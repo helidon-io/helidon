@@ -49,5 +49,11 @@
                 <module>chaos</module>
             </modules>
         </profile>
+        <profile>
+            <id>data-jdbc-chaos-real</id>
+            <modules>
+                <module>chaos</module>
+            </modules>
+        </profile>
     </profiles>
 </project>

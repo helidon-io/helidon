@@ -155,6 +155,21 @@ mvn -f tests/integration/data-jdbc/pom.xml -pl h2 -am verify
 
 See the [chaos test README](chaos/README.md).
 
+Run every regular integration test and every chaos contract against all
+applicable databases with both profiles explicitly active:
+
+```bash
+mvn -f tests/integration/data-jdbc/pom.xml \
+    -Plong-tests,data-jdbc-chaos-real verify
+```
+
+The `data-jdbc-chaos-real` profile adds the opt-in chaos reactor and selects
+its lifecycle, physical-session disruption, lock, and pool-contention coverage
+in addition to the default database-failure smoke contract. Container-backed
+classes use `@Testcontainers(disabledWithoutDocker = true)`, so missing Docker
+skips those classes instead of failing the build. Inspect the Failsafe summary
+to confirm which database classes executed.
+
 ## Test design notes
 
 - Prefer portable contracts in `common/src/main/java` and small database leaves

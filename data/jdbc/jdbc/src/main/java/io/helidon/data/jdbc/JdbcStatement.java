@@ -59,7 +59,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     @Override
     public JdbcClient.Statement bind(int index, Object value) {
         Objects.requireNonNull(value, "The bind value must not be null.");
-        if (!JdbcRow.supportedScalar(value.getClass())) {
+        if (!JdbcScalarAccess.supported(value.getClass())) {
             throw new IllegalArgumentException("JDBC does not support bind values of type '"
                                                        + value.getClass().getTypeName() + "'.");
         }
@@ -102,7 +102,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     public <T> JdbcClient.Rows<T> map(Class<T> scalarType) {
         ensureMutable();
         Objects.requireNonNull(scalarType, "The scalar type must not be null.");
-        if (!JdbcRow.supportedScalar(scalarType)) {
+        if (!JdbcScalarAccess.supported(scalarType)) {
             throw new IllegalArgumentException("JDBC does not support scalar values of type '"
                                                        + scalarType.getTypeName() + "'.");
         }

@@ -68,6 +68,10 @@ class JdbcGeneratedKeyScalarMatrixTest {
         metadata = mock(ResultSetMetaData.class);
     }
 
+    /**
+     * Verifies that generated-key scalar mapping uses each supported JDBC
+     * extraction path and returns the detached column-one value.
+     */
     @Test
     void mapsEverySupportedScalarFromGeneratedKeyColumnOne() throws Exception {
         assertGeneratedKey(Boolean.TRUE, Boolean.class);
@@ -90,6 +94,10 @@ class JdbcGeneratedKeyScalarMatrixTest {
         assertGeneratedKey(Timestamp.valueOf("2026-07-27 10:11:12"), Timestamp.class);
     }
 
+    /**
+     * Verifies generated-key cardinality and distinguishes required SQL NULL
+     * from absent, singular, and non-unique key rows.
+     */
     @Test
     void enforcesGeneratedKeyCardinalityAndRequiredNullSemantics() throws Exception {
         prepareOperation();
@@ -98,10 +106,11 @@ class JdbcGeneratedKeyScalarMatrixTest {
 
         prepareOperation();
         when(resultSet.next()).thenReturn(true, true);
-        when(resultSet.getObject(1, Long.class)).thenReturn(1L, 2L);
+        when(resultSet.getLong(1)).thenReturn(1L, 2L);
         assertThrows(NonUniqueResultException.class, () -> generatedLongKeys().one());
 
         prepareOperation();
+        when(resultSet.wasNull()).thenReturn(true);
         assertThrows(DataException.class, () -> generatedLongKeys().one());
 
         prepareOperation();
@@ -120,17 +129,22 @@ class JdbcGeneratedKeyScalarMatrixTest {
         assertThat(optionalGeneratedLongKey(), is(Optional.empty()));
 
         prepareOperation();
+        when(resultSet.wasNull()).thenReturn(true);
         assertThat(optionalGeneratedLongKey(), is(Optional.empty()));
 
         prepareOperation();
-        when(resultSet.getObject(1, Long.class)).thenReturn(10L);
+        when(resultSet.getLong(1)).thenReturn(10L);
         assertThat(optionalGeneratedLongKey(), is(Optional.of(10L)));
     }
 
+    /**
+     * Verifies that default and named generated keys use their exact JDBC
+     * preparation overloads while retaining scalar key extraction.
+     */
     @Test
     void usesTheExactJdbcPreparationOverloadForDefaultAndNamedKeys() throws Exception {
         prepareOperation();
-        when(resultSet.getObject(1, Long.class)).thenReturn(10L);
+        when(resultSet.getLong(1)).thenReturn(10L);
 
         generatedLongKeys().one();
 
@@ -146,7 +160,7 @@ class JdbcGeneratedKeyScalarMatrixTest {
         when(resultSet.getMetaData()).thenReturn(metadata);
         when(metadata.getColumnCount()).thenReturn(2);
         when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getObject(1, Long.class)).thenReturn(11L);
+        when(resultSet.getLong(1)).thenReturn(11L);
         when(statement.getMoreResults()).thenReturn(false);
 
         long key = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
@@ -163,8 +177,32 @@ class JdbcGeneratedKeyScalarMatrixTest {
 
     private <T> void assertGeneratedKey(T expected, Class<T> type) throws Exception {
         prepareOperation();
-        if (type == byte[].class) {
+        if (type == Boolean.class) {
+            when(resultSet.getBoolean(1)).thenReturn((Boolean) expected);
+        } else if (type == Byte.class) {
+            when(resultSet.getByte(1)).thenReturn((Byte) expected);
+        } else if (type == Short.class) {
+            when(resultSet.getShort(1)).thenReturn((Short) expected);
+        } else if (type == Integer.class) {
+            when(resultSet.getInt(1)).thenReturn((Integer) expected);
+        } else if (type == Long.class) {
+            when(resultSet.getLong(1)).thenReturn((Long) expected);
+        } else if (type == Float.class) {
+            when(resultSet.getFloat(1)).thenReturn((Float) expected);
+        } else if (type == Double.class) {
+            when(resultSet.getDouble(1)).thenReturn((Double) expected);
+        } else if (type == BigDecimal.class) {
+            when(resultSet.getBigDecimal(1)).thenReturn((BigDecimal) expected);
+        } else if (type == String.class) {
+            when(resultSet.getString(1)).thenReturn((String) expected);
+        } else if (type == byte[].class) {
             when(resultSet.getBytes(1)).thenReturn((byte[]) expected);
+        } else if (type == Date.class) {
+            when(resultSet.getDate(1)).thenReturn((Date) expected);
+        } else if (type == Time.class) {
+            when(resultSet.getTime(1)).thenReturn((Time) expected);
+        } else if (type == Timestamp.class) {
+            when(resultSet.getTimestamp(1)).thenReturn((Timestamp) expected);
         } else {
             when(resultSet.getObject(1, type)).thenReturn(expected);
         }
@@ -175,11 +213,42 @@ class JdbcGeneratedKeyScalarMatrixTest {
                 .map(row -> row.required(1, type))
                 .one();
 
-        if (type == byte[].class) {
+        assertThat(actual, is(expected));
+        if (type == Boolean.class) {
+            verify(resultSet).getBoolean(1);
+            verify(resultSet).wasNull();
+        } else if (type == Byte.class) {
+            verify(resultSet).getByte(1);
+            verify(resultSet).wasNull();
+        } else if (type == Short.class) {
+            verify(resultSet).getShort(1);
+            verify(resultSet).wasNull();
+        } else if (type == Integer.class) {
+            verify(resultSet).getInt(1);
+            verify(resultSet).wasNull();
+        } else if (type == Long.class) {
+            verify(resultSet).getLong(1);
+            verify(resultSet).wasNull();
+        } else if (type == Float.class) {
+            verify(resultSet).getFloat(1);
+            verify(resultSet).wasNull();
+        } else if (type == Double.class) {
+            verify(resultSet).getDouble(1);
+            verify(resultSet).wasNull();
+        } else if (type == BigDecimal.class) {
+            verify(resultSet).getBigDecimal(1);
+        } else if (type == String.class) {
+            verify(resultSet).getString(1);
+        } else if (type == byte[].class) {
             assertThat((byte[]) actual, is((byte[]) expected));
             verify(resultSet).getBytes(1);
+        } else if (type == Date.class) {
+            verify(resultSet).getDate(1);
+        } else if (type == Time.class) {
+            verify(resultSet).getTime(1);
+        } else if (type == Timestamp.class) {
+            verify(resultSet).getTimestamp(1);
         } else {
-            assertThat(actual, is(expected));
             verify(resultSet).getObject(1, type);
         }
     }

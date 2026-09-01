@@ -79,6 +79,21 @@ public final class ChaosSql {
     public static final String COUNT_GENERATED_BY_NAME = "SELECT COUNT(*) FROM CHAOS_GENERATED WHERE NAME = ?";
 
     /**
+     * Reads the identifier of the physical database session used by the current transaction.
+     */
+    public static final String CURRENT_SESSION_ID = "SELECT SESSION_ID FROM CHAOS_SESSION";
+
+    /**
+     * Updates one row which a control connection can lock before disrupting an application session.
+     */
+    public static final String UPDATE_GATE = "UPDATE CHAOS_GATE SET GATE_VALUE = GATE_VALUE + 1 WHERE ID = ?";
+
+    /**
+     * Reads the committed gate value after a disruption.
+     */
+    public static final String READ_GATE = "SELECT GATE_VALUE FROM CHAOS_GATE WHERE ID = 1";
+
+    /**
      * Removes chaos contacts before restoring deterministic baseline rows.
      */
     public static final String RESET_CONTACTS = "DELETE FROM CHAOS_CONTACT";
@@ -87,6 +102,11 @@ public final class ChaosSql {
      * Removes generated-key rows before each chaos smoke scenario.
      */
     public static final String RESET_GENERATED = "DELETE FROM CHAOS_GENERATED";
+
+    /**
+     * Restores the connection-disruption gate to its baseline value.
+     */
+    public static final String RESET_GATE = "UPDATE CHAOS_GATE SET GATE_VALUE = 0 WHERE ID = 1";
 
     /**
      * Restores one chaos contact with an explicit identifier.

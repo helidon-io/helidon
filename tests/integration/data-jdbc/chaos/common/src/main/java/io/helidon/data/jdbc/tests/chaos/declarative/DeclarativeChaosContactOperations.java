@@ -60,4 +60,14 @@ public final class DeclarativeChaosContactOperations implements ChaosContactOper
     public long countContacts() {
         return repository.countContacts();
     }
+
+    @Override
+    public long currentSessionId() {
+        return repository.currentSessionId();
+    }
+
+    @Override
+    public void updateGate(long id) {
+        repository.updateGate(id);
+    }
 }

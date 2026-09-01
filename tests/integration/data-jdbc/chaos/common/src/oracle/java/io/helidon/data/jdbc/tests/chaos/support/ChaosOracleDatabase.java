@@ -96,8 +96,19 @@ public final class ChaosOracleDatabase {
                     NAME VARCHAR2(80) NOT NULL
                 )
                 """).execute();
+        client.create("""
+                CREATE TABLE CHAOS_GATE (
+                    ID NUMBER(19) PRIMARY KEY,
+                    GATE_VALUE NUMBER(19) NOT NULL
+                )
+                """).execute();
+        client.create("""
+                CREATE VIEW CHAOS_SESSION AS
+                SELECT TO_NUMBER(SYS_CONTEXT('USERENV', 'SESSIONID')) AS SESSION_ID FROM DUAL
+                """).execute();
         client.create("INSERT INTO CHAOS_CONTACT (ID, NAME) VALUES (1, 'alpha')").execute();
         client.create("INSERT INTO CHAOS_CONTACT (ID, NAME) VALUES (2, 'beta')").execute();
+        client.create("INSERT INTO CHAOS_GATE (ID, GATE_VALUE) VALUES (1, 0)").execute();
         System.setProperty(GENERATED_KEY_COLUMN_PROPERTY, "ID");
         return Config.just(ConfigSources.create(Map.of(
                 "data.clients.jdbc.0.name", "@default",
@@ -134,6 +145,18 @@ public final class ChaosOracleDatabase {
         config.setMaximumPoolSize(1);
         config.setConnectionTimeout(1_000);
         return new HikariDataSource(config);
+    }
+
+    static String activeUsername() {
+        return username;
+    }
+
+    static String controlJdbcUrl(GenericContainer<?> container) {
+        return jdbcUrl(container);
+    }
+
+    static String controlPassword() {
+        return PASSWORD;
     }
 
     private static void createSchema(GenericContainer<?> container, String username) {

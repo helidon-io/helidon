@@ -50,6 +50,16 @@ public final class ChaosFailureAssertions {
     }
 
     /**
+     * Asserts that a failure and its complete application-visible graph omit all supplied canaries.
+     *
+     * @param failure application-visible failure
+     * @param canaries secret values that must not be exposed
+     */
+    public static void assertSanitizedFailure(Throwable failure, String... canaries) {
+        assertNoCanaries(failure, canaries);
+    }
+
+    /**
      * Asserts that a transaction failure has a sanitized data failure in its causal graph.
      *
      * @param failure application-visible transaction failure

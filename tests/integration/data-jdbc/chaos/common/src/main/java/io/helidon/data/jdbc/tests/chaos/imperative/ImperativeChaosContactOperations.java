@@ -76,4 +76,14 @@ public final class ImperativeChaosContactOperations implements ChaosContactOpera
     public long countContacts() {
         return client.create(ChaosSql.COUNT_CONTACTS).map(Long.class).one();
     }
+
+    @Override
+    public long currentSessionId() {
+        return client.create(ChaosSql.CURRENT_SESSION_ID).map(Long.class).one();
+    }
+
+    @Override
+    public void updateGate(long id) {
+        client.create(ChaosSql.UPDATE_GATE).bind(1, id).execute();
+    }
 }

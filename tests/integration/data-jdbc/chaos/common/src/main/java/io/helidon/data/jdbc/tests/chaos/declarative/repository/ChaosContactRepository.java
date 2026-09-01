@@ -71,4 +71,22 @@ public interface ChaosContactRepository {
     @Jdbc.Statement(ChaosSql.COUNT_CONTACTS)
     @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
     long countContacts();
+
+    /**
+     * Returns the physical database session identifier used by the current transaction.
+     *
+     * @return database session identifier
+     */
+    @Jdbc.Statement(ChaosSql.CURRENT_SESSION_ID)
+    @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
+    long currentSessionId();
+
+    /**
+     * Updates the gate row used to synchronize a physical connection disruption.
+     *
+     * @param id gate row identifier
+     */
+    @Jdbc.Statement(ChaosSql.UPDATE_GATE)
+    @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+    void updateGate(long id);
 }

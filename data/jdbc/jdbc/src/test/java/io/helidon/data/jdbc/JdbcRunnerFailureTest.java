@@ -213,14 +213,14 @@ class JdbcRunnerFailureTest {
     void failedOwnedLeaseCloseInvalidatesOnlyOnceBeforeBecomingTerminal() throws Exception {
         SQLException closeFailure = new SQLException("connection close failed", "08006", 97);
         AtomicBoolean released = new AtomicBoolean();
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             if (!released.get()) {
                 // Model a pool/driver close that fails before releasing its physical resource.
                 throw closeFailure;
             }
             return null;
         }).when(connection).close();
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             released.set(true);
             return null;
         }).when(connection).abort(any());
@@ -273,11 +273,15 @@ class JdbcRunnerFailureTest {
         cleanup.verify(connection).close();
     }
 
+    /**
+     * Verifies that a dedicated setter failure retains safe SQL metadata and
+     * closes the operation-owned statement and connection.
+     */
     @Test
     void closesStatementAndConnectionWhenBindingFails() throws Exception {
         SQLException bindFailure = new SQLException("bind failed", "22000", 92);
         when(connection.prepareStatement("UPDATE TEST_VALUE SET VALUE = ?")).thenReturn(statement);
-        doThrow(bindFailure).when(statement).setObject(1, "value");
+        doThrow(bindFailure).when(statement).setString(1, "value");
 
         DataException failure = assertThrows(DataException.class,
                                              () -> client.create("UPDATE TEST_VALUE SET VALUE = ?")
@@ -570,6 +574,10 @@ class JdbcRunnerFailureTest {
         verify(statement).close();
     }
 
+    /**
+     * Verifies that a non-unique result remains primary when result-set,
+     * statement, and connection cleanup all fail.
+     */
     @Test
     void keepsCardinalityFailurePrimaryWhenEveryCleanupStepAlsoFails() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
@@ -580,7 +588,7 @@ class JdbcRunnerFailureTest {
         when(resultSet.getMetaData()).thenReturn(metadata);
         when(metadata.getColumnCount()).thenReturn(1);
         when(resultSet.next()).thenReturn(true, true);
-        when(resultSet.getObject(1, String.class)).thenReturn("first", "second");
+        when(resultSet.getString(1)).thenReturn("first", "second");
         SQLException resultClose = new SQLException("result close failed");
         SQLException statementClose = new SQLException("statement close failed");
         SQLException connectionClose = new SQLException("connection close failed");
@@ -646,7 +654,7 @@ class JdbcRunnerFailureTest {
         assertThat(value, is("value"));
         InOrder order = inOrder(resultSet);
         order.verify(resultSet).next();
-        order.verify(resultSet).getObject(1, String.class);
+        order.verify(resultSet).getString(1);
         order.verify(resultSet).next();
         verify(resultSet, never()).getWarnings();
         verify(resultSet, never()).clearWarnings();
@@ -768,6 +776,10 @@ class JdbcRunnerFailureTest {
         cleanup.verify(connection).close();
     }
 
+    /**
+     * Verifies that unchecked preparation and dedicated setter failures are
+     * sanitized while every acquired resource is closed.
+     */
     @Test
     void sanitizesRuntimeFailuresFromPreparationAndBinding() throws Exception {
         IllegalStateException preparationFailure = driverRuntimeFailure("private prepared SQL");
@@ -781,7 +793,7 @@ class JdbcRunnerFailureTest {
         setUp();
         IllegalStateException bindFailure = driverRuntimeFailure("private bound value");
         when(connection.prepareStatement("UPDATE TEST_VALUE SET VALUE = ?")).thenReturn(statement);
-        doThrow(bindFailure).when(statement).setObject(1, "private-value");
+        doThrow(bindFailure).when(statement).setString(1, "private-value");
 
         assertSanitizedRuntimeFailure(() -> client.create("UPDATE TEST_VALUE SET VALUE = ?")
                                               .bind(1, "private-value")
@@ -887,7 +899,7 @@ class JdbcRunnerFailureTest {
         setUp();
         prepareSuccessfulQuery();
 
-        assertThat(client.create("SELECT VALUE FROM TEST_VALUE").map(row -> "value").optional(),
+        assertThat(client.create("SELECT VALUE FROM TEST_VALUE").map(_ -> "value").optional(),
                    is(Optional.of("value")));
         verify(statement).setMaxRows(2);
 
@@ -944,13 +956,17 @@ class JdbcRunnerFailureTest {
         verify(connection).close();
     }
 
+    /**
+     * Verifies that an unchecked dedicated String getter failure is sanitized
+     * and followed by result-set, statement, and connection cleanup.
+     */
     @Test
-    void sanitizesRuntimeFailureWhileReadingAnObjectResultValue() throws Exception {
+    void sanitizesRuntimeFailureWhileReadingAStringResultValue() throws Exception {
         ResultSet resultSet = prepareSuccessfulQuery();
         IllegalStateException driverFailure = new IllegalStateException("secret result value",
                                                                          new IllegalArgumentException("secret cause"));
         driverFailure.addSuppressed(new IllegalArgumentException("secret suppressed"));
-        when(resultSet.getObject(1, String.class)).thenThrow(driverFailure);
+        when(resultSet.getString(1)).thenThrow(driverFailure);
 
         DataException failure = assertThrows(DataException.class,
                                              () -> client.create("SELECT VALUE FROM TEST_VALUE")
@@ -963,6 +979,35 @@ class JdbcRunnerFailureTest {
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    /**
+     * Verifies that failures from both steps of nullable byte extraction retain
+     * safe JDBC metadata and close every operation-owned resource.
+     */
+    @Test
+    void closesResourcesAfterByteValueAndNullInspectionFailures() throws Exception {
+        ResultSet resultSet = prepareSuccessfulQuery();
+        SQLException valueFailure = new SQLException("private byte value", "22023", 91);
+        when(resultSet.getByte(1)).thenThrow(valueFailure);
+
+        assertExecutionFailure(() -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                       .map(Byte.class)
+                                       .one(),
+                               valueFailure,
+                               resultSet);
+
+        setUp();
+        resultSet = prepareSuccessfulQuery();
+        SQLException nullFailure = new SQLException("private byte null state", "HY000", 92);
+        when(resultSet.getByte(1)).thenReturn((byte) 2);
+        when(resultSet.wasNull()).thenThrow(nullFailure);
+
+        assertExecutionFailure(() -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                       .map(Byte.class)
+                                       .one(),
+                               nullFailure,
+                               resultSet);
     }
 
     @Test
@@ -1000,7 +1045,7 @@ class JdbcRunnerFailureTest {
         when(resultSet.getMetaData()).thenReturn(metadata);
         when(metadata.getColumnCount()).thenReturn(1);
         when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getObject(1, String.class)).thenReturn("value");
+        when(resultSet.getString(1)).thenReturn("value");
         when(statement.getLargeUpdateCount()).thenReturn(-1L);
         when(statement.getMoreResults()).thenReturn(false);
         return resultSet;
@@ -1015,7 +1060,7 @@ class JdbcRunnerFailureTest {
         when(resultSet.getMetaData()).thenReturn(metadata);
         when(metadata.getColumnCount()).thenReturn(1);
         when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getObject(1, Long.class)).thenReturn(1L);
+        when(resultSet.getLong(1)).thenReturn(1L);
         when(statement.getMoreResults()).thenReturn(false);
         return resultSet;
     }

@@ -37,4 +37,13 @@
         <module>imperative</module>
         <module>declarative</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>data-jdbc-chaos-real</id>
+            <properties>
+                <data.jdbc.chaos.groups>data-jdbc-chaos-smoke | data-jdbc-chaos-lifecycle | data-jdbc-chaos-disruption | data-jdbc-chaos-concurrency</data.jdbc.chaos.groups>
+            </properties>
+        </profile>
+    </profiles>
 </project>

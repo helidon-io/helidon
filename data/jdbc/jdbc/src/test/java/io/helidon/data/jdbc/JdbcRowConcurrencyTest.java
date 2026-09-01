@@ -39,6 +39,10 @@ import static org.mockito.Mockito.when;
 
 class JdbcRowConcurrencyTest {
 
+    /**
+     * Verifies that cross-thread row access fails before invoking any scalar
+     * getter on the callback-owned result set.
+     */
     @Test
     void accessFromAnotherThreadFailsBeforeReadingTheDriver() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
@@ -61,7 +65,7 @@ class JdbcRowConcurrencyTest {
             row.expire();
             resultSet.close();
 
-            verify(resultSet, never()).getObject(1, String.class);
+            verify(resultSet, never()).getString(1);
             verify(resultSet, never()).getBytes(1);
             verify(resultSet).close();
         } finally {
@@ -69,6 +73,10 @@ class JdbcRowConcurrencyTest {
         }
     }
 
+    /**
+     * Verifies that expiration published by the callback thread prevents a
+     * subsequent thread from reaching the result set.
+     */
     @Test
     void expirationIsVisibleToAnotherThread() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
@@ -82,23 +90,27 @@ class JdbcRowConcurrencyTest {
             assertThat(failure.getCause(), instanceOf(IllegalStateException.class));
             assertThat(failure.getCause().getMessage(),
                        is("A JDBC row is valid only during its mapper callback."));
-            verify(resultSet, never()).getObject(1, String.class);
+            verify(resultSet, never()).getString(1);
         } finally {
             executor.shutdownNow();
         }
     }
 
+    /**
+     * Verifies that the callback thread may use the dedicated String getter
+     * until expiration and cannot read the row afterward.
+     */
     @Test
     void callbackThreadCanReadUntilExpiration() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
-        when(resultSet.getObject(1, String.class)).thenReturn("value");
+        when(resultSet.getString(1)).thenReturn("value");
         JdbcRow row = newRow(resultSet);
 
         assertThat(row.required(1, String.class), is("value"));
         row.expire();
         assertThrows(IllegalStateException.class, () -> row.required(1, String.class));
 
-        verify(resultSet).getObject(1, String.class);
+        verify(resultSet).getString(1);
     }
 
     private static JdbcRow newRow(ResultSet resultSet) throws SQLException {
