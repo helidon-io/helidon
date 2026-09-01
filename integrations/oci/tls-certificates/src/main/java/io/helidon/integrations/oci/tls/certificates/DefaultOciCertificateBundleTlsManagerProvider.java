@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.integrations.oci.tls.certificates;
+
+import io.helidon.common.tls.TlsManager;
+import io.helidon.common.tls.spi.TlsManagerProvider;
+import io.helidon.config.Config;
+
+/**
+ * The service provider for {@link OciCertificateBundleTlsManager}.
+ */
+public class DefaultOciCertificateBundleTlsManagerProvider implements TlsManagerProvider {
+
+    /**
+     * Service loader based constructor.
+     *
+     * @deprecated this is a Java ServiceLoader implementation and the constructor should not be used directly
+     */
+    public DefaultOciCertificateBundleTlsManagerProvider() {
+    }
+
+    @Override
+    public String configKey() {
+        return DefaultOciCertificateBundleTlsManager.TYPE;
+    }
+
+    @Override
+    public TlsManager create(Config config, String name) {
+        OciCertificateBundleTlsManagerConfig cfg = OciCertificateBundleTlsManagerConfig.create(config);
+        return TlsManagerProvider.getOrCreate(cfg,
+                                              c -> new DefaultOciCertificateBundleTlsManager(cfg, name, config));
+    }
+}
