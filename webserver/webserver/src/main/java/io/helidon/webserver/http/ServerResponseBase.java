@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -515,7 +516,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     protected OutputStream contentEncode(OutputStream outputStream, boolean allowAutomaticEncoding) {
         if (!statusAllowsEntity()) {
             if (explicitContentEncoder != null) {
-                return responseContentEncoder(false).apply(outputStream);
+                return new DeferredContentEncoderOutputStream(responseContentEncoder(false),
+                                                              outputStream,
+                                                              this::statusAllowsEntity);
             }
             return outputStream;
         }
@@ -675,5 +678,52 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         ByteArrayOutputStream baos = new ByteArrayOutputStream((int) configuredContentLength);
         writer.write(type, entity, baos, requestHeaders, headers());
         send(baos.toByteArray());
+    }
+
+    private static final class DeferredContentEncoderOutputStream extends OutputStream {
+        private final ContentEncoder encoder;
+        private final OutputStream outputStream;
+        private final BooleanSupplier statusAllowsEntity;
+        private OutputStream encodedOutputStream;
+
+        private DeferredContentEncoderOutputStream(ContentEncoder encoder,
+                                                   OutputStream outputStream,
+                                                   BooleanSupplier statusAllowsEntity) {
+            this.encoder = encoder;
+            this.outputStream = outputStream;
+            this.statusAllowsEntity = statusAllowsEntity;
+        }
+
+        @Override
+        public void write(int value) throws IOException {
+            outputStream().write(value);
+        }
+
+        @Override
+        public void write(byte[] bytes) throws IOException {
+            outputStream().write(bytes);
+        }
+
+        @Override
+        public void write(byte[] bytes, int offset, int length) throws IOException {
+            outputStream().write(bytes, offset, length);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            outputStream().flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            outputStream().close();
+        }
+
+        private OutputStream outputStream() {
+            if (encodedOutputStream == null && statusAllowsEntity.getAsBoolean()) {
+                encodedOutputStream = encoder.apply(outputStream);
+            }
+            return encodedOutputStream == null ? outputStream : encodedOutputStream;
+        }
     }
 }

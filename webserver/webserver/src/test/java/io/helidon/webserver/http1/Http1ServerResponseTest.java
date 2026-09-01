@@ -45,6 +45,7 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerConfig;
@@ -434,6 +435,32 @@ class Http1ServerResponseTest {
                 () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
                 () -> assertThat(responseText, containsString("\r\nxentity\r\n")),
                 () -> assertThat(responseText, endsWith("0\r\n\r\n"))
+        );
+    }
+
+    @Test
+    void lateEntityStatusPreservesEagerEncoderHeaderWithoutBuffering() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        ListenerConfig config = WebServer.builder().writeBufferSize(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext, config);
+        response.contentEncoder(GzipEncoding.create().encoder());
+        response.status(Status.NO_CONTENT_204);
+
+        OutputStream output = response.outputStream();
+        output.write(new byte[0]);
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        output.close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\n")),
+                () -> assertThat(responseText, containsString("\u001f\u008b"))
         );
     }
 

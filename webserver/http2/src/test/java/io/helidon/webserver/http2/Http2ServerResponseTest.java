@@ -472,6 +472,30 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void noEntityStatusesDoNotApplyExplicitGzip() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            Http2ServerStream stream = mock(Http2ServerStream.class);
+            Http2ServerResponse response = createResponse(stream, Method.GET, ContentEncodingContext.create());
+            response.status(status);
+            response.contentEncoder(GzipEncoding.create().encoder());
+
+            response.outputStream();
+            response.commit();
+
+            var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+            verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+            verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+            verify(stream, never()).writeData(any(), anyBoolean());
+            verify(stream, never()).writeTrailers(any());
+            assertAll(
+                    () -> assertThat(responseHeaders.getValue().status(), is(status)),
+                    () -> assertThat(responseHeaders.getValue().httpHeaders()
+                                             .get(HeaderNames.CONTENT_ENCODING).get(), is("gzip"))
+            );
+        }
+    }
+
+    @Test
     void eagerlyFlushedNoEntityStatusIsSentOnce() {
         for (Status status : NO_ENTITY_STATUSES) {
             ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
