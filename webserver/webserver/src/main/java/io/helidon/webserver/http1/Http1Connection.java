@@ -162,7 +162,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             // look for protocol data
             ProxyProtocolData proxyProtocolData = ctx.proxyProtocolData().orElse(null);
-
             // handle connection until an exception (or explicit connection close)
             while (canRun) {
                 // prologue (first line of request)
