@@ -396,7 +396,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         Objects.requireNonNull(responsePreparation);
         beforeSend();
         responsePreparation.run();
-        return Optional.of(outputStream(false));
+        return Optional.of(outputStream(true));
     }
 
     void flushHeaders() {
