@@ -334,6 +334,20 @@ Configuration of a grpc client
 </td>
 <td>Buffer size used when writing data to the underlying socket on a client TCP connection</td>
 </tr>
+<tr>
+<td>
+<a id="alt-svc"></a>
+<a href="io.helidon.webclient.api.ClientAltSvcConfig.md">
+<code>alt-<wbr>svc</code>
+</a>
+</td>
+<td>
+<code>Client<wbr>AltSvc<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Client policy for accepting and using HTTP <code>Alt-<wbr>Svc</code> response advertisements</td>
+</tr>
 </tbody>
 </table>
 
