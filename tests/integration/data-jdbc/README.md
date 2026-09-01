@@ -29,10 +29,10 @@ H2 tests do not require Docker.
 
 ## Test database credentials
 
-The regular container tests use fixed credentials from the test source code.
-These credentials are intended only for temporary databases that
-Testcontainers creates for this suite. Do not use them for a shared database
-or for any other environment.
+> **Note:** These tests intentionally use hard-coded database credentials.
+> They are demonstration values for temporary databases that Testcontainers
+> creates for this suite only. Do not reuse them for shared databases,
+> production systems, or any other environment.
 
 The MySQL username is `test`, and its password is `mysql123`. To change these
 values, update the `withUsername` and `withPassword` calls in

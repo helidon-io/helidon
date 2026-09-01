@@ -15,12 +15,17 @@
  */
 package io.helidon.data.jdbc.tests.declarative.mysql;
 
+import java.time.OffsetDateTime;
+
 import io.helidon.data.jdbc.tests.contract.AbstractDeclarativeScalarContract;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Executes the generated scalar and typed-null contract against MySQL.
@@ -29,6 +34,24 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class MySqlDeclarativeScalarTest extends AbstractDeclarativeScalarContract {
     @Container
     static final MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
+
+    /**
+     * Compares the expected instant with internal epoch value of MySQL so matching bind and read
+     * time-zone conversions cannot hide an incorrectly stored {@code TIMESTAMP} instant.
+     *
+     * @param expected expected offset date-time
+     */
+    @Override
+    protected void assertStoredOffsetDateTimeInstant(OffsetDateTime expected) {
+        long storedEpochSecond = client().create("""
+                        SELECT UNIX_TIMESTAMP(OFFSET_DATE_TIME_VALUE)
+                        FROM SCALAR_VALUE
+                        WHERE ID = 1
+                        """)
+                .map(row -> row.required(1, Long.class))
+                .one();
+        assertThat(storedEpochSecond, is(expected.toEpochSecond()));
+    }
 
     @Override
     protected void beforeStartApplication() {

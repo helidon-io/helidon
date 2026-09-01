@@ -46,6 +46,9 @@ public final class MySqlDatabase {
                 .withUsername("test")
                 .withPassword("mysql123")
                 .withDatabaseName("test")
+                .withUrlParam("preserveInstants", "true")
+                .withUrlParam("connectionTimeZone", "UTC")
+                .withUrlParam("forceConnectionTimeZoneToSession", "true")
                 .withInitScript("db/mysql/schema-init.sql");
     }
 
