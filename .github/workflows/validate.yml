@@ -185,6 +185,7 @@ jobs:
           artifact-path: |
             **/target/state-javadoc.xml
             **/target/*-javadoc.jar
+            javadocs/target/*.jar
           run: |
             mvn ${MVN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \

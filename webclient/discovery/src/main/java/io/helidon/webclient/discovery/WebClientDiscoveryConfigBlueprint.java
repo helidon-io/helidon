@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.helidon.discovery.Discovery;
  *
  * @see WebClientDiscovery
  * @see WebClientDiscovery#create(WebClientDiscoveryConfig)
- * @see <a href="https://helidon.io/docs/latest/se/builder#_specification">Helidon Builder</a>
  */
 @Prototype.Blueprint
 @Prototype.Configured
