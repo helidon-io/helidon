@@ -4,13 +4,16 @@
 This informal document is intended for developers of Helidon components who are converting  a 
 metrics-dependent component to be metrics-capable instead.
 
-Developers of new metrics-capable components should see the Helidon SE metrics guide (part 2) on developing metrics-capable compoments.
+Developers of new metrics-capable components should see the Helidon metrics
+guide (part 2) on developing metrics-capable compoments.
 
 ## Overview
-Helidon SE provides these related metrics components:
-* `helidon-metrics` - The full-featured implementation of Helidon SE metrics and the support for the web service endpoint `/metrics`.
+Helidon provides these related metrics components:
+* `helidon-metrics` - The full-featured implementation of Helidon metrics and
+  the support for the web service endpoint `/metrics`.
 * `helidon-metrics-api` - 
-  New component, containing the public interface to Helidon SE metrics for Helidon SE apps and 
+  New component, containing the public interface to Helidon metrics for Helidon
+  apps and
   components.
   This component also includes "no-op" implementations of those interfaces which allow 
   apps and components to create, register, look-up, and remove metrics in metrics registries.
@@ -22,8 +25,6 @@ The `helidon-metrics-api` module contains interfaces for `RegistryFactory` and
 With minimal coding changes, components can be converted to become metrics-capable.
 
 ## Step-by-step Conversion
-
-See `docs/se/guides/_metrics-capable-components.adoc` (the public documentation).
 
 ### Change `pom.xml`
 Change the `pom.xml` of the component to depend on `helidon-metrics-api` instead of `helidon-metrics`.

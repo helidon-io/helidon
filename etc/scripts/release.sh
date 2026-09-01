@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -130,17 +130,23 @@ current_version() {
   awk 'BEGIN {FS="[<>]"} ; /<version>/ {print $3; exit 0}' "${WS_DIR}"/pom.xml
 }
 
-# arg1: pattern
-# arg2: include pattern
+# arg1: dir
+# arg2: pattern
+# arg3: include pattern
 search() {
   set +o pipefail
-  grep "${1}" -Er . --include "${2}" | cut -d ':' -f 1 | xargs git ls-files | sort | uniq
+  grep "${2}" -Er "${1}" --include "${3}" | cut -d ':' -f 1 | xargs git ls-files | sort | uniq
 }
 
 replace() {
-  local pattern value replace include
+  local dir pattern value replace include
+
   while (( ${#} > 0 )); do
     case ${1} in
+    "--dir="*)
+      dir=${1#*=}
+      shift
+      ;;
     "--pattern="*)
       pattern=${1#*=}
       shift
@@ -168,7 +174,7 @@ replace() {
     replace=${pattern/\.\*/${value}}
   fi
 
-  for file in $(search "${pattern}" "${include}"); do
+  for file in $(search "${dir:-.}" "${pattern}" "${include}"); do
     echo "Updating ${file}"
     sed -e s@"${pattern}"@"${replace}"@g "${file}" > "${file}.tmp"
     mv "${file}.tmp" "${file}"
@@ -176,19 +182,13 @@ replace() {
 }
 
 update_version(){
-  local version current_version is_release
+  local version current_version
 
   version=${1-${VERSION}}
   if [ -z "${version+x}" ] ; then
     echo "ERROR: version required" >&2
     usage
     exit 1
-  fi
-
-  if [[ "${version}" == *-SNAPSHOT ]]; then
-    is_release="false"
-  else
-    is_release="true"
   fi
 
   # find current version
@@ -207,14 +207,10 @@ update_version(){
 
   # update docs
   replace \
-    --pattern=":helidon-version: .*" \
-    --value="${version}" \
-    --include="attributes.adoc"
-
-  replace \
-    --pattern=":helidon-version-is-release: .*" \
-    --value="${is_release}" \
-    --include="attributes.adoc"
+    --pattern="${current_version}" \
+    --replace="${version}" \
+    --dir="docs" \
+    --include="*.md"
 }
 
 create_tag() {

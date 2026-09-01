@@ -14,10 +14,10 @@ When filing a bug remember that the better written the bug is, the more likely i
 to be fixed. Please include:
 
 1. Version of Helidon
-2. Whether you are writing a Helidon SE or MP application
-3. OS
-4. Version of Docker or Kubernetes or other software if it's relevant to your issue
-5. Steps to reproduce
+2. OS
+3. Version of Docker or Kubernetes or other software if it's relevant to your
+   issue
+4. Steps to reproduce
 
 ## Contributing Code
 
@@ -41,4 +41,3 @@ first.
 Follow the [Golden Rule](https://en.wikipedia.org/wiki/Golden_Rule). If
 you'd like more specific guidelines see the
 [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/1/4/code-of-conduct.html)
-

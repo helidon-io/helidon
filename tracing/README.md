@@ -8,7 +8,7 @@ Module `helidon-tracing-providers-opentelemetry` adds OpenTelemetry tracing supp
 
 # Usage
 
-To use tracing in SE, add a dependency on `helidon-tracing` and a tracer
+To use tracing in Helidon, add a dependency on `helidon-tracing` and a tracer
 implementation, then register the tracer with server configuration.
 
 pom.xml:

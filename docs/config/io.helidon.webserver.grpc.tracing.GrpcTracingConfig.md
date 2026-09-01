@@ -1,0 +1,63 @@
+# io.<wbr>helidon.<wbr>webserver.<wbr>grpc.<wbr>tracing.<wbr>Grpc<wbr>Tracing<wbr>Config
+
+## Description
+
+Grpc tracing config
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>streaming</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>A flag indicating streaming logging</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>A flag indicating if tracing is enabled</td>
+</tr>
+<tr>
+<td>
+<code>verbose</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>A flag indicating verbose logging</td>
+</tr>
+</tbody>
+</table>
+
+
+
+---
+
+See the [manifest](manifest.md) for all available types.

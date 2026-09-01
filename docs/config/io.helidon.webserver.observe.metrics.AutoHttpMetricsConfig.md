@@ -1,0 +1,119 @@
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>metrics.<wbr>Auto<wbr>Http<wbr>Metrics<wbr>Config
+
+## Description
+
+Automatic metrics collection settings
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>opt-<wbr>in</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>Elective attribute for which to opt in</td>
+</tr>
+<tr>
+<td>
+<a id="paths"></a>
+<a href="io.helidon.webserver.observe.metrics.AutoHttpMetricsPathConfig.md">
+<code>paths</code>
+</a>
+</td>
+<td>
+<code>List&lt;<wbr>Auto<wbr>Http<wbr>Metrics<wbr>Path<wbr>Config&gt;</code>
+</td>
+<td>
+</td>
+<td>Automatic metrics collection settings</td>
+</tr>
+<tr>
+<td>
+<code>sockets</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>Socket names for sockets to be instrumented with automatic metrics</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether automatic metrics collection as a whole is enabled</td>
+</tr>
+<tr>
+<td>
+<code>known-<wbr>methods</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard HTTP methods plus <code>LIST</code>; assigning this value fully replaces the set of method names</td>
+</tr>
+</tbody>
+</table>
+
+
+### Deprecated Options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>use-<wbr>updated-<wbr>http-<wbr>metrics</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Retained for configuration compatibility with Helidon 4.x; Helidon 27 ignores the value and always uses the updated automatic HTTP metrics behavior</td>
+</tr>
+</tbody>
+</table>
+
+
+## Usages
+
+- <a href="io.helidon.MetricsConfig.md#auto-http-metrics"><code>metrics.<wbr>auto-<wbr>http-<wbr>metrics</code></a>
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#auto-http-metrics"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>auto-<wbr>http-<wbr>metrics</code></a>
+
+---
+
+See the [manifest](manifest.md) for all available types.

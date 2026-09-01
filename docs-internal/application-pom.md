@@ -24,7 +24,8 @@ made in the pom, errors tended to compound leading to frustration.
 ## The Solution
 
 To address this we decided to bite the bullet and introduce Helidon application poms
-for SE and MP. This is a trade-off. It helps newbies by simplifying the pom they
+for Helidon and Helidon MicroProfile. This is a trade-off. It helps newbies by
+simplifying the pom they
 deal with and reducing the chance of making a mistake. But it obscures
 the details of what's going on and makes things more complicated for customers
  that want to use their own parent poms.
@@ -54,11 +55,12 @@ io.helidon:helidon-parent (parent/pom.xml)
 
 And what they do (starting from the bottom):
 
-* **helidon-mp**: the parent pom used by Helidon MP applications. 
-  It contains plugin configuration specific to Helidon MP applications, like
+* **helidon-mp**: the parent pom used by Helidon MicroProfile applications.
+  It contains plugin configuration specific to Helidon MicroProfile
+  applications, like
   jandex. It inherits from *helidon-applications-project*.
-* **helidon-se**: the parent pom used by Helidon SE applications.
-  It contains plugin configuration specific to Helidon SE applications, like
+* **helidon-se**: the parent pom used by Helidon applications.
+  It contains plugin configuration specific to Helidon applications, like
   native image supportin the helidon-maven-plugin.
   It also inherits from *helidon-applications-project*.
 * **helidon-applications-project**: contains

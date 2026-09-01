@@ -337,7 +337,7 @@ be used by users to [bom/pom.xml](bom/pom.xml).
 
 - <a id="rule-11-6-1"></a>**Rule 11.6.1.** Avoid bundling third-party dependencies that may add unexpected libraries,
   such as the Google Login provider.
-- <a id="rule-11-6-2"></a>**Rule 11.6.2.** Put SE bundles under `bundles/` with group ID `io.helidon.bundles`.
+- <a id="rule-11-6-2"></a>**Rule 11.6.2.** Put Helidon bundles under `bundles/` with group ID `io.helidon.bundles`.
 - <a id="rule-11-6-3"></a>**Rule 11.6.3.** Keep bundle directories scoped to active Helidon bundle families.
 - <a id="rule-11-6-4"></a>**Rule 11.6.4.** Bundles are for end users, not internal use.
 
