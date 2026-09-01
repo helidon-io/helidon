@@ -22,28 +22,40 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Exception;
+import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameType;
-import io.helidon.http.http2.Http2Flag;
+import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
+import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2Util;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
+import io.helidon.webserver.http2.spi.SubProtocolResult;
 
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +67,7 @@ import static io.helidon.http.http2.Http2Setting.MAX_FRAME_SIZE;
 import static io.helidon.http.http2.Http2Setting.MAX_HEADER_LIST_SIZE;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -113,6 +126,93 @@ class UpgradeSettingsTest {
         Http2Settings s = upgrade(encSett);
         assertThat(s.presentValue(MAX_CONCURRENT_STREAMS).orElseThrow(), is(MAX_UNSIGNED_INT - 5));
         assertThat(s.presentValue(MAX_HEADER_LIST_SIZE).orElseThrow(), is(256L));
+    }
+
+    @Test
+    void h2cDuplicateHeaderTableSettingsPreserveMinimumAndFinal() throws InterruptedException {
+        List<BufferData> writtenFrames = new ArrayList<>();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            writtenFrames.add(data.copy());
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        when(connectionContext.router()).thenReturn(Router.empty());
+        when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(connectionContext.dataWriter()).thenReturn(dataWriter);
+        when(connectionContext.dataReader()).thenReturn(settingsReader(Http2Settings.builder().build()));
+        ExecutorService executor = mock(ExecutorService.class);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(Future.class);
+        }).when(executor).submit(any(Runnable.class));
+        when(connectionContext.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(connectionContext.remotePeer()).thenReturn(peerInfo);
+        when(connectionContext.proxyProtocolData()).thenReturn(Optional.empty());
+        Http2SubProtocolSelector selector = (_, _, _, streamWriter, streamId, _, _, streamFlowControl, _, _) -> {
+            var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+            when(handler.streamState()).thenReturn(Http2StreamState.CLOSED);
+            doAnswer(_ -> {
+                Http2Headers responseHeaders = Http2Headers.create(WritableHeaders.create())
+                        .status(Status.OK_200);
+                streamWriter.writeHeaders(responseHeaders,
+                                          streamId,
+                                          Http2Flag.HeaderFlags.create(
+                                                  Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                          streamFlowControl.outbound());
+                return null;
+            }).when(handler).init();
+            return new SubProtocolResult(true, handler);
+        };
+        BufferData settingsData = settingsData(HEADER_TABLE_SIZE.identifier(), 4096,
+                                               HEADER_TABLE_SIZE.identifier(), 0,
+                                               HEADER_TABLE_SIZE.identifier(), 2048);
+        String encodedSettings = Base64.getUrlEncoder().encodeToString(settingsData.readBytes());
+        WritableHeaders<?> headers = WritableHeaders.create()
+                .add(HeaderValues.create("HTTP2-Settings", encodedSettings));
+        Http2Upgrader http2Upgrader = new Http2Upgrader(Http2Config.create(), List.of(selector));
+
+        Http2Connection connection = (Http2Connection) http2Upgrader.upgrade(connectionContext, prologue, headers);
+
+        writtenFrames.clear();
+        assertThrows(CloseConnectionException.class, () -> connection.handle(FixedLimit.create()));
+
+        List<Http2FrameHeader> frameHeaders = new ArrayList<>();
+        BufferData responseHeaderBlock = null;
+        for (BufferData writtenFrame : writtenFrames) {
+            BufferData frame = writtenFrame.copy();
+            Http2FrameHeader frameHeader = Http2FrameHeader.create(frame);
+            frameHeaders.add(frameHeader);
+            if (frameHeader.type() == Http2FrameType.HEADERS) {
+                responseHeaderBlock = frame;
+            }
+        }
+        BufferData capturedHeaderBlock = responseHeaderBlock;
+        assertThat(capturedHeaderBlock, notNullValue());
+        int minimumTableSizeByte = capturedHeaderBlock.read();
+        int minimumTableSize = capturedHeaderBlock.readHpackInt(minimumTableSizeByte, 5);
+        int finalTableSizeByte = capturedHeaderBlock.read();
+        int finalTableSize = capturedHeaderBlock.readHpackInt(finalTableSizeByte, 5);
+        List<Http2FrameHeader> settingsAndHeaders = frameHeaders.stream()
+                .filter(it -> it.type() == Http2FrameType.SETTINGS || it.type() == Http2FrameType.HEADERS)
+                .toList();
+        List<Http2FrameType> frameTypes = settingsAndHeaders.stream()
+                .map(Http2FrameHeader::type)
+                .toList();
+
+        assertAll(
+                () -> assertThat(frameTypes,
+                                 contains(Http2FrameType.SETTINGS, Http2FrameType.SETTINGS, Http2FrameType.HEADERS)),
+                () -> assertThat(settingsAndHeaders.get(1).flags(Http2FrameTypes.SETTINGS).ack(), is(true)),
+                () -> assertThat(minimumTableSizeByte & 0b11100000, is(0b00100000)),
+                () -> assertThat(minimumTableSize, is(0)),
+                () -> assertThat(finalTableSizeByte & 0b11100000, is(0b00100000)),
+                () -> assertThat(finalTableSize, is(2048))
+        );
     }
 
     @Test
@@ -322,6 +422,15 @@ class UpgradeSettingsTest {
         byte[] b = new byte[settingsFrameData.available()];
         settingsFrameData.read(b);
         return b;
+    }
+
+    private static BufferData settingsData(long... identifierValues) {
+        BufferData data = BufferData.create(identifierValues.length / 2 * 6);
+        for (int i = 0; i < identifierValues.length; i += 2) {
+            data.writeInt16((int) identifierValues[i]);
+            data.writeUnsignedInt32(identifierValues[i + 1]);
+        }
+        return data;
     }
 
     private static DataReader settingsReader(Http2Settings settings) {
