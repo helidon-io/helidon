@@ -28,7 +28,6 @@ import io.helidon.discovery.Discovery;
  *
  * @see WebClientDiscovery
  * @see WebClientDiscovery#create(WebClientDiscoveryConfig)
- * @see <a href="https://helidon.io/docs/latest/se/builder#_specification">Helidon Builder</a>
  */
 @Prototype.Blueprint
 @Prototype.Configured
