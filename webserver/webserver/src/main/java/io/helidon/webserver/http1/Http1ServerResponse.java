@@ -639,7 +639,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         void status(Status status) {
+            Status previousWriteForbiddenStatus = writeForbiddenStatus;
             writeForbiddenStatus = isNoEntityStatus(status) ? status : null;
+            if (previousWriteForbiddenStatus != null && writeForbiddenStatus == null) {
+                if (previousWriteForbiddenStatus.code() == Status.RESET_CONTENT_205.code()) {
+                    headers.remove(HeaderNames.CONTENT_LENGTH);
+                }
+                checkResponseHeaders();
+            }
         }
 
         void checkResponseHeaders() {
