@@ -56,5 +56,5 @@ echo "Updating helidon.version in examples to ${HELIDON_VERSION}"
 
 # shellcheck disable=SC2086
 mvn ${MVN_ARGS} \
-    -B -f "${WS_DIR}/helidon-examples/pom.xml" -T4 \
+    -B -f "${WS_DIR}/helidon-examples/pom.xml" \
     clean install
