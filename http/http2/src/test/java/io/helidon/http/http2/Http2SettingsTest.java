@@ -53,6 +53,15 @@ class Http2SettingsTest {
         );
     }
 
+    @Test
+    void lastHeaderTableSizeWins() {
+        Http2Settings settings = Http2Settings.create(frameData(Http2Setting.HEADER_TABLE_SIZE.identifier(), 4096,
+                                                                 Http2Setting.HEADER_TABLE_SIZE.identifier(), 0,
+                                                                 Http2Setting.HEADER_TABLE_SIZE.identifier(), 2048));
+
+        assertThat(settings.value(Http2Setting.HEADER_TABLE_SIZE), is(2048L));
+    }
+
     private static BufferData frameData(long... identifierValues) {
         BufferData frame = BufferData.create(identifierValues.length / 2 * 6);
         for (int i = 0; i < identifierValues.length; i += 2) {

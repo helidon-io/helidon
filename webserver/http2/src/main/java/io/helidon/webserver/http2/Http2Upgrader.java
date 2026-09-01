@@ -33,7 +33,6 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2Settings;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ServerConnectionException;
@@ -105,7 +104,7 @@ public class Http2Upgrader implements Http1Upgrader {
             }
         }
         if (headers.contains(HTTP2_SETTINGS_HEADER_NAME)) {
-            connection.clientSettings(token68ToHttp2Settings(headers.get(HTTP2_SETTINGS_HEADER_NAME).valueBytes()));
+            connection.clientSettings(token68ToSettingsData(headers.get(HTTP2_SETTINGS_HEADER_NAME).valueBytes()));
         } else {
             throw new RuntimeException("Bad request -> not " + HTTP2_SETTINGS_HEADER_NAME + " header");
         }
@@ -142,10 +141,10 @@ public class Http2Upgrader implements Http1Upgrader {
      * }</pre>
      *
      * @param bytes Base64URL encoded bytes
-     * @return HTTP/2 settings
+     * @return HTTP/2 settings data
      */
-    private static Http2Settings token68ToHttp2Settings(byte[] bytes) {
-        return Http2Settings.create(BufferData.create(Base64.getUrlDecoder().decode(bytes)));
+    private static BufferData token68ToSettingsData(byte[] bytes) {
+        return BufferData.create(Base64.getUrlDecoder().decode(bytes));
     }
 
 }

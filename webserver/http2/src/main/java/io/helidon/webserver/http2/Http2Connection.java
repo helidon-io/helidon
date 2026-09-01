@@ -106,6 +106,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private static final System.Logger LOGGER = System.getLogger(Http2Connection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
+    private static final int SETTINGS_ENTRY_LENGTH = Short.BYTES + Integer.BYTES;
     private static final int MAX_LOCALLY_RESET_STREAMS = 8192;
     private static final int MIN_LOCALLY_RESET_STREAMS = 64;
     private static final long MIN_HEADER_BLOCK_SIZE = 64 * 1024;
@@ -253,6 +254,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
      * @param http2Settings client settings to use
      */
     public void clientSettings(Http2Settings http2Settings) {
+        long minimumHeaderTableSize = http2Settings.hasValue(Http2Setting.HEADER_TABLE_SIZE)
+                ? http2Settings.value(Http2Setting.HEADER_TABLE_SIZE)
+                : Long.MAX_VALUE;
+        clientSettings(http2Settings, minimumHeaderTableSize);
+    }
+
+    void clientSettings(BufferData settingsData) {
+        ParsedSettings parsedSettings = readSettings(settingsData);
+        clientSettings(parsedSettings.settings(), parsedSettings.minimumHeaderTableSize());
+    }
+
+    private void clientSettings(Http2Settings http2Settings, long minimumHeaderTableSize) {
         validateMaxFrameSize(http2Settings);
         if (http2Settings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
             Long initialWindowSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
@@ -265,7 +278,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.clientSettings = http2Settings;
         this.receiveFrameListener.frame(ctx, 0, clientSettings);
         if (this.clientSettings.hasValue(Http2Setting.HEADER_TABLE_SIZE)) {
-            updateHeaderTableSize(clientSettings.value(Http2Setting.HEADER_TABLE_SIZE));
+            long finalHeaderTableSize = clientSettings.value(Http2Setting.HEADER_TABLE_SIZE);
+            updateHeaderTableSize(minimumHeaderTableSize);
+            if (minimumHeaderTableSize != finalHeaderTableSize) {
+                updateHeaderTableSize(finalHeaderTableSize);
+            }
         }
 
         if (this.clientSettings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
@@ -478,6 +495,40 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (value != settings.defaultValue()) {
             builder.add(settings, value);
         }
+    }
+
+    private static ParsedSettings readSettings(BufferData data) {
+        int available = data.available();
+        if (available % SETTINGS_ENTRY_LENGTH != 0) {
+            throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                     "Each setting must be 6 bytes, but frame size is " + available);
+        }
+
+        Http2Settings.Builder builder = Http2Settings.builder();
+        long minimumHeaderTableSize = Long.MAX_VALUE;
+        int settingCount = available / SETTINGS_ENTRY_LENGTH;
+        for (int i = 0; i < settingCount; i++) {
+            int identifier = data.readInt16();
+            Http2Setting<?> setting = Http2Setting.BY_ID.get(identifier);
+            if (setting == null) {
+                data.skip(Integer.BYTES);
+                continue;
+            }
+
+            Object value = readSetting(builder, setting, data);
+            if (setting == Http2Setting.HEADER_TABLE_SIZE) {
+                minimumHeaderTableSize = Math.min(minimumHeaderTableSize, (long) value);
+            }
+        }
+        return new ParsedSettings(builder.build(), minimumHeaderTableSize);
+    }
+
+    private static <T> T readSetting(Http2Settings.Builder builder,
+                                     Http2Setting<T> setting,
+                                     BufferData data) {
+        T value = setting.read(data);
+        builder.add(setting, value);
+        return value;
     }
 
     private static void validateMaxFrameSize(Http2Settings http2Settings) {
@@ -721,7 +772,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 throw new Http2Exception(Http2ErrorCode.FRAME_SIZE, "Settings with ACK should not have payload.");
             }
         } else {
-            clientSettings(Http2Settings.create(inProgressFrame()));
+            clientSettings(inProgressFrame());
 
             state = State.ACK_SETTINGS;
         }
@@ -1395,6 +1446,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         try {
             connectionWriter.updateHeaderTableSize(value);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CloseConnectionException("Failed to update header table size, interrupted", e);
         }
     }
@@ -1455,6 +1507,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         public String toString() {
             return rawPath;
         }
+    }
+
+    private record ParsedSettings(Http2Settings settings, long minimumHeaderTableSize) {
     }
 
     // Package-private for deterministic tests of writer-thread failure handling.

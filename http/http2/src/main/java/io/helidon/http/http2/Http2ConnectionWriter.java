@@ -39,6 +39,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     // Do not let a peer-raised maximum frame size enlarge either payload in a response batch.
     private static final int MAX_BATCHED_FRAME_PAYLOAD_LENGTH = Http2Setting.MAX_FRAME_SIZE.defaultValue().intValue();
     private static final Runnable NO_OP = () -> { };
+    private static final int DEFAULT_HEADER_TABLE_SIZE = Http2Setting.HEADER_TABLE_SIZE.defaultValue().intValue();
+    private static final int NO_PENDING_HEADER_TABLE_SIZE = -1;
     private static final int NO_RESET_STREAM = -1;
 
     private final DataWriter writer;
@@ -53,6 +55,12 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private final Http2Headers.DynamicTable outboundDynamicTable;
     private final Http2HuffmanEncoder responseHuffman;
     private final BufferData headerBuffer = BufferData.growing(512);
+    // Guarded by streamLock.
+    private int minimumPendingHeaderTableSize = Integer.MAX_VALUE;
+    private int pendingHeaderTableSize = NO_PENDING_HEADER_TABLE_SIZE;
+    private int minimumUnacknowledgedHeaderTableSize = Integer.MAX_VALUE;
+    private int unacknowledgedHeaderTableSize = NO_PENDING_HEADER_TABLE_SIZE;
+    private long unacknowledgedProtocolMaxHeaderTableSize = NO_PENDING_HEADER_TABLE_SIZE;
     // Guarded by windowUpdateLock. The generation prevents an older reset from clearing a newer reset's fence.
     private int resetStreamId = NO_RESET_STREAM;
     private long resetGeneration;
@@ -70,7 +78,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         this.writer = writer;
 
         // initial size is based on our settings, then updated with client settings
-        this.outboundDynamicTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        this.outboundDynamicTable = Http2Headers.DynamicTable.create(DEFAULT_HEADER_TABLE_SIZE);
         this.responseHuffman = Http2HuffmanEncoder.create();
     }
 
@@ -209,10 +217,16 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
         int written;
         lock();
+        Http2Headers.DynamicTable tableSnapshot = pendingHeaderTableSize == NO_PENDING_HEADER_TABLE_SIZE
+                ? null
+                : outboundDynamicTable.copy();
         try {
             try {
                 written = noLockWriteHeaders(headers, streamId, flags, maxFrameSize);
             } catch (Throwable t) {
+                if (tableSnapshot != null && pendingHeaderTableSize != NO_PENDING_HEADER_TABLE_SIZE) {
+                    outboundDynamicTable.restore(tableSnapshot);
+                }
                 failWriter(t);
                 throw t;
             }
@@ -269,6 +283,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         int bytesWritten;
         Http2FrameData[] splitFrames;
         lock();
+        Http2Headers.DynamicTable tableSnapshot = pendingHeaderTableSize == NO_PENDING_HEADER_TABLE_SIZE
+                ? null
+                : outboundDynamicTable.copy();
         try {
             splitFrames = flowControl.cut(dataFrame);
             Http2FrameData writableFrame = switch (splitFrames.length) {
@@ -287,6 +304,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 if (windowUpdateWriteScheduled.get()) {
                     if (batch != null) {
                         writer.writeNow(BufferData.create(batch[0], batch[1]));
+                        clearPendingHeaderTableSizeUpdates();
                     }
                     noLockDrainWindowUpdates();
                     if (splitFrames.length == 1) {
@@ -304,6 +322,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                             noLockFrameBuffers(writableFrame, batch, 2);
                         }
                         writer.writeNow(BufferData.create(batch));
+                        clearPendingHeaderTableSizeUpdates();
                         if (writableFrame != null) {
                             flowControl.decrementWindowSize(writableFrame.header().length());
                             bytesWritten += frameBytes(writableFrame);
@@ -311,6 +330,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                     }
                 }
             } catch (Throwable t) {
+                if (tableSnapshot != null && pendingHeaderTableSize != NO_PENDING_HEADER_TABLE_SIZE) {
+                    outboundDynamicTable.restore(tableSnapshot);
+                }
                 failWriter(t);
                 throw t;
             }
@@ -330,15 +352,23 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     }
 
     /**
-     * Update header table size.
+     * Record an outbound header table size allowed by the peer. The change takes effect after the corresponding SETTINGS
+     * acknowledgment is written. The encoder keeps its local default as an upper bound and writes any required HPACK
+     * dynamic table size update at the beginning of the next header block.
      *
-     * @param newSize in bytes
+     * @param newSize maximum size accepted by the peer, in bytes
      * @throws InterruptedException in case we fail to lock on the stream
      */
     public void updateHeaderTableSize(long newSize) throws InterruptedException {
-        lock();
+        if (newSize < 0) {
+            throw new IllegalArgumentException("Header table size must be greater than or equal to zero");
+        }
+        streamLock.lockInterruptibly();
         try {
-            outboundDynamicTable.protocolMaxTableSize(newSize);
+            int effectiveSize = (int) Math.min(DEFAULT_HEADER_TABLE_SIZE, newSize);
+            minimumUnacknowledgedHeaderTableSize = Math.min(minimumUnacknowledgedHeaderTableSize, effectiveSize);
+            unacknowledgedHeaderTableSize = effectiveSize;
+            unacknowledgedProtocolMaxHeaderTableSize = newSize;
         } finally {
             streamLock.unlock();
         }
@@ -360,6 +390,21 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
         runEndStreamCallback(frame, onEndStreamFrameWritten);
         return written;
+    }
+
+    private void writePendingHeaderTableSizeUpdates() {
+        if (pendingHeaderTableSize == NO_PENDING_HEADER_TABLE_SIZE) {
+            return;
+        }
+        if (minimumPendingHeaderTableSize < pendingHeaderTableSize) {
+            headerBuffer.writeHpackInt(minimumPendingHeaderTableSize, 0b00100000, 5);
+        }
+        headerBuffer.writeHpackInt(pendingHeaderTableSize, 0b00100000, 5);
+    }
+
+    private void clearPendingHeaderTableSizeUpdates() {
+        minimumPendingHeaderTableSize = Integer.MAX_VALUE;
+        pendingHeaderTableSize = NO_PENDING_HEADER_TABLE_SIZE;
     }
 
     private void lockedWrite(Http2FrameData frame) {
@@ -541,6 +586,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     private void noLockWrite(Http2FrameData frame) {
         writer.writeNow(noLockFrameBuffer(frame));
+        applyAcknowledgedHeaderTableSizeUpdates(frame.header());
     }
 
     private BufferData noLockFrameBuffer(Http2FrameData frame) {
@@ -583,6 +629,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     private void noLockEncodeHeaders(Http2Headers headers) {
         headerBuffer.clear();
+        writePendingHeaderTableSizeUpdates();
         headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
     }
 
@@ -649,6 +696,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private void noLockWrite(Http2FrameData frame, BufferData[] batch) {
         if (batch == null) {
             noLockWrite(frame);
+            clearPendingHeaderTableSizeUpdates();
         } else {
             noLockFrameBuffers(frame, batch, 0);
         }
@@ -665,6 +713,32 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             failWriter(t);
             throw t;
         }
+    }
+
+    private void applyAcknowledgedHeaderTableSizeUpdates(Http2FrameHeader frameHeader) {
+        if (frameHeader.type() != Http2FrameType.SETTINGS
+                || !frameHeader.flags(Http2FrameTypes.SETTINGS).ack()
+                || unacknowledgedHeaderTableSize == NO_PENDING_HEADER_TABLE_SIZE) {
+            return;
+        }
+
+        long previousSize = outboundDynamicTable.maxTableSize();
+        outboundDynamicTable.protocolMaxTableSize(unacknowledgedProtocolMaxHeaderTableSize);
+        if (minimumUnacknowledgedHeaderTableSize < previousSize) {
+            outboundDynamicTable.maxTableSize(minimumUnacknowledgedHeaderTableSize);
+        }
+        if (unacknowledgedHeaderTableSize != outboundDynamicTable.maxTableSize()) {
+            outboundDynamicTable.maxTableSize(unacknowledgedHeaderTableSize);
+        }
+        if (minimumUnacknowledgedHeaderTableSize != previousSize
+                || unacknowledgedHeaderTableSize != previousSize) {
+            minimumPendingHeaderTableSize = Math.min(minimumPendingHeaderTableSize,
+                                                     minimumUnacknowledgedHeaderTableSize);
+            pendingHeaderTableSize = unacknowledgedHeaderTableSize;
+        }
+        minimumUnacknowledgedHeaderTableSize = Integer.MAX_VALUE;
+        unacknowledgedHeaderTableSize = NO_PENDING_HEADER_TABLE_SIZE;
+        unacknowledgedProtocolMaxHeaderTableSize = NO_PENDING_HEADER_TABLE_SIZE;
     }
 
     private int splitAndWrite(Http2FrameData frame,
