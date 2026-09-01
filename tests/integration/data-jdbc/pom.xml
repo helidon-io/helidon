@@ -35,25 +35,4 @@
         <module>imperative</module>
         <module>declarative</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>data-jdbc-chaos</id>
-            <activation>
-                <property>
-                    <name>data.jdbc.chaos</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <modules>
-                <module>chaos</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>data-jdbc-chaos-real</id>
-            <modules>
-                <module>chaos</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>
