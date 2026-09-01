@@ -119,7 +119,7 @@ class CachedHandlerTest {
     @BeforeAll
     static void initTestClass() {
         classpathHandler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .cachedFiles(Set.of("favicon.ico"))
                         .welcome("resource.txt")
@@ -127,7 +127,7 @@ class CachedHandlerTest {
         classpathHandler.beforeStart();
 
         fsHandler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(Paths.get("./src/test/resources/web"))
                         .cachedFiles(Set.of("nested"))
                         .welcome("resource.txt")
@@ -205,6 +205,42 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testClasspathCachedIdentityBytesSurviveRecordCacheEviction() throws IOException, URISyntaxException {
+        Path classPathRoot = tempDir.resolve("cached-identity-classpath");
+        Path resourceRoot = classPathRoot.resolve("web");
+        Path cachedResource = resourceRoot.resolve("cached.txt");
+        Files.createDirectories(resourceRoot);
+        Files.writeString(cachedResource, "Cached snapshot");
+        Files.writeString(resourceRoot.resolve("other.txt"), "Other content");
+
+        try (var classLoader = new URLClassLoader(new URL[] {classPathRoot.toUri().toURL()}, null)) {
+            ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
+                    classpathHandlerBuilder()
+                            .location("/web")
+                            .classLoader(classLoader)
+                            .cachedFiles(Set.of("cached.txt"))
+                            .recordCacheCapacity(1)
+                            .build());
+            handler.beforeStart();
+
+            Files.writeString(cachedResource, "Changed source");
+            assertThat(handler.doHandle(Method.GET,
+                                        "other.txt",
+                                        request("/other.txt", ServerRequestHeaders.create()),
+                                        response(ServerResponseHeaders.create(), new ByteArrayOutputStream()),
+                                        false), is(true));
+
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            assertThat(handler.doHandle(Method.GET,
+                                        "cached.txt",
+                                        request("/cached.txt", ServerRequestHeaders.create()),
+                                        response(ServerResponseHeaders.create(), body),
+                                        false), is(true));
+            assertThat(body.toString(StandardCharsets.UTF_8), is("Cached snapshot"));
+        }
+    }
+
+    @Test
     void testClasspathDynamicCacheIsReleasedOnRestart(@TempDir Path tempDir) throws IOException, URISyntaxException {
         Path resource = Files.writeString(Files.createDirectories(tempDir.resolve("web")).resolve("dynamic.txt"),
                                           "Initial");
@@ -212,7 +248,7 @@ class CachedHandlerTest {
 
         try (var classLoader = new URLClassLoader(new URL[] {tempDir.toUri().toURL()}, null)) {
             ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                    ClasspathHandlerConfig.builder()
+                    classpathHandlerBuilder()
                             .location("/web")
                             .classLoader(classLoader)
                             .build());
@@ -300,7 +336,7 @@ class CachedHandlerTest {
         try (var classLoader = new URLClassLoader(new URL[] {tempDir.toUri().toURL()}, null)) {
             SingleFileClassPathContentHandler handler =
                     (SingleFileClassPathContentHandler) StaticContentFeature.createService(
-                            ClasspathHandlerConfig.builder()
+                            classpathHandlerBuilder()
                                     .location("/single.txt")
                                     .classLoader(classLoader)
                                     .singleFile(true)
@@ -354,7 +390,7 @@ class CachedHandlerTest {
         try (var classLoader = new URLClassLoader(new URL[] {tempDir.toUri().toURL()}, null)) {
             SingleFileClassPathContentHandler handler =
                     (SingleFileClassPathContentHandler) StaticContentFeature.createService(
-                            ClasspathHandlerConfig.builder()
+                            classpathHandlerBuilder()
                                     .location("/single.txt")
                                     .classLoader(classLoader)
                                     .singleFile(true)
@@ -782,7 +818,7 @@ class CachedHandlerTest {
     void testClasspathCacheHitDoesNotResolveIdentityUrlAgain() throws IOException, URISyntaxException {
         CountingClassLoader classLoader = new CountingClassLoader("web/resource.txt", "web/resource.txt.br");
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(classLoader)
                         .build());
@@ -807,7 +843,7 @@ class CachedHandlerTest {
     void testSingleFileClasspathCacheHitDoesNotResolveIdentityUrlAgain() throws IOException, URISyntaxException {
         CountingClassLoader classLoader = new CountingClassLoader("web/resource.txt", "web/resource.txt.br");
         SingleFileClassPathContentHandler handler = (SingleFileClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web/resource.txt")
                         .singleFile(true)
                         .classLoader(classLoader)
@@ -835,7 +871,7 @@ class CachedHandlerTest {
     void testClasspathSidecarMissDoesNotEvictPrimaryRecord() throws IOException, URISyntaxException {
         CountingClassLoader classLoader = new CountingClassLoader("web/nested/resource.txt", "web/nested/resource.txt.br");
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(classLoader)
                         .recordCacheCapacity(1)
@@ -867,7 +903,7 @@ class CachedHandlerTest {
     void testSingleFileClasspathSidecarMissDoesNotEvictPrimaryRecord() throws IOException, URISyntaxException {
         CountingClassLoader classLoader = new CountingClassLoader("web/nested/resource.txt", "web/nested/resource.txt.br");
         SingleFileClassPathContentHandler handler = (SingleFileClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web/nested/resource.txt")
                         .singleFile(true)
                         .classLoader(classLoader)
@@ -903,7 +939,7 @@ class CachedHandlerTest {
         Path jarFile = createTmpJarFile(Map.of("web/resource.txt", "Content",
                                                "web/resource.txt.br", "Brotli content"));
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(new JarResourceClassLoader(jarFile))
                         .memoryCache(MemoryCache.create(builder -> builder.enabled(true)))
@@ -988,7 +1024,7 @@ class CachedHandlerTest {
             }
         };
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(classLoader)
                         .memoryCache(MemoryCache.create(builder -> builder.enabled(true)))
@@ -1013,7 +1049,7 @@ class CachedHandlerTest {
         Path jarFile = createTmpJarFile(Map.of("web/resource.txt", "Content larger than memory",
                                                "web/resource.txt.br", "br-data!"));
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(new JarResourceClassLoader(jarFile))
                         .memoryCache(MemoryCache.create(builder -> builder.enabled(true)
@@ -1040,7 +1076,7 @@ class CachedHandlerTest {
                                                    "web/other.txt", "Other larger than memory"));
         Path sidecarJar = createTmpJarFile(Map.of("web/resource.txt.br", "br-data!"));
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(new MappedJarResourceClassLoader(
                                 Map.of("web/resource.txt", List.of(identityJar),
@@ -1087,7 +1123,7 @@ class CachedHandlerTest {
         Path identityJar = createTmpJarFile(Map.of("web/resource.txt", "Content"));
         Path sidecarJar = createTmpJarFile(Map.of("web/resource.txt.br", "Brotli content"));
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(new MappedJarResourceClassLoader(
                                 Map.of("web/resource.txt", List.of(identityJar),
@@ -1144,7 +1180,7 @@ class CachedHandlerTest {
 
         try (var classLoader = new URLClassLoader(new URL[] {classPathRoot.toUri().toURL()}, null)) {
             ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                    ClasspathHandlerConfig.builder()
+                    classpathHandlerBuilder()
                             .location("/web")
                             .classLoader(classLoader)
                             .build());
@@ -1183,7 +1219,7 @@ class CachedHandlerTest {
         Path identityJar = createTmpJarFile(Map.of("web/resource.txt", "Content"));
         Path sidecarJar = createTmpJarFile(Map.of("web/resource.txt.br", "Brotli content"));
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(new MappedJarResourceClassLoader(
                                 Map.of("web/resource.txt", List.of(identityJar),
@@ -1211,7 +1247,7 @@ class CachedHandlerTest {
                                                    "web/resource.txt.br", "Same origin Brotli content"));
         Path crossOriginJar = createTmpJarFile(Map.of("web/resource.txt.br", "Cross origin Brotli content"));
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                ClasspathHandlerConfig.builder()
+                classpathHandlerBuilder()
                         .location("/web")
                         .classLoader(new MappedJarResourceClassLoader(
                                 Map.of("web/resource.txt", List.of(identityJar),
@@ -1238,7 +1274,7 @@ class CachedHandlerTest {
         Path gzip = tempDir.resolve("resource.txt.gz");
         Files.writeString(resource, "Content");
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(tempDir)
                         .build());
 
@@ -1288,7 +1324,7 @@ class CachedHandlerTest {
         CompletableFuture<Void> aliasPublished = new CompletableFuture<>();
         CompletableFuture<Void> continuePublication = new CompletableFuture<>();
         FileSystemContentHandler handler = new FileSystemContentHandler(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(tempDir)
                         .cachedFiles(Set.of("directory/index.html"))
                         .welcome("index.html")
@@ -1344,7 +1380,7 @@ class CachedHandlerTest {
         Files.writeString(resource, "Content");
         Files.writeString(gzip, "Gzip content");
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(tempDir)
                         .build());
 
@@ -1378,7 +1414,7 @@ class CachedHandlerTest {
         Files.writeString(resource, "Content");
         Files.writeString(gzip, "Original gzip content");
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(tempDir)
                         .build());
 
@@ -1425,7 +1461,7 @@ class CachedHandlerTest {
         Files.writeString(resource, "Content");
         Files.writeString(gzip, "Old gzip");
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(tempDir)
                         .build());
 
@@ -1476,7 +1512,7 @@ class CachedHandlerTest {
         Files.writeString(secret, "Secret content");
         createSymbolicLink(gzip, secret);
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .build());
 
@@ -1502,7 +1538,7 @@ class CachedHandlerTest {
         Files.writeString(gzip, "Gzip content");
         Files.writeString(secret, "Secret content");
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .build());
 
@@ -1539,7 +1575,7 @@ class CachedHandlerTest {
         Files.writeString(resource, "Content");
         Files.writeString(gzip, "Gzip content");
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(tempDir)
                         .build());
 
@@ -1569,7 +1605,7 @@ class CachedHandlerTest {
         Path gzip = tempDir.resolve("single.txt.gz");
         Files.writeString(resource, "Content");
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(resource)
                         .preCompressedEnabled(true)
                         .build());
@@ -1616,7 +1652,7 @@ class CachedHandlerTest {
         Files.writeString(resource, "Content");
         Files.writeString(gzip, "Gzip content");
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(resource)
                         .preCompressedEnabled(true)
                         .build());
@@ -1655,7 +1691,7 @@ class CachedHandlerTest {
         Files.writeString(secret, "Secret content");
         createSymbolicLink(gzip, secret);
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(resource)
                         .preCompressedEnabled(true)
                         .build());
@@ -1682,7 +1718,7 @@ class CachedHandlerTest {
         Files.writeString(secret, "Secret content");
         createSymbolicLink(gzip, secret);
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(resource)
                         .preCompressedEnabled(true)
                         .build());
@@ -1713,7 +1749,7 @@ class CachedHandlerTest {
         Files.writeString(gzip, "Gzip content");
         Files.writeString(secret, "Secret content");
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(resource)
                         .preCompressedEnabled(true)
                         .build());
@@ -1748,7 +1784,7 @@ class CachedHandlerTest {
         Files.writeString(resource, "Content");
         Files.writeString(gzip, "Gzip content");
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(resource)
                         .preCompressedEnabled(true)
                         .build());
@@ -1823,7 +1859,7 @@ class CachedHandlerTest {
         createSymbolicLink(link, externalDir.resolve("resource.txt"));
 
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .cachedFiles(Set.of("resource.txt"))
                         .build());
@@ -1844,7 +1880,7 @@ class CachedHandlerTest {
         createSymbolicLink(link, root.resolve("target.txt"));
 
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .cachedFiles(Set.of("resource.txt"))
                         .build());
@@ -1864,7 +1900,7 @@ class CachedHandlerTest {
         createSymbolicLink(linkRoot, root);
 
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(linkRoot)
                         .cachedFiles(Set.of("resource.txt"))
                         .build());
@@ -1905,7 +1941,7 @@ class CachedHandlerTest {
         createSymbolicLink(linkRoot, root);
 
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(linkRoot)
                         .build());
         handler.beforeStart();
@@ -1939,7 +1975,7 @@ class CachedHandlerTest {
         createSymbolicLink(dir.resolve("link.txt"), externalDir.resolve("resource.txt"));
 
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .cachedFiles(Set.of("dir"))
                         .build());
@@ -1975,7 +2011,7 @@ class CachedHandlerTest {
         Files.writeString(externalDir.resolve("resource.txt"), "External content");
 
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .cachedFiles(Set.of("resource.txt"))
                         .build());
@@ -2005,13 +2041,13 @@ class CachedHandlerTest {
 
         MemoryCache memoryCache = MemoryCache.create(it -> it.capacity(Size.create(14)));
         FileSystemContentHandler firstHandler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(firstRoot)
                         .cachedFiles(Set.of("resource.txt"))
                         .memoryCache(memoryCache)
                         .build());
         FileSystemContentHandler secondHandler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(secondRoot)
                         .cachedFiles(Set.of("resource.txt"))
                         .memoryCache(memoryCache)
@@ -2052,7 +2088,7 @@ class CachedHandlerTest {
 
         MemoryCache memoryCache = MemoryCache.create(it -> it.capacity(Size.create(8)));
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .memoryCache(memoryCache)
                         .build());
@@ -2090,7 +2126,7 @@ class CachedHandlerTest {
 
         MemoryCache memoryCache = MemoryCache.create(it -> it.capacity(Size.create(10)));
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .memoryCache(memoryCache)
                         .build());
@@ -2147,7 +2183,7 @@ class CachedHandlerTest {
         createSymbolicLink(link, root.resolve("resource.txt"));
 
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(link)
                         .build());
         handler.beforeStart();
@@ -2255,7 +2291,7 @@ class CachedHandlerTest {
         Path root = Files.createDirectory(tempDir.resolve("root"));
         Path file = Files.writeString(root.resolve("resource.txt"), "Content");
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .cachedFiles(Set.of("resource.txt"))
                         .build());
@@ -2315,7 +2351,7 @@ class CachedHandlerTest {
         createSymbolicLink(link, root.resolve("resource.txt"));
 
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(link)
                         .cachedFiles(Set.of("."))
                         .build());
@@ -2343,7 +2379,7 @@ class CachedHandlerTest {
         createSymbolicLink(linkRoot, root);
 
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(linkRoot.resolve("resource.txt"))
                         .cachedFiles(Set.of("."))
                         .build());
@@ -2368,7 +2404,7 @@ class CachedHandlerTest {
         assumeTrue(Files.isHidden(link), "Hidden symbolic links are not supported on this file system");
 
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
-                FileSystemHandlerConfig.builder()
+                fileSystemHandlerBuilder()
                         .location(root)
                         .build());
 
@@ -2610,6 +2646,16 @@ class CachedHandlerTest {
         }
     }
 
+    private static ClasspathHandlerConfig.Builder classpathHandlerBuilder() {
+        return ClasspathHandlerConfig.builder()
+                .preCompressedEnabled(true);
+    }
+
+    private static FileSystemHandlerConfig.Builder fileSystemHandlerBuilder() {
+        return FileSystemHandlerConfig.builder()
+                .preCompressedEnabled(true);
+    }
+
     private static ServerRequestHeaders acceptEncodingHeaders(String acceptEncoding) {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderNames.ACCEPT_ENCODING, acceptEncoding);
@@ -2733,7 +2779,7 @@ class CachedHandlerTest {
 
         try (var classLoader = new URLClassLoader(new URL[] {classPathRoot.toUri().toURL()}, null)) {
             ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                    ClasspathHandlerConfig.builder()
+                    classpathHandlerBuilder()
                             .location(singleFile ? "/web/resource.txt" : "/web")
                             .singleFile(singleFile)
                             .classLoader(classLoader)

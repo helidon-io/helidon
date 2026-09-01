@@ -974,6 +974,7 @@ class StaticContentHandlerTest {
             String acceptedCoding = alias.getValue();
             TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
                                                                     .location(Paths.get("."))
+                                                                    .preCompressedEnabled(true)
                                                                     .putPreCompressedEncoding(coding, "sidecar")
                                                                     .build(),
                                                                 true);
@@ -1476,6 +1477,7 @@ class StaticContentHandlerTest {
         encodings.put("br", "br");
         TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
                                                                     .location(Paths.get("."))
+                                                                    .preCompressedEnabled(true)
                                                                     .preCompressedEncodings(encodings)
                                                                     .build(),
                                                             true);
@@ -2608,6 +2610,7 @@ class StaticContentHandlerTest {
         static TestContentHandler create(boolean returnValue) {
             return new TestContentHandler(FileSystemHandlerConfig.builder()
                                                   .location(Paths.get("."))
+                                                  .preCompressedEnabled(true)
                                                   .build(), returnValue);
         }
 

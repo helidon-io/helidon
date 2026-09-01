@@ -133,13 +133,22 @@ class StaticContentEncodingTest {
                     response.next();
                 })
                 .register("/before-send-failure",
-                          StaticContentFeature.createService(FileSystemHandlerConfig.create(tempDir)))
+                          StaticContentFeature.createService(FileSystemHandlerConfig.builder()
+                                                                     .location(tempDir)
+                                                                     .preCompressedEnabled(true)
+                                                                     .build()))
                 .any("/filtered-path/*", (request, response) -> {
                     response.streamFilter(network -> prefixingOutputStream(network, "filtered:"));
                     response.next();
                 })
-                .register("/filtered-path", StaticContentFeature.createService(FileSystemHandlerConfig.create(tempDir)))
-                .register("/path", StaticContentFeature.createService(FileSystemHandlerConfig.create(tempDir)))
+                .register("/filtered-path", StaticContentFeature.createService(FileSystemHandlerConfig.builder()
+                                                                                        .location(tempDir)
+                                                                                        .preCompressedEnabled(true)
+                                                                                        .build()))
+                .register("/path", StaticContentFeature.createService(FileSystemHandlerConfig.builder()
+                                                                               .location(tempDir)
+                                                                               .preCompressedEnabled(true)
+                                                                               .build()))
                 .register("/path-disabled",
                           StaticContentFeature.createService(FileSystemHandlerConfig.builder()
                                                                      .location(tempDir)
@@ -150,6 +159,7 @@ class StaticContentEncodingTest {
                                                                                           .classLoader(
                                                                                                   new FailingSidecarClassLoader(
                                                                                                           StreamFailure.READ))
+                                                                                          .preCompressedEnabled(true)
                                                                                           .preCompressedCrossOriginSourcingEnabled(
                                                                                                   true)
                                                                                           .build()))
@@ -159,6 +169,7 @@ class StaticContentEncodingTest {
                                                                                           .classLoader(
                                                                                                   new FailingSidecarClassLoader(
                                                                                                           StreamFailure.CLOSE))
+                                                                                          .preCompressedEnabled(true)
                                                                                           .preCompressedCrossOriginSourcingEnabled(
                                                                                                   true)
                                                                                           .build()));

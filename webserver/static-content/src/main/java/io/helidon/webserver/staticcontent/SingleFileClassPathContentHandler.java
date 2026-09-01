@@ -83,7 +83,7 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
     boolean doHandle(Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
             throws IOException {
 
-        Optional<CachedHandler> handler = handlerCache().get(location);
+        Optional<CachedHandler> handler = cachedClassPathHandler(location);
         if (handler.isEmpty()) {
             URL resourceUrl = classLoader.getResource(location);
             if (resourceUrl == null) {

@@ -61,6 +61,13 @@ import static org.mockito.Mockito.when;
 
 class StaticContentFeatureTest {
     @Test
+    void testPreCompressedSidecarsAreDisabledByDefault() {
+        StaticContentConfig config = StaticContentConfig.builder().buildPrototype();
+
+        assertThat(config.preCompressedEnabled(), is(false));
+    }
+
+    @Test
     void testSetupWithNullContextClassLoader() {
         StaticContentFeature feature = StaticContentFeature.create(builder -> builder
                 .addClasspath(it -> it.location("web")));
@@ -115,6 +122,7 @@ class StaticContentFeatureTest {
         URL[] classPath = {identityRoot.toUri().toURL(), sidecarRoot.toUri().toURL()};
         try (URLClassLoader classLoader = new URLClassLoader(classPath, null)) {
             StaticContentFeature feature = StaticContentFeature.create(builder -> builder
+                    .preCompressedEnabled(true)
                     .preCompressedCrossOriginSourcingEnabled(true)
                     .addClasspath(classpath -> classpath
                             .context("/inherited")

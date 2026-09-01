@@ -29,8 +29,10 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
@@ -51,6 +53,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     private static final System.Logger LOGGER = System.getLogger(ClassPathContentHandler.class.getName());
 
     private final AtomicBoolean populatedInMemoryCache = new AtomicBoolean();
+    private final Map<String, CachedClassPathHandler> inMemoryHandlers = new ConcurrentHashMap<>();
     private final ClassLoader classLoader;
     private final String root;
     private final String rootWithTrailingSlash;
@@ -120,6 +123,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        inMemoryHandlers.clear();
         super.releaseCache();
     }
 
@@ -136,14 +140,13 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
 
         // we have a resource that we support, let's try to use one from the cache
-        Optional<CachedHandler> cached = handlerCache().get(requestedResource);
-
+        Optional<CachedHandler> cached = cachedClassPathHandler(requestedResource);
         if (cached.isPresent()) {
-            CachedHandler cachedHandler = cached.get();
-            if (cachedHandler instanceof CachedHandlerRedirect) {
-                return cachedHandler.handle(handlerCache(), method, request, response, requestedResource);
+            CachedHandler cachedRecord = cached.get();
+            if (cachedRecord instanceof CachedHandlerRedirect) {
+                return cachedRecord.handle(handlerCache(), method, request, response, requestedResource);
             }
-            CachedHandler handler = selectCachedClassPathHandler(requestedResource, cachedHandler, request);
+            CachedHandler handler = selectCachedClassPathHandler(requestedResource, cachedRecord, request);
             // this requested resource is cached and can be safely returned
             return handler.handle(handlerCache(), method, request, response, requestedResource);
         }
@@ -318,9 +321,18 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                         String logicalResource,
                                         URL identityUrl,
                                         CachedHandler delegate) {
-        CachedHandler handler = new CachedClassPathHandler(delegate, logicalResource, identityUrl);
-        cacheHandler(requestedResource, handler);
+        CachedClassPathHandler handler = new CachedClassPathHandler(delegate, logicalResource, identityUrl);
+        if (delegate instanceof CachedHandlerInMemory) {
+            inMemoryHandlers.put(requestedResource, handler);
+        } else {
+            cacheHandler(requestedResource, handler);
+        }
         return handler;
+    }
+
+    Optional<CachedHandler> cachedClassPathHandler(String requestedResource) {
+        CachedHandler inMemoryHandler = inMemoryHandlers.get(requestedResource);
+        return inMemoryHandler == null ? handlerCache().get(requestedResource) : Optional.of(inMemoryHandler);
     }
 
     private static String fileName(URL url) {

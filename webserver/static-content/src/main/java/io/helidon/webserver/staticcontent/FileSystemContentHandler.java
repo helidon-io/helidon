@@ -55,7 +55,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     }
 
     static HttpService create(FileSystemHandlerConfig config) {
-        return create(config, true);
+        return create(config, false);
     }
 
     static HttpService create(FileSystemHandlerConfig config, boolean preCompressedEnabledDefault) {

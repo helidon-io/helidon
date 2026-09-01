@@ -89,7 +89,7 @@ abstract class StaticContentHandler implements HttpService {
                 .map(LruCache::<String, CachedHandler>create)
                 .orElseGet(LruCache::create);
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
-        this.preCompressedEnabled = config.preCompressedEnabled().orElse(true);
+        this.preCompressedEnabled = config.preCompressedEnabled().orElse(false);
         this.preCompressedCrossOriginSourcingEnabled = preCompressedCrossOriginSourcingEnabled;
         this.preCompressedEncodings = StaticContentConfigSupport.normalizePreCompressedEncodings(
                 config.preCompressedEncodings()

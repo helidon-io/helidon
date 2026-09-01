@@ -153,13 +153,13 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
 
     /**
      * Whether pre-compressed sidecar resources should be selected by default for feature-registered directory and
-     * classpath handlers. This setting does not apply to file system handlers configured with a single file, which require
-     * handler-level opt-in.
+     * classpath handlers; this is disabled by default and does not apply to file system handlers configured with a single
+     * file, which require handler-level opt-in.
      *
      * @return whether pre-compressed sidecar resources should be used
      */
     @Option.Configured
-    @Option.DefaultBoolean(true)
+    @Option.DefaultBoolean(false)
     boolean preCompressedEnabled();
 
     /**

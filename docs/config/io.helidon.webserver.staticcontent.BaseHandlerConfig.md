@@ -26,7 +26,7 @@ Configuration of static content handlers that is common for classpath and file s
 </td>
 <td>
 </td>
-<td>Whether pre-compressed sidecar resources should be selected for this handler; file system handlers configured with a single file require explicit enablement, other feature-registered handlers inherit the feature value when absent, and all other directly created handlers default to enabled</td>
+<td>Whether pre-compressed sidecar resources should be selected for this handler; feature-registered handlers inherit the feature value when absent, directly created handlers default to disabled, and file system handlers configured with a single file always require handler-level opt-in</td>
 </tr>
 <tr>
 <td>

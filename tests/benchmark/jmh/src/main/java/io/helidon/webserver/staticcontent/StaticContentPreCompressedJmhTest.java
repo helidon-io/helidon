@@ -129,6 +129,7 @@ public class StaticContentPreCompressedJmhTest {
 
         handler = new BenchmarkStaticContentHandler(FileSystemHandlerConfig.builder()
                                                            .location(benchmarkDirectory)
+                                                           .preCompressedEnabled(true)
                                                            .build());
         disabledHandler = new BenchmarkStaticContentHandler(FileSystemHandlerConfig.builder()
                                                                    .location(benchmarkDirectory)
@@ -136,6 +137,7 @@ public class StaticContentPreCompressedJmhTest {
                                                                    .build());
         fileSystemMissingSidecarHandler = new FileSystemContentHandler(FileSystemHandlerConfig.builder()
                                                                                .location(benchmarkDirectory)
+                                                                               .preCompressedEnabled(true)
                                                                                .build());
         disabledFileSystemMissingSidecarHandler = new FileSystemContentHandler(FileSystemHandlerConfig.builder()
                                                                                        .location(benchmarkDirectory)
@@ -144,6 +146,7 @@ public class StaticContentPreCompressedJmhTest {
         classpathHandler = new ClassPathContentHandler(ClasspathHandlerConfig.builder()
                                                                .location("benchmark")
                                                                .classLoader(classpathClassLoader)
+                                                               .preCompressedEnabled(true)
                                                                .build());
         disabledClasspathHandler = new ClassPathContentHandler(ClasspathHandlerConfig.builder()
                                                                        .location("benchmark")
@@ -283,7 +286,7 @@ public class StaticContentPreCompressedJmhTest {
     }
 
     @Benchmark
-    public ServerResponse handleNoAcceptEncodingDefault() throws IOException, URISyntaxException {
+    public ServerResponse handleNoAcceptEncodingEnabled() throws IOException, URISyntaxException {
         return selectAndHandle(handler, noAcceptEncodingRequest);
     }
 

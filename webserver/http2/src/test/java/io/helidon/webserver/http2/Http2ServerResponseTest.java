@@ -189,8 +189,7 @@ class Http2ServerResponseTest {
 
     @Test
     void failedFilterCloseDoesNotCompleteResponse() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
         Http2Exception filterFailure = new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Filter close failed.");

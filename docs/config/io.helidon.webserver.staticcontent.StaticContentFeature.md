@@ -25,9 +25,9 @@ Configuration of Static content feature
 <code>Boolean</code>
 </td>
 <td>
-<code>true</code>
+<code>false</code>
 </td>
-<td>Whether pre-compressed sidecar resources should be selected by default for feature-registered directory and classpath handlers</td>
+<td>Whether pre-compressed sidecar resources should be selected by default for feature-registered directory and classpath handlers; this is disabled by default and does not apply to file system handlers configured with a single file, which require handler-level opt-in</td>
 </tr>
 <tr>
 <td>

@@ -109,14 +109,26 @@ class StaticContentTest {
 
         builder.any("/vary-path/*",
                     (request, response) -> response.header(HeaderNames.VARY, HeaderNames.ORIGIN_NAME).next())
-                .register("/vary-path", createService(FileSystemHandlerConfig.create(staticRoot)))
-                .register("/classpath", createService(ClasspathHandlerConfig.create("web")))
+                .register("/vary-path", createService(FileSystemHandlerConfig.builder()
+                                                               .location(staticRoot)
+                                                               .preCompressedEnabled(true)
+                                                               .build()))
+                .register("/classpath", createService(ClasspathHandlerConfig.builder()
+                                                               .location("web")
+                                                               .preCompressedEnabled(true)
+                                                               .build()))
                 .register("/classpath-memory", createService(ClasspathHandlerConfig.builder()
                                                                       .location("web")
                                                                       .cachedFiles(Set.of("resource.txt"))
                                                                       .build()))
-                .register("/singleclasspath", createService(ClasspathHandlerConfig.create("web/resource.txt")))
-                .register("/path", createService(FileSystemHandlerConfig.create(staticRoot)))
+                .register("/singleclasspath", createService(ClasspathHandlerConfig.builder()
+                                                                     .location("web/resource.txt")
+                                                                     .preCompressedEnabled(true)
+                                                                     .build()))
+                .register("/path", createService(FileSystemHandlerConfig.builder()
+                                                          .location(staticRoot)
+                                                          .preCompressedEnabled(true)
+                                                          .build()))
                 .register("/path-memory", createService(FileSystemHandlerConfig.builder()
                                                                 .location(staticRoot)
                                                                 .cachedFiles(Set.of("empty.txt"))
@@ -221,6 +233,30 @@ class StaticContentTest {
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
             assertThat(response.as(String.class), is("Brotli content\n"));
+        }
+    }
+
+    @Test
+    void testClasspathPreCompressedDisabledByDefault() {
+        try (Http1ClientResponse response = testClient.get("/classpath-memory/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testFileSystemPreCompressedDisabledByDefault() {
+        try (Http1ClientResponse response = testClient.get("/path-memory/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.as(String.class), is("Content"));
         }
     }
 
