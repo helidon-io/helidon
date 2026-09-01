@@ -136,14 +136,7 @@ jobs:
           cache: maven
       - name: Maven build
         run: |
-          mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install
-      - name: Examples checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: '0'
-          repository: helidon-io/helidon-examples.git
-          ref: dev-3.x
-          path: helidon-examples
+          mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline -T4 install
       - name: Examples build
         run: etc/scripts/build-examples.sh
   archetypes:
