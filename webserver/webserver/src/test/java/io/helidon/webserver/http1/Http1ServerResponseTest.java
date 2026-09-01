@@ -492,6 +492,32 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void entityStatusRejectedAfterExplicitEncoderIsDiscarded() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.contentEncoder(GzipEncoding.create().encoder());
+
+        OutputStream output = response.outputStream();
+        response.status(Status.NO_CONTENT_204);
+        output.flush();
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> response.status(Status.OK_200));
+        output.close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("content encoding was discarded")),
+                () -> assertThat(responseText, containsString("HTTP/1.1 204 No Content\r\n")),
+                () -> assertNoEntityHeaders(Status.NO_CONTENT_204, responseText),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
+    @Test
     void flushedFixedLengthResponseRejectsStatusChange() throws IOException {
         assertFlushedResponseRejectsStatusChange(true);
     }

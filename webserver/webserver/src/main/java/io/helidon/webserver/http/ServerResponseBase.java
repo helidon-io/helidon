@@ -102,7 +102,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private boolean automaticContentEncoding = true;
     private ContentEncoder explicitContentEncoder;
     private ContentEncoder selectedContentEncoder;
-    private boolean contentEncodingStarted;
+    private boolean contentEncodingDataWritten;
+    private boolean contentEncodingDiscarded;
     private Consumer<ServerResponseTrailers> beforeTrailers;
     private Runnable responseBeforeSend;
     private UnaryOperator<OutputStream> responseStreamFilter;
@@ -127,8 +128,14 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         if (isSent()) {
             throw new IllegalStateException("Response already sent");
         }
-        if (contentEncodingStarted && !statusAllowsEntity(status)) {
-            throw new IllegalStateException("Cannot set a no-entity response status after response content encoding has started");
+        boolean statusAllowsEntity = statusAllowsEntity(status);
+        if (contentEncodingDataWritten && !statusAllowsEntity) {
+            throw new IllegalStateException("Cannot set a no-entity response status after response content encoding"
+                                                    + " has started");
+        }
+        if (contentEncodingDiscarded && statusAllowsEntity) {
+            throw new IllegalStateException("Cannot set an entity-bearing response status after response content encoding"
+                                                    + " was discarded");
         }
         this.status = status;
         return (T) this;
@@ -520,10 +527,10 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     protected OutputStream contentEncode(OutputStream outputStream, boolean allowAutomaticEncoding) {
         if (!statusAllowsEntity(status())) {
             if (explicitContentEncoder != null) {
-                return new DeferredContentEncoderOutputStream(responseContentEncoder(false),
+                ContentEncoder encoder = responseContentEncoder(false);
+                return new DeferredContentEncoderOutputStream(network -> applyContentEncoder(encoder, network),
                                                               outputStream,
-                                                              () -> statusAllowsEntity(status()),
-                                                              () -> contentEncodingStarted = true);
+                                                              () -> statusAllowsEntity(status()));
             }
             return outputStream;
         }
@@ -535,7 +542,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected void resetAutomaticContentEncoding() {
         this.automaticContentEncoding = true;
-        this.contentEncodingStarted = false;
+        this.contentEncodingDataWritten = false;
+        this.contentEncodingDiscarded = false;
         if (explicitContentEncoder == null
                 && selectedContentEncoder == ContentEncoder.NO_OP
                 && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
@@ -618,10 +626,14 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     private OutputStream applyContentEncoder(ContentEncoder encoder, OutputStream outputStream) {
-        if (encoder != ContentEncoder.NO_OP) {
-            contentEncodingStarted = true;
+        OutputStream encodedOutputStream = encoder.apply(outputStream);
+        if (encoder == ContentEncoder.NO_OP) {
+            return encodedOutputStream;
         }
-        return encoder.apply(outputStream);
+        return new ContentEncodingOutputStream(encodedOutputStream,
+                                               () -> statusAllowsEntity(status()),
+                                               () -> contentEncodingDataWritten = true,
+                                               () -> contentEncodingDiscarded = true);
     }
 
     private void ensureContentEncodingConfigurable() {
@@ -694,20 +706,17 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     private static final class DeferredContentEncoderOutputStream extends OutputStream {
-        private final ContentEncoder encoder;
+        private final Function<OutputStream, OutputStream> encoder;
         private final OutputStream outputStream;
         private final BooleanSupplier statusAllowsEntity;
-        private final Runnable encoderStarted;
         private OutputStream encodedOutputStream;
 
-        private DeferredContentEncoderOutputStream(ContentEncoder encoder,
+        private DeferredContentEncoderOutputStream(Function<OutputStream, OutputStream> encoder,
                                                    OutputStream outputStream,
-                                                   BooleanSupplier statusAllowsEntity,
-                                                   Runnable encoderStarted) {
+                                                   BooleanSupplier statusAllowsEntity) {
             this.encoder = encoder;
             this.outputStream = outputStream;
             this.statusAllowsEntity = statusAllowsEntity;
-            this.encoderStarted = encoderStarted;
         }
 
         @Override
@@ -737,12 +746,64 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
         private OutputStream outputStream() {
             if (encodedOutputStream == null && statusAllowsEntity.getAsBoolean()) {
-                if (encoder != ContentEncoder.NO_OP) {
-                    encoderStarted.run();
-                }
                 encodedOutputStream = encoder.apply(outputStream);
             }
             return encodedOutputStream == null ? outputStream : encodedOutputStream;
+        }
+    }
+
+    private static final class ContentEncodingOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private final BooleanSupplier statusAllowsEntity;
+        private final Runnable dataWritten;
+        private final Runnable encodingDiscarded;
+
+        private ContentEncodingOutputStream(OutputStream delegate,
+                                            BooleanSupplier statusAllowsEntity,
+                                            Runnable dataWritten,
+                                            Runnable encodingDiscarded) {
+            this.delegate = delegate;
+            this.statusAllowsEntity = statusAllowsEntity;
+            this.dataWritten = dataWritten;
+            this.encodingDiscarded = encodingDiscarded;
+        }
+
+        @Override
+        public void write(int value) throws IOException {
+            dataWritten.run();
+            delegate.write(value);
+        }
+
+        @Override
+        public void write(byte[] bytes) throws IOException {
+            if (bytes.length > 0) {
+                dataWritten.run();
+            }
+            delegate.write(bytes);
+        }
+
+        @Override
+        public void write(byte[] bytes, int offset, int length) throws IOException {
+            if (length > 0) {
+                dataWritten.run();
+            }
+            delegate.write(bytes, offset, length);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (!statusAllowsEntity.getAsBoolean()) {
+                encodingDiscarded.run();
+            }
+            delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!statusAllowsEntity.getAsBoolean()) {
+                encodingDiscarded.run();
+            }
+            delegate.close();
         }
     }
 }
