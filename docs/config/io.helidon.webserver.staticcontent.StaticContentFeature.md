@@ -19,6 +19,18 @@ Configuration of Static content feature
 <tbody>
 <tr>
 <td>
+<code>pre-<wbr>compressed-<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether pre-compressed sidecar resources should be selected by default for feature-registered directory and classpath handlers</td>
+</tr>
+<tr>
+<td>
 <a id="path"></a>
 <a href="io.helidon.webserver.staticcontent.FileSystemHandlerConfig.md">
 <code>path</code>
@@ -30,6 +42,18 @@ Configuration of Static content feature
 <td>
 </td>
 <td>List of file system based static content handlers</td>
+</tr>
+<tr>
+<td>
+<code>pre-<wbr>compressed-<wbr>cross-<wbr>origin-<wbr>sourcing-<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Whether classpath sidecar resources may be sourced from a different classpath origin than the logical resource by default for feature-registered handlers</td>
 </tr>
 <tr>
 <td>
@@ -55,6 +79,17 @@ Configuration of Static content feature
 <td>
 </td>
 <td>Maps a filename extension to the response content type</td>
+</tr>
+<tr>
+<td>
+<code>pre-<wbr>compressed-<wbr>encodings</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
+</td>
+<td>
+</td>
+<td>Pre-compressed content coding to file suffix mappings; defaults include br to br and gzip to gz, handler-level mappings replace these mappings rather than merging with them, an explicit empty map disables sidecar lookups by default, codings must be unique concrete valid HTTP tokens other than <code>identity</code> and <code>*</code>, and suffixes have leading dots ignored and must not contain path separators</td>
 </tr>
 <tr>
 <td>

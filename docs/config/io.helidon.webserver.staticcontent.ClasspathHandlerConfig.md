@@ -55,17 +55,6 @@ Classpath based static content handler configuration
 </tr>
 <tr>
 <td>
-<code>content-<wbr>types</code>
-</td>
-<td>
-<code>Map&lt;<wbr>String,<wbr> Base<wbr>Methods&gt;</code>
-</td>
-<td>
-</td>
-<td>Maps a filename extension to the response content type</td>
-</tr>
-<tr>
-<td>
 <a id="memory-cache"></a>
 <a href="io.helidon.webserver.staticcontent.MemoryCache.md">
 <code>memory-<wbr>cache</code>
@@ -80,6 +69,73 @@ Classpath based static content handler configuration
 </tr>
 <tr>
 <td>
+<code>record-<wbr>cache-<wbr>capacity</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+</td>
+<td>Configures the capacity of the cache used for resource metadata</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether this handle is enabled, defaults to <code>true</code></td>
+</tr>
+<tr>
+<td>
+<code>pre-<wbr>compressed-<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+</td>
+<td>Whether pre-compressed sidecar resources should be selected for this handler; file system handlers configured with a single file require explicit enablement, other feature-registered handlers inherit the feature value when absent, and all other directly created handlers default to enabled</td>
+</tr>
+<tr>
+<td>
+<code>pre-<wbr>compressed-<wbr>cross-<wbr>origin-<wbr>sourcing-<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+</td>
+<td>Whether sidecar resources may be sourced from a different classpath origin than the logical resource</td>
+</tr>
+<tr>
+<td>
+<code>content-<wbr>types</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Base<wbr>Methods&gt;</code>
+</td>
+<td>
+</td>
+<td>Maps a filename extension to the response content type</td>
+</tr>
+<tr>
+<td>
+<code>pre-<wbr>compressed-<wbr>encodings</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
+</td>
+<td>
+</td>
+<td>Pre-compressed content coding to file suffix mappings; handler mappings replace inherited feature-level mappings rather than merging with them, an explicit empty map disables sidecar lookups for this handler, codings must be unique concrete valid HTTP tokens other than <code>identity</code> and <code>*</code>, and suffixes have leading dots ignored and must not contain path separators</td>
+</tr>
+<tr>
+<td>
 <code>context</code>
 </td>
 <td>
@@ -89,17 +145,6 @@ Classpath based static content handler configuration
 <code>/</code>
 </td>
 <td>Context that will serve this handler's static resources, defaults to <code>/</code></td>
-</tr>
-<tr>
-<td>
-<code>record-<wbr>cache-<wbr>capacity</code>
-</td>
-<td>
-<code>Integer</code>
-</td>
-<td>
-</td>
-<td>Configures the capacity of the cache used for resource metadata</td>
 </tr>
 <tr>
 <td>
@@ -133,18 +178,6 @@ Classpath based static content handler configuration
 <td>
 </td>
 <td>Welcome-file name</td>
-</tr>
-<tr>
-<td>
-<code>enabled</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether this handle is enabled, defaults to <code>true</code></td>
 </tr>
 </tbody>
 </table>
