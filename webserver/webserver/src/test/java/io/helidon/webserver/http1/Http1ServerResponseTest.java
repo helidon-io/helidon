@@ -465,6 +465,33 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void noEntityStatusRejectedAfterExplicitEncoderStarts() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.contentEncoder(GzipEncoding.create().encoder());
+        response.status(Status.NO_CONTENT_204);
+
+        OutputStream output = response.outputStream();
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> response.status(Status.NO_CONTENT_204));
+        output.close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("content encoding has started")),
+                () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\n")),
+                () -> assertThat(responseText, containsString("\u001f\u008b"))
+        );
+    }
+
+    @Test
     void flushedFixedLengthResponseRejectsStatusChange() throws IOException {
         assertFlushedResponseRejectsStatusChange(true);
     }
