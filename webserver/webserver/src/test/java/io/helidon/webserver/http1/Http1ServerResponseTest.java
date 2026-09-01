@@ -313,8 +313,7 @@ class Http1ServerResponseTest {
             writes.incrementAndGet();
             return null;
         }).when(writer).write(any(BufferData.class));
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
         IllegalStateException filterFailure = new IllegalStateException("Filter close failed.");
@@ -460,8 +459,7 @@ class Http1ServerResponseTest {
     @Test
     void eagerlyFlushedNoEntityStatusIsSentOnce() {
         for (Status status : NO_ENTITY_STATUSES) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
             Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
             response.status(status);

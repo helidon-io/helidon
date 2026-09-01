@@ -530,7 +530,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
 
         OutputStream encodedOutputStream = contentEncode(outputStream, allowAutomaticEncoding);
-        bos.checkResponseHeaders();     // headers can be augmented by encoders
+        if (!isNoEntityStatus(status())) {
+            bos.checkResponseHeaders();     // headers can be augmented by encoders
+        }
         OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
         keepConnectionOpen = resolveKeepConnectionOpen();
         if (applicationOutputStream == outputStream) {
