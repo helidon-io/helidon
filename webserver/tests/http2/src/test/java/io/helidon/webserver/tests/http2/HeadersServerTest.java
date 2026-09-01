@@ -59,6 +59,7 @@ import io.helidon.webserver.testing.junit5.http2.Http2TestConnection;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
@@ -466,13 +467,19 @@ public class HeadersServerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"[Vf.foo-bar]:443", "service+name:443", "service%2Dname:443"})
+    @CsvSource({
+            "'[Vf.foo-bar]:443', '[Vf.foo-bar]:443'",
+            "service+name:443, service+name:443",
+            "service%2Dname:443, service%2Dname:443",
+            "service%2Dname:443, service%2dname:443"
+    })
     void ordinaryConnectWithMatchingHostReturnsNotImplementedAndKeepsConnectionOpen(String authority,
+                                                                                     String host,
                                                                                      Http2TestClient testClient) {
         try (Http2TestConnection connection = testClient.createConnection()) {
             WritableHeaders<?> headers = WritableHeaders.create();
             Http2Headers connectHeaders = Http2Headers.create(headers);
-            headers.add(HeaderNames.HOST, authority);
+            headers.add(HeaderNames.HOST, host);
             connectHeaders.method(Method.CONNECT);
             connectHeaders.authority(authority);
             connection.writer()

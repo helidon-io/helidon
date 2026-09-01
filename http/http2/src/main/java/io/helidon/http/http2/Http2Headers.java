@@ -574,7 +574,7 @@ public class Http2Headers {
     }
 
     private static boolean authoritiesMatch(String scheme, String authority, String host) {
-        if (scheme == null && authority.equals(host)) {
+        if (scheme == null && authority.equalsIgnoreCase(host)) {
             return true;
         }
         try {

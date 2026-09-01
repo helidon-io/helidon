@@ -31,6 +31,7 @@ import io.helidon.http.http2.Http2Headers.HeaderRecord;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
@@ -256,9 +257,14 @@ class Http2HeadersTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"[Vf.foo-bar]:443", "service+name:443", "service%2Dname:443"})
-    void testRequestAcceptsMatchingUriHostOnOrdinaryConnect(String authority) {
-        String hexEncoded = connectRequestHeaders(authority, authority);
+    @CsvSource({
+            "'[Vf.foo-bar]:443', '[Vf.foo-bar]:443'",
+            "service+name:443, service+name:443",
+            "service%2Dname:443, service%2Dname:443",
+            "service%2Dname:443, service%2dname:443"
+    })
+    void testRequestAcceptsMatchingUriHostOnOrdinaryConnect(String authority, String host) {
+        String hexEncoded = connectRequestHeaders(authority, host);
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
