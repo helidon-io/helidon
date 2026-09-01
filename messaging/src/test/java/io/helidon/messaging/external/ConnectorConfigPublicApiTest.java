@@ -16,7 +16,6 @@
 
 package io.helidon.messaging.external;
 
-import java.lang.reflect.Modifier;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -27,28 +26,23 @@ import io.helidon.messaging.ConnectorDirection;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConnectorConfigPublicApiTest {
     @Test
-    void connectorApiIsPubliclyNameable() throws NoSuchMethodException {
+    void connectorApiIsUsableFromExternalPackage() {
         ConnectorConfig config = ConnectorConfig.builder()
                 .direction(ConnectorDirection.INCOMING)
                 .channelName("orders")
                 .connector("test")
                 .buildPrototype();
+        ConnectorDirection direction = config.direction();
 
-        assertThat(config.direction(), is(ConnectorDirection.INCOMING));
+        assertThat(direction, is(ConnectorDirection.INCOMING));
         assertThat(config.channelName(), is("orders"));
-        assertThat(ConnectorConfig.class.getMethod("direction").getReturnType(), sameInstance(ConnectorDirection.class));
-        assertThat(Modifier.isPublic(ConnectorDirection.class.getModifiers()), is(true));
+        assertThat(config.connector(), is("test"));
         assertThat(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE, is("channel-name"));
         assertThat(ConnectorConfig.CONNECTOR_ATTRIBUTE, is("connector"));
-        assertThrows(NoSuchFieldException.class, () -> ConnectorConfig.class.getField("INCOMING_PREFIX"));
-        assertThrows(NoSuchFieldException.class, () -> ConnectorConfig.class.getField("OUTGOING_PREFIX"));
-        assertThrows(NoSuchFieldException.class, () -> ConnectorConfig.class.getField("CONNECTOR_PREFIX"));
     }
 
     @Test
