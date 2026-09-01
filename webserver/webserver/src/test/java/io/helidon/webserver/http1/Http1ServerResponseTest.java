@@ -389,6 +389,30 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void lateEntityStatusClearsEarlierResetContentLength() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.status(Status.RESET_CONTENT_205);
+
+        OutputStream output = response.outputStream();
+        response.status(Status.NOT_MODIFIED_304);
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, containsString("\r\nentity\r\n")),
+                () -> assertThat(responseText, endsWith("0\r\n\r\n"))
+        );
+    }
+
+    @Test
     void flushedFixedLengthResponseRejectsStatusChange() throws IOException {
         assertFlushedResponseRejectsStatusChange(true);
     }
