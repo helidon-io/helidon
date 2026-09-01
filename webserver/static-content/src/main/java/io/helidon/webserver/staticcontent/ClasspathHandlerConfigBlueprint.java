@@ -53,7 +53,7 @@ interface ClasspathHandlerConfigBlueprint extends BaseHandlerConfigBlueprint {
     Optional<ClassLoader> classLoader();
 
     /**
-     * Whether sidecar resources may be sourced from a different classpath origin than the logical resource. When not
+     * Whether sidecar resources may be sourced from a different classpath origin than the logical resource; when not
      * configured, feature-registered handlers inherit the feature-level value and direct services default to
      * {@code false}.
      *
