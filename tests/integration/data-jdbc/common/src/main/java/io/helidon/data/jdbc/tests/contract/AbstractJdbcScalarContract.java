@@ -190,6 +190,14 @@ public abstract class AbstractJdbcScalarContract {
     }
 
     /**
+     * Allows a database-specific leaf to verify the independently stored offset date-time instant.
+     *
+     * @param expected expected offset date-time
+     */
+    protected void assertStoredOffsetDateTimeInstant(OffsetDateTime expected) {
+    }
+
+    /**
      * Returns the all-null scalar value set used by generated typed-null tests.
      *
      * @return all-null values
@@ -247,6 +255,7 @@ public abstract class AbstractJdbcScalarContract {
     @Test
     protected final void bindsAndMapsEverySupportedScalarThroughTheRealDriver() {
         bindAll(VALUES);
+        assertStoredOffsetDateTimeInstant(VALUES.offsetDateTimeValue());
 
         client.create(SELECT_SQL)
                 .map(row -> {
