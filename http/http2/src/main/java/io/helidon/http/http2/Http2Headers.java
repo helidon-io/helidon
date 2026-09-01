@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import io.helidon.common.buffers.Ascii;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -575,10 +576,15 @@ public class Http2Headers {
     }
 
     private static boolean authoritiesMatch(String scheme, String authority, String host) {
-        if (scheme == null && Ascii.toLowerCase(authority).equals(Ascii.toLowerCase(host))) {
-            return true;
-        }
         try {
+            if (scheme == null) {
+                String lowerAuthority = Ascii.toLowerCase(authority);
+                String lowerHost = Ascii.toLowerCase(host);
+                if (lowerAuthority.equals(lowerHost)
+                        || normalizeSchemeLessAuthority(lowerAuthority).equals(normalizeSchemeLessAuthority(lowerHost))) {
+                    return true;
+                }
+            }
             int defaultPort = scheme == null ? UriAuthority.UNDEFINED_PORT : defaultPort(scheme);
             UriAuthority authorityValue = UriAuthority.create(authority);
             UriAuthority hostValue = UriAuthority.create(host);
@@ -587,6 +593,92 @@ public class Http2Headers {
         } catch (IllegalArgumentException e) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
         }
+    }
+
+    private static String normalizeSchemeLessAuthority(String authority) {
+        if (authority.isEmpty() || authority.charAt(0) == '[') {
+            return authority;
+        }
+
+        int colon = authority.indexOf(':');
+        if (colon != authority.lastIndexOf(':')) {
+            return authority;
+        }
+
+        int hostEnd = colon == -1 ? authority.length() : colon;
+        String host = authority.substring(0, hostEnd);
+        UriValidator.validateHost(host);
+        String normalizedHost = decodeUnreserved(host);
+        if (colon == -1) {
+            return normalizedHost;
+        }
+        return normalizedHost + ":" + parsePort(authority, colon + 1);
+    }
+
+    private static String decodeUnreserved(String host) {
+        int percent = host.indexOf('%');
+        if (percent == -1) {
+            return host;
+        }
+
+        StringBuilder result = new StringBuilder(host.length());
+        result.append(host, 0, percent);
+        for (int i = percent; i < host.length(); i++) {
+            char c = host.charAt(i);
+            if (c != '%') {
+                result.append(c);
+                continue;
+            }
+            char high = host.charAt(++i);
+            char low = host.charAt(++i);
+            char decoded = (char) ((hexDigit(high) << 4) | hexDigit(low));
+            if (isUnreserved(decoded)) {
+                result.append(Ascii.toLowerCase(decoded));
+            } else {
+                result.append('%')
+                        .append(Ascii.toUpperCase(high))
+                        .append(Ascii.toUpperCase(low));
+            }
+        }
+        return result.toString();
+    }
+
+    private static int parsePort(String authority, int offset) {
+        if (offset == authority.length()) {
+            throw new IllegalArgumentException("Authority port cannot be blank");
+        }
+        int result = 0;
+        for (int i = offset; i < authority.length(); i++) {
+            char c = authority.charAt(i);
+            if (c < '0' || c > '9') {
+                throw new IllegalArgumentException("Authority port must contain only digits");
+            }
+            result = result * 10 + c - '0';
+            if (result > 65535) {
+                throw new IllegalArgumentException("Authority port must be between 0 and 65535");
+            }
+        }
+        return result;
+    }
+
+    private static int hexDigit(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        if (c >= 'a' && c <= 'f') {
+            return c - 'a' + 10;
+        }
+        return c - 'A' + 10;
+    }
+
+    private static boolean isUnreserved(char c) {
+        return c >= 'a' && c <= 'z'
+                || c >= 'A' && c <= 'Z'
+                || c >= '0' && c <= '9'
+                || c == '-'
+                || c == '.'
+                || c == '_'
+                || c == '~';
     }
 
     private static int defaultPort(String scheme) {

@@ -261,7 +261,9 @@ class Http2HeadersTest {
             "'[Vf.foo-bar]:443', '[Vf.foo-bar]:443'",
             "service+name:443, service+name:443",
             "service%2Dname:443, service%2Dname:443",
-            "service%2Dname:443, service%2dname:443"
+            "service%2Dname:443, service%2dname:443",
+            "service-name:443, service%2Dname:443",
+            "service%2Dname:443, service-name:443"
     })
     void testRequestAcceptsMatchingUriHostOnOrdinaryConnect(String authority, String host) {
         String hexEncoded = connectRequestHeaders(authority, host);

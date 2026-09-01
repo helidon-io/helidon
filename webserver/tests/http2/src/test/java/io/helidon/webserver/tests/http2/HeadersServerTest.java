@@ -476,7 +476,9 @@ public class HeadersServerTest {
             "'[Vf.foo-bar]:443', '[Vf.foo-bar]:443'",
             "service+name:443, service+name:443",
             "service%2Dname:443, service%2Dname:443",
-            "service%2Dname:443, service%2dname:443"
+            "service%2Dname:443, service%2dname:443",
+            "service-name:443, service%2Dname:443",
+            "service%2Dname:443, service-name:443"
     })
     void ordinaryConnectWithMatchingHostReturnsNotImplementedAndKeepsConnectionOpen(String authority,
                                                                                      String host,
