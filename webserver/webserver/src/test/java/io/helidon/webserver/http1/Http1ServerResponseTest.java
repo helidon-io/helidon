@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.io.ByteArrayInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.SSLException;
 
@@ -483,11 +485,18 @@ class Http1ServerResponseTest {
         var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
         verify(writer, atLeastOnce()).write(responseBuffer.capture());
         String responseText = responseText(responseBuffer);
+        int entityStart = responseText.indexOf("\r\n\r\n") + 4;
+        String decodedEntity;
+        try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(
+                responseText.substring(entityStart).getBytes(StandardCharsets.ISO_8859_1)))) {
+            decodedEntity = new String(gzip.readAllBytes(), StandardCharsets.UTF_8);
+        }
         assertAll(
                 () -> assertThat(exception.getMessage(), containsString("content encoding has started")),
                 () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
                 () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\n")),
-                () -> assertThat(responseText, containsString("\u001f\u008b"))
+                () -> assertThat(responseText, containsString("\u001f\u008b")),
+                () -> assertThat(decodedEntity, is("entity"))
         );
     }
 
