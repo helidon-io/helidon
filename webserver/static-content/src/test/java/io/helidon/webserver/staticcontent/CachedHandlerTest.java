@@ -241,6 +241,29 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testClasspathCachedMetadataUsesCurrentMemoryCacheEntry() throws IOException {
+        String resource = "web/cached.txt";
+        ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
+                classpathHandlerBuilder()
+                        .location("/web")
+                        .build());
+        byte[] firstBytes = "First".getBytes(StandardCharsets.UTF_8);
+        byte[] currentBytes = "Current".getBytes(StandardCharsets.UTF_8);
+        CachedHandlerInMemory first = new CachedHandlerInMemory(
+                StaticContentMetadata.create(MediaTypes.TEXT_PLAIN, firstBytes.length), firstBytes);
+        CachedHandlerInMemory current = new CachedHandlerInMemory(
+                StaticContentMetadata.create(MediaTypes.TEXT_PLAIN, currentBytes.length), currentBytes);
+
+        handler.cacheInMemory(resource, first);
+        handler.cacheClassPathHandler(resource, resource, tempDir.resolve("cached.txt").toUri().toURL(), first);
+        handler.cacheInMemory(resource, current);
+
+        Optional<CachedHandler> cached = handler.cachedClassPathHandler(resource);
+        assertThat(cached, optionalPresent());
+        assertThat(((ClassPathContentHandler.CachedClassPathHandler) cached.get()).delegate(), sameInstance(current));
+    }
+
+    @Test
     void testClasspathDynamicCacheIsReleasedOnRestart(@TempDir Path tempDir) throws IOException, URISyntaxException {
         Path resource = Files.writeString(Files.createDirectories(tempDir.resolve("web")).resolve("dynamic.txt"),
                                           "Initial");

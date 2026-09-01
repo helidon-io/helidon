@@ -53,7 +53,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     private static final System.Logger LOGGER = System.getLogger(ClassPathContentHandler.class.getName());
 
     private final AtomicBoolean populatedInMemoryCache = new AtomicBoolean();
-    private final Map<String, CachedClassPathHandler> inMemoryHandlers = new ConcurrentHashMap<>();
+    private final Map<String, CachedClassPathMetadata> inMemoryMetadata = new ConcurrentHashMap<>();
     private final ClassLoader classLoader;
     private final String root;
     private final String rootWithTrailingSlash;
@@ -123,7 +123,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
-        inMemoryHandlers.clear();
+        inMemoryMetadata.clear();
         super.releaseCache();
     }
 
@@ -323,7 +323,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                         CachedHandler delegate) {
         CachedClassPathHandler handler = new CachedClassPathHandler(delegate, logicalResource, identityUrl);
         if (delegate instanceof CachedHandlerInMemory) {
-            inMemoryHandlers.put(requestedResource, handler);
+            inMemoryMetadata.put(requestedResource, new CachedClassPathMetadata(logicalResource, identityUrl));
         } else {
             cacheHandler(requestedResource, handler);
         }
@@ -331,8 +331,17 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     }
 
     Optional<CachedHandler> cachedClassPathHandler(String requestedResource) {
-        CachedHandler inMemoryHandler = inMemoryHandlers.get(requestedResource);
-        return inMemoryHandler == null ? handlerCache().get(requestedResource) : Optional.of(inMemoryHandler);
+        CachedClassPathMetadata metadata = inMemoryMetadata.get(requestedResource);
+        if (metadata != null) {
+            Optional<CachedHandlerInMemory> inMemoryHandler = cacheInMemory(requestedResource);
+            if (inMemoryHandler.isPresent()) {
+                return Optional.of(new CachedClassPathHandler(inMemoryHandler.get(),
+                                                              metadata.logicalResource(),
+                                                              metadata.identityUrl()));
+            }
+            inMemoryMetadata.remove(requestedResource, metadata);
+        }
+        return handlerCache().get(requestedResource);
     }
 
     private static String fileName(URL url) {
@@ -552,6 +561,9 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     private Optional<Instant> lastModified(String path) throws IOException {
         return lastModified(Paths.get(path));
+    }
+
+    private record CachedClassPathMetadata(String logicalResource, URL identityUrl) {
     }
 
     record CachedClassPathHandler(CachedHandler delegate,
