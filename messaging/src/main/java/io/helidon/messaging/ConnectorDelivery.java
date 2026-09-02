@@ -25,6 +25,13 @@ import io.helidon.common.Api;
  * <p>
  * Application-facing emission remains synchronous. This handle exists so a connector such as Kafka can keep polling
  * for group heartbeats while one retained delivery executes on a messaging-runtime virtual thread.
+ * <p>
+ * A {@link BatchDeliveryException} propagated by either {@code await} method is aligned with this delivery's retained
+ * batch. Its {@link BatchDeliveryException#batch()} is the exact same {@link MessageBatch} instance supplied to the
+ * successful {@link ConnectorDeliveryReservation#start(MessageBatch) start},
+ * {@link ConnectorDeliveryReservation#tryStart(MessageBatch) tryStart}, or
+ * {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException) startFailed} invocation that
+ * returned this delivery, and every {@link BatchItemOutcome#index()} addresses that batch.
  */
 @Api.Preview
 public interface ConnectorDelivery extends AutoCloseable {
@@ -50,9 +57,11 @@ public interface ConnectorDelivery extends AutoCloseable {
      * <p>
      * If the waiting connector owner is interrupted, its interrupt status is restored before the failure is reported.
      *
+     * @throws BatchDeliveryException if processing reports structured per-item failure outcomes; the exception is
+     *                                aligned with this delivery's retained batch as specified by this interface
      * @throws MessagingException if the waiting connector owner is interrupted or processing fails with a checked
      *                            cause
-     * @throws RuntimeException if delivery processing fails with a runtime exception
+     * @throws RuntimeException if delivery processing fails with another runtime exception
      */
     void await();
 
@@ -63,9 +72,11 @@ public interface ConnectorDelivery extends AutoCloseable {
      *
      * @param timeout maximum wait
      * @return {@code true} if processing terminated, {@code false} on timeout
+     * @throws BatchDeliveryException if processing reports structured per-item failure outcomes; the exception is
+     *                                aligned with this delivery's retained batch as specified by this interface
      * @throws MessagingException if the waiting connector owner is interrupted or processing fails with a checked
      *                            cause
-     * @throws RuntimeException if delivery processing fails with a runtime exception
+     * @throws RuntimeException if delivery processing fails with another runtime exception
      */
     boolean await(Duration timeout);
 

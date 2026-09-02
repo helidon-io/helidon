@@ -34,6 +34,8 @@ final class MessagingTypes {
             TypeName.create("io.helidon.messaging.ConsumerRegistration");
     static final TypeName BATCH_DELIVERY_EXCEPTION =
             TypeName.create("io.helidon.messaging.BatchDeliveryException");
+    static final TypeName BATCH_ITEM_OUTCOME =
+            TypeName.create("io.helidon.messaging.BatchItemOutcome");
     static final TypeName EMITTER = TypeName.create("io.helidon.messaging.Emitter");
     static final TypeName EMITTER_REGISTRATION =
             TypeName.create("io.helidon.messaging.EmitterRegistration");

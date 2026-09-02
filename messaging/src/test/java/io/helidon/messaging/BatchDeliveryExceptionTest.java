@@ -16,6 +16,7 @@
 
 package io.helidon.messaging;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -24,8 +25,28 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BatchDeliveryExceptionTest {
+    @Test
+    void rejectsNullConstructionState() {
+        MessageBatch<String> batch = MessageBatch.create(Message.create("message"));
+        IllegalStateException cause = new IllegalStateException("failed");
+        List<BatchItemOutcome> outcomes = List.of(BatchItemOutcome.notAttempted(0));
+
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException(null, cause, batch, outcomes));
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException("failed", null, batch, outcomes));
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException("failed", cause, null, outcomes));
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException("failed", cause, batch, null));
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException("failed", cause, batch,
+                                                       Collections.singletonList(null)));
+    }
+
     @Test
     void alignsAncestorOutcomesWithNonContiguousPolicySubset() {
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("first"),
@@ -37,16 +58,16 @@ class BatchDeliveryExceptionTest {
         IllegalStateException cleanupFailure = new IllegalStateException("cleanup failed");
         BatchDeliveryException failure = new BatchDeliveryException(
                 "Partial delivery",
+                secondFailure,
                 batch,
                 List.of(BatchItemOutcome.succeeded(0),
                         BatchItemOutcome.failed(1, secondFailure),
                         BatchItemOutcome.succeeded(2),
-                        BatchItemOutcome.indeterminate(3, fourthFailure)),
-                secondFailure);
+                        BatchItemOutcome.indeterminate(3, fourthFailure)));
         failure.addSuppressed(cleanupFailure);
         MessageBatch<String> policyBatch = batch.subset(List.of(1, 3));
 
-        RuntimeException result = BatchDeliveryException.align(policyBatch, failure);
+        RuntimeException result = BatchDeliveryExceptionSupport.align(policyBatch, failure);
 
         assertThat(result, is(instanceOf(BatchDeliveryException.class)));
         BatchDeliveryException aligned = (BatchDeliveryException) result;
@@ -64,13 +85,13 @@ class BatchDeliveryExceptionTest {
     void alignsDerivedEnvelopesAndReturnsAlreadyAlignedFailure() {
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("first"), Message.create("second")));
         IllegalStateException itemFailure = new IllegalStateException("failed");
-        BatchDeliveryException failure = BatchDeliveryException.sequential("Delivery", batch, 0, itemFailure);
+        BatchDeliveryException failure = BatchDeliveryExceptionSupport.sequential("Delivery", batch, 0, itemFailure);
 
-        assertThat(BatchDeliveryException.align(batch, failure), sameInstance(failure));
+        assertThat(BatchDeliveryExceptionSupport.align(batch, failure), sameInstance(failure));
 
         MessageBatch<String> derived = batch.derive(List.of(Message.create("mapped-first"),
                                                             Message.create("mapped-second")));
-        BatchDeliveryException aligned = (BatchDeliveryException) BatchDeliveryException.align(derived, failure);
+        BatchDeliveryException aligned = (BatchDeliveryException) BatchDeliveryExceptionSupport.align(derived, failure);
 
         assertThat(aligned.batch(), sameInstance(derived));
         assertThat(aligned.outcomes().stream().map(BatchItemOutcome::status).toList(),
@@ -83,12 +104,12 @@ class BatchDeliveryExceptionTest {
         MessageBatch<String> source = MessageBatch.create(List.of(Message.create("source")));
         MessageBatch<String> target = MessageBatch.create(List.of(Message.create("target-1"),
                                                                   Message.create("target-2")));
-        BatchDeliveryException failure = BatchDeliveryException.notAttempted(
+        BatchDeliveryException failure = BatchDeliveryExceptionSupport.notAttempted(
                 "Source delivery",
                 source,
                 new IllegalStateException("source failed"));
 
-        BatchDeliveryException aligned = (BatchDeliveryException) BatchDeliveryException.align(target, failure);
+        BatchDeliveryException aligned = (BatchDeliveryException) BatchDeliveryExceptionSupport.align(target, failure);
 
         assertThat(aligned.batch(), sameInstance(target));
         assertThat(aligned.getCause(), sameInstance(failure));
@@ -100,14 +121,15 @@ class BatchDeliveryExceptionTest {
     void treatsSucceededProjectionAsIndeterminate() {
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("succeeded"),
                                                                  Message.create("failed")));
-        BatchDeliveryException failure = BatchDeliveryException.sequential(
+        BatchDeliveryException failure = BatchDeliveryExceptionSupport.sequential(
                 "Source delivery",
                 batch,
                 1,
                 new IllegalStateException("failed"));
         MessageBatch<String> succeededOnly = batch.subset(List.of(0));
 
-        BatchDeliveryException aligned = (BatchDeliveryException) BatchDeliveryException.align(succeededOnly, failure);
+        BatchDeliveryException aligned =
+                (BatchDeliveryException) BatchDeliveryExceptionSupport.align(succeededOnly, failure);
 
         assertThat(aligned.batch(), sameInstance(succeededOnly));
         assertThat(aligned.getCause(), sameInstance(failure));
@@ -119,6 +141,6 @@ class BatchDeliveryExceptionTest {
         MessageBatch<String> batch = MessageBatch.create(Message.create("message"));
         IllegalStateException failure = new IllegalStateException("failed");
 
-        assertThat(BatchDeliveryException.align(batch, failure), sameInstance(failure));
+        assertThat(BatchDeliveryExceptionSupport.align(batch, failure), sameInstance(failure));
     }
 }

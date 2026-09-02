@@ -50,7 +50,8 @@ public interface ConnectorDeliveryReservation extends AutoCloseable {
      * Rebuilt batches and replacement envelopes require separate admission.
      *
      * @param batch complete retained delivery
-     * @return admitted delivery task and settlement lease
+     * @return admitted delivery task and settlement lease bound to {@code batch} by the
+     *         {@link ConnectorDelivery structured-failure alignment contract}
      * @throws MessagingRejectedException if the delivery cannot be admitted
      * @throws IllegalStateException if this reservation was already started or another start is in progress
      */
@@ -68,8 +69,7 @@ public interface ConnectorDeliveryReservation extends AutoCloseable {
      * A structured {@link BatchDeliveryException} aligned to {@code batch} can identify unmappable items as
      * {@link BatchItemStatus#FAILED} or {@link BatchItemStatus#INDETERMINATE} and mapped but undispatched siblings as
      * {@link BatchItemStatus#NOT_ATTEMPTED}. The runtime settles the failed subset first, then dispatches the deferred
-     * subset only after successful drop or dead-letter settlement. A terminal {@link BatchDeliveryException} remains
-     * aligned to the original retained batch. An undispatched item must not be marked
+     * subset only after successful drop or dead-letter settlement. An undispatched item must not be marked
      * {@link BatchItemStatus#SUCCEEDED}.
      * <p>
      * The default implementation closes this reservation and rethrows the supplied failure so implementations
@@ -77,7 +77,8 @@ public interface ConnectorDeliveryReservation extends AutoCloseable {
      *
      * @param batch retained delivery metadata used for failure accounting, drop, or dead-letter handling
      * @param failure pre-dispatch mapping failure
-     * @return admitted delivery task and settlement lease
+     * @return admitted delivery task and settlement lease bound to {@code batch} by the
+     *         {@link ConnectorDelivery structured-failure alignment contract}
      * @throws RuntimeException the supplied failure when this operation is not implemented by the runtime
      */
     default ConnectorDelivery startFailed(MessageBatch<?> batch, RuntimeException failure) {
@@ -105,7 +106,9 @@ public interface ConnectorDeliveryReservation extends AutoCloseable {
      * Rebuilt batches and replacement envelopes require separate admission.
      *
      * @param batch complete retained delivery
-     * @return admitted delivery task, or empty when in-flight capacity is currently unavailable
+     * @return admitted delivery task bound to {@code batch} by the
+     *         {@link ConnectorDelivery structured-failure alignment contract}, or empty when in-flight capacity is
+     *         currently unavailable
      * @throws MessagingRejectedException if the delivery exceeds this reservation or the reservation is unavailable
      * @throws IllegalStateException if this reservation was already started or another start is in progress
      */

@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.messaging.BatchDeliveryException;
+import io.helidon.messaging.BatchItemOutcome;
 import io.helidon.messaging.ConnectorDelivery;
 import io.helidon.messaging.HeaderValue;
 import io.helidon.messaging.Message;
@@ -34,7 +36,9 @@ import io.helidon.messaging.MessagingEntryPoint;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessagingPublicApiTest {
     @Test
@@ -88,6 +92,30 @@ class MessagingPublicApiTest {
         assertThat(message.localMetadata(), is(metadata));
         assertThat(message.localMetadata().text("application.local").orElseThrow(), is("value"));
         assertThat(message.headers().isEmpty(), is(true));
+    }
+
+    @Test
+    void batchDeliveryExceptionSupportsDirectPublicConstructionAndRejectsNulls() {
+        MessageBatch<String> batch = MessageBatch.create(Message.create("payload"));
+        RuntimeException cause = new IllegalStateException("send failed");
+        List<BatchItemOutcome> outcomes = List.of(BatchItemOutcome.notAttempted(0));
+        BatchDeliveryException failure = new BatchDeliveryException("Acme send failed",
+                                                                     cause,
+                                                                     batch,
+                                                                     outcomes);
+
+        assertThat(failure.getMessage(), is("Acme send failed"));
+        assertThat(failure.getCause(), sameInstance(cause));
+        assertThat(failure.batch(), sameInstance(batch));
+        assertThat(failure.outcomes(), is(outcomes));
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException(null, cause, batch, outcomes));
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException("Acme send failed", null, batch, outcomes));
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException("Acme send failed", cause, null, outcomes));
+        assertThrows(NullPointerException.class,
+                     () -> new BatchDeliveryException("Acme send failed", cause, batch, null));
     }
 
     private static void assertNoDeclaredExceptions(Method method) {

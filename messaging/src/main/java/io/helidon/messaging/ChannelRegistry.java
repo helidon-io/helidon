@@ -1538,12 +1538,12 @@ class ChannelRegistry implements MessagingRuntime {
         }
 
         private BatchDeliveryException batchFailure(MessageBatch<?> batch, RuntimeException failure) {
-            RuntimeException aligned = BatchDeliveryException.align(batch, failure);
+            RuntimeException aligned = BatchDeliveryExceptionSupport.align(batch, failure);
             return aligned instanceof BatchDeliveryException batchFailure
                     ? batchFailure
-                    : BatchDeliveryException.indeterminate("Messaging delivery on channel " + channel,
-                                                           batch,
-                                                           aligned);
+                    : BatchDeliveryExceptionSupport.indeterminate("Messaging delivery on channel " + channel,
+                                                                  batch,
+                                                                  aligned);
         }
 
         private BatchDeliveryException terminalFailure(MessageBatch<?> root,
@@ -1566,7 +1566,7 @@ class ChannelRegistry implements MessagingRuntime {
                 outcomes.set(rootIndex, reindex(rootIndex, outcome));
             }
             Throwable cause = failure.getCause() == null ? failure : failure.getCause();
-            BatchDeliveryException result = new BatchDeliveryException(message, root, outcomes, cause);
+            BatchDeliveryException result = new BatchDeliveryException(message, cause, root, outcomes);
             for (Throwable suppressed : failure.getSuppressed()) {
                 result.addSuppressed(suppressed);
             }

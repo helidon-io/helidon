@@ -252,7 +252,7 @@ class MessageBatchTest {
                                                                  Message.create("three")));
         IllegalStateException failure = new IllegalStateException("send failed");
 
-        BatchDeliveryException sequential = BatchDeliveryException.sequential("send", batch, 1, failure);
+        BatchDeliveryException sequential = BatchDeliveryExceptionSupport.sequential("send", batch, 1, failure);
 
         assertThat(sequential.batch(), sameInstance(batch));
         assertThat(sequential.getCause(), sameInstance(failure));
@@ -263,17 +263,18 @@ class MessageBatchTest {
         assertThat(sequential.outcome(2).failure().isPresent(), is(false));
         assertThrows(UnsupportedOperationException.class, () -> sequential.outcomes().clear());
 
-        BatchDeliveryException indeterminate = BatchDeliveryException.indeterminate("send", batch, failure);
+        BatchDeliveryException indeterminate = BatchDeliveryExceptionSupport.indeterminate("send", batch, failure);
         assertThat(indeterminate.outcomes().stream()
                            .allMatch(outcome -> outcome.status() == BatchItemStatus.INDETERMINATE), is(true));
 
-        BatchDeliveryException attemptedPrefix = BatchDeliveryException.attemptedPrefix("process", batch, 1, failure);
+        BatchDeliveryException attemptedPrefix =
+                BatchDeliveryExceptionSupport.attemptedPrefix("process", batch, 1, failure);
         assertThat(attemptedPrefix.outcomes().stream().map(BatchItemOutcome::status).toList(),
                    is(List.of(BatchItemStatus.INDETERMINATE,
                               BatchItemStatus.INDETERMINATE,
                               BatchItemStatus.NOT_ATTEMPTED)));
 
-        BatchDeliveryException notAttempted = BatchDeliveryException.notAttempted("send", batch, failure);
+        BatchDeliveryException notAttempted = BatchDeliveryExceptionSupport.notAttempted("send", batch, failure);
         assertThat(notAttempted.outcomes().stream()
                            .allMatch(outcome -> outcome.status() == BatchItemStatus.NOT_ATTEMPTED), is(true));
     }
@@ -281,26 +282,27 @@ class MessageBatchTest {
     @Test
     void validatesStructuredOutcomesAgainstOriginalIndexes() {
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("one"), Message.create("two")));
+        RuntimeException failure = new RuntimeException("failed");
 
         assertThrows(IllegalArgumentException.class,
                      () -> new BatchDeliveryException("failed",
+                                                      failure,
                                                       batch,
-                                                      List.of(BatchItemOutcome.failed(0, new RuntimeException())),
-                                                      null));
+                                                      List.of(BatchItemOutcome.failed(0, new RuntimeException()))));
         assertThrows(IllegalArgumentException.class,
                      () -> new BatchDeliveryException("failed",
+                                                      failure,
                                                       batch,
                                                       List.of(BatchItemOutcome.succeeded(1),
-                                                              BatchItemOutcome.notAttempted(0)),
-                                                      null));
+                                                              BatchItemOutcome.notAttempted(0))));
         assertThrows(IllegalArgumentException.class,
                      () -> new BatchDeliveryException("failed",
+                                                      failure,
                                                       batch,
                                                       List.of(BatchItemOutcome.succeeded(0),
-                                                              BatchItemOutcome.succeeded(1)),
-                                                      null));
+                                                              BatchItemOutcome.succeeded(1))));
         assertThrows(IndexOutOfBoundsException.class,
-                     () -> BatchDeliveryException.sequential("send", batch, 2, new RuntimeException()));
+                     () -> BatchDeliveryExceptionSupport.sequential("send", batch, 2, new RuntimeException()));
         assertThrows(IllegalArgumentException.class, () -> BatchItemOutcome.succeeded(-1));
     }
 

@@ -906,10 +906,10 @@ settle native records by original index.
 
 A normal return from `await()` may mean normal handler completion, `DROP`, or successful dead-letter delivery; all are
 settled runtime outcomes and the complete source delivery may then be committed. The conservative outline above
-abandons the complete transport batch on failure. A connector that supports partial settlement may align a
-`BatchDeliveryException` to the original batch and settle only `SUCCEEDED` items, while respecting transport ordering
-constraints such as contiguous committed prefixes. `FAILED`, `NOT_ATTEMPTED`, and `INDETERMINATE` items remain
-unsettled. Treat an unstructured exception as indeterminate for the complete batch.
+abandons the complete transport batch on failure. A connector that supports partial settlement may inspect the terminal
+`BatchDeliveryException`, which the runtime aligns to the original retained batch, and settle only `SUCCEEDED` items
+while respecting transport ordering constraints such as contiguous committed prefixes. `FAILED`, `NOT_ATTEMPTED`, and
+`INDETERMINATE` items remain unsettled. Treat an unstructured exception as indeterminate for the complete batch.
 
 `ConnectorDelivery.close()` releases runtime admission capacity; it does not acknowledge the source. Closing it before
 processing terminates requests cancellation, and capacity remains retained until processing actually stops. Commit,
@@ -954,7 +954,7 @@ final class AcmeOutgoingConnector implements OutgoingConnector {
         try {
             current = lifecycle.beginSend();
         } catch (RuntimeException failure) {
-            throw BatchDeliveryException.notAttempted("Acme send", batch, failure);
+            throw beforeAnyAttempt(batch, failure);
         }
         try {
             for (int i = 0; i < batch.size(); i++) {
@@ -962,12 +962,43 @@ final class AcmeOutgoingConnector implements OutgoingConnector {
                     // Await the transport acknowledgement or other documented success point.
                     current.sendAndAwait(batch.get(i));
                 } catch (RuntimeException failure) {
-                    throw BatchDeliveryException.sequential("Acme send", batch, i, failure);
+                    throw afterItemFailure(batch, i, failure);
                 }
             }
         } finally {
             lifecycle.endSend();
         }
+    }
+
+    private static BatchDeliveryException beforeAnyAttempt(MessageBatch<?> batch,
+                                                            RuntimeException failure) {
+        List<BatchItemOutcome> outcomes = new ArrayList<>(batch.size());
+        for (int i = 0; i < batch.size(); i++) {
+            outcomes.add(BatchItemOutcome.notAttempted(i));
+        }
+        return new BatchDeliveryException("Acme send failed before attempting the batch",
+                                          failure,
+                                          batch,
+                                          outcomes);
+    }
+
+    private static BatchDeliveryException afterItemFailure(MessageBatch<?> batch,
+                                                            int failedIndex,
+                                                            RuntimeException failure) {
+        List<BatchItemOutcome> outcomes = new ArrayList<>(batch.size());
+        for (int i = 0; i < batch.size(); i++) {
+            if (i < failedIndex) {
+                outcomes.add(BatchItemOutcome.succeeded(i));
+            } else if (i == failedIndex) {
+                outcomes.add(BatchItemOutcome.indeterminate(i, failure));
+            } else {
+                outcomes.add(BatchItemOutcome.notAttempted(i));
+            }
+        }
+        return new BatchDeliveryException("Acme send failed at batch index " + failedIndex,
+                                          failure,
+                                          batch,
+                                          outcomes);
     }
 
     @Override
@@ -990,10 +1021,12 @@ the failures. `beginSend()` must reject non-ready state before any transport att
 bookkeeping so it cannot mask a primary delivery failure.
 
 The example reports an interrupted or failed item as indeterminate because the transport may have accepted it before
-throwing. Use `BatchItemOutcome.failed` only when the transport proves the item did not reach its success point. Use
-`BatchDeliveryException.notAttempted` for failures before any external attempt and `indeterminate` when the complete
-batch outcome is unknown. Return `BatchAtomicity.ATOMIC` only when the transport guarantees one all-or-none settlement
-boundary for the complete batch.
+throwing. Use `BatchItemOutcome.failed` only when the transport proves the item did not reach its success point. For a
+failure before any external attempt, construct one `NOT_ATTEMPTED` outcome per item as shown above. When the complete
+batch outcome is unknown, construct one `INDETERMINATE` outcome per item. Connector-private helpers may encode these
+transport-specific rules, then create `BatchDeliveryException` with the message, primary cause, original batch, and
+aligned outcomes. Return `BatchAtomicity.ATOMIC` only when the transport guarantees one all-or-none settlement boundary
+for the complete batch.
 
 Preserve the original transport failure as the cause. Make send and startup paths interruptible; `forceClose()` itself
 must run promptly to completion and perform every unblock action. Make normal and forced cleanup safe when invoked

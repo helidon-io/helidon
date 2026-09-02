@@ -577,7 +577,7 @@ class DeclarativeRegistrationTest {
                     try {
                         consumer.accept(batch.get(i));
                     } catch (RuntimeException e) {
-                        throw BatchDeliveryException.sequential("Test consumer", batch, i, e);
+                        throw BatchDeliveryExceptionSupport.sequential("Test consumer", batch, i, e);
                     }
                 }
             }
@@ -666,7 +666,7 @@ class DeclarativeRegistrationTest {
                     try {
                         results.add(processor.apply(batch.get(i)));
                     } catch (RuntimeException e) {
-                        throw BatchDeliveryException.attemptedPrefix("Test processor", batch, i, e);
+                        throw BatchDeliveryExceptionSupport.attemptedPrefix("Test processor", batch, i, e);
                     }
                 }
                 return batch.derive(results);

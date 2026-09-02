@@ -818,7 +818,7 @@ class ChannelRegistryFailurePolicyTest {
         try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
              ConnectorDelivery delivery = reservation.startFailed(
                      root,
-                     BatchDeliveryException.notAttempted("Mapping", root, mappingFailure))) {
+                     BatchDeliveryExceptionSupport.notAttempted("Mapping", root, mappingFailure))) {
             assertThat(delivery.await(Duration.ofSeconds(2)), is(true));
         }
 
@@ -924,17 +924,17 @@ class ChannelRegistryFailurePolicyTest {
         ConsumerRegistration source = batchRegistration("orders", batch -> {
             int dispatch = dispatches.incrementAndGet();
             if (dispatch == 1) {
-                throw BatchDeliveryException.indeterminate("First attempt", batch, processingFailure);
+                throw BatchDeliveryExceptionSupport.indeterminate("First attempt", batch, processingFailure);
             }
             if (dispatch == 2) {
                 throw new BatchDeliveryException(
                         "Retry partially deferred",
+                        processingFailure,
                         batch,
                         List.of(BatchItemOutcome.indeterminate(0, processingFailure),
-                                BatchItemOutcome.notAttempted(1)),
-                        processingFailure);
+                                BatchItemOutcome.notAttempted(1)));
             }
-            throw BatchDeliveryException.indeterminate("Deferred attempt", batch, processingFailure);
+            throw BatchDeliveryExceptionSupport.indeterminate("Deferred attempt", batch, processingFailure);
         });
         ChannelRegistry registry = new ChannelRegistry(List.of(source),
                             yaml("""
@@ -970,18 +970,18 @@ class ChannelRegistryFailurePolicyTest {
             switch (dispatches.incrementAndGet()) {
             case 1 -> throw new BatchDeliveryException(
                     "Initial partial failure",
+                    firstFailure,
                     batch,
                     List.of(BatchItemOutcome.succeeded(0),
                             BatchItemOutcome.indeterminate(1, firstFailure),
                             BatchItemOutcome.notAttempted(2),
-                            BatchItemOutcome.indeterminate(3, thirdFailure)),
-                    firstFailure);
+                            BatchItemOutcome.indeterminate(3, thirdFailure)));
             case 2 -> throw new BatchDeliveryException(
                     "Retry retained only third",
+                    thirdFailure,
                     batch,
                     List.of(BatchItemOutcome.succeeded(0),
-                            BatchItemOutcome.indeterminate(1, thirdFailure)),
-                    thirdFailure);
+                            BatchItemOutcome.indeterminate(1, thirdFailure)));
             default -> {
             }
             }
@@ -1057,7 +1057,7 @@ class ChannelRegistryFailurePolicyTest {
         AtomicInteger attempts = new AtomicInteger();
         ConsumerRegistration source = batchRegistration("orders", batch -> {
             attempts.incrementAndGet();
-            throw BatchDeliveryException.notAttempted(
+            throw BatchDeliveryExceptionSupport.notAttempted(
                     "Source deferred every item",
                     batch,
                     new MessagingException("not admitted"));
@@ -1115,6 +1115,51 @@ class ChannelRegistryFailurePolicyTest {
                                                        () -> deliver(incoming.context("orders"), root));
 
         assertThat(failure.batch(), sameInstance(root));
+        assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(List.of(BatchItemStatus.SUCCEEDED,
+                              BatchItemStatus.INDETERMINATE,
+                              BatchItemStatus.NOT_ATTEMPTED)));
+        assertThat(failure.outcome(1).failure().orElseThrow(), sameInstance(processingFailure));
+        assertThat(handled, is(List.of("first", "poison")));
+    }
+
+    @Test
+    void testTryStartTerminalFailureReportsExactRetainedBatch() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        IllegalStateException processingFailure = new IllegalStateException("poison failed");
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+                                String entity = (String) message.entity();
+                                handled.add(entity);
+                                if (entity.equals("poison")) {
+                                    throw processingFailure;
+                                }
+                            })),
+                            yaml("""
+                                    helidon:
+                                      messaging:
+                                        incoming:
+                                          orders:
+                                            connector: test-in
+                                            failure:
+                                              retry:
+                                                max-attempts: 1
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"),
+                                                                 Message.create("poison"),
+                                                                 Message.create("deferred")));
+
+        BatchDeliveryException failure;
+        try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
+             ConnectorDelivery delivery = reservation.tryStart(root).orElseThrow()) {
+            failure = assertThrows(BatchDeliveryException.class,
+                                   () -> delivery.await(Duration.ofSeconds(2)));
+        }
+
+        assertThat(failure.batch(), sameInstance(root));
+        assertThat(failure.outcomes().stream().map(BatchItemOutcome::index).toList(), is(List.of(0, 1, 2)));
         assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
                    is(List.of(BatchItemStatus.SUCCEEDED,
                               BatchItemStatus.INDETERMINATE,
@@ -1274,7 +1319,7 @@ class ChannelRegistryFailurePolicyTest {
         ConsumerRegistration source = batchRegistration(
                 "orders",
                 batch -> {
-                    throw BatchDeliveryException.indeterminate("Source delivery", batch, processingFailure);
+                    throw BatchDeliveryExceptionSupport.indeterminate("Source delivery", batch, processingFailure);
                 });
         ChannelRegistry registry = new ChannelRegistry(List.of(source, deadLetterConsumer),
                             yaml("""
@@ -1354,7 +1399,7 @@ class ChannelRegistryFailurePolicyTest {
         CountDownLatch secondEntered = new CountDownLatch(1);
         List<String> routed = new CopyOnWriteArrayList<>();
         ConsumerRegistration source = batchRegistration("orders", batch -> {
-            throw BatchDeliveryException.indeterminate("Source delivery", batch, processingFailure);
+            throw BatchDeliveryExceptionSupport.indeterminate("Source delivery", batch, processingFailure);
         });
         ConsumerRegistration deadLetter = registration("orders-dlq", message -> {
             String entity = (String) message.entity();
@@ -1896,11 +1941,11 @@ class ChannelRegistryFailurePolicyTest {
                                                                   RuntimeException mappingFailure) {
         return new BatchDeliveryException(
                 "Partial mapping failure",
+                mappingFailure,
                 batch,
                 List.of(BatchItemOutcome.notAttempted(0),
                         BatchItemOutcome.failed(1, mappingFailure),
-                        BatchItemOutcome.notAttempted(2)),
-                mappingFailure);
+                        BatchItemOutcome.notAttempted(2)));
     }
 
     private static Message<String> customMessage(String entity) {
@@ -2106,7 +2151,7 @@ class ChannelRegistryFailurePolicyTest {
                     try {
                         consumer.accept(batch.get(i));
                     } catch (RuntimeException e) {
-                        throw BatchDeliveryException.sequential("Test consumer", batch, i, e);
+                        throw BatchDeliveryExceptionSupport.sequential("Test consumer", batch, i, e);
                     }
                 }
             }

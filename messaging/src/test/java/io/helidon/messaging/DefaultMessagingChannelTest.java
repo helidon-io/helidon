@@ -86,9 +86,9 @@ class DefaultMessagingChannelTest {
         builder.batchSink(channel, ignored -> firstOutputInvocations.incrementAndGet())
                 .batchSink(channel, batch -> {
                     throw new BatchDeliveryException("second output failed",
+                                                     itemFailure,
                                                      batch,
-                                                     List.of(BatchItemOutcome.failed(0, itemFailure)),
-                                                     itemFailure);
+                                                     List.of(BatchItemOutcome.failed(0, itemFailure)));
                 });
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("message")));
 
@@ -116,12 +116,12 @@ class DefaultMessagingChannelTest {
                 .batchSink(channel, batch -> {
                     throw new BatchDeliveryException(
                             "mixed second output failure",
+                            itemFailure,
                             batch,
                             List.of(BatchItemOutcome.succeeded(0),
                                     BatchItemOutcome.failed(1, itemFailure),
                                     BatchItemOutcome.notAttempted(2),
-                                    BatchItemOutcome.indeterminate(3, itemFailure)),
-                            itemFailure);
+                                    BatchItemOutcome.indeterminate(3, itemFailure)));
                 })
                 .batchSink(channel, ignored -> laterOutputInvocations.incrementAndGet());
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("first"),

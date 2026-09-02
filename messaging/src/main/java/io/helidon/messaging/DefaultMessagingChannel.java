@@ -110,7 +110,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
             emitBatchObject(messages);
         } catch (RuntimeException failure) {
             if (DeliveryEngine.isPreDispatchRejection(failure)) {
-                throw BatchDeliveryException.notAttempted("Messaging nested delivery admission", messages, failure);
+                throw BatchDeliveryExceptionSupport.notAttempted("Messaging nested delivery admission", messages, failure);
             }
             throw failure;
         }
@@ -257,7 +257,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
             try {
                 output.accept(batch.get(i));
             } catch (RuntimeException e) {
-                throw BatchDeliveryException.sequential("Messaging per-message output", batch, i, e);
+                throw BatchDeliveryExceptionSupport.sequential("Messaging per-message output", batch, i, e);
             }
         }
     }
@@ -268,13 +268,13 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
                 && batch.sameDelivery(actualFailure.batch())) {
             batchFailure = actualFailure;
         } else {
-            return BatchDeliveryException.indeterminate("Messaging batch output", batch, failure);
+            return BatchDeliveryExceptionSupport.indeterminate("Messaging batch output", batch, failure);
         }
         if (batchFailure.batch() != batch) {
             batchFailure = new BatchDeliveryException(batchFailure.getMessage(),
+                                                      batchFailure,
                                                       batch,
-                                                      batchFailure.outcomes(),
-                                                      batchFailure);
+                                                      batchFailure.outcomes());
         }
         boolean earlierOutputCompleted = outputIndex > 0;
         boolean laterOutputSkipped = outputIndex + 1 < outputs.size();
@@ -291,7 +291,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
                                  ? BatchItemOutcome.indeterminate(outcome.index(), failure)
                                  : outcome);
         }
-        return new BatchDeliveryException(batchFailure.getMessage(), batch, outcomes, batchFailure);
+        return new BatchDeliveryException(batchFailure.getMessage(), batchFailure, batch, outcomes);
     }
 
     private static final class StreamSource implements Runnable, Connector, DefaultMessagingGraph.DrainableSource {

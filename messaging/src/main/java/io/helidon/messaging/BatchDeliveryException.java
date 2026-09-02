@@ -16,7 +16,6 @@
 
 package io.helidon.messaging;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,168 +34,20 @@ public final class BatchDeliveryException extends MessagingException {
     /**
      * Create a structured batch failure.
      *
-     * @param message failure message
-     * @param batch original batch
-     * @param outcomes one ordered outcome for every original item
-     * @param cause primary cause
+     * @param message non-null failure message
+     * @param cause non-null primary cause
+     * @param batch non-null original batch
+     * @param outcomes non-null ordered outcome for every original item
+     * @throws NullPointerException if any argument or outcome is {@code null}
+     * @throws IllegalArgumentException if the outcomes do not align with the batch, or every outcome succeeded
      */
     public BatchDeliveryException(String message,
+                                  Throwable cause,
                                   MessageBatch<?> batch,
-                                  List<BatchItemOutcome> outcomes,
-                                  Throwable cause) {
-        super(message, cause);
-        this.batch = Objects.requireNonNull(batch);
+                                  List<BatchItemOutcome> outcomes) {
+        super(Objects.requireNonNull(message, "message"), Objects.requireNonNull(cause, "cause"));
+        this.batch = Objects.requireNonNull(batch, "batch");
         this.outcomes = validate(batch, outcomes);
-    }
-
-    /**
-     * Create a sequential failure with a successful prefix, one indeterminate item, and an unattempted suffix.
-     *
-     * @param operation operation description
-     * @param batch original batch
-     * @param failedIndex index whose operation threw
-     * @param cause failure
-     * @return structured failure
-     */
-    public static BatchDeliveryException sequential(String operation,
-                                                    MessageBatch<?> batch,
-                                                    int failedIndex,
-                                                    Throwable cause) {
-        Objects.requireNonNull(batch);
-        if (failedIndex < 0 || failedIndex >= batch.size()) {
-            throw new IndexOutOfBoundsException(failedIndex);
-        }
-        List<BatchItemOutcome> outcomes = new ArrayList<>(batch.size());
-        for (int i = 0; i < batch.size(); i++) {
-            if (i < failedIndex) {
-                outcomes.add(BatchItemOutcome.succeeded(i));
-            } else if (i == failedIndex) {
-                outcomes.add(BatchItemOutcome.indeterminate(i, cause));
-            } else {
-                outcomes.add(BatchItemOutcome.notAttempted(i));
-            }
-        }
-        return new BatchDeliveryException(operation + " failed at batch index " + failedIndex,
-                                          batch,
-                                          outcomes,
-                                          cause);
-    }
-
-    /**
-     * Create a processing failure for an invoked prefix whose downstream completion is indeterminate, followed by an
-     * untouched suffix.
-     *
-     * @param operation operation description
-     * @param batch original batch
-     * @param failedIndex last invoked index, whose operation threw
-     * @param cause failure
-     * @return structured failure
-     */
-    public static BatchDeliveryException attemptedPrefix(String operation,
-                                                         MessageBatch<?> batch,
-                                                         int failedIndex,
-                                                         Throwable cause) {
-        Objects.requireNonNull(batch);
-        if (failedIndex < 0 || failedIndex >= batch.size()) {
-            throw new IndexOutOfBoundsException(failedIndex);
-        }
-        List<BatchItemOutcome> outcomes = new ArrayList<>(batch.size());
-        for (int i = 0; i < batch.size(); i++) {
-            outcomes.add(i <= failedIndex
-                                 ? BatchItemOutcome.indeterminate(i, cause)
-                                 : BatchItemOutcome.notAttempted(i));
-        }
-        return new BatchDeliveryException(operation + " failed at batch index " + failedIndex,
-                                          batch,
-                                          outcomes,
-                                          cause);
-    }
-
-    /**
-     * Create a failure for which every item outcome is indeterminate.
-     *
-     * @param operation operation description
-     * @param batch original batch
-     * @param cause failure
-     * @return structured failure
-     */
-    public static BatchDeliveryException indeterminate(String operation,
-                                                       MessageBatch<?> batch,
-                                                       Throwable cause) {
-        Objects.requireNonNull(batch);
-        List<BatchItemOutcome> outcomes = new ArrayList<>(batch.size());
-        for (int i = 0; i < batch.size(); i++) {
-            outcomes.add(BatchItemOutcome.indeterminate(i, cause));
-        }
-        return new BatchDeliveryException(operation + " failed with indeterminate batch outcome",
-                                          batch,
-                                          outcomes,
-                                          cause);
-    }
-
-    /**
-     * Create a failure that occurred before any item was attempted.
-     *
-     * @param operation operation description
-     * @param batch original batch
-     * @param cause failure
-     * @return structured failure
-     */
-    public static BatchDeliveryException notAttempted(String operation,
-                                                      MessageBatch<?> batch,
-                                                      Throwable cause) {
-        Objects.requireNonNull(batch);
-        List<BatchItemOutcome> outcomes = new ArrayList<>(batch.size());
-        for (int i = 0; i < batch.size(); i++) {
-            outcomes.add(BatchItemOutcome.notAttempted(i));
-        }
-        return new BatchDeliveryException(operation + " failed before attempting the batch",
-                                          batch,
-                                          outcomes,
-                                          cause);
-    }
-
-    /**
-     * Align a failure with the exact batch supplied to a failure policy.
-     * <p>
-     * A structured failure produced for an ancestor batch is projected through the retained delivery lineage and its
-     * outcomes are reindexed to the target batch. An unrelated structured failure cannot be indexed safely and is
-     * therefore represented conservatively as indeterminate for the complete target batch. Non-structured failures are
-     * returned unchanged. Projection preserves the original primary cause and suppressed diagnostics.
-     *
-     * @param batch exact failure-policy batch
-     * @param failure delivery failure
-     * @return failure aligned with {@code batch}
-     */
-    public static RuntimeException align(MessageBatch<?> batch, RuntimeException failure) {
-        MessageBatch<?> actualBatch = Objects.requireNonNull(batch);
-        RuntimeException actualFailure = Objects.requireNonNull(failure);
-        if (!(actualFailure instanceof BatchDeliveryException batchFailure)) {
-            return actualFailure;
-        }
-        if (batchFailure.batch == actualBatch) {
-            return batchFailure;
-        }
-
-        List<BatchItemOutcome> alignedOutcomes = new ArrayList<>(actualBatch.size());
-        for (int i = 0; i < actualBatch.size(); i++) {
-            int sourceIndex = actualBatch.lineageIndexIn(batchFailure.batch, i);
-            if (sourceIndex < 0) {
-                return indeterminate("Batch delivery failure alignment", actualBatch, batchFailure);
-            }
-            alignedOutcomes.add(reindex(i, batchFailure.outcome(sourceIndex)));
-        }
-        if (alignedOutcomes.stream().allMatch(outcome -> outcome.status() == BatchItemStatus.SUCCEEDED)) {
-            return indeterminate("Batch delivery failure alignment", actualBatch, batchFailure);
-        }
-        BatchDeliveryException aligned = new BatchDeliveryException(batchFailure.getMessage(),
-                                                                     actualBatch,
-                                                                     alignedOutcomes,
-                                                                     batchFailure.getCause());
-        for (Throwable suppressed : batchFailure.getSuppressed()) {
-            aligned.addSuppressed(suppressed);
-        }
-        return aligned;
     }
 
     /**
@@ -227,17 +78,8 @@ public final class BatchDeliveryException extends MessagingException {
         return outcomes.get(index);
     }
 
-    private static BatchItemOutcome reindex(int index, BatchItemOutcome outcome) {
-        return switch (outcome.status()) {
-        case SUCCEEDED -> BatchItemOutcome.succeeded(index);
-        case FAILED -> BatchItemOutcome.failed(index, outcome.failure().orElse(null));
-        case NOT_ATTEMPTED -> BatchItemOutcome.notAttempted(index);
-        case INDETERMINATE -> BatchItemOutcome.indeterminate(index, outcome.failure().orElse(null));
-        };
-    }
-
     private static List<BatchItemOutcome> validate(MessageBatch<?> batch, List<BatchItemOutcome> outcomes) {
-        List<BatchItemOutcome> snapshot = List.copyOf(Objects.requireNonNull(outcomes));
+        List<BatchItemOutcome> snapshot = List.copyOf(Objects.requireNonNull(outcomes, "outcomes"));
         if (snapshot.size() != batch.size()) {
             throw new IllegalArgumentException("Batch outcome count " + snapshot.size()
                                                        + " does not match batch size " + batch.size());

@@ -132,7 +132,7 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
                     Message<I> message = batch.get(i);
                     results.add(Message.create(actualProcessor.apply(source.payloadType().cast(message.entity()))));
                 } catch (RuntimeException e) {
-                    throw BatchDeliveryException.attemptedPrefix("Messaging payload processor", batch, i, e);
+                    throw BatchDeliveryExceptionSupport.attemptedPrefix("Messaging payload processor", batch, i, e);
                 }
             }
             actualTarget.emitBatchObject(batch.derive(results));
@@ -156,7 +156,7 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
                 try {
                     results.add(Objects.requireNonNull(actualProcessor.apply(batch.get(i)), "Message processor result"));
                 } catch (RuntimeException e) {
-                    throw BatchDeliveryException.attemptedPrefix("Messaging message processor", batch, i, e);
+                    throw BatchDeliveryExceptionSupport.attemptedPrefix("Messaging message processor", batch, i, e);
                 }
             }
             actualTarget.emitBatchObject(batch.derive(results));

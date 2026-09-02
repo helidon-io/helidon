@@ -27,6 +27,7 @@ import java.util.Set;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.messaging.BatchDeliveryException;
+import io.helidon.messaging.BatchItemOutcome;
 import io.helidon.messaging.ConsumerRegistration;
 import io.helidon.messaging.Emitter;
 import io.helidon.messaging.EmitterRegistration;
@@ -72,6 +73,7 @@ class DeclarativeCodegenMessagingTypesTest {
         checkField(toCheck, checked, fields, "ARRAY_LIST", ArrayList.class);
         checkField(toCheck, checked, fields, "CONSUMER_REGISTRATION", ConsumerRegistration.class);
         checkField(toCheck, checked, fields, "BATCH_DELIVERY_EXCEPTION", BatchDeliveryException.class);
+        checkField(toCheck, checked, fields, "BATCH_ITEM_OUTCOME", BatchItemOutcome.class);
         checkField(toCheck, checked, fields, "EMITTER", Emitter.class);
         checkField(toCheck, checked, fields, "EMITTER_REGISTRATION", EmitterRegistration.class);
         checkField(toCheck, checked, fields, "ENTITY", Messaging.Entity.class);

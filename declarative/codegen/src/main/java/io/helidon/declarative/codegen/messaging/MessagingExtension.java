@@ -311,15 +311,13 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .decreaseContentPadding()
                 .addContentLine("} catch (RuntimeException e) {")
                 .increaseContentPadding()
-                .addContent("throw ")
-                .addContent(MessagingTypes.BATCH_DELIVERY_EXCEPTION)
-                .addContent(".sequential(")
-                .addContentLiteral("Messaging consumer " + handlerId(typeInfo, element))
-                .addContentLine(", messages, index, e);")
+                .addContentLine("throw sequentialFailure(messages, index, e);")
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .decreaseContentPadding()
                 .addContentLine("}"));
+
+        addSequentialFailureMethod(classModel, "Messaging consumer " + handlerId(typeInfo, element));
 
         classModel.addMethod(dispatch -> dispatch
                 .accessModifier(AccessModifier.PRIVATE)
@@ -356,16 +354,14 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .decreaseContentPadding()
                 .addContentLine("} catch (RuntimeException e) {")
                 .increaseContentPadding()
-                .addContent("throw ")
-                .addContent(MessagingTypes.BATCH_DELIVERY_EXCEPTION)
-                .addContent(".attemptedPrefix(")
-                .addContentLiteral("Messaging processor " + handlerId(typeInfo, element))
-                .addContentLine(", messages, index, e);")
+                .addContentLine("throw attemptedPrefixFailure(messages, index, e);")
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("return messages.derive(processedMessages);"));
+
+        addAttemptedPrefixFailureMethod(classModel, "Messaging processor " + handlerId(typeInfo, element));
 
         classModel.addMethod(process -> process
                 .accessModifier(AccessModifier.PRIVATE)
@@ -375,6 +371,100 @@ class MessagingExtension implements RegistryCodegenExtension {
                         .type(messageWildcardType())
                         .name("message"))
                 .update(method -> addHandlerInvocation(method, typeInfo, element, singleton)));
+    }
+
+    private void addSequentialFailureMethod(ClassModel.Builder classModel, String operation) {
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .returnType(MessagingTypes.BATCH_DELIVERY_EXCEPTION)
+                .name("sequentialFailure")
+                .addParameter(messages -> messages
+                        .type(messageBatchWildcardType())
+                        .name("messages"))
+                .addParameter(failedIndex -> failedIndex
+                        .type(TypeNames.PRIMITIVE_INT)
+                        .name("failedIndex"))
+                .addParameter(cause -> cause
+                        .type(DeclarativeTypes.THROWABLE)
+                        .name("cause"))
+                .addContent("var outcomes = new ")
+                .addContent(MessagingTypes.ARRAY_LIST)
+                .addContent("<")
+                .addContent(MessagingTypes.BATCH_ITEM_OUTCOME)
+                .addContentLine(">(messages.size());")
+                .addContentLine("for (int index = 0; index < messages.size(); index++) {")
+                .increaseContentPadding()
+                .addContentLine("if (index < failedIndex) {")
+                .increaseContentPadding()
+                .addContent("outcomes.add(")
+                .addContent(MessagingTypes.BATCH_ITEM_OUTCOME)
+                .addContentLine(".succeeded(index));")
+                .decreaseContentPadding()
+                .addContentLine("} else if (index == failedIndex) {")
+                .increaseContentPadding()
+                .addContent("outcomes.add(")
+                .addContent(MessagingTypes.BATCH_ITEM_OUTCOME)
+                .addContentLine(".indeterminate(index, cause));")
+                .decreaseContentPadding()
+                .addContentLine("} else {")
+                .increaseContentPadding()
+                .addContent("outcomes.add(")
+                .addContent(MessagingTypes.BATCH_ITEM_OUTCOME)
+                .addContentLine(".notAttempted(index));")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("return new ")
+                .addContent(MessagingTypes.BATCH_DELIVERY_EXCEPTION)
+                .addContent("(")
+                .addContentLiteral(operation + " failed at batch index ")
+                .addContentLine(" + failedIndex, cause, messages, outcomes);"));
+    }
+
+    private void addAttemptedPrefixFailureMethod(ClassModel.Builder classModel, String operation) {
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .returnType(MessagingTypes.BATCH_DELIVERY_EXCEPTION)
+                .name("attemptedPrefixFailure")
+                .addParameter(messages -> messages
+                        .type(messageBatchWildcardType())
+                        .name("messages"))
+                .addParameter(failedIndex -> failedIndex
+                        .type(TypeNames.PRIMITIVE_INT)
+                        .name("failedIndex"))
+                .addParameter(cause -> cause
+                        .type(DeclarativeTypes.THROWABLE)
+                        .name("cause"))
+                .addContent("var outcomes = new ")
+                .addContent(MessagingTypes.ARRAY_LIST)
+                .addContent("<")
+                .addContent(MessagingTypes.BATCH_ITEM_OUTCOME)
+                .addContentLine(">(messages.size());")
+                .addContentLine("for (int index = 0; index < messages.size(); index++) {")
+                .increaseContentPadding()
+                .addContentLine("if (index <= failedIndex) {")
+                .increaseContentPadding()
+                .addContent("outcomes.add(")
+                .addContent(MessagingTypes.BATCH_ITEM_OUTCOME)
+                .addContentLine(".indeterminate(index, cause));")
+                .decreaseContentPadding()
+                .addContentLine("} else {")
+                .increaseContentPadding()
+                .addContent("outcomes.add(")
+                .addContent(MessagingTypes.BATCH_ITEM_OUTCOME)
+                .addContentLine(".notAttempted(index));")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("return new ")
+                .addContent(MessagingTypes.BATCH_DELIVERY_EXCEPTION)
+                .addContent("(")
+                .addContentLiteral(operation + " failed at batch index ")
+                .addContentLine(" + failedIndex, cause, messages, outcomes);"));
     }
 
     private void addHandlerInvocation(Method.Builder method,
