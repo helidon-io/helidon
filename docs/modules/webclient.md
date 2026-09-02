@@ -565,10 +565,10 @@ services:
 - `telemetry metrics` and `tracing`
 
   ```xml [pom.xml]
-  <dependencdy>
+  <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-telemetry</artifactId>
-  </dependencdy>
+  </dependency>
   ```
 
 - `security`

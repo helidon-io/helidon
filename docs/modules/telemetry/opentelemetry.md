@@ -428,16 +428,16 @@ OpenTelemetry provides other exporters, often used for debugging:
 
 - `console`
 
-  Writes telemetry data at the `INFO` level using the `java.util.logging.Logger`
-  for `io.opentelemetry.exporter.logging.Logging{signal}Expoerter`
+  Uses `LoggingSpanExporter` for spans, `LoggingMetricExporter` for metrics, and
+  `SystemOutLogRecordExporter` for logs.
 
-- `logging-otlp`
+- `logging_otlp`
 
   Writes telemetry data in JSON format to the logger for the particular
   OpenTelemetry implementation class (e.g., `OtlpJsonLoggingMetricExporter`).
 
-The `console` and `logging-otlp` have no configuration that is common across all
-signals.
+The `console` and `logging_otlp` exporters have no configuration that is common
+across all signals.
 
 > [!NOTE]
 > You need to add dependencies to your project for the exporters your
@@ -455,36 +455,19 @@ If you need to use an exporter that is *not* in the table:
   exporter instance to the builder.
 
 In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
+See also the [OpenTelemetry exporter documentation](https://opentelemetry.io/docs/languages/java/sdk/#spanexporter).
 
-<table>
-<thead>
-<tr>
-<th>Exporter type</th>
-<th>OpenTelemetry Java Type</th>
-<th>Artifact ID to add - <code>see</code>also the <a href="https://opentelemetry.io/docs/languages/java/sdk/#spanexporter">OpenTelemetry documentation</a></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td rowspan="2"><code>otlp</code></td>
-<td><code>OtlpGrpc{signal}Exporter</code></td>
-<td rowspan="2" ><code>opentelemetry-exporter-otlp</code></td>
-</tr>
-<tr>
-<td><code>OtlpHttp{signal}Exporter</code></td>
-</tr>
-<tr>
-<td><code>console</code></td>
-<td><code>Logging{signal}Exporter</code></td>
-<td rowspan="2" ><code>opentelemetry-exporter-logging</code></td>
-</tr>
-<tr>
-<td><code>logging_otlp</code></td>
-<td><code>OtlpJsonLogging{signal}Exporter</code>
-<code>SystemOutLogRecordExporter</code></td>
-</tr>
-</tbody>
-</table>
+| Exporter type | Signal | OpenTelemetry Java type | Artifact ID to add |
+|---------------|--------|-------------------------|--------------------|
+| `otlp` | Tracing | `OtlpGrpcSpanExporter`, `OtlpHttpSpanExporter` | `opentelemetry-exporter-otlp` |
+| `otlp` | Metrics | `OtlpGrpcMetricExporter`, `OtlpHttpMetricExporter` | `opentelemetry-exporter-otlp` |
+| `otlp` | Logging | `OtlpGrpcLogRecordExporter`, `OtlpHttpLogRecordExporter` | `opentelemetry-exporter-otlp` |
+| `console` | Tracing | `LoggingSpanExporter` | `opentelemetry-exporter-logging` |
+| `console` | Metrics | `LoggingMetricExporter` | `opentelemetry-exporter-logging` |
+| `console` | Logging | `SystemOutLogRecordExporter` | `opentelemetry-exporter-logging` |
+| `logging_otlp` | Tracing | `OtlpJsonLoggingSpanExporter` | `opentelemetry-exporter-logging-otlp` |
+| `logging_otlp` | Metrics | `OtlpJsonLoggingMetricExporter` | `opentelemetry-exporter-logging-otlp` |
+| `logging_otlp` | Logging | `OtlpJsonLoggingLogRecordExporter` | `opentelemetry-exporter-logging-otlp` |
 
 ### Assigning Exporters
 

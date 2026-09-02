@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class HeaderNamesTest {
     private static final Class<HeaderNames> clazz = HeaderNames.class;
+    @SuppressWarnings("removal")
     private static final List<HeaderName> NON_INDEXED_HEADERS = List.of(HeaderNames.ACCEPT_CHARSET,
                                                                         HeaderNames.PUBLIC_KEY_PINS,
                                                                         HeaderNames.SET_COOKIE2,

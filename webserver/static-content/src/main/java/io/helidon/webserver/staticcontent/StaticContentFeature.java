@@ -75,10 +75,10 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
     }
 
     /**
-     * Create Access log support configured from {@link io.helidon.config.Config}.
+     * Create a static content feature configured from {@link io.helidon.config.Config}.
      *
-     * @param config to configure a new access log support instance
-     * @return a new access log support to be registered with WebServer routing
+     * @param config configuration for a new static content feature
+     * @return a new static content feature to be registered with WebServer routing
      */
     public static StaticContentFeature create(Config config) {
         return builder()
@@ -87,7 +87,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
     }
 
     /**
-     * A new fluent API builder to create Access log support instance.
+     * A new fluent API builder to create a static content feature.
      *
      * @return a new builder
      */

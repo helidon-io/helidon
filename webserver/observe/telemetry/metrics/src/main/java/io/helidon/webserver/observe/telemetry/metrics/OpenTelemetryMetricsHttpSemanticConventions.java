@@ -109,7 +109,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     private static DoubleHistogram httpRequestDuration(Meter meter) {
         return meter
                 .histogramBuilder(TIMER_NAME)
-                .setDescription("HTTP request dureation")
+                .setDescription("HTTP request duration")
                 .setUnit("s") // seconds
                 .setExplicitBucketBoundariesAdvice(BUCKET_BOUNDARIES)
                 .build();

@@ -321,11 +321,12 @@ public interface ServerResponse {
     }
 
     /**
-     * Returns a sink from this response based on the sink type, if available.
+     * Returns a sink from this response based on the sink type.
      *
      * @param sinkType type of sink
-     * @return sink or {@code null} if not available
      * @param <T> type of sink returned
+     * @return sink
+     * @throws UnsupportedOperationException if no sink is available for the requested type
      */
     default <T extends Sink<?>> T sink(GenericType<T> sinkType) {
         throw new UnsupportedOperationException("No sink available for type " + sinkType);

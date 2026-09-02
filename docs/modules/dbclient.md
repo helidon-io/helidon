@@ -191,10 +191,10 @@ or as `$<name>` in the MongoDB statement:
     "operation": "update",
     "value": {
       "$set": {
-        "name": "$name"
+        "name": $name
       }
     },
-    "query": { "id": "$id" }
+    "query": { "id": $id }
 }
 ```
 
@@ -239,9 +239,15 @@ query does not run in transaction:
 dbClient.execute()
     .createUpdate("""
         {
-            "collection": "pokemons","
-            "value":{$set:{"name":$name}},
-            "query":{id:$id}
+            "collection": "pokemons",
+            "value": {
+                "$set": {
+                    "name": $name
+                }
+            },
+            "query": {
+                "id": $id
+            }
         }
         """)
     .addParam("id", 1)
