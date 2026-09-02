@@ -275,6 +275,21 @@ class Http2HeadersTest {
         assertThat(http2Headers.authority(), is(authority));
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "service+name:443, service%2Bname:443",
+            "service%2Bname:443, service+name:443"
+    })
+    void testRequestRejectsReservedEncodingMismatchOnOrdinaryConnect(String authority, String host) {
+        String hexEncoded = connectRequestHeaders(authority, host);
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
     @Test
     void testRequestRejectsUnicodeCaseFoldedHostOnOrdinaryConnect() {
         String hexEncoded = literalWithIndexedName(2, "CONNECT")

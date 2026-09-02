@@ -504,6 +504,36 @@ public class HeadersServerTest {
         }
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "service+name:443, service%2Bname:443",
+            "service%2Bname:443, service+name:443"
+    })
+    void ordinaryConnectRejectsReservedEncodingMismatchAndKeepsConnectionOpen(String authority,
+                                                                               String host,
+                                                                               Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            WritableHeaders<?> headers = WritableHeaders.create();
+            Http2Headers connectHeaders = Http2Headers.create(headers);
+            headers.add(HeaderNames.HOST, host);
+            connectHeaders.method(Method.CONNECT);
+            connectHeaders.authority(authority);
+            connection.writer()
+                    .writeHeaders(connectHeaders,
+                                  1,
+                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                  FlowControl.Outbound.NOOP);
+
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
+
+            Http2RstStream rstStream = connection.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.PROTOCOL));
+            assertConnectionReusable(connection);
+        }
+    }
+
     @Test
     void ordinaryConnectRejectsUnicodeCaseFoldedHostAndKeepsConnectionOpen(Http2TestClient testClient) {
         try (Http2TestConnection connection = testClient.createConnection()) {
