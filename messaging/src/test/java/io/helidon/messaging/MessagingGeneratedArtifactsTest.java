@@ -48,16 +48,32 @@ class MessagingGeneratedArtifactsTest {
     @Test
     void builderDecoratorsRemainImplementationDetails() throws IOException {
         assertThat(FailurePolicyBlueprint.class.getDeclaredClasses().length, is(0));
+        assertThat(RetryConfigBlueprint.class.getDeclaredClasses().length, is(0));
+        assertThat(DeadLetterConfigBlueprint.class.getDeclaredClasses().length, is(0));
         assertThat(MessagingExecutionConfigBlueprint.class.getDeclaredClasses().length, is(0));
         assertThat(Modifier.isPublic(FailurePolicyBuilderDecorator.class.getModifiers()), is(false));
+        assertThat(Modifier.isPublic(RetryConfigBuilderDecorator.class.getModifiers()), is(false));
+        assertThat(Modifier.isPublic(DeadLetterConfigBuilderDecorator.class.getModifiers()), is(false));
         assertThat(Modifier.isPublic(MessagingExecutionConfigBuilderDecorator.class.getModifiers()), is(false));
         assertThat(hasPublicBuilderDecorator(FailurePolicy.class), is(false));
+        assertThat(hasPublicBuilderDecorator(RetryConfig.class), is(false));
+        assertThat(hasPublicBuilderDecorator(DeadLetterConfig.class), is(false));
         assertThat(hasPublicBuilderDecorator(MessagingExecutionConfig.class), is(false));
 
         String failurePolicySource = Files.readString(GENERATED_SOURCES.resolve("FailurePolicy.java"));
         assertThat(failurePolicySource,
                    containsString("new FailurePolicyBuilderDecorator().decorate(this)"));
         assertThat(failurePolicySource.contains("FailurePolicyBlueprint.BuilderDecorator"), is(false));
+
+        String retryConfigSource = Files.readString(GENERATED_SOURCES.resolve("RetryConfig.java"));
+        assertThat(retryConfigSource,
+                   containsString("new RetryConfigBuilderDecorator().decorate(this)"));
+        assertThat(retryConfigSource.contains("RetryConfigBlueprint.BuilderDecorator"), is(false));
+
+        String deadLetterConfigSource = Files.readString(GENERATED_SOURCES.resolve("DeadLetterConfig.java"));
+        assertThat(deadLetterConfigSource,
+                   containsString("new DeadLetterConfigBuilderDecorator().decorate(this)"));
+        assertThat(deadLetterConfigSource.contains("DeadLetterConfigBlueprint.BuilderDecorator"), is(false));
 
         String executionConfigSource = Files.readString(GENERATED_SOURCES.resolve("MessagingExecutionConfig.java"));
         assertThat(executionConfigSource,
@@ -93,18 +109,29 @@ class MessagingGeneratedArtifactsTest {
         assertThat(failure.prefix(), is(Optional.empty()));
         Map<String, CmOption> failureOptions = options(failure);
         assertThat(failureOptions.keySet(),
-                   is(Set.of("dead-letter.channel", "on-exhausted", "retry.delay", "retry.max-attempts")));
-        assertOption(failureOptions, "dead-letter.channel", "java.lang.String", null, false);
+                   is(Set.of("dead-letter", "on-exhausted", "retry")));
+        assertOption(failureOptions, "dead-letter", DeadLetterConfig.class.getName(), null, false);
         assertOption(failureOptions, "on-exhausted", FailureDisposition.class.getName(), "FAIL", false);
-        assertOption(failureOptions, "retry.delay", "java.time.Duration", "PT1S", false);
-        assertOption(failureOptions, "retry.max-attempts", "java.lang.Integer", "0", false);
+        assertOption(failureOptions, "retry", RetryConfig.class.getName(), null, false);
         assertThat(allowedValues(failureOptions.get("on-exhausted")),
                    is(Set.of("FAIL", "DROP", "DEAD_LETTER")));
-        assertThat(failureOptions.get("retry.delay").description().orElseThrow(), containsString("Positive"));
-        assertThat(failureOptions.get("retry.max-attempts").description().orElseThrow(), containsString("zero"));
-        assertThat(failureOptions.get("retry.max-attempts").description().orElseThrow(), containsString("DROP"));
-        assertThat(failureOptions.get("retry.max-attempts").description().orElseThrow(), containsString("DEAD_LETTER"));
-        assertThat(failureOptions.get("dead-letter.channel").description().orElseThrow(), containsString("required"));
+
+        CmType retry = type(model, RetryConfig.class);
+        assertThat(retry.standalone(), is(false));
+        assertThat(retry.prefix(), is(Optional.empty()));
+        Map<String, CmOption> retryOptions = options(retry);
+        assertThat(retryOptions.keySet(), is(Set.of("delay", "max-attempts")));
+        assertOption(retryOptions, "delay", "java.time.Duration", "PT1S", false);
+        assertOption(retryOptions, "max-attempts", "java.lang.Integer", "0", false);
+        assertThat(retryOptions.get("delay").description().orElseThrow(), containsString("Positive"));
+        assertThat(retryOptions.get("max-attempts").description().orElseThrow(), containsString("unlimited"));
+
+        CmType deadLetter = type(model, DeadLetterConfig.class);
+        assertThat(deadLetter.standalone(), is(false));
+        assertThat(deadLetter.prefix(), is(Optional.empty()));
+        Map<String, CmOption> deadLetterOptions = options(deadLetter);
+        assertThat(deadLetterOptions.keySet(), is(Set.of("channel")));
+        assertOption(deadLetterOptions, "channel", "java.lang.String", null, true);
 
         CmType execution = type(model, MessagingExecutionConfig.class);
         assertThat(execution.standalone(), is(true));
@@ -137,6 +164,8 @@ class MessagingGeneratedArtifactsTest {
         String manifest = Files.readString(outputDirectory.resolve("manifest.adoc"));
         assertThat(manifest, containsString("io.helidon.messaging.spi.ConnectorConfig"));
         assertThat(manifest, containsString("io.helidon.messaging.FailurePolicy"));
+        assertThat(manifest, containsString("io.helidon.messaging.RetryConfig"));
+        assertThat(manifest, containsString("io.helidon.messaging.DeadLetterConfig"));
         assertThat(manifest, containsString("io.helidon.messaging.MessagingExecutionConfig"));
         assertThat(manifest, containsString("io.helidon.messaging.spi.ConnectorDirection"));
         assertThat(manifest, containsString("io.helidon.messaging.FailureDisposition"));
@@ -155,13 +184,22 @@ class MessagingGeneratedArtifactsTest {
         assertThat(connector, containsString("io_helidon_messaging_spi_ConnectorDirection.adoc"));
 
         String failure = Files.readString(outputDirectory.resolve("io_helidon_messaging_FailurePolicy.adoc"));
-        assertThat(failure, containsString("`retry.delay`"));
-        assertThat(failure, containsString("`PT1S`"));
-        assertThat(failure, containsString("`retry.max-attempts`"));
+        assertThat(failure, containsString("`retry`"));
+        assertThat(failure, containsString("io_helidon_messaging_RetryConfig.adoc"));
         assertThat(failure, containsString("`on-exhausted`"));
         assertThat(failure, containsString("io_helidon_messaging_FailureDisposition.adoc"));
-        assertThat(failure, containsString("`dead-letter.channel`"));
-        assertThat(failure, containsString("required"));
+        assertThat(failure, containsString("`dead-letter`"));
+        assertThat(failure, containsString("io_helidon_messaging_DeadLetterConfig.adoc"));
+
+        String retry = Files.readString(outputDirectory.resolve("io_helidon_messaging_RetryConfig.adoc"));
+        assertThat(retry, containsString("`delay`"));
+        assertThat(retry, containsString("`PT1S`"));
+        assertThat(retry, containsString("`max-attempts`"));
+
+        String deadLetter = Files.readString(
+                outputDirectory.resolve("io_helidon_messaging_DeadLetterConfig.adoc"));
+        assertThat(deadLetter, containsString("`channel`"));
+        assertThat(deadLetter, containsString("required"));
 
         String execution = Files.readString(
                 outputDirectory.resolve("io_helidon_messaging_MessagingExecutionConfig.adoc"));

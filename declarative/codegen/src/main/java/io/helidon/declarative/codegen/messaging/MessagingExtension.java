@@ -228,23 +228,22 @@ class MessagingExtension implements RegistryCodegenExtension {
                     .addContent(MessagingTypes.FAILURE_POLICY)
                     .addContentLine(".builder()")
                     .increaseContentPadding()
-                    .addContent(".retryDelay(")
+                    .addContent(".retry(retry -> retry.delay(")
                     .addContent(Duration.class)
                     .addContent(".parse(")
                     .addContentLiteral(policy.retryDelay())
-                    .addContentLine("))")
-                    .addContent(".maxAttempts(")
+                    .addContent(")).maxAttempts(")
                     .addContent(String.valueOf(policy.maxAttempts()))
-                    .addContentLine(")")
+                    .addContentLine("))")
                     .addContent(".onExhausted(")
                     .addContent(MessagingTypes.FAILURE_DISPOSITION)
                     .addContent(".")
                     .addContent(policy.onExhausted())
                     .addContentLine(")");
             policy.deadLetterChannel().ifPresent(channel -> field
-                    .addContent(".deadLetterChannel(")
+                    .addContent(".deadLetter(deadLetter -> deadLetter.channel(")
                     .addContentLiteral(channel)
-                    .addContentLine(")"));
+                    .addContentLine("))"));
             field.addContent(".build()")
                     .decreaseContentPadding();
         });

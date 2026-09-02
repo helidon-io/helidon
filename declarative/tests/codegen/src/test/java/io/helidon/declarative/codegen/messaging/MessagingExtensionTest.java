@@ -40,6 +40,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.messaging.ConsumerRegistration;
 import io.helidon.messaging.EmitterRegistration;
+import io.helidon.messaging.FailurePolicy;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.ProcessorRegistration;
@@ -650,10 +651,13 @@ class MessagingExtensionTest {
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "FailurePolicyConsumer__MessagingConsumer_");
         assertThat(source, source.contains("private static final FailurePolicy DECLARED_FAILURE_POLICY"), is(true));
-        assertThat(source, source.contains(".retryDelay(Duration.parse(\"PT0.25S\"))"), is(true));
-        assertThat(source, source.contains(".maxAttempts(3)"), is(true));
+        assertThat(source,
+                   source.contains(".retry(retry -> retry.delay(Duration.parse(\"PT0.25S\")).maxAttempts(3))"),
+                   is(true));
         assertThat(source, source.contains(".onExhausted(FailureDisposition.DEAD_LETTER)"), is(true));
-        assertThat(source, source.contains(".deadLetterChannel(\"orders-dlq\")"), is(true));
+        assertThat(source,
+                   source.contains(".deadLetter(deadLetter -> deadLetter.channel(\"orders-dlq\"))"),
+                   is(true));
         assertThat(source, source.contains("Optional<FailurePolicy> declaredFailurePolicy()"), is(true));
         assertThat(source, source.contains("return Optional.of(DECLARED_FAILURE_POLICY);"), is(true));
 
@@ -663,17 +667,16 @@ class MessagingExtensionTest {
             Class<?> registrationType = generatedClass(classLoader,
                                                        result,
                                                        "FailurePolicyConsumer__MessagingConsumer_");
-            Object registration = newRegistration(
+            ConsumerRegistration registration = (ConsumerRegistration) newRegistration(
                     registrationType,
                     (Object) null,
                     passthroughEntryPoints());
-            Optional<?> declared = (Optional<?>) invoke(registration, "declaredFailurePolicy");
-            Object policy = declared.orElseThrow();
-            assertThat(invoke(policy, "retryDelay"), is(Duration.ofMillis(250)));
-            assertThat(invoke(policy, "maxAttempts"), is(3));
-            assertThat(invoke(policy, "onExhausted").toString(), is("DEAD_LETTER"));
-            assertThat(invoke(policy, "deadLetterChannel"), is(Optional.of("orders-dlq")));
-            assertThat(((Optional<?>) invoke(registration, "declaredFailurePolicy")).orElseThrow(), sameInstance(policy));
+            FailurePolicy policy = registration.declaredFailurePolicy().orElseThrow();
+            assertThat(policy.retry().delay(), is(Duration.ofMillis(250)));
+            assertThat(policy.retry().maxAttempts(), is(3));
+            assertThat(policy.onExhausted().toString(), is("DEAD_LETTER"));
+            assertThat(policy.deadLetter().orElseThrow().channel(), is("orders-dlq"));
+            assertThat(registration.declaredFailurePolicy().orElseThrow(), sameInstance(policy));
         }
     }
 
@@ -704,8 +707,9 @@ class MessagingExtensionTest {
         assertCompilationSucceeded(result);
         String annotatedSource = generatedSource(result, "BareFailurePolicyConsumer__MessagingConsumer_");
         assertThat(annotatedSource, annotatedSource.contains("DECLARED_FAILURE_POLICY"), is(true));
-        assertThat(annotatedSource, annotatedSource.contains(".retryDelay(Duration.parse(\"PT1S\"))"), is(true));
-        assertThat(annotatedSource, annotatedSource.contains(".maxAttempts(0)"), is(true));
+        assertThat(annotatedSource,
+                   annotatedSource.contains(".retry(retry -> retry.delay(Duration.parse(\"PT1S\")).maxAttempts(0))"),
+                   is(true));
         assertThat(annotatedSource, annotatedSource.contains(".onExhausted(FailureDisposition.FAIL)"), is(true));
 
         String unannotatedSource = generatedSource(result, "UnannotatedConsumer__MessagingConsumer_");
@@ -715,22 +719,21 @@ class MessagingExtensionTest {
         try (URLClassLoader classLoader = new URLClassLoader(new URL[] {
                 result.classOutput().toUri().toURL()
         }, getClass().getClassLoader())) {
-            Object annotated = newRegistration(
+            ConsumerRegistration annotated = (ConsumerRegistration) newRegistration(
                     generatedClass(classLoader, result, "BareFailurePolicyConsumer__MessagingConsumer_"),
                     (Object) null,
                     passthroughEntryPoints());
-            Optional<?> declared = (Optional<?>) invoke(annotated, "declaredFailurePolicy");
-            Object policy = declared.orElseThrow();
-            assertThat(invoke(policy, "retryDelay"), is(Duration.ofSeconds(1)));
-            assertThat(invoke(policy, "maxAttempts"), is(0));
-            assertThat(invoke(policy, "onExhausted").toString(), is("FAIL"));
-            assertThat(invoke(policy, "deadLetterChannel"), is(Optional.empty()));
+            FailurePolicy policy = annotated.declaredFailurePolicy().orElseThrow();
+            assertThat(policy.retry().delay(), is(Duration.ofSeconds(1)));
+            assertThat(policy.retry().maxAttempts(), is(0));
+            assertThat(policy.onExhausted().toString(), is("FAIL"));
+            assertThat(policy.deadLetter(), is(Optional.empty()));
 
-            Object unannotated = newRegistration(
+            ConsumerRegistration unannotated = (ConsumerRegistration) newRegistration(
                     generatedClass(classLoader, result, "UnannotatedConsumer__MessagingConsumer_"),
                     (Object) null,
                     passthroughEntryPoints());
-            assertThat(invoke(unannotated, "declaredFailurePolicy"), is(Optional.empty()));
+            assertThat(unannotated.declaredFailurePolicy(), is(Optional.empty()));
         }
     }
 

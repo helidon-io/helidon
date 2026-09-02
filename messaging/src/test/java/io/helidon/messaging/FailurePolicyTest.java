@@ -18,6 +18,7 @@ package io.helidon.messaging;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,10 +42,10 @@ class FailurePolicyTest {
     void testDefaultsAndConfiguredValues() {
         FailurePolicy defaults = FailurePolicy.create();
 
-        assertThat(defaults.retryDelay(), is(Duration.ofSeconds(1)));
-        assertThat(defaults.maxAttempts(), is(0));
+        assertThat(defaults.retry().delay(), is(Duration.ofSeconds(1)));
+        assertThat(defaults.retry().maxAttempts(), is(0));
         assertThat(defaults.onExhausted(), is(FailureDisposition.FAIL));
-        assertThat(defaults.deadLetterChannel().isEmpty(), is(true));
+        assertThat(defaults.deadLetter().isEmpty(), is(true));
 
         FailurePolicy configured = FailurePolicy.create(Config.just("""
                 retry:
@@ -54,20 +56,26 @@ class FailurePolicyTest {
                   channel: orders-dlq
                 """, MediaTypes.APPLICATION_YAML));
 
-        assertThat(configured.retryDelay(), is(Duration.ofMillis(250)));
-        assertThat(configured.maxAttempts(), is(3));
+        assertThat(configured.retry().delay(), is(Duration.ofMillis(250)));
+        assertThat(configured.retry().maxAttempts(), is(3));
         assertThat(configured.onExhausted(), is(FailureDisposition.DEAD_LETTER));
-        assertThat(configured.deadLetterChannel().orElseThrow(), is("orders-dlq"));
+        assertThat(configured.deadLetter().orElseThrow().channel(), is("orders-dlq"));
     }
 
     @Test
     void testRetryValidation() {
         assertThrows(RuntimeException.class,
-                     () -> FailurePolicy.builder().retryDelay(Duration.ZERO).build());
+                     () -> FailurePolicy.builder()
+                             .retry(RetryConfig.builder().delay(Duration.ZERO).build())
+                             .build());
         assertThrows(RuntimeException.class,
-                     () -> FailurePolicy.builder().retryDelay(Duration.ofNanos(-1)).build());
+                     () -> FailurePolicy.builder()
+                             .retry(RetryConfig.builder().delay(Duration.ofNanos(-1)).build())
+                             .build());
         assertThrows(RuntimeException.class,
-                     () -> FailurePolicy.builder().maxAttempts(-1).build());
+                     () -> FailurePolicy.builder()
+                             .retry(RetryConfig.builder().maxAttempts(-1).build())
+                             .build());
         RuntimeException dropFailure = assertThrows(
                 RuntimeException.class,
                 () -> FailurePolicy.builder()
@@ -77,29 +85,140 @@ class FailurePolicyTest {
     }
 
     @Test
+    void testCustomRetryImplementationsCannotBypassPolicyValidation() {
+        RuntimeException nullDelay = assertThrows(
+                RuntimeException.class,
+                () -> FailurePolicy.builder().retry(retryConfig(null, 1)).build());
+        assertThat(nullDelay.getMessage(), containsString("delay must be greater than zero"));
+        RuntimeException zeroDelay = assertThrows(
+                RuntimeException.class,
+                () -> FailurePolicy.builder().retry(retryConfig(Duration.ZERO, 1)).build());
+        assertThat(zeroDelay.getMessage(), containsString("delay must be greater than zero"));
+        RuntimeException negativeAttempts = assertThrows(
+                RuntimeException.class,
+                () -> FailurePolicy.builder().retry(retryConfig(Duration.ofSeconds(1), -1)).build());
+        assertThat(negativeAttempts.getMessage(), containsString("max-attempts must be zero or greater"));
+    }
+
+    @Test
+    void testCustomNestedConfigsAreSnapshottedWithStableValueEquality() {
+        MutableRetryConfig mutableRetry = new MutableRetryConfig(Duration.ofMillis(25), 3);
+        MutableDeadLetterConfig mutableDeadLetter = new MutableDeadLetterConfig("orders-dlq");
+        FailurePolicy policy = FailurePolicy.builder()
+                .retry(mutableRetry)
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(mutableDeadLetter)
+                .build();
+        FailurePolicy equivalent = FailurePolicy.builder()
+                .retry(retryConfig(Duration.ofMillis(25), 3))
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(() -> "orders-dlq")
+                .build();
+
+        assertThat(policy.retry(), not(sameInstance(mutableRetry)));
+        assertThat(policy.deadLetter().orElseThrow(), not(sameInstance(mutableDeadLetter)));
+        assertThat(policy, is(equivalent));
+        assertThat(equivalent, is(policy));
+        assertThat(policy.hashCode(), is(equivalent.hashCode()));
+        int stableHashCode = policy.hashCode();
+
+        mutableRetry.update(Duration.ZERO, -1);
+        mutableDeadLetter.update("changed-dlq");
+
+        assertThat(policy.retry().delay(), is(Duration.ofMillis(25)));
+        assertThat(policy.retry().maxAttempts(), is(3));
+        assertThat(policy.deadLetter().orElseThrow().channel(), is("orders-dlq"));
+        assertThat(policy, is(equivalent));
+        assertThat(equivalent, is(policy));
+        assertThat(policy.hashCode(), is(stableHashCode));
+    }
+
+    @Test
+    void testCustomNestedConfigValuesAreSampledOnlyOnce() {
+        AtomicInteger delayReads = new AtomicInteger();
+        AtomicInteger maxAttemptsReads = new AtomicInteger();
+        AtomicInteger channelReads = new AtomicInteger();
+        RetryConfig retry = new RetryConfig() {
+            @Override
+            public Duration delay() {
+                return delayReads.getAndIncrement() == 0 ? Duration.ofMillis(25) : Duration.ZERO;
+            }
+
+            @Override
+            public int maxAttempts() {
+                return maxAttemptsReads.getAndIncrement() == 0 ? 3 : -1;
+            }
+        };
+        DeadLetterConfig deadLetter = () -> channelReads.getAndIncrement() == 0 ? "orders-dlq" : " ";
+
+        FailurePolicy policy = FailurePolicy.builder()
+                .retry(retry)
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(deadLetter)
+                .build();
+
+        assertThat(policy.retry().delay(), is(Duration.ofMillis(25)));
+        assertThat(policy.retry().maxAttempts(), is(3));
+        assertThat(policy.deadLetter().orElseThrow().channel(), is("orders-dlq"));
+        assertThat(delayReads.get(), is(1));
+        assertThat(maxAttemptsReads.get(), is(1));
+        assertThat(channelReads.get(), is(1));
+    }
+
+    @Test
     void testDeadLetterValidation() {
+        RuntimeException missingChannel = assertThrows(RuntimeException.class, DeadLetterConfig::create);
+        assertThat(missingChannel.getMessage(), containsString("channel must be configured"));
+        RuntimeException emptyDeadLetter = assertThrows(
+                RuntimeException.class,
+                () -> FailurePolicy.create(Config.just("""
+                        retry:
+                          max-attempts: 1
+                        on-exhausted: DEAD_LETTER
+                        dead-letter: {}
+                        """, MediaTypes.APPLICATION_YAML)));
+        assertThat(emptyDeadLetter.getMessage(), containsString("channel must be configured"));
         assertThrows(RuntimeException.class,
                      () -> FailurePolicy.builder()
                              .onExhausted(FailureDisposition.DEAD_LETTER)
-                             .deadLetterChannel("orders-dlq")
+                             .deadLetter(DeadLetterConfig.builder().channel("orders-dlq").build())
                              .build());
         assertThrows(RuntimeException.class,
                      () -> FailurePolicy.builder()
                              .onExhausted(FailureDisposition.DEAD_LETTER)
-                             .maxAttempts(3)
+                             .retry(RetryConfig.builder().maxAttempts(3).build())
                              .build());
         assertThrows(RuntimeException.class,
                      () -> FailurePolicy.builder()
                              .onExhausted(FailureDisposition.DEAD_LETTER)
-                             .maxAttempts(3)
-                             .deadLetterChannel(" ")
+                             .retry(RetryConfig.builder().maxAttempts(3).build())
+                             .deadLetter(DeadLetterConfig.builder().channel(" ").build())
                              .build());
         assertThrows(RuntimeException.class,
                      () -> FailurePolicy.builder()
                              .onExhausted(FailureDisposition.DROP)
-                             .maxAttempts(3)
-                             .deadLetterChannel("orders-dlq")
+                             .retry(RetryConfig.builder().maxAttempts(3).build())
+                             .deadLetter(DeadLetterConfig.builder().channel("orders-dlq").build())
                              .build());
+
+        DeadLetterConfig invalid = () -> " ";
+        RuntimeException customFailure = assertThrows(
+                RuntimeException.class,
+                () -> FailurePolicy.builder()
+                        .retry(RetryConfig.builder().maxAttempts(1).build())
+                        .onExhausted(FailureDisposition.DEAD_LETTER)
+                        .deadLetter(invalid)
+                        .build());
+        assertThat(customFailure.getMessage(), containsString("channel must not be blank"));
+        DeadLetterConfig nullChannel = () -> null;
+        RuntimeException nullFailure = assertThrows(
+                RuntimeException.class,
+                () -> FailurePolicy.builder()
+                        .retry(RetryConfig.builder().maxAttempts(1).build())
+                        .onExhausted(FailureDisposition.DEAD_LETTER)
+                        .deadLetter(nullChannel)
+                        .build());
+        assertThat(nullFailure.getMessage(), containsString("channel must be configured"));
     }
 
     @Test
@@ -193,6 +312,20 @@ class FailurePolicyTest {
         assertThat(wrongFailureMessage.getMessage(), containsString("not a text value"));
     }
 
+    private static RetryConfig retryConfig(Duration delay, int maxAttempts) {
+        return new RetryConfig() {
+            @Override
+            public Duration delay() {
+                return delay;
+            }
+
+            @Override
+            public int maxAttempts() {
+                return maxAttempts;
+            }
+        };
+    }
+
     private record MetadataDeadLetterMessage(MessageMetadata localMetadata) implements DeadLetterMessage<String> {
         @Override
         public Message<String> originalMessage() {
@@ -217,6 +350,48 @@ class FailurePolicyTest {
         @Override
         public MessageHeaders headers() {
             return MessageHeaders.empty();
+        }
+    }
+
+    private static final class MutableRetryConfig implements RetryConfig {
+        private Duration delay;
+        private int maxAttempts;
+
+        private MutableRetryConfig(Duration delay, int maxAttempts) {
+            this.delay = delay;
+            this.maxAttempts = maxAttempts;
+        }
+
+        @Override
+        public Duration delay() {
+            return delay;
+        }
+
+        @Override
+        public int maxAttempts() {
+            return maxAttempts;
+        }
+
+        private void update(Duration delay, int maxAttempts) {
+            this.delay = delay;
+            this.maxAttempts = maxAttempts;
+        }
+    }
+
+    private static final class MutableDeadLetterConfig implements DeadLetterConfig {
+        private String channel;
+
+        private MutableDeadLetterConfig(String channel) {
+            this.channel = channel;
+        }
+
+        @Override
+        public String channel() {
+            return channel;
+        }
+
+        private void update(String channel) {
+            this.channel = channel;
         }
     }
 }

@@ -25,12 +25,16 @@ import java.util.Set;
 
 import io.helidon.messaging.BatchDeliveryException;
 import io.helidon.messaging.BatchItemOutcome;
+import io.helidon.messaging.DeadLetterConfig;
+import io.helidon.messaging.FailureDisposition;
+import io.helidon.messaging.FailurePolicy;
 import io.helidon.messaging.HeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeader;
 import io.helidon.messaging.MessageMetadata;
 import io.helidon.messaging.MessagingEntryPoint;
+import io.helidon.messaging.RetryConfig;
 import io.helidon.messaging.spi.ConnectorDelivery;
 
 import org.junit.jupiter.api.Test;
@@ -92,6 +96,27 @@ class MessagingPublicApiTest {
         assertThat(message.localMetadata(), is(metadata));
         assertThat(message.localMetadata().text("application.local").orElseThrow(), is("value"));
         assertThat(message.headers().isEmpty(), is(true));
+    }
+
+    @Test
+    void nestedFailurePolicyConfigurationIsUsableOutsideItsPackage() {
+        RetryConfig retry = RetryConfig.builder()
+                .delay(Duration.ofMillis(250))
+                .maxAttempts(3)
+                .build();
+        DeadLetterConfig deadLetter = DeadLetterConfig.builder()
+                .channel("orders-dlq")
+                .build();
+        FailurePolicy policy = FailurePolicy.builder()
+                .retry(retry)
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(deadLetter)
+                .build();
+
+        assertThat(policy.retry().delay(), is(Duration.ofMillis(250)));
+        assertThat(policy.retry().maxAttempts(), is(3));
+        assertThat(policy.onExhausted(), is(FailureDisposition.DEAD_LETTER));
+        assertThat(policy.deadLetter().orElseThrow().channel(), is("orders-dlq"));
     }
 
     @Test

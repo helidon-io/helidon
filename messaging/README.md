@@ -318,9 +318,10 @@ void deadLetter(DeadLetterMessage<Order> failed) {
 }
 ```
 
-`maxAttempts` includes the initial attempt. Zero means unlimited attempts and is valid only with `FAIL`. `DROP` and
+The annotation's `retryDelay` and `maxAttempts` members populate the policy's required `RetryConfig`. Its
+`maxAttempts()` includes the initial attempt. Zero means unlimited attempts and is valid only with `FAIL`. `DROP` and
 `DEAD_LETTER` require a positive limit, and `DEAD_LETTER` also requires a distinct logical target channel with an
-actual output.
+actual output. The target is represented by the optional `DeadLetterConfig` nested in the failure policy.
 
 A dead-letter target must use the source payload type. Its local receivers must accept `DeadLetterMessage<T>` or a
 compatible `Message<T>` envelope, and dead-letter routes cannot form cycles. These constraints are validated before
@@ -353,9 +354,10 @@ helidon:
           on-exhausted: DROP
 ```
 
-This retains the annotation's retry delay, changes the total attempts to one, and replaces `DEAD_LETTER` with `DROP`.
-The inherited dead-letter target is cleared. Without either an annotation or configuration, an incoming connector uses
-a one-second retry delay, unlimited attempts, and `FAIL`.
+This merges the nested retry settings, retaining the annotation's retry delay while changing the total attempts to one,
+and replaces `DEAD_LETTER` with `DROP`. The inherited dead-letter configuration is cleared. Without either an annotation
+or configuration, an incoming connector uses the required retry configuration defaults: a one-second delay, unlimited
+attempts, and `FAIL`.
 
 Exhaustion has these results:
 

@@ -76,7 +76,8 @@ public final class Messaging {
     @Target(ElementType.METHOD)
     public @interface OnFailure {
         /**
-         * Delay before retrying a failed delivery, in {@link java.time.Duration} format.
+         * Delay before retrying a failed delivery, in {@link java.time.Duration} format. This populates
+         * {@link RetryConfig#delay()}.
          *
          * @return retry delay
          */
@@ -84,7 +85,8 @@ public final class Messaging {
 
         /**
          * Maximum total delivery attempts, including the initial attempt. Zero means unlimited attempts and is only
-         * valid with {@link FailureDisposition#FAIL}. An unlimited pre-dispatch mapping failure reported through
+         * valid with {@link FailureDisposition#FAIL}. This populates {@link RetryConfig#maxAttempts()}. An unlimited
+         * pre-dispatch mapping failure reported through
          * {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)} is treated as exhausted
          * after its initial attempt because the runtime cannot repeat transport mapping.
          *
@@ -101,7 +103,8 @@ public final class Messaging {
 
         /**
          * Logical channel used for dead-letter delivery. This is required for
-         * {@link FailureDisposition#DEAD_LETTER} and is not valid for other dispositions.
+         * {@link FailureDisposition#DEAD_LETTER} and is not valid for other dispositions. A non-empty value populates
+         * {@link DeadLetterConfig#channel()}.
          *
          * @return dead-letter channel, or an empty string when none is declared
          */

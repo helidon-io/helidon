@@ -951,15 +951,19 @@ class ChannelRegistry implements MessagingRuntime {
     }
 
     private FailurePolicy mergeFailurePolicy(FailurePolicy declared, Config failureConfig) {
-        FailurePolicy.Builder builder = FailurePolicy.builder(declared);
+        FailurePolicy.Builder builder = FailurePolicy.builder(declared).config(failureConfig);
+        Config retryConfig = failureConfig.get("retry");
+        if (retryConfig.exists()) {
+            builder.retry(RetryConfig.builder(declared.retry()).config(retryConfig).build());
+        }
         FailureDisposition configuredDisposition = failureConfig.get("on-exhausted")
                 .as(FailureDisposition.class)
                 .orElse(null);
         if (configuredDisposition != null && configuredDisposition != FailureDisposition.DEAD_LETTER
                 && !failureConfig.get("dead-letter.channel").exists()) {
-            builder.clearDeadLetterChannel();
+            builder.clearDeadLetter();
         }
-        return builder.config(failureConfig).build();
+        return builder.build();
     }
 
     private void configureOutgoingConnectors(List<OutgoingBinding> bindings) {
@@ -1001,7 +1005,7 @@ class ChannelRegistry implements MessagingRuntime {
             }
 
             String source = binding.channel();
-            String target = policy.deadLetterChannel().orElseThrow();
+            String target = policy.deadLetter().orElseThrow().channel();
             if (source.equals(target)) {
                 throw new IllegalArgumentException("Dead-letter channel must not reference itself: " + source);
             }
@@ -1487,7 +1491,7 @@ class ChannelRegistry implements MessagingRuntime {
         }
 
         private boolean shouldRetry(PendingDelivery current, int failedAttempt) {
-            int maxAttempts = failurePolicy.maxAttempts();
+            int maxAttempts = failurePolicy.retry().maxAttempts();
             return maxAttempts == 0
                     ? current.preDispatchFailure() == null
                     : failedAttempt < maxAttempts;
@@ -1496,7 +1500,7 @@ class ChannelRegistry implements MessagingRuntime {
         private void awaitRetry() {
             ensureDeliveryActive();
             try {
-                Thread.sleep(failurePolicy.retryDelay());
+                Thread.sleep(failurePolicy.retry().delay());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new MessagingRejectedException(
@@ -1512,7 +1516,7 @@ class ChannelRegistry implements MessagingRuntime {
                                       MessageBatch<?> failedBatch,
                                       int failedAttempt,
                                       BatchDeliveryException applicationFailure) {
-            String target = failurePolicy.deadLetterChannel().orElseThrow();
+            String target = failurePolicy.deadLetter().orElseThrow().channel();
             MessageBatch<?> remaining = failedBatch;
             while (true) {
                 ensureDeliveryActive();

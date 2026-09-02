@@ -25,32 +25,43 @@ final class FailurePolicyBuilderDecorator
         implements Prototype.BuilderDecorator<FailurePolicy.BuilderBase<?, ?>> {
     @Override
     public void decorate(FailurePolicy.BuilderBase<?, ?> target) {
-        Duration retryDelay = target.retryDelay();
-        if (retryDelay.isZero() || retryDelay.isNegative()) {
-            throw new IllegalArgumentException("failure.retry.delay must be greater than zero");
-        }
-        int maxAttempts = target.maxAttempts();
-        if (maxAttempts < 0) {
-            throw new IllegalArgumentException("failure.retry.max-attempts must be zero or greater");
-        }
-
-        Optional<String> deadLetterChannel = target.deadLetterChannel();
-        if (target.onExhausted() == FailureDisposition.DROP && maxAttempts == 0) {
+        RetryConfig retry = target.retry();
+        Duration retryDelay = retry.delay();
+        int maxAttempts = retry.maxAttempts();
+        RetryConfigBuilderDecorator.validate(retryDelay, maxAttempts);
+        FailureDisposition onExhausted = target.onExhausted();
+        Optional<DeadLetterConfig> deadLetter = target.deadLetter();
+        String deadLetterChannel = null;
+        if (onExhausted == FailureDisposition.DROP && maxAttempts == 0) {
             throw new IllegalArgumentException(
                     "failure.retry.max-attempts must be greater than zero for DROP");
         }
-        if (target.onExhausted() == FailureDisposition.DEAD_LETTER) {
+        if (onExhausted == FailureDisposition.DEAD_LETTER) {
             if (maxAttempts == 0) {
                 throw new IllegalArgumentException(
                         "failure.retry.max-attempts must be greater than zero for DEAD_LETTER");
             }
-            if (deadLetterChannel.filter(channel -> !channel.isBlank()).isEmpty()) {
+            if (deadLetter.isEmpty()) {
                 throw new IllegalArgumentException(
                         "failure.dead-letter.channel must be configured for DEAD_LETTER");
             }
-        } else if (deadLetterChannel.isPresent()) {
+            deadLetterChannel = deadLetter.orElseThrow().channel();
+            DeadLetterConfigBuilderDecorator.validate(deadLetterChannel);
+        } else if (deadLetter.isPresent()) {
             throw new IllegalArgumentException(
                     "failure.dead-letter.channel is only valid for DEAD_LETTER");
+        }
+
+        RetryConfig canonicalRetry = RetryConfig.builder()
+                .delay(retryDelay)
+                .maxAttempts(maxAttempts)
+                .build();
+        DeadLetterConfig canonicalDeadLetter = deadLetterChannel == null
+                ? null
+                : DeadLetterConfig.builder().channel(deadLetterChannel).build();
+        target.retry(canonicalRetry);
+        if (canonicalDeadLetter != null) {
+            target.deadLetter(canonicalDeadLetter);
         }
     }
 }

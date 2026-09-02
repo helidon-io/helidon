@@ -16,7 +16,6 @@
 
 package io.helidon.messaging;
 
-import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
@@ -31,36 +30,24 @@ import io.helidon.common.Api;
 @Prototype.Configured
 interface FailurePolicyBlueprint {
     /**
-     * Positive delay before retrying a failed delivery.
+     * Retry configuration. The default uses a one-second delay and unlimited attempts.
      *
-     * @return retry delay
+     * @return retry configuration
      */
-    @Option.Configured("retry.delay")
-    @Option.Default("PT1S")
-    Duration retryDelay();
-
-    /**
-     * Maximum total delivery attempts, including the initial attempt; the value must be zero or greater, zero means
-     * unlimited and is only valid with {@link FailureDisposition#FAIL}, and {@link FailureDisposition#DROP} and
-     * {@link FailureDisposition#DEAD_LETTER} require a positive limit. An
-     * unlimited pre-dispatch mapping failure reported through
-     * {@link io.helidon.messaging.spi.ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)} is
-     * treated as exhausted after
-     * its initial attempt because the runtime cannot repeat transport mapping.
-     *
-     * @return maximum delivery attempts, or zero for unlimited attempts
-     */
-    @Option.Configured("retry.max-attempts")
-    @Option.DefaultInt(0)
-    int maxAttempts();
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    RetryConfig retry();
 
     /**
      * Terminal disposition after delivery attempts are exhausted; {@link FailureDisposition#DROP} and
      * {@link FailureDisposition#DEAD_LETTER} require positive maximum attempts, and dead letter also requires a target
-     * channel.
+     * channel. An unlimited retry configuration is only valid with {@link FailureDisposition#FAIL}. An unlimited
+     * pre-dispatch mapping failure reported through
+     * {@link io.helidon.messaging.spi.ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)} is
+     * treated as exhausted after its initial attempt because the runtime cannot repeat transport mapping.
      * <p>
      * {@link FailureDisposition#DROP} and {@link FailureDisposition#DEAD_LETTER} require a positive
-     * {@link #maxAttempts()} so that exhaustion can be reached.
+     * {@link RetryConfig#maxAttempts()} so that exhaustion can be reached.
      *
      * @return terminal disposition
      */
@@ -69,16 +56,16 @@ interface FailurePolicyBlueprint {
     FailureDisposition onExhausted();
 
     /**
-     * Logical channel used for dead-letter delivery; required for {@link FailureDisposition#DEAD_LETTER} and invalid
-     * for other dispositions.
+     * Dead-letter delivery configuration; required for {@link FailureDisposition#DEAD_LETTER} and invalid for other
+     * dispositions.
      * <p>
      * Runtime validation covers the logical channel graph. It cannot detect when distinct connector bindings resolve
      * to the same transport destination, such as two Kafka channels configured with the same topic. A dead-letter
      * target must not resolve back to the source connector.
      *
-     * @return dead-letter channel
+     * @return dead-letter configuration
      */
-    @Option.Configured("dead-letter.channel")
-    Optional<String> deadLetterChannel();
+    @Option.Configured
+    Optional<DeadLetterConfig> deadLetter();
 
 }

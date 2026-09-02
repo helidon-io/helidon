@@ -1211,11 +1211,11 @@ class ChannelRegistryFailurePolicyTest {
     void testConflictingDeclaredFailurePoliciesAreRejectedAfterConfigMerge() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         FailurePolicy firstPolicy = FailurePolicy.builder()
-                .maxAttempts(2)
+                .retry(RetryConfig.builder().maxAttempts(2).build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
         FailurePolicy secondPolicy = FailurePolicy.builder()
-                .maxAttempts(3)
+                .retry(RetryConfig.builder().maxAttempts(3).build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
 
@@ -1240,19 +1240,56 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
+    void testEquivalentCustomNestedFailurePoliciesDoNotConflict() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        FailurePolicy firstPolicy = FailurePolicy.builder()
+                .retry(retryConfig(Duration.ofMillis(7), 1))
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(deadLetterConfig("orders-dlq"))
+                .build();
+        FailurePolicy secondPolicy = FailurePolicy.builder()
+                .retry(retryConfig(Duration.ofMillis(7), 1))
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(deadLetterConfig("orders-dlq"))
+                .build();
+
+        ChannelRegistry registry = registry(
+                List.of(registration("first-handler", "orders", firstPolicy, ignored -> { }),
+                        registration("second-handler", "orders", secondPolicy, ignored -> { }),
+                        registration("orders-dlq", ignored -> { })),
+                yaml("""
+                        helidon:
+                          messaging:
+                            incoming:
+                              orders:
+                                connector: test-in
+                        """),
+                List.of(incoming));
+        try {
+            assertThat(incoming.createdCount(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
     void testConfigResolvesDeclaredPolicyConflictAndClearsInheritedDeadLetterChannels() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         FailurePolicy firstPolicy = FailurePolicy.builder()
-                .retryDelay(Duration.ofMillis(7))
-                .maxAttempts(2)
+                .retry(RetryConfig.builder()
+                               .delay(Duration.ofMillis(7))
+                               .maxAttempts(2)
+                               .build())
                 .onExhausted(FailureDisposition.DEAD_LETTER)
-                .deadLetterChannel("first-dlq")
+                .deadLetter(DeadLetterConfig.builder().channel("first-dlq").build())
                 .build();
         FailurePolicy secondPolicy = FailurePolicy.builder()
-                .retryDelay(Duration.ofMillis(7))
-                .maxAttempts(3)
+                .retry(RetryConfig.builder()
+                               .delay(Duration.ofMillis(7))
+                               .maxAttempts(3)
+                               .build())
                 .onExhausted(FailureDisposition.DEAD_LETTER)
-                .deadLetterChannel("second-dlq")
+                .deadLetter(DeadLetterConfig.builder().channel("second-dlq").build())
                 .build();
 
         ChannelRegistry registry = registry(
@@ -1275,6 +1312,47 @@ class ChannelRegistryFailurePolicyTest {
         } finally {
             registry.close();
         }
+    }
+
+    @Test
+    void testMaxAttemptsOverridePreservesConflictingDeclaredRetryDelays() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        FailurePolicy firstPolicy = FailurePolicy.builder()
+                .retry(RetryConfig.builder()
+                               .delay(Duration.ofMillis(7))
+                               .maxAttempts(2)
+                               .build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        FailurePolicy secondPolicy = FailurePolicy.builder()
+                .retry(RetryConfig.builder()
+                               .delay(Duration.ofMillis(11))
+                               .maxAttempts(3)
+                               .build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(
+                        List.of(registration("first-handler", "orders", firstPolicy, ignored -> { }),
+                                registration("second-handler", "orders", secondPolicy, ignored -> { })),
+                        yaml("""
+                                helidon:
+                                  messaging:
+                                    incoming:
+                                      orders:
+                                        connector: test-in
+                                        failure:
+                                          retry:
+                                            max-attempts: 1
+                                """),
+                        List.of(incoming)));
+
+        assertThat(failure.getMessage(), containsString("Incoming channel orders"));
+        assertThat(failure.getMessage(), containsString("first-handler"));
+        assertThat(failure.getMessage(), containsString("second-handler"));
+        assertThat(incoming.createdCount(), is(0));
     }
 
     @Test
@@ -2019,6 +2097,24 @@ class ChannelRegistryFailurePolicyTest {
                 return MessageHeaders.empty();
             }
         };
+    }
+
+    private static RetryConfig retryConfig(Duration delay, int maxAttempts) {
+        return new RetryConfig() {
+            @Override
+            public Duration delay() {
+                return delay;
+            }
+
+            @Override
+            public int maxAttempts() {
+                return maxAttempts;
+            }
+        };
+    }
+
+    private static DeadLetterConfig deadLetterConfig(String channel) {
+        return () -> channel;
     }
 
     private static ConsumerRegistration registration(String channel, Consumer<Message<?>> consumer) {
