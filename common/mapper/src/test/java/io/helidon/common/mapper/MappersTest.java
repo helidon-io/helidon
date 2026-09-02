@@ -86,6 +86,23 @@ class MappersTest {
     }
 
     @Test
+    void stringToClassMappingIsNotAvailable() {
+        Mappers mappers = Mappers.builder()
+                .mapperProvidersDiscoverServices(false)
+                .mappersDiscoverServices(false)
+                .build();
+
+        assertThrows(MapperException.class,
+                     () -> mappers.map("java.lang.String",
+                                       GenericType.STRING,
+                                       GenericType.create(Class.class),
+                                       "uri",
+                                       "query"));
+        assertThrows(MapperException.class,
+                     () -> mappers.map("java.lang.String", String.class, Class.class, "http", "header"));
+    }
+
+    @Test
     void testUsingCustomProviders() {
         Mappers mm = Mappers.builder()
                 .mapperProvidersDiscoverServices(false)
