@@ -22,8 +22,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 
 import io.helidon.data.Data;
 import io.helidon.data.jdbc.Jdbc;
@@ -51,8 +49,6 @@ public interface ScalarBindingRepository {
      * @param localDateValue local date value
      * @param localTimeValue local time value
      * @param localDateTimeValue local date-time value
-     * @param offsetTimeValue offset time value
-     * @param offsetDateTimeValue offset date-time value
      * @param dateValue JDBC date value
      * @param timeValue JDBC time value
      * @param timestampValue JDBC timestamp value
@@ -72,8 +68,6 @@ public interface ScalarBindingRepository {
                 LOCAL_DATE_VALUE = ?,
                 LOCAL_TIME_VALUE = ?,
                 LOCAL_DATE_TIME_VALUE = ?,
-                OFFSET_TIME_VALUE = ?,
-                OFFSET_DATE_TIME_VALUE = ?,
                 DATE_VALUE = ?,
                 TIME_VALUE = ?,
                 TIMESTAMP_VALUE = ?
@@ -92,8 +86,6 @@ public interface ScalarBindingRepository {
                  LocalDate localDateValue,
                  LocalTime localTimeValue,
                  LocalDateTime localDateTimeValue,
-                 OffsetTime offsetTimeValue,
-                 OffsetDateTime offsetDateTimeValue,
                  Date dateValue,
                  Time timeValue,
                  Timestamp timestampValue);

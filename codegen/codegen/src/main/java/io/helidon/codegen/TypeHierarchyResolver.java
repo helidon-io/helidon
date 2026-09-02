@@ -73,7 +73,7 @@ public class TypeHierarchyResolver {
      * @param typeInfoLookup lookup used for types that are not already present in a hierarchy
      * @return a new resolver
      */
-    public static TypeHierarchyResolver create(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
+    static TypeHierarchyResolver create(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
         return new TypeHierarchyResolver(typeInfoLookup);
     }
 

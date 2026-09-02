@@ -30,6 +30,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class JdbcSqlScannerTest {
 
     /**
+     * Verifies the public scanner boundary rejects both null reference
+     * arguments explicitly before scanning begins.
+     */
+    @Test
+    void rejectsNullPublicArguments() {
+        RecordingHandler handler = new RecordingHandler("");
+
+        NullPointerException sourceFailure = assertThrows(
+                NullPointerException.class,
+                () -> JdbcSqlScanner.scan(null, handler));
+        NullPointerException handlerFailure = assertThrows(
+                NullPointerException.class,
+                () -> JdbcSqlScanner.scan("", null));
+
+        assertThat(sourceFailure.getMessage(), is("The SQL source must not be null."));
+        assertThat(handlerFailure.getMessage(), is("The JDBC SQL scan handler must not be null."));
+    }
+
+    /**
      * Verifies that the scanner reports each marker while preserving every
      * source character through ordinary and protected regions.
      */
@@ -38,7 +57,7 @@ class JdbcSqlScannerTest {
         String sql = "select ':ignored', \"question?\", :name, ? /* :ignored ? */";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.source(), is(sql));
         assertThat(handler.namedMarkers(), is(List.of("name")));
@@ -64,7 +83,7 @@ class JdbcSqlScannerTest {
                 """;
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.positionalMarkers().size(), is(4));
         assertThat(handler.protectedRegions(),
@@ -83,7 +102,7 @@ class JdbcSqlScannerTest {
                 + "       'second \\' ? :ignored', ?";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.source(), is(sql));
         assertThat(handler.namedMarkers(), is(List.of()));
@@ -100,7 +119,7 @@ class JdbcSqlScannerTest {
         String sql = "select 'ends with \\', ?";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.source(), is(sql));
         assertThat(handler.positionalMarkers(), is(List.of(sql.lastIndexOf('?'))));
@@ -116,7 +135,7 @@ class JdbcSqlScannerTest {
         String sql = "select " + supplementaryLetter + "E'ends with \\', :id";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.source(), is(sql));
         assertThat(handler.namedMarkers(), is(List.of("id")));
@@ -133,7 +152,7 @@ class JdbcSqlScannerTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, new RecordingHandler(sql)));
+                () -> JdbcSqlScanner.scan(sql, new RecordingHandler(sql)));
 
         assertThat(failure.getMessage(), containsString("Ambiguous double-dash SQL sequence"));
         assertThat(failure.getMessage(), containsString("PORTABLE"));
@@ -150,7 +169,7 @@ class JdbcSqlScannerTest {
         String sql = "select $$?$$, ($tag$:$name ?$tag$), q'[? :name]', identifier$tag$ where ID = ?";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.namedMarkers(), is(List.of()));
         assertThat(handler.positionalMarkers().size(), is(1));
@@ -158,6 +177,73 @@ class JdbcSqlScannerTest {
                    is(List.of(JdbcSqlScanHandler.RegionKind.DOLLAR_QUOTE,
                               JdbcSqlScanHandler.RegionKind.DOLLAR_QUOTE,
                               JdbcSqlScanHandler.RegionKind.ALTERNATIVE_QUOTE)));
+    }
+
+    /**
+     * Verifies PostgreSQL and Oracle quote candidates embedded after a
+     * supplementary identifier code point remain ordinary SQL with active
+     * markers.
+     */
+    @Test
+    void appliesCodePointBoundariesToVendorQuotedValues() {
+        String supplementaryLetter = Character.toString(0x10400);
+        String sql = "select " + supplementaryLetter + "$tag$ :dollar x$tag$, "
+                + supplementaryLetter + "q'[first' ? 'second]', "
+                + supplementaryLetter + "nq'[third' :oracle 'fourth]'";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, handler);
+
+        assertThat(handler.source(), is(sql));
+        assertThat(handler.namedMarkers(), is(List.of("dollar", "oracle")));
+        assertThat(handler.positionalMarkers(), is(List.of(sql.indexOf('?'))));
+        assertThat(handler.protectedRegions(),
+                   is(List.of(JdbcSqlScanHandler.RegionKind.SINGLE_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.SINGLE_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.SINGLE_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.SINGLE_QUOTE)));
+    }
+
+    /**
+     * Verifies PostgreSQL dollar-quote tags accept supplementary letters in
+     * initial and continuation positions and supplementary digits after a
+     * valid initial letter.
+     */
+    @Test
+    void protectsSupplementaryPostgreSqlDollarQuoteTags() {
+        String supplementaryLetter = Character.toString(0x10400);
+        String supplementaryDigit = Character.toString(0x104A0);
+        String sql = "select $" + supplementaryLetter + "$? :first$" + supplementaryLetter + "$, "
+                + "$tag" + supplementaryLetter + "$? :second$tag" + supplementaryLetter + "$, "
+                + "$a" + supplementaryDigit + "$? :third$a" + supplementaryDigit + "$, :active, ?";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, handler);
+
+        assertThat(handler.source(), is(sql));
+        assertThat(handler.namedMarkers(), is(List.of("active")));
+        assertThat(handler.positionalMarkers(), is(List.of(sql.lastIndexOf('?'))));
+        assertThat(handler.protectedRegions(),
+                   is(List.of(JdbcSqlScanHandler.RegionKind.DOLLAR_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.DOLLAR_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.DOLLAR_QUOTE)));
+    }
+
+    /**
+     * Verifies a supplementary digit cannot begin a PostgreSQL dollar-quote
+     * tag, leaving marker-shaped text in that ordinary SQL active.
+     */
+    @Test
+    void keepsSupplementaryDigitInitialDollarQuoteTagOrdinary() {
+        String supplementaryDigit = Character.toString(0x104A0);
+        String sql = "select $" + supplementaryDigit + "$ :active x$" + supplementaryDigit + "$";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, handler);
+
+        assertThat(handler.source(), is(sql));
+        assertThat(handler.namedMarkers(), is(List.of("active")));
+        assertThat(handler.protectedRegions(), is(List.of()));
     }
 
     /**
@@ -171,7 +257,7 @@ class JdbcSqlScannerTest {
                 + "nQ'<Oracle's ? :mixed>', Nq'!Oracle's ? :mixed!', ?";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.source(), is(sql));
         assertThat(handler.namedMarkers(), is(List.of()));
@@ -184,6 +270,28 @@ class JdbcSqlScannerTest {
     }
 
     /**
+     * Verifies supplementary Oracle delimiters protect marker-shaped content
+     * in ordinary and national alternative-quoted values while preserving
+     * UTF-16 callback offsets.
+     */
+    @Test
+    void protectsSupplementaryOracleAlternativeQuoteDelimiters() {
+        String delimiter = Character.toString(0x1F600);
+        String sql = "select q'" + delimiter + "ordinary's ? :ignored" + delimiter + "', "
+                + "nq'" + delimiter + "national's ? :ignored" + delimiter + "', :active, ?";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, handler);
+
+        assertThat(handler.source(), is(sql));
+        assertThat(handler.namedMarkers(), is(List.of("active")));
+        assertThat(handler.positionalMarkers(), is(List.of(sql.lastIndexOf('?'))));
+        assertThat(handler.protectedRegions(),
+                   is(List.of(JdbcSqlScanHandler.RegionKind.ALTERNATIVE_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.ALTERNATIVE_QUOTE)));
+    }
+
+    /**
      * Verifies an {@code nq} sequence embedded in an identifier is not
      * promoted to an Oracle alternative-quote opener.
      */
@@ -192,7 +300,7 @@ class JdbcSqlScannerTest {
         String sql = "select identifiernq'[first' ? 'second]'";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.positionalMarkers(), is(List.of(sql.indexOf('?'))));
         assertThat(handler.protectedRegions(),
@@ -209,7 +317,7 @@ class JdbcSqlScannerTest {
         String sql = "select :value::jsonb where VERSION := VERSION and ID = :id";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.namedMarkers(), is(List.of("value", "id")));
         assertThat(handler.source(), is(sql));
@@ -227,7 +335,7 @@ class JdbcSqlScannerTest {
         String sql = "select :" + firstSupplementary + ", :" + embeddedSupplementary + "::text";
         RecordingHandler handler = new RecordingHandler(sql);
 
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+        JdbcSqlScanner.scan(sql, handler);
 
         assertThat(handler.namedMarkers(), is(List.of(firstSupplementary, embeddedSupplementary)));
         assertThat(handler.source(), is(sql));
@@ -243,7 +351,7 @@ class JdbcSqlScannerTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, new RecordingHandler(sql)));
+                () -> JdbcSqlScanner.scan(sql, new RecordingHandler(sql)));
 
         assertThat(failure.getMessage(), containsString("Nested block comments are not supported"));
         assertThat(failure.getMessage(), containsString("PORTABLE"));

@@ -21,7 +21,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Objects;
 
-import io.helidon.data.jdbc.lexical.JdbcSqlLexicalProfile;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanner;
 
@@ -79,7 +78,7 @@ final class JdbcOperation {
             throw new IllegalArgumentException("The SQL statement must not be blank.");
         }
         MarkerCounter counter = new MarkerCounter();
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, counter);
+        JdbcSqlScanner.scan(sql, counter);
         return counter.count;
     }
 
@@ -217,7 +216,7 @@ final class JdbcOperation {
         public void namedMarker(int start, int end) {
             throw new IllegalArgumentException(
                     "JdbcClient SQL accepts only positional '?' markers. A named marker was found for lexical "
-                            + "profile " + JdbcSqlLexicalProfile.PORTABLE + " at offset " + start + ".");
+                            + "profile PORTABLE at offset " + start + ".");
         }
 
         @Override

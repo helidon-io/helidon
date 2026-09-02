@@ -22,11 +22,10 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 
 import io.helidon.data.Data;
 import io.helidon.data.jdbc.Jdbc;
+import io.helidon.data.jdbc.tests.application.StoredOffsetDateTime;
 
 /**
  * Declarative repository for real-driver scalar and typed-null binding coverage.
@@ -34,6 +33,35 @@ import io.helidon.data.jdbc.Jdbc;
 @Data.Repository
 @Data.Provider("jdbc")
 public interface DeclarativeScalarBindingRepository {
+
+    /**
+     * Stores the local and offset components of an offset date-time separately.
+     *
+     * @param localDateTime local date-time component
+     * @param offsetSeconds offset from UTC in seconds
+     * @param id value identifier
+     */
+    @Jdbc.Statement("""
+            UPDATE OFFSET_DATE_TIME_VALUE
+            SET LOCAL_DATE_TIME = ?,
+                OFFSET_SECONDS = ?
+            WHERE ID = ?
+            """)
+    void updateTime(LocalDateTime localDateTime, int offsetSeconds, long id);
+
+    /**
+     * Reads the separately stored components of an offset date-time.
+     *
+     * @param id value identifier
+     * @return portable stored representation
+     */
+    @Jdbc.Statement("""
+            SELECT LOCAL_DATE_TIME AS localDateTime,
+                   OFFSET_SECONDS AS offsetSeconds
+            FROM OFFSET_DATE_TIME_VALUE
+            WHERE ID = ?
+            """)
+    StoredOffsetDateTime findTime(long id);
 
     /**
      * Binds every supported reference scalar to a stored database column.
@@ -51,8 +79,6 @@ public interface DeclarativeScalarBindingRepository {
      * @param localDateValue local date value
      * @param localTimeValue local time value
      * @param localDateTimeValue local date-time value
-     * @param offsetTimeValue offset time value
-     * @param offsetDateTimeValue offset date-time value
      * @param dateValue JDBC date value
      * @param timeValue JDBC time value
      * @param timestampValue JDBC timestamp value
@@ -72,8 +98,6 @@ public interface DeclarativeScalarBindingRepository {
                 LOCAL_DATE_VALUE = ?,
                 LOCAL_TIME_VALUE = ?,
                 LOCAL_DATE_TIME_VALUE = ?,
-                OFFSET_TIME_VALUE = ?,
-                OFFSET_DATE_TIME_VALUE = ?,
                 DATE_VALUE = ?,
                 TIME_VALUE = ?,
                 TIMESTAMP_VALUE = ?
@@ -93,8 +117,6 @@ public interface DeclarativeScalarBindingRepository {
                  LocalDate localDateValue,
                  LocalTime localTimeValue,
                  LocalDateTime localDateTimeValue,
-                 OffsetTime offsetTimeValue,
-                 OffsetDateTime offsetDateTimeValue,
                  Date dateValue,
                  Time timeValue,
                  Timestamp timestampValue);

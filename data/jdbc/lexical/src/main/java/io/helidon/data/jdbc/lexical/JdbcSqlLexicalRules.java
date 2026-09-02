@@ -15,13 +15,10 @@
  */
 package io.helidon.data.jdbc.lexical;
 
-import io.helidon.common.Api;
-
 /**
  * Shared delimiter rules used by JDBC SQL scanners.
  */
-@Api.Internal
-public final class JdbcSqlLexicalRules {
+final class JdbcSqlLexicalRules {
 
     private JdbcSqlLexicalRules() {
     }
@@ -38,7 +35,7 @@ public final class JdbcSqlLexicalRules {
      * @param start first dash offset
      * @return whether the dashes begin a portable line comment
      */
-    public static boolean lineComment(String source, int start) {
+    static boolean lineComment(String source, int start) {
         int contentStart = start + 2;
         if (contentStart == source.length()) {
             return true;
@@ -57,31 +54,31 @@ public final class JdbcSqlLexicalRules {
      * @param start candidate opening dollar offset
      * @return complete delimiter, or {@code null} when the candidate is not a delimiter
      */
-    public static String dollarDelimiter(String source, int start) {
-        if (start > 0 && identifierContinuation(source.charAt(start - 1))) {
+    static String dollarDelimiter(String source, int start) {
+        if (start > 0 && identifierContinuation(source.codePointBefore(start))) {
             return null;
         }
         int index = start + 1;
         if (index >= source.length()) {
             return null;
         }
-        char first = source.charAt(index);
+        int first = source.codePointAt(index);
         if (first == '$') {
             return "$$";
         }
         if (!Character.isLetter(first) && first != '_') {
             return null;
         }
-        index++;
+        index += Character.charCount(first);
         while (index < source.length()) {
-            char current = source.charAt(index);
+            int current = source.codePointAt(index);
             if (current == '$') {
                 return source.substring(start, index + 1);
             }
             if (!Character.isLetterOrDigit(current) && current != '_') {
                 return null;
             }
-            index++;
+            index += Character.charCount(current);
         }
         return null;
     }
@@ -102,18 +99,18 @@ public final class JdbcSqlLexicalRules {
      *
      * @param source SQL source
      * @param start candidate {@code q} or {@code nq} prefix offset, case-insensitive
-     * @return closing delimiter, or NUL when the candidate is not a valid opener
+     * @return closing delimiter code point, or a negative value when the candidate is not a valid opener
      */
-    public static char qQuoteClosingDelimiter(String source, int start) {
+    static int qQuoteClosingDelimiter(String source, int start) {
         // An incomplete candidate at end-of-input cannot contain q, the apostrophe, and an opening delimiter.
         if (start >= source.length()) {
-            return '\0';
+            return -1;
         }
 
         // Apply the boundary to the complete q/nq token. Testing at q would mistake the valid nq prefix's n for an
         // identifier continuation; ignoring the boundary would instead accept nq embedded in an identifier.
-        if (start > 0 && identifierContinuation(source.charAt(start - 1))) {
-            return '\0';
+        if (start > 0 && identifierContinuation(source.codePointBefore(start))) {
+            return -1;
         }
 
         // Normalize both prefix forms to the q position because their apostrophe and delimiter grammar is identical.
@@ -127,11 +124,11 @@ public final class JdbcSqlLexicalRules {
         if (qOffset + 2 >= source.length()
                 || (source.charAt(qOffset) != 'q' && source.charAt(qOffset) != 'Q')
                 || source.charAt(qOffset + 1) != '\'') {
-            return '\0';
+            return -1;
         }
-        char opening = source.charAt(qOffset + 2);
+        int opening = source.codePointAt(qOffset + 2);
         if (opening == '\'' || Character.isWhitespace(opening) || Character.isISOControl(opening)) {
-            return '\0';
+            return -1;
         }
 
         // Oracle pairs the four bracket-like delimiters; any other valid delimiter closes with the same character.
@@ -145,13 +142,13 @@ public final class JdbcSqlLexicalRules {
     }
 
     /**
-     * Tests whether a character can continue the SQL token immediately before
+     * Tests whether a code point can continue the SQL token immediately before
      * a vendor-specific quote opener.
      *
-     * @param character character before the candidate opener
+     * @param codePoint code point before the candidate opener
      * @return whether the candidate is embedded in an existing token
      */
-    private static boolean identifierContinuation(char character) {
-        return Character.isLetterOrDigit(character) || character == '_' || character == '$';
+    private static boolean identifierContinuation(int codePoint) {
+        return Character.isLetterOrDigit(codePoint) || codePoint == '_' || codePoint == '$';
     }
 }

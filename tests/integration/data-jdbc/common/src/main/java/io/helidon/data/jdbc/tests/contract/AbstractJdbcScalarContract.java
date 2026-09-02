@@ -22,8 +22,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 import java.util.Optional;
 
 import io.helidon.data.Data;
@@ -61,8 +59,6 @@ public abstract class AbstractJdbcScalarContract {
                 LOCAL_DATE_VALUE = ?,
                 LOCAL_TIME_VALUE = ?,
                 LOCAL_DATE_TIME_VALUE = ?,
-                OFFSET_TIME_VALUE = ?,
-                OFFSET_DATE_TIME_VALUE = ?,
                 DATE_VALUE = ?,
                 TIME_VALUE = ?,
                 TIMESTAMP_VALUE = ?
@@ -82,8 +78,6 @@ public abstract class AbstractJdbcScalarContract {
                    LOCAL_DATE_VALUE,
                    LOCAL_TIME_VALUE,
                    LOCAL_DATE_TIME_VALUE,
-                   OFFSET_TIME_VALUE,
-                   OFFSET_DATE_TIME_VALUE,
                    DATE_VALUE,
                    TIME_VALUE,
                    TIMESTAMP_VALUE
@@ -109,14 +103,10 @@ public abstract class AbstractJdbcScalarContract {
                                                                  LocalDate.of(2026, 7, 27),
                                                                  LocalTime.of(10, 11, 12),
                                                                  LocalDateTime.of(2026, 7, 27, 10, 11, 12),
-                                                                 OffsetTime.parse("10:11:12-03:30"),
-                                                                 OffsetDateTime.parse("2026-07-27T10:11:12-03:30"),
                                                                  Date.valueOf("2026-07-27"),
                                                                  Time.valueOf("10:11:12"),
                                                                  Timestamp.valueOf("2026-07-27 10:11:12"));
     private static final ScalarValues NULL_VALUES = new ScalarValues(null,
-                                                                      null,
-                                                                      null,
                                                                       null,
                                                                       null,
                                                                       null,
@@ -181,20 +171,10 @@ public abstract class AbstractJdbcScalarContract {
                 .bind(11, values.localDateValue())
                 .bind(12, values.localTimeValue())
                 .bind(13, values.localDateTimeValue())
-                .bind(14, values.offsetTimeValue())
-                .bind(15, values.offsetDateTimeValue())
-                .bind(16, values.dateValue())
-                .bind(17, values.timeValue())
-                .bind(18, values.timestampValue())
+                .bind(14, values.dateValue())
+                .bind(15, values.timeValue())
+                .bind(16, values.timestampValue())
                 .execute();
-    }
-
-    /**
-     * Allows a database-specific leaf to verify the independently stored offset date-time instant.
-     *
-     * @param expected expected offset date-time
-     */
-    protected void assertStoredOffsetDateTimeInstant(OffsetDateTime expected) {
     }
 
     /**
@@ -226,11 +206,9 @@ public abstract class AbstractJdbcScalarContract {
                               () -> assertThat(row.optional(11, LocalDate.class), is(Optional.empty())),
                               () -> assertThat(row.optional(12, LocalTime.class), is(Optional.empty())),
                               () -> assertThat(row.optional(13, LocalDateTime.class), is(Optional.empty())),
-                              () -> assertThat(row.optional(14, OffsetTime.class), is(Optional.empty())),
-                              () -> assertThat(row.optional(15, OffsetDateTime.class), is(Optional.empty())),
-                              () -> assertThat(row.optional(16, Date.class), is(Optional.empty())),
-                              () -> assertThat(row.optional(17, Time.class), is(Optional.empty())),
-                              () -> assertThat(row.optional(18, Timestamp.class), is(Optional.empty())));
+                              () -> assertThat(row.optional(14, Date.class), is(Optional.empty())),
+                              () -> assertThat(row.optional(15, Time.class), is(Optional.empty())),
+                              () -> assertThat(row.optional(16, Timestamp.class), is(Optional.empty())));
                     return true;
                 })
                 .one();
@@ -255,7 +233,6 @@ public abstract class AbstractJdbcScalarContract {
     @Test
     protected final void bindsAndMapsEverySupportedScalarThroughTheRealDriver() {
         bindAll(VALUES);
-        assertStoredOffsetDateTimeInstant(VALUES.offsetDateTimeValue());
 
         client.create(SELECT_SQL)
                 .map(row -> {
@@ -274,13 +251,9 @@ public abstract class AbstractJdbcScalarContract {
                               () -> assertThat(row.required(11, LocalDate.class), is(VALUES.localDateValue())),
                               () -> assertThat(row.required(12, LocalTime.class), is(VALUES.localTimeValue())),
                               () -> assertThat(row.required(13, LocalDateTime.class), is(VALUES.localDateTimeValue())),
-                              () -> assertThat(row.required(14, OffsetTime.class).isEqual(VALUES.offsetTimeValue()),
-                                               is(true)),
-                              () -> assertThat(row.required(15, OffsetDateTime.class).isEqual(VALUES.offsetDateTimeValue()),
-                                               is(true)),
-                              () -> assertThat(row.required(16, Date.class), is(VALUES.dateValue())),
-                              () -> assertThat(row.required(17, Time.class), is(VALUES.timeValue())),
-                              () -> assertThat(row.required(18, Timestamp.class), is(VALUES.timestampValue())));
+                              () -> assertThat(row.required(14, Date.class), is(VALUES.dateValue())),
+                              () -> assertThat(row.required(15, Time.class), is(VALUES.timeValue())),
+                              () -> assertThat(row.required(16, Timestamp.class), is(VALUES.timestampValue())));
                     return true;
                 })
                 .one();
@@ -327,8 +300,6 @@ public abstract class AbstractJdbcScalarContract {
      * @param localDateValue local date value
      * @param localTimeValue local time value
      * @param localDateTimeValue local date-time value
-     * @param offsetTimeValue offset time value
-     * @param offsetDateTimeValue offset date-time value
      * @param dateValue JDBC date value
      * @param timeValue JDBC time value
      * @param timestampValue JDBC timestamp value
@@ -347,8 +318,6 @@ public abstract class AbstractJdbcScalarContract {
                                   LocalDate localDateValue,
                                   LocalTime localTimeValue,
                                   LocalDateTime localDateTimeValue,
-                                  OffsetTime offsetTimeValue,
-                                  OffsetDateTime offsetDateTimeValue,
                                   Date dateValue,
                                   Time timeValue,
                                   Timestamp timestampValue) {

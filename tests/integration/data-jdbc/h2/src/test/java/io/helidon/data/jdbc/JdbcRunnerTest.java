@@ -22,8 +22,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -209,8 +207,6 @@ class JdbcRunnerTest {
         assertScalar(LocalDate.of(2026, 7, 25), LocalDate.class);
         assertScalar(LocalTime.of(10, 11, 12), LocalTime.class);
         assertScalar(LocalDateTime.of(2026, 7, 25, 10, 11, 12), LocalDateTime.class);
-        assertScalar(OffsetTime.parse("10:11:12+05:30"), OffsetTime.class);
-        assertScalar(OffsetDateTime.parse("2026-07-25T10:11:12+05:30"), OffsetDateTime.class);
         assertScalar(Date.valueOf("2026-07-25"), Date.class);
         assertScalar(Time.valueOf("10:11:12"), Time.class);
         assertScalar(Timestamp.valueOf("2026-07-25 10:11:12"), Timestamp.class);
@@ -276,7 +272,7 @@ class JdbcRunnerTest {
                                                      () -> escaped.get().required(1, String.class));
         assertThat(expired.getMessage(), is("A JDBC row is valid only during its mapper callback."));
         DataException nullResult = assertThrows(DataException.class,
-                                                () -> client.create("SELECT 'value'").map(row -> null).one());
+                                                () -> client.create("SELECT 'value'").map(_ -> null).one());
         assertThat(nullResult.getMessage(), is("The JDBC row mapper returned null."));
     }
 

@@ -51,8 +51,6 @@ class JdbcScalarTypesTest {
             Map.entry(TypeName.create(LocalDate.class), "DATE"),
             Map.entry(TypeName.create(LocalTime.class), "TIME"),
             Map.entry(TypeName.create(LocalDateTime.class), "TIMESTAMP"),
-            Map.entry(TypeName.create(OffsetTime.class), "TIME_WITH_TIMEZONE"),
-            Map.entry(TypeName.create(OffsetDateTime.class), "TIMESTAMP_WITH_TIMEZONE"),
             Map.entry(TypeName.create("java.sql.Date"), "DATE"),
             Map.entry(TypeName.create("java.sql.Time"), "TIME"),
             Map.entry(TypeName.create("java.sql.Timestamp"), "TIMESTAMP"));
@@ -87,13 +85,17 @@ class JdbcScalarTypesTest {
 
     @Test
     void rejectsTypesOutsideTheScalarContract() {
-        TypeName bigInteger = TypeName.create(BigInteger.class);
-        assertThat(JdbcScalarTypes.isScalar(bigInteger), is(false));
         assertThat(JdbcScalarTypes.isScalar(TypeName.create(String[].class)), is(false));
-        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-                                                        () -> JdbcScalarTypes.nullJdbcTypeConstant(bigInteger));
-        assertThat(failure.getMessage(),
-                   is("JDBC does not support the scalar type 'java.math.BigInteger'."));
+        for (TypeName unsupported : List.of(TypeName.create(BigInteger.class),
+                                            TypeName.create(OffsetTime.class),
+                                            TypeName.create(OffsetDateTime.class))) {
+            assertThat(unsupported.resolvedName(), JdbcScalarTypes.isScalar(unsupported), is(false));
+            IllegalArgumentException failure = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> JdbcScalarTypes.nullJdbcTypeConstant(unsupported));
+            assertThat(failure.getMessage(),
+                       is("JDBC does not support the scalar type '" + unsupported.resolvedName() + "'."));
+        }
     }
 
     @Test
