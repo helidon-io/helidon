@@ -2109,7 +2109,7 @@ class Http2ClientConnectionTest {
     }
 
     @Test
-    void writeHeadersFailureReleasesReservedStream() throws Exception {
+    void writeHeadersFailureClosesConnection() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             CompletableFuture<Http2ClientConnection> connectionFuture = new CompletableFuture<>();
             Thread.ofPlatform().start(() -> {
@@ -2130,10 +2130,8 @@ class Http2ClientConnectionTest {
             assertThrows(UncheckedIOException.class, () -> failingStream.writeHeaders(requestHeaders(), false));
             test.allowWrites();
 
-            Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
-            assertNotNull(recoveredStream);
-            recoveredStream.close();
-            connection.close();
+            test.assertConnectionClosed();
+            assertNull(connection.tryStream(STREAM_CONFIG));
         }
     }
 

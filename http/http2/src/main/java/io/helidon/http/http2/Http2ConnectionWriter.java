@@ -47,8 +47,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private final Lock windowUpdateLock = new ReentrantLock();
     private final Map<Integer, Long> pendingWindowUpdates = new LinkedHashMap<>();
     private final AtomicBoolean windowUpdateWriteScheduled = new AtomicBoolean();
-    private final AtomicBoolean writerClosed = new AtomicBoolean();
-    private final AtomicReference<Throwable> windowUpdateFailure = new AtomicReference<>();
+    private final AtomicReference<Throwable> terminalFailure = new AtomicReference<>();
     private final SocketContext ctx;
     private final Http2FrameListener listener;
     private final Http2Headers.DynamicTable outboundDynamicTable;
@@ -90,7 +89,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         try {
             windowUpdateLock.lock();
             try {
-                throwIfWindowUpdateFailed();
+                throwIfTerminalFailure();
                 if (streamId != 0 && streamId == resetStreamId) {
                     return;
                 }
@@ -107,7 +106,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
         if (locked) {
             try {
-                throwIfWindowUpdateFailed();
+                throwIfTerminalFailure();
                 int count = pendingWindowUpdateCount();
                 Http2FrameData pending;
                 for (int i = 0; i < count && (pending = pollWindowUpdate()) != null; i++) {
@@ -115,7 +114,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 }
                 noLockWrite(frame);
             } catch (Throwable t) {
-                failWindowUpdatesAndClose(t);
+                failWriter(t);
                 throw t;
             } finally {
                 streamLock.unlock();
@@ -144,6 +143,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         Objects.requireNonNull(frame);
         Objects.requireNonNull(flowControl);
         Objects.requireNonNull(onEndStreamFrameWritten);
+        throwIfTerminalFailure();
         int written = 0;
         for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
             written += splitAndWrite(f, flowControl, onEndStreamFrameWritten);
@@ -186,7 +186,12 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         int written;
         lock();
         try {
-            written = noLockWriteHeaders(headers, streamId, flags, maxFrameSize);
+            try {
+                written = noLockWriteHeaders(headers, streamId, flags, maxFrameSize);
+            } catch (Throwable t) {
+                failWriter(t);
+                throw t;
+            }
         } finally {
             streamLock.unlock();
         }
@@ -269,7 +274,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                     }
                 }
             } catch (Throwable t) {
-                closeWriter(t);
+                failWriter(t);
                 throw t;
             }
         } finally {
@@ -315,7 +320,6 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         long fenceGeneration = -1;
         lock();
         try {
-            throwIfWindowUpdateFailed();
             if (reset) {
                 List<Http2FrameData> windowUpdates = new ArrayList<>();
                 windowUpdateLock.lock();
@@ -337,7 +341,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             noLockWrite(frame);
         } catch (Throwable t) {
             if (reset) {
-                failWindowUpdatesAndClose(t);
+                failWriter(t);
             }
             throw t;
         } finally {
@@ -365,7 +369,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                     .start(this::drainWindowUpdates);
         } catch (RuntimeException | Error e) {
             windowUpdateWriteScheduled.set(false);
-            failWindowUpdatesAndClose(e);
+            failWriter(e);
             throw e;
         }
     }
@@ -379,11 +383,14 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 for (int i = 0; i < count && (frame = pollWindowUpdate()) != null; i++) {
                     noLockWrite(frame);
                 }
+            } catch (Throwable t) {
+                // Publish the terminal state while still owning streamLock so a waiting writer cannot slip through.
+                failWriter(t);
             } finally {
                 streamLock.unlock();
             }
         } catch (Throwable t) {
-            failWindowUpdatesAndClose(t);
+            failWriter(t);
         } finally {
             windowUpdateWriteScheduled.set(false);
             if (hasPendingWindowUpdates()) {
@@ -441,18 +448,11 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void failWindowUpdatesAndClose(Throwable failure) {
-        if (!windowUpdateFailure.compareAndSet(null, failure)) {
+    private void failWriter(Throwable failure) {
+        if (!terminalFailure.compareAndSet(null, failure)) {
             return;
         }
         clearWindowUpdates();
-        closeWriter(failure);
-    }
-
-    private void closeWriter(Throwable failure) {
-        if (!writerClosed.compareAndSet(false, true)) {
-            return;
-        }
         try {
             writer.close();
         } catch (Throwable closeFailure) {
@@ -471,10 +471,10 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void throwIfWindowUpdateFailed() {
-        Throwable failure = windowUpdateFailure.get();
+    private void throwIfTerminalFailure() {
+        Throwable failure = terminalFailure.get();
         if (failure != null) {
-            throw new IllegalStateException("Failed to write HTTP/2 window update", failure);
+            throw new IllegalStateException("HTTP/2 connection writer has failed", failure);
         }
     }
 
@@ -483,6 +483,12 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             streamLock.lockInterruptibly();
         } catch (InterruptedException e) {
             throw new IllegalStateException("Interrupted", e);
+        }
+        try {
+            throwIfTerminalFailure();
+        } catch (Throwable t) {
+            streamLock.unlock();
+            throw t;
         }
     }
 
@@ -592,7 +598,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 noLockWrite(frame);
             }
         } catch (Throwable t) {
-            failWindowUpdatesAndClose(t);
+            failWriter(t);
             throw t;
         }
     }

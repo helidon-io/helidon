@@ -1018,6 +1018,34 @@ class Http2ConnectionWriterTest {
     }
 
     @Test
+    void headerWriteFailureTerminatesWriter() {
+        SocketWriterException writeFailure = new SocketWriterException();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            throw writeFailure;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+
+        SocketWriterException thrown = assertThrows(SocketWriterException.class,
+                                                     () -> writer.writeHeaders(headers(),
+                                                                               1,
+                                                                               Http2Flag.HeaderFlags.create(
+                                                                                       Http2Flag.END_OF_HEADERS),
+                                                                               flowControl()));
+        IllegalStateException terminal = assertThrows(IllegalStateException.class,
+                                                       () -> writer.writeHeaders(headers(),
+                                                                                 3,
+                                                                                 Http2Flag.HeaderFlags.create(
+                                                                                         Http2Flag.END_OF_HEADERS),
+                                                                                 flowControl()));
+
+        assertThat(thrown, is(writeFailure));
+        assertThat(terminal.getCause(), is(writeFailure));
+        verify(dataWriter).writeNow(any(BufferData.class));
+        verify(dataWriter).close();
+    }
+
+    @Test
     void batchedWriteFailureDoesNotDebitOrComplete() {
         SocketWriterException writeFailure = new SocketWriterException();
         DataWriter dataWriter = mock(DataWriter.class);
