@@ -457,17 +457,72 @@ If you need to use an exporter that is *not* in the table:
 In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 See also the [OpenTelemetry exporter documentation](https://opentelemetry.io/docs/languages/java/sdk/#spanexporter).
 
-| Exporter type | Signal | OpenTelemetry Java type | Artifact ID to add |
-|---------------|--------|-------------------------|--------------------|
-| `otlp` | Tracing | `OtlpGrpcSpanExporter`, `OtlpHttpSpanExporter` | `opentelemetry-exporter-otlp` |
-| `otlp` | Metrics | `OtlpGrpcMetricExporter`, `OtlpHttpMetricExporter` | `opentelemetry-exporter-otlp` |
-| `otlp` | Logging | `OtlpGrpcLogRecordExporter`, `OtlpHttpLogRecordExporter` | `opentelemetry-exporter-otlp` |
-| `console` | Tracing | `LoggingSpanExporter` | `opentelemetry-exporter-logging` |
-| `console` | Metrics | `LoggingMetricExporter` | `opentelemetry-exporter-logging` |
-| `console` | Logging | `SystemOutLogRecordExporter` | `opentelemetry-exporter-logging` |
-| `logging_otlp` | Tracing | `OtlpJsonLoggingSpanExporter` | `opentelemetry-exporter-logging-otlp` |
-| `logging_otlp` | Metrics | `OtlpJsonLoggingMetricExporter` | `opentelemetry-exporter-logging-otlp` |
-| `logging_otlp` | Logging | `OtlpJsonLoggingLogRecordExporter` | `opentelemetry-exporter-logging-otlp` |
+<table>
+<thead>
+<tr>
+<th>Exporter type</th>
+<th>Signal</th>
+<th>OpenTelemetry Java type</th>
+<th>Artifact ID to add</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>otlp</code></td>
+<td>Tracing</td>
+<td><code>Otlp<wbr>Grpc<wbr>Span<wbr>Exporter</code>, <code>Otlp<wbr>Http<wbr>Span<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>otlp</code></td>
+</tr>
+<tr>
+<td><code>otlp</code></td>
+<td>Metrics</td>
+<td><code>Otlp<wbr>Grpc<wbr>Metric<wbr>Exporter</code>, <code>Otlp<wbr>Http<wbr>Metric<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>otlp</code></td>
+</tr>
+<tr>
+<td><code>otlp</code></td>
+<td>Logging</td>
+<td><code>Otlp<wbr>Grpc<wbr>Log<wbr>Record<wbr>Exporter</code>, <code>Otlp<wbr>Http<wbr>Log<wbr>Record<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>otlp</code></td>
+</tr>
+<tr>
+<td><code>console</code></td>
+<td>Tracing</td>
+<td><code>Logging<wbr>Span<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>logging</code></td>
+</tr>
+<tr>
+<td><code>console</code></td>
+<td>Metrics</td>
+<td><code>Logging<wbr>Metric<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>logging</code></td>
+</tr>
+<tr>
+<td><code>console</code></td>
+<td>Logging</td>
+<td><code>System<wbr>Out<wbr>Log<wbr>Record<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>logging</code></td>
+</tr>
+<tr>
+<td><code>logging_<wbr>otlp</code></td>
+<td>Tracing</td>
+<td><code>Otlp<wbr>Json<wbr>Logging<wbr>Span<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>logging-<wbr>otlp</code></td>
+</tr>
+<tr>
+<td><code>logging_<wbr>otlp</code></td>
+<td>Metrics</td>
+<td><code>Otlp<wbr>Json<wbr>Logging<wbr>Metric<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>logging-<wbr>otlp</code></td>
+</tr>
+<tr>
+<td><code>logging_<wbr>otlp</code></td>
+<td>Logging</td>
+<td><code>Otlp<wbr>Json<wbr>Logging<wbr>Log<wbr>Record<wbr>Exporter</code></td>
+<td><code>opentelemetry-<wbr>exporter-<wbr>logging-<wbr>otlp</code></td>
+</tr>
+</tbody>
+</table>
 
 ### Assigning Exporters
 
