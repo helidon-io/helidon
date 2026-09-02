@@ -73,7 +73,7 @@
         <version.lib.testng>7.8.0</version.lib.testng>
         <version.lib.bedrock>7.0.1</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
-        <version.lib.jmh>1.23</version.lib.jmh>
+        <version.lib.jmh>1.37</version.lib.jmh>
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <version.lib.maven.plugin.annotations>3.15.1</version.lib.maven.plugin.annotations>
