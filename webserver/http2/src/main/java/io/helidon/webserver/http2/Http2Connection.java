@@ -991,6 +991,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         } else {
             ping = Http2Ping.create(inProgressFrame());
             receiveFrameListener.frame(ctx, 0, ping);
+            // PING is observable connection activity (RFC 9113 §6.7 keep-alive)
+            this.lastRequestTimestamp = DateTime.timestamp();
             state = State.SEND_PING_ACK;
         }
     }

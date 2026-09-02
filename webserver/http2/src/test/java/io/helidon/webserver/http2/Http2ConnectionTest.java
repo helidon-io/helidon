@@ -195,6 +195,29 @@ class Http2ConnectionTest {
     }
 
     @Test
+    void pingFrameRefreshesIdleTime() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(frameBytes(Http2Ping.create().toFrameData()));
+
+        AtomicReference<Http2Connection> connectionRef = new AtomicReference<>();
+        DataReader reader = DataReader.create(() -> {
+            byte[] frame = input.poll();
+            if (frame != null) {
+                connectionRef.get().lastRequestTimestamp(ZonedDateTime.now().minusHours(1));
+            }
+            return frame;
+        });
+        ConnectionContext ctx = http2Context(mock(DataWriter.class), reader);
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+        connectionRef.set(connection);
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
+
+        assertThat(connection.idleTime(), lessThan(Duration.ofSeconds(5)));
+    }
+
+    @Test
     void connectionErrorWakesActiveStreamTask() throws InterruptedException {
         Queue<byte[]> input = new ConcurrentLinkedQueue<>();
         Http2Headers h2Headers = Http2Headers.create(WritableHeaders.create());
