@@ -53,11 +53,11 @@ public interface RecordMapperReuseRepository {
     List<Projection<Integer>> integerValues();
 
     /**
-     * Record projection whose generic argument does not alter its supported scalar layout.
+     * Record projection whose component type is supplied by each mapped use site.
      *
      * @param value projected value
      * @param <T> projection identity type
      */
-    record Projection<T>(String value) {
+    record Projection<T>(T value) {
     }
 }

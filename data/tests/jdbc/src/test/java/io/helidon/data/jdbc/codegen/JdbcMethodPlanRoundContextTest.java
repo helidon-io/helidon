@@ -59,6 +59,40 @@ class JdbcMethodPlanRoundContextTest {
         assertThat(plan.recordComponents().size(), is(1));
     }
 
+    /**
+     * Verifies a concrete use of a round-visible generic record resolves its
+     * formal component type before JDBC validation and generation.
+     */
+    @Test
+    void resolvesAParameterizedRecordAvailableOnlyFromTheCurrentRound() {
+        TypeName variable = TypeName.createFromGenericDeclaration("T");
+        TypeName recordType = TypeName.create("example.GeneratedRecord");
+        TypeName mappedType = TypeName.builder(recordType)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        TypeInfo recordInfo = TypeInfo.builder()
+                .typeName(TypeName.builder(recordType)
+                                  .addTypeArgument(variable)
+                                  .build())
+                .rawType(recordType)
+                .declaredType(TypeName.builder(recordType)
+                                      .addTypeParameter("T")
+                                      .addTypeArgument(variable)
+                                      .build())
+                .kind(ElementKind.RECORD)
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addElementInfo(component -> component.kind(ElementKind.RECORD_COMPONENT)
+                        .elementName("value")
+                        .typeName(variable))
+                .build();
+
+        JdbcMethodPlan plan = JdbcMethodPlan.create(repositoryMethod("recordValue", mappedType, null),
+                                                    new TypesRoundContext(Map.of(mappedType, recordInfo)));
+
+        assertThat(plan.mappingKind(), is(JdbcMethodPlan.MappingKind.RECORD));
+        assertThat(plan.recordComponents().getFirst().typeName(), is(TypeNames.STRING));
+    }
+
     @Test
     void acceptsAnExplicitMapperAvailableOnlyFromTheCurrentRound() {
         TypeName mapperType = TypeName.create("example.GeneratedStringMapper");

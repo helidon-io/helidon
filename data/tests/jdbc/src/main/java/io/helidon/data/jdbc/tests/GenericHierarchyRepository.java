@@ -30,6 +30,7 @@ import io.helidon.service.registry.Service;
 public interface GenericHierarchyRepository extends GenericQueryRepository<String>,
                                                     GenericExceptionRepository<IOException>,
                                                     GenericCovariantRepository<String>,
+                                                    GenericRecordRepository<String>,
                                                     ObjectCovariantRepository {
 
     /**
@@ -112,6 +113,23 @@ interface GenericCovariantRepository<T> {
 }
 
 /**
+ * Generic parent that contributes a parameterized record result resolved by
+ * the child repository.
+ *
+ * @param <T> record component type
+ */
+interface GenericRecordRepository<T> {
+
+    /**
+     * Returns a record whose component uses the inherited type argument.
+     *
+     * @return mapped record
+     */
+    @Jdbc.Statement("SELECT VALUE FROM TEST_VALUE")
+    GenericProjection<T> genericProjection();
+}
+
+/**
  * Parent whose broad result is implemented by the generic covariant declaration.
  */
 interface ObjectCovariantRepository {
@@ -123,4 +141,13 @@ interface ObjectCovariantRepository {
      */
     @Jdbc.Statement("SELECT VALUE FROM TEST_VALUE")
     Object covariantValue();
+}
+
+/**
+ * Generic projection used by an inherited repository method.
+ *
+ * @param value mapped value
+ * @param <T> mapped value type
+ */
+record GenericProjection<T>(T value) {
 }
