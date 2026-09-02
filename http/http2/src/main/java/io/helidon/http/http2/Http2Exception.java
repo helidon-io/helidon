@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,10 @@ public class Http2Exception extends RuntimeException {
      * Type of the HTTP/2 error.
      */
     private final Http2ErrorCode type;
+    /**
+     * Whether this is a request-target error.
+     */
+    private final boolean requestTarget;
 
     /**
      * Exception with type and message.
@@ -32,8 +36,7 @@ public class Http2Exception extends RuntimeException {
      * @param message   descriptive message
      */
     public Http2Exception(Http2ErrorCode errorCode, String message) {
-        super(message);
-        this.type = errorCode;
+        this(errorCode, message, false);
     }
 
     /**
@@ -46,6 +49,13 @@ public class Http2Exception extends RuntimeException {
     public Http2Exception(Http2ErrorCode errorCode, String message, Throwable cause) {
         super(message, cause);
         this.type = errorCode;
+        this.requestTarget = false;
+    }
+
+    Http2Exception(Http2ErrorCode errorCode, String message, boolean requestTarget) {
+        super(message);
+        this.type = errorCode;
+        this.requestTarget = requestTarget;
     }
 
     /**
@@ -55,5 +65,14 @@ public class Http2Exception extends RuntimeException {
      */
     public Http2ErrorCode code() {
         return type;
+    }
+
+    /**
+     * Whether this exception reports a malformed HTTP/2 request target.
+     *
+     * @return whether this is a request-target error
+     */
+    public boolean requestTarget() {
+        return requestTarget;
     }
 }

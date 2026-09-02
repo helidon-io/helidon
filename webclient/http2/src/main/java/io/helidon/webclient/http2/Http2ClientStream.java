@@ -225,6 +225,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             updateState(Http2StreamState.checkAndGetState(this.state, header.type(), false, endOfStream, false));
             readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
             incrementInboundWindowSizeLocked(header.length());
+            buffer.dataProcessed(header.length());
         } finally {
             inboundStateLock.unlock();
         }
@@ -733,17 +734,34 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             if (closed || locallyReset) {
                 return;
             }
-            if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
-                try {
+            boolean trailerBlock = readState == ReadState.DATA || readState == ReadState.TRAILERS;
+            if (trailerBlock && !endOfStream) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Received trailers without END_STREAM");
+            }
+            try {
+                if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
                     headers.validateResponse();
                     if (protocolConfig().validateResponseHeaders()) {
                         validateRegularHeaders(headers.httpHeaders());
                     }
-                } catch (Http2Exception e) {
-                    failInboundLocked(e);
-                    inboundStateChanged.signalAll();
-                    return;
+                } else if (trailerBlock) {
+                    headers.validateTrailers();
                 }
+            } catch (Http2Exception e) {
+                if (trailerBlock) {
+                    int discardedDataLength = buffer.failAndDiscard(e);
+                    try {
+                        failInboundLocked(e);
+                        incrementInboundWindowSizeLocked(discardedDataLength);
+                    } finally {
+                        Thread.startVirtualThread(() -> completeTrailersFailure(e));
+                    }
+                } else {
+                    failInboundLocked(e);
+                }
+                inboundStateChanged.signalAll();
+                return;
             }
             switch (readState) {
             case CONTINUE_100_HEADERS -> continue100Locked(headers, endOfStream);

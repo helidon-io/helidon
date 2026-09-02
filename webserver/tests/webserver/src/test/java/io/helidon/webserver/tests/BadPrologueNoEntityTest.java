@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,15 +116,11 @@ class BadPrologueNoEntityTest {
     @Test
     void testBadFragment() {
         String response = socketClient.sendAndReceive(Method.GET,
-                                                      "/?a=b#invalid-fragment>",
+                                                      "/#fragment",
                                                       null,
                                                       List.of());
 
         assertThat(response, containsString("400 Bad Request"));
-        // beginning of message to the first double quote
         assertThat(response, not(containsString("Fragment contains invalid char: ")));
-        // end of message from double quote, index of bad char, and bad char
-        assertThat(response, not(containsString(", index: 16, char: 0x3e")));
-        assertThat(response, not(containsString(">")));
     }
 }

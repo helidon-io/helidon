@@ -33,9 +33,15 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriPathSegment;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -408,6 +414,45 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             if (connectionThread != null && connectionThread != Thread.currentThread()) {
                 connectionThread.interrupt();
             }
+        }
+    }
+
+    private static void validateConnectAuthority(String authority) {
+        int portSeparator;
+        if (authority.charAt(0) == '[') {
+            int closingBracket = authority.indexOf(']');
+            if (closingBracket == -1) {
+                throw new IllegalArgumentException("CONNECT authority is missing a closing bracket");
+            }
+            UriValidator.validateIpLiteral(authority.substring(0, closingBracket + 1));
+            portSeparator = closingBracket + 1;
+            if (portSeparator == authority.length() || authority.charAt(portSeparator) != ':') {
+                throw new IllegalArgumentException("CONNECT authority must include a port");
+            }
+        } else {
+            portSeparator = authority.lastIndexOf(':');
+            if (portSeparator <= 0 || authority.indexOf(':') != portSeparator) {
+                throw new IllegalArgumentException("CONNECT authority must contain a host and port");
+            }
+            UriValidator.validateNonIpLiteral(authority.substring(0, portSeparator));
+        }
+
+        if (portSeparator == authority.length() - 1) {
+            throw new IllegalArgumentException("CONNECT authority port cannot be blank");
+        }
+        int port = 0;
+        for (int i = portSeparator + 1; i < authority.length(); i++) {
+            char c = authority.charAt(i);
+            if (c < '0' || c > '9') {
+                throw new IllegalArgumentException("CONNECT authority port must contain only digits");
+            }
+            port = port * 10 + c - '0';
+            if (port > 65535) {
+                throw new IllegalArgumentException("CONNECT authority port must be between 1 and 65535");
+            }
+        }
+        if (port == 0) {
+            throw new IllegalArgumentException("CONNECT authority port must be between 1 and 65535");
         }
     }
 
@@ -897,8 +942,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
 
         if (trailers) {
-            if (!endOfStream) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received trailers without endOfStream flag " + streamId);
+            if (!validateRequestTrailers(headers, stream, streamId, endOfStream)) {
+                return;
             }
             stream.closeFromRemote();
             state = State.READ_FRAME;
@@ -906,7 +951,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             return;
         }
 
-        headers.validateRequest();
+        if (!validateRequestHeaders(headers, stream, streamId, newStream, endOfStream)) {
+            return;
+        }
         if (http2Config.validateRequestHeaders()) {
             for (var header : headers.httpHeaders()) {
                 if (!SERVER_CONTROLLED_REQUEST_HEADERS.contains(header.headerName())) {
@@ -918,17 +965,17 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 }
             }
         }
-        String path = headers.path();
-        Method method = headers.method();
         if (newStream) {
             activateStream(streamId);
         }
-        HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
-                                                        PROTOCOL,
-                                                        PROTOCOL_VERSION,
-                                                        method,
-                                                        path,
-                                                        http2Config.validatePath());
+        HttpPrologue httpPrologue;
+        try {
+            httpPrologue = createPrologue(headers);
+        } catch (IllegalArgumentException _) {
+            stream.resetProtocolError(0, endOfStream);
+            state = State.READ_FRAME;
+            return;
+        }
         stream.prologue(httpPrologue);
         stream.requestLimit(limit);
         stream.headers(headers, endOfStream);
@@ -942,6 +989,48 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // we now have all information needed to execute
         ctx.executor()
                 .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+    }
+
+    private boolean validateRequestTrailers(Http2Headers headers,
+                                            Http2ServerStream stream,
+                                            int streamId,
+                                            boolean endOfStream) {
+        if (!endOfStream) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received trailers without endOfStream flag " + streamId);
+        }
+        try {
+            headers.validateTrailers();
+        } catch (Http2Exception e) {
+            if (e.code() != Http2ErrorCode.PROTOCOL) {
+                throw e;
+            }
+            stream.resetProtocolError(0, true);
+            state = State.READ_FRAME;
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validateRequestHeaders(Http2Headers headers,
+                                           Http2ServerStream stream,
+                                           int streamId,
+                                           boolean newStream,
+                                           boolean endOfStream) {
+        try {
+            headers.validateRequest();
+            return true;
+        } catch (Http2Exception e) {
+            boolean connect = Method.CONNECT.equals(headers.method());
+            if (e.code() != Http2ErrorCode.PROTOCOL || (!connect && !e.requestTarget())) {
+                throw e;
+            }
+            if (newStream) {
+                activateStream(streamId);
+            }
+            stream.resetProtocolError(0, endOfStream);
+            state = State.READ_FRAME;
+            return false;
+        }
     }
 
     private void decodeDroppedInboundHeaders(Http2FrameData... headerFrames) {
@@ -991,6 +1080,62 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         } else {
             emptyFrames = 0;
         }
+    }
+
+    private HttpPrologue createPrologue(Http2Headers headers) {
+        Method method = headers.method();
+        if (Method.CONNECT.equals(method)) {
+            String authority = headers.authority();
+            if (http2Config.validatePath()) {
+                validateConnectAuthority(authority);
+            }
+            return HttpPrologue.create(FULL_PROTOCOL,
+                                       PROTOCOL,
+                                       PROTOCOL_VERSION,
+                                       method,
+                                       new AuthorityFormPath(authority),
+                                       UriQuery.empty(),
+                                       UriFragment.empty());
+        }
+
+        String path = headers.path();
+        HttpPrologue prologue;
+        if (validateRequestTarget(method, path)) {
+            prologue = HttpPrologue.create(FULL_PROTOCOL,
+                                           PROTOCOL,
+                                           PROTOCOL_VERSION,
+                                           method,
+                                           UriPath.createRelative(UriPath.root(), path),
+                                           UriQuery.empty(),
+                                           UriFragment.empty());
+        } else {
+            prologue = HttpPrologue.create(FULL_PROTOCOL,
+                                           PROTOCOL,
+                                           PROTOCOL_VERSION,
+                                           method,
+                                           path,
+                                           http2Config.validatePath());
+        }
+        if (http2Config.validatePath() && prologue.hasQuery()) {
+            UriValidator.validateQuery(prologue.query().rawValue());
+        }
+        return prologue;
+    }
+
+    private boolean validateRequestTarget(Method method, String requestTarget) {
+        boolean specialRequestTarget = Method.OPTIONS.equals(method) && "*".equals(requestTarget);
+        if (!http2Config.validatePath()) {
+            return specialRequestTarget;
+        }
+        if (specialRequestTarget) {
+            return true;
+        }
+        if (!requestTarget.isEmpty()
+                && requestTarget.charAt(0) == '/'
+                && requestTarget.indexOf('#') == -1) {
+            return false;
+        }
+        throw new IllegalArgumentException("Invalid HTTP/2 request-target form");
     }
 
     private void activateStream(int streamId) {
@@ -1194,6 +1339,44 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         CONTINUATION,
         // unknown frames must be discarded
         UNKNOWN
+    }
+
+    private record AuthorityFormPath(String rawPath) implements UriPath {
+        private static final Parameters EMPTY_PARAMETERS = Parameters.empty("uri/authority");
+
+        @Override
+        public String rawPathNoParams() {
+            return rawPath;
+        }
+
+        @Override
+        public String path() {
+            return "";
+        }
+
+        @Override
+        public Parameters matrixParameters() {
+            return EMPTY_PARAMETERS;
+        }
+
+        @Override
+        public UriPath absolute() {
+            return this;
+        }
+
+        @Override
+        public List<UriPathSegment> segments() {
+            return List.of();
+        }
+
+        @Override
+        public void validate() {
+        }
+
+        @Override
+        public String toString() {
+            return rawPath;
+        }
     }
 
     // Package-private for deterministic tests of writer-thread failure handling.

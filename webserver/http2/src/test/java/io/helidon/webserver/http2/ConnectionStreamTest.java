@@ -29,6 +29,8 @@ import io.helidon.common.socket.SocketContext;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
@@ -372,20 +374,28 @@ class ConnectionStreamTest {
         when(ctx.router()).thenReturn(Router.empty());
         when(ctx.listenerContext()).thenReturn(listenerContext);
 
-        return new Http2ServerStream(ctx,
-                                     streams,
-                                     NO_OP_RESET_TRACKER,
-                                     HttpRouting.empty(),
-                                     config,
-                                     subProtocols,
-                                     STREAM_ID,
-                                     Http2Settings.builder().build(),
-                                     Http2Settings.builder().build(),
-                                     writer,
-                                     flowControl,
-                                     new Http2ServerStream.InboundDataBudget(1024,
-                                                                             2L * config.initialWindowSize()),
-                                     new Http2ConnectionChecks(config, mock(Http2Connection.class)));
+        Http2ServerStream stream = new Http2ServerStream(ctx,
+                                                        streams,
+                                                        NO_OP_RESET_TRACKER,
+                                                        HttpRouting.empty(),
+                                                        config,
+                                                        subProtocols,
+                                                        STREAM_ID,
+                                                        Http2Settings.builder().build(),
+                                                        Http2Settings.builder().build(),
+                                                        writer,
+                                                        flowControl,
+                                                        new Http2ServerStream.InboundDataBudget(
+                                                                1024,
+                                                                2L * config.initialWindowSize()),
+                                                        new Http2ConnectionChecks(config, mock(Http2Connection.class)));
+        stream.prologue(HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
+                                            Http2Connection.PROTOCOL,
+                                            Http2Connection.PROTOCOL_VERSION,
+                                            Method.GET,
+                                            "/",
+                                            false));
+        return stream;
     }
 
     private static final class AsyncSubProtocolHandler implements Http2SubProtocolSelector.SubProtocolHandler {

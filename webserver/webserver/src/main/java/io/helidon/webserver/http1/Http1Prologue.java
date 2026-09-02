@@ -165,6 +165,111 @@ public final class Http1Prologue {
         return maybePost == POST_INT;
     }
 
+    private static boolean validateRequestTarget(Method method,
+                                                 String requestTarget,
+                                                 boolean hasQuery,
+                                                 boolean hasFragment) {
+        if (hasFragment) {
+            throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
+        }
+        if ("*".equals(requestTarget)) {
+            if (!hasQuery && Method.OPTIONS.equals(method)) {
+                return true;
+            }
+        } else {
+            if (!requestTarget.isEmpty()
+                    && (requestTarget.charAt(0) == '/' || isAbsoluteForm(requestTarget))) {
+                return false;
+            }
+            throw new IllegalArgumentException("Relative path in HTTP request-target");
+        }
+        throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
+    }
+
+    private static boolean isAbsoluteForm(String requestTarget) {
+        int colon = requestTarget.indexOf(':');
+        if (colon <= 0) {
+            return false;
+        }
+        char first = requestTarget.charAt(0);
+        if ((first < 'a' || first > 'z') && (first < 'A' || first > 'Z')) {
+            return false;
+        }
+        for (int i = 1; i < colon; i++) {
+            char c = requestTarget.charAt(i);
+            if ((c >= 'a' && c <= 'z')
+                    || (c >= 'A' && c <= 'Z')
+                    || (c >= '0' && c <= '9')
+                    || c == '+' || c == '-' || c == '.') {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private static HttpPrologue connectPrologue(String protocol,
+                                                Method method,
+                                                String path,
+                                                boolean validatePath) {
+        if (validatePath) {
+            int portSeparator;
+            if (path.charAt(0) == '[') {
+                int closingBracket = path.indexOf(']');
+                if (closingBracket == -1) {
+                    throw new IllegalArgumentException("CONNECT authority is missing a closing bracket");
+                }
+                UriValidator.validateIpLiteral(path.substring(0, closingBracket + 1));
+                portSeparator = closingBracket + 1;
+                if (portSeparator == path.length() || path.charAt(portSeparator) != ':') {
+                    throw new IllegalArgumentException("CONNECT authority must include a port");
+                }
+            } else {
+                portSeparator = path.lastIndexOf(':');
+                if (portSeparator <= 0 || path.indexOf(':') != portSeparator) {
+                    throw new IllegalArgumentException("CONNECT authority must contain a host and port");
+                }
+
+                String host = path.substring(0, portSeparator);
+                UriValidator.validateNonIpLiteral(host);
+            }
+
+            if (portSeparator == path.length() - 1) {
+                throw new IllegalArgumentException("CONNECT authority port cannot be blank");
+            }
+            int port = 0;
+            for (int i = portSeparator + 1; i < path.length(); i++) {
+                char c = path.charAt(i);
+                if (c < '0' || c > '9') {
+                    throw new IllegalArgumentException("CONNECT authority port must contain only digits");
+                }
+                port = port * 10 + c - '0';
+                if (port > 65535) {
+                    throw new IllegalArgumentException("CONNECT authority port must be between 1 and 65535");
+                }
+            }
+            if (port == 0) {
+                throw new IllegalArgumentException("CONNECT authority port must be between 1 and 65535");
+            }
+        }
+        if (path.startsWith("[v") || path.startsWith("[V")) {
+            throw RequestException.builder()
+                    .type(DirectHandler.EventType.OTHER)
+                    .status(Status.NOT_IMPLEMENTED_501)
+                    .request(DirectTransportRequest.create(protocol, method.text(), path))
+                    .message("CONNECT IP address mechanism is not supported")
+                    .safeMessage(true)
+                    .build();
+        }
+        return HttpPrologue.create(protocol,
+                                   "HTTP",
+                                   "1.1",
+                                   method,
+                                   new AuthorityFormPath(path),
+                                   UriQuery.empty(),
+                                   UriFragment.empty());
+    }
+
     private HttpPrologue doRead() {
         int eol;
 
@@ -239,55 +344,31 @@ public final class Http1Prologue {
 
         try {
             if (Method.CONNECT.equals(method)) {
-                int portSeparator;
-                if (path.charAt(0) == '[') {
-                    int closingBracket = path.indexOf(']');
-                    if (closingBracket == -1) {
-                        throw new IllegalArgumentException("CONNECT authority is missing a closing bracket");
-                    }
-                    UriValidator.validateIpLiteral(path.substring(0, closingBracket + 1));
-                    portSeparator = closingBracket + 1;
-                    if (portSeparator == path.length() || path.charAt(portSeparator) != ':') {
-                        throw new IllegalArgumentException("CONNECT authority must include a port");
-                    }
-                } else {
-                    portSeparator = path.lastIndexOf(':');
-                    if (portSeparator <= 0 || path.indexOf(':') != portSeparator) {
-                        throw new IllegalArgumentException("CONNECT authority must contain a host and port");
-                    }
-
-                    String host = path.substring(0, portSeparator);
-                    UriValidator.validateNonIpLiteral(host);
-                }
-
-                if (portSeparator == path.length() - 1) {
-                    throw new IllegalArgumentException("CONNECT authority port cannot be blank");
-                }
-                int port = 0;
-                for (int i = portSeparator + 1; i < path.length(); i++) {
-                    char c = path.charAt(i);
-                    if (c < '0' || c > '9') {
-                        throw new IllegalArgumentException("CONNECT authority port must contain only digits");
-                    }
-                    port = port * 10 + c - '0';
-                    if (port > 65535) {
-                        throw new IllegalArgumentException("CONNECT authority port must be between 0 and 65535");
-                    }
-                }
+                return connectPrologue(protocol, method, path, validatePath);
+            }
+            HttpPrologue prologue = HttpPrologue.create(protocol,
+                                                        "HTTP",
+                                                        "1.1",
+                                                        method,
+                                                        path,
+                                                        validatePath);
+            if (!validatePath) {
+                return prologue;
+            }
+            String requestTarget = prologue.uriPath().rawPath();
+            if (validateRequestTarget(method,
+                                      requestTarget,
+                                      prologue.hasQuery(),
+                                      prologue.fragment().hasValue())) {
                 return HttpPrologue.create(protocol,
                                            "HTTP",
                                            "1.1",
                                            method,
-                                           new AuthorityFormPath(path),
-                                           UriQuery.empty(),
-                                           UriFragment.empty());
+                                           UriPath.createRelative(UriPath.root(), requestTarget),
+                                           prologue.query(),
+                                           prologue.fragment());
             }
-            return HttpPrologue.create(protocol,
-                                       "HTTP",
-                                       "1.1",
-                                       method,
-                                       path,
-                                       validatePath);
+            return prologue;
         } catch (IllegalArgumentException e) {
             throw badRequest("Invalid path: " + e.getMessage(), method.text(), path, "HTTP", "1.1");
         }

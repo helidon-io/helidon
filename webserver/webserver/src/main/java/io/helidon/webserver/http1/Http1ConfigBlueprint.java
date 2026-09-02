@@ -63,7 +63,8 @@ interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
     int maxHeadersSize();
 
     /**
-     * If set to false, any query and fragment is accepted (even containing illegal characters).
+     * Disables query and fragment syntax validation when set to {@code false}; intended only for closed systems receiving
+     * trusted, valid request targets, as behavior for invalid input is unspecified.
      * Validation of path is controlled by {@link #validatePath()}.
      *
      * @return whether to validate prologue query and fragment
@@ -74,7 +75,7 @@ interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
 
 
     /**
-     * If set to false, any path is accepted (even containing illegal characters).
+     * Whether to validate path characters and HTTP/1.1 request-target forms.
      *
      * @return whether to validate path
      */

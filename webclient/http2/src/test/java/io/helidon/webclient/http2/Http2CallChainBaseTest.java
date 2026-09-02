@@ -21,6 +21,7 @@ import java.net.URI;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.ClientUri;
@@ -28,6 +29,7 @@ import io.helidon.webclient.api.ClientUri;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class Http2CallChainBaseTest {
@@ -59,6 +61,34 @@ class Http2CallChainBaseTest {
         Http2CallChainBase.alignHostHeader(uri(), headers);
 
         assertThat(headers.first(HeaderNames.HOST).orElseThrow(), is("service.example:8443"));
+    }
+
+    @Test
+    void ordinaryConnectOmitsSchemeAndPath() {
+        ClientRequestHeaders headers = emptyHeaders();
+        ClientUri uri = uri();
+        Http2CallChainBase.alignHostHeader(uri, headers);
+
+        Http2Headers http2Headers = Http2CallChainBase.prepareHeaders(Method.CONNECT, headers, uri);
+
+        http2Headers.validateRequest();
+        assertThat(http2Headers.method(), is(Method.CONNECT));
+        assertThat(http2Headers.authority(), is("service.example:8443"));
+        assertThat(http2Headers.scheme(), is(nullValue()));
+        assertThat(http2Headers.path(), is(nullValue()));
+    }
+
+    @Test
+    void ordinaryRequestKeepsSchemeAndPath() {
+        ClientRequestHeaders headers = emptyHeaders();
+        ClientUri uri = uri();
+        Http2CallChainBase.alignHostHeader(uri, headers);
+
+        Http2Headers http2Headers = Http2CallChainBase.prepareHeaders(Method.GET, headers, uri);
+
+        http2Headers.validateRequest();
+        assertThat(http2Headers.scheme(), is("https"));
+        assertThat(http2Headers.path(), is("/path"));
     }
 
     private static ClientRequestHeaders emptyHeaders() {

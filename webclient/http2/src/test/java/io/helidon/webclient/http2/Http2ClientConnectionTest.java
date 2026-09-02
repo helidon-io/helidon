@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
@@ -1779,6 +1780,292 @@ class Http2ClientConnectionTest {
                 stream.close();
                 connection.close();
             }
+        }
+    }
+
+    @Test
+    void pseudoHeaderInTrailersFailsStream() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+            CountDownLatch entityReadStarted = new CountDownLatch(1);
+            CompletableFuture<BufferData> entity = CompletableFuture.supplyAsync(() -> {
+                entityReadStarted.countDown();
+                return stream.read();
+            });
+            assertThat(entityReadStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+            assertThrows(TimeoutException.class, () -> entity.get(200, TimeUnit.MILLISECONDS));
+
+            Http2Headers trailers = encodedTrailers().path("/forbidden");
+            test.offerInbound(encodedHeaderFrame(stream.streamId(), trailers, inboundTable, huffman, true));
+
+            ExecutionException entityFailure = assertThrows(
+                    ExecutionException.class,
+                    () -> entity.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            assertThat(entityFailure.getCause(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) entityFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+
+            ExecutionException trailersFailure = assertThrows(
+                    ExecutionException.class,
+                    () -> stream.trailers().get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            assertThat(trailersFailure.getCause(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) trailersFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void invalidTrailersCallbackDoesNotBlockSiblingStream() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream secondStream = connection.createStream(STREAM_CONFIG);
+            firstStream.writeHeaders(requestHeaders(), true);
+            secondStream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(firstStream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(firstStream.readHeaders().status(), is(Status.OK_200));
+
+            CountDownLatch callbackStarted = new CountDownLatch(1);
+            CountDownLatch releaseCallback = new CountDownLatch(1);
+            CompletableFuture<Headers> publishedTrailers = firstStream.trailers().thenApply(it -> it);
+            publishedTrailers.whenComplete((_, _) -> {
+                callbackStarted.countDown();
+                try {
+                    releaseCallback.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+
+            try {
+                Http2Headers invalidTrailers = encodedTrailers().path("/forbidden");
+                test.offerInbound(encodedHeaderFrame(firstStream.streamId(),
+                                                     invalidTrailers,
+                                                     inboundTable,
+                                                     huffman,
+                                                     true),
+                                  encodedHeaderFrame(secondStream.streamId(),
+                                                     encodedResponseHeaders(false),
+                                                     inboundTable,
+                                                     huffman,
+                                                     true));
+
+                assertThat(callbackStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+                assertThat(secondStream.readHeaders().status(), is(Status.OK_200));
+            } finally {
+                releaseCallback.countDown();
+                firstStream.close();
+                secondStream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void pseudoHeaderInTrailersRestoresConnectionWindowForDiscardedData() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+            long initialConnectionWindow = connection.flowControl().incrementInboundConnectionWindowSize(0);
+            byte[] entity = "hello".getBytes(StandardCharsets.UTF_8);
+            Http2Headers trailers = encodedTrailers().path("/forbidden");
+            test.offerInbound(dataFrame(stream.streamId(), entity, false),
+                              encodedHeaderFrame(stream.streamId(), trailers, inboundTable, huffman, true));
+
+            ExecutionException trailersFailure = assertThrows(
+                    ExecutionException.class,
+                    () -> stream.trailers().get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            assertThat(trailersFailure.getCause(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) trailersFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+            assertThat(connection.flowControl().incrementInboundConnectionWindowSize(0), is(initialConnectionWindow));
+
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void pseudoHeaderInTrailersRestoresConnectionWindowForDequeuedData() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            CountDownLatch dataDequeued = new CountDownLatch(1);
+            CountDownLatch resumeEntityReader = new CountDownLatch(1);
+            AtomicReference<Thread> entityReaderThread = new AtomicReference<>();
+            Http2FrameListener recvListener = new Http2FrameListener() {
+                @Override
+                public void frame(SocketContext ctx, int streamId, BufferData data) {
+                    if (Thread.currentThread() == entityReaderThread.get()) {
+                        dataDequeued.countDown();
+                        try {
+                            assertThat(resumeEntityReader.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                                       is(true));
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException("Interrupted while holding dequeued DATA", e);
+                        }
+                    }
+                }
+            };
+            when(test.client.recvListener()).thenReturn(recvListener);
+
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+            long initialConnectionWindow = connection.flowControl().incrementInboundConnectionWindowSize(0);
+            byte[] entityBytes = "hello".getBytes(StandardCharsets.UTF_8);
+            CompletableFuture<BufferData> entity = CompletableFuture.supplyAsync(() -> {
+                entityReaderThread.set(Thread.currentThread());
+                return stream.read();
+            });
+            try {
+                test.offerInbound(dataFrame(stream.streamId(), entityBytes, false));
+                assertThat(dataDequeued.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+
+                Http2Headers trailers = encodedTrailers().path("/forbidden");
+                test.offerInbound(encodedHeaderFrame(stream.streamId(), trailers, inboundTable, huffman, true));
+
+                ExecutionException trailersFailure = assertThrows(
+                        ExecutionException.class,
+                        () -> stream.trailers().get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+                assertThat(trailersFailure.getCause(), instanceOf(Http2Exception.class));
+                assertThat(((Http2Exception) trailersFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(connection.flowControl().incrementInboundConnectionWindowSize(0), is(initialConnectionWindow));
+
+                resumeEntityReader.countDown();
+                ExecutionException entityFailure = assertThrows(
+                        ExecutionException.class,
+                        () -> entity.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+                assertThat(entityFailure.getCause(), instanceOf(Http2Exception.class));
+                assertThat(((Http2Exception) entityFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+            } finally {
+                resumeEntityReader.countDown();
+                stream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void discardedStreamBufferPublishesFailure() {
+        StreamBuffer buffer = new StreamBuffer(mock(Http2ClientStream.class), 1);
+        byte[] entity = "hello".getBytes(StandardCharsets.UTF_8);
+        buffer.push(dataFrame(1, entity, false));
+        Http2Exception failure = new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid trailers");
+
+        assertThat(buffer.failAndDiscard(failure), is(entity.length));
+        assertThat(assertThrows(Http2Exception.class, () -> buffer.poll(Duration.ZERO)), is(failure));
+    }
+
+    @Test
+    void invalidTrailersCompleteFutureWhenWindowUpdateFails() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+            doAnswer(invocation -> {
+                BufferData frame = invocation.getArgument(0);
+                if (frame.get(3) == Http2FrameType.WINDOW_UPDATE.type()) {
+                    throw new UncheckedIOException(new IOException("expected WINDOW_UPDATE failure"));
+                }
+                return null;
+            }).when(test.dataWriter).writeNow(any(BufferData.class));
+
+            byte[] entity = "hello".getBytes(StandardCharsets.UTF_8);
+            Http2Headers trailers = encodedTrailers().path("/forbidden");
+            test.offerInbound(dataFrame(stream.streamId(), entity, false),
+                              encodedHeaderFrame(stream.streamId(), trailers, inboundTable, huffman, true));
+
+            ExecutionException trailersFailure = assertThrows(
+                    ExecutionException.class,
+                    () -> stream.trailers().get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            assertThat(trailersFailure.getCause(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) trailersFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+            test.assertConnectionClosed();
+
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void pseudoHeaderTrailersWithoutEndStreamCloseConnection() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+            Http2Headers trailers = encodedTrailers().path("/forbidden");
+            test.offerInbound(encodedHeaderFrame(stream.streamId(), trailers, inboundTable, huffman, false));
+
+            test.assertConnectionClosed();
+
+            stream.close();
+            connection.close();
         }
     }
 

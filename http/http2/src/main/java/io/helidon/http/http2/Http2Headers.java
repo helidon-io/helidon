@@ -26,8 +26,10 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.buffers.Ascii;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -353,6 +355,22 @@ public class Http2Headers {
     }
 
     /**
+     * Validate that request or response trailers do not contain pseudo-headers.
+     *
+     * @throws Http2Exception if the trailers contain a pseudo-header
+     */
+    public void validateTrailers() throws Http2Exception {
+        if (pseudoHeaders.size() != 0) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Pseudo header in trailers");
+        }
+        for (Header header : headers) {
+            if (header.headerName().isPseudoHeader()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Pseudo header in trailers");
+            }
+        }
+    }
+
+    /**
      * Validate client or server request.
      *
      * @throws Http2Exception in case the request is invalid
@@ -380,14 +398,27 @@ public class Http2Headers {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "te in headers with other value than trailers");
             }
         }
-        if (!pseudoHeaders.hasScheme()) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :scheme pseudo header");
-        }
-        if (!pseudoHeaders.hasPath()) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :path pseudo header");
-        }
         if (!pseudoHeaders.hasMethod()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :method pseudo header");
+        }
+        boolean connect = Method.CONNECT.equals(pseudoHeaders.method());
+        if (connect) {
+            if (pseudoHeaders.hasScheme()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":scheme in CONNECT request headers");
+            }
+            if (pseudoHeaders.hasPath()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":path in CONNECT request headers");
+            }
+        } else {
+            if (!pseudoHeaders.hasScheme()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :scheme pseudo header");
+            }
+            if (!pseudoHeaders.hasPath()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :path pseudo header", true);
+            }
+            if (pseudoHeaders.path().isEmpty()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":path pseudo header has empty value", true);
+            }
         }
         List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
         if (hostValues.size() > 1) {
@@ -395,7 +426,10 @@ public class Http2Headers {
         }
         boolean hasHost = hostValues.size() == 1 && !hostValues.get(0).isEmpty();
         boolean hasAuthority = pseudoHeaders.hasAuthority() && !pseudoHeaders.authority().isEmpty();
-        if (!hasAuthority && !hasHost) {
+        if (connect && !hasAuthority) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header in CONNECT request");
+        }
+        if (!connect && !hasAuthority && !hasHost) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header or Host header");
         }
         if (pseudoHeaders.hasAuthority() && !hostValues.isEmpty()
@@ -543,7 +577,15 @@ public class Http2Headers {
 
     private static boolean authoritiesMatch(String scheme, String authority, String host) {
         try {
-            int defaultPort = defaultPort(scheme);
+            if (scheme == null) {
+                String lowerAuthority = Ascii.toLowerCase(authority);
+                String lowerHost = Ascii.toLowerCase(host);
+                if (lowerAuthority.equals(lowerHost)
+                        || normalizeSchemeLessAuthority(lowerAuthority).equals(normalizeSchemeLessAuthority(lowerHost))) {
+                    return true;
+                }
+            }
+            int defaultPort = scheme == null ? UriAuthority.UNDEFINED_PORT : defaultPort(scheme);
             UriAuthority authorityValue = UriAuthority.create(authority);
             UriAuthority hostValue = UriAuthority.create(host);
             return authorityValue.host().equals(hostValue.host())
@@ -551,6 +593,92 @@ public class Http2Headers {
         } catch (IllegalArgumentException e) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
         }
+    }
+
+    private static String normalizeSchemeLessAuthority(String authority) {
+        if (authority.isEmpty() || authority.charAt(0) == '[') {
+            return authority;
+        }
+
+        int colon = authority.indexOf(':');
+        if (colon != authority.lastIndexOf(':')) {
+            return authority;
+        }
+
+        int hostEnd = colon == -1 ? authority.length() : colon;
+        String host = authority.substring(0, hostEnd);
+        UriValidator.validateHost(host);
+        String normalizedHost = decodeUnreserved(host);
+        if (colon == -1) {
+            return normalizedHost;
+        }
+        return normalizedHost + ":" + parsePort(authority, colon + 1);
+    }
+
+    private static String decodeUnreserved(String host) {
+        int percent = host.indexOf('%');
+        if (percent == -1) {
+            return host;
+        }
+
+        StringBuilder result = new StringBuilder(host.length());
+        result.append(host, 0, percent);
+        for (int i = percent; i < host.length(); i++) {
+            char c = host.charAt(i);
+            if (c != '%') {
+                result.append(c);
+                continue;
+            }
+            char high = host.charAt(++i);
+            char low = host.charAt(++i);
+            char decoded = (char) ((hexDigit(high) << 4) | hexDigit(low));
+            if (isUnreserved(decoded)) {
+                result.append(Ascii.toLowerCase(decoded));
+            } else {
+                result.append('%')
+                        .append(Ascii.toUpperCase(high))
+                        .append(Ascii.toUpperCase(low));
+            }
+        }
+        return result.toString();
+    }
+
+    private static int parsePort(String authority, int offset) {
+        if (offset == authority.length()) {
+            throw new IllegalArgumentException("Authority port cannot be blank");
+        }
+        int result = 0;
+        for (int i = offset; i < authority.length(); i++) {
+            char c = authority.charAt(i);
+            if (c < '0' || c > '9') {
+                throw new IllegalArgumentException("Authority port must contain only digits");
+            }
+            result = result * 10 + c - '0';
+            if (result > 65535) {
+                throw new IllegalArgumentException("Authority port must be between 0 and 65535");
+            }
+        }
+        return result;
+    }
+
+    private static int hexDigit(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        if (c >= 'a' && c <= 'f') {
+            return c - 'a' + 10;
+        }
+        return c - 'A' + 10;
+    }
+
+    private static boolean isUnreserved(char c) {
+        return c >= 'a' && c <= 'z'
+                || c >= 'A' && c <= 'Z'
+                || c >= '0' && c <= '9'
+                || c == '-'
+                || c == '.'
+                || c == '_'
+                || c == '~';
     }
 
     private static int defaultPort(String scheme) {
@@ -634,9 +762,6 @@ public class Http2Headers {
             if (isPseudoHeader) {
                 if (value == null) {
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Value of a pseudo header must not be null");
-                }
-                if (headerName.equals(PATH_NAME) && value.length() == 0) {
-                    throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":path pseudo header has empty value");
                 }
                 if (headerName.equals(PATH_NAME)) {
                     validateAndSetPseudoHeader(headerName, pseudoHeaders::hasPath, pseudoHeaders::path, value);

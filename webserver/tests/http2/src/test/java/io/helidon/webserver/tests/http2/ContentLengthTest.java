@@ -370,6 +370,26 @@ class ContentLengthTest {
         assertNextRequestSucceeds(h2conn, 3);
     }
 
+    @Test
+    void pseudoHeaderInTrailersResetsStream(Http2TestClient client) {
+        Http2TestConnection h2conn = client.createConnection();
+
+        writeRequestHeaders(h2conn, 1, LONGER_DATA_PATH, WritableHeaders.create(), false);
+        Http2Headers trailers = Http2Headers.create(WritableHeaders.create());
+        trailers.path("/forbidden");
+        h2conn.writer().writeHeaders(trailers,
+                                     1,
+                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                     FlowControl.Outbound.NOOP);
+
+        h2conn.assertSettings(TIMEOUT);
+        h2conn.assertWindowsUpdate(0, TIMEOUT);
+        h2conn.assertSettings(TIMEOUT);
+
+        assertProtocolRstStream(h2conn, 1);
+        assertNextRequestSucceeds(h2conn, 3);
+    }
+
     private static Handler handler() {
         return (req, res) -> {
             try {

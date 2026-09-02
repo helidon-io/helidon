@@ -24,11 +24,15 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers.DynamicTable;
 import io.helidon.http.http2.Http2Headers.HeaderRecord;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -188,6 +192,145 @@ class Http2HeadersTest {
     @Test
     void testRequestRejectsHostAuthorityMismatch() {
         String hexEncoded = requestHeaders("signed.example", "attacker.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+        assertThat(exception.requestTarget(), is(false));
+    }
+
+    @Test
+    void testRequestRejectsEmptyPathAfterDecoding() {
+        String hexEncoded = "82 86 " + literalWithIndexedName(4, "")
+                + " " + literalWithIndexedName(1, "signed.example");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+        assertThat(exception.requestTarget(), is(true));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"authority", "method", "path", "empty-path", "scheme", "status"})
+    void testTrailersRejectPseudoHeaders(String pseudoHeader) {
+        Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create());
+        switch (pseudoHeader) {
+        case "authority" -> http2Headers.authority("www.example.com");
+        case "method" -> http2Headers.method(Method.GET);
+        case "path" -> http2Headers.path("/forbidden");
+        case "empty-path" -> http2Headers.path("");
+        case "scheme" -> http2Headers.scheme("https");
+        case "status" -> http2Headers.status(Status.OK_200);
+        default -> throw new AssertionError("Unexpected pseudo header: " + pseudoHeader);
+        }
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateTrailers);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testTrailersRejectUnknownPseudoHeader() {
+        WritableHeaders<?> trailers = WritableHeaders.create()
+                .add(HeaderNames.create(":unknown"), "value");
+        Http2Headers http2Headers = Http2Headers.create(trailers);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateTrailers);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestAcceptsOrdinaryConnect() {
+        String hexEncoded = connectRequestHeaders("proxy.example:443", "proxy.example:443");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        http2Headers.validateRequest();
+
+        assertThat(http2Headers.method(), is(Method.CONNECT));
+        assertThat(http2Headers.authority(), is("proxy.example:443"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "'[Vf.foo-bar]:443', '[Vf.foo-bar]:443'",
+            "service+name:443, service+name:443",
+            "service%2Dname:443, service%2Dname:443",
+            "service%2Dname:443, service%2dname:443",
+            "service-name:443, service%2Dname:443",
+            "service%2Dname:443, service-name:443"
+    })
+    void testRequestAcceptsMatchingUriHostOnOrdinaryConnect(String authority, String host) {
+        String hexEncoded = connectRequestHeaders(authority, host);
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        http2Headers.validateRequest();
+
+        assertThat(http2Headers.authority(), is(authority));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "service+name:443, service%2Bname:443",
+            "service%2Bname:443, service+name:443"
+    })
+    void testRequestRejectsReservedEncodingMismatchOnOrdinaryConnect(String authority, String host) {
+        String hexEncoded = connectRequestHeaders(authority, host);
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestRejectsUnicodeCaseFoldedHostOnOrdinaryConnect() {
+        String hexEncoded = literalWithIndexedName(2, "CONNECT")
+                + " " + literalWithIndexedName(1, "service%2Di.example:443")
+                + " " + literalWithNewNameUtf8("host", "service%2D\u0131.example:443");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestRejectsConnectWithScheme() {
+        Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create())
+                .method(Method.CONNECT)
+                .scheme("https")
+                .authority("proxy.example:443");
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestRejectsConnectWithPath() {
+        Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create())
+                .method(Method.CONNECT)
+                .path("/")
+                .authority("proxy.example:443");
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestRejectsConnectWithHostOnly() {
+        String hexEncoded = literalWithIndexedName(2, "CONNECT")
+                + " " + literalWithNewName("host", "proxy.example:443");
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
@@ -441,6 +584,17 @@ class Http2HeadersTest {
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
     }
 
+    private static String connectRequestHeaders(String authority, String... hostValues) {
+        StringBuilder headers = new StringBuilder(literalWithIndexedName(2, "CONNECT"));
+        headers.append(' ')
+                .append(literalWithIndexedName(1, authority));
+        for (String hostValue : hostValues) {
+            headers.append(' ')
+                    .append(literalWithNewName("host", hostValue));
+        }
+        return headers.toString();
+    }
+
     private Http2Headers headers(String hexEncoded, DynamicTable dynamicTable) {
         BufferData data = data(hexEncoded);
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),
@@ -472,6 +626,12 @@ class Http2HeadersTest {
 
     private static String literalWithNewName(String name, String value) {
         return "40 " + lengthAndValue(name) + " " + lengthAndValue(value);
+    }
+
+    private static String literalWithNewNameUtf8(String name, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        return "40 " + lengthAndValue(name) + " "
+                + String.format("%02x %s", bytes.length, HexFormat.of().formatHex(bytes));
     }
 
     private static String lengthAndValue(String value) {
