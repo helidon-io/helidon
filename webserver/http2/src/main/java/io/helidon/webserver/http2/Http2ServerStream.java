@@ -857,6 +857,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                            streamId),
                                    bufferData);
         try {
+            if (endOfStream && connectionWriter != null) {
+                return connectionWriter.writeHeaders(http2Headers,
+                                                     streamId,
+                                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                                     frameData,
+                                                     flowControl.outbound(),
+                                                     this::closeFromLocal);
+            }
             return writer.writeHeaders(http2Headers,
                                        streamId,
                                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),

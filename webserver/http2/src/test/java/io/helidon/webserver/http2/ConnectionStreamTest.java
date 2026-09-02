@@ -182,6 +182,67 @@ class ConnectionStreamTest {
     }
 
     @Test
+    void terminalHeadersWithDataDeactivateAfterCombinedWriteCallback() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingConnectionWriter writer = new RecordingConnectionWriter();
+        Http2ServerStream stream = stream(streams, writer);
+
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        streams.activate(STREAM_ID);
+        stream.closeFromRemote();
+
+        stream.writeHeadersWithData(responseHeaders(), 1, BufferData.create(new byte[] {1}), true);
+
+        assertThat(writer.headersWithDataWritten(), Matchers.is(true));
+        assertThat(writer.hasPendingTerminalCallback(), Matchers.is(true));
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+
+        writer.completeTerminalWrite();
+
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(false));
+    }
+
+    @Test
+    void terminalHeadersWithDataFailureDeactivatesStream() {
+        RuntimeException writeFailure = new IllegalStateException("test write failure");
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingConnectionWriter writer = new RecordingConnectionWriter(writeFailure);
+        Http2ServerStream stream = stream(streams, writer);
+
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        streams.activate(STREAM_ID);
+        stream.closeFromRemote();
+
+        RuntimeException thrown = assertThrows(RuntimeException.class,
+                                               () -> stream.writeHeadersWithData(responseHeaders(),
+                                                                                 1,
+                                                                                 BufferData.create(new byte[] {1}),
+                                                                                 true));
+
+        assertThat(thrown, sameInstance(writeFailure));
+        assertThat(writer.headersWithDataWritten(), Matchers.is(true));
+        assertThat(writer.hasPendingTerminalCallback(), Matchers.is(false));
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(false));
+    }
+
+    @Test
+    void nonTerminalHeadersWithDataUseSeparateWritePath() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingConnectionWriter writer = new RecordingConnectionWriter();
+        Http2ServerStream stream = stream(streams, writer);
+
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        streams.activate(STREAM_ID);
+
+        stream.writeHeadersWithData(responseHeaders(), 1, BufferData.create(new byte[] {1}), false);
+
+        assertThat(writer.headersWithDataWritten(), Matchers.is(false));
+        assertThat(writer.separateHeadersWithDataWritten(), Matchers.is(true));
+        assertThat(writer.dataWritten(), Matchers.is(true));
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+    }
+
+    @Test
     void terminalTrailersDeactivateAfterConnectionWriterCallback() {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingConnectionWriter writer = new RecordingConnectionWriter();
@@ -461,6 +522,9 @@ class ConnectionStreamTest {
 
     private static final class RecordingConnectionWriter extends Http2ConnectionWriter {
         private final RuntimeException writeFailure;
+        private boolean dataWritten;
+        private boolean headersWithDataWritten;
+        private boolean separateHeadersWithDataWritten;
         private Runnable terminalCallback;
 
         private RecordingConnectionWriter() {
@@ -477,6 +541,7 @@ class ConnectionStreamTest {
                                 int streamId,
                                 Http2Flag.HeaderFlags flags,
                                 FlowControl.Outbound flowControl) {
+            separateHeadersWithDataWritten = true;
             return 0;
         }
 
@@ -498,6 +563,7 @@ class ConnectionStreamTest {
                                 Http2Flag.HeaderFlags flags,
                                 Http2FrameData dataFrame,
                                 FlowControl.Outbound flowControl) {
+            separateHeadersWithDataWritten = true;
             return 0;
         }
 
@@ -508,6 +574,10 @@ class ConnectionStreamTest {
                                 Http2FrameData dataFrame,
                                 FlowControl.Outbound flowControl,
                                 Runnable onEndStreamFrameWritten) {
+            headersWithDataWritten = true;
+            if (writeFailure != null) {
+                throw writeFailure;
+            }
             terminalCallback = onEndStreamFrameWritten;
             return 0;
         }
@@ -520,6 +590,7 @@ class ConnectionStreamTest {
         public int writeData(Http2FrameData frame,
                              FlowControl.Outbound flowControl,
                              Runnable onEndStreamFrameWritten) {
+            dataWritten = true;
             terminalCallback = onEndStreamFrameWritten;
             return 0;
         }
@@ -539,6 +610,18 @@ class ConnectionStreamTest {
 
         private boolean hasPendingTerminalCallback() {
             return terminalCallback != null;
+        }
+
+        private boolean headersWithDataWritten() {
+            return headersWithDataWritten;
+        }
+
+        private boolean separateHeadersWithDataWritten() {
+            return separateHeadersWithDataWritten;
+        }
+
+        private boolean dataWritten() {
+            return dataWritten;
         }
     }
 }
