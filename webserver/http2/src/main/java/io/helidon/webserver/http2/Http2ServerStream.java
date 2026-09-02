@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,7 +31,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketWriterException;
@@ -138,9 +136,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private Http2RstStream pendingSubProtocolReset;
     private long expectedLength = -1;
     private HttpPrologue prologue;
-    // create a limit if accessed before we get the one from connection
     // must be volatile, as it is accessed both from connection thread and from stream thread
-    private volatile Limit requestLimit = FixedLimit.create(new Semaphore(1));
+    private volatile Limit requestLimit;
 
     /**
      * A new HTTP/2 server stream.
@@ -582,9 +579,6 @@ class Http2ServerStream implements Runnable, Http2Stream {
         } finally {
             runnerLock.unlock();
         }
-        Thread.currentThread()
-                .setName("[" + ctx.socketId() + " "
-                                 + ctx.childSocketId() + " ] - " + streamId);
         boolean completed = false;
         boolean connectionFailed = false;
         boolean resetSent = false;

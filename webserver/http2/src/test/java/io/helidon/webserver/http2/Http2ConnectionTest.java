@@ -39,6 +39,7 @@ import java.util.logging.Logger;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketWriter;
@@ -46,6 +47,7 @@ import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
@@ -407,6 +409,51 @@ class Http2ConnectionTest {
     }
 
     @Test
+    void requestUsesConnectionLimitWithoutRenamingHandlerThread() {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(requestHeadersFrame());
+        ConnectionContext ctx = runnableConnectionContext(input);
+        Limit limit = throwingLimit();
+        String originalThreadName = Thread.currentThread().getName();
+
+        try {
+            assertThrows(CloseConnectionException.class,
+                         () -> new Http2Connection(ctx, Http2Config.create(), List.of()).handle(limit));
+            assertThat(Thread.currentThread().getName(), is(originalThreadName));
+        } finally {
+            Thread.currentThread().setName(originalThreadName);
+        }
+        verify(limit).tryAcquireOutcome(true);
+    }
+
+    @Test
+    void h2cUpgradeUsesConnectionLimit() {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(frameBytes(Http2Settings.builder()
+                                     .build()
+                                     .toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))));
+        ConnectionContext ctx = runnableConnectionContext(input);
+        Limit limit = throwingLimit();
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+        Http2Headers headers = Http2Headers.create(WritableHeaders.create());
+        headers.method(Method.GET);
+        headers.path("/upgrade");
+        headers.scheme("http");
+        headers.authority("localhost");
+        connection.upgradeConnectionData(HttpPrologue.create("HTTP/1.1",
+                                                             "HTTP",
+                                                             "1.1",
+                                                             Method.GET,
+                                                             "/upgrade",
+                                                             false),
+                                         headers);
+
+        assertThrows(CloseConnectionException.class, () -> connection.handle(limit));
+
+        verify(limit).tryAcquireOutcome(true);
+    }
+
+    @Test
     void windowUpdateForActiveStreamRefreshesIdleTime() throws InterruptedException {
         Queue<byte[]> input = new ConcurrentLinkedQueue<>();
         Http2Headers h2Headers = Http2Headers.create(WritableHeaders.create());
@@ -615,6 +662,49 @@ class Http2ConnectionTest {
         when(ctx.dataWriter()).thenReturn(writer);
         when(ctx.dataReader()).thenReturn(reader);
         return ctx;
+    }
+
+    private static ConnectionContext runnableConnectionContext(Queue<byte[]> input) {
+        ConnectionContext ctx = http2Context(mock(DataWriter.class), DataReader.create(input::poll));
+        ExecutorService executor = mock(ExecutorService.class);
+        doAnswer(invocation -> {
+            invocation.<Runnable>getArgument(0).run();
+            return null;
+        }).when(executor).submit(any(Runnable.class));
+        when(ctx.executor()).thenReturn(executor);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
+        return ctx;
+    }
+
+    private static Limit throwingLimit() {
+        Limit limit = mock(Limit.class);
+        doThrow(new IllegalStateException("connection limit used")).when(limit).tryAcquireOutcome(true);
+        return limit;
+    }
+
+    private static byte[] requestHeadersFrame() {
+        Http2Headers headers = Http2Headers.create(WritableHeaders.create());
+        headers.method(Method.GET);
+        headers.path("/");
+        headers.scheme("http");
+        headers.authority("localhost");
+        BufferData headersData = BufferData.growing(512);
+        headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                      Http2HuffmanEncoder.create(),
+                      headersData);
+        return frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                     Http2FrameTypes.HEADERS,
+                                                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
+                                                                                                           | Http2Flag.END_OF_STREAM),
+                                                                     1),
+                                             headersData));
     }
 
     private static byte[] frameBytes(Http2FrameData frameData) {
