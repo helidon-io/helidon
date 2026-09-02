@@ -19,6 +19,7 @@ import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 
 import io.helidon.builder.api.Option;
 import io.helidon.codegen.CodegenContext;
@@ -187,7 +188,7 @@ class SchemaGenerator {
             builder.property("kind", enumValue);
         }
 
-        var defaultValue = defaultValue(optionInfo);
+        var defaultValue = defaultValue(typeInfo, optionInfo);
         if (defaultValue != null) {
             builder.property("value", defaultValue);
         }
@@ -211,7 +212,7 @@ class SchemaGenerator {
         return builder.build();
     }
 
-    private String defaultValue(OptionInfo optionInfo) {
+    private String defaultValue(TypeInfo typeInfo, OptionInfo optionInfo) {
         var key = optionInfo.configured().orElseThrow().configKey();
         if (key.endsWith("-discover-services")) {
             return optionInfo.interfaceMethod()
@@ -227,9 +228,31 @@ class SchemaGenerator {
                             .or(() -> it.findAnnotation(Types.OPTION_DEFAULT_LONG))
                             .or(() -> it.findAnnotation(Types.OPTION_DEFAULT_DOUBLE))
                             .flatMap(Annotation::stringValues))
+                    .map(defaultValues -> enumDefaultValues(typeInfo, optionInfo, defaultValues))
                     .map(it -> String.join(", ", it))
                     .orElse(null);
         }
+    }
+
+    private List<String> enumDefaultValues(TypeInfo typeInfo,
+                                           OptionInfo optionInfo,
+                                           List<String> defaultValues) {
+        if (typeInfo == null || typeInfo.kind() != ElementKind.ENUM) {
+            return defaultValues;
+        }
+        var allowedValues = optionInfo.allowedValues()
+                .stream()
+                .map(OptionAllowedValue::value)
+                .toList();
+        return defaultValues.stream()
+                .map(defaultValue -> allowedValues.contains(defaultValue)
+                        ? defaultValue
+                        : allowedValues.stream()
+                                .filter(value -> value.equals(value.toLowerCase(Locale.ROOT)))
+                                .filter(value -> value.equals(defaultValue.toLowerCase(Locale.ROOT)))
+                                .findFirst()
+                                .orElse(defaultValue))
+                .toList();
     }
 
     private List<Annotation> allowedValues(TypeInfo typeInfo, OptionInfo optionInfo) {
@@ -389,6 +412,9 @@ class SchemaGenerator {
 
         if (optionInfo.prototypedBy().isPresent()) {
             return optionInfo.prototypedBy().get();
+        }
+        if (!optionInfo.allowedValues().isEmpty()) {
+            return typeName.boxed();
         }
 
         // check configured factory method

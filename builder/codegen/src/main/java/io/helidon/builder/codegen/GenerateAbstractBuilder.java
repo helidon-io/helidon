@@ -133,6 +133,10 @@ final class GenerateAbstractBuilder {
                      options,
                      true);
 
+            if (hasAllowedValues(options)) {
+                isAllowedValueMethod(builder);
+            }
+
             // before the builder class is finished, we also generate a protected implementation
             generatePrototypeImpl(extensions, builder, prototypeInfo, options, typeArguments, typeArgumentNames);
 
@@ -1095,7 +1099,8 @@ final class GenerateAbstractBuilder {
                 .addContentLine("}");
     }
 
-    private static void validatePrototypeMethod(List<BuilderCodegenExtension> extensions, InnerClass.Builder classBuilder,
+    private static void validatePrototypeMethod(List<BuilderCodegenExtension> extensions,
+                                                InnerClass.Builder classBuilder,
                                                 PrototypeInfo prototypeInfo,
                                                 List<OptionHandler> options) {
 
@@ -1144,9 +1149,8 @@ final class GenerateAbstractBuilder {
                 if (declaredType.isList() || declaredType.isSet()) {
                     String single = "single" + capitalize(propertyName);
                     validateBuilder.addContentLine("for (var " + single + " : " + propertyName + ") {");
-                    validateBuilder.addContentLine("if (!" + allowedValuesConstant + ".contains(String.valueOf(" + single + "))"
-                                                           + ") {")
-                            .addContent("collector.fatal(getClass(), \"Property \\\"")
+                    validateBuilder.addContentLine("if (!isAllowedValue(" + allowedValuesConstant + ", " + single + ")) {");
+                    validateBuilder.addContent("collector.fatal(getClass(), \"Property \\\"")
                             .addContent(propertyName)
                             .addContent("\\\" contains value that is not within allowed values. Configured: \\\"\" + "
                                                 + single + " + \"\\\"")
@@ -1158,9 +1162,8 @@ final class GenerateAbstractBuilder {
                     if (!declaredType.primitive()) {
                         validateBuilder.addContent(propertyName + " != null && ");
                     }
-                    validateBuilder.addContentLine("!" + allowedValuesConstant + ".contains(String.valueOf(" + propertyName
-                                                           + "))) {")
-                            .addContent("collector.fatal(getClass(), \"Property \\\"")
+                    validateBuilder.addContentLine("!isAllowedValue(" + allowedValuesConstant + ", " + propertyName + ")) {");
+                    validateBuilder.addContent("collector.fatal(getClass(), \"Property \\\"")
                             .addContent(propertyName)
                             .addContent("\\\" value is not within allowed values. Configured: \\\"\" + " + propertyName + " + "
                                                 + "\"\\\"")
@@ -1170,6 +1173,28 @@ final class GenerateAbstractBuilder {
             }
         }
         validateBuilder.addContentLine("collector.collect().checkValid();");
+    }
+
+    private static void isAllowedValueMethod(InnerClass.Builder classBuilder) {
+        classBuilder.addMethod(method -> method
+                .name("isAllowedValue")
+                .accessModifier(AccessModifier.PRIVATE)
+                .returnType(TypeName.create(boolean.class))
+                .addParameter(param -> param.name("allowedValues")
+                        .type(TypeName.builder(SET)
+                                      .addTypeArgument(TypeNames.STRING)
+                                      .build()))
+                .addParameter(param -> param.name("value")
+                        .type(Object.class))
+                .addContentLine("if (allowedValues.contains(String.valueOf(value))) {")
+                .addContentLine("return true;")
+                .addContentLine("}")
+                .addContentLine("if (!(value instanceof Enum<?> enumValue)) {")
+                .addContentLine("return false;")
+                .addContentLine("}")
+                .addContent("return allowedValues.contains(enumValue.name().toLowerCase(")
+                .addContent(Locale.class)
+                .addContentLine(".ROOT));"));
     }
 
     private static void generatePrototypeImpl(List<BuilderCodegenExtension> extensions,

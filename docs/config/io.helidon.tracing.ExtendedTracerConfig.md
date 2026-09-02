@@ -92,7 +92,7 @@ Common settings for tracers including settings for span processors and secure cl
 <code>Sampler<wbr>Type</code>
 </td>
 <td>
-<code>CONSTANT</code>
+<code>constant</code>
 </td>
 <td>Type of sampler for collecting spans</td>
 </tr>

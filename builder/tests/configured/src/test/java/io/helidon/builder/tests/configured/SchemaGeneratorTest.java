@@ -1077,6 +1077,143 @@ class SchemaGeneratorTest {
     }
 
     @Test
+    void testExplicitEnumAllowedValues() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeMode.java", """
+                        package com.acme;
+
+                        /**
+                         * ACME mode.
+                         */
+                        enum AcmeMode {
+                            /**
+                             * Mode1.
+                             */
+                            MODE1,
+                            /**
+                             * Mode2.
+                             */
+                            MODE2,
+                        }
+                        """)
+                .addSource("AcmeCaseMode.java", """
+                        package com.acme;
+
+                        /**
+                         * ACME case-distinct mode.
+                         */
+                        enum AcmeCaseMode {
+                            /**
+                             * Upper-case mode.
+                             */
+                            MODE,
+                            /**
+                             * Lower-case mode.
+                             */
+                            mode,
+                        }
+                        """)
+                .addSource("AcmeConfigSupport.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeConfigSupport {
+
+                            @Prototype.ConfigFactoryMethod("option1")
+                            static AcmeMode createMode(Config config) {
+                                return config.as(AcmeMode.class).get();
+                            }
+
+                            @Prototype.ConfigFactoryMethod("option2")
+                            static AcmeCaseMode createCaseMode(Config config) {
+                                return config.as(AcmeCaseMode.class).get();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeConfigSupport.class)
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * Option1.
+                             *
+                             * @return option1
+                             */
+                            @Option.Configured
+                            @Option.Default("MODE1")
+                            @Option.AllowedValue(value = "mode1", description = "Mode1")
+                            @Option.AllowedValue(value = "MODE2", description = "Mode2")
+                            AcmeMode option1();
+
+                            /**
+                             * Option2.
+                             *
+                             * @return option2
+                             */
+                            @Option.Configured
+                            @Option.Default("MODE")
+                            @Option.AllowedValue(value = "mode", description = "Lower-case mode")
+                            @Option.AllowedValue(value = "MODE", description = "Upper-case mode")
+                            AcmeCaseMode option2();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var schema = result.sourceOutput().resolve("com/acme/AcmeConfig.java");
+        assertThat(Files.exists(schema), is(true));
+
+        var actual = Files.readString(schema);
+        assertThat(actual, matches("""
+                //...
+                package com.acme;
+                //...
+                @Configured(
+                    description = "ACME config",
+                    options = {
+                        @ConfiguredOption(
+                            key = "option1",
+                            description = "Option1",
+                            type = AcmeMode.class,
+                            value = "mode1",
+                            allowedValues = {
+                                @ConfiguredValue(value = "mode1", description = "Mode1"),
+                                @ConfiguredValue(value = "MODE2", description = "Mode2")
+                            }),
+                        @ConfiguredOption(
+                            key = "option2",
+                            description = "Option2",
+                            type = AcmeCaseMode.class,
+                            value = "MODE",
+                            allowedValues = {
+                                @ConfiguredValue(value = "mode", description = "Lower-case mode"),
+                                @ConfiguredValue(value = "MODE", description = "Upper-case mode")
+                            })
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                //...
+                }
+                """));
+    }
+
+    @Test
     void testPrefixWithConstant() throws IOException {
         var compiler = TestCompiler.builder()
                 .currentRelease()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,4 +38,25 @@ interface AllowedValuesBlueprint {
     @Option.Singular("restrictedOptionToList")
     @Option.Configured
     List<String> restrictedOptionsList();
+
+    /**
+     * Restricted enum option.
+     *
+     * @return restricted enum
+     */
+    @Option.AllowedValue(value = "good_1", description = "First good value")
+    @Option.AllowedValue(value = "GOOD_2", description = "Second good value")
+    @Option.Configured
+    Optional<AllowedValueEnum> restrictedEnum();
+
+    /**
+     * Restricted enum list option.
+     *
+     * @return restricted enum list
+     */
+    @Option.AllowedValue(value = "good_1", description = "First good value")
+    @Option.AllowedValue(value = "GOOD_2", description = "Second good value")
+    @Option.Singular("restrictedEnumToList")
+    @Option.Configured
+    List<AllowedValueEnum> restrictedEnums();
 }
