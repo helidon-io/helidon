@@ -336,6 +336,30 @@ class GreetServiceEndpoint implements GreetService {
         }
     }
 
+    @Http.POST
+    @Http.Path("/optional-entity")
+    String optionalEntity(@Http.Entity Optional<String> entity) {
+        return entity.orElse("none");
+    }
+
+    @Http.POST
+    @Http.Path("/optional-input-stream")
+    String optionalInputStreamEntity(@Http.Entity Optional<InputStream> entity) throws IOException {
+        if (entity.isEmpty()) {
+            return "none";
+        }
+        try (InputStream inputStream = entity.get()) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    @Http.POST
+    @Http.Path("/optional-byte-array")
+    String optionalByteArrayEntity(@Http.Entity Optional<byte[]> entity) {
+        return entity.map(bytes -> new String(bytes, StandardCharsets.UTF_8))
+                .orElse("none");
+    }
+
     private JsonObject response(String name) {
         return JsonObject.builder()
                 .set("message", stringResponse(name))

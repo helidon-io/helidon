@@ -39,6 +39,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TypeHierarchyTest {
     private static final TypeName NOT_BLANK = TypeName.create("io.helidon.validation.Validation.String.NotBlank");
@@ -131,6 +132,108 @@ class TypeHierarchyTest {
     }
 
     @Test
+    void hierarchyAnnotationCandidatesRejectNullArguments() {
+        TypeName annotationType = TypeName.create("io.helidon.codegen.test.Candidate");
+        TypedElementInfo method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("candidate")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .build();
+        TypeInfo type = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.CandidateContract"))
+                .kind(ElementKind.INTERFACE)
+                .addElementInfo(method)
+                .build();
+
+        NullPointerException nullContext = assertThrows(
+                NullPointerException.class,
+                () -> TypeHierarchy.hierarchyAnnotationCandidates(null, type, method, Set.of(annotationType)));
+        NullPointerException nullType = assertThrows(
+                NullPointerException.class,
+                () -> TypeHierarchy.hierarchyAnnotationCandidates(CTX, null, method, Set.of(annotationType)));
+        NullPointerException nullMethod = assertThrows(
+                NullPointerException.class,
+                () -> TypeHierarchy.hierarchyAnnotationCandidates(CTX, type, null, Set.of(annotationType)));
+        NullPointerException nullAnnotationTypes = assertThrows(
+                NullPointerException.class,
+                () -> TypeHierarchy.hierarchyAnnotationCandidates(CTX, type, method, null));
+
+        assertThat(nullContext.getMessage(), is("ctx is null"));
+        assertThat(nullType.getMessage(), is("type is null"));
+        assertThat(nullMethod.getMessage(), is("method is null"));
+        assertThat(nullAnnotationTypes.getMessage(), is("annotationTypes is null"));
+    }
+
+    @Test
+    void hierarchyAnnotationCandidatesUseNearestAnnotatedDeclaration() {
+        TypeName annotationType = TypeName.create("io.helidon.codegen.test.Candidate");
+        Annotation baseCandidate = Annotation.create(annotationType, "base");
+        Annotation narrowedCandidate = Annotation.create(annotationType, "narrowed");
+        TypedElementInfo baseMethod = candidateMethod(baseCandidate);
+        TypeInfo base = candidateType("BaseApi", baseMethod);
+        TypedElementInfo narrowedMethod = candidateMethod(narrowedCandidate);
+        TypeInfo narrowed = TypeInfo.builder(candidateType("NarrowedApi", narrowedMethod))
+                .addInterfaceTypeInfo(base)
+                .build();
+        TypedElementInfo endpointMethod = candidateMethod();
+        TypeInfo endpoint = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.Endpoint"))
+                .kind(ElementKind.CLASS)
+                .addInterfaceTypeInfo(narrowed)
+                .addElementInfo(endpointMethod)
+                .build();
+
+        List<List<Annotation>> candidates = TypeHierarchy.hierarchyAnnotationCandidates(
+                CTX, endpoint, endpointMethod, Set.of(annotationType));
+
+        assertThat(candidates, is(List.of(List.of(narrowedCandidate))));
+    }
+
+    @Test
+    void hierarchyAnnotationCandidatesFallBackToAnnotatedAncestor() {
+        TypeName annotationType = TypeName.create("io.helidon.codegen.test.Candidate");
+        Annotation baseCandidate = Annotation.create(annotationType, "base");
+        TypeInfo base = candidateType("BaseApi", candidateMethod(baseCandidate));
+        TypeInfo narrowed = TypeInfo.builder(candidateType("NarrowedApi", candidateMethod()))
+                .addInterfaceTypeInfo(base)
+                .build();
+        TypedElementInfo endpointMethod = candidateMethod();
+        TypeInfo endpoint = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.Endpoint"))
+                .kind(ElementKind.CLASS)
+                .addInterfaceTypeInfo(narrowed)
+                .addElementInfo(endpointMethod)
+                .build();
+
+        List<List<Annotation>> candidates = TypeHierarchy.hierarchyAnnotationCandidates(
+                CTX, endpoint, endpointMethod, Set.of(annotationType));
+
+        assertThat(candidates, is(List.of(List.of(baseCandidate))));
+    }
+
+    @Test
+    void hierarchyAnnotationCandidatesKeepUnrelatedDeclarations() {
+        TypeName annotationType = TypeName.create("io.helidon.codegen.test.Candidate");
+        Annotation firstCandidate = Annotation.create(annotationType, "first");
+        Annotation secondCandidate = Annotation.create(annotationType, "second");
+        TypeInfo first = candidateType("FirstApi", candidateMethod(firstCandidate));
+        TypeInfo second = candidateType("SecondApi", candidateMethod(secondCandidate));
+        TypedElementInfo endpointMethod = candidateMethod();
+        TypeInfo endpoint = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.Endpoint"))
+                .kind(ElementKind.CLASS)
+                .addInterfaceTypeInfo(first)
+                .addInterfaceTypeInfo(second)
+                .addElementInfo(endpointMethod)
+                .build();
+
+        List<List<Annotation>> candidates = TypeHierarchy.hierarchyAnnotationCandidates(
+                CTX, endpoint, endpointMethod, Set.of(annotationType));
+
+        assertThat(candidates, is(List.of(List.of(firstCandidate), List.of(secondCandidate))));
+    }
+
+    @Test
     void nestedAnnotationsIncludeDeepGenericTypeArgumentAnnotations() {
         TypeName mapType = TypeName.builder(TypeNames.MAP)
                 .addTypeArgument(TypeNames.STRING)
@@ -156,6 +259,24 @@ class TypeHierarchyTest {
                 .build();
 
         assertThat(TypeHierarchy.nestedAnnotations(CTX, typeInfo), hasItem(NOT_BLANK));
+    }
+
+    private static TypeInfo candidateType(String className, TypedElementInfo method) {
+        return TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test." + className))
+                .kind(ElementKind.INTERFACE)
+                .addElementInfo(method)
+                .build();
+    }
+
+    private static TypedElementInfo candidateMethod(Annotation... annotations) {
+        return TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(AccessModifier.PUBLIC)
+                .elementName("candidate")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .annotations(List.of(annotations))
+                .build();
     }
 
     @Test

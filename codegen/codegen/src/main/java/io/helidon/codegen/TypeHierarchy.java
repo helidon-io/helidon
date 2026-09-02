@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Api;
@@ -175,6 +176,83 @@ public final class TypeHierarchy {
         processMetaAnnotations(ctx, processedTypes, annotations);
 
         return List.copyOf(annotations.values());
+    }
+
+    /**
+     * Find all distinct effective occurrences of any of the annotation types on matching methods in a method's type
+     * hierarchy, grouped by the declaring method. Meta-annotations are included. Unlike
+     * {@link #hierarchyAnnotations(CodegenContext, TypeInfo, TypedElementInfo)}, this method does not apply
+     * annotation-type precedence between declarations.
+     * A candidate-bearing declaration excludes candidates on declarations it overrides. A declaration without matching
+     * candidates does not exclude candidates inherited from its ancestors. Candidates on unrelated hierarchy branches
+     * are retained. The provided method itself is excluded. The outer list contains distinct declaration multisets; each
+     * inner list preserves candidate order and multiplicity.
+     *
+     * @param ctx codegen context
+     * @param type type info owning the method
+     * @param method method element
+     * @param annotationTypes annotation types to find
+     * @return distinct annotation candidates grouped by declaring method
+     */
+    @Api.Internal
+    public static List<List<Annotation>> hierarchyAnnotationCandidates(CodegenContext ctx,
+                                                                       TypeInfo type,
+                                                                       TypedElementInfo method,
+                                                                       Set<TypeName> annotationTypes) {
+        Objects.requireNonNull(ctx, "ctx is null");
+        Objects.requireNonNull(type, "type is null");
+        Objects.requireNonNull(method, "method is null");
+        Set<TypeName> candidateTypes = Set.copyOf(Objects.requireNonNull(annotationTypes, "annotationTypes is null"));
+        if (method.kind() != ElementKind.METHOD) {
+            throw new CodegenException("Only method elements have hierarchy annotation candidates: " + method.kind());
+        }
+
+        List<HierarchyMethod> prototypes = new ArrayList<>();
+        BiConsumer<TypeInfo, TypedElementInfo> collector = (declaringType, inheritedMethod) ->
+                prototypes.add(new HierarchyMethod(declaringType, inheritedMethod));
+        Set<TypeName> processedTypes = new HashSet<>();
+        String packageName = type.typeName().packageName();
+        type.superTypeInfo().ifPresent(it -> collectInheritedMethods(
+                processedTypes,
+                collector,
+                it,
+                method,
+                packageName));
+        type.interfaceTypeInfo().forEach(it -> collectInheritedMethods(
+                processedTypes,
+                collector,
+                it,
+                method,
+                packageName));
+
+        List<HierarchyAnnotationCandidate> annotationCandidates = new ArrayList<>();
+        for (HierarchyMethod prototype : prototypes) {
+            List<Annotation> candidates = new ArrayList<>();
+            prototype.method().annotations()
+                    .forEach(it -> collectAnnotationCandidates(ctx,
+                                                               candidateTypes,
+                                                               candidates,
+                                                               it,
+                                                               new HashSet<>()));
+            if (!candidates.isEmpty()) {
+                annotationCandidates.add(new HierarchyAnnotationCandidate(prototype.declaringType(),
+                                                                          List.copyOf(candidates)));
+            }
+        }
+
+        List<List<Annotation>> result = new ArrayList<>();
+        Set<Map<Annotation, Long>> distinctCandidates = new HashSet<>();
+        for (HierarchyAnnotationCandidate candidate : annotationCandidates) {
+            if (isOverriddenCandidate(candidate, annotationCandidates)) {
+                continue;
+            }
+            Map<Annotation, Long> candidateCounts = candidate.annotations().stream()
+                    .collect(Collectors.groupingBy(it -> it, Collectors.counting()));
+            if (distinctCandidates.add(candidateCounts)) {
+                result.add(candidate.annotations());
+            }
+        }
+        return List.copyOf(result);
     }
 
     /**
@@ -556,6 +634,30 @@ public final class TypeHierarchy {
         newAnnotations.forEach(it -> annotations.putIfAbsent(it.typeName(), it));
     }
 
+    private static void collectAnnotationCandidates(CodegenContext ctx,
+                                                    Set<TypeName> annotationTypes,
+                                                    List<Annotation> result,
+                                                    Annotation annotation,
+                                                    Set<TypeName> path) {
+        if (!path.add(annotation.typeName())) {
+            return;
+        }
+        if (annotationTypes.contains(annotation.typeName())) {
+            result.add(annotation);
+        }
+        List<Annotation> metaAnnotations = annotation.metaAnnotations();
+        if (metaAnnotations.isEmpty()) {
+            metaAnnotations = ctx.typeInfo(annotation.typeName())
+                    .map(TypeInfo::annotations)
+                    .orElseGet(List::of);
+        }
+        metaAnnotations.forEach(it -> collectAnnotationCandidates(ctx,
+                                                                   annotationTypes,
+                                                                   result,
+                                                                   it,
+                                                                   new HashSet<>(path)));
+    }
+
     private static void collectMetaAnnotations(CodegenContext ctx,
                                                Set<TypeName> processedTypes,
                                                List<Annotation> metaAnnotations,
@@ -579,6 +681,18 @@ public final class TypeHierarchy {
 
     private static void collectInheritedMethods(Set<TypeName> processed,
                                                 List<TypedElementInfo> collected,
+                                                TypeInfo type,
+                                                TypedElementInfo method,
+                                                String currentPackage) {
+        collectInheritedMethods(processed,
+                                (_, inheritedMethod) -> collected.add(inheritedMethod),
+                                type,
+                                method,
+                                currentPackage);
+    }
+
+    private static void collectInheritedMethods(Set<TypeName> processed,
+                                                BiConsumer<TypeInfo, TypedElementInfo> collector,
                                                 TypeInfo type,
                                                 TypedElementInfo method,
                                                 String currentPackage) {
@@ -617,18 +731,27 @@ public final class TypeHierarchy {
                         .collect(Collectors.toUnmodifiableList()),
                 currentPackage,
                 substitutions)
-                .ifPresent(collected::add);
+                .ifPresent(it -> collector.accept(type, it));
 
         type.superTypeInfo()
                 .map(it -> substituteTypeParameters(it, substitutions))
-                .ifPresent(it -> collectInheritedMethods(processed, collected, it, method, currentPackage));
+                .ifPresent(it -> collectInheritedMethods(processed, collector, it, method, currentPackage));
         for (TypeInfo typeInfo : type.interfaceTypeInfo()) {
             collectInheritedMethods(processed,
-                                    collected,
+                                    collector,
                                     substituteTypeParameters(typeInfo, substitutions),
                                     method,
                                     currentPackage);
         }
+    }
+
+    private static boolean isOverriddenCandidate(HierarchyAnnotationCandidate candidate,
+                                                 List<HierarchyAnnotationCandidate> candidates) {
+        TypeName candidateType = candidate.declaringType().typeName().genericTypeName();
+        return candidates.stream()
+                .map(HierarchyAnnotationCandidate::declaringType)
+                .filter(it -> !it.typeName().genericTypeName().equals(candidateType))
+                .anyMatch(it -> it.findInHierarchy(candidateType).isPresent());
     }
 
     /**
@@ -805,6 +928,12 @@ public final class TypeHierarchy {
                 .ifPresent(builder::componentType);
 
         return builder.build();
+    }
+
+    private record HierarchyMethod(TypeInfo declaringType, TypedElementInfo method) {
+    }
+
+    private record HierarchyAnnotationCandidate(TypeInfo declaringType, List<Annotation> annotations) {
     }
 
 }
