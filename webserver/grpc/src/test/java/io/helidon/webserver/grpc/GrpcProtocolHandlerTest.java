@@ -37,6 +37,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -91,6 +92,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class GrpcProtocolHandlerTest {
 
     private static final HeaderName GRPC_ACCEPT_ENCODING = HeaderNames.create("grpc-accept-encoding");
+    private static final HeaderName GRPC_ENCODING = HeaderNames.create("grpc-encoding");
     private static final ExecutorService EXECUTOR = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
 
     @AfterAll
@@ -495,6 +497,54 @@ class GrpcProtocolHandlerTest {
 
         assertThat(dataThread.isAlive(), is(false));
         assertThat(messageCount.get(), is(messageCountInFrame));
+    }
+
+    @Test
+    void testCompressedMessageBodyMaySpanDataFrames() throws IOException {
+        List<String> messages = new ArrayList<>();
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    messages.add(message);
+                }
+            };
+        };
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(GRPC_ENCODING, "gzip");
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(headers),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create(),
+                                                metrics);
+        handler.init();
+
+        byte[] compressed = gzip("fragmented");
+        int split = compressed.length / 2;
+        BufferData first = BufferData.create(5 + split);
+        first.write(1);
+        first.writeUnsignedInt32(compressed.length);
+        first.write(compressed, 0, split);
+        BufferData second = BufferData.create(compressed.length - split);
+        second.write(compressed, split, compressed.length - split);
+
+        handler.data(Http2FrameHeader.create(first.available(),
+                                             Http2FrameTypes.DATA,
+                                             Http2Flag.DataFlags.create(0),
+                                             1),
+                     first);
+        handler.data(Http2FrameHeader.create(second.available(),
+                                             Http2FrameTypes.DATA,
+                                             Http2Flag.DataFlags.create(0),
+                                             1),
+                     second);
+
+        assertThat(messages, is(List.of("fragmented")));
     }
 
     @Test
@@ -912,6 +962,14 @@ class GrpcProtocolHandlerTest {
         data.writeUnsignedInt32(bytes.length);
         data.write(bytes);
         return data;
+    }
+
+    private static byte[] gzip(String content) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(output)) {
+            gzip.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+        return output.toByteArray();
     }
 
     private static MethodDescriptor<String, String> stringMethodDescriptor() {

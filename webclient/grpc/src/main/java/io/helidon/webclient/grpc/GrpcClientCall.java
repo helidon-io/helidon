@@ -44,6 +44,7 @@ import io.grpc.InternalStatus;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
@@ -230,6 +231,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 notifyClosed(status, trailingMetadata);
             } catch (StreamTimeoutException e) {
                 notifyClosed(Status.DEADLINE_EXCEEDED);
+            } catch (StatusRuntimeException e) {
+                Metadata trailers = e.getTrailers();
+                notifyClosed(e.getStatus(), trailers == null ? EMPTY_METADATA : trailers);
             } catch (Http2Exception e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
                 notifyClosed(resetStatus(e.code()).withDescription(e.getMessage()).withCause(e));

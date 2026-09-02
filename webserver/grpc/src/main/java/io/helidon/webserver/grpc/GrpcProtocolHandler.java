@@ -118,6 +118,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
     private BufferData unreadBufferData;
     private long entityBytesLeft;
+    private boolean entityCompressed;
     private Compressor compressor;
     private Decompressor decompressor;
     private boolean identityCompressor;
@@ -287,8 +288,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 return;
             }
 
-            boolean isCompressed = false;
-
             // check for any unread data received before
             BufferData newData;
             if (unreadBufferData != null) {
@@ -303,7 +302,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 // start of new request?
                 if (entityBytes == null) {
                     if (newData.available() >= GRPC_HEADER_SIZE) {
-                        isCompressed = (newData.read() == 1);
+                        entityCompressed = (newData.read() == 1);
                         entityBytesLeft = newData.readUnsignedInt32();
                         int maxReadBufferSize = grpcConfig.maxReadBufferSize();
                         if (entityBytesLeft > maxReadBufferSize) {
@@ -332,14 +331,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 // is the entity complete?
                 if (entityBytesLeft == 0) {
                     // fail if compressed and no decompressor
-                    if (isCompressed && decompressor == null) {
+                    if (entityCompressed && decompressor == null) {
                         throw new IllegalStateException("Unable to codec for compressed data");
                     }
 
                     // read and possibly decompress data
                     bytesReceived += entityBytes.available();
                     InputStream is = new BufferDataInputStream(entityBytes);
-                    REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(is) : is);
+                    REQ request = route.method().parseRequest(entityCompressed ? decompressor.decompress(is) : is);
+                    entityCompressed = false;
                     long messageSequence = 0;
                     inboundLock.lock();
                     try {
