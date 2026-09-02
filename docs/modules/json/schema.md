@@ -94,17 +94,24 @@ automatically without manual coding.
 ```java
 @JsonSchema.Schema // <1>
 @JsonSchema.Description("Example JSON Schema")
-public record ExampleSchema(@JsonSchema.Default("0") @JsonSchema.Integer.Minimum(0) int exampleProperty) {
+public record ExampleSchema(@JsonSchema.DefaultInt(0) @JsonSchema.Integer.Minimum(0) int exampleProperty) {
 }
 ```
 1. Schema defining annotation. Without this annotation the class/record will not
    be processed as a JSON schema
 <!--@mdc :: -->
 
-The `@JsonSchema.Default` value must contain exactly one JSON value encoded as
-text. For example, `@JsonSchema.Default("0")` produces a numeric default, while
-a JSON string requires escaped JSON quotes, such as
-`@JsonSchema.Default("\"draft\"")`.
+The declarative API uses typed annotations so the generated JSON type is clear
+from the Java source. Use `@JsonSchema.Default` for strings and the
+`DefaultInt`, `DefaultLong`, `DefaultDouble`, and `DefaultBoolean` variants for
+the corresponding Java primitive types. For example,
+`@JsonSchema.Default("0")` produces the JSON string `"0"`, while
+`@JsonSchema.DefaultInt(0)` produces the JSON number `0`.
+
+Defaults such as `null`, arrays, objects, and numbers outside the ranges of the
+typed annotations can use `@JsonSchema.DefaultJson`. Its value must contain
+exactly one valid JSON value; for example,
+`@JsonSchema.DefaultJson("{\"enabled\":true}")`.
 
 In addition, the following section must be added to the `build` of the Maven
 `pom.xml` to enable annotation processors that generate the necessary code:

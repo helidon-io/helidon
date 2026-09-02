@@ -85,16 +85,93 @@ public final class JsonSchema {
     }
 
     /**
-     * Default JSON value associated with a JSON schema.
+     * String default value associated with a JSON schema.
      * <p>
-     * The annotation value must contain JSON text. For example, a JSON string default can be declared as
-     * {@code @JsonSchema.Default("\"value\"")}. Any JSON value is supported, including {@code null}, arrays, and objects.
      * A value that validates against the associated schema is recommended, but not required. The value is annotation metadata
      * and is not used to fill in missing instance values.
      */
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
     @Retention(RetentionPolicy.CLASS)
     public @interface Default {
+
+        /**
+         * String default value.
+         *
+         * @return string default value
+         */
+        java.lang.String value();
+    }
+
+    /**
+     * Integer default value associated with a JSON schema.
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface DefaultInt {
+
+        /**
+         * Integer default value.
+         *
+         * @return integer default value
+         */
+        int value();
+    }
+
+    /**
+     * Long default value associated with a JSON schema.
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface DefaultLong {
+
+        /**
+         * Long default value.
+         *
+         * @return long default value
+         */
+        long value();
+    }
+
+    /**
+     * Double default value associated with a JSON schema.
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface DefaultDouble {
+
+        /**
+         * Double default value.
+         *
+         * @return double default value
+         */
+        double value();
+    }
+
+    /**
+     * Boolean default value associated with a JSON schema.
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface DefaultBoolean {
+
+        /**
+         * Boolean default value.
+         *
+         * @return boolean default value
+         */
+        boolean value();
+    }
+
+    /**
+     * Default value expressed as JSON text.
+     * <p>
+     * Use this annotation for defaults that cannot be represented by one of the typed default annotations, such as
+     * {@code null}, arrays, objects, or numbers outside the ranges of the typed annotations. The value must contain exactly
+     * one valid JSON value.
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface DefaultJson {
 
         /**
          * Default value as JSON text.

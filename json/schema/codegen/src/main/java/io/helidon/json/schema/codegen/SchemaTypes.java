@@ -29,6 +29,11 @@ final class SchemaTypes {
     static final TypeName JSON_SCHEMA_TITLE = TypeName.create("io.helidon.json.schema.JsonSchema.Title");
     static final TypeName JSON_SCHEMA_DESCRIPTION = TypeName.create("io.helidon.json.schema.JsonSchema.Description");
     static final TypeName JSON_SCHEMA_DEFAULT = TypeName.create("io.helidon.json.schema.JsonSchema.Default");
+    static final TypeName JSON_SCHEMA_DEFAULT_INT = TypeName.create("io.helidon.json.schema.JsonSchema.DefaultInt");
+    static final TypeName JSON_SCHEMA_DEFAULT_LONG = TypeName.create("io.helidon.json.schema.JsonSchema.DefaultLong");
+    static final TypeName JSON_SCHEMA_DEFAULT_DOUBLE = TypeName.create("io.helidon.json.schema.JsonSchema.DefaultDouble");
+    static final TypeName JSON_SCHEMA_DEFAULT_BOOLEAN = TypeName.create("io.helidon.json.schema.JsonSchema.DefaultBoolean");
+    static final TypeName JSON_SCHEMA_DEFAULT_JSON = TypeName.create("io.helidon.json.schema.JsonSchema.DefaultJson");
     static final TypeName JSON_SCHEMA_REQUIRED = TypeName.create("io.helidon.json.schema.JsonSchema.Required");
     static final TypeName JSON_SCHEMA_PROVIDER = TypeName.create("io.helidon.json.schema.spi.JsonSchemaProvider");
     static final TypeName JSON_SCHEMA_DO_NOT_INSPECT = TypeName.create("io.helidon.json.schema.JsonSchema.DoNotInspect");

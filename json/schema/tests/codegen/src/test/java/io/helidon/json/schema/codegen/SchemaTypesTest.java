@@ -77,6 +77,11 @@ class SchemaTypesTest {
         checkField(toCheck, checked, fields, "JSON_SCHEMA_TITLE", JsonSchema.Title.class);
         checkField(toCheck, checked, fields, "JSON_SCHEMA_DESCRIPTION", JsonSchema.Description.class);
         checkField(toCheck, checked, fields, "JSON_SCHEMA_DEFAULT", JsonSchema.Default.class);
+        checkField(toCheck, checked, fields, "JSON_SCHEMA_DEFAULT_INT", JsonSchema.DefaultInt.class);
+        checkField(toCheck, checked, fields, "JSON_SCHEMA_DEFAULT_LONG", JsonSchema.DefaultLong.class);
+        checkField(toCheck, checked, fields, "JSON_SCHEMA_DEFAULT_DOUBLE", JsonSchema.DefaultDouble.class);
+        checkField(toCheck, checked, fields, "JSON_SCHEMA_DEFAULT_BOOLEAN", JsonSchema.DefaultBoolean.class);
+        checkField(toCheck, checked, fields, "JSON_SCHEMA_DEFAULT_JSON", JsonSchema.DefaultJson.class);
         checkField(toCheck, checked, fields, "JSON_SCHEMA_REQUIRED", JsonSchema.Required.class);
         checkField(toCheck, checked, fields, "JSON_SCHEMA_DO_NOT_INSPECT", JsonSchema.DoNotInspect.class);
         checkField(toCheck, checked, fields, "JSON_SCHEMA_IGNORE", JsonSchema.Ignore.class);

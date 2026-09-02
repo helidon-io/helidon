@@ -18,6 +18,7 @@ package io.helidon.json.schema.tests;
 
 import java.util.Optional;
 
+import io.helidon.json.JsonValueType;
 import io.helidon.json.schema.Schema;
 import io.helidon.json.schema.SchemaObject;
 
@@ -27,6 +28,27 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SchemaServiceRegistryTest {
+
+    @Test
+    public void testTypedDefaultsFromGeneratedProvider() {
+        SchemaObject root = Schema.find(DefaultValuesSchema.class)
+                .orElseThrow()
+                .rootObject()
+                .orElseThrow();
+
+        assertThat(root.properties().get("stringValue").defaultValue().orElseThrow().asString().value(), is("0"));
+        assertThat(root.properties().get("intValue").defaultValue().orElseThrow().asNumber().intValue(), is(42));
+        assertThat(root.properties().get("longValue").defaultValue().orElseThrow().asNumber().longValue(),
+                   is(9_007_199_254_740_993L));
+        assertThat(root.properties().get("doubleValue").defaultValue().orElseThrow().asNumber().doubleValue(), is(4.2));
+        assertThat(root.properties().get("booleanValue").defaultValue().orElseThrow().asBoolean().value(), is(true));
+        assertThat(root.properties().get("nullValue").defaultValue().orElseThrow().type(), is(JsonValueType.NULL));
+        assertThat(root.properties().get("arrayValue").defaultValue().orElseThrow().type(), is(JsonValueType.ARRAY));
+        assertThat(root.properties().get("objectValue").defaultValue().orElseThrow().asObject()
+                           .stringValue("nested")
+                           .orElseThrow(),
+                   is("value"));
+    }
 
     @Test
     public void testEscapedDefaultFromGeneratedProvider() {

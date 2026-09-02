@@ -32,20 +32,39 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class SchemaCodegenTest {
 
     @Test
-    void testRejectsTrailingDefaultValue() {
-        TestCompiler.Result result = compileDefault("true false");
+    void testRejectsTrailingDefaultJsonValue() {
+        TestCompiler.Result result = compileDefaultJson("true false");
 
         assertThat(result.success(), is(false));
     }
 
     @Test
-    void testAcceptsTrailingDefaultWhitespace() {
-        TestCompiler.Result result = compileDefault("true ");
+    void testAcceptsTrailingDefaultJsonWhitespace() {
+        TestCompiler.Result result = compileDefaultJson("true ");
 
         assertThat(result.success(), is(true));
     }
 
-    private static TestCompiler.Result compileDefault(String defaultValue) {
+    @Test
+    void testRejectsInvalidDefaultJsonNumber() {
+        TestCompiler.Result result = compileDefaultJson("01");
+
+        assertThat(result.success(), is(false));
+    }
+
+    @Test
+    void testRejectsMultipleDefaultAnnotations() {
+        TestCompiler.Result result = compileDefaultAnnotations("@JsonSchema.Default(\"value\")\n"
+                                                                       + "@JsonSchema.DefaultInt(1)");
+
+        assertThat(result.success(), is(false));
+    }
+
+    private static TestCompiler.Result compileDefaultJson(String defaultValue) {
+        return compileDefaultAnnotations("@JsonSchema.DefaultJson(\"" + defaultValue + "\")");
+    }
+
+    private static TestCompiler.Result compileDefaultAnnotations(String defaultAnnotations) {
         return TestCompiler.builder()
                 .currentRelease()
                 .procOnly()
@@ -62,10 +81,10 @@ class SchemaCodegenTest {
                         import io.helidon.json.schema.JsonSchema;
 
                         @JsonSchema.Schema
-                        @JsonSchema.Default("%s")
+                        %s
                         class DefaultSchema {
                         }
-                        """.formatted(defaultValue))
+                        """.formatted(defaultAnnotations))
                 .build()
                 .compile();
     }

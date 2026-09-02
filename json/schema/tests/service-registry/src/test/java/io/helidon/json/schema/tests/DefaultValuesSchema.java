@@ -19,7 +19,12 @@ package io.helidon.json.schema.tests;
 import io.helidon.json.schema.JsonSchema;
 
 @JsonSchema.Schema
-public record EscapedDefaultSchema(
-        @JsonSchema.Default("quote: \"; backslash: \\; newline: \n; triple: \"\"\"")
-        String value) {
+public record DefaultValuesSchema(@JsonSchema.Default("0") String stringValue,
+                                  @JsonSchema.DefaultInt(42) int intValue,
+                                  @JsonSchema.DefaultLong(9_007_199_254_740_993L) long longValue,
+                                  @JsonSchema.DefaultDouble(4.2) double doubleValue,
+                                  @JsonSchema.DefaultBoolean(true) boolean booleanValue,
+                                  @JsonSchema.DefaultJson("null") String nullValue,
+                                  @JsonSchema.DefaultJson("[1,true,null]") String arrayValue,
+                                  @JsonSchema.DefaultJson("{\"nested\":\"value\"}") String objectValue) {
 }

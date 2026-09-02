@@ -24,12 +24,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -67,6 +69,16 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
                                                         SchemaTypes.BIG_DECIMAL,
                                                         SchemaTypes.NUMBER);
 
+    private static final Set<TypeName> DEFAULT_ANNOTATIONS = Set.of(SchemaTypes.JSON_SCHEMA_DEFAULT,
+                                                                   SchemaTypes.JSON_SCHEMA_DEFAULT_INT,
+                                                                   SchemaTypes.JSON_SCHEMA_DEFAULT_LONG,
+                                                                   SchemaTypes.JSON_SCHEMA_DEFAULT_DOUBLE,
+                                                                   SchemaTypes.JSON_SCHEMA_DEFAULT_BOOLEAN,
+                                                                   SchemaTypes.JSON_SCHEMA_DEFAULT_JSON);
+
+    private static final Pattern JSON_NUMBER_PATTERN =
+            Pattern.compile("-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?");
+
     static SchemaInfo create(TypeInfo annotatedType, CodegenContext ctx) {
         TypeName annotatedTypeName = annotatedType.typeName();
         TypeName generatedTypeName = TypeName.builder()
@@ -90,25 +102,102 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_DESCRIPTION)
                 .flatMap(it -> it.stringValue())
                 .ifPresent(it -> builder.set("description", it));
-        annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_DEFAULT)
-                .flatMap(it -> it.stringValue())
-                .map(it -> parseDefaultValue(annotatedType, it))
-                .ifPresent(it -> builder.set("default", it));
+        processDefaultAnnotation(builder, annotatedType);
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_REQUIRED).ifPresent(it -> required.set(true));
     }
 
-    private static JsonValue parseDefaultValue(Annotated annotated, String value) {
-        JsonParser parser = JsonParser.create(value);
-        JsonValue result = parser.readJsonValue();
-        if (!parser.hasNext()) {
-            return result;
+    private static void processDefaultAnnotation(JsonObject.Builder builder, Annotated annotated) {
+        List<Annotation> defaultAnnotations = annotated.annotations()
+                .stream()
+                .filter(annotation -> DEFAULT_ANNOTATIONS.contains(annotation.typeName()))
+                .toList();
+        if (defaultAnnotations.size() > 1) {
+            throw new CodegenException("Only one JsonSchema default annotation can be declared", annotated);
         }
+        if (defaultAnnotations.isEmpty()) {
+            return;
+        }
+
+        Annotation defaultAnnotation = defaultAnnotations.getFirst();
+        TypeName annotationType = defaultAnnotation.typeName();
+        if (annotationType.equals(SchemaTypes.JSON_SCHEMA_DEFAULT)) {
+            defaultAnnotation.stringValue().ifPresent(value -> builder.set("default", value));
+        } else if (annotationType.equals(SchemaTypes.JSON_SCHEMA_DEFAULT_INT)) {
+            defaultAnnotation.intValue().ifPresent(value -> builder.set("default", value));
+        } else if (annotationType.equals(SchemaTypes.JSON_SCHEMA_DEFAULT_LONG)) {
+            defaultAnnotation.longValue().ifPresent(value -> builder.set("default", value));
+        } else if (annotationType.equals(SchemaTypes.JSON_SCHEMA_DEFAULT_DOUBLE)) {
+            defaultAnnotation.doubleValue().ifPresent(value -> builder.set("default", value));
+        } else if (annotationType.equals(SchemaTypes.JSON_SCHEMA_DEFAULT_BOOLEAN)) {
+            defaultAnnotation.booleanValue().ifPresent(value -> builder.set("default", value));
+        } else {
+            defaultAnnotation.stringValue()
+                    .map(value -> parseDefaultJson(annotated, value))
+                    .ifPresent(value -> builder.set("default", value));
+        }
+    }
+
+    private static JsonValue parseDefaultJson(Annotated annotated, String value) {
+        validateJsonNumbers(annotated, value);
         try {
-            parser.nextToken();
-        } catch (JsonException _) {
-            return result;
+            JsonParser parser = JsonParser.create(value);
+            JsonValue result = parser.readJsonValue();
+            if (!parser.hasNext()) {
+                return result;
+            }
+            try {
+                parser.nextToken();
+            } catch (JsonException _) {
+                return result;
+            }
+        } catch (JsonException e) {
+            throw new CodegenException("JsonSchema.DefaultJson value must contain exactly one valid JSON value",
+                                       e,
+                                       annotated);
         }
-        throw new CodegenException("JsonSchema.Default value must contain exactly one JSON value", annotated);
+        throw new CodegenException("JsonSchema.DefaultJson value must contain exactly one valid JSON value", annotated);
+    }
+
+    private static void validateJsonNumbers(Annotated annotated, String value) {
+        boolean inString = false;
+        boolean escaped = false;
+        for (int i = 0; i < value.length(); i++) {
+            char character = value.charAt(i);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (character == '\\') {
+                    escaped = true;
+                } else if (character == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            if (character == '"') {
+                inString = true;
+                continue;
+            }
+            if (character != '-' && (character < '0' || character > '9')) {
+                continue;
+            }
+            int numberEnd = i + 1;
+            while (numberEnd < value.length() && isJsonNumberCharacter(value.charAt(numberEnd))) {
+                numberEnd++;
+            }
+            if (!JSON_NUMBER_PATTERN.matcher(value.substring(i, numberEnd)).matches()) {
+                throw new CodegenException("JsonSchema.DefaultJson value contains an invalid JSON number", annotated);
+            }
+            i = numberEnd - 1;
+        }
+    }
+
+    private static boolean isJsonNumberCharacter(char character) {
+        return character >= '0' && character <= '9'
+                || character == '-'
+                || character == '+'
+                || character == '.'
+                || character == 'e'
+                || character == 'E';
     }
 
     private static void processIntegerAnnotations(JsonObject.Builder builder, Annotated annotatedType, AtomicBoolean required) {
@@ -292,6 +381,7 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
             properties.forEach(it -> processNumberAnnotations(newStructBuilder, it.annotated(), required));
         } else if (parameterTypeName.primitive()) {
             if (parameterTypeName.equals(TypeNames.PRIMITIVE_BOOLEAN)) {
+                newStructBuilder.set("type", "boolean");
                 properties.forEach(it -> processCommonAnnotations(newStructBuilder, it.annotated(), required));
             } else {
                 properties.forEach(it -> processStringAnnotations(newStructBuilder, it.annotated(), required));
