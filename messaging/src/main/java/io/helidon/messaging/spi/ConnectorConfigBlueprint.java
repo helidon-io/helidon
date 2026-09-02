@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -26,10 +26,10 @@ import io.helidon.common.Api;
 @Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
-@Prototype.CustomMethods(MessagingConfigSupport.class)
+@Prototype.CustomMethods(ConnectorConfigSupport.class)
 interface ConnectorConfigBlueprint {
     /**
-     * Runtime-supplied channel direction.
+     * Runtime-supplied connector direction relative to the messaging graph.
      *
      * @return direction
      */

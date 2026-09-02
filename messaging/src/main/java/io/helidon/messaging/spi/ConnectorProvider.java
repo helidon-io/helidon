@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
 import io.helidon.common.Api;
 import io.helidon.service.registry.Service;

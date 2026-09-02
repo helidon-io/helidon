@@ -26,6 +26,9 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.messaging.spi.ConnectorProvider;
+import io.helidon.messaging.spi.IncomingConnector;
+import io.helidon.messaging.spi.IncomingConnectorProvider;
 
 import org.junit.jupiter.api.Test;
 

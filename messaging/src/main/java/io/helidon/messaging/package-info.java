@@ -15,12 +15,14 @@
  */
 
 /**
- * Helidon-native declarative messaging API, runtime, and connector SPI.
+ * Helidon-native declarative messaging API and runtime.
  * <p>
  * Message delivery uses a synchronous, at-least-once settlement contract. An emission returns only after every
  * required output completes successfully. Outputs are invoked sequentially and delivery fails immediately when an
  * output throws. Outputs completed before that failure are not rolled back, so retrying a failed emission can deliver
  * the same message to those outputs again. Each logical channel executes at most one delivery at a time; different
  * channels may execute concurrently. Applications and connectors must therefore tolerate duplicate delivery.
+ *
+ * @see io.helidon.messaging.spi
  */
 package io.helidon.messaging;

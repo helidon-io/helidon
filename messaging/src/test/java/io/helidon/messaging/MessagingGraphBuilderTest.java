@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
+import io.helidon.messaging.spi.OutgoingConnector;
 
 import org.junit.jupiter.api.Test;
 

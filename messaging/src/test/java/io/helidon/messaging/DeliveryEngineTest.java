@@ -29,6 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import io.helidon.messaging.spi.ConnectorDelivery;
+import io.helidon.messaging.spi.ConnectorDeliveryReservation;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 

@@ -23,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import io.helidon.common.Api;
+import io.helidon.messaging.spi.ConnectorDeliveryReservation;
 import io.helidon.service.registry.Service;
 
 /**

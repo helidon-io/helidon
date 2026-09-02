@@ -31,6 +31,8 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
+import io.helidon.messaging.spi.Connector;
+import io.helidon.messaging.spi.OutgoingConnector;
 
 /**
  * Internal in-memory messaging channel runtime.

@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
 import io.helidon.common.Api;
-import io.helidon.config.Config;
 
 /**
- * Outgoing capability of a connector provider.
- *
+ * Direction of a connector binding relative to the messaging graph.
  */
 @Api.Preview
-public interface OutgoingConnectorProvider extends ConnectorProvider {
+public enum ConnectorDirection {
     /**
-     * Create one unstarted outgoing connector.
-     * <p>
-     * The connector factory may validate and snapshot configuration, but must not acquire transport resources or
-     * create threads. The messaging graph owns the returned connector and invokes its lifecycle.
-     *
-     * @param config effective binding configuration
-     * @return outgoing connector
+     * Messages enter the graph from an external transport source through the connector.
      */
-    OutgoingConnector createOutgoingConnector(Config config);
+    INCOMING,
+
+    /**
+     * Messages leave the graph for an external transport destination through the connector.
+     */
+    OUTGOING
 }

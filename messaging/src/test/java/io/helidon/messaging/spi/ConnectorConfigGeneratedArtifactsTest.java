@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,7 +29,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ConnectorConfigGeneratedArtifactsTest {
     @Test
     void generatedArtifactsUsePublicConnectorApi() throws IOException {
-        Path generatedSource = Path.of("target/generated-sources/annotations/io/helidon/messaging/ConnectorConfig.java");
+        Path generatedSource = Path.of(
+                "target/generated-sources/annotations/io/helidon/messaging/spi/ConnectorConfig.java");
         Path metadataFile = Path.of("target/classes/META-INF/helidon/config-metadata.json");
         assertThat(Files.isRegularFile(generatedSource), is(true));
         assertThat(Files.isRegularFile(metadataFile), is(true));
@@ -37,9 +38,9 @@ class ConnectorConfigGeneratedArtifactsTest {
 
         String source = Files.readString(generatedSource);
         assertThat(source,
-                   containsString("String CHANNEL_NAME_ATTRIBUTE = MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE"));
+                   containsString("String CHANNEL_NAME_ATTRIBUTE = ConnectorConfigSupport.CHANNEL_NAME_ATTRIBUTE"));
         assertThat(source,
-                   containsString("String CONNECTOR_ATTRIBUTE = MessagingConfigSupport.CONNECTOR_ATTRIBUTE"));
+                   containsString("String CONNECTOR_ATTRIBUTE = ConnectorConfigSupport.CONNECTOR_ATTRIBUTE"));
         assertThat(source, containsString("type = ConnectorDirection.class"));
         assertThat(source, containsString("ConnectorDirection direction()"));
         assertThat(source, containsString("direction(ConnectorDirection direction)"));
@@ -52,7 +53,7 @@ class ConnectorConfigGeneratedArtifactsTest {
         assertThat(metadata, containsString("\"key\":\"channel-name\""));
         assertThat(metadata,
                    containsString("\"key\":\"direction\","
-                                          + "\"type\":\"io.helidon.messaging.ConnectorDirection\""));
+                                          + "\"type\":\"io.helidon.messaging.spi.ConnectorDirection\""));
         assertThat(metadata.contains("ConnectorConfigBlueprint.Direction"), is(false));
     }
 }

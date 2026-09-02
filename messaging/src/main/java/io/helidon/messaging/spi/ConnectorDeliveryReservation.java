@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
+import io.helidon.messaging.BatchDeliveryException;
+import io.helidon.messaging.BatchItemStatus;
+import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessagingRejectedException;
 
 /**
  * Pending message-count capacity reserved by an incoming connector before it acquires transport data.

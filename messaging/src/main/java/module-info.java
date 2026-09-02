@@ -36,4 +36,5 @@ module io.helidon.messaging {
     requires static io.helidon.config.metadata;
 
     exports io.helidon.messaging;
+    exports io.helidon.messaging.spi;
 }

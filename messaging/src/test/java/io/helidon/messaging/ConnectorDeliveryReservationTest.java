@@ -18,6 +18,9 @@ package io.helidon.messaging;
 
 import java.util.Optional;
 
+import io.helidon.messaging.spi.ConnectorDelivery;
+import io.helidon.messaging.spi.ConnectorDeliveryReservation;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

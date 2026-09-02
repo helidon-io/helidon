@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Api;
 import io.helidon.common.GenericType;
+import io.helidon.messaging.spi.OutgoingConnector;
 
 /**
  * One imperative messaging topology and lifecycle.

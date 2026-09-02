@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
 import java.util.Optional;
 
 import io.helidon.common.Api;
+import io.helidon.messaging.MessagingRejectedException;
 
 /**
  * Runtime lifecycle and retained-delivery admission exposed to an incoming connector.

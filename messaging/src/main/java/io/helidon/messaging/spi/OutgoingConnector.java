@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
 import io.helidon.common.Api;
+import io.helidon.messaging.BatchDeliveryException;
+import io.helidon.messaging.Message;
+import io.helidon.messaging.MessageBatch;
 
 /**
  * Synchronous outgoing connector for one configured binding.

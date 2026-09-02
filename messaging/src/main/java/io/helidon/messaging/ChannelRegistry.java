@@ -44,6 +44,15 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.MergingStrategy;
+import io.helidon.messaging.spi.ConnectorConfig;
+import io.helidon.messaging.spi.ConnectorDeliveryReservation;
+import io.helidon.messaging.spi.ConnectorDirection;
+import io.helidon.messaging.spi.ConnectorProvider;
+import io.helidon.messaging.spi.IncomingConnector;
+import io.helidon.messaging.spi.IncomingConnectorContext;
+import io.helidon.messaging.spi.IncomingConnectorProvider;
+import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.OutgoingConnectorProvider;
 import io.helidon.service.registry.Service;
 
 /**
@@ -203,7 +212,7 @@ class ChannelRegistry implements MessagingRuntime {
     }
 
     private static String requireConnectorType(Config channelConfig, String direction, String channel) {
-        return channelConfig.get(MessagingConfigSupport.CONNECTOR_ATTRIBUTE)
+        return channelConfig.get(ConnectorConfig.CONNECTOR_ATTRIBUTE)
                 .asString()
                 .filter(connector -> !connector.isBlank())
                 .orElseThrow(() -> new IllegalArgumentException("Configured " + direction + " channel " + channel
@@ -1150,8 +1159,8 @@ class ChannelRegistry implements MessagingRuntime {
         ConfigNode.ObjectNode.Builder result = ConfigNode.ObjectNode.builder();
         merged.value().ifPresent(result::value);
         merged.forEach(result::addNode);
-        return result.addValue(MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE, channel)
-                .addValue(MessagingConfigSupport.CONNECTOR_ATTRIBUTE, connector)
+        return result.addValue(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE, channel)
+                .addValue(ConnectorConfig.CONNECTOR_ATTRIBUTE, connector)
                 .addValue("direction", direction.name())
                 .build();
     }
@@ -1170,10 +1179,10 @@ class ChannelRegistry implements MessagingRuntime {
     private boolean reservedConnectorProperty(String key) {
         return key.equals("failure")
                 || key.startsWith("failure.")
-                || key.equals(MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE)
-                || key.startsWith(MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE + ".")
-                || key.equals(MessagingConfigSupport.CONNECTOR_ATTRIBUTE)
-                || key.startsWith(MessagingConfigSupport.CONNECTOR_ATTRIBUTE + ".")
+                || key.equals(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE)
+                || key.startsWith(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE + ".")
+                || key.equals(ConnectorConfig.CONNECTOR_ATTRIBUTE)
+                || key.startsWith(ConnectorConfig.CONNECTOR_ATTRIBUTE + ".")
                 || key.equals("direction")
                 || key.startsWith("direction.");
     }

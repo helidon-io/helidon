@@ -44,7 +44,8 @@ interface FailurePolicyBlueprint {
      * unlimited and is only valid with {@link FailureDisposition#FAIL}, and {@link FailureDisposition#DROP} and
      * {@link FailureDisposition#DEAD_LETTER} require a positive limit. An
      * unlimited pre-dispatch mapping failure reported through
-     * {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)} is treated as exhausted after
+     * {@link io.helidon.messaging.spi.ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)} is
+     * treated as exhausted after
      * its initial attempt because the runtime cannot repeat transport mapping.
      *
      * @return maximum delivery attempts, or zero for unlimited attempts

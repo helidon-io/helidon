@@ -516,7 +516,8 @@ an unsuccessful or indeterminate delivery can therefore produce duplicates.
 
 A connector module contains one stateless provider and one new lifecycle object for every configured incoming or
 outgoing binding. The provider is shared; connector instances are not. Implement only the direction interfaces the
-transport supports.
+transport supports. The connector-author contracts, including connector configuration and delivery handles, are in
+the exported `io.helidon.messaging.spi` package; the examples below omit routine imports.
 
 ### 1. Choose the connector identity and directions
 

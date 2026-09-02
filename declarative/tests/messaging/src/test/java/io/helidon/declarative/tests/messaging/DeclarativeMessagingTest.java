@@ -48,7 +48,7 @@ import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.MessagingRuntime;
-import io.helidon.messaging.OutgoingConnector;
+import io.helidon.messaging.spi.OutgoingConnector;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.AnnotatedFailureConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.AnnotatedFailureDeadLetterConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ArrayPayloadConsumer;

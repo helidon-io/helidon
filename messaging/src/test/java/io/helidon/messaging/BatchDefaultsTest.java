@@ -19,6 +19,8 @@ package io.helidon.messaging;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.messaging.spi.OutgoingConnector;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

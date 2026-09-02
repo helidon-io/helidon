@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
-
-import io.helidon.common.Api;
-
 /**
- * Connector channel direction.
+ * Service provider interfaces for messaging transport connectors.
+ * <p>
+ * Connector implementations use these contracts to expose providers and bindings and to coordinate retained
+ * deliveries with the messaging runtime.
  */
-@Api.Preview
-public enum ConnectorDirection {
-    /**
-     * Incoming/source direction.
-     */
-    INCOMING,
-
-    /**
-     * Outgoing/sink direction.
-     */
-    OUTGOING
-}
+package io.helidon.messaging.spi;

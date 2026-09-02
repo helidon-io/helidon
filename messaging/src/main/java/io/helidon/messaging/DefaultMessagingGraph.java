@@ -35,6 +35,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.messaging.spi.Connector;
+import io.helidon.messaging.spi.ConnectorDeliveryReservation;
+import io.helidon.messaging.spi.IncomingConnector;
+import io.helidon.messaging.spi.IncomingConnectorContext;
+import io.helidon.messaging.spi.OutgoingConnector;
+
 /**
  * One validated messaging topology and lifecycle.
  */

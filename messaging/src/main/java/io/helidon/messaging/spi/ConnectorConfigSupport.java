@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
-import io.helidon.common.Api;
+import io.helidon.builder.api.Prototype;
 
-/**
- * Connector batch completion capability.
- */
-@Api.Preview
-public enum BatchAtomicity {
+final class ConnectorConfigSupport {
     /**
-     * Messages settle independently and a batch can complete partially.
+     * Channel name attribute.
      */
-    PER_MESSAGE,
+    @Prototype.Constant
+    static final String CHANNEL_NAME_ATTRIBUTE = "channel-name";
 
     /**
-     * The connector guarantees one all-or-none external settlement boundary for the complete batch.
+     * Connector name attribute.
      */
-    ATOMIC
+    @Prototype.Constant
+    static final String CONNECTOR_ATTRIBUTE = "connector";
+
+    private ConnectorConfigSupport() {
+    }
 }

@@ -31,6 +31,10 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
+import io.helidon.messaging.spi.Connector;
+import io.helidon.messaging.spi.IncomingConnector;
+import io.helidon.messaging.spi.IncomingConnectorContext;
+import io.helidon.messaging.spi.OutgoingConnector;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;

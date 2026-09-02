@@ -31,6 +31,8 @@ import io.helidon.config.metadata.docs.Main;
 import io.helidon.config.metadata.model.CmModel;
 import io.helidon.config.metadata.model.CmModel.CmOption;
 import io.helidon.config.metadata.model.CmModel.CmType;
+import io.helidon.messaging.spi.ConnectorConfig;
+import io.helidon.messaging.spi.ConnectorDirection;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -133,10 +135,10 @@ class MessagingGeneratedArtifactsTest {
 
         assertThat(Files.isRegularFile(outputDirectory.resolve("config_reference.adoc")), is(true));
         String manifest = Files.readString(outputDirectory.resolve("manifest.adoc"));
-        assertThat(manifest, containsString("io.helidon.messaging.ConnectorConfig"));
+        assertThat(manifest, containsString("io.helidon.messaging.spi.ConnectorConfig"));
         assertThat(manifest, containsString("io.helidon.messaging.FailurePolicy"));
         assertThat(manifest, containsString("io.helidon.messaging.MessagingExecutionConfig"));
-        assertThat(manifest, containsString("io.helidon.messaging.ConnectorDirection"));
+        assertThat(manifest, containsString("io.helidon.messaging.spi.ConnectorDirection"));
         assertThat(manifest, containsString("io.helidon.messaging.FailureDisposition"));
 
         String helidonRoot = Files.readString(outputDirectory.resolve("io_helidon_HelidonConfig.adoc"));
@@ -145,11 +147,12 @@ class MessagingGeneratedArtifactsTest {
         assertThat(messagingRoot, containsString("io_helidon_messaging_MessagingExecutionConfig.adoc[`execution`]"));
         assertThat(messagingRoot, containsString("helidon.messaging"));
 
-        String connector = Files.readString(outputDirectory.resolve("io_helidon_messaging_ConnectorConfig.adoc"));
+        String connector = Files.readString(
+                outputDirectory.resolve("io_helidon_messaging_spi_ConnectorConfig.adoc"));
         assertThat(connector, containsString("`channel-name`"));
         assertThat(connector, containsString("`connector`"));
         assertThat(connector, containsString("`direction`"));
-        assertThat(connector, containsString("io_helidon_messaging_ConnectorDirection.adoc"));
+        assertThat(connector, containsString("io_helidon_messaging_spi_ConnectorDirection.adoc"));
 
         String failure = Files.readString(outputDirectory.resolve("io_helidon_messaging_FailurePolicy.adoc"));
         assertThat(failure, containsString("`retry.delay`"));
@@ -172,7 +175,7 @@ class MessagingGeneratedArtifactsTest {
         assertThat(execution, containsString("`PT10S`"));
 
         String connectorDirection = Files.readString(
-                outputDirectory.resolve("io_helidon_messaging_ConnectorDirection.adoc"));
+                outputDirectory.resolve("io_helidon_messaging_spi_ConnectorDirection.adoc"));
         assertThat(connectorDirection, containsString("`INCOMING`"));
         assertThat(connectorDirection, containsString("`OUTGOING`"));
         String failureDisposition = Files.readString(

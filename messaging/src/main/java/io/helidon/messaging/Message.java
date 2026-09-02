@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
+import io.helidon.messaging.spi.ConnectorDeliveryReservation;
 
 /**
  * Message envelope with a payload, portable headers, and optional local metadata.

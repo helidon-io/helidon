@@ -30,6 +30,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
+import io.helidon.messaging.spi.OutgoingConnector;
 
 final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     private final List<SourceDefinition> sources = new ArrayList<>();

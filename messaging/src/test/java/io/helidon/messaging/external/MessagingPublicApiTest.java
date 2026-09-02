@@ -25,13 +25,13 @@ import java.util.Set;
 
 import io.helidon.messaging.BatchDeliveryException;
 import io.helidon.messaging.BatchItemOutcome;
-import io.helidon.messaging.ConnectorDelivery;
 import io.helidon.messaging.HeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeader;
 import io.helidon.messaging.MessageMetadata;
 import io.helidon.messaging.MessagingEntryPoint;
+import io.helidon.messaging.spi.ConnectorDelivery;
 
 import org.junit.jupiter.api.Test;
 

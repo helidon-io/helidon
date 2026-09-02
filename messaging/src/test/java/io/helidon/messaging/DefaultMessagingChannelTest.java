@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
+import io.helidon.messaging.spi.Connector;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;

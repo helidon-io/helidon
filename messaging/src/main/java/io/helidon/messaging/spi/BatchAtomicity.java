@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
-final class MessagingConfigSupport {
-    static final String CONNECTOR_PREFIX = "helidon.messaging.connector.";
-    static final String EXECUTION = "helidon.messaging.execution";
-    static final String INCOMING_PREFIX = "helidon.messaging.incoming.";
-    static final String OUTGOING_PREFIX = "helidon.messaging.outgoing.";
+import io.helidon.common.Api;
 
-    private MessagingConfigSupport() {
-    }
+/**
+ * Connector batch completion capability.
+ */
+@Api.Preview
+public enum BatchAtomicity {
+    /**
+     * Messages settle independently and a batch can complete partially.
+     */
+    PER_MESSAGE,
+
+    /**
+     * The connector guarantees one all-or-none external settlement boundary for the complete batch.
+     */
+    ATOMIC
 }

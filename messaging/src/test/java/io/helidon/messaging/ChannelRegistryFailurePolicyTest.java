@@ -37,6 +37,16 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
+import io.helidon.messaging.spi.ConnectorConfig;
+import io.helidon.messaging.spi.ConnectorDelivery;
+import io.helidon.messaging.spi.ConnectorDeliveryReservation;
+import io.helidon.messaging.spi.ConnectorDirection;
+import io.helidon.messaging.spi.ConnectorProvider;
+import io.helidon.messaging.spi.IncomingConnector;
+import io.helidon.messaging.spi.IncomingConnectorContext;
+import io.helidon.messaging.spi.IncomingConnectorProvider;
+import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.OutgoingConnectorProvider;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -2274,8 +2284,8 @@ class ChannelRegistryFailurePolicyTest {
         private static TestConnectorConfig from(Config config) {
             return new TestConnectorConfig(
                     ConnectorDirection.valueOf(config.get("direction").asString().orElseThrow()),
-                    config.get(MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE).asString().orElseThrow(),
-                    config.get(MessagingConfigSupport.CONNECTOR_ATTRIBUTE).asString().orElseThrow(),
+                    config.get(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE).asString().orElseThrow(),
+                    config.get(ConnectorConfig.CONNECTOR_ATTRIBUTE).asString().orElseThrow(),
                     Map.copyOf(config.detach().asMap().orElse(Map.of())),
                     config.detach());
         }

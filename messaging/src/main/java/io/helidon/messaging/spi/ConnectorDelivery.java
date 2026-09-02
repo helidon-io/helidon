@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
 import java.time.Duration;
 
 import io.helidon.common.Api;
+import io.helidon.messaging.BatchDeliveryException;
+import io.helidon.messaging.BatchItemOutcome;
+import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessagingException;
 
 /**
  * Runtime-owned asynchronous task used by an incoming connector while its owner thread performs transport maintenance.

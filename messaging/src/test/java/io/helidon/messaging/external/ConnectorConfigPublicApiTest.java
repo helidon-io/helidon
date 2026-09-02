@@ -20,8 +20,8 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.messaging.ConnectorConfig;
-import io.helidon.messaging.ConnectorDirection;
+import io.helidon.messaging.spi.ConnectorConfig;
+import io.helidon.messaging.spi.ConnectorDirection;
 
 import org.junit.jupiter.api.Test;
 
