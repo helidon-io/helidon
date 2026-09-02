@@ -48,27 +48,10 @@ public interface EmitterRegistration {
     GenericType<?> payloadGenericType();
 
     /**
-     * Produced payload raw type.
-     *
-     * @return payload raw type
-     */
-    default Class<?> payloadType() {
-        return payloadGenericType().rawType();
-    }
-
-    /**
      * Produced message envelope type including generic arguments.
      *
      * @return envelope type
      */
     GenericType<?> envelopeGenericType();
 
-    /**
-     * Produced message envelope raw type.
-     *
-     * @return envelope raw type
-     */
-    default Class<?> envelopeType() {
-        return envelopeGenericType().rawType();
-    }
 }

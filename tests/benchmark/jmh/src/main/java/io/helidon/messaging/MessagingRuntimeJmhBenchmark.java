@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.messaging.spi.ConnectorDelivery;
 import io.helidon.messaging.spi.ConnectorDeliveryReservation;
@@ -55,6 +56,7 @@ import org.openjdk.jmh.infra.Blackhole;
 public class MessagingRuntimeJmhBenchmark {
     private static final String CHANNEL = "benchmark";
     private static final String PAYLOAD = "payload";
+    private static final GenericType<Message<String>> MESSAGE_TYPE = new GenericType<>() { };
 
     /**
      * Invoke the same sink used by the runtime without messaging dispatch.
@@ -300,8 +302,13 @@ public class MessagingRuntimeJmhBenchmark {
                 }
 
                 @Override
-                public Class<?> payloadType() {
-                    return String.class;
+                public GenericType<?> payloadGenericType() {
+                    return GenericType.STRING;
+                }
+
+                @Override
+                public GenericType<?> envelopeGenericType() {
+                    return MESSAGE_TYPE;
                 }
 
                 @Override

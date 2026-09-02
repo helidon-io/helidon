@@ -41,29 +41,11 @@ public interface ProcessorRegistration extends ConsumerRegistration {
     GenericType<?> outgoingPayloadGenericType();
 
     /**
-     * Produced payload raw type.
-     *
-     * @return outgoing payload raw type
-     */
-    default Class<?> outgoingPayloadType() {
-        return outgoingPayloadGenericType().rawType();
-    }
-
-    /**
      * Produced message envelope type including generic arguments.
      *
      * @return outgoing envelope type
      */
     GenericType<?> outgoingEnvelopeGenericType();
-
-    /**
-     * Produced message envelope raw type.
-     *
-     * @return outgoing envelope raw type
-     */
-    default Class<?> outgoingEnvelopeType() {
-        return outgoingEnvelopeGenericType().rawType();
-    }
 
     /**
      * Invoke the processor adapter for one delivery and return one derived batch for

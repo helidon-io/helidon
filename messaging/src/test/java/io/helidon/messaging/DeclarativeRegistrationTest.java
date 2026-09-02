@@ -70,68 +70,6 @@ class DeclarativeRegistrationTest {
     }
 
     @Test
-    void rejectsInconsistentManualConsumerAndProcessorTypeMetadata() {
-        ConsumerRegistration inconsistentPayload = consumer("orders",
-                                                            "manual#payload",
-                                                            Integer.class,
-                                                            STRING_TYPE,
-                                                            Message.class,
-                                                            STRING_MESSAGE_TYPE,
-                                                            ignored -> { });
-        IllegalArgumentException payloadFailure = assertThrows(
-                IllegalArgumentException.class,
-                () -> registry(List.of(inconsistentPayload), Config.empty(), List.of()));
-        assertThat(payloadFailure.getMessage(),
-                   is("Messaging handler manual#payload payload raw type java.lang.Integer"
-                              + " does not match generic raw type java.lang.String"));
-
-        ConsumerRegistration inconsistentEnvelope = consumer("orders",
-                                                             "manual#envelope",
-                                                             String.class,
-                                                             STRING_TYPE,
-                                                             SpecialMessage.class,
-                                                             STRING_MESSAGE_TYPE,
-                                                             ignored -> { });
-        IllegalArgumentException envelopeFailure = assertThrows(
-                IllegalArgumentException.class,
-                () -> registry(List.of(inconsistentEnvelope), Config.empty(), List.of()));
-        assertThat(envelopeFailure.getMessage(),
-                   is("Messaging handler manual#envelope envelope raw type " + SpecialMessage.class.getName()
-                              + " does not match generic raw type " + Message.class.getName()));
-
-        ProcessorRegistration inconsistentOutgoingPayload = processor("orders",
-                                                                       "audit",
-                                                                       "manual#outgoing-payload",
-                                                                       Integer.class,
-                                                                       STRING_TYPE,
-                                                                       Message.class,
-                                                                       STRING_MESSAGE_TYPE,
-                                                                       Function.identity());
-        IllegalArgumentException outgoingPayloadFailure = assertThrows(
-                IllegalArgumentException.class,
-                () -> registry(List.of(inconsistentOutgoingPayload), Config.empty(), List.of()));
-        assertThat(outgoingPayloadFailure.getMessage(),
-                   is("Messaging processor manual#outgoing-payload outgoing payload raw type java.lang.Integer"
-                              + " does not match generic raw type java.lang.String"));
-
-        ProcessorRegistration inconsistentOutgoingEnvelope = processor("orders",
-                                                                        "audit",
-                                                                        "manual#outgoing-envelope",
-                                                                        String.class,
-                                                                        STRING_TYPE,
-                                                                        SpecialMessage.class,
-                                                                        STRING_MESSAGE_TYPE,
-                                                                        Function.identity());
-        IllegalArgumentException outgoingEnvelopeFailure = assertThrows(
-                IllegalArgumentException.class,
-                () -> registry(List.of(inconsistentOutgoingEnvelope), Config.empty(), List.of()));
-        assertThat(outgoingEnvelopeFailure.getMessage(),
-                   is("Messaging processor manual#outgoing-envelope outgoing envelope raw type "
-                              + SpecialMessage.class.getName() + " does not match generic raw type "
-                              + Message.class.getName()));
-    }
-
-    @Test
     void rejectsPayloadTypesThatContradictEnvelopePayloadTypes() {
         ConsumerRegistration inconsistentConsumer = consumer("orders",
                                                              "manual#payload-envelope",
@@ -177,9 +115,7 @@ class DeclarativeRegistrationTest {
     void rejectsEnvelopeMetadataThatIsNotAMessageType() {
         ConsumerRegistration inconsistentConsumer = consumer("orders",
                                                              "manual#non-message-envelope",
-                                                             String.class,
                                                              STRING_TYPE,
-                                                             String.class,
                                                              STRING_TYPE,
                                                              ignored -> { });
         IllegalArgumentException consumerFailure = assertThrows(
@@ -192,9 +128,7 @@ class DeclarativeRegistrationTest {
         ProcessorRegistration inconsistentProcessor = processor("orders",
                                                                  "audit",
                                                                  "manual#non-message-outgoing-envelope",
-                                                                 String.class,
                                                                  STRING_TYPE,
-                                                                 String.class,
                                                                  STRING_TYPE,
                                                                  Function.identity());
         IllegalArgumentException processorFailure = assertThrows(
@@ -217,12 +151,45 @@ class DeclarativeRegistrationTest {
     }
 
     @Test
+    void rejectsNullGenericTypeMetadata() {
+        ConsumerRegistration nullConsumerPayload =
+                consumer("orders", "manual#null-payload", null, STRING_MESSAGE_TYPE, ignored -> { });
+        assertThrows(NullPointerException.class,
+                     () -> registry(List.of(nullConsumerPayload), Config.empty(), List.of()));
+
+        ConsumerRegistration nullConsumerEnvelope =
+                consumer("orders", "manual#null-envelope", STRING_TYPE, null, ignored -> { });
+        assertThrows(NullPointerException.class,
+                     () -> registry(List.of(nullConsumerEnvelope), Config.empty(), List.of()));
+
+        ProcessorRegistration nullProcessorPayload =
+                processor("orders", "audit", "manual#null-outgoing-payload", null, STRING_MESSAGE_TYPE,
+                          Function.identity());
+        assertThrows(NullPointerException.class,
+                     () -> registry(List.of(nullProcessorPayload), Config.empty(), List.of()));
+
+        ProcessorRegistration nullProcessorEnvelope =
+                processor("orders", "audit", "manual#null-outgoing-envelope", STRING_TYPE, null,
+                          Function.identity());
+        assertThrows(NullPointerException.class,
+                     () -> registry(List.of(nullProcessorEnvelope), Config.empty(), List.of()));
+
+        EmitterRegistration nullEmitterPayload =
+                emitter("orders", "manual#null-emitter-payload", null, STRING_MESSAGE_TYPE);
+        assertThrows(NullPointerException.class,
+                     () -> registry(List.of(), List.of(nullEmitterPayload), Config.empty(), List.of()));
+
+        EmitterRegistration nullEmitterEnvelope =
+                emitter("orders", "manual#null-emitter-envelope", STRING_TYPE, null);
+        assertThrows(NullPointerException.class,
+                     () -> registry(List.of(), List.of(nullEmitterEnvelope), Config.empty(), List.of()));
+    }
+
+    @Test
     void rejectsPrimitiveManualMetadataAndAcceptsBoxedPayloadMetadata() {
         ConsumerRegistration primitiveConsumer = consumer("numbers",
                                                           "manual#primitive-payload",
-                                                          int.class,
                                                           PRIMITIVE_INT_TYPE,
-                                                          Message.class,
                                                           INTEGER_MESSAGE_TYPE,
                                                           ignored -> { });
         IllegalArgumentException primitiveFailure = assertThrows(
@@ -231,26 +198,10 @@ class DeclarativeRegistrationTest {
         assertThat(primitiveFailure.getMessage(),
                    is("Messaging handler manual#primitive-payload payload raw type must not be primitive: int"));
 
-        ConsumerRegistration primitiveGenericConsumer = consumer("numbers",
-                                                                 "manual#primitive-generic-payload",
-                                                                 Integer.class,
-                                                                 PRIMITIVE_INT_TYPE,
-                                                                 Message.class,
-                                                                 INTEGER_MESSAGE_TYPE,
-                                                                 ignored -> { });
-        IllegalArgumentException primitiveGenericFailure = assertThrows(
-                IllegalArgumentException.class,
-                () -> registry(List.of(primitiveGenericConsumer), Config.empty(), List.of()));
-        assertThat(primitiveGenericFailure.getMessage(),
-                   is("Messaging handler manual#primitive-generic-payload payload generic raw type"
-                              + " must not be primitive: int"));
-
         ProcessorRegistration primitiveProcessor = processor("numbers",
                                                               "audit",
                                                               "manual#primitive-outgoing-payload",
-                                                              int.class,
                                                               PRIMITIVE_INT_TYPE,
-                                                              Message.class,
                                                               INTEGER_MESSAGE_TYPE,
                                                               Function.identity());
         IllegalArgumentException primitiveProcessorFailure = assertThrows(
@@ -544,22 +495,6 @@ class DeclarativeRegistrationTest {
                                                  GenericType<?> payloadType,
                                                  GenericType<?> envelopeType,
                                                  Consumer<Message<?>> consumer) {
-        return consumer(channel,
-                        handlerId,
-                        payloadType.rawType(),
-                        payloadType,
-                        envelopeType.rawType(),
-                        envelopeType,
-                        consumer);
-    }
-
-    private static ConsumerRegistration consumer(String channel,
-                                                 String handlerId,
-                                                 Class<?> rawPayloadType,
-                                                 GenericType<?> payloadType,
-                                                 Class<?> rawEnvelopeType,
-                                                 GenericType<?> envelopeType,
-                                                 Consumer<Message<?>> consumer) {
         return new ConsumerRegistration() {
             @Override
             public String handlerId() {
@@ -572,18 +507,8 @@ class DeclarativeRegistrationTest {
             }
 
             @Override
-            public Class<?> payloadType() {
-                return rawPayloadType;
-            }
-
-            @Override
             public GenericType<?> payloadGenericType() {
                 return payloadType;
-            }
-
-            @Override
-            public Class<?> envelopeType() {
-                return rawEnvelopeType;
             }
 
             @Override
@@ -610,24 +535,6 @@ class DeclarativeRegistrationTest {
                                                    GenericType<?> outgoingPayloadType,
                                                    GenericType<?> outgoingEnvelopeType,
                                                    Function<Message<?>, Message<?>> processor) {
-        return processor(incoming,
-                         outgoing,
-                         handlerId,
-                         outgoingPayloadType.rawType(),
-                         outgoingPayloadType,
-                         outgoingEnvelopeType.rawType(),
-                         outgoingEnvelopeType,
-                         processor);
-    }
-
-    private static ProcessorRegistration processor(String incoming,
-                                                   String outgoing,
-                                                   String handlerId,
-                                                   Class<?> rawOutgoingPayloadType,
-                                                   GenericType<?> outgoingPayloadType,
-                                                   Class<?> rawOutgoingEnvelopeType,
-                                                   GenericType<?> outgoingEnvelopeType,
-                                                   Function<Message<?>, Message<?>> processor) {
         return new ProcessorRegistration() {
             @Override
             public String handlerId() {
@@ -637,11 +544,6 @@ class DeclarativeRegistrationTest {
             @Override
             public String channel() {
                 return incoming;
-            }
-
-            @Override
-            public Class<?> payloadType() {
-                return String.class;
             }
 
             @Override
@@ -665,18 +567,8 @@ class DeclarativeRegistrationTest {
             }
 
             @Override
-            public Class<?> outgoingPayloadType() {
-                return rawOutgoingPayloadType;
-            }
-
-            @Override
             public GenericType<?> outgoingEnvelopeGenericType() {
                 return outgoingEnvelopeType;
-            }
-
-            @Override
-            public Class<?> outgoingEnvelopeType() {
-                return rawOutgoingEnvelopeType;
             }
 
             @Override
@@ -707,11 +599,6 @@ class DeclarativeRegistrationTest {
             @Override
             public String channel() {
                 return incoming;
-            }
-
-            @Override
-            public Class<?> payloadType() {
-                return String.class;
             }
 
             @Override

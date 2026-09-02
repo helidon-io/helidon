@@ -58,38 +58,18 @@ public interface ConsumerRegistration {
     }
 
     /**
-     * Expected payload type.
-     *
-     * @return payload type
-     */
-    Class<?> payloadType();
-
-    /**
      * Expected payload type including generic arguments.
      *
      * @return generic payload type
      */
-    default GenericType<?> payloadGenericType() {
-        return GenericType.create(payloadType());
-    }
-
-    /**
-     * Expected message envelope raw type.
-     *
-     * @return message envelope raw type
-     */
-    default Class<?> envelopeType() {
-        return Message.class;
-    }
+    GenericType<?> payloadGenericType();
 
     /**
      * Expected message envelope type including generic arguments.
      *
      * @return generic message envelope type
      */
-    default GenericType<?> envelopeGenericType() {
-        return GenericType.create(envelopeType());
-    }
+    GenericType<?> envelopeGenericType();
 
     /**
      * Dispatch one immutable delivery batch to the generated invocation adapter.

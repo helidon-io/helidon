@@ -19,6 +19,7 @@ package io.helidon.messaging;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.GenericType;
 import io.helidon.messaging.spi.OutgoingConnector;
 
 import org.junit.jupiter.api.Test;
@@ -99,8 +100,13 @@ class BatchDefaultsTest {
             }
 
             @Override
-            public Class<?> payloadType() {
-                return String.class;
+            public GenericType<?> payloadGenericType() {
+                return GenericType.STRING;
+            }
+
+            @Override
+            public GenericType<?> envelopeGenericType() {
+                return new GenericType<Message<String>>() { };
             }
 
             @Override

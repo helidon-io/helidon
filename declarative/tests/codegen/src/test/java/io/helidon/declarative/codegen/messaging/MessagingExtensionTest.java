@@ -39,8 +39,10 @@ import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.messaging.ConsumerRegistration;
+import io.helidon.messaging.EmitterRegistration;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.ProcessorRegistration;
 import io.helidon.service.registry.Service;
 
 import org.junit.jupiter.api.Test;
@@ -210,6 +212,8 @@ class MessagingExtensionTest {
                    is(true));
         assertThat(generatedSource, generatedSource.contains("new GenericType<KeyedMessage<String, List<Integer>>>()"), is(true));
         assertThat(generatedSource, generatedSource.contains("return ENVELOPE_GENERIC_TYPE;"), is(true));
+        assertThat(generatedSource, generatedSource.contains("Class<?> payloadType()"), is(false));
+        assertThat(generatedSource, generatedSource.contains("Class<?> envelopeType()"), is(false));
     }
 
     @Test
@@ -230,8 +234,9 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String generatedSource = generatedSource(result, "PrimitiveConsumer__MessagingConsumer_");
-        assertThat(generatedSource, generatedSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), is(true));
         assertThat(generatedSource, generatedSource.contains("new GenericType<Integer>()"), is(true));
+        assertThat(generatedSource, generatedSource.contains("return PAYLOAD_GENERIC_TYPE;"), is(true));
+        assertThat(generatedSource, generatedSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), is(false));
     }
 
     @Test
@@ -391,8 +396,8 @@ class MessagingExtensionTest {
                     entityConsumer,
                     passthroughEntryPoints());
 
-            assertThat(entityRegistration.payloadType(), sameInstance(payloadType));
-            assertThat(entityRegistration.envelopeType(), sameInstance(Message.class));
+            assertThat(entityRegistration.payloadGenericType().rawType(), sameInstance(payloadType));
+            assertThat(entityRegistration.envelopeGenericType().rawType(), sameInstance(Message.class));
 
             entityRegistration.dispatch(MessageBatch.create(Message.builder(payload)
                                                                       .header("tenant", "outer")
@@ -410,8 +415,8 @@ class MessagingExtensionTest {
                     envelopeConsumer,
                     passthroughEntryPoints());
 
-            assertThat(envelopeRegistration.payloadType(), sameInstance(String.class));
-            assertThat(envelopeRegistration.envelopeType(), sameInstance(payloadType));
+            assertThat(envelopeRegistration.payloadGenericType().rawType(), sameInstance(String.class));
+            assertThat(envelopeRegistration.envelopeGenericType().rawType(), sameInstance(payloadType));
 
             envelopeRegistration.dispatch(MessageBatch.create((Message<?>) payload));
 
@@ -893,6 +898,12 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("return \"audit\";"), is(true));
         assertThat(source, source.contains("new GenericType<Integer>()"), is(true));
         assertThat(source, source.contains("new GenericType<Message<Integer>>()"), is(true));
+        assertThat(source, source.contains("outgoingPayloadGenericType()"), is(true));
+        assertThat(source, source.contains("outgoingEnvelopeGenericType()"), is(true));
+        assertThat(source, source.contains("Class<?> payloadType()"), is(false));
+        assertThat(source, source.contains("Class<?> envelopeType()"), is(false));
+        assertThat(source, source.contains("Class<?> outgoingPayloadType()"), is(false));
+        assertThat(source, source.contains("Class<?> outgoingEnvelopeType()"), is(false));
         assertThat(source, source.contains("MessageBatch<?> process(MessageBatch<?> messages)"), is(true));
         assertThat(source, source.contains("processedMessages.add(processMessage(messages.get(index)));"), is(true));
         assertThat(source, source.contains("return messages.derive(processedMessages);"), is(true));
@@ -977,10 +988,12 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("new GenericType<ArrayMessage<String>>()"), is(true));
 
         String consumerSource = generatedSource(result, "ArrayPayloadConsumer__MessagingConsumer_");
-        assertThat(consumerSource, consumerSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), is(true));
         assertThat(consumerSource, consumerSource.contains("new GenericType<String[][]>()"), is(true));
-        assertThat(consumerSource, consumerSource.contains("return ENVELOPE_GENERIC_TYPE.rawType();"), is(true));
         assertThat(consumerSource, consumerSource.contains("new GenericType<Message<String[][]>>()"), is(true));
+        assertThat(consumerSource, consumerSource.contains("return PAYLOAD_GENERIC_TYPE;"), is(true));
+        assertThat(consumerSource, consumerSource.contains("return ENVELOPE_GENERIC_TYPE;"), is(true));
+        assertThat(consumerSource, consumerSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), is(false));
+        assertThat(consumerSource, consumerSource.contains("return ENVELOPE_GENERIC_TYPE.rawType();"), is(false));
     }
 
     @Test
@@ -1344,6 +1357,10 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("com.example.MetadataEmitterProducer#emitter:orders"), is(true));
         assertThat(source, source.contains("new GenericType<List<String>>()"), is(true));
         assertThat(source, source.contains("new GenericType<Message<List<String>>>()"), is(true));
+        assertThat(source, source.contains("payloadGenericType()"), is(true));
+        assertThat(source, source.contains("envelopeGenericType()"), is(true));
+        assertThat(source, source.contains("Class<?> payloadType()"), is(false));
+        assertThat(source, source.contains("Class<?> envelopeType()"), is(false));
         assertThat(source, source.contains("void emit(MessageBatch<? extends List<String>> messages)"), is(true));
         assertThat(source, source.contains("void emitBatch("), is(false));
         assertThat(source, source.contains("void emitMessage("), is(false));
@@ -1382,23 +1399,23 @@ class MessagingExtensionTest {
             Class<?> processorType = generatedClass(classLoader,
                                                      result,
                                                      "CachedMetadataService__MessagingConsumer_");
-            Object processor = newRegistration(
+            ProcessorRegistration processor = (ProcessorRegistration) newRegistration(
                     processorType,
                     (Object) null,
                     passthroughEntryPoints());
-            assertCachedTypeMetadata(processor, "payloadGenericType", "payloadType");
-            assertCachedTypeMetadata(processor, "envelopeGenericType", "envelopeType");
-            assertCachedTypeMetadata(processor, "outgoingPayloadGenericType", "outgoingPayloadType");
-            assertCachedTypeMetadata(processor, "outgoingEnvelopeGenericType", "outgoingEnvelopeType");
+            assertCachedTypeMetadata(processor::payloadGenericType);
+            assertCachedTypeMetadata(processor::envelopeGenericType);
+            assertCachedTypeMetadata(processor::outgoingPayloadGenericType);
+            assertCachedTypeMetadata(processor::outgoingEnvelopeGenericType);
 
             Class<?> emitterType = generatedClass(classLoader,
                                                    result,
                                                    "CachedMetadataService__MessagingEmitter_");
-            Object emitter = newRegistration(
+            EmitterRegistration emitter = (EmitterRegistration) newRegistration(
                     emitterType,
                     (Supplier<Object>) () -> null);
-            assertCachedTypeMetadata(emitter, "payloadGenericType", "payloadType");
-            assertCachedTypeMetadata(emitter, "envelopeGenericType", "envelopeType");
+            assertCachedTypeMetadata(emitter::payloadGenericType);
+            assertCachedTypeMetadata(emitter::envelopeGenericType);
         }
     }
 
@@ -2413,12 +2430,9 @@ class MessagingExtensionTest {
                 (proxy, method, arguments) -> arguments[arguments.length - 1]);
     }
 
-    private void assertCachedTypeMetadata(Object registration,
-                                          String genericMethod,
-                                          String rawMethod) throws ReflectiveOperationException {
-        Object genericType = invoke(registration, genericMethod);
-        assertThat(invoke(registration, genericMethod), sameInstance(genericType));
-        assertThat(invoke(registration, rawMethod), sameInstance(invoke(genericType, "rawType")));
+    private void assertCachedTypeMetadata(Supplier<?> accessor) {
+        Object genericType = accessor.get();
+        assertThat(accessor.get(), sameInstance(genericType));
     }
 
     private Object invoke(Object target, String methodName) throws ReflectiveOperationException {

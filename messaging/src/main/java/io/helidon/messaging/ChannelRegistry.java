@@ -255,23 +255,15 @@ class ChannelRegistry implements MessagingRuntime {
             String handler = "Messaging handler " + registration.handlerId();
             GenericType<?> payloadType = registration.payloadGenericType();
             GenericType<?> envelopeType = registration.envelopeGenericType();
-            validateRawType(handler + " payload",
-                            registration.payloadType(),
-                            payloadType);
-            validateRawType(handler + " envelope",
-                            registration.envelopeType(),
-                            envelopeType);
+            validateType(handler + " payload", payloadType);
+            validateType(handler + " envelope", envelopeType);
             validateEnvelopePayloadType(handler, payloadType, envelopeType);
             if (registration instanceof ProcessorRegistration processor) {
                 String outgoing = "Messaging processor " + processor.handlerId() + " outgoing";
                 GenericType<?> outgoingPayloadType = processor.outgoingPayloadGenericType();
                 GenericType<?> outgoingEnvelopeType = processor.outgoingEnvelopeGenericType();
-                validateRawType(outgoing + " payload",
-                                processor.outgoingPayloadType(),
-                                outgoingPayloadType);
-                validateRawType(outgoing + " envelope",
-                                processor.outgoingEnvelopeType(),
-                                outgoingEnvelopeType);
+                validateType(outgoing + " payload", outgoingPayloadType);
+                validateType(outgoing + " envelope", outgoingEnvelopeType);
                 validateEnvelopePayloadType(outgoing, outgoingPayloadType, outgoingEnvelopeType);
             }
         }
@@ -279,27 +271,18 @@ class ChannelRegistry implements MessagingRuntime {
             String emitter = "Messaging emitter " + registration.producerId();
             GenericType<?> payloadType = registration.payloadGenericType();
             GenericType<?> envelopeType = registration.envelopeGenericType();
-            validateRawType(emitter + " payload", registration.payloadType(), payloadType);
-            validateRawType(emitter + " envelope", registration.envelopeType(), envelopeType);
+            validateType(emitter + " payload", payloadType);
+            validateType(emitter + " envelope", envelopeType);
             validateEnvelopePayloadType(emitter, payloadType, envelopeType);
         }
     }
 
-    private void validateRawType(String source, Class<?> rawType, GenericType<?> genericType) {
-        Class<?> actualRawType = Objects.requireNonNull(rawType, source + " raw type");
-        GenericType<?> actualGenericType = Objects.requireNonNull(genericType, source + " generic type");
-        Class<?> genericRawType = actualGenericType.rawType();
-        if (actualRawType.isPrimitive()) {
-            throw new IllegalArgumentException(source + " raw type must not be primitive: " + actualRawType.getName());
-        }
-        if (genericRawType.isPrimitive()) {
-            throw new IllegalArgumentException(source + " generic raw type must not be primitive: "
-                                                       + genericRawType.getName());
-        }
-        if (!actualRawType.equals(genericRawType)) {
-            throw new IllegalArgumentException(source + " raw type " + actualRawType.getName()
-                                                       + " does not match generic raw type "
-                                                       + genericRawType.getName());
+    private void validateType(String source, GenericType<?> type) {
+        GenericType<?> actualType = Objects.requireNonNull(type, source + " type");
+        Class<?> rawType = actualType.rawType();
+        if (rawType.isPrimitive()) {
+            throw new IllegalArgumentException(source + " raw type must not be primitive: "
+                                                       + rawType.getName());
         }
     }
 
@@ -574,8 +557,8 @@ class ChannelRegistry implements MessagingRuntime {
             throw new MessagingException("Messaging processor " + processor.handlerId()
                                                  + " did not preserve batch delivery lineage");
         }
-        Class<?> outgoingEnvelopeType = processor.outgoingEnvelopeType();
-        Class<?> outgoingPayloadType = processor.outgoingPayloadType();
+        Class<?> outgoingEnvelopeType = processor.outgoingEnvelopeGenericType().rawType();
+        Class<?> outgoingPayloadType = processor.outgoingPayloadGenericType().rawType();
         for (Message<?> message : result) {
             if (!outgoingEnvelopeType.isInstance(message)) {
                 throw new MessagingException("Messaging processor " + processor.handlerId()
@@ -837,10 +820,11 @@ class ChannelRegistry implements MessagingRuntime {
     }
 
     private void validateMessageType(ConsumerRegistration consumer, Message<?> message) {
-        if (!consumer.envelopeType().isInstance(message)) {
+        Class<?> envelopeType = consumer.envelopeGenericType().rawType();
+        if (!envelopeType.isInstance(message)) {
             throw new IllegalArgumentException("Channel " + consumer.channel()
                                                        + " expected message envelope type "
-                                                       + consumer.envelopeType().getName()
+                                                       + envelopeType.getName()
                                                        + " but received " + message.getClass().getName());
         }
         Object entity;
@@ -848,7 +832,7 @@ class ChannelRegistry implements MessagingRuntime {
             entity = message.entity();
         } catch (MessagingException failure) {
             if (message instanceof DeadLetterMessage<?>
-                    && consumer.envelopeType().isAssignableFrom(DeadLetterMessage.class)) {
+                    && envelopeType.isAssignableFrom(DeadLetterMessage.class)) {
                 return;
             }
             throw failure;
@@ -856,10 +840,11 @@ class ChannelRegistry implements MessagingRuntime {
         if (entity == null) {
             throw new IllegalArgumentException("Channel " + consumer.channel() + " received a null payload");
         }
-        if (!consumer.payloadType().isInstance(entity)) {
+        Class<?> payloadType = consumer.payloadGenericType().rawType();
+        if (!payloadType.isInstance(entity)) {
             throw new IllegalArgumentException("Channel " + consumer.channel()
                                                        + " expected payload type "
-                                                       + consumer.payloadType().getName()
+                                                       + payloadType.getName()
                                                        + " but received " + entity.getClass().getName());
         }
     }
@@ -1056,7 +1041,8 @@ class ChannelRegistry implements MessagingRuntime {
                                              String target,
                                              List<ConsumerRegistration> consumers) {
         for (ConsumerRegistration consumer : consumers) {
-            if (!consumer.envelopeType().isAssignableFrom(DeadLetterMessage.class)) {
+            Class<?> envelopeType = consumer.envelopeGenericType().rawType();
+            if (!envelopeType.isAssignableFrom(DeadLetterMessage.class)) {
                 throw new IllegalArgumentException("Dead-letter channel " + target
                                                            + " configured for incoming channel " + source
                                                            + " has consumer envelope "

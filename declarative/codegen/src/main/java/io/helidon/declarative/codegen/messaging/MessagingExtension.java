@@ -190,23 +190,7 @@ class MessagingExtension implements RegistryCodegenExtension {
 
         addGenericTypeField(classModel, "PAYLOAD_GENERIC_TYPE", payloadMetadataType);
         addGenericTypeField(classModel, "ENVELOPE_GENERIC_TYPE", consumerMethod.envelopeType());
-
-        classModel.addMethod(method -> method
-                .addAnnotation(Annotations.OVERRIDE)
-                .accessModifier(AccessModifier.PUBLIC)
-                .returnType(TypeNames.CLASS_WILDCARD)
-                .name("payloadType")
-                .addContentLine("return PAYLOAD_GENERIC_TYPE.rawType();"));
-
         addGenericTypeMethod(classModel, "payloadGenericType", "PAYLOAD_GENERIC_TYPE");
-
-        classModel.addMethod(method -> method
-                .addAnnotation(Annotations.OVERRIDE)
-                .accessModifier(AccessModifier.PUBLIC)
-                .returnType(TypeNames.CLASS_WILDCARD)
-                .name("envelopeType")
-                .addContentLine("return ENVELOPE_GENERIC_TYPE.rawType();"));
-
         addGenericTypeMethod(classModel, "envelopeGenericType", "ENVELOPE_GENERIC_TYPE");
 
         if (consumerMethod.processor()) {

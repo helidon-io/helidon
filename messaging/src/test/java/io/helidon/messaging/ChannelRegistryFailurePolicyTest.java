@@ -563,19 +563,16 @@ class ChannelRegistryFailurePolicyTest {
     @Test
     void testPreDispatchEntityFailureReachesLocalDeadLetterEnvelopeConsumer() throws InterruptedException {
         assertPreDispatchEntityFailureReachesLocalConsumer(
-                DeadLetterMessage.class,
                 new GenericType<DeadLetterMessage<String>>() { });
     }
 
     @Test
     void testPreDispatchEntityFailureReachesLocalMessageEnvelopeConsumer() throws InterruptedException {
         assertPreDispatchEntityFailureReachesLocalConsumer(
-                Message.class,
                 new GenericType<Message<String>>() { });
     }
 
-    private void assertPreDispatchEntityFailureReachesLocalConsumer(Class<?> envelopeType,
-                                                                    GenericType<?> envelopeGenericType)
+    private void assertPreDispatchEntityFailureReachesLocalConsumer(GenericType<?> envelopeGenericType)
             throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger entityCalls = new AtomicInteger();
@@ -594,9 +591,7 @@ class ChannelRegistryFailurePolicyTest {
         AtomicReference<Message<?>> routed = new AtomicReference<>();
         ConsumerRegistration deadLetterConsumer = registration(
                 "orders-dlq",
-                String.class,
                 new GenericType<String>() { },
-                envelopeType,
                 envelopeGenericType,
                 routed::set);
         ChannelRegistry registry = registry(
@@ -1757,16 +1752,12 @@ class ChannelRegistryFailurePolicyTest {
         AtomicInteger keyedDispatches = new AtomicInteger();
         ConsumerRegistration broad = registration(
                 "orders",
-                Integer.class,
                 new GenericType<Integer>() { },
-                Message.class,
                 new GenericType<Message<Integer>>() { },
                 ignored -> broadDispatches.incrementAndGet());
         ConsumerRegistration keyed = registration(
                 "orders",
-                Integer.class,
                 new GenericType<Integer>() { },
-                TestKeyedMessage.class,
                 new GenericType<TestKeyedMessage<String, Integer>>() { },
                 ignored -> keyedDispatches.incrementAndGet());
 
@@ -1780,9 +1771,7 @@ class ChannelRegistryFailurePolicyTest {
 
         ConsumerRegistration conflictingKeyed = registration(
                 "orders",
-                Integer.class,
                 new GenericType<Integer>() { },
-                TestKeyedMessage.class,
                 new GenericType<TestKeyedMessage<Long, Integer>>() { });
         IllegalArgumentException envelopeFailure = assertThrows(
                 IllegalArgumentException.class,
@@ -1791,9 +1780,7 @@ class ChannelRegistryFailurePolicyTest {
 
         ConsumerRegistration conflictingSubtype = registration(
                 "orders",
-                Integer.class,
                 new GenericType<Integer>() { },
-                TestKeyedMessageSubtype.class,
                 new GenericType<TestKeyedMessageSubtype<Long, Integer>>() { });
         assertThrows(IllegalArgumentException.class,
                      () -> registry(List.of(keyed, conflictingSubtype),
@@ -1802,15 +1789,11 @@ class ChannelRegistryFailurePolicyTest {
 
         ConsumerRegistration stringList = registration(
                 "lists",
-                List.class,
                 new GenericType<List<String>>() { },
-                Message.class,
                 new GenericType<Message<List<String>>>() { });
         ConsumerRegistration integerList = registration(
                 "lists",
-                List.class,
                 new GenericType<List<Integer>>() { },
-                Message.class,
                 new GenericType<Message<List<Integer>>>() { });
         IllegalArgumentException payloadFailure = assertThrows(
                 IllegalArgumentException.class,
@@ -1827,9 +1810,7 @@ class ChannelRegistryFailurePolicyTest {
         ConsumerRegistration source = registration("orders", ignored -> { });
         ConsumerRegistration incompatibleTarget = registration(
                 "orders-dlq",
-                String.class,
                 new GenericType<String>() { },
-                TestSpecialMessage.class,
                 new GenericType<TestSpecialMessage<String>>() { });
 
         IllegalArgumentException failure = assertThrows(
@@ -1868,9 +1849,7 @@ class ChannelRegistryFailurePolicyTest {
         ConsumerRegistration source = registration("orders", ignored -> { });
         ConsumerRegistration incompatibleTarget = registration(
                 "orders-dlq",
-                Integer.class,
                 new GenericType<Integer>() { },
-                DeadLetterMessage.class,
                 new GenericType<DeadLetterMessage<Integer>>() { });
 
         IllegalArgumentException failure = assertThrows(
@@ -1907,9 +1886,7 @@ class ChannelRegistryFailurePolicyTest {
     void testRawProducerEnvelopeDoesNotSatisfyParameterizedConsumer() {
         ConsumerRegistration target = registration(
                 "orders",
-                Integer.class,
                 new GenericType<Integer>() { },
-                TestKeyedMessage.class,
                 new GenericType<TestKeyedMessage<Long, Integer>>() { });
         EmitterRegistration rawProducer = emitterRegistration(
                 "orders",
@@ -2046,9 +2023,7 @@ class ChannelRegistryFailurePolicyTest {
 
     private static ConsumerRegistration registration(String channel, Consumer<Message<?>> consumer) {
         return registration(channel,
-                            String.class,
                             new GenericType<String>() { },
-                            Message.class,
                             new GenericType<Message<String>>() { },
                             consumer);
     }
@@ -2059,9 +2034,7 @@ class ChannelRegistryFailurePolicyTest {
                                                      Consumer<Message<?>> consumer) {
         return registration(handlerId,
                             channel,
-                            String.class,
                             new GenericType<String>() { },
-                            Message.class,
                             new GenericType<Message<String>>() { },
                             failurePolicy,
                             consumer);
@@ -2076,18 +2049,8 @@ class ChannelRegistryFailurePolicyTest {
             }
 
             @Override
-            public Class<?> payloadType() {
-                return String.class;
-            }
-
-            @Override
             public GenericType<?> payloadGenericType() {
                 return new GenericType<String>() { };
-            }
-
-            @Override
-            public Class<?> envelopeType() {
-                return Message.class;
             }
 
             @Override
@@ -2114,11 +2077,6 @@ class ChannelRegistryFailurePolicyTest {
             @Override
             public String channel() {
                 return incoming;
-            }
-
-            @Override
-            public Class<?> payloadType() {
-                return String.class;
             }
 
             @Override
@@ -2155,29 +2113,21 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     private static ConsumerRegistration registration(String channel,
-                                                     Class<?> payloadType,
                                                      GenericType<?> payloadGenericType,
-                                                     Class<?> envelopeType,
                                                      GenericType<?> envelopeGenericType) {
         return registration(channel,
-                            payloadType,
                             payloadGenericType,
-                            envelopeType,
                             envelopeGenericType,
                             ignored -> { });
     }
 
     private static ConsumerRegistration registration(String channel,
-                                                     Class<?> payloadType,
                                                      GenericType<?> payloadGenericType,
-                                                     Class<?> envelopeType,
                                                      GenericType<?> envelopeGenericType,
                                                      Consumer<Message<?>> consumer) {
         return registration(null,
                             channel,
-                            payloadType,
                             payloadGenericType,
-                            envelopeType,
                             envelopeGenericType,
                             null,
                             consumer);
@@ -2185,9 +2135,7 @@ class ChannelRegistryFailurePolicyTest {
 
     private static ConsumerRegistration registration(String handlerId,
                                                      String channel,
-                                                     Class<?> payloadType,
                                                      GenericType<?> payloadGenericType,
-                                                     Class<?> envelopeType,
                                                      GenericType<?> envelopeGenericType,
                                                      FailurePolicy failurePolicy,
                                                      Consumer<Message<?>> consumer) {
@@ -2203,18 +2151,8 @@ class ChannelRegistryFailurePolicyTest {
             }
 
             @Override
-            public Class<?> payloadType() {
-                return payloadType;
-            }
-
-            @Override
             public GenericType<?> payloadGenericType() {
                 return payloadGenericType;
-            }
-
-            @Override
-            public Class<?> envelopeType() {
-                return envelopeType;
             }
 
             @Override
