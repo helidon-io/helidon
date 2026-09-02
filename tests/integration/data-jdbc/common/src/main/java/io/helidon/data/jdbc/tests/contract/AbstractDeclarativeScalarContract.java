@@ -15,9 +15,15 @@
  */
 package io.helidon.data.jdbc.tests.contract;
 
+import java.time.OffsetDateTime;
+
+import io.helidon.data.jdbc.tests.application.StoredOffsetDateTime;
 import io.helidon.data.jdbc.tests.declarative.repository.DeclarativeScalarBindingRepository;
 
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Real-driver scalar contract for generated declarative repositories.
@@ -31,6 +37,21 @@ public abstract class AbstractDeclarativeScalarContract extends AbstractJdbcScal
      */
     protected final DeclarativeScalarBindingRepository repository() {
         return service(DeclarativeScalarBindingRepository.class);
+    }
+
+    /**
+     * Proves an offset date-time retains its local value and offset when represented by two portable scalars.
+     */
+    @Test
+    protected final void preservesOffsetDateTimeUsingLocalDateTimeAndOffsetSeconds() {
+        OffsetDateTime expected = OffsetDateTime.parse("2026-07-27T00:01:02-03:30:45");
+        StoredOffsetDateTime stored = StoredOffsetDateTime.from(expected);
+
+        repository().updateTime(stored.localDateTime(), stored.offsetSeconds(), 1);
+
+        StoredOffsetDateTime actual = repository().findTime(1);
+        assertThat(actual, is(stored));
+        assertThat(actual.toOffsetDateTime(), is(expected));
     }
 
     @Override
@@ -48,8 +69,6 @@ public abstract class AbstractDeclarativeScalarContract extends AbstractJdbcScal
                              values.localDateValue(),
                              values.localTimeValue(),
                              values.localDateTimeValue(),
-                             values.offsetTimeValue(),
-                             values.offsetDateTimeValue(),
                              values.dateValue(),
                              values.timeValue(),
                              values.timestampValue());

@@ -27,8 +27,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -87,8 +85,6 @@ class JdbcGeneratedKeyScalarMatrixTest {
         assertGeneratedKey(LocalDate.of(2026, 7, 27), LocalDate.class);
         assertGeneratedKey(LocalTime.of(10, 11, 12), LocalTime.class);
         assertGeneratedKey(LocalDateTime.of(2026, 7, 27, 10, 11, 12), LocalDateTime.class);
-        assertGeneratedKey(OffsetTime.parse("10:11:12+05:30"), OffsetTime.class);
-        assertGeneratedKey(OffsetDateTime.parse("2026-07-27T10:11:12+05:30"), OffsetDateTime.class);
         assertGeneratedKey(Date.valueOf("2026-07-27"), Date.class);
         assertGeneratedKey(Time.valueOf("10:11:12"), Time.class);
         assertGeneratedKey(Timestamp.valueOf("2026-07-27 10:11:12"), Timestamp.class);

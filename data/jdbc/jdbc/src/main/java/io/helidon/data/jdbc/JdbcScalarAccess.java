@@ -25,8 +25,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -37,6 +35,10 @@ import java.util.Set;
 final class JdbcScalarAccess {
 
     // This list must stay aligned with the scalar types accepted by code generation.
+    // OffsetTime and OffsetDateTime are deliberately excluded because the supported databases do not provide a
+    // lossless, single-column mapping: MySQL discards offsets, PostgreSQL normalizes offset date-times, and Oracle
+    // has no standalone SQL time-with-time-zone type. Applications can bind supported local temporal fields plus
+    // offset seconds, or use an explicitly encoded String representation.
     private static final Set<Class<?>> SUPPORTED_TYPES = Set.of(Boolean.class,
                                                                  Byte.class,
                                                                  Short.class,
@@ -50,8 +52,6 @@ final class JdbcScalarAccess {
                                                                  LocalDate.class,
                                                                  LocalTime.class,
                                                                  LocalDateTime.class,
-                                                                 OffsetTime.class,
-                                                                 OffsetDateTime.class,
                                                                  Date.class,
                                                                  Time.class,
                                                                  Timestamp.class);
@@ -109,9 +109,7 @@ final class JdbcScalarAccess {
             statement.setDate(index, dateValue);
         } else if (value instanceof LocalDate
                 || value instanceof LocalTime
-                || value instanceof LocalDateTime
-                || value instanceof OffsetTime
-                || value instanceof OffsetDateTime) {
+                || value instanceof LocalDateTime) {
             statement.setObject(index, value);
         } else {
             throw new IllegalArgumentException("JDBC does not support bind values of type '"
@@ -173,9 +171,7 @@ final class JdbcScalarAccess {
             return resultSet.getTimestamp(index);
         } else if (targetType == LocalDate.class
                 || targetType == LocalTime.class
-                || targetType == LocalDateTime.class
-                || targetType == OffsetTime.class
-                || targetType == OffsetDateTime.class) {
+                || targetType == LocalDateTime.class) {
             return resultSet.getObject(index, targetType);
         }
         throw new IllegalArgumentException("JDBC does not support the scalar type '"

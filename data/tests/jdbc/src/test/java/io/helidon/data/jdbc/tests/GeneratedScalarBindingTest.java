@@ -25,8 +25,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 
 import io.helidon.data.jdbc.JdbcClient;
 
@@ -55,12 +53,12 @@ class GeneratedScalarBindingTest {
     void generatedRepositorySharesNullableBindHelperAcrossPhysicalMarkers() throws Exception {
         String source = generatedSource(ScalarBindingRepository.class);
 
-        assertThat(source.split("bindParameter\\(jdbcStatement,", -1).length - 1, is(18));
+        assertThat(source.split("bindParameter\\(jdbcStatement,", -1).length - 1, is(16));
         assertThat(source, containsString("void bindParameter("));
         assertThat(source, containsString("if (value == null) {"));
         assertThat(source, containsString("JdbcClient.bindNull(statement, index, nullType);"));
         assertThat(source, containsString("statement.bind(index, value);"));
-        assertThat(source, containsString("JdbcClient.createGenerated(jdbcClient, SQL_BIND_ALL, 18);"));
+        assertThat(source, containsString("JdbcClient.createGenerated(jdbcClient, SQL_BIND_ALL, 16);"));
         assertThat(source, not(containsString("if (booleanValue == null) {")));
 
         String[] parameterNames = {
@@ -77,8 +75,6 @@ class GeneratedScalarBindingTest {
                 "localDateValue",
                 "localTimeValue",
                 "localDateTimeValue",
-                "offsetTimeValue",
-                "offsetDateTimeValue",
                 "dateValue",
                 "timeValue",
                 "timestampValue"
@@ -97,8 +93,6 @@ class GeneratedScalarBindingTest {
                 JDBCType.DATE,
                 JDBCType.TIME,
                 JDBCType.TIMESTAMP,
-                JDBCType.TIME_WITH_TIMEZONE,
-                JDBCType.TIMESTAMP_WITH_TIMEZONE,
                 JDBCType.DATE,
                 JDBCType.TIME,
                 JDBCType.TIMESTAMP
@@ -170,8 +164,6 @@ class GeneratedScalarBindingTest {
                 LocalDate.of(2026, 7, 27),
                 LocalTime.of(10, 11, 12),
                 LocalDateTime.of(2026, 7, 27, 10, 11, 12),
-                OffsetTime.parse("10:11:12+05:30"),
-                OffsetDateTime.parse("2026-07-27T10:11:12+05:30"),
                 Date.valueOf("2026-07-27"),
                 Time.valueOf("10:11:12"),
                 Timestamp.valueOf("2026-07-27 10:11:12")
@@ -199,11 +191,9 @@ class GeneratedScalarBindingTest {
                            (LocalDate) values[10],
                            (LocalTime) values[11],
                            (LocalDateTime) values[12],
-                           (OffsetTime) values[13],
-                           (OffsetDateTime) values[14],
-                           (Date) values[15],
-                           (Time) values[16],
-                           (Timestamp) values[17]);
+                           (Date) values[13],
+                           (Time) values[14],
+                           (Timestamp) values[15]);
     }
 
     private static String generatedSource(Class<?> repositoryType) throws Exception {

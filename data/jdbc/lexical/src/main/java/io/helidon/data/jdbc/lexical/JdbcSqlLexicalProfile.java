@@ -15,14 +15,11 @@
  */
 package io.helidon.data.jdbc.lexical;
 
-import io.helidon.common.Api;
-
 /**
  * Immutable rules used to recognize JDBC bind markers without parsing SQL
  * grammar.
  */
-@Api.Internal
-public enum JdbcSqlLexicalProfile {
+enum JdbcSqlLexicalProfile {
 
     /**
      * Portable marker rules used by generated repositories and imperative

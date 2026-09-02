@@ -76,6 +76,10 @@ class JdbcRunnerFailureTest {
         client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
     }
 
+    /**
+     * Verifies that a driver-provided negative large-update result is rejected
+     * for both ordinary updates and generated-key operations.
+     */
     @Test
     void rejectsMissingUpdateCountForOrdinaryAndGeneratedKeyUpdates() throws Exception {
         when(statement.execute()).thenReturn(false);
@@ -314,6 +318,10 @@ class JdbcRunnerFailureTest {
         order.verify(connection).close();
     }
 
+    /**
+     * Verifies that execution failures from update, query, and generated-key
+     * channels retain their safe SQL diagnostics and close owned resources.
+     */
     @Test
     void closesOwnedResourcesForEveryExecutionChannelFailure() throws Exception {
         SQLException executeFailure = new SQLException("execute failed", "42000", 94);
@@ -336,17 +344,22 @@ class JdbcRunnerFailureTest {
                 .list(), executeFailure);
     }
 
+    /**
+     * Verifies that an unexpected result set from update SQL closes the result
+     * set, statement, and connection through the normal failure path.
+     */
     @Test
-    void rejectsUnexpectedUpdateResultSetAndClosesItBeforeOtherResources() throws Exception {
+    void closesResourcesWhenUpdateReturnsAResultSet() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
         when(statement.execute()).thenReturn(true);
         when(statement.getResultSet()).thenReturn(resultSet);
+        when(statement.getMoreResults()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(-1L);
 
         DataException failure = assertThrows(DataException.class,
                                              () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
 
-        assertThat(failure.getMessage(), containsString("incompatible result"));
+        assertThat(failure.getMessage(), is("The JDBC update returned an incompatible result."));
         InOrder order = inOrder(resultSet, statement, connection);
         order.verify(resultSet).close();
         order.verify(statement).close();
@@ -386,6 +399,10 @@ class JdbcRunnerFailureTest {
                                rowResultSet);
     }
 
+    /**
+     * Verifies that generated-key retrieval failures close resources after a
+     * successful update execution.
+     */
     @Test
     void closesResourcesWhenGeneratedKeyRetrievalFails() throws Exception {
         SQLException keyFailure = new SQLException("generated keys failed");
@@ -687,6 +704,10 @@ class JdbcRunnerFailureTest {
         verify(connection).close();
     }
 
+    /**
+     * Verifies that result traversal still rejects every channel following an
+     * accepted large-update count.
+     */
     @Test
     void advancesAndDrainsResultsWithTheBaselineJdbcMethod() throws Exception {
         when(statement.execute()).thenReturn(false);
@@ -804,6 +825,10 @@ class JdbcRunnerFailureTest {
         verify(connection).close();
     }
 
+    /**
+     * Verifies that runtime failures from update execution and query
+     * traversal are sanitized at their JDBC ownership boundaries.
+     */
     @Test
     void sanitizesRuntimeFailuresFromExecutionAndResultTraversal() throws Exception {
         IllegalStateException executionFailure = driverRuntimeFailure("private execution detail");
@@ -868,15 +893,20 @@ class JdbcRunnerFailureTest {
                                       "reading a JDBC result column label");
     }
 
+    /**
+     * Verifies that runtime failures from result-presence checks and generated
+     * key retrieval are sanitized without exposing driver details.
+     */
     @Test
     void sanitizesRuntimeFailuresFromUpdateCountsAndGeneratedKeys() throws Exception {
         IllegalStateException countFailure = driverRuntimeFailure("private update count");
         when(statement.execute()).thenReturn(false);
-        when(statement.getLargeUpdateCount()).thenThrow(countFailure);
+        when(statement.getMoreResults()).thenReturn(false);
+        when(statement.getLargeUpdateCount()).thenReturn(1L).thenThrow(countFailure);
 
         assertSanitizedRuntimeFailure(() -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute(),
                                       countFailure,
-                                      "reading a JDBC large update count");
+                                      "checking for a JDBC large update count");
 
         setUp();
         IllegalStateException keysFailure = driverRuntimeFailure("private generated key detail");

@@ -301,8 +301,7 @@ final class JdbcRunner {
                     JdbcExceptionTranslator.invokeVoid("closing an unexpected JDBC result set", current::close);
                 }
             } else {
-                long count = scope.largeUpdateCount();
-                if (count == -1) {
+                if (!scope.updateCountPresent()) {
                     return found;
                 }
                 found = true;
@@ -444,9 +443,6 @@ final class JdbcRunner {
         // Registered here so the runner closes it on every exit path.
         private ResultSet resultSet;
 
-        // Capability is statement-instance scoped because wrappers from one pool may behave differently by instance.
-        private boolean largeUpdateCountsUnsupported;
-
         /**
          * Creates an execution scope.
          *
@@ -512,32 +508,23 @@ final class JdbcRunner {
         }
 
         /**
-         * Reads the current large update count, falling back to the legacy
-         * integer accessor when the driver reports that large counts are not
-         * supported. Java SE's default implementation reports this with
-         * {@link UnsupportedOperationException}. Drivers may instead use
-         * {@link SQLFeatureNotSupportedException}.
-         * <p>
-         * Once either signal is observed, this statement scope uses the legacy
-         * accessor directly so result draining does not repeatedly use an
-         * exception as capability detection.
+         * Reads the current update count without narrowing it to the legacy integer range.
          *
-         * @return update count
+         * @return exact update count
          * @throws SQLException when JDBC access fails
          */
         long largeUpdateCount() throws SQLException {
-            if (largeUpdateCountsUnsupported) {
-                return JdbcExceptionTranslator.invoke("reading a JDBC update count", statement::getUpdateCount);
-            }
-            try {
-                return statement.getLargeUpdateCount();
-            } catch (SQLFeatureNotSupportedException | UnsupportedOperationException _) {
-                largeUpdateCountsUnsupported = true;
-                return JdbcExceptionTranslator.invoke("reading a JDBC update count", statement::getUpdateCount);
-            } catch (RuntimeException runtimeException) {
-                throw (RuntimeException) JdbcExceptionTranslator.sanitize("reading a JDBC large update count",
-                                                                           runtimeException);
-            }
+            return readLargeUpdateCount("reading a JDBC large update count");
+        }
+
+        /**
+         * Reports whether the current result is an update-count channel.
+         *
+         * @return whether an update-count channel is present
+         * @throws SQLException when JDBC access fails
+         */
+        boolean updateCountPresent() throws SQLException {
+            return readLargeUpdateCount("checking for a JDBC large update count") != -1L;
         }
 
         /**
@@ -568,6 +555,24 @@ final class JdbcRunner {
          */
         DataException unexpectedResult(boolean resultPresent) {
             return JdbcRunner.unexpectedResult(operation, resultPresent);
+        }
+
+        /**
+         * Reads the current large update count and fails closed when the driver cannot represent it.
+         *
+         * @param operation safe diagnostic description
+         * @return exact update count
+         * @throws SQLException when JDBC access fails
+         */
+        private long readLargeUpdateCount(String operation) throws SQLException {
+            try {
+                return statement.getLargeUpdateCount();
+            } catch (SQLFeatureNotSupportedException | UnsupportedOperationException _) {
+                throw new DataException("The JDBC driver does not support the large update count required for this "
+                                                + "operation.");
+            } catch (RuntimeException runtimeException) {
+                throw (RuntimeException) JdbcExceptionTranslator.sanitize(operation, runtimeException);
+            }
         }
 
         /**

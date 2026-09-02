@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.data.jdbc.lexical.JdbcSqlLexicalProfile;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanner;
 
@@ -57,7 +56,7 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
         }
 
         JdbcSqlMarkerLexer lexer = new JdbcSqlMarkerLexer(sql);
-        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, lexer);
+        JdbcSqlScanner.scan(sql, lexer);
         if (lexer.named && lexer.positional) {
             throw malformed("Declarative SQL cannot mix named and positional markers", sql.length());
         }
@@ -97,7 +96,7 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
     }
 
     private static IllegalArgumentException malformed(String problem, int offset) {
-        return new IllegalArgumentException(problem + ". The lexical profile is " + JdbcSqlLexicalProfile.PORTABLE
+        return new IllegalArgumentException(problem + ". The lexical profile is PORTABLE"
                                                     + ", and the SQL offset is " + offset + ".");
     }
 

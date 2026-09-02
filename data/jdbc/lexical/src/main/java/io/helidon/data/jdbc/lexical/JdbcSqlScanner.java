@@ -27,19 +27,17 @@ import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler.RegionKind;
 @Api.Internal
 public final class JdbcSqlScanner {
 
+    private static final JdbcSqlLexicalProfile PROFILE = JdbcSqlLexicalProfile.PORTABLE;
+
     private final String source;
     private final int length;
-    private final JdbcSqlLexicalProfile profile;
     private final JdbcSqlScanHandler handler;
     private int index;
     private int ordinaryStart;
 
-    private JdbcSqlScanner(String source,
-                           JdbcSqlLexicalProfile profile,
-                           JdbcSqlScanHandler handler) {
+    private JdbcSqlScanner(String source, JdbcSqlScanHandler handler) {
         this.source = source;
         this.length = source.length();
-        this.profile = profile;
         this.handler = handler;
     }
 
@@ -47,17 +45,13 @@ public final class JdbcSqlScanner {
      * Scans one SQL source and reports its regions in encounter order.
      *
      * @param source SQL source
-     * @param profile lexical rules to apply
      * @param handler receiver for regions and markers
      * @throws IllegalArgumentException when a protected region is malformed
      */
-    public static void scan(String source,
-                            JdbcSqlLexicalProfile profile,
-                            JdbcSqlScanHandler handler) {
+    public static void scan(String source, JdbcSqlScanHandler handler) {
         Objects.requireNonNull(source, "The SQL source must not be null.");
-        Objects.requireNonNull(profile, "The JDBC SQL lexical profile must not be null.");
         Objects.requireNonNull(handler, "The JDBC SQL scan handler must not be null.");
-        new JdbcSqlScanner(source, profile, handler).scan();
+        new JdbcSqlScanner(source, handler).scan();
     }
 
     private void scan() {
@@ -83,12 +77,12 @@ public final class JdbcSqlScanner {
                 ordinary();
                 quoted('"', false);
                 protectedRegion(RegionKind.DOUBLE_QUOTE, start);
-            } else if (current == '`' && profile.backtickIdentifiers()) {
+            } else if (current == '`' && PROFILE.backtickIdentifiers()) {
                 int start = index;
                 ordinary();
                 quoted('`', false);
                 protectedRegion(RegionKind.BACKTICK_IDENTIFIER, start);
-            } else if (current == '[' && profile.bracketIdentifiers()) {
+            } else if (current == '[' && PROFILE.bracketIdentifiers()) {
                 int start = index;
                 ordinary();
                 bracketIdentifier();
@@ -110,8 +104,8 @@ public final class JdbcSqlScanner {
                 blockComment();
                 protectedRegion(RegionKind.BLOCK_COMMENT, start);
             } else if ((current == 'q' || current == 'Q' || current == 'n' || current == 'N')
-                    && profile.qQuotedStrings()
-                    && JdbcSqlLexicalRules.qQuoteClosingDelimiter(source, index) != '\0') {
+                    && PROFILE.qQuotedStrings()
+                    && JdbcSqlLexicalRules.qQuoteClosingDelimiter(source, index) >= 0) {
                 // Oracle prefixes are case-insensitive. Starting at n lets the lexical rule test the boundary before
                 // the complete nq prefix; starting at q would incorrectly treat the prefix's n as identifier text.
                 // It also keeps the n inside the protected region so handlers preserve the complete Oracle literal.
@@ -119,7 +113,7 @@ public final class JdbcSqlScanner {
                 ordinary();
                 alternativeQuoted();
                 protectedRegion(RegionKind.ALTERNATIVE_QUOTE, start);
-            } else if (current == '$' && profile.dollarQuotedStrings()) {
+            } else if (current == '$' && PROFILE.dollarQuotedStrings()) {
                 String delimiter = JdbcSqlLexicalRules.dollarDelimiter(source, index);
                 if (delimiter == null) {
                     index++;
@@ -177,7 +171,7 @@ public final class JdbcSqlScanner {
     }
 
     private void positionalMarker() {
-        if (peek(1) == '?' && profile.questionMarkEscape()) {
+        if (peek(1) == '?' && PROFILE.questionMarkEscape()) {
             index += 2;
             return;
         }
@@ -266,7 +260,7 @@ public final class JdbcSqlScanner {
         int depth = 1;
         while (index < length) {
             if (source.charAt(index) == '/' && peek(1) == '*') {
-                if (!profile.nestedBlockComments()) {
+                if (!PROFILE.nestedBlockComments()) {
                     throw malformed("Nested block comments are not supported");
                 }
                 depth++;
@@ -299,17 +293,21 @@ public final class JdbcSqlScanner {
      * @throws IllegalArgumentException when the alternative-quoted literal is unterminated
      */
     private void alternativeQuoted() {
-        char closing = JdbcSqlLexicalRules.qQuoteClosingDelimiter(source, index);
+        int closing = JdbcSqlLexicalRules.qQuoteClosingDelimiter(source, index);
         boolean national = source.charAt(index) == 'n' || source.charAt(index) == 'N';
-        // Skip q'<delimiter> or nq'<delimiter> so the search begins with the literal's content.
-        index += national ? 4 : 3;
-        while (index + 1 < length) {
+        int delimiterOffset = index + (national ? 3 : 2);
+        // Skip q'<delimiter> or nq'<delimiter> so the search begins with the literal's content. Handler offsets remain
+        // UTF-16 String indices even when the delimiter occupies a surrogate pair.
+        index = delimiterOffset + Character.charCount(source.codePointAt(delimiterOffset));
+        while (index < length) {
+            int current = source.codePointAt(index);
+            int next = index + Character.charCount(current);
             // Oracle closes the literal only when the matching delimiter is immediately followed by an apostrophe.
-            if (source.charAt(index) == closing && source.charAt(index + 1) == '\'') {
-                index += 2;
+            if (current == closing && next < length && source.charAt(next) == '\'') {
+                index = next + 1;
                 return;
             }
-            index++;
+            index = next;
         }
         throw malformed("Unterminated alternative quoted string");
     }
@@ -339,6 +337,6 @@ public final class JdbcSqlScanner {
     }
 
     private IllegalArgumentException malformed(String problem) {
-        return new JdbcSqlLexicalException(problem, profile, index);
+        return new JdbcSqlLexicalException(problem, PROFILE, index);
     }
 }

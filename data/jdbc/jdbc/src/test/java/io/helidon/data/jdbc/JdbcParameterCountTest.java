@@ -68,6 +68,48 @@ class JdbcParameterCountTest {
     }
 
     /**
+     * Verifies imperative counting keeps markers active when vendor quote
+     * candidates follow a supplementary identifier code point.
+     */
+    @Test
+    void countsMarkersAfterSupplementaryVendorLiteralCandidates() {
+        String supplementaryLetter = Character.toString(0x10400);
+        String sql = "select " + supplementaryLetter + "$tag$ ? x$tag$, "
+                + supplementaryLetter + "q'[first' ? 'second]', "
+                + supplementaryLetter + "nq'[third' ? 'fourth]'";
+
+        assertThat(JdbcOperation.parameterCount(sql), is(3));
+    }
+
+    /**
+     * Verifies imperative counting protects marker-shaped content between
+     * supplementary Oracle delimiters for ordinary and national literals.
+     */
+    @Test
+    void protectsSupplementaryOracleAlternativeQuoteDelimiters() {
+        String delimiter = Character.toString(0x1F600);
+        String sql = "select q'" + delimiter + "ordinary's ?" + delimiter + "', "
+                + "nq'" + delimiter + "national's ?" + delimiter + "', ?";
+
+        assertThat(JdbcOperation.parameterCount(sql), is(1));
+    }
+
+    /**
+     * Verifies imperative counting protects marker-shaped content inside
+     * PostgreSQL dollar quotes whose tags contain supplementary code points.
+     */
+    @Test
+    void protectsSupplementaryPostgreSqlDollarQuoteTags() {
+        String supplementaryLetter = Character.toString(0x10400);
+        String supplementaryDigit = Character.toString(0x104A0);
+        String sql = "select $" + supplementaryLetter + "$?$" + supplementaryLetter + "$, "
+                + "$tag" + supplementaryLetter + "$?$tag" + supplementaryLetter + "$, "
+                + "$a" + supplementaryDigit + "$?$a" + supplementaryDigit + "$, ?";
+
+        assertThat(JdbcOperation.parameterCount(sql), is(1));
+    }
+
+    /**
      * Verifies that imperative statement creation rejects a no-whitespace
      * double dash through the shared safe lexical diagnostic.
      */

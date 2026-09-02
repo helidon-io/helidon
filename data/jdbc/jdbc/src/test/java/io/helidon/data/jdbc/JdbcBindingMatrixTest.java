@@ -79,8 +79,6 @@ class JdbcBindingMatrixTest {
         assertBinding(LocalDate.of(2026, 7, 27));
         assertBinding(LocalTime.of(10, 11, 12));
         assertBinding(LocalDateTime.of(2026, 7, 27, 10, 11, 12));
-        assertBinding(OffsetTime.parse("10:11:12+05:30"));
-        assertBinding(OffsetDateTime.parse("2026-07-27T10:11:12+05:30"));
         assertBinding(Date.valueOf("2026-07-27"));
         assertBinding(Time.valueOf("10:11:12"));
         assertBinding(Timestamp.valueOf("2026-07-27 10:11:12"));
@@ -105,8 +103,32 @@ class JdbcBindingMatrixTest {
         assertNullBinding(JDBCType.DATE);
         assertNullBinding(JDBCType.TIME);
         assertNullBinding(JDBCType.TIMESTAMP);
-        assertNullBinding(JDBCType.TIME_WITH_TIMEZONE);
-        assertNullBinding(JDBCType.TIMESTAMP_WITH_TIMEZONE);
+    }
+
+    /**
+     * Proves offset-bearing temporal values are rejected as portable binds and
+     * scalar mappings before a JDBC connection can be acquired.
+     */
+    @Test
+    void rejectsOffsetTemporalScalarsBeforeConnectionAcquisition() throws Exception {
+        JdbcClient client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+
+        for (Object value : List.of(OffsetTime.parse("10:11:12+05:30"),
+                                    OffsetDateTime.parse("2026-07-27T10:11:12+05:30"))) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                            () -> client.create(SQL).bind(1, value));
+            assertThat(failure.getMessage(),
+                       is("JDBC does not support bind values of type '" + value.getClass().getTypeName() + "'."));
+        }
+        for (Class<?> type : List.of(OffsetTime.class, OffsetDateTime.class)) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                            () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                                    .map(type));
+            assertThat(failure.getMessage(),
+                       is("JDBC does not support scalar values of type '" + type.getTypeName() + "'."));
+        }
+
+        verify(dataSource, never()).getConnection();
     }
 
     /**
@@ -198,9 +220,7 @@ class JdbcBindingMatrixTest {
         verify(statement, never()).setNull(anyInt(), anyInt());
         if (!(value instanceof LocalDate)
                 && !(value instanceof LocalTime)
-                && !(value instanceof LocalDateTime)
-                && !(value instanceof OffsetTime)
-                && !(value instanceof OffsetDateTime)) {
+                && !(value instanceof LocalDateTime)) {
             verify(statement, never()).setObject(anyInt(), any());
         }
     }

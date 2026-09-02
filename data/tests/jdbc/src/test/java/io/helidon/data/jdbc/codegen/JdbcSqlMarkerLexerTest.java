@@ -187,6 +187,62 @@ class JdbcSqlMarkerLexerTest {
         assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
     }
 
+    /**
+     * Verifies declarative rewriting keeps named markers active when vendor
+     * quote candidates follow a supplementary identifier code point.
+     */
+    @Test
+    void rewritesMarkersAfterSupplementaryVendorLiteralCandidates() {
+        String supplementaryLetter = Character.toString(0x10400);
+        String sql = "select " + supplementaryLetter + "$tag$ :dollar x$tag$, "
+                + supplementaryLetter + "q'[first' :ordinary 'second]', "
+                + supplementaryLetter + "nq'[third' :national 'fourth]'";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.markers(), is(List.of("dollar", "ordinary", "national")));
+        assertThat(result.sql(), is(sql.replace(":dollar", "?")
+                                           .replace(":ordinary", "?")
+                                           .replace(":national", "?")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+    }
+
+    /**
+     * Verifies declarative rewriting protects marker-shaped content between
+     * supplementary Oracle delimiters and rewrites only the active marker.
+     */
+    @Test
+    void protectsSupplementaryOracleAlternativeQuoteDelimiters() {
+        String delimiter = Character.toString(0x1F600);
+        String sql = "select q'" + delimiter + "ordinary's :ignored" + delimiter + "', "
+                + "nq'" + delimiter + "national's :ignored" + delimiter + "' from T where ID = :id";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.markers(), is(List.of("id")));
+        assertThat(result.sql(), is(sql.replace(":id", "?")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+    }
+
+    /**
+     * Verifies declarative rewriting protects marker-shaped content inside
+     * PostgreSQL dollar quotes whose tags contain supplementary code points.
+     */
+    @Test
+    void protectsSupplementaryPostgreSqlDollarQuoteTags() {
+        String supplementaryLetter = Character.toString(0x10400);
+        String supplementaryDigit = Character.toString(0x104A0);
+        String sql = "select $" + supplementaryLetter + "$:first$" + supplementaryLetter + "$, "
+                + "$tag" + supplementaryLetter + "$:second$tag" + supplementaryLetter + "$, "
+                + "$a" + supplementaryDigit + "$:third$a" + supplementaryDigit + "$ from T where ID = :id";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.markers(), is(List.of("id")));
+        assertThat(result.sql(), is(sql.replace(":id", "?")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+    }
+
     @Test
     void preservesSqlOutsideMarkerSyntax() {
         String sql = "select <name> from #contacts where ID = :id";

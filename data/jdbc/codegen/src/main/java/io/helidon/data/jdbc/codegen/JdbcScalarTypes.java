@@ -19,8 +19,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -58,9 +56,11 @@ final class JdbcScalarTypes {
     // | java.sql.Time      | TIME                               | TIME                    |
     // | LocalDateTime      | TIMESTAMP                          | TIMESTAMP               |
     // | java.sql.Timestamp | TIMESTAMP                          | TIMESTAMP               |
-    // | OffsetTime         | TIME_WITH_TIMEZONE                 | TIME_WITH_TIMEZONE      |
-    // | OffsetDateTime     | TIMESTAMP_WITH_TIMEZONE            | TIMESTAMP_WITH_TIMEZONE |
     // +--------------------+------------------------------------+-------------------------+
+    // OffsetTime and OffsetDateTime are deliberately not scalar types. JDBC time-zone type identifiers do not
+    // guarantee a lossless physical representation across the supported databases. Applications can bind supported
+    // local temporal fields plus offset seconds, or use an explicitly encoded String representation. Keep this
+    // exclusion aligned with JdbcScalarAccess and the documented portable JDBC contract.
     private static final Map<TypeName, String> NULL_TYPE_CONSTANTS = Map.ofEntries(
             Map.entry(TypeName.create(Boolean.class), "BOOLEAN"),
             Map.entry(TypeName.create(Byte.class), "TINYINT"),
@@ -75,8 +75,6 @@ final class JdbcScalarTypes {
             Map.entry(TypeName.create(LocalDate.class), "DATE"),
             Map.entry(TypeName.create(LocalTime.class), "TIME"),
             Map.entry(TypeName.create(LocalDateTime.class), "TIMESTAMP"),
-            Map.entry(TypeName.create(OffsetTime.class), "TIME_WITH_TIMEZONE"),
-            Map.entry(TypeName.create(OffsetDateTime.class), "TIMESTAMP_WITH_TIMEZONE"),
             Map.entry(TypeName.create("java.sql.Date"), "DATE"),
             Map.entry(TypeName.create("java.sql.Time"), "TIME"),
             Map.entry(TypeName.create("java.sql.Timestamp"), "TIMESTAMP"));
