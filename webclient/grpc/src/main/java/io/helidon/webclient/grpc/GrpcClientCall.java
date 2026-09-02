@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,10 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
+import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
@@ -51,7 +53,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private final Semaphore messageRequest = new Semaphore(0);
 
     private final LinkedBlockingQueue<BufferData> sendingQueue = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<BufferData> receivingQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<BufferData> receivingQueue = new LinkedBlockingQueue<>(1);
 
     private final CountDownLatch startReadBarrier = new CountDownLatch(1);
     private final CountDownLatch startWriteBarrier = new CountDownLatch(1);
@@ -185,8 +187,15 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 } while (!headersRead);
 
                 // read data from stream
-                while (isRemoteOpen()) {
-                    drainReceivingQueue();
+                Duration nextRequestWaitTime = grpcClient().prototype().protocolConfig().nextRequestWaitTime();
+                boolean requestTimedOut = false;
+                while (isRemoteOpen() || hasUnreadData()) {
+                    if (!drainReceivingQueue(nextRequestWaitTime)) {
+                        socket().log(LOGGER, DEBUG, "[Reading thread] unable to drain receiving queue");
+                        status = Status.CANCELLED;
+                        requestTimedOut = true;
+                        break;
+                    }
 
                     // trailers or eos received?
                     if (clientStream().trailers().isDone() || !clientStream().hasEntity()) {
@@ -209,18 +218,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 }
 
                 // attempt to drain our receiving queue if permits arrive on time
-                if (!receivingQueue.isEmpty()) {
-                    Duration waitTime = grpcClient().prototype().protocolConfig().nextRequestWaitTime();
-                    do {
-                        if (messageRequest.tryAcquire(waitTime.toNanos(), TimeUnit.NANOSECONDS)) {
-                            ResT res = toResponse(receivingQueue.remove());
-                            responseListener().onMessage(res);
-                        } else {
-                            socket().log(LOGGER, DEBUG, "[Reading thread] unable to drain receiving queue");
-                            status = Status.CANCELLED;
-                            break;      // wait time expired
-                        }
-                    } while (!receivingQueue.isEmpty());
+                if (!requestTimedOut && !drainReceivingQueue(nextRequestWaitTime)) {
+                    socket().log(LOGGER, DEBUG, "[Reading thread] unable to drain receiving queue");
+                    status = Status.CANCELLED;
                 }
 
                 // report onClose call with final status
@@ -233,6 +233,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 responseListener().onClose(status, EMPTY_METADATA);
             } catch (StreamTimeoutException e) {
                 responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
+            } catch (StatusRuntimeException e) {
+                Metadata trailers = e.getTrailers();
+                responseListener().onClose(e.getStatus(), trailers == null ? EMPTY_METADATA : trailers);
             } catch (Throwable e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
                 Status errorStatus = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
@@ -261,11 +264,15 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         }
     }
 
-    private void drainReceivingQueue() {
+    private boolean drainReceivingQueue(Duration waitTime) throws InterruptedException {
         socket().log(LOGGER, DEBUG, "[Reading thread] draining receiving queue");
-        while (!receivingQueue.isEmpty() && messageRequest.tryAcquire()) {
+        while (!receivingQueue.isEmpty()) {
+            if (!messageRequest.tryAcquire(waitTime.toNanos(), TimeUnit.NANOSECONDS)) {
+                return false;
+            }
             ResT res = toResponse(receivingQueue.remove());
             responseListener().onMessage(res);
         }
+        return true;
     }
 }
