@@ -309,7 +309,11 @@ public class MessagingRuntimeJmhBenchmark {
                 }
             };
 
-            registry = new ChannelRegistry(List.of(registration), Config.empty(), List.of());
+            registry = new ChannelRegistry(List.of(registration),
+                                           List.of(),
+                                           Config.empty(),
+                                           List.of(),
+                                           new MessagingLifecycleGuard());
             try {
                 registry.start();
                 context = registry.incomingContext(CHANNEL);

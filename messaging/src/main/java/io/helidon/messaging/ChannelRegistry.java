@@ -37,7 +37,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
@@ -55,10 +54,9 @@ import io.helidon.service.registry.Service;
 class ChannelRegistry implements MessagingRuntime {
     private static final System.Logger LOGGER = System.getLogger(ChannelRegistry.class.getName());
 
-    private Map<String, MessagingChannel<?>> channels = Map.of();
+    private final Map<String, MessagingChannel<?>> channels;
     private final DeliveryEngine deliveryEngine;
     private final DefaultMessagingGraph graph;
-    private final LongSupplier nanoTime;
 
     @Service.Inject
     ChannelRegistry(List<ConsumerRegistration> consumerRegistrations,
@@ -66,29 +64,43 @@ class ChannelRegistry implements MessagingRuntime {
                     Config config,
                     List<ConnectorProvider> connectorProviders,
                     MessagingLifecycleGuard lifecycleGuard) {
-        this(consumerRegistrations,
-             emitterRegistrations,
-             config,
-             connectorProviders,
-             lifecycleGuard,
-             System::nanoTime);
-    }
-
-    ChannelRegistry(List<ConsumerRegistration> consumerRegistrations,
-                    List<EmitterRegistration> emitterRegistrations,
-                    Config config,
-                    List<ConnectorProvider> connectorProviders,
-                    MessagingLifecycleGuard lifecycleGuard,
-                    LongSupplier nanoTime) {
-        this.nanoTime = Objects.requireNonNull(nanoTime);
         MessagingExecutionConfig defaultExecutionConfig = executionConfig(config, null);
         this.deliveryEngine = new DeliveryEngine(defaultExecutionConfig);
         this.graph = new DefaultMessagingGraph(deliveryEngine);
         try {
-            initialize(consumerRegistrations,
-                       emitterRegistrations,
-                       config,
-                       connectorProviders);
+            validateRegistrationIdentities(consumerRegistrations, emitterRegistrations);
+            validateRegistrationTypeMetadata(consumerRegistrations, emitterRegistrations);
+            Map<String, PayloadContribution> payloadContributions =
+                    validateChannelPayloadContributions(consumerRegistrations, emitterRegistrations);
+            Map<String, List<ConsumerRegistration>> grouped = new HashMap<>();
+            for (ConsumerRegistration registration : consumerRegistrations) {
+                grouped.computeIfAbsent(registration.channel(), ignored -> new ArrayList<>())
+                        .add(registration);
+            }
+
+            Map<String, MessagingChannel<?>> channels = new HashMap<>();
+            grouped.forEach((channel, consumers) -> channels.put(channel, createChannel(config, channel, consumers)));
+            configuredChannels(config, MessagingConfigSupport.OUTGOING_PREFIX)
+                    .forEach(channel -> ensureChannel(config, channels, channel));
+            configuredChannels(config, MessagingConfigSupport.INCOMING_PREFIX)
+                    .forEach(channel -> ensureChannel(config, channels, channel));
+            this.channels = Map.copyOf(channels);
+
+            Map<String, ConnectorProvider> providers = connectorProviders(connectorProviders);
+            List<OutgoingBinding> outgoingBindings = prepareOutgoingBindings(config, providers);
+            List<IncomingDescriptor> incomingDescriptors = prepareIncomingDescriptors(config, providers, grouped);
+            Set<String> outputChannels = new LinkedHashSet<>(grouped.keySet());
+            outgoingBindings.stream().map(OutgoingBinding::channel).forEach(outputChannels::add);
+            validateGeneratedProducerTargets(consumerRegistrations,
+                                             emitterRegistrations,
+                                             grouped,
+                                             outputChannels);
+            validateFailureRoutes(incomingDescriptors, outputChannels, grouped, payloadContributions);
+            validateIncomingOutputs(incomingDescriptors, outputChannels);
+            registerProcessorRoutes(consumerRegistrations);
+
+            configureOutgoingConnectors(outgoingBindings);
+            configureIncomingConnectors(incomingDescriptors);
             graph.prepare();
         } catch (RuntimeException | Error e) {
             graph.abortPreparation(e);
@@ -97,75 +109,22 @@ class ChannelRegistry implements MessagingRuntime {
         lifecycleGuard.register(this);
     }
 
-    ChannelRegistry(List<ConsumerRegistration> consumerRegistrations,
-                    Config config,
-                    List<ConnectorProvider> connectorProviders,
-                    MessagingLifecycleGuard lifecycleGuard) {
-        this(consumerRegistrations,
-             List.of(),
-             config,
-             connectorProviders,
-             lifecycleGuard);
-    }
-
-    ChannelRegistry(List<ConsumerRegistration> consumerRegistrations,
-                    Config config,
-                    List<ConnectorProvider> connectorProviders) {
-        this(consumerRegistrations,
-             List.of(),
-             config,
-             connectorProviders,
-             new MessagingLifecycleGuard());
-    }
-
-    ChannelRegistry(List<ConsumerRegistration> consumerRegistrations,
-                    List<EmitterRegistration> emitterRegistrations,
-                    Config config,
-                    List<ConnectorProvider> connectorProviders) {
-        this(consumerRegistrations,
-             emitterRegistrations,
-             config,
-             connectorProviders,
-             new MessagingLifecycleGuard());
-    }
-
-    private void initialize(List<ConsumerRegistration> consumerRegistrations,
-                            List<EmitterRegistration> emitterRegistrations,
-                            Config config,
-                            List<ConnectorProvider> connectorProviders) {
-        validateRegistrationIdentities(consumerRegistrations, emitterRegistrations);
-        validateRegistrationTypeMetadata(consumerRegistrations, emitterRegistrations);
-        Map<String, PayloadContribution> payloadContributions =
-                validateChannelPayloadContributions(consumerRegistrations, emitterRegistrations);
-        Map<String, List<ConsumerRegistration>> grouped = new HashMap<>();
-        for (ConsumerRegistration registration : consumerRegistrations) {
-            grouped.computeIfAbsent(registration.channel(), ignored -> new ArrayList<>())
-                    .add(registration);
+    static MessagingExecutionConfig executionConfig(Config root, String channel) {
+        Map<String, String> properties = new LinkedHashMap<>();
+        root.get(MessagingConfigSupport.EXECUTION).detach().asMap().ifPresent(properties::putAll);
+        if (channel != null) {
+            Map<String, String> channelProperties = new LinkedHashMap<>();
+            root.get("helidon.messaging.channel." + Config.Key.escapeName(channel) + ".execution")
+                    .detach()
+                    .asMap()
+                    .ifPresent(channelProperties::putAll);
+            if (channelProperties.containsKey("shutdown-timeout")) {
+                throw new IllegalArgumentException("Channel execution configuration must not override global "
+                                                           + "shutdown-timeout: " + channel);
+            }
+            properties.putAll(channelProperties);
         }
-
-        Map<String, MessagingChannel<?>> channels = new HashMap<>();
-        grouped.forEach((channel, consumers) -> channels.put(channel, createChannel(config, channel, consumers)));
-        configuredChannels(config, MessagingConfigSupport.OUTGOING_PREFIX)
-                .forEach(channel -> ensureChannel(config, channels, channel));
-        configuredChannels(config, MessagingConfigSupport.INCOMING_PREFIX)
-                .forEach(channel -> ensureChannel(config, channels, channel));
-        this.channels = Map.copyOf(channels);
-
-        Map<String, ConnectorProvider> providers = connectorProviders(connectorProviders);
-        List<OutgoingBinding> outgoingBindings = prepareOutgoingBindings(config, providers);
-        List<IncomingDescriptor> incomingDescriptors = prepareIncomingDescriptors(config, providers, grouped);
-        Set<String> outputChannels = new LinkedHashSet<>(grouped.keySet());
-        outgoingBindings.stream().map(OutgoingBinding::channel).forEach(outputChannels::add);
-        validateGeneratedProducerTargets(consumerRegistrations,
-                                         emitterRegistrations,
-                                         grouped,
-                                         outputChannels);
-        validateFailureRoutes(incomingDescriptors, outputChannels, grouped, payloadContributions);
-        validateIncomingOutputs(incomingDescriptors, outputChannels);
-        registerProcessorRoutes(consumerRegistrations);
-
-        configureOutgoingConnectors(outgoingBindings);
-        configureIncomingConnectors(incomingDescriptors);
+        return MessagingExecutionConfig.create(Config.just(ConfigSources.create(properties)));
     }
 
     /**
@@ -190,6 +149,11 @@ class ChannelRegistry implements MessagingRuntime {
         emitBatch(messagingChannel, messages);
     }
 
+    @Service.PreDestroy
+    public void close() {
+        graph.close();
+    }
+
     /**
      * Get an assembled channel.
      *
@@ -203,11 +167,6 @@ class ChannelRegistry implements MessagingRuntime {
     @Service.PostConstruct
     void start() {
         graph.start();
-    }
-
-    @Service.PreDestroy
-    public void close() {
-        graph.close();
     }
 
     /**
@@ -237,6 +196,18 @@ class ChannelRegistry implements MessagingRuntime {
      */
     IncomingConnectorContext incomingContext(String channel) {
         return incomingContext(channel, FailurePolicy.create());
+    }
+
+    private static Config channelConfig(Config root, String prefix, String channel) {
+        return root.get(prefix + Config.Key.escapeName(channel));
+    }
+
+    private static String requireConnectorType(Config channelConfig, String direction, String channel) {
+        return channelConfig.get(MessagingConfigSupport.CONNECTOR_ATTRIBUTE)
+                .asString()
+                .filter(connector -> !connector.isBlank())
+                .orElseThrow(() -> new IllegalArgumentException("Configured " + direction + " channel " + channel
+                                                                        + " must declare a non-blank connector"));
     }
 
     private IncomingConnectorContext incomingContext(String channel, FailurePolicy failurePolicy) {
@@ -1155,36 +1126,6 @@ class ChannelRegistry implements MessagingRuntime {
         channels.computeIfAbsent(channel, ignored -> createConfiguredChannel(config, channel));
     }
 
-    static MessagingExecutionConfig executionConfig(Config root, String channel) {
-        Map<String, String> properties = new LinkedHashMap<>();
-        root.get(MessagingConfigSupport.EXECUTION).detach().asMap().ifPresent(properties::putAll);
-        if (channel != null) {
-            Map<String, String> channelProperties = new LinkedHashMap<>();
-            root.get("helidon.messaging.channel." + Config.Key.escapeName(channel) + ".execution")
-                    .detach()
-                    .asMap()
-                    .ifPresent(channelProperties::putAll);
-            if (channelProperties.containsKey("shutdown-timeout")) {
-                throw new IllegalArgumentException("Channel execution configuration must not override global "
-                                                           + "shutdown-timeout: " + channel);
-            }
-            properties.putAll(channelProperties);
-        }
-        return MessagingExecutionConfig.create(Config.just(ConfigSources.create(properties)));
-    }
-
-    private static Config channelConfig(Config root, String prefix, String channel) {
-        return root.get(prefix + Config.Key.escapeName(channel));
-    }
-
-    private static String requireConnectorType(Config channelConfig, String direction, String channel) {
-        return channelConfig.get(MessagingConfigSupport.CONNECTOR_ATTRIBUTE)
-                .asString()
-                .filter(connector -> !connector.isBlank())
-                .orElseThrow(() -> new IllegalArgumentException("Configured " + direction + " channel " + channel
-                                                                        + " must declare a non-blank connector"));
-    }
-
     private Config connectorConfig(Config root,
                                    Config channelConfig,
                                    ConnectorDirection direction,
@@ -1281,14 +1222,141 @@ class ChannelRegistry implements MessagingRuntime {
         };
     }
 
+    private record PendingDelivery(MessageBatch<?> batch,
+                                   int failedAttempts,
+                                   RuntimeException preDispatchFailure) {
+    }
+
+    private static final class ResolvedParameterizedType implements ParameterizedType {
+        private final Type ownerType;
+        private final Type rawType;
+        private final Type[] actualTypeArguments;
+
+        private ResolvedParameterizedType(Type ownerType, Type rawType, Type[] actualTypeArguments) {
+            this.ownerType = ownerType;
+            this.rawType = rawType;
+            this.actualTypeArguments = actualTypeArguments.clone();
+        }
+
+        @Override
+        public Type[] getActualTypeArguments() {
+            return actualTypeArguments.clone();
+        }
+
+        @Override
+        public Type getRawType() {
+            return rawType;
+        }
+
+        @Override
+        public Type getOwnerType() {
+            return ownerType;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (!(object instanceof ParameterizedType other)) {
+                return false;
+            }
+            return Objects.equals(ownerType, other.getOwnerType())
+                    && rawType.equals(other.getRawType())
+                    && Arrays.equals(actualTypeArguments, other.getActualTypeArguments());
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(actualTypeArguments)
+                    ^ Objects.hashCode(ownerType)
+                    ^ Objects.hashCode(rawType);
+        }
+    }
+
+    private static final class ResolvedWildcardType implements WildcardType {
+        private final Type[] lowerBounds;
+        private final Type[] upperBounds;
+
+        private ResolvedWildcardType(Type[] lowerBounds, Type[] upperBounds) {
+            this.lowerBounds = lowerBounds.clone();
+            this.upperBounds = upperBounds.clone();
+        }
+
+        @Override
+        public Type[] getUpperBounds() {
+            return upperBounds.clone();
+        }
+
+        @Override
+        public Type[] getLowerBounds() {
+            return lowerBounds.clone();
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (!(object instanceof WildcardType other)) {
+                return false;
+            }
+            return Arrays.equals(lowerBounds, other.getLowerBounds())
+                    && Arrays.equals(upperBounds, other.getUpperBounds());
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(lowerBounds) ^ Arrays.hashCode(upperBounds);
+        }
+    }
+
+    private static final class ResolvedGenericArrayType implements GenericArrayType {
+        private final Type componentType;
+
+        private ResolvedGenericArrayType(Type componentType) {
+            this.componentType = componentType;
+        }
+
+        @Override
+        public Type getGenericComponentType() {
+            return componentType;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return object instanceof GenericArrayType other
+                    && componentType.equals(other.getGenericComponentType());
+        }
+
+        @Override
+        public int hashCode() {
+            return componentType.hashCode();
+        }
+    }
+
+    private record PayloadContribution(GenericType<?> payloadType, String source) {
+    }
+
+    private record OutgoingBinding(String channel,
+                                   String connectorType,
+                                   OutgoingConnectorProvider provider,
+                                   Config config) {
+    }
+
+    private record FailurePolicyContribution(String handlerId, FailurePolicy policy) {
+    }
+
+    private record IncomingDescriptor(String channel,
+                                      String connectorType,
+                                      FailurePolicy failurePolicy,
+                                      IncomingConnectorProvider provider,
+                                      Config config) {
+    }
+
     private final class RegistryIncomingConnectorContext implements IncomingConnectorContext {
         private final String channel;
         private final FailurePolicy failurePolicy;
-        private long reservationDeadline = Long.MIN_VALUE;
+        private final AdmissionTimeoutBudget admissionTimeoutBudget;
 
         private RegistryIncomingConnectorContext(String channel, FailurePolicy failurePolicy) {
             this.channel = channel;
             this.failurePolicy = failurePolicy;
+            this.admissionTimeoutBudget = new AdmissionTimeoutBudget(channel, System::nanoTime);
         }
 
         @Override
@@ -1303,7 +1371,7 @@ class ChannelRegistry implements MessagingRuntime {
 
         @Override
         public synchronized ConnectorDeliveryReservation reserveDelivery() {
-            reservationDeadline = Long.MIN_VALUE;
+            admissionTimeoutBudget.reset();
             return deliveryEngine.reserveConnectorDelivery(channel,
                                                             maxDeliveryMessages(),
                                                             this::processDelivery,
@@ -1312,39 +1380,16 @@ class ChannelRegistry implements MessagingRuntime {
 
         @Override
         public synchronized Optional<ConnectorDeliveryReservation> tryReserveDelivery() {
-            long started = nanoTime.getAsLong();
-            long timeout = deliveryEngine.admissionTimeout(channel)
-                    .map(Duration::toNanos)
-                    .orElse(Long.MAX_VALUE);
-            long remaining = timeout;
-            if (reservationDeadline != Long.MIN_VALUE) {
-                remaining = reservationDeadline - started;
-                if (remaining <= 0) {
-                    throw new MessagingRejectedException(
+            return admissionTimeoutBudget.attempt(
+                    () -> deliveryEngine.admissionTimeout(channel)
+                            .map(Duration::toNanos)
+                            .orElse(Long.MAX_VALUE),
+                    remaining -> deliveryEngine.tryReserveConnectorDelivery(
                             channel,
-                            MessagingRejectedException.Reason.TIMEOUT,
-                            "Messaging delivery reservation timed out on channel " + channel);
-                }
-            }
-
-            Optional<ConnectorDeliveryReservation> result = deliveryEngine.tryReserveConnectorDelivery(
-                    channel,
-                    maxDeliveryMessages(),
-                    remaining,
-                    this::processDelivery,
-                    this::processFailedDelivery);
-            if (result.isPresent()) {
-                reservationDeadline = Long.MIN_VALUE;
-            } else if (reservationDeadline == Long.MIN_VALUE && timeout != Long.MAX_VALUE) {
-                reservationDeadline = saturatedAdd(started, timeout);
-                if (reservationDeadline - nanoTime.getAsLong() <= 0) {
-                    throw new MessagingRejectedException(
-                            channel,
-                            MessagingRejectedException.Reason.TIMEOUT,
-                            "Messaging delivery reservation timed out on channel " + channel);
-                }
-            }
-            return result;
+                            maxDeliveryMessages(),
+                            remaining,
+                            this::processDelivery,
+                            this::processFailedDelivery));
         }
 
         private void processDelivery(MessageBatch<?> root) {
@@ -1632,137 +1677,6 @@ class ChannelRegistry implements MessagingRuntime {
             }
             return current;
         }
-    }
-
-    private static long saturatedAdd(long first, long second) {
-        long result = first + second;
-        return ((first ^ result) & (second ^ result)) < 0 ? Long.MAX_VALUE : result;
-    }
-
-    private record PendingDelivery(MessageBatch<?> batch,
-                                   int failedAttempts,
-                                   RuntimeException preDispatchFailure) {
-    }
-
-    private static final class ResolvedParameterizedType implements ParameterizedType {
-        private final Type ownerType;
-        private final Type rawType;
-        private final Type[] actualTypeArguments;
-
-        private ResolvedParameterizedType(Type ownerType, Type rawType, Type[] actualTypeArguments) {
-            this.ownerType = ownerType;
-            this.rawType = rawType;
-            this.actualTypeArguments = actualTypeArguments.clone();
-        }
-
-        @Override
-        public Type[] getActualTypeArguments() {
-            return actualTypeArguments.clone();
-        }
-
-        @Override
-        public Type getRawType() {
-            return rawType;
-        }
-
-        @Override
-        public Type getOwnerType() {
-            return ownerType;
-        }
-
-        @Override
-        public boolean equals(Object object) {
-            if (!(object instanceof ParameterizedType other)) {
-                return false;
-            }
-            return Objects.equals(ownerType, other.getOwnerType())
-                    && rawType.equals(other.getRawType())
-                    && Arrays.equals(actualTypeArguments, other.getActualTypeArguments());
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(actualTypeArguments)
-                    ^ Objects.hashCode(ownerType)
-                    ^ Objects.hashCode(rawType);
-        }
-    }
-
-    private static final class ResolvedWildcardType implements WildcardType {
-        private final Type[] lowerBounds;
-        private final Type[] upperBounds;
-
-        private ResolvedWildcardType(Type[] lowerBounds, Type[] upperBounds) {
-            this.lowerBounds = lowerBounds.clone();
-            this.upperBounds = upperBounds.clone();
-        }
-
-        @Override
-        public Type[] getUpperBounds() {
-            return upperBounds.clone();
-        }
-
-        @Override
-        public Type[] getLowerBounds() {
-            return lowerBounds.clone();
-        }
-
-        @Override
-        public boolean equals(Object object) {
-            if (!(object instanceof WildcardType other)) {
-                return false;
-            }
-            return Arrays.equals(lowerBounds, other.getLowerBounds())
-                    && Arrays.equals(upperBounds, other.getUpperBounds());
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(lowerBounds) ^ Arrays.hashCode(upperBounds);
-        }
-    }
-
-    private static final class ResolvedGenericArrayType implements GenericArrayType {
-        private final Type componentType;
-
-        private ResolvedGenericArrayType(Type componentType) {
-            this.componentType = componentType;
-        }
-
-        @Override
-        public Type getGenericComponentType() {
-            return componentType;
-        }
-
-        @Override
-        public boolean equals(Object object) {
-            return object instanceof GenericArrayType other
-                    && componentType.equals(other.getGenericComponentType());
-        }
-
-        @Override
-        public int hashCode() {
-            return componentType.hashCode();
-        }
-    }
-
-    private record PayloadContribution(GenericType<?> payloadType, String source) {
-    }
-
-    private record OutgoingBinding(String channel,
-                                   String connectorType,
-                                   OutgoingConnectorProvider provider,
-                                   Config config) {
-    }
-
-    private record FailurePolicyContribution(String handlerId, FailurePolicy policy) {
-    }
-
-    private record IncomingDescriptor(String channel,
-                                      String connectorType,
-                                      FailurePolicy failurePolicy,
-                                      IncomingConnectorProvider provider,
-                                      Config config) {
     }
 
 }

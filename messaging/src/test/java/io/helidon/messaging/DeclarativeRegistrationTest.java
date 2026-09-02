@@ -50,7 +50,7 @@ class DeclarativeRegistrationTest {
 
         IllegalArgumentException handlerFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(first, second), Config.empty(), List.of()));
+                () -> registry(List.of(first, second), Config.empty(), List.of()));
         assertThat(handlerFailure.getMessage(), containsString("Duplicate messaging handler registration service#consume"));
 
         ConsumerRegistration target = consumer("orders", "target#consume", ignored -> { });
@@ -58,7 +58,7 @@ class DeclarativeRegistrationTest {
         EmitterRegistration producerTwo = emitter("orders", "publisher#orders", STRING_TYPE, STRING_MESSAGE_TYPE);
         IllegalArgumentException producerFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(target),
+                () -> registry(List.of(target),
                                           List.of(producerOne, producerTwo),
                                           Config.empty(),
                                           List.of()));
@@ -77,7 +77,7 @@ class DeclarativeRegistrationTest {
                                                             ignored -> { });
         IllegalArgumentException payloadFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(inconsistentPayload), Config.empty(), List.of()));
+                () -> registry(List.of(inconsistentPayload), Config.empty(), List.of()));
         assertThat(payloadFailure.getMessage(),
                    is("Messaging handler manual#payload payload raw type java.lang.Integer"
                               + " does not match generic raw type java.lang.String"));
@@ -91,7 +91,7 @@ class DeclarativeRegistrationTest {
                                                              ignored -> { });
         IllegalArgumentException envelopeFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(inconsistentEnvelope), Config.empty(), List.of()));
+                () -> registry(List.of(inconsistentEnvelope), Config.empty(), List.of()));
         assertThat(envelopeFailure.getMessage(),
                    is("Messaging handler manual#envelope envelope raw type " + SpecialMessage.class.getName()
                               + " does not match generic raw type " + Message.class.getName()));
@@ -106,7 +106,7 @@ class DeclarativeRegistrationTest {
                                                                        Function.identity());
         IllegalArgumentException outgoingPayloadFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(inconsistentOutgoingPayload), Config.empty(), List.of()));
+                () -> registry(List.of(inconsistentOutgoingPayload), Config.empty(), List.of()));
         assertThat(outgoingPayloadFailure.getMessage(),
                    is("Messaging processor manual#outgoing-payload outgoing payload raw type java.lang.Integer"
                               + " does not match generic raw type java.lang.String"));
@@ -121,7 +121,7 @@ class DeclarativeRegistrationTest {
                                                                         Function.identity());
         IllegalArgumentException outgoingEnvelopeFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(inconsistentOutgoingEnvelope), Config.empty(), List.of()));
+                () -> registry(List.of(inconsistentOutgoingEnvelope), Config.empty(), List.of()));
         assertThat(outgoingEnvelopeFailure.getMessage(),
                    is("Messaging processor manual#outgoing-envelope outgoing envelope raw type "
                               + SpecialMessage.class.getName() + " does not match generic raw type "
@@ -137,7 +137,7 @@ class DeclarativeRegistrationTest {
                                                              ignored -> { });
         IllegalArgumentException consumerFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(inconsistentConsumer), Config.empty(), List.of()));
+                () -> registry(List.of(inconsistentConsumer), Config.empty(), List.of()));
         assertThat(consumerFailure.getMessage(),
                    is("Messaging handler manual#payload-envelope payload generic type java.lang.String"
                               + " does not match envelope payload type java.lang.Integer declared by "
@@ -151,7 +151,7 @@ class DeclarativeRegistrationTest {
                                                                  Function.identity());
         IllegalArgumentException processorFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(inconsistentProcessor), Config.empty(), List.of()));
+                () -> registry(List.of(inconsistentProcessor), Config.empty(), List.of()));
         assertThat(processorFailure.getMessage(),
                    is("Messaging processor manual#outgoing-payload-envelope outgoing payload generic type "
                               + "java.lang.String does not match envelope payload type java.lang.Integer declared by "
@@ -163,7 +163,7 @@ class DeclarativeRegistrationTest {
                                                           INTEGER_MESSAGE_TYPE);
         IllegalArgumentException emitterFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(), List.of(inconsistentEmitter), Config.empty(), List.of()));
+                () -> registry(List.of(), List.of(inconsistentEmitter), Config.empty(), List.of()));
         assertThat(emitterFailure.getMessage(),
                    is("Messaging emitter manual#emitter-payload-envelope payload generic type java.lang.String"
                               + " does not match envelope payload type java.lang.Integer declared by "
@@ -181,7 +181,7 @@ class DeclarativeRegistrationTest {
                                                              ignored -> { });
         IllegalArgumentException consumerFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(inconsistentConsumer), Config.empty(), List.of()));
+                () -> registry(List.of(inconsistentConsumer), Config.empty(), List.of()));
         assertThat(consumerFailure.getMessage(),
                    is("Messaging handler manual#non-message-envelope envelope type java.lang.String must implement "
                               + Message.class.getName()));
@@ -196,7 +196,7 @@ class DeclarativeRegistrationTest {
                                                                  Function.identity());
         IllegalArgumentException processorFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(inconsistentProcessor), Config.empty(), List.of()));
+                () -> registry(List.of(inconsistentProcessor), Config.empty(), List.of()));
         assertThat(processorFailure.getMessage(),
                    is("Messaging processor manual#non-message-outgoing-envelope outgoing envelope type java.lang.String"
                               + " must implement " + Message.class.getName()));
@@ -207,7 +207,7 @@ class DeclarativeRegistrationTest {
                                                           STRING_TYPE);
         IllegalArgumentException emitterFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(), List.of(inconsistentEmitter), Config.empty(), List.of()));
+                () -> registry(List.of(), List.of(inconsistentEmitter), Config.empty(), List.of()));
         assertThat(emitterFailure.getMessage(),
                    is("Messaging emitter manual#non-message-emitter-envelope envelope type java.lang.String"
                               + " must implement " + Message.class.getName()));
@@ -224,7 +224,7 @@ class DeclarativeRegistrationTest {
                                                           ignored -> { });
         IllegalArgumentException primitiveFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(primitiveConsumer), Config.empty(), List.of()));
+                () -> registry(List.of(primitiveConsumer), Config.empty(), List.of()));
         assertThat(primitiveFailure.getMessage(),
                    is("Messaging handler manual#primitive-payload payload raw type must not be primitive: int"));
 
@@ -237,7 +237,7 @@ class DeclarativeRegistrationTest {
                                                                  ignored -> { });
         IllegalArgumentException primitiveGenericFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(primitiveGenericConsumer), Config.empty(), List.of()));
+                () -> registry(List.of(primitiveGenericConsumer), Config.empty(), List.of()));
         assertThat(primitiveGenericFailure.getMessage(),
                    is("Messaging handler manual#primitive-generic-payload payload generic raw type"
                               + " must not be primitive: int"));
@@ -252,7 +252,7 @@ class DeclarativeRegistrationTest {
                                                               Function.identity());
         IllegalArgumentException primitiveProcessorFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(primitiveProcessor), Config.empty(), List.of()));
+                () -> registry(List.of(primitiveProcessor), Config.empty(), List.of()));
         assertThat(primitiveProcessorFailure.getMessage(),
                    is("Messaging processor manual#primitive-outgoing-payload outgoing payload raw type"
                               + " must not be primitive: int"));
@@ -263,7 +263,7 @@ class DeclarativeRegistrationTest {
                                                        INTEGER_MESSAGE_TYPE);
         IllegalArgumentException primitiveEmitterFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(), List.of(primitiveEmitter), Config.empty(), List.of()));
+                () -> registry(List.of(), List.of(primitiveEmitter), Config.empty(), List.of()));
         assertThat(primitiveEmitterFailure.getMessage(),
                    is("Messaging emitter manual#primitive-emitter-payload payload raw type must not be primitive: int"));
 
@@ -273,7 +273,7 @@ class DeclarativeRegistrationTest {
                                                       INTEGER_TYPE,
                                                       INTEGER_MESSAGE_TYPE,
                                                       received::set);
-        ChannelRegistry registry = new ChannelRegistry(List.of(boxedConsumer), Config.empty(), List.of());
+        ChannelRegistry registry = registry(List.of(boxedConsumer), Config.empty(), List.of());
         try {
             registry.emit("numbers", Message.create(42));
             assertThat(received.get().entity(), is(42));
@@ -288,7 +288,7 @@ class DeclarativeRegistrationTest {
         EmitterRegistration unknown = emitter("missing", "publisher#missing", STRING_TYPE, STRING_MESSAGE_TYPE);
         IllegalArgumentException missingFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(source),
+                () -> registry(List.of(source),
                                           List.of(unknown),
                                           Config.empty(),
                                           List.of()));
@@ -313,7 +313,7 @@ class DeclarativeRegistrationTest {
         };
         IllegalArgumentException outputFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(outputless),
+                () -> registry(List.of(outputless),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -334,7 +334,7 @@ class DeclarativeRegistrationTest {
                                                      INTEGER_MESSAGE_TYPE);
         IllegalArgumentException payloadFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(stringTarget),
+                () -> registry(List.of(stringTarget),
                                           List.of(integerEmitter),
                                           Config.empty(),
                                           List.of()));
@@ -351,7 +351,7 @@ class DeclarativeRegistrationTest {
                                                          INTEGER_MESSAGE_TYPE);
         IllegalArgumentException connectorOnlyFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(),
+                () -> registry(List.of(),
                                           List.of(stringEmitter, conflictingEmitter),
                                           Config.empty(),
                                           List.of()));
@@ -368,7 +368,7 @@ class DeclarativeRegistrationTest {
                                                    STRING_MESSAGE_TYPE);
         IllegalArgumentException envelopeFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(specializedTarget),
+                () -> registry(List.of(specializedTarget),
                                           List.of(broadEmitter),
                                           Config.empty(),
                                           List.of()));
@@ -396,7 +396,7 @@ class DeclarativeRegistrationTest {
                                                nestedArrayMessageType,
                                                received::set);
 
-        ChannelRegistry registry = new ChannelRegistry(List.of(processor, target), Config.empty(), List.of());
+        ChannelRegistry registry = registry(List.of(processor, target), Config.empty(), List.of());
         try {
             registry.emit("orders", Message.create("test"));
             assertThat(received.get(), sameInstance(processed));
@@ -413,7 +413,7 @@ class DeclarativeRegistrationTest {
                                                     ignored -> processed);
         IllegalArgumentException rankFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(wrongRank, target), Config.empty(), List.of()));
+                () -> registry(List.of(wrongRank, target), Config.empty(), List.of()));
         assertThat(rankFailure.getMessage(), containsString("does not match envelope payload type java.lang.String[]"));
     }
 
@@ -430,7 +430,7 @@ class DeclarativeRegistrationTest {
                         .header("processed", "true")
                         .build());
         ConsumerRegistration target = consumer("audit", "audit#consume", received::set);
-        ChannelRegistry registry = new ChannelRegistry(List.of(processor, target), Config.empty(), List.of());
+        ChannelRegistry registry = registry(List.of(processor, target), Config.empty(), List.of());
         try {
             registry.emit("orders", Message.create("one"));
             assertThat(received.get().entity(), is("ONE"));
@@ -443,7 +443,7 @@ class DeclarativeRegistrationTest {
         ConsumerRegistration failingTarget = consumer("audit", "audit#fail", ignored -> {
             throw expected;
         });
-        ChannelRegistry failingRegistry = new ChannelRegistry(List.of(processor, failingTarget),
+        ChannelRegistry failingRegistry = registry(List.of(processor, failingTarget),
                                                               Config.empty(),
                                                               List.of());
         try {
@@ -471,7 +471,7 @@ class DeclarativeRegistrationTest {
                         .build());
         AtomicBoolean targetInvoked = new AtomicBoolean();
         ConsumerRegistration target = consumer("audit", "audit#consume", ignored -> targetInvoked.set(true));
-        ChannelRegistry registry = new ChannelRegistry(List.of(processor, target), Config.empty(), List.of());
+        ChannelRegistry registry = registry(List.of(processor, target), Config.empty(), List.of());
         try {
             MessageBatch<String> input = MessageBatch.create(List.of(Message.create("first"),
                                                                      Message.create("second")));
@@ -504,9 +504,26 @@ class DeclarativeRegistrationTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(first, second), Config.empty(), List.of()));
+                () -> registry(List.of(first, second), Config.empty(), List.of()));
         assertThat(failure.getMessage(), containsString("Cyclic synchronous messaging route"));
         assertThat(failure.getMessage(), containsString("first -> second -> first"));
+    }
+
+    private static ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+                                            Config config,
+                                            List<ConnectorProvider> connectorProviders) {
+        return registry(consumerRegistrations, List.of(), config, connectorProviders);
+    }
+
+    private static ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+                                            List<EmitterRegistration> emitterRegistrations,
+                                            Config config,
+                                            List<ConnectorProvider> connectorProviders) {
+        return new ChannelRegistry(consumerRegistrations,
+                                   emitterRegistrations,
+                                   config,
+                                   connectorProviders,
+                                   new MessagingLifecycleGuard());
     }
 
     private static Config yaml(String yaml) {

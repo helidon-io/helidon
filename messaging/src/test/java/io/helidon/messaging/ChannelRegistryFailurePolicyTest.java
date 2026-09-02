@@ -23,10 +23,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -44,7 +46,9 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class ChannelRegistryFailurePolicyTest {
     private static final String NON_PORTABLE_FAILURE_TYPE_HEADER =
@@ -139,7 +143,7 @@ class ChannelRegistryFailurePolicyTest {
     void testChannelCannotOverrideGlobalShutdownTimeout() {
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(
+                () -> registry(
                         List.of(registration("orders", ignored -> { })),
                         yaml("""
                                 helidon:
@@ -158,7 +162,7 @@ class ChannelRegistryFailurePolicyTest {
     void testLiteralDottedChannelInvokesConnectorProviders() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
-        ChannelRegistry registry = new ChannelRegistry(
+        ChannelRegistry registry = registry(
                 List.of(),
                 yaml("""
                         helidon:
@@ -187,7 +191,7 @@ class ChannelRegistryFailurePolicyTest {
     @Test
     void testLiteralDottedConnectorDefaultsAndChannelOverrides() {
         TestIncomingConnector incoming = new TestIncomingConnector("acme.v1");
-        ChannelRegistry registry = new ChannelRegistry(
+        ChannelRegistry registry = registry(
                 List.of(registration("inherited", ignored -> { }),
                         registration("overridden", ignored -> { }),
                         registration("empty", ignored -> { })),
@@ -285,7 +289,7 @@ class ChannelRegistryFailurePolicyTest {
                         .build())
                 .build();
         Config config = Config.just(ConfigSources.create(root));
-        ChannelRegistry registry = new ChannelRegistry(
+        ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> { })),
                 config,
                 List.of(incoming));
@@ -308,7 +312,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger processorAttempts = new AtomicInteger();
         List<String> received = new CopyOnWriteArrayList<>();
-        ChannelRegistry registry = new ChannelRegistry(
+        ChannelRegistry registry = registry(
                 List.of(passThroughProcessor("source", "target", processorAttempts),
                         registration("target", message -> received.add((String) message.entity()))),
                 yaml("""
@@ -359,12 +363,12 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testRepeatedTryReserveCallsShareAdmissionTimeoutBudget() {
+    void testTryReserveDeliveryUsesConfiguredSharedAdmissionTimeoutBudget() {
+        Duration configuredTimeout = Duration.ofMillis(500);
+        Duration testTimeout = Duration.ofSeconds(5);
         TestIncomingConnector incoming = new TestIncomingConnector();
-        AtomicLong nanoTime = new AtomicLong();
-        ChannelRegistry registry = new ChannelRegistry(
+        ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> { })),
-                List.of(),
                 yaml("""
                         helidon:
                           messaging:
@@ -373,30 +377,34 @@ class ChannelRegistryFailurePolicyTest {
                                 execution:
                                   max-pending-messages: 1
                                   max-in-flight-messages: 1
-                                  admission-timeout: PT0.15S
+                                  admission-timeout: %s
                             incoming:
                               orders:
                                 connector: test-in
-                        """),
-                List.of(incoming),
-                new MessagingLifecycleGuard(),
-                nanoTime::get);
+                        """.formatted(configuredTimeout)),
+                List.of(incoming));
         start(registry);
         IncomingConnectorContext context = incoming.context("orders");
 
         try (ConnectorDeliveryReservation held = context.reserveDelivery()) {
-            assertThat(context.tryReserveDelivery().isEmpty(), is(true));
-            nanoTime.set(Duration.ofMillis(60).toNanos());
-            assertThat(context.tryReserveDelivery().isEmpty(), is(true));
-            nanoTime.set(Duration.ofMillis(150).toNanos());
-            MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class,
-                                                               context::tryReserveDelivery);
+            FutureTask<MessagingRejectedException> timeoutProbe = new FutureTask<>(
+                    () -> awaitConfiguredTimeout(context, configuredTimeout, testTimeout));
+            MessagingRejectedException timeout = awaitTimeoutProbe(timeoutProbe);
             assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+
+            MessagingRejectedException stickyTimeout = assertThrows(MessagingRejectedException.class,
+                                                                      context::tryReserveDelivery);
+            assertThat(stickyTimeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
         }
 
-        MessagingRejectedException stillTimedOut = assertThrows(MessagingRejectedException.class,
-                                                                 context::tryReserveDelivery);
-        assertThat(stillTimedOut.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+        try (ConnectorDeliveryReservation ignored = context.reserveDelivery()) {
+            // Reset the expired non-blocking budget and release the reservation.
+        }
+        var available = context.tryReserveDelivery();
+        assertThat(available.isPresent(), is(true));
+        try (ConnectorDeliveryReservation ignored = available.orElseThrow()) {
+            // Release the successful non-blocking reservation.
+        }
     }
 
     @Test
@@ -406,7 +414,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         TestOutgoingConnector outgoing = new TestOutgoingConnector(maxPortableHeaderLength);
         AtomicInteger attempts = new AtomicInteger();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", ignored -> {
                                 attempts.incrementAndGet();
                                 throw new IllegalStateException(failureMessage);
                             })),
@@ -482,7 +490,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         List<String> handled = new CopyOnWriteArrayList<>();
         AtomicInteger entityCalls = new AtomicInteger();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
                                 handled.add((String) message.entity());
                             })),
                             yaml("""
@@ -581,7 +589,7 @@ class ChannelRegistryFailurePolicyTest {
                 envelopeType,
                 envelopeGenericType,
                 routed::set);
-        ChannelRegistry registry = new ChannelRegistry(
+        ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> {
                             throw new AssertionError("Unavailable payload must not reach handlers");
                         }),
@@ -622,7 +630,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
         AtomicInteger handlerCalls = new AtomicInteger();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", ignored -> {
                                 handlerCalls.incrementAndGet();
                             })),
                             yaml("""
@@ -677,7 +685,7 @@ class ChannelRegistryFailurePolicyTest {
     void testPreDispatchFailureDropsWithoutInvokingHandlersOrFailingGraph() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         List<String> handled = new CopyOnWriteArrayList<>();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
                                 handled.add((String) message.entity());
                             })),
                             yaml("""
@@ -709,7 +717,7 @@ class ChannelRegistryFailurePolicyTest {
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
         List<String> handled = new CopyOnWriteArrayList<>();
         AtomicBoolean failureSettledBeforeDeferred = new AtomicBoolean();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
                                 handled.add((String) message.entity());
                                 failureSettledBeforeDeferred.compareAndSet(false, outgoing.messages().size() == 1);
                             })),
@@ -752,7 +760,7 @@ class ChannelRegistryFailurePolicyTest {
     void testStructuredPreDispatchFailStopsBeforeDeferredSiblings() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         List<String> handled = new CopyOnWriteArrayList<>();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
                                 handled.add((String) message.entity());
                             })),
                             yaml("""
@@ -790,7 +798,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
         AtomicInteger handlerCalls = new AtomicInteger();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", ignored -> {
                                 handlerCalls.incrementAndGet();
                             })),
                             yaml("""
@@ -837,7 +845,7 @@ class ChannelRegistryFailurePolicyTest {
     void testCoordinatorDeadLettersCustomMessageImplementations() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
-        ChannelRegistry registry = new ChannelRegistry(List.of(batchRegistration("orders", ignored -> {
+        ChannelRegistry registry = registry(List.of(batchRegistration("orders", ignored -> {
                                 throw new IllegalStateException("handler failed");
                             })),
                             yaml("""
@@ -875,7 +883,7 @@ class ChannelRegistryFailurePolicyTest {
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
         List<String> handled = new CopyOnWriteArrayList<>();
         AtomicBoolean failedSubsetSettledBeforeDeferred = new AtomicBoolean();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
                                 String entity = (String) message.entity();
                                 handled.add(entity);
                                 if (entity.equals("poison")) {
@@ -936,7 +944,7 @@ class ChannelRegistryFailurePolicyTest {
             }
             throw BatchDeliveryExceptionSupport.indeterminate("Deferred attempt", batch, processingFailure);
         });
-        ChannelRegistry registry = new ChannelRegistry(List.of(source),
+        ChannelRegistry registry = registry(List.of(source),
                             yaml("""
                                     helidon:
                                       messaging:
@@ -986,7 +994,7 @@ class ChannelRegistryFailurePolicyTest {
             }
             }
         });
-        ChannelRegistry registry = new ChannelRegistry(List.of(source),
+        ChannelRegistry registry = registry(List.of(source),
                             yaml("""
                                     helidon:
                                       messaging:
@@ -1024,7 +1032,7 @@ class ChannelRegistryFailurePolicyTest {
     void testPartialTerminalDropProcessesDeferredSubset() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         List<String> handled = new CopyOnWriteArrayList<>();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
                                 String entity = (String) message.entity();
                                 handled.add(entity);
                                 if (entity.equals("poison")) {
@@ -1062,7 +1070,7 @@ class ChannelRegistryFailurePolicyTest {
                     batch,
                     new MessagingException("not admitted"));
         });
-        ChannelRegistry registry = new ChannelRegistry(List.of(source),
+        ChannelRegistry registry = registry(List.of(source),
                             yaml("""
                                     helidon:
                                       messaging:
@@ -1088,7 +1096,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         IllegalStateException processingFailure = new IllegalStateException("poison failed");
         List<String> handled = new CopyOnWriteArrayList<>();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
                                 String entity = (String) message.entity();
                                 handled.add(entity);
                                 if (entity.equals("poison")) {
@@ -1128,7 +1136,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         IllegalStateException processingFailure = new IllegalStateException("poison failed");
         List<String> handled = new CopyOnWriteArrayList<>();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
                                 String entity = (String) message.entity();
                                 handled.add(entity);
                                 if (entity.equals("poison")) {
@@ -1174,7 +1182,7 @@ class ChannelRegistryFailurePolicyTest {
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
 
         assertThrows(RuntimeException.class,
-                     () -> new ChannelRegistry(List.of(),
+                     () -> registry(List.of(),
                                                yaml("""
                                                        helidon:
                                                          messaging:
@@ -1208,7 +1216,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(
+                () -> registry(
                         List.of(registration("first-handler", "orders", firstPolicy, ignored -> { }),
                                 registration("second-handler", "orders", secondPolicy, ignored -> { })),
                         yaml("""
@@ -1242,7 +1250,7 @@ class ChannelRegistryFailurePolicyTest {
                 .deadLetterChannel("second-dlq")
                 .build();
 
-        ChannelRegistry registry = new ChannelRegistry(
+        ChannelRegistry registry = registry(
                 List.of(registration("first-handler", "orders", firstPolicy, ignored -> { }),
                         registration("second-handler", "orders", secondPolicy, ignored -> { })),
                 yaml("""
@@ -1270,7 +1278,7 @@ class ChannelRegistryFailurePolicyTest {
         IllegalStateException routeFailure = new IllegalStateException("sink failed");
         IllegalStateException processingFailure = new IllegalStateException("handler failed");
         TestOutgoingConnector outgoing = new TestOutgoingConnector(routeFailure);
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", ignored -> {
                                 throw processingFailure;
                             })),
                             yaml("""
@@ -1321,7 +1329,7 @@ class ChannelRegistryFailurePolicyTest {
                 batch -> {
                     throw BatchDeliveryExceptionSupport.indeterminate("Source delivery", batch, processingFailure);
                 });
-        ChannelRegistry registry = new ChannelRegistry(List.of(source, deadLetterConsumer),
+        ChannelRegistry registry = registry(List.of(source, deadLetterConsumer),
                             yaml("""
                                     helidon:
                                       messaging:
@@ -1360,7 +1368,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger attempts = new AtomicInteger();
         CountDownLatch entered = new CountDownLatch(1);
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> {
+        ChannelRegistry registry = registry(List.of(registration("orders", ignored -> {
                                 attempts.incrementAndGet();
                                 entered.countDown();
                                 try {
@@ -1414,7 +1422,7 @@ class ChannelRegistryFailurePolicyTest {
                 }
             }
         });
-        ChannelRegistry registry = new ChannelRegistry(List.of(source, deadLetter),
+        ChannelRegistry registry = registry(List.of(source, deadLetter),
                             yaml("""
                                     helidon:
                                       messaging:
@@ -1453,7 +1461,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(),
+                () -> registry(List.of(),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1485,7 +1493,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector outputless = new TestIncomingConnector();
         IllegalArgumentException outputlessFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(),
+                () -> registry(List.of(),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1509,7 +1517,7 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector self = new TestIncomingConnector();
         IllegalArgumentException selfFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(registration("orders", ignored -> { })),
+                () -> registry(List.of(registration("orders", ignored -> { })),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1535,7 +1543,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(
+                () -> registry(
                         List.of(registration("a", ignored -> { }),
                                 registration("b", ignored -> { }),
                                 registration("c", ignored -> { })),
@@ -1583,7 +1591,7 @@ class ChannelRegistryFailurePolicyTest {
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
         IllegalArgumentException incomingFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(),
+                () -> registry(List.of(),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1600,7 +1608,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException outgoingFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(),
+                () -> registry(List.of(),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1618,7 +1626,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(registration("orders", ignored -> { })),
+                () -> registry(List.of(registration("orders", ignored -> { })),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1639,7 +1647,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(registration("orders", ignored -> { })),
+                () -> registry(List.of(registration("orders", ignored -> { })),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1660,7 +1668,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(registration("orders", ignored -> { })),
+                () -> registry(List.of(registration("orders", ignored -> { })),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1681,7 +1689,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(), yaml("{}"), List.of(first, second)));
+                () -> registry(List.of(), yaml("{}"), List.of(first, second)));
 
         assertThat(failure.getMessage(), containsString("Duplicate connector provider type test-out"));
         assertThat(first.createdCount(), is(0));
@@ -1701,7 +1709,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(), yaml("{}"), List.of(provider)));
+                () -> registry(List.of(), yaml("{}"), List.of(provider)));
 
         assertThat(failure.getMessage(), containsString("Connector provider type must not be blank"));
         assertThat(configCreated.get(), is(0));
@@ -1714,7 +1722,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(),
+                () -> registry(List.of(),
                                           yaml("""
                                                   helidon:
                                                     messaging:
@@ -1752,7 +1760,7 @@ class ChannelRegistryFailurePolicyTest {
                 new GenericType<TestKeyedMessage<String, Integer>>() { },
                 ignored -> keyedDispatches.incrementAndGet());
 
-        ChannelRegistry registry = new ChannelRegistry(List.of(broad, keyed), yaml("{}"), List.of());
+        ChannelRegistry registry = registry(List.of(broad, keyed), yaml("{}"), List.of());
         IllegalArgumentException dispatchFailure = assertThrows(
                 IllegalArgumentException.class,
                 () -> registry.emit("orders", Message.create(1)));
@@ -1768,7 +1776,7 @@ class ChannelRegistryFailurePolicyTest {
                 new GenericType<TestKeyedMessage<Long, Integer>>() { });
         IllegalArgumentException envelopeFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(keyed, conflictingKeyed), yaml("{}"), List.of()));
+                () -> registry(List.of(keyed, conflictingKeyed), yaml("{}"), List.of()));
         assertThat(envelopeFailure.getMessage(), containsString("conflicting message envelope types"));
 
         ConsumerRegistration conflictingSubtype = registration(
@@ -1778,7 +1786,7 @@ class ChannelRegistryFailurePolicyTest {
                 TestKeyedMessageSubtype.class,
                 new GenericType<TestKeyedMessageSubtype<Long, Integer>>() { });
         assertThrows(IllegalArgumentException.class,
-                     () -> new ChannelRegistry(List.of(keyed, conflictingSubtype),
+                     () -> registry(List.of(keyed, conflictingSubtype),
                                                yaml("{}"),
                                                List.of()));
 
@@ -1796,7 +1804,7 @@ class ChannelRegistryFailurePolicyTest {
                 new GenericType<Message<List<Integer>>>() { });
         IllegalArgumentException payloadFailure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(stringList, integerList), yaml("{}"), List.of()));
+                () -> registry(List.of(stringList, integerList), yaml("{}"), List.of()));
         assertThat(payloadFailure.getMessage(), containsString("conflicting payload types"));
         assertThat(payloadFailure.getMessage(), containsString("java.util.List<java.lang.String>"));
         assertThat(payloadFailure.getMessage(), containsString("java.util.List<java.lang.Integer>"));
@@ -1816,7 +1824,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(
+                () -> registry(
                         List.of(source, incompatibleTarget),
                         yaml("""
                                 helidon:
@@ -1857,7 +1865,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(
+                () -> registry(
                         List.of(source, incompatibleTarget),
                         yaml("""
                                 helidon:
@@ -1901,7 +1909,7 @@ class ChannelRegistryFailurePolicyTest {
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> new ChannelRegistry(List.of(target),
+                () -> registry(List.of(target),
                                           List.of(rawProducer),
                                           yaml("{}"),
                                           List.of()));
@@ -1909,6 +1917,70 @@ class ChannelRegistryFailurePolicyTest {
         assertThat(failure.getMessage(), containsString("produces envelope type"));
         assertThat(failure.getMessage(), containsString("cannot accept"));
         assertThat(failure.getMessage(), containsString("TestKeyedMessage<java.lang.Long, java.lang.Integer>"));
+    }
+
+    private static ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+                                            Config config,
+                                            List<ConnectorProvider> connectorProviders) {
+        return registry(consumerRegistrations, List.of(), config, connectorProviders);
+    }
+
+    private static ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+                                            List<EmitterRegistration> emitterRegistrations,
+                                            Config config,
+                                            List<ConnectorProvider> connectorProviders) {
+        return new ChannelRegistry(consumerRegistrations,
+                                   emitterRegistrations,
+                                   config,
+                                   connectorProviders,
+                                   new MessagingLifecycleGuard());
+    }
+
+    private static MessagingRejectedException awaitConfiguredTimeout(IncomingConnectorContext context,
+                                                                      Duration configuredTimeout,
+                                                                      Duration testTimeout) {
+        long started = System.nanoTime();
+        while (true) {
+            if (System.nanoTime() - started >= testTimeout.toNanos()) {
+                fail("Configured admission timeout did not expire within " + testTimeout);
+            }
+            try {
+                var attempt = context.tryReserveDelivery();
+                if (attempt.isPresent()) {
+                    try (ConnectorDeliveryReservation ignored = attempt.orElseThrow()) {
+                        fail("Non-blocking reservation succeeded while capacity was held");
+                    }
+                }
+            } catch (MessagingRejectedException e) {
+                assertThat("Reservation timed out before the configured admission budget elapsed",
+                           System.nanoTime() - started,
+                           greaterThanOrEqualTo(configuredTimeout.toNanos()));
+                return e;
+            }
+        }
+    }
+
+    private static MessagingRejectedException awaitTimeoutProbe(FutureTask<MessagingRejectedException> timeoutProbe) {
+        Thread.ofVirtual().name("messaging-admission-timeout-probe").start(timeoutProbe);
+        try {
+            return timeoutProbe.get(10, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            timeoutProbe.cancel(true);
+            throw new AssertionError("Admission timeout probe did not complete within 10 seconds", e);
+        } catch (InterruptedException e) {
+            timeoutProbe.cancel(true);
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting for admission timeout probe", e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw new AssertionError("Admission timeout probe failed", cause);
+        }
     }
 
     private static Config yaml(String yaml) {
