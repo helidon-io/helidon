@@ -17,6 +17,15 @@ Configuration for data
 <tbody>
 <tr>
 <td>
+<a id="clients"></a>
+<a href="io.helidon.data.ClientsConfig.md">
+<code>clients</code>
+</a>
+</td>
+<td>Configuration for clients</td>
+</tr>
+<tr>
+<td>
 <a id="sources"></a>
 <a href="io.helidon.data.SourcesConfig.md">
 <code>sources</code>
