@@ -478,6 +478,17 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         return ContentDecoder.NO_OP;
     }
 
+    private static String requestTarget(ClientUri uri) {
+        String requestTarget = uri.pathWithQueryAndFragment();
+        var fragment = uri.fragment();
+        if (!fragment.hasValue()) {
+            return requestTarget;
+        }
+        String rawFragment = fragment.rawValue();
+        int fragmentLength = requestTarget.endsWith(rawFragment) ? rawFragment.length() : fragment.value().length();
+        return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
+    }
+
     private ClientConnectionTarget connectionTarget(ClientUri uri,
                                                     ClientRequestHeaders headers,
                                                     ConnectionKey connectionKey,
@@ -575,17 +586,6 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
                 failedStream.close();
             }
         }
-    }
-
-    private static String requestTarget(ClientUri uri) {
-        String requestTarget = uri.pathWithQueryAndFragment();
-        var fragment = uri.fragment();
-        if (!fragment.hasValue()) {
-            return requestTarget;
-        }
-        String rawFragment = fragment.rawValue();
-        int fragmentLength = requestTarget.endsWith(rawFragment) ? rawFragment.length() : fragment.value().length();
-        return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
     }
 
     private static final class LogHeaderConsumer implements Consumer<Header> {
