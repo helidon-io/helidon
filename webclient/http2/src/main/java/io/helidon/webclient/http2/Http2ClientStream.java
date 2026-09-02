@@ -753,7 +753,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                         failInboundLocked(e);
                         incrementInboundWindowSizeLocked(discardedDataLength);
                     } finally {
-                        trailers.completeExceptionally(e);
+                        Thread.startVirtualThread(() -> completeTrailersFailure(e));
                     }
                 } else {
                     failInboundLocked(e);
