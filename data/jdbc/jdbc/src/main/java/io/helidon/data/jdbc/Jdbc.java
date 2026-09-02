@@ -69,7 +69,7 @@ public final class Jdbc {
      * positional JDBC markers. A statement must use one style consistently.
      */
     @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.SOURCE)
+    @Retention(RetentionPolicy.CLASS)
     public @interface Statement {
 
         /**
@@ -84,7 +84,7 @@ public final class Jdbc {
      * Selects how a repository statement is executed.
      */
     @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.SOURCE)
+    @Retention(RetentionPolicy.CLASS)
     public @interface Execution {
 
         /**
@@ -123,7 +123,7 @@ public final class Jdbc {
      * Otherwise, the provided values are passed to JDBC in declaration order.
      */
     @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.SOURCE)
+    @Retention(RetentionPolicy.CLASS)
     public @interface GeneratedKeys {
 
         /**
@@ -148,7 +148,7 @@ public final class Jdbc {
      * never owns JDBC resources.
      */
     @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.SOURCE)
+    @Retention(RetentionPolicy.CLASS)
     public @interface RowMapper {
 
         /**

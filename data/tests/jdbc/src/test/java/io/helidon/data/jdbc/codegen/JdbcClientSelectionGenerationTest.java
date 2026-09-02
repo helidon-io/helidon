@@ -44,6 +44,24 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class JdbcClientSelectionGenerationTest {
 
     /**
+     * Proves JDBC method contracts remain available to code generation from
+     * separately compiled repository interfaces without becoming runtime API.
+     */
+    @Test
+    void methodAnnotationsTargetMethodsAndUseClassRetention() {
+        for (Class<?> annotationType : List.of(Jdbc.Statement.class,
+                                               Jdbc.Execution.class,
+                                               Jdbc.GeneratedKeys.class,
+                                               Jdbc.RowMapper.class)) {
+            Target target = annotationType.getAnnotation(Target.class);
+            Retention retention = annotationType.getAnnotation(Retention.class);
+
+            assertThat(Set.of(target.value()), is(Set.of(ElementType.METHOD)));
+            assertThat(retention.value(), is(RetentionPolicy.CLASS));
+        }
+    }
+
+    /**
      * Proves the JDBC client selector is available only to source processing
      * on repository types.
      */

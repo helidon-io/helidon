@@ -91,6 +91,27 @@ class GeneratedRepositoryTest {
         assertThat(source, not(containsString("MAPPER_OPTIONAL_STRING_VALUE")));
         assertThat(source.split("RowMapper<RecordMapperReuseRepository.Projection<Integer>> MAPPER_", -1).length - 1,
                    is(1));
+        assertThat(source,
+                   containsString("new RecordMapperReuseRepository.Projection<String>("
+                                          + "row.required(\"value\", String.class))"));
+        assertThat(source,
+                   containsString("new RecordMapperReuseRepository.Projection<Integer>("
+                                          + "row.required(\"value\", Integer.class))"));
+    }
+
+    /**
+     * Proves an inherited generic repository method resolves a parameterized
+     * record component before mapper source is emitted.
+     *
+     * @throws Exception when the compiler output cannot be inspected
+     */
+    @Test
+    void resolvesInheritedParameterizedRecordComponents() throws Exception {
+        String source = generatedSource(GenericHierarchyRepository.class);
+
+        assertThat(source, containsString("JdbcClient.RowMapper<GenericProjection<String>>"));
+        assertThat(source,
+                   containsString("new GenericProjection<String>(row.required(\"value\", String.class))"));
     }
 
     /**

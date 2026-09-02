@@ -144,6 +144,27 @@ public class TypeHierarchyResolver {
     }
 
     /**
+     * Resolves a member type in the context of one concrete enclosing type.
+     *
+     * @param enclosingType declaration of the enclosing type
+     * @param useSiteType concrete use of the enclosing type
+     * @param memberType member type declared by the enclosing type
+     * @return member type with enclosing type variables substituted
+     */
+    public final TypeName resolveMemberType(TypeInfo enclosingType,
+                                            TypeName useSiteType,
+                                            TypeName memberType) {
+        Objects.requireNonNull(enclosingType, "The enclosing type must not be null.");
+        Objects.requireNonNull(useSiteType, "The use-site type must not be null.");
+        Objects.requireNonNull(memberType, "The member type must not be null.");
+        TypeInfo resolvedEnclosingType = TypeInfo.builder(enclosingType)
+                .typeName(useSiteType)
+                .build();
+        boolean rawType = rawType(resolvedEnclosingType, useSiteType);
+        return substitute(memberType, substitutions(resolvedEnclosingType, Map.of(), rawType));
+    }
+
+    /**
      * Resolves a declaration as a member of the inspected interface.
      *
      * @param interfaceInfo inspected interface

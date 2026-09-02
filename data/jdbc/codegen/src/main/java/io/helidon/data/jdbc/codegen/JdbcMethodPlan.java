@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
+import io.helidon.codegen.TypeHierarchyResolver;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
@@ -236,11 +237,11 @@ final class JdbcMethodPlan {
                                        Return result,
                                        boolean generatedKeys,
                                        boolean rowMapper) {
-        ExecutionSelection requested = executionSelection(method);
-        if (requested == ExecutionSelection.QUERY) {
+        JdbcExecutionSelection requested = JdbcExecutionSelection.create(method);
+        if (requested == JdbcExecutionSelection.QUERY) {
             return Operation.QUERY;
         }
-        if (requested == ExecutionSelection.UPDATE) {
+        if (requested == JdbcExecutionSelection.UPDATE) {
             return Operation.UPDATE;
         }
         if (generatedKeys) {
@@ -260,23 +261,6 @@ final class JdbcMethodPlan {
                     + "@Jdbc.Execution(Jdbc.ExecutionType.UPDATE).");
         }
         return Operation.QUERY;
-    }
-
-    /**
-     * Reads the public execution choice into the internal planning model.
-     *
-     * @param method repository method
-     * @return requested execution
-     */
-    private static ExecutionSelection executionSelection(TypedElementInfo method) {
-        String value = method.findAnnotation(JdbcCodegenTypes.JDBC_EXECUTION)
-                .flatMap(Annotation::stringValue)
-                .orElse(ExecutionSelection.AUTO.name());
-        try {
-            return ExecutionSelection.valueOf(value);
-        } catch (IllegalArgumentException _) {
-            throw failure(method, "@Jdbc.Execution does not support the value '" + value + "'.");
-        }
     }
 
     /**
@@ -454,13 +438,17 @@ final class JdbcMethodPlan {
         }
         // RoundContext presents records known to javac and records generated earlier in this processing run
         // through the same TypeInfo contract.
-        TypeInfo typeInfo = roundContext.typeInfo(mappedType.genericTypeName())
+        TypeInfo typeInfo = roundContext.typeInfo(mappedType)
                 .orElseThrow(() -> failure(method, "Type information is unavailable for mapped result '"
                         + mappedType.resolvedName() + "'."));
         if (typeInfo.kind() == ElementKind.RECORD) {
+            TypeHierarchyResolver typeResolver = roundContext.typeHierarchyResolver();
             List<TypedElementInfo> components = typeInfo.elementInfo()
                     .stream()
                     .filter(element -> element.kind() == ElementKind.RECORD_COMPONENT)
+                    .map(component -> TypedElementInfo.builder(component)
+                            .typeName(typeResolver.resolveMemberType(typeInfo, mappedType, component.typeName()))
+                            .build())
                     .toList();
             validateRecordComponents(method, components);
             return new Mapping(MappingKind.RECORD, components);
@@ -551,15 +539,6 @@ final class JdbcMethodPlan {
         RECORD,
         SERVICE,
         EXPLICIT
-    }
-
-    /**
-     * Public execution choices used while resolving an operation.
-     */
-    private enum ExecutionSelection {
-        AUTO,
-        QUERY,
-        UPDATE
     }
 
     /**

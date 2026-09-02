@@ -35,7 +35,7 @@ import io.helidon.common.types.TypedElementInfo;
  */
 final class JdbcTypeHierarchy {
 
-    private static final List<TypeName> METHOD_ANNOTATIONS = methodAnnotations();
+    private static final List<TypeName> EXACT_METHOD_ANNOTATIONS = exactMethodAnnotations();
 
     private JdbcTypeHierarchy() {
     }
@@ -127,18 +127,17 @@ final class JdbcTypeHierarchy {
     }
 
     private static boolean sameMethodAnnotations(TypedElementInfo first, TypedElementInfo second) {
-        for (TypeName annotation : METHOD_ANNOTATIONS) {
+        for (TypeName annotation : EXACT_METHOD_ANNOTATIONS) {
             if (!first.findAnnotation(annotation).equals(second.findAnnotation(annotation))) {
                 return false;
             }
         }
-        return true;
+        return JdbcExecutionSelection.create(first) == JdbcExecutionSelection.create(second);
     }
 
-    private static List<TypeName> methodAnnotations() {
-        List<TypeName> annotations = new ArrayList<>(4 + JdbcCodegenTypes.TX_ANNOTATIONS.size());
+    private static List<TypeName> exactMethodAnnotations() {
+        List<TypeName> annotations = new ArrayList<>(3 + JdbcCodegenTypes.TX_ANNOTATIONS.size());
         annotations.add(JdbcCodegenTypes.JDBC_STATEMENT);
-        annotations.add(JdbcCodegenTypes.JDBC_EXECUTION);
         annotations.add(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
         annotations.add(JdbcCodegenTypes.JDBC_ROW_MAPPER);
         annotations.addAll(JdbcCodegenTypes.TX_ANNOTATIONS);

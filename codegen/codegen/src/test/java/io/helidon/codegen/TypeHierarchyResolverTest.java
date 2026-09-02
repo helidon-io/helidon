@@ -103,6 +103,41 @@ class TypeHierarchyResolverTest {
     }
 
     /**
+     * Verifies a declaration member is resolved using the concrete arguments
+     * of its enclosing type.
+     */
+    @Test
+    void resolvesAParameterizedMemberType() {
+        TypeName variable = TypeName.createFromGenericDeclaration("T");
+        TypeName boxType = TypeName.create("example.Box");
+        TypeName concreteBoxType = TypeName.builder(boxType)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        TypeInfo boxDeclaration = TypeInfo.builder()
+                .typeName(TypeName.builder(boxType)
+                                  .addTypeArgument(variable)
+                                  .build())
+                .rawType(boxType)
+                .declaredType(TypeName.builder(boxType)
+                                      .addTypeParameter("T")
+                                      .addTypeArgument(variable)
+                                      .build())
+                .kind(ElementKind.RECORD)
+                .build();
+        TypeName optionalVariable = TypeName.builder(TypeNames.OPTIONAL)
+                .addTypeArgument(variable)
+                .build();
+
+        TypeName resolved = TypeHierarchyResolver.create(type -> Optional.empty())
+                .resolveMemberType(boxDeclaration, concreteBoxType, optionalVariable);
+
+        assertThat(resolved,
+                   is(TypeName.builder(TypeNames.OPTIONAL)
+                              .addTypeArgument(TypeNames.STRING)
+                              .build()));
+    }
+
+    /**
      * Verifies implicit Java supertypes for round visible records, enums, and annotations.
      */
     @Test

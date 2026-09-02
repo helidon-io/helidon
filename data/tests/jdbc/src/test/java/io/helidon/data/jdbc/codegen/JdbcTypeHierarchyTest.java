@@ -25,11 +25,13 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.data.jdbc.Jdbc;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,6 +50,44 @@ class JdbcTypeHierarchyTest {
                                    method("find", TypeNames.STRING, "select LEFT_VALUE from ITEM"));
         TypeInfo right = repository("example.RightRepository",
                                     method("find", TypeNames.STRING, "select RIGHT_VALUE from ITEM"));
+        TypeInfo repository = repository("example.Repository", left, right);
+
+        CodegenException failure = assertThrows(CodegenException.class,
+                                                () -> JdbcTypeHierarchy.abstractMethods(repository,
+                                                                                       new TypesRoundContext(Map.of())));
+
+        assertThat(failure.getMessage(),
+                   is("Inherited repository method 'find()' has conflicting JDBC or transaction annotations."));
+    }
+
+    /**
+     * Verifies omitted execution and explicit AUTO are equivalent in an inherited diamond.
+     */
+    @Test
+    void acceptsOmittedAndExplicitAutoExecutionInDiamond() {
+        String sql = "select VALUE from ITEM";
+        TypeInfo left = repository("example.LeftRepository",
+                                   method("find", TypeNames.STRING, sql));
+        TypeInfo right = repository("example.RightRepository",
+                                    method("find", TypeNames.STRING, sql, Jdbc.ExecutionType.AUTO));
+        TypeInfo repository = repository("example.Repository", left, right);
+
+        List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(repository,
+                                                                          new TypesRoundContext(Map.of()));
+
+        assertThat(methods.size(), is(1));
+    }
+
+    /**
+     * Verifies normalization does not hide genuinely different inherited execution policies.
+     */
+    @Test
+    void rejectsOmittedAndExplicitQueryExecutionInDiamond() {
+        String sql = "select VALUE from ITEM";
+        TypeInfo left = repository("example.LeftRepository",
+                                   method("find", TypeNames.STRING, sql));
+        TypeInfo right = repository("example.RightRepository",
+                                    method("find", TypeNames.STRING, sql, Jdbc.ExecutionType.QUERY));
         TypeInfo repository = repository("example.Repository", left, right);
 
         CodegenException failure = assertThrows(CodegenException.class,
@@ -172,6 +212,18 @@ class JdbcTypeHierarchyTest {
                                                  .build());
         }
         return builder.build();
+    }
+
+    private static TypedElementInfo method(String name,
+                                           TypeName returnType,
+                                           String sql,
+                                           Jdbc.ExecutionType execution) {
+        return TypedElementInfo.builder(method(name, returnType, sql))
+                .addAnnotation(Annotation.builder()
+                                       .typeName(JdbcCodegenTypes.JDBC_EXECUTION)
+                                       .property("value", EnumValue.create(Jdbc.ExecutionType.class, execution))
+                                       .build())
+                .build();
     }
 
     /**
