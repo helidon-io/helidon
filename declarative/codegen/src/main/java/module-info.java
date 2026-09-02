@@ -59,6 +59,7 @@ module io.helidon.declarative.codegen {
             with io.helidon.declarative.codegen.faulttolerance.FtExtensionProvider,
                     io.helidon.declarative.codegen.scheduling.SchedulingExtensionProvider,
                     io.helidon.declarative.codegen.graphql.server.GraphQlServerExtensionProvider,
+                    io.helidon.declarative.codegen.openapi.OpenApiExtensionProvider,
                     io.helidon.declarative.codegen.http.restclient.RestClientExtensionProvider,
                     io.helidon.declarative.codegen.grpc.client.GrpcClientExtensionProvider,
                     io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider,
