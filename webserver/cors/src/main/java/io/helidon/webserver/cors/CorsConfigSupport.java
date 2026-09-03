@@ -66,6 +66,7 @@ class CorsConfigSupport {
                                         .addAllowMethod(Method.GET)
                                         .addAllowMethod(Method.HEAD)
                                         .addAllowMethod(Method.POST)
+                                        .addAllowMethod(Method.QUERY)
                                         .exclusive(false)
                                         .build());
             }
