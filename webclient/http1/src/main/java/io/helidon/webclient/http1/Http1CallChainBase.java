@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -566,6 +567,8 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         private final Http1ConnectionListener recvListener;
 
         private BufferData currentBuffer;
+        private int remainingChunkLength;
+        private boolean chunkTerminatorPending;
         private boolean finished;
 
         ChunkedInputStream(HelidonSocket helidonSocket,
@@ -596,6 +599,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         @Override
         public int read(byte[] b, int off, int len) {
+            Objects.checkFromIndexSize(off, len, b.length);
+            if (len == 0) {
+                return 0;
+            }
             if (finished) {
                 return -1;
             }
@@ -618,38 +625,48 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 // we did not read the previous buffer fully
                 return;
             }
-            // chunked encoding - I will just read each chunk fully into memory, as that is how the protocol is designed
-            int endOfChunkSize = reader.findNewLine(256);
-            if (endOfChunkSize == 256) {
-                entityProcessedRunnable.run();
-                throw new IllegalStateException("Cannot read chunked entity, end of line not found within 256 bytes");
+            if (chunkTerminatorPending) {
+                reader.skip(2); // trailing CRLF after each chunk
+                chunkTerminatorPending = false;
             }
-            String hex = reader.readAsciiString(endOfChunkSize);
-            reader.skip(2); // CRLF
-            int length;
-            try {
-                length = ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Chunk size is not a number");
-            }
-            if (length == 0) {
-                if (reader.startsWithNewLine()) {
-                    // No trailers, skip second CRLF
-                    reader.skip(2);
+            if (remainingChunkLength == 0) {
+                int endOfChunkSize = reader.findNewLine(256);
+                if (endOfChunkSize == 256) {
+                    entityProcessedRunnable.run();
+                    throw new IllegalStateException("Cannot read chunked entity, end of line not found within 256 bytes");
                 }
+                String hex = reader.readAsciiString(endOfChunkSize);
+                reader.skip(2); // CRLF
+                try {
+                    remainingChunkLength = ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Chunk size is not a number");
+                }
+                if (remainingChunkLength == 0) {
+                    if (reader.startsWithNewLine()) {
+                        // No trailers, skip second CRLF
+                        reader.skip(2);
+                    }
 
-                recvListener.data(helidonSocket, BufferData.empty());
-                finished = true;
-                currentBuffer = null;
-                entityProcessedRunnable.run();
-                return;
+                    recvListener.data(helidonSocket, BufferData.empty());
+                    finished = true;
+                    currentBuffer = null;
+                    entityProcessedRunnable.run();
+                    return;
+                }
             }
 
-            BufferData chunk = reader.readBuffer(length);
+            reader.ensureAvailable();
+            // Retain the available window so small application reads do not create a buffer per read.
+            int toRead = Math.min(remainingChunkLength, reader.available());
+            BufferData chunk = reader.readBuffer(toRead);
+            remainingChunkLength -= toRead;
 
             recvListener.data(helidonSocket, chunk);
 
-            reader.skip(2); // trailing CRLF after each chunk
+            if (remainingChunkLength == 0) {
+                chunkTerminatorPending = true;
+            }
             this.currentBuffer = chunk;
         }
     }
