@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,18 @@
  */
 package io.helidon.metrics.providers.micrometer.spi;
 
-import io.prometheus.client.exemplars.tracer.common.SpanContextSupplier;
+import io.prometheus.metrics.tracer.common.SpanContext;
 
 /**
- * Returns a {@link io.prometheus.client.exemplars.tracer.common.SpanContextSupplier} for use in linking trace information
+ * Returns a {@link io.prometheus.metrics.tracer.common.SpanContext} for use in linking trace information
  * to meters via exemplars.
  */
 public interface SpanContextSupplierProvider {
 
     /**
-     * Returns a {@link io.prometheus.client.exemplars.tracer.common.SpanContextSupplier} for supporting exemplars.
+     * Returns a {@link io.prometheus.metrics.tracer.common.SpanContext} for supporting exemplars.
      *
      * @return a span context supplier
      */
-    SpanContextSupplier get();
+    SpanContext get();
 }

@@ -42,9 +42,10 @@ interface PrometheusPublisherConfigBlueprint extends MetricsPublisherConfig, Pro
     boolean enabled();
 
     /**
-     * Property name prefix.
+     * Prefix for Micrometer Prometheus property lookups; this setting does not add a prefix to exported metric names, and
+     * the legacy {@code prometheus.histogramFlavor} property is not supported by the current Prometheus registry.
      *
-     * @return property name prefix
+     * @return property lookup prefix
      */
     @Option.Configured
     Optional<String> prefix();
@@ -65,5 +66,13 @@ interface PrometheusPublisherConfigBlueprint extends MetricsPublisherConfig, Pro
      */
     @Option.Configured
     Optional<Duration> interval();
+
+    /**
+     * Prometheus naming convention settings.
+     *
+     * @return naming convention settings
+     */
+    @Option.Configured
+    Optional<PrometheusNamingConventionConfig> namingConvention();
 
 }

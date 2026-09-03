@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,32 @@ package io.helidon.metrics.providers.micrometer;
 
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 
-import io.prometheus.client.exemplars.tracer.common.SpanContextSupplier;
+import io.prometheus.metrics.tracer.common.SpanContext;
 
 /**
  * No-op implementation for providing exemplar trace information.
  */
 class NoOpSpanContextSupplierProvider implements SpanContextSupplierProvider {
     @Override
-    public SpanContextSupplier get() {
-        return new SpanContextSupplier() {
+    public SpanContext get() {
+        return new SpanContext() {
             @Override
-            public String getTraceId() {
+            public String getCurrentTraceId() {
                 return null;
             }
 
             @Override
-            public String getSpanId() {
+            public String getCurrentSpanId() {
                 return null;
             }
 
             @Override
-            public boolean isSampled() {
+            public boolean isCurrentSpanSampled() {
                 return false;
+            }
+
+            @Override
+            public void markCurrentSpanAsExemplar() {
             }
         };
     }

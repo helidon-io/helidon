@@ -20,10 +20,14 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestPublisherConfig {
 
@@ -85,5 +89,51 @@ class TestPublisherConfig {
         assertThat("Publishers",
                    metricsConfig.publishers(),
                    hasSize(2));
+    }
+
+    @Test
+    void testPrometheusNamingConventionConfig() {
+        String configText = """
+                metrics:
+                  publishers:
+                    prometheus:
+                      naming-convention:
+                        timer-suffix: "_duration"
+                        non-letter-prefix: "m_"
+                """;
+
+        var metricsConfig = MetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML)
+                                                         .get("metrics"));
+        var publisher = (PrometheusPublisher) metricsConfig.publishers().getFirst();
+        var namingConfig = publisher.prototype().namingConvention().orElseThrow();
+
+        assertThat("Timer suffix", namingConfig.timerSuffix(), is("_duration"));
+        assertThat("Non-letter prefix", namingConfig.nonLetterPrefix().orElseThrow(), is("m_"));
+
+        PrometheusMeterRegistry registry = publisher.prometheusRegistry()
+                .apply(_ -> null, new NoOpSpanContextSupplierProvider());
+        try {
+            registry.counter("1request").increment();
+            assertThat("Config selects legacy naming",
+                       registry.scrape(),
+                       containsString("m_1request_total 1.0"));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testInvalidNonLetterPrefix() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                                                   () -> PrometheusPublisher.builder()
+                                                           .namingConvention(builder -> builder.nonLetterPrefix("1_"))
+                                                           .build());
+
+        assertThat(ex.getMessage(), containsString("must match [A-Za-z][A-Za-z0-9_]*"));
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> PrometheusPublisher.builder()
+                             .namingConvention(builder -> builder.nonLetterPrefix(""))
+                             .build());
     }
 }

@@ -48,6 +48,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Scoping<wbr>Config](io.helidon.metrics.api.ScopingConfig.md)
 - [io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Tag](io.helidon.metrics.api.Tag.md)
 - [io.<wbr>helidon.<wbr>metrics.<wbr>providers.<wbr>micrometer.<wbr>Otlp<wbr>Publisher](io.helidon.metrics.providers.micrometer.OtlpPublisher.md)
+- [io.<wbr>helidon.<wbr>metrics.<wbr>providers.<wbr>micrometer.<wbr>Prometheus<wbr>Naming<wbr>Convention<wbr>Config](io.helidon.metrics.providers.micrometer.PrometheusNamingConventionConfig.md)
 - [io.<wbr>helidon.<wbr>metrics.<wbr>providers.<wbr>micrometer.<wbr>Prometheus<wbr>Publisher](io.helidon.metrics.providers.micrometer.PrometheusPublisher.md)
 - [io.<wbr>helidon.<wbr>openapi.<wbr>Open<wbr>ApiFeature](io.helidon.openapi.OpenApiFeature.md)
 - [io.<wbr>helidon.<wbr>openapi.<wbr>v30.<wbr>Open<wbr>Api30Version](io.helidon.openapi.v30.OpenApi30Version.md)

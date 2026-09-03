@@ -18,10 +18,13 @@ package io.helidon.metrics.providers.micrometer;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -138,7 +141,7 @@ class TestPrometheusFormatting {
                          containsString(scopeExpr("t1_seconds_count",
                                                   "this_scope",
                                                   "other",
-                                                  "1.0")),
+                                                  "1")),
                          containsString(scopeExpr("t1_seconds_sum",
                                                   "this_scope",
                                                   "other",
@@ -146,7 +149,7 @@ class TestPrometheusFormatting {
                          containsString(scopeExpr("t1_1_seconds_count",
                                                   "this_scope",
                                                   "app",
-                                                  "1.0")),
+                                                  "1")),
                          endsWith(OPENMETRICS_EOF)));
 
     }
@@ -225,7 +228,7 @@ class TestPrometheusFormatting {
                          containsString(scopeExpr("t3_1_seconds_count",
                                                   "this_scope",
                                                   "app",
-                                                  "1.0")),
+                                                  "1")),
                          endsWith(OPENMETRICS_EOF)));
     }
 
@@ -349,6 +352,57 @@ class TestPrometheusFormatting {
         assertThat("Selective by non-existent scope",
                    output,
                    OptionalMatcher.optionalEmpty());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testLegacyNamingSelectiveScrapeUsesOriginalNamesAndIncludesMaxFamilies() {
+        MetricsConfig legacyConfig = MetricsConfig.builder()
+                .scoping(ScopingConfig.builder()
+                                 .tagName(SCOPE_TAG_NAME)
+                                 .defaultValue("app"))
+                .addPublisher(PrometheusPublisher.builder()
+                                      .namingConvention(builder -> builder.nonLetterPrefix("m_"))
+                                      .build())
+                .warnOnMultipleRegistries(false)
+                .build();
+        MeterRegistry legacyRegistry = metricsFactory.createMeterRegistry(legacyConfig);
+        try {
+            AtomicLong gaugeValue = new AtomicLong(4);
+            Gauge.Builder<Double> gaugeBuilder = metricsFactory.gaugeBuilder("build.info",
+                                                                             gaugeValue,
+                                                                             AtomicLong::doubleValue);
+            gaugeBuilder.unwrap(io.micrometer.core.instrument.Gauge.Builder.class).strongReference(true);
+            legacyRegistry.getOrCreate(gaugeBuilder);
+
+            legacyRegistry.getOrCreate(metricsFactory.counterBuilder("1counter")).increment();
+            Timer timer = legacyRegistry.getOrCreate(metricsFactory.timerBuilder("request.time"));
+            timer.record(2, TimeUnit.SECONDS);
+            DistributionSummary summary = legacyRegistry.getOrCreate(metricsFactory.distributionSummaryBuilder(
+                    "payload.size",
+                    metricsFactory.distributionStatisticsConfigBuilder()));
+            summary.record(5);
+            legacyRegistry.getOrCreate(metricsFactory.counterBuilder("unselected")).increment();
+
+            var formatter = MicrometerPrometheusFormatter.builder(legacyRegistry)
+                    .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                    .meterNameSelection(Set.of("1counter", "build.info", "request.time", "payload.size"))
+                    .scopeSelection(Set.of("app"))
+                    .scopeTagName(SCOPE_TAG_NAME)
+                    .build();
+
+            assertThat("Legacy selective output",
+                       checkAndCast(formatter.format()),
+                       allOf(containsString(scopeExpr("m_1counter_total", "this_scope", "app", "1.0")),
+                             containsString(scopeExpr("build_info", "this_scope", "app", "4.0")),
+                             containsString(scopeExpr("request_time_seconds_count", "this_scope", "app", "1")),
+                             containsString(scopeExpr("request_time_seconds_max", "this_scope", "app", "2.0")),
+                             containsString(scopeExpr("payload_size_count", "this_scope", "app", "1")),
+                             containsString(scopeExpr("payload_size_max", "this_scope", "app", "5.0")),
+                             not(containsString("unselected_total"))));
+        } finally {
+            legacyRegistry.close();
+        }
     }
 
     private static String scopeExpr(String meterName, String key, String value, String suffix) {

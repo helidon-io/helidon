@@ -17,6 +17,7 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -26,10 +27,10 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.exemplars.DefaultExemplarSampler;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusNamingConvention;
+import io.prometheus.metrics.model.registry.PrometheusRegistry;
 
 /**
  * Metrics publisher for Prometheus output.
@@ -40,7 +41,10 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
     private final PrometheusPublisherConfig config;
 
     private PrometheusPublisher(PrometheusPublisherConfig config) {
-        this.config = config;
+        this.config = Objects.requireNonNull(config);
+        config.namingConvention()
+                .flatMap(PrometheusNamingConventionConfig::nonLetterPrefix)
+                .ifPresent(LegacyPrometheusNamingConvention::validatePrefix);
     }
 
     /**
@@ -62,7 +66,7 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
     }
 
     /**
-     * Creates a new Prometheus published using the provided configuration.
+     * Creates a new Prometheus publisher using the provided configuration.
      *
      * @param config Prometheus publisher config
      *
@@ -105,19 +109,23 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
 
     /**
      * Returns a factory function accepting a property look-up function and the Micrometer span context supplier provider
-     * and producing a {@link io.micrometer.prometheus.PrometheusMeterRegistry}.
+     * and producing a {@link io.micrometer.prometheusmetrics.PrometheusMeterRegistry}.
      *
      * @return factory function
      */
     public BiFunction<Function<String, String>, SpanContextSupplierProvider, PrometheusMeterRegistry> prometheusRegistry() {
 
-        return (lookupFunction, spanContextSupplierProvider) ->
-            spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
-                ? new PrometheusMeterRegistry(prometheusConfig(lookupFunction))
-                : new PrometheusMeterRegistry(prometheusConfig(lookupFunction),
-                                         new CollectorRegistry(),
-                                         io.micrometer.core.instrument.Clock.SYSTEM,
-                                         new DefaultExemplarSampler(spanContextSupplierProvider.get()));
+        return (lookupFunction, spanContextSupplierProvider) -> {
+            PrometheusConfig prometheusConfig = prometheusConfig(lookupFunction);
+            PrometheusMeterRegistry registry = spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
+                    ? new PrometheusMeterRegistry(prometheusConfig)
+                    : new PrometheusMeterRegistry(prometheusConfig,
+                                                  new PrometheusRegistry(),
+                                                  io.micrometer.core.instrument.Clock.SYSTEM,
+                                                  spanContextSupplierProvider.get());
+            configureNaming(registry);
+            return registry;
+        };
     }
 
     @Override
@@ -151,5 +159,15 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
                 return config.interval().orElse(PrometheusConfig.super.step());
             }
         };
+    }
+
+    private void configureNaming(PrometheusMeterRegistry registry) {
+        PrometheusNamingConventionConfig namingConfig = config.namingConvention()
+                .orElseGet(() -> PrometheusNamingConventionConfig.builder().build());
+
+        namingConfig.nonLetterPrefix().ifPresentOrElse(prefix -> {
+            registry.config().meterFilter(new LegacyPrometheusMeterFilter());
+            registry.config().namingConvention(new LegacyPrometheusNamingConvention(namingConfig.timerSuffix(), prefix));
+        }, () -> registry.config().namingConvention(new PrometheusNamingConvention(namingConfig.timerSuffix())));
     }
 }
