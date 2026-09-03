@@ -63,7 +63,7 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.asm>9.9.1</version.lib.asm>
-        <version.lib.checkstyle>13.3.0</version.lib.checkstyle>
+        <version.lib.checkstyle>14.1.0</version.lib.checkstyle>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mockserver>5.15.0</version.lib.mockserver>

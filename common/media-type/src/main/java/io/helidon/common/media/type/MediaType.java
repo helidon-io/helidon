@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public interface MediaType {
     String text();
 
     /**
-     * Is the type a wildcard?
+     * Checks whether the type is a wildcard.
      * @return whether this is a wildcard type
      */
     default boolean isWildcardType() {
@@ -63,7 +63,7 @@ public interface MediaType {
     }
 
     /**
-     * Is the subtype a wildcard?
+     * Checks whether the subtype is a wildcard.
      * @return whether this is a wildcard subtype
      */
     default boolean isWildcardSubtype() {

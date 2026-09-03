@@ -40,6 +40,8 @@ public class HttpPrologue {
     private UriFragment fragment;
 
     /**
+     * Creates an HTTP prologue.
+     *
      * @param protocol        protocol name, should be {@code HTTP} in most cases
      * @param protocolVersion HTTP protocol version of this request
      * @param method          HTTP method of this request

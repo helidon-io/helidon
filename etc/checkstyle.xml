@@ -126,7 +126,7 @@
         <module name="JavadocVariable">
             <property name="accessModifiers" value="protected,public"/>
         </module>
-        <module name="JavadocStyle"/>
+        <module name="SummaryJavadoc"/>
 
         <!-- Checks for Naming Conventions.                  -->
         <!-- See http://checkstyle.sf.net/config_naming.html -->

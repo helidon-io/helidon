@@ -623,6 +623,8 @@ class BindingGenerator {
     }
 
     /**
+     * A binding to matching service descriptors.
+     *
      * @param dependency  to bind to
      * @param descriptors matching descriptors
      */
