@@ -35,6 +35,10 @@ final class OpenTelemetryConfigSupport {
     private OpenTelemetryConfigSupport() {
     }
 
+    private static OpenTelemetrySdk noopOpenTelemetrySdk() {
+        return OpenTelemetrySdk.builder().build();
+    }
+
     private static OpenTelemetry openTelemetry(OpenTelemetryConfig.BuilderBase<?, ?> target) {
         var openTelemetrySdkBuilder = OpenTelemetrySdk.builder();
 
@@ -100,12 +104,21 @@ final class OpenTelemetryConfigSupport {
             derive from the settings.
              */
             if (target.openTelemetry().isPresent()) {
+                if (target.openTelemetrySdk().isEmpty()) {
+                    var openTelemetry = target.openTelemetry().get();
+                    target.openTelemetrySdk(openTelemetry instanceof OpenTelemetrySdk sdk
+                                                    ? sdk
+                                                    : noopOpenTelemetrySdk());
+                }
                 return;
             }
 
-            target.openTelemetry(target.enabled()
-                                         ? openTelemetry(target)
-                                         : OpenTelemetry.noop());
+            if (target.enabled()) {
+                target.openTelemetry(openTelemetry(target));
+            } else {
+                target.openTelemetrySdk(noopOpenTelemetrySdk())
+                        .openTelemetry(OpenTelemetry.noop());
+            }
         }
 
     }
@@ -149,4 +162,3 @@ final class OpenTelemetryConfigSupport {
     }
 
 }
-
