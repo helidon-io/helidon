@@ -26,7 +26,7 @@ Settings for a Micrometer Prometheus meter registry
 </td>
 <td>
 </td>
-<td>Prefix for Micrometer Prometheus property lookups; this setting does not add a prefix to exported metric names, and the legacy <code>prometheus.histogramFlavor</code> property is accepted for compatibility but ignored with a warning</td>
+<td>Prefix for Micrometer Prometheus property lookups; this setting does not add a prefix to exported metric names</td>
 </tr>
 <tr>
 <td>

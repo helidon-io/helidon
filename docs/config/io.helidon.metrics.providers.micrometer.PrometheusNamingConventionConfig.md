@@ -23,7 +23,7 @@ Settings controlling Prometheus naming conventions
 <td>
 <code>String</code>
 </td>
-<td>Prefix to add to metric names and tag keys which do not begin with a letter; configuring this setting enables legacy simpleclient-compatible normalization, with <code>m_</code> reproducing the naming from earlier Helidon releases, and preserves user-supplied reserved suffixes such as <code>_total</code>, <code>_created</code>, <code>_bucket</code>, and <code>_info</code>, whereas leaving it unset uses the new Prometheus client's normalization</td>
+<td>Prefix to add to metric names and tag keys which do not begin with a letter; configuring this setting enables legacy simpleclient-compatible normalization, with <code>m_</code> reproducing the naming from earlier Helidon releases, while leaving it unset uses the new Prometheus client's normalization</td>
 </tr>
 <tr>
 <td>
