@@ -27,6 +27,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
@@ -48,6 +49,7 @@ import org.openjdk.jmh.infra.Blackhole;
 public class Http2ConnectionWriterJmhTest {
     private static final int MAX_FRAME_SIZE = 16_384;
     private static final int CONCURRENT_THREADS = 8;
+    private static final String FRAGMENTED_HEADER_VALUE = "~".repeat(18_000);
     private static final byte[] RESPONSE_BYTES = {1};
     private static final PeerInfo PEER_INFO = new BenchmarkPeerInfo();
 
@@ -75,6 +77,18 @@ public class Http2ConnectionWriterJmhTest {
         return connection.write(frame, frame.exhaustedWindow);
     }
 
+    @Benchmark
+    @Threads(1)
+    public int fragmentedHeaders(ConnectionState connection, FrameState frame) {
+        return connection.write(frame, frame.fragmentedHeaders, frame.fundedWindow);
+    }
+
+    @Benchmark
+    @Threads(CONCURRENT_THREADS)
+    public int fragmentedHeadersConcurrent(ConnectionState connection, FrameState frame) {
+        return connection.write(frame, frame.fragmentedHeaders, frame.fundedWindow);
+    }
+
     @State(Scope.Benchmark)
     public static class ConnectionState {
         private BenchmarkDataWriter dataWriter;
@@ -87,8 +101,12 @@ public class Http2ConnectionWriterJmhTest {
         }
 
         private int write(FrameState frame, FlowControl.Outbound flowControl) {
+            return write(frame, frame.headers, flowControl);
+        }
+
+        private int write(FrameState frame, Http2Headers headers, FlowControl.Outbound flowControl) {
             try {
-                return writer.writeHeaders(frame.headers,
+                return writer.writeHeaders(headers,
                                            1,
                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
                                            frame.data,
@@ -105,6 +123,7 @@ public class Http2ConnectionWriterJmhTest {
         private final BenchmarkFlowControl exhaustedWindow = new BenchmarkFlowControl(0);
         private BenchmarkDataWriter dataWriter;
         private Http2FrameData data;
+        private Http2Headers fragmentedHeaders;
         private Http2Headers headers;
 
         @Setup
@@ -112,6 +131,10 @@ public class Http2ConnectionWriterJmhTest {
             dataWriter = connection.dataWriter;
             dataWriter.register(blackhole);
             headers = Http2Headers.create(WritableHeaders.create())
+                    .status(Status.OK_200);
+            WritableHeaders<?> writableHeaders = WritableHeaders.create();
+            writableHeaders.set(HeaderNames.create("x-large-header"), FRAGMENTED_HEADER_VALUE);
+            fragmentedHeaders = Http2Headers.create(writableHeaders)
                     .status(Status.OK_200);
             data = new Http2FrameData(Http2FrameHeader.create(RESPONSE_BYTES.length,
                                                                Http2FrameTypes.DATA,

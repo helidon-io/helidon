@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
@@ -727,9 +728,9 @@ class Http2ConnectionWriterTest {
         }
         assertThat(frameTypes.get(frameTypes.size() - 2), is(Http2FrameType.WINDOW_UPDATE));
         assertThat(frameTypes.getLast(), is(Http2FrameType.DATA));
-        assertThat("blocker, HEADERS, WINDOW_UPDATE, and DATA must be separate transport writes",
+        assertThat("blocker, each header fragment, WINDOW_UPDATE, and DATA must use separate transport writes",
                    writes.get(),
-                   is(4));
+                   is(frameTypes.size()));
     }
 
     @Test
@@ -945,7 +946,7 @@ class Http2ConnectionWriterTest {
     }
 
     @Test
-    void batchesSplitHeadersAndDataAsLogicalFrames() {
+    void writesSplitHeadersAndDataAsSeparateTransportWrites() {
         int maxFrameSize = 32;
         byte[] data = "payload".getBytes(StandardCharsets.UTF_8);
         AtomicBoolean flowControlDebited = new AtomicBoolean();
@@ -985,18 +986,19 @@ class Http2ConnectionWriterTest {
                                           dataFrame,
                                           flowControl,
                                           () -> {
-                                              assertThat(dataWriter.writes.size(), is(1));
                                               assertThat(flowControlDebited.get(), is(true));
                                               callbackCalled.set(true);
                                           });
 
         assertThat(callbackCalled.get(), is(true));
         assertThat(dataFrame.data().consumed(), is(true));
-        assertThat(dataWriter.writes.size(), is(1));
-        byte[] wireBytes = dataWriter.writes.getFirst();
+        byte[] wireBytes = combineWrites(dataWriter.writes);
         assertThat(written, is(wireBytes.length));
         List<CapturedFrame> frames = parseFrames(wireBytes);
         assertThat("Test setup must force continuation frames", frames.size() > 2, is(true));
+        assertThat("Each fragmented header and DATA frame must use its own bounded transport write",
+                   dataWriter.writes.size(),
+                   is(frames.size()));
         assertThat(frames.getFirst().header().type(), is(Http2FrameType.HEADERS));
         assertThat(frames.getFirst().header().flags(Http2FrameTypes.HEADERS).endOfHeaders(), is(false));
         for (int i = 1; i < frames.size() - 2; i++) {
@@ -1014,6 +1016,41 @@ class Http2ConnectionWriterTest {
         assertThat(listenerFrameTypes,
                    is(frames.stream().map(frame -> frame.header().type()).toList()));
         assertThat(frames.stream().allMatch(frame -> frame.header().length() <= maxFrameSize), is(true));
+        verify(flowControl).decrementWindowSize(data.length);
+    }
+
+    @Test
+    void writesOversizedSingleFrameHeadersBeforeData() {
+        int maxFrameSize = 32_768;
+        byte[] data = {1};
+        RecordingDataWriter dataWriter = new RecordingDataWriter();
+        FlowControl.Outbound flowControl = flowControl();
+        when(flowControl.maxFrameSize()).thenReturn(maxFrameSize);
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        writableHeaders.set(HeaderNames.create("x-large-header"), "~".repeat(18_000));
+        Http2Headers headers = Http2Headers.create(writableHeaders)
+                .status(Status.OK_200);
+        Http2FrameData dataFrame = terminalDataFrame(data);
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+
+        int written = writer.writeHeaders(headers,
+                                          1,
+                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                          dataFrame,
+                                          flowControl);
+
+        byte[] wireBytes = combineWrites(dataWriter.writes);
+        List<CapturedFrame> frames = parseFrames(wireBytes);
+        assertThat(written, is(wireBytes.length));
+        assertThat(dataWriter.writes.size(), is(2));
+        assertThat(frames.size(), is(2));
+        assertThat(frames.getFirst().header().type(), is(Http2FrameType.HEADERS));
+        assertThat(frames.getFirst().header().length(), greaterThan(16_384));
+        assertThat(frames.getFirst().header().length(), lessThanOrEqualTo(maxFrameSize));
+        assertThat(frames.getFirst().header().flags(Http2FrameTypes.HEADERS).endOfHeaders(), is(true));
+        assertThat(frames.getLast().header().type(), is(Http2FrameType.DATA));
+        assertThat(frames.getLast().data(), is(data));
+        assertThat(dataFrame.data().consumed(), is(true));
         verify(flowControl).decrementWindowSize(data.length);
     }
 
@@ -1437,6 +1474,15 @@ class Http2ConnectionWriterTest {
             frames.add(new CapturedFrame(header, data));
         }
         return frames;
+    }
+
+    private static byte[] combineWrites(List<byte[]> writes) {
+        int length = writes.stream().mapToInt(it -> it.length).sum();
+        BufferData buffer = BufferData.create(length);
+        for (byte[] write : writes) {
+            buffer.write(write);
+        }
+        return buffer.readBytes();
     }
 
     private static void writeData(Http2ConnectionWriter writer,

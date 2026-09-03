@@ -36,8 +36,8 @@ import io.helidon.common.socket.SocketContext;
  * HTTP/2 connection writer.
  */
 public class Http2ConnectionWriter implements Http2StreamWriter {
-    // Do not let a peer-raised maximum frame size enlarge the DATA portion of a response batch.
-    private static final int MAX_BATCHED_DATA_LENGTH = Http2Setting.MAX_FRAME_SIZE.defaultValue().intValue();
+    // Do not let a peer-raised maximum frame size enlarge either payload in a response batch.
+    private static final int MAX_BATCHED_FRAME_PAYLOAD_LENGTH = Http2Setting.MAX_FRAME_SIZE.defaultValue().intValue();
     private static final Runnable NO_OP = () -> { };
     private static final int NO_RESET_STREAM = -1;
 
@@ -237,7 +237,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         // Executed on stream thread
         int dataLength = dataFrame.header().length();
         int maxFrameSize = flowControl.maxFrameSize();
-        if (maxFrameSize <= 0 || dataLength > maxFrameSize || dataLength > MAX_BATCHED_DATA_LENGTH) {
+        if (maxFrameSize <= 0 || dataLength > maxFrameSize || dataLength > MAX_BATCHED_FRAME_PAYLOAD_LENGTH) {
             return writeHeaders(headers, streamId, flags, flowControl)
                     + writeData(dataFrame, flowControl, onEndStreamFrameWritten);
         }
@@ -248,10 +248,16 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         try {
             splitFrames = flowControl.cut(dataFrame);
             try {
-                CompositeBufferData batch = BufferData.createComposite();
-                bytesWritten = noLockWriteHeaders(headers, streamId, flags, maxFrameSize, batch);
+                noLockEncodeHeaders(headers);
+                CompositeBufferData batch = headerBuffer.available() <= maxFrameSize
+                        && headerBuffer.available() <= MAX_BATCHED_FRAME_PAYLOAD_LENGTH
+                        ? BufferData.createComposite()
+                        : null;
+                bytesWritten = noLockWriteEncodedHeaders(streamId, flags, maxFrameSize, batch);
                 if (windowUpdateWriteScheduled.get()) {
-                    writer.writeNow(batch);
+                    if (batch != null) {
+                        writer.writeNow(batch);
+                    }
                     noLockDrainWindowUpdates();
                     if (splitFrames.length == 1) {
                         bytesWritten += noLockWriteData(dataFrame, flowControl);
@@ -264,13 +270,19 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                     case 2 -> splitFrames[0];
                     default -> null;
                     };
-                    if (writableFrame != null) {
-                        batch.add(noLockFrameBuffer(writableFrame));
-                    }
-                    writer.writeNow(batch);
-                    if (writableFrame != null) {
-                        flowControl.decrementWindowSize(writableFrame.header().length());
-                        bytesWritten += frameBytes(writableFrame);
+                    if (batch == null) {
+                        if (writableFrame != null) {
+                            bytesWritten += noLockWriteData(writableFrame, flowControl);
+                        }
+                    } else {
+                        if (writableFrame != null) {
+                            batch.add(noLockFrameBuffer(writableFrame));
+                        }
+                        writer.writeNow(batch);
+                        if (writableFrame != null) {
+                            flowControl.decrementWindowSize(writableFrame.header().length());
+                            bytesWritten += frameBytes(writableFrame);
+                        }
                     }
                 }
             } catch (Throwable t) {
@@ -516,17 +528,20 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                                    int streamId,
                                    Http2Flag.HeaderFlags flags,
                                    int maxFrameSize) {
-        return noLockWriteHeaders(headers, streamId, flags, maxFrameSize, null);
+        noLockEncodeHeaders(headers);
+        return noLockWriteEncodedHeaders(streamId, flags, maxFrameSize, null);
     }
 
-    private int noLockWriteHeaders(Http2Headers headers,
-                                   int streamId,
-                                   Http2Flag.HeaderFlags flags,
-                                   int maxFrameSize,
-                                   CompositeBufferData batch) {
-        int written = 0;
+    private void noLockEncodeHeaders(Http2Headers headers) {
         headerBuffer.clear();
         headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
+    }
+
+    private int noLockWriteEncodedHeaders(int streamId,
+                                          Http2Flag.HeaderFlags flags,
+                                          int maxFrameSize,
+                                          CompositeBufferData batch) {
+        int written = 0;
 
         // Fast path when headers fits within the SETTINGS_MAX_FRAME_SIZE
         if (headerBuffer.available() <= maxFrameSize) {
