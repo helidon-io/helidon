@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
  */
 
 package io.helidon.json.schema;
+
+import java.net.URI;
+
+import io.helidon.json.JsonObject;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +47,25 @@ class SchemaTest {
                 .rootInteger(builder -> builder.multipleOf(1))
                 .rootNumber(builder -> builder.multipleOf(1))
                 .build());
+    }
+
+    @Test
+    void testGenerateObjectWithoutKeywords() {
+        Schema schema = Schema.builder()
+                .id(URI.create("https://example.com/schemas/item"))
+                .rootObject(builder -> builder.addStringProperty("name", name -> name.description("Item name")))
+                .build();
+
+        JsonObject full = schema.generateObject();
+        assertThat(full.stringValue("$schema").orElseThrow(), is("https://json-schema.org/draft/2020-12/schema"));
+        assertThat(full.stringValue("$id").orElseThrow(), is("https://example.com/schemas/item"));
+        assertThat(full.stringValue("type").orElseThrow(), is("object"));
+
+        JsonObject body = schema.generateObjectNoKeywords();
+        assertThat(body.containsKey("$schema"), is(false));
+        assertThat(body.containsKey("$id"), is(false));
+        assertThat(body.stringValue("type").orElseThrow(), is("object"));
+        assertThat(body.objectValue("properties").orElseThrow().containsKey("name"), is(true));
     }
 
 }

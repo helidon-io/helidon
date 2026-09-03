@@ -145,6 +145,14 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     }
 
     @Override
+    public <T> Optional<T> asOptional(Class<T> type) {
+        if (hasEntity()) {
+            return Optional.of(as(type));
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public final <T> T as(GenericType<T> type) {
         return entityAs(type);
     }

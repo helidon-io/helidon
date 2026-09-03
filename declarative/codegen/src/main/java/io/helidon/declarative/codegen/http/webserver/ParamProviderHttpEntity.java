@@ -36,9 +36,16 @@ class ParamProviderHttpEntity extends AbstractParametersProvider implements Http
         }
 
         var contentBuilder = ctx.contentBuilder();
+        var parameterType = ctx.parameterType();
         contentBuilder.addContent(ctx.serverRequestParamName())
-                .addContent(".content().as(");
-        addTypeArgument(ctx, contentBuilder, ctx.parameterType());
+                .addContent(".content().");
+        if (parameterType.isOptional()) {
+            contentBuilder.addContent("asOptional(");
+            addTypeArgument(ctx, contentBuilder, parameterType.typeArguments().getFirst());
+        } else {
+            contentBuilder.addContent("as(");
+            addTypeArgument(ctx, contentBuilder, parameterType);
+        }
         contentBuilder.addContent(");");
 
         return true;

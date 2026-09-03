@@ -2,7 +2,7 @@
 
 ## Description
 
-<code>Open<wbr>ApiFeature</code> prototype
+OpenAPI feature configuration
 
 ## Configuration options
 
@@ -19,15 +19,54 @@
 <tbody>
 <tr>
 <td>
-<code>web-<wbr>context</code>
+<a id="document"></a>
+<a href="io.helidon.openapi.spi.OpenApiVersion.md">
+<code>document</code>
+</a>
 </td>
 <td>
-<code>String</code>
+<code>Map&lt;<wbr>String,<wbr> Open<wbr>ApiVersion&gt;<wbr> or List&lt;<wbr>Open<wbr>ApiVersion&gt;</code>
 </td>
 <td>
-<code>/openapi</code>
 </td>
-<td>Web context path for the OpenAPI endpoint</td>
+<td>OpenAPI version implementation for rendered generated or merged documents</td>
+</tr>
+<tr>
+<td>
+<code>document-<wbr>discover-<wbr>services</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>document</code></td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Sets whether the feature should be enabled</td>
+</tr>
+<tr>
+<td>
+<a id="generated"></a>
+<a href="io.helidon.openapi.GeneratedConfig.md">
+<code>generated</code>
+</a>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>Configuration for generated</td>
 </tr>
 <tr>
 <td>
@@ -42,78 +81,6 @@
 <td>
 </td>
 <td>OpenAPI manager</td>
-</tr>
-<tr>
-<td>
-<code>services-<wbr>discover-<wbr>services</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether to enable automatic service discovery for <code>services</code></td>
-</tr>
-<tr>
-<td>
-<code>roles</code>
-</td>
-<td>
-<code>List&lt;<wbr>String&gt;</code>
-</td>
-<td>
-<code>openapi</code>
-</td>
-<td>Hints for role names the user is expected to be in</td>
-</tr>
-<tr>
-<td>
-<code>static-<wbr>file</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Path of the static OpenAPI document file</td>
-</tr>
-<tr>
-<td>
-<code>weight</code>
-</td>
-<td>
-<code>Double</code>
-</td>
-<td>
-<code>90.<wbr>0</code>
-</td>
-<td>Weight of the OpenAPI feature</td>
-</tr>
-<tr>
-<td>
-<a id="services"></a>
-<a href="io.helidon.openapi.OpenApiService.md">
-<code>services</code>
-</a>
-</td>
-<td>
-<code>Map&lt;<wbr>String,<wbr> Open<wbr>ApiService&gt;<wbr> or List&lt;<wbr>Open<wbr>ApiService&gt;</code>
-</td>
-<td>
-</td>
-<td>OpenAPI services</td>
-</tr>
-<tr>
-<td>
-<code>sockets</code>
-</td>
-<td>
-<code>List&lt;<wbr>String&gt;</code>
-</td>
-<td>
-</td>
-<td>List of sockets to register this feature on</td>
 </tr>
 <tr>
 <td>
@@ -141,7 +108,33 @@
 </tr>
 <tr>
 <td>
-<code>enabled</code>
+<code>roles</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+<code>openapi</code>
+</td>
+<td>Hints for role names the user is expected to be in</td>
+</tr>
+<tr>
+<td>
+<a id="services"></a>
+<a href="io.helidon.openapi.OpenApiService.md">
+<code>services</code>
+</a>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Open<wbr>ApiService&gt;<wbr> or List&lt;<wbr>Open<wbr>ApiService&gt;</code>
+</td>
+<td>
+</td>
+<td>OpenAPI services</td>
+</tr>
+<tr>
+<td>
+<code>services-<wbr>discover-<wbr>services</code>
 </td>
 <td>
 <code>Boolean</code>
@@ -149,7 +142,53 @@
 <td>
 <code>true</code>
 </td>
-<td>Sets whether the feature should be enabled</td>
+<td>Whether to enable automatic service discovery for <code>services</code></td>
+</tr>
+<tr>
+<td>
+<code>sockets</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>List of sockets to register this feature on</td>
+</tr>
+<tr>
+<td>
+<code>static-<wbr>file</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Path of the static OpenAPI document file</td>
+</tr>
+<tr>
+<td>
+<code>web-<wbr>context</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+<code>/openapi</code>
+</td>
+<td>Web context path for the OpenAPI endpoint</td>
+</tr>
+<tr>
+<td>
+<code>weight</code>
+</td>
+<td>
+<code>Double</code>
+</td>
+<td>
+<code>90.<wbr>0</code>
+</td>
+<td>Weight of the OpenAPI feature</td>
 </tr>
 </tbody>
 </table>

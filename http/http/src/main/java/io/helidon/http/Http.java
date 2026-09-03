@@ -84,6 +84,10 @@ public final class Http {
      * Inject entity into a method parameter.
      * <p>
      * Can also be used on {@link RequestParams} record components.
+     * <p>
+     * Declarative server endpoints support {@code Optional<T>} entities. If the request has no entity, an optional
+     * entity is injected as {@link Optional#empty()}; a non-optional entity is rejected as a bad request. This behavior
+     * applies to both method parameters and {@link RequestParams} record components.
      */
     @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
     @Retention(RetentionPolicy.CLASS)

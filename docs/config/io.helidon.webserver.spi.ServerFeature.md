@@ -86,7 +86,7 @@ This type is a provider contract.
 <code>openapi</code>
 </a>
 </td>
-<td><code>Open<wbr>ApiFeature</code> prototype</td>
+<td>OpenAPI feature configuration</td>
 </tr>
 <tr>
 <td>

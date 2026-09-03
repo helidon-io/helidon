@@ -47,6 +47,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.graphql</groupId>
             <artifactId>helidon-graphql</artifactId>
             <scope>test</scope>

@@ -225,6 +225,12 @@ combine supported request parameter annotations. At most one `Http.Entity`
 component is supported, and `Http.Entity` cannot be combined with
 `Http.FormParam` components.
 
+For declarative server endpoints, `Http.Entity` supports both a direct entity
+type and `Optional<T>`. A direct entity is mandatory, and the request fails if
+the entity is missing. An optional entity is `Optional.empty()` when the
+request has no entity. This behavior applies both to endpoint method parameters
+and to `Http.RequestParams` record components.
+
 The named value annotations include `Http.HeaderParam`, `Http.CookieParam`,
 `Http.QueryParam`, `Http.FormParam`, and `Http.PathParam`. They support scalar
 values, `Optional<T>`, `List<T>`, and `Optional<List<T>>`. For server endpoints,

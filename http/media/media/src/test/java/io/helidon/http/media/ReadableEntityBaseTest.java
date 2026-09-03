@@ -58,6 +58,20 @@ class ReadableEntityBaseTest {
     }
 
     @Test
+    void testOptionalInputStream() throws IOException {
+        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
+        try (InputStream is = entityBase.asOptional(InputStream.class).orElseThrow()) {
+            assertThat(is.readAllBytes(), is(BYTES));
+        }
+    }
+
+    @Test
+    void testOptionalByteArray() {
+        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
+        assertThat(entityBase.asOptional(byte[].class).orElseThrow(), is(BYTES));
+    }
+
+    @Test
     void testMultipleInputStream() throws IOException {
         ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
         try (InputStream is = entityBase.inputStream()) {

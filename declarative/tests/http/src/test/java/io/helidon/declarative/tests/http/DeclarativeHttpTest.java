@@ -818,4 +818,43 @@ class DeclarativeHttpTest {
         assertThat(response.status(), is(Status.BAD_REQUEST_400));
         assertThat(response.entity(), is("Entity inputStream is not present in the request."));
     }
+
+    @Test
+    void testOptionalEntityEmptyContent() {
+        var response = client.post("/greet/optional-entity")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("none"));
+    }
+
+    @Test
+    void testOptionalInputStreamEntity() {
+        var presentResponse = client.post("/greet/optional-input-stream")
+                .submit("hello", String.class);
+
+        assertThat(presentResponse.status(), is(Status.OK_200));
+        assertThat(presentResponse.entity(), is("hello"));
+
+        var emptyResponse = client.post("/greet/optional-input-stream")
+                .request(String.class);
+
+        assertThat(emptyResponse.status(), is(Status.OK_200));
+        assertThat(emptyResponse.entity(), is("none"));
+    }
+
+    @Test
+    void testOptionalByteArrayEntity() {
+        var presentResponse = client.post("/greet/optional-byte-array")
+                .submit("hello", String.class);
+
+        assertThat(presentResponse.status(), is(Status.OK_200));
+        assertThat(presentResponse.entity(), is("hello"));
+
+        var emptyResponse = client.post("/greet/optional-byte-array")
+                .request(String.class);
+
+        assertThat(emptyResponse.status(), is(Status.OK_200));
+        assertThat(emptyResponse.entity(), is("none"));
+    }
 }

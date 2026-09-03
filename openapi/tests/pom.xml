@@ -35,6 +35,7 @@
 
     <modules>
         <module>gh-5792</module>
+        <module>jpms</module>
     </modules>
 
     <properties>
