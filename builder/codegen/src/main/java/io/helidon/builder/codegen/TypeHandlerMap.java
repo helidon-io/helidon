@@ -59,6 +59,115 @@ class TypeHandlerMap extends TypeHandlerContainer {
         this.valueType = option.declaredType().typeArguments().get(1);
     }
 
+    static void sameGenericArgs(OptionInfo option,
+                                TypedElementInfo.Builder method,
+                                TypeName keyType,
+                                String value,
+                                TypeName valueType) {
+
+        TypeName genericTypeBase;
+        TypeName resolvedKeyType;
+        TypeName resolvedValueType;
+
+        if (keyType.typeArguments().isEmpty()) {
+            /*
+            Map<Object, List<Object>>
+            <TYPE extends Object> put(TYPE, List<TYPE>)
+             */
+            // this is good
+            genericTypeBase = keyType;
+            resolvedKeyType = SAME_GENERIC_TYPE;
+        } else if (keyType.typeArguments().size() == 1) {
+            /*
+            Map<Class<Provider>, Provider>
+            <TYPE extends Provider> put(Class<TYPE>, List<TYPE>)
+             */
+            // this is also good
+            TypeName typeArg = keyType.typeArguments().getFirst();
+            if (typeArg.wildcard()) {
+                // ?, or ? extends Something
+                if (typeArg.generic()) {
+                    genericTypeBase = OBJECT;
+                } else {
+                    genericTypeBase = TypeName.builder(typeArg)
+                            .wildcard(false)
+                            .build();
+                }
+            } else {
+                genericTypeBase = typeArg;
+            }
+            resolvedKeyType = TypeName.builder(keyType)
+                    .typeArguments(List.of(SAME_GENERIC_TYPE))
+                    .build();
+        } else {
+            throw new IllegalArgumentException("Property " + option.name() + " with type " + option.declaredType()
+                    .fqName() + " is annotated"
+                                                       + " with @SameGeneric, yet the key generic type cannot be determined."
+                                                       + " Either the key must be a simple type, or a type with one type"
+                                                       + " argument.");
+        }
+
+        method.addTypeParameter(TypeArgument.builder()
+                                        .token("TYPE")
+                                        .bound(genericTypeBase)
+                                        .description("Type to correctly map key and value")
+                                        .build());
+
+        // now resolve value
+        if (valueType.typeArguments().isEmpty()) {
+            if (!genericTypeBase.equals(valueType)) {
+                throw new IllegalArgumentException("Property " + option.name() + " with type " + option.declaredType()
+                        .fqName() + " is "
+                                                           + "annotated"
+                                                           + " with @SameGeneric, yet the type of value is not the"
+                                                           + " same as type found on key: " + genericTypeBase.fqName());
+            }
+            resolvedValueType = SAME_GENERIC_TYPE;
+        } else if (valueType.typeArguments().size() == 1) {
+            if (!genericTypeBase.equals(valueType.typeArguments().getFirst())) {
+                throw new IllegalArgumentException("Property " + option.name() + " with type " + option.declaredType()
+                        .fqName() + " is "
+                                                           + "annotated"
+                                                           + " with @SameGeneric, yet type of value is not the"
+                                                           + " same as type found on key: " + genericTypeBase.fqName());
+            }
+            resolvedValueType = TypeName.builder(valueType)
+                    .typeArguments(List.of(SAME_GENERIC_TYPE))
+                    .build();
+        } else {
+            throw new IllegalArgumentException("Property " + option.name() + " with type " + option.declaredType()
+                    .fqName() + " is annotated"
+                                                       + " with @SameGeneric, yet the value generic type cannot be determined."
+                                                       + " Either the value must be a simple type, or a type with one type"
+                                                       + " argument.");
+        }
+
+        method.addParameterArgument(param -> param.elementName("key")
+                        .kind(ElementKind.PARAMETER)
+                        .typeName(resolvedKeyType)
+                        .description("key to add or replace"))
+                .addParameterArgument(param -> param.elementName(value)
+                        .kind(ElementKind.PARAMETER)
+                        .typeName(resolvedValueType)
+                        .description("new value for the key"));
+    }
+
+    static void secondArgToPut(ContentBuilder<?> contentBuilder, TypeName typeName, String singularName) {
+        TypeName genericTypeName = typeName.genericTypeName();
+        if (genericTypeName.equals(LIST)) {
+            contentBuilder.addContent(List.class)
+                    .addContent(".copyOf(" + singularName + ")");
+        } else if (genericTypeName.equals(SET)) {
+            contentBuilder.addContent(Set.class)
+                    .addContent(".copyOf(" + singularName + ")");
+        } else if (genericTypeName.equals(MAP)) {
+            contentBuilder.addContent(Map.class)
+                    .addContent(".copyOf(" + singularName + ")");
+        } else {
+            contentBuilder.addContent(singularName);
+        }
+    }
+
     @Override
     public void generateFromConfig(Method.Builder method, OptionConfigured optionConfigured) {
         String optionName = option().name();
@@ -198,7 +307,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .update(it -> option().annotations().forEach(it::addAnnotation));
 
         if (sameGeneric) {
-            sameGenericArgs(method, keyType, singularName, type());
+            sameGenericArgs(option(), method, keyType, singularName, type());
         } else {
             method.addParameterArgument(param -> param
                             .kind(ElementKind.PARAMETER)
@@ -260,7 +369,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .update(it -> option().annotations().forEach(it::addAnnotation));
 
         if (sameGeneric) {
-            sameGenericArgs(method, keyType, singularName, valueParamType);
+            sameGenericArgs(option(), method, keyType, singularName, valueParamType);
         } else {
             method.addParameterArgument(param -> param
                             .kind(ElementKind.PARAMETER)
@@ -328,7 +437,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .update(it -> option().annotations().forEach(it::addAnnotation));
 
         if (sameGeneric) {
-            sameGenericArgs(method, keyType, name, type());
+            sameGenericArgs(option(), method, keyType, name, type());
         } else {
             method.addParameterArgument(param -> param
                             .kind(ElementKind.PARAMETER)
@@ -551,111 +660,4 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .build();
     }
 
-    private void sameGenericArgs(TypedElementInfo.Builder method,
-                                 TypeName keyType,
-                                 String value,
-                                 TypeName valueType) {
-
-        TypeName genericTypeBase;
-        TypeName resolvedKeyType;
-        TypeName resolvedValueType;
-
-        if (keyType.typeArguments().isEmpty()) {
-            /*
-            Map<Object, List<Object>>
-            <TYPE extends Object> put(TYPE, List<TYPE>)
-             */
-            // this is good
-            genericTypeBase = keyType;
-            resolvedKeyType = SAME_GENERIC_TYPE;
-        } else if (keyType.typeArguments().size() == 1) {
-            /*
-            Map<Class<Provider>, Provider>
-            <TYPE extends Provider> put(Class<TYPE>, List<TYPE>)
-             */
-            // this is also good
-            TypeName typeArg = keyType.typeArguments().getFirst();
-            if (typeArg.wildcard()) {
-                // ?, or ? extends Something
-                if (typeArg.generic()) {
-                    genericTypeBase = OBJECT;
-                } else {
-                    genericTypeBase = TypeName.builder(typeArg)
-                            .wildcard(false)
-                            .build();
-                }
-            } else {
-                genericTypeBase = typeArg;
-            }
-            resolvedKeyType = TypeName.builder(keyType)
-                    .typeArguments(List.of(SAME_GENERIC_TYPE))
-                    .build();
-        } else {
-            throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
-                    .fqName() + " is annotated"
-                                                       + " with @SameGeneric, yet the key generic type cannot be determined."
-                                                       + " Either the key must be a simple type, or a type with one type"
-                                                       + " argument.");
-        }
-
-        method.addTypeParameter(TypeArgument.builder()
-                                        .token("TYPE")
-                                        .bound(genericTypeBase)
-                                        .description("Type to correctly map key and value")
-                                        .build());
-
-        // now resolve value
-        if (valueType.typeArguments().isEmpty()) {
-            if (!genericTypeBase.equals(valueType)) {
-                throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
-                        .fqName() + " is "
-                                                           + "annotated"
-                                                           + " with @SameGeneric, yet the type of value is not the"
-                                                           + " same as type found on key: " + genericTypeBase.fqName());
-            }
-            resolvedValueType = SAME_GENERIC_TYPE;
-        } else if (valueType.typeArguments().size() == 1) {
-            if (!genericTypeBase.equals(valueType.typeArguments().getFirst())) {
-                throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
-                        .fqName() + " is "
-                                                           + "annotated"
-                                                           + " with @SameGeneric, yet type of value is not the"
-                                                           + " same as type found on key: " + genericTypeBase.fqName());
-            }
-            resolvedValueType = TypeName.builder(valueType)
-                    .typeArguments(List.of(SAME_GENERIC_TYPE))
-                    .build();
-        } else {
-            throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
-                    .fqName() + " is annotated"
-                                                       + " with @SameGeneric, yet the value generic type cannot be determined."
-                                                       + " Either the value must be a simple type, or a type with one type"
-                                                       + " argument.");
-        }
-
-        method.addParameterArgument(param -> param.elementName("key")
-                        .kind(ElementKind.PARAMETER)
-                        .typeName(resolvedKeyType)
-                        .description("key to add or replace"))
-                .addParameterArgument(param -> param.elementName(value)
-                        .kind(ElementKind.PARAMETER)
-                        .typeName(resolvedValueType)
-                        .description("new value for the key"));
-    }
-
-    private void secondArgToPut(ContentBuilder<?> contentBuilder, TypeName typeName, String singularName) {
-        TypeName genericTypeName = typeName.genericTypeName();
-        if (genericTypeName.equals(LIST)) {
-            contentBuilder.addContent(List.class)
-                    .addContent(".copyOf(" + singularName + ")");
-        } else if (genericTypeName.equals(SET)) {
-            contentBuilder.addContent(Set.class)
-                    .addContent(".copyOf(" + singularName + ")");
-        } else if (genericTypeName.equals(MAP)) {
-            contentBuilder.addContent(Map.class)
-                    .addContent(".copyOf(" + singularName + ")");
-        } else {
-            contentBuilder.addContent(singularName);
-        }
-    }
 }

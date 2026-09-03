@@ -178,7 +178,7 @@ class Http1ConnectionTest {
                                                     DirectHandlers directHandlers,
                                                     Router router) {
         ListenerContext listenerContext = mock(ListenerContext.class);
-        when(listenerContext.contentEncodingContext()).thenReturn(mock(ContentEncodingContext.class));
+        when(listenerContext.contentEncodingContext()).thenReturn(ContentEncodingContext.create());
         when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
         when(listenerContext.directHandlers()).thenReturn(directHandlers);
 

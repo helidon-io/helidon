@@ -22,6 +22,7 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.encoding.ContentEncoder;
 
 /**
  * Routing response of a server.
@@ -60,6 +61,37 @@ public interface RoutingResponse extends ServerResponse {
      * @return whether has entity
      */
     boolean hasEntity();
+
+    /**
+     * Configure whether the WebServer response layer may automatically encode the response entity using the listener
+     * content encoding context. This does not remove or rewrite any explicitly configured {@code Content-Encoding} header.
+     * Repeated calls replace the previous setting until response content encoding is selected.
+     *
+     * @param enabled whether automatic response content encoding is enabled
+     * @return this instance
+     * @throws IllegalStateException if response content encoding was already selected, or the response was sent
+     */
+    @Override
+    @Api.Incubating
+    default RoutingResponse automaticContentEncoding(boolean enabled) {
+        return this;
+    }
+
+    /**
+     * Configure an explicit response content encoder. Repeated calls replace the previous encoder until response content
+     * encoding is selected. The selected encoder's headers are applied once during selection.
+     *
+     * @param encoder content encoder
+     * @return this instance
+     * @throws NullPointerException if {@code encoder} is {@code null}
+     * @throws IllegalStateException if response content encoding was already selected, or the response was sent
+     */
+    @Override
+    @Api.Incubating
+    default RoutingResponse contentEncoder(ContentEncoder encoder) {
+        ServerResponse.super.contentEncoder(encoder);
+        return this;
+    }
 
     /**
      * Return true if the underlying response buffers and headers can be reset and a new response can be sent.

@@ -53,7 +53,6 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
                                                            + "not exist on classpath for single file classpath static content "
                                                            + "handler.");
             }
-
             if (cacheInMemory && populatedInMemoryCache.compareAndSet(false, true)) {
                 addToInMemoryCache(location, resourceUrl);
             } else {
@@ -64,7 +63,7 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
                                                                + "not exist on classpath for single file classpath static "
                                                                + "content handler.");
                 }
-                cacheHandler(location, handler.get());
+                cacheClassPathHandler(location, location, resourceUrl, handler.get());
             }
         } catch (Exception e) {
             LOGGER.log(System.Logger.Level.WARNING,
@@ -84,7 +83,7 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
     boolean doHandle(Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
             throws IOException {
 
-        Optional<CachedHandler> handler = cacheHandler(location);
+        Optional<CachedHandler> handler = cachedClassPathHandler(location);
         if (handler.isEmpty()) {
             URL resourceUrl = classLoader.getResource(location);
             if (resourceUrl == null) {
@@ -95,9 +94,17 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
             } catch (URISyntaxException e) {
                 throw new IOException("Failed to resolve classpath resource " + location, e);
             }
-            handler.ifPresent(it -> cacheHandler(location, it));
+            if (handler.isEmpty()) {
+                return false;
+            }
+            handler = Optional.of(cacheClassPathHandler(location, location, resourceUrl, handler.get()));
         }
 
-        return handler.isPresent() && handler.get().handle(handlerCache(), method, request, response, location);
+        try {
+            CachedHandler selected = selectCachedClassPathHandler(location, handler.get(), request);
+            return selected.handle(handlerCache(), method, request, response, location);
+        } catch (URISyntaxException e) {
+            throw new IOException("Failed to resolve classpath resource " + location, e);
+        }
     }
 }

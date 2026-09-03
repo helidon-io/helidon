@@ -17,6 +17,7 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import io.helidon.common.LruCache;
 import io.helidon.http.Method;
@@ -24,9 +25,37 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 interface CachedHandler {
-    boolean handle(LruCache<String, CachedHandler> cache,
-                   Method method,
-                   ServerRequest request,
-                   ServerResponse response,
-                   String requestedResource) throws IOException;
+    default boolean handle(LruCache<String, CachedHandler> cache,
+                           Method method,
+                           ServerRequest request,
+                           ServerResponse response,
+                           String requestedResource) throws IOException {
+        Optional<PreparedContent> prepared = prepare(cache, requestedResource);
+        if (prepared.isEmpty()) {
+            return false;
+        }
+        return StaticContentResponse.send(method, request, response, prepared.get());
+    }
+
+    Optional<PreparedContent> prepare(LruCache<String, CachedHandler> cache,
+                                      String requestedResource) throws IOException;
+
+    default Optional<PreparedContent> prepareSidecar(SidecarCache sidecarCache,
+                                                     String coding,
+                                                     LruCache<String, CachedHandler> cache,
+                                                     String requestedResource) throws IOException {
+        return prepare(cache, requestedResource);
+    }
+
+    default CachedHandler withRepresentation(ResponseRepresentation representation) {
+        return new CachedHandlerRepresentation(this, representation);
+    }
+
+    default boolean available() throws IOException {
+        return true;
+    }
+
+    default SidecarCache sidecarCache() {
+        return SidecarCache.disabled();
+    }
 }

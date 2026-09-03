@@ -250,6 +250,86 @@ class TypeHandlerOptional extends TypeHandlerBasic {
     }
 
     @Override
+    Optional<GeneratedMethod> prepareBuilderSingularAdd(Javadoc getterJavadoc) {
+        if (!optionalMap() || option().singular().isEmpty()) {
+            return Optional.empty();
+        }
+
+        OptionSingular singular = option().singular().get();
+        String singularName = singular.name();
+        String methodName = singular.methodName();
+        TypeName returnType = Utils.builderReturnType();
+        String name = option().name();
+        TypeName keyType = type().typeArguments().get(0);
+        TypeName valueType = type().typeArguments().get(1);
+
+        Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
+                .add("\nThis method adds a new value to the map, or replaces it if the key already exists.")
+                .parameters(Map.of())
+                .addParameter("key", "key to add or replace")
+                .addParameter(singularName, "new value for the key")
+                .update(it -> {
+                    if (option().sameGeneric()) {
+                        it.addGenericArgument("TYPE", "The key and value has to use the same generic type.");
+                    }
+                })
+                .build();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(methodName)
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        if (option().sameGeneric()) {
+            TypeHandlerMap.sameGenericArgs(option(), method, keyType, singularName, valueType);
+        } else {
+            method.addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(keyType)
+                            .elementName("key"))
+                    .addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(valueType)
+                            .elementName(singularName));
+        }
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(key);")
+                    .addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + singularName + ");")
+                    .addContentLine("if (this." + name + " == null) {")
+                    .addContent("this.")
+                    .addContent(name)
+                    .addContent(" = ");
+            emptyMutableContainer(it);
+            it.addContentLine(";")
+                    .addContentLine("}")
+                    .addContent("this." + name + ".put(key, ");
+            TypeHandlerMap.secondArgToPut(it, valueType, singularName);
+            it.addContentLine(");");
+            option().decorator()
+                    .ifPresent(decorator -> {
+                        it.addContent("new ")
+                                .addContent(decorator)
+                                .addContent("().decorate(this, ");
+                        optionalDecoratorValue(it);
+                        it.addContentLine(");");
+                    });
+            it.addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .contentBuilder(contentConsumer)
+                                   .javadoc(setterJavadoc)
+                                   .build());
+    }
+
+    @Override
     Optional<GeneratedMethod> prepareBuilderClear(Javadoc getterJavadoc) {
         TypeName returnType = Utils.builderReturnType();
 
@@ -590,4 +670,5 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                     .addContent("))");
         }
     }
+
 }

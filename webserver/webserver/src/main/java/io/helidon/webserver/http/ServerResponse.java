@@ -18,10 +18,12 @@ package io.helidon.webserver.http;
 
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
@@ -32,6 +34,7 @@ import io.helidon.http.NotFoundException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.spi.Sink;
 
@@ -205,6 +208,40 @@ public interface ServerResponse {
      * @return bytes written (combination of all bytes of status, headers and entity)
      */
     long bytesWritten();
+
+    /**
+     * Configure whether the WebServer response layer may automatically encode the response entity using the listener
+     * content encoding context. This does not remove or rewrite any explicitly configured {@code Content-Encoding} header.
+     * Repeated calls replace the previous setting until response content encoding is selected. Content encoding is selected
+     * when an entity is sent or the response output stream is obtained.
+     *
+     * @param enabled whether automatic response content encoding is enabled
+     * @return this instance
+     * @throws IllegalStateException if response content encoding was already selected, or the response was sent
+     */
+    @Api.Incubating
+    default ServerResponse automaticContentEncoding(boolean enabled) {
+        return this;
+    }
+
+    /**
+     * Configure an explicit response content encoder.
+     * <p>
+     * The explicit encoder takes precedence over automatic content encoding. Response stream filters process the plain
+     * entity before this encoder. Repeated calls replace the previous encoder until response content encoding is selected.
+     * The selected encoder's headers are applied once during selection, so a {@code HEAD} response exposes the same
+     * representation metadata as {@code GET} without sending the encoded entity.
+     *
+     * @param encoder content encoder
+     * @return this instance
+     * @throws NullPointerException if {@code encoder} is {@code null}
+     * @throws IllegalStateException if response content encoding was already selected, or the response was sent
+     */
+    @Api.Incubating
+    default ServerResponse contentEncoder(ContentEncoder encoder) {
+        Objects.requireNonNull(encoder);
+        return this;
+    }
 
     /**
      * Executed right before the first byte is written to the socket (including response status and headers).

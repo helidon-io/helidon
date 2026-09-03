@@ -16,85 +16,32 @@
 
 package io.helidon.webserver.staticcontent;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Optional;
 
 import io.helidon.common.LruCache;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.HttpException;
-import io.helidon.http.Method;
-import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.Status;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-
-import static io.helidon.webserver.staticcontent.StaticContentHandler.processPreconditions;
 
 record CachedHandlerInMemory(StaticContentMetadata metadata,
-                             byte[] bytes) implements CachedHandler {
+                             byte[] bytes,
+                             SidecarCache sidecarCache) implements CachedHandler {
+
+    CachedHandlerInMemory(StaticContentMetadata metadata, byte[] bytes) {
+        this(metadata, bytes, SidecarCache.create());
+    }
 
     @Override
-    public boolean handle(LruCache<String, CachedHandler> cache,
-                          Method method,
-                          ServerRequest request,
-                          ServerResponse response,
-                          String requestedResource) {
-        // etag etc.
-        processPreconditions(metadata, request.headers(), response.headers());
+    public Optional<PreparedContent> prepare(LruCache<String, CachedHandler> cache,
+                                             String requestedResource) {
+        return Optional.of(new PreparedContent(metadata,
+                                               bytes,
+                                               null));
+    }
 
-        metadata.setContentType(response.headers());
-
-        if (method == Method.GET) {
-            send(request, response);
-        } else {
-            metadata.setContentLength(response.headers());
-            response.send();
-        }
-
-        return true;
+    @Override
+    public SidecarCache sidecarCache() {
+        return sidecarCache;
     }
 
     int contentLength() {
         return bytes.length;
-    }
-
-    private void send(ServerRequest request, ServerResponse response) {
-        ServerRequestHeaders headers = request.headers();
-
-        if (headers.contains(HeaderNames.RANGE)) {
-            long contentLength = contentLength();
-            List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
-                                                                   response,
-                                                                   headers.get(HeaderNames.RANGE).values(),
-                                                                   contentLength);
-            if (ranges.size() == 1) {
-                // single response
-                ByteRangeRequest range = ranges.getFirst();
-
-                if (range.offset() > contentLength()) {
-                    throw new HttpException("Invalid range offset", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
-                }
-                if (range.length() > (contentLength() - range.offset())) {
-                    throw new HttpException("Invalid length", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
-                }
-
-                range.setContentRange(response);
-
-                // only send a part of the file
-                response.send(Arrays.copyOfRange(bytes(),
-                                                 (int) range.offset(),
-                                                 (int) (range.offset() + range.length())));
-            } else {
-                // not supported, send full
-                send(response);
-            }
-        } else {
-            send(response);
-        }
-    }
-
-    private void send(ServerResponse response) {
-        metadata.setContentLength(response.headers());
-        response.send(bytes());
     }
 }

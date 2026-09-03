@@ -16,8 +16,11 @@
 
 package io.helidon.http.tests.integration.encoding.gzip;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -25,11 +28,15 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -51,6 +58,11 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class AlreadyEncodedResponseTest {
     private static final String ACCEPT_ENCODING_VALUE = "br;q=1, gzip;q=0.8";
     private static final byte[] PRE_ENCODED_ENTITY = "already-brotli-encoded".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] STACKED_ENTITY = "stacked-encoding-entity".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] GZIP_ENCODED_ENTITY = gzip(STACKED_ENTITY);
+    private static final ContentEncodingContext ENCODING_CONTEXT = ContentEncodingContext.builder()
+            .addContentEncoding(GzipEncoding.create())
+            .build();
 
     private final URI uri;
     private final Http1Client http1Client;
@@ -75,6 +87,9 @@ class AlreadyEncodedResponseTest {
                 .route(Http1Route.route(Method.GET,
                                         "/already-encoded-streamed-http1",
                                         (req, res) -> alreadyEncodedStreamedResponse(res)))
+                .route(Http1Route.route(Method.GET,
+                                        "/stacked-alias-http1",
+                                        (req, res) -> stackedAliasResponse(res)))
                 .route(Http2Route.route(Method.GET,
                                         "/already-encoded-http2",
                                         (req, res) -> alreadyEncodedResponse(res)))
@@ -140,6 +155,21 @@ class AlreadyEncodedResponseTest {
     }
 
     @Test
+    void testExplicitAliasPreservesEarlierContentEncodingLayer() throws IOException, InterruptedException {
+        HttpResponse<byte[]> response = jdkClient.send(HttpRequest.newBuilder()
+                                                               .uri(uri.resolve("/stacked-alias-http1"))
+                                                               .build(),
+                                                       HttpResponse.BodyHandlers.ofByteArray());
+
+        assertAll(
+                () -> assertThat(response.statusCode(), is(200)),
+                () -> assertThat(String.join(",", response.headers().allValues("Content-Encoding")).replace(" ", ""),
+                                 is("gzip,x-gzip")),
+                () -> assertThat(gunzip(gunzip(response.body())), is(STACKED_ENTITY))
+        );
+    }
+
+    @Test
     void testHttp1ClientStreamsAlreadyEncodedResponse() throws IOException {
         try (Http1ClientResponse response = http1Client.get("/already-encoded-streamed-http1")
                 .header(HeaderNames.ACCEPT_ENCODING, ACCEPT_ENCODING_VALUE)
@@ -172,6 +202,13 @@ class AlreadyEncodedResponseTest {
         }
     }
 
+    private static void stackedAliasResponse(ServerResponse res) {
+        res.status(Status.OK_200);
+        res.header(HeaderValues.create(HeaderNames.CONTENT_ENCODING, "gzip"));
+        res.contentEncoder(ENCODING_CONTEXT.encoder("x-gzip"));
+        res.send(GZIP_ENCODED_ENTITY);
+    }
+
     private static void assertStreamedPassThrough(HttpClientResponse response) throws IOException {
         assertAll(
                 () -> assertThat(response.status(), is(Status.OK_200)),
@@ -188,6 +225,23 @@ class AlreadyEncodedResponseTest {
             System.arraycopy(firstChunk, 0, result, 0, firstChunk.length);
             System.arraycopy(remaining, 0, result, firstChunk.length, remaining.length);
             return result;
+        }
+    }
+
+    private static byte[] gzip(byte[] bytes) {
+        try (var output = new ByteArrayOutputStream();
+             var gzip = new GZIPOutputStream(output)) {
+            gzip.write(bytes);
+            gzip.finish();
+            return output.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static byte[] gunzip(byte[] bytes) throws IOException {
+        try (var gzip = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
+            return gzip.readAllBytes();
         }
     }
 }

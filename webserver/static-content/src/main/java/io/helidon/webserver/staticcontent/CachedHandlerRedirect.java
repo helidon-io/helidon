@@ -17,6 +17,7 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.uri.UriQuery;
@@ -27,6 +28,12 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 record CachedHandlerRedirect(String location) implements CachedHandler {
+    @Override
+    public Optional<PreparedContent> prepare(LruCache<String, CachedHandler> cache,
+                                             String requestedResource) {
+        return Optional.empty();
+    }
+
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
                           Method method,

@@ -19,10 +19,13 @@ package io.helidon.webserver.staticcontent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.System.Logger.Level;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -42,6 +45,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     // The configured location is pinned for the handler instance lifetime, including stop/start cycles.
     private final AtomicReference<Path> realRoot = new AtomicReference<>();
     private final Set<String> cacheInMemory;
+    private final Map<String, InMemoryResource> inMemoryResources = new ConcurrentHashMap<>();
 
     FileSystemContentHandler(FileSystemHandlerConfig config) {
         super(config);
@@ -51,12 +55,19 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     }
 
     static HttpService create(FileSystemHandlerConfig config) {
+        return create(config, false);
+    }
+
+    static HttpService create(FileSystemHandlerConfig config, boolean preCompressedEnabledDefault) {
         Path location = config.location();
-        if (Files.isDirectory(location)) {
-            return new FileSystemContentHandler(config);
-        } else {
-            return new SingleFileContentHandler(config);
+        boolean directory = Files.isDirectory(location);
+        if (config.preCompressedEnabled().isEmpty()) {
+            config = FileSystemHandlerConfig.builder()
+                    .from(config)
+                    .preCompressedEnabled(directory && preCompressedEnabledDefault)
+                    .build();
         }
+        return directory ? new FileSystemContentHandler(config) : new SingleFileContentHandler(config);
     }
 
     @Override
@@ -77,6 +88,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        inMemoryResources.clear();
         super.releaseCache();
     }
 
@@ -102,11 +114,25 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         }
 
         // we have a resource that we support, let's try to use one from the cache
-        Optional<CachedHandler> cached = cacheHandler(requestedResource);
+        InMemoryResource inMemoryResource = inMemoryResources.get(requestedResource);
+        if (inMemoryResource != null) {
+            CachedHandler handler = selectFileSystemHandler(inMemoryResource.handler(), req, inMemoryResource.path());
+            return handler.handle(handlerCache(), method, req, res, requestedResource);
+        }
+
+        Optional<CachedHandler> cached = handlerCache().get(requestedResource);
 
         if (cached.isPresent()) {
+            CachedHandler cachedHandler = cached.get();
+            if (cachedHandler instanceof CachedHandlerRedirect) {
+                return cachedHandler.handle(handlerCache(), method, req, res, requestedResource);
+            }
+            Path logicalPath = cachedHandler instanceof CachedHandlerPath pathHandler
+                    ? pathHandler.sourcePath()
+                    : path;
+            CachedHandler handler = selectFileSystemHandler(cachedHandler, req, logicalPath);
             // this requested resource is cached and can be safely returned
-            return cached.get().handle(handlerCache(), method, req, res, requestedResource);
+            return handler.handle(handlerCache(), method, req, res, requestedResource);
         }
 
         // if it is not cached, find the resource and cache it (or return 404 and do not cache)
@@ -137,15 +163,15 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                         + welcomeFileName;
 
                 if (rawPath.endsWith("/")) {
-                    Optional<CachedHandlerInMemory> inMemoryMaybe = cacheInMemory(welcomeFileResource);
-                    if (inMemoryMaybe.isPresent()) {
+                    InMemoryResource inMemoryResource = inMemoryResources.get(welcomeFileResource);
+                    if (inMemoryResource != null) {
                         // reference to the same definition, never times out
-                        cacheInMemory(requestedResource, inMemoryMaybe.get());
-                        return inMemoryMaybe.get().handle(handlerCache(),
-                                                          method,
-                                                          req,
-                                                          res,
-                                                          requestedResource);
+                        inMemoryResources.put(requestedResource, inMemoryResource);
+                        CachedHandler handler = selectFileSystemHandler(
+                                inMemoryResource.handler(),
+                                req,
+                                inMemoryResource.path());
+                        return handler.handle(handlerCache(), method, req, res, requestedResource);
                     }
 
                     // Try to find welcome file
@@ -170,7 +196,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                                                          false,
                                                          realRoot.get());
         cacheHandler(requestedResource, handler);
-        return handler.handle(handlerCache(), method, req, res, requestedResource);
+        CachedHandler selected = selectFileSystemHandler(handler, req, path);
+        return selected.handle(handlerCache(), method, req, res, requestedResource);
     }
 
     private void addToInMemoryCache(String resource) throws IOException {
@@ -216,11 +243,13 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             byte[] fileBytes = FileBasedContentHandler.readAllBytes(resolvedPath, false, currentRealRoot);
             var contentType = detectType(fileName(path));
             var lastModified = lastModified(resolvedPath, false, currentRealRoot);
+            CachedHandlerInMemory handler;
             if (lastModified.isPresent()) {
-                cacheInMemory(resource, contentType, fileBytes, lastModified.get());
+                handler = cacheInMemory(resource, contentType, fileBytes, lastModified.get());
             } else {
-                cacheInMemory(resource, contentType, fileBytes);
+                handler = cacheInMemory(resource, contentType, fileBytes);
             }
+            inMemoryResources.put(resource, new InMemoryResource(handler, path));
         }
     }
 
@@ -229,6 +258,31 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return root;
         }
         return root.resolve(requestedPath).toAbsolutePath().normalize();
+    }
+
+    private CachedHandler selectFileSystemHandler(CachedHandler identityHandler,
+                                                  ServerRequest request,
+                                                  Path path) throws IOException {
+        String logicalFileName = fileName(path);
+        try {
+            return selectHandler(identityHandler, request, (coding, suffix) -> {
+                Path sidecar = path.resolveSibling(logicalFileName + "." + suffix);
+                if (!sidecar.startsWith(root)) {
+                    return Optional.empty();
+                }
+                Optional<Path> resolvedSidecar = contentPath(sidecar);
+                if (resolvedSidecar.isEmpty()) {
+                    return Optional.empty();
+                }
+                return Optional.of(CachedHandlerPath.create(sidecar,
+                                                            resolvedSidecar.get(),
+                                                            detectType(logicalFileName),
+                                                            false,
+                                                            realRoot.get()));
+            });
+        } catch (URISyntaxException e) {
+            throw new IOException(e);
+        }
     }
 
     private Optional<Path> contentPath(Path path) {
@@ -268,5 +322,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         } catch (IOException | SecurityException e) {
             return Optional.empty();
         }
+    }
+
+    private record InMemoryResource(CachedHandlerInMemory handler, Path path) {
     }
 }

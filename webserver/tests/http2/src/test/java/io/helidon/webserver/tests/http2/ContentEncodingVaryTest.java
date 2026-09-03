@@ -43,6 +43,7 @@ import static org.hamcrest.Matchers.equalToIgnoringCase;
 class ContentEncodingVaryTest {
     private static final String ENTITY = "hello webserver";
     private static final String ETAG = "\"content-encoding\"";
+    private static final GzipEncoding GZIP_ENCODING = GzipEncoding.create();
     private static final Header VARY_ACCEPT_ENCODING =
             HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
     private static final Header VARY_ORIGIN =
@@ -57,7 +58,7 @@ class ContentEncodingVaryTest {
     @SetUpServer
     static void server(WebServerConfig.Builder server) {
         server.contentEncoding(ContentEncodingContext.builder()
-                                       .addContentEncoding(GzipEncoding.create())
+                                       .addContentEncoding(GZIP_ENCODING)
                                        .build());
     }
 
@@ -67,6 +68,14 @@ class ContentEncodingVaryTest {
             res.beforeSend(() -> res.headers().set(VARY_ORIGIN));
             res.send(ENTITY);
         })).route(Http2Route.route(GET, "/not-modified", (req, res) -> {
+            res.header(HeaderNames.ETAG, ETAG);
+            if (req.headers().contains(HeaderValues.create(HeaderNames.IF_NONE_MATCH, ETAG))) {
+                res.status(Status.NOT_MODIFIED_304).send();
+            } else {
+                res.send(ENTITY);
+            }
+        })).route(Http2Route.route(GET, "/not-modified-explicit", (req, res) -> {
+            res.contentEncoder(GZIP_ENCODING.encoder());
             res.header(HeaderNames.ETAG, ETAG);
             if (req.headers().contains(HeaderValues.create(HeaderNames.IF_NONE_MATCH, ETAG))) {
                 res.status(Status.NOT_MODIFIED_304).send();
@@ -119,6 +128,27 @@ class ContentEncodingVaryTest {
             var varyValues = response.headers().values(HeaderNames.VARY);
             assertThat("Vary response header " + varyValues,
                        response.headers().containsToken(VARY_ACCEPT_ENCODING), is(true));
+        }
+    }
+
+    @Test
+    void testExplicitContentEncodingDoesNotAddVaryToNotModified() {
+        try (var response = client.get("/not-modified-explicit").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(),
+                       hasHeaderValue(HeaderNames.CONTENT_ENCODING, equalToIgnoringCase("gzip")));
+            assertThat(response.headers(), noHeader(HeaderNames.VARY));
+        }
+
+        try (var response = client.get("/not-modified-explicit")
+                .header(HeaderNames.IF_NONE_MATCH, ETAG)
+                .followRedirects(false)
+                .request()) {
+            assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+            assertThat(response.headers(),
+                       hasHeaderValue(HeaderNames.CONTENT_ENCODING, equalToIgnoringCase("gzip")));
+            assertThat(response.headers(), noHeader(HeaderNames.VARY));
+            assertThat(response.entity().hasEntity(), is(false));
         }
     }
 }

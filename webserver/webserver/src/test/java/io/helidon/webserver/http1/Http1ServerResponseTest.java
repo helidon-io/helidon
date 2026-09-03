@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.io.ByteArrayInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.SSLException;
 
@@ -45,6 +47,7 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerConfig;
@@ -313,8 +316,7 @@ class Http1ServerResponseTest {
             writes.incrementAndGet();
             return null;
         }).when(writer).write(any(BufferData.class));
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
         IllegalStateException filterFailure = new IllegalStateException("Filter close failed.");
@@ -340,8 +342,7 @@ class Http1ServerResponseTest {
     @Test
     void lateNoEntityStatusSuppressesBufferedEntity() throws IOException {
         for (Status status : NO_ENTITY_STATUSES) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
             Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
             response.contentLength(23);
@@ -366,6 +367,176 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void lateEntityStatusRecomputesResponseFraming() throws IOException {
+        for (Status status : NO_ENTITY_STATUSES) {
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+            DataWriter writer = mock(DataWriter.class);
+            Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+            response.status(status);
+
+            OutputStream output = response.outputStream();
+            response.status(Status.OK_200);
+            output.write("entity".getBytes(StandardCharsets.UTF_8));
+            response.commit();
+
+            var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+            verify(writer, atLeastOnce()).write(responseBuffer.capture());
+            String responseText = responseText(responseBuffer);
+            assertAll(
+                    () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                    () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                    () -> assertThat(responseText, containsString("\r\nentity\r\n")),
+                    () -> assertThat(responseText, endsWith("0\r\n\r\n"))
+            );
+        }
+    }
+
+    @Test
+    void lateEntityStatusClearsEarlierResetContentLength() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.status(Status.RESET_CONTENT_205);
+
+        OutputStream output = response.outputStream();
+        response.status(Status.NOT_MODIFIED_304);
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, containsString("\r\nentity\r\n")),
+                () -> assertThat(responseText, endsWith("0\r\n\r\n"))
+        );
+    }
+
+    @Test
+    void lateEntityStatusUsesExplicitEncoder() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.contentEncoder(testEncoder());
+        response.status(Status.NO_CONTENT_204);
+
+        OutputStream output = response.outputStream();
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: test\r\n")),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, containsString("\r\nxentity\r\n")),
+                () -> assertThat(responseText, endsWith("0\r\n\r\n"))
+        );
+    }
+
+    @Test
+    void lateEntityStatusPreservesEagerEncoderHeaderWithoutBuffering() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        ListenerConfig config = WebServer.builder().writeBufferSize(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext, config);
+        response.contentEncoder(GzipEncoding.create().encoder());
+        response.status(Status.NO_CONTENT_204);
+
+        OutputStream output = response.outputStream();
+        output.write(new byte[0]);
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        output.close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\n")),
+                () -> assertThat(responseText, containsString("\u001f\u008b"))
+        );
+    }
+
+    @Test
+    void noEntityStatusRejectedAfterExplicitEncoderStarts() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.contentEncoder(GzipEncoding.create().encoder());
+        response.status(Status.NO_CONTENT_204);
+
+        OutputStream output = response.outputStream();
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> response.status(Status.NO_CONTENT_204));
+        output.close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        int entityStart = responseText.indexOf("\r\n\r\n") + 4;
+        String decodedEntity;
+        try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(
+                responseText.substring(entityStart).getBytes(StandardCharsets.ISO_8859_1)))) {
+            decodedEntity = new String(gzip.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("content encoding has started")),
+                () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\n")),
+                () -> assertThat(responseText, containsString("\u001f\u008b")),
+                () -> assertThat(decodedEntity, is("entity"))
+        );
+    }
+
+    @Test
+    void entityStatusRejectedAfterExplicitEncoderIsDiscarded() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.contentEncoder(GzipEncoding.create().encoder());
+
+        OutputStream output = response.outputStream();
+        response.status(Status.NO_CONTENT_204);
+        output.flush();
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> response.status(Status.OK_200));
+        output.close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("content encoding was discarded")),
+                () -> assertThat(responseText, containsString("HTTP/1.1 204 No Content\r\n")),
+                () -> assertNoEntityHeaders(Status.NO_CONTENT_204, responseText),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
+    @Test
+    void entityStatusRejectedAfterDeferredExplicitEncoderIsClosed() throws IOException {
+        assertEntityStatusRejectedAfterDeferredEncoderFinalization(true);
+    }
+
+    @Test
+    void entityStatusRejectedAfterDeferredExplicitEncoderIsFlushed() throws IOException {
+        assertEntityStatusRejectedAfterDeferredEncoderFinalization(false);
+    }
+
+    @Test
     void flushedFixedLengthResponseRejectsStatusChange() throws IOException {
         assertFlushedResponseRejectsStatusChange(true);
     }
@@ -378,8 +549,7 @@ class Http1ServerResponseTest {
     @Test
     void beforeSendNoEntityStatusSuppressesEntity() {
         for (Status status : NO_ENTITY_STATUSES) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
             Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
             AtomicBoolean filterApplied = new AtomicBoolean();
@@ -410,8 +580,7 @@ class Http1ServerResponseTest {
     @Test
     void noEntityStatusWithoutContentLengthUsesRequiredFraming() {
         for (Status status : NO_ENTITY_STATUSES) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
             Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
 
@@ -437,8 +606,7 @@ class Http1ServerResponseTest {
     @Test
     void noEntityStatusIgnoresEmptyWritesWithoutBuffering() throws IOException {
         for (Status status : NO_ENTITY_STATUSES) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
             ListenerConfig config = WebServer.builder().writeBufferSize(0).buildPrototype();
             Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext, config);
@@ -464,8 +632,7 @@ class Http1ServerResponseTest {
     @Test
     void eagerlyFlushedNoEntityStatusIsSentOnce() {
         for (Status status : NO_ENTITY_STATUSES) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
             Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
             response.status(status);
@@ -539,8 +706,7 @@ class Http1ServerResponseTest {
 
     @Test
     void directHandlerHeadPreservesContentLengthWithoutEntity() {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
         DirectHandler.TransportRequest request = mock(DirectHandler.TransportRequest.class);
@@ -611,8 +777,7 @@ class Http1ServerResponseTest {
     @Test
     void directHandlerFilteredHeadUsesOnlyConfiguredRepresentationLength() {
         for (long configuredLength : List.of(-1L, 10L)) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
             Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
             response.streamFilter(output -> new FilterOutputStream(output) {
@@ -657,8 +822,7 @@ class Http1ServerResponseTest {
 
     @Test
     void directHandlerNoContentRemovesContentLength() {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
         response.contentLength(17);
@@ -716,8 +880,7 @@ class Http1ServerResponseTest {
 
     @Test
     void streamingHeadRejectsEntityBeforeWritingToFilter() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         AtomicBoolean filterWritten = new AtomicBoolean();
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
@@ -772,8 +935,7 @@ class Http1ServerResponseTest {
     @Test
     void streamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
@@ -789,8 +951,7 @@ class Http1ServerResponseTest {
 
     @Test
     void flushedStreamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
 
@@ -811,8 +972,7 @@ class Http1ServerResponseTest {
     @Test
     void flushedStreamingHeadNoEntityStatusSendsHeadersOnce() throws IOException {
         for (Status status : NO_ENTITY_STATUSES) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
             Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
             response.contentLength(23);
@@ -837,8 +997,7 @@ class Http1ServerResponseTest {
 
     @Test
     void flushedStreamingHeadPreservesExplicitContentLength() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
         response.contentLength(11);
@@ -859,8 +1018,7 @@ class Http1ServerResponseTest {
 
     @Test
     void emptyStreamingHeadEvaluatesButDoesNotSendTrailers() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
         AtomicBoolean beforeTrailersCalled = new AtomicBoolean();
@@ -882,8 +1040,7 @@ class Http1ServerResponseTest {
 
     @Test
     void forcedChunkedHeadSendsHeadersOnly() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
         response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
@@ -908,9 +1065,40 @@ class Http1ServerResponseTest {
         return responseText.toString();
     }
 
+    private static void assertEntityStatusRejectedAfterDeferredEncoderFinalization(boolean closeOutput)
+            throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.contentEncoder(GzipEncoding.create().encoder());
+        response.status(Status.NO_CONTENT_204);
+
+        OutputStream output = response.outputStream();
+        if (closeOutput) {
+            output.close();
+        } else {
+            output.flush();
+        }
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> response.status(Status.OK_200));
+        if (!closeOutput) {
+            output.close();
+        }
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("content encoding was discarded")),
+                () -> assertThat(responseText, containsString("HTTP/1.1 204 No Content\r\n")),
+                () -> assertNoEntityHeaders(Status.NO_CONTENT_204, responseText),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
     private static void assertFlushedResponseRejectsStatusChange(boolean fixedLength) throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
@@ -957,8 +1145,7 @@ class Http1ServerResponseTest {
         DataWriter dataWriter = mock(DataWriter.class);
         doThrow(writerFailure).when(dataWriter).write(any(BufferData.class));
 
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         return createResponse(dataWriter, Method.GET, contentEncodingContext);
     }

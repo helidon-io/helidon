@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 
@@ -758,6 +759,228 @@ class SchemaGeneratorTest {
                 //...
                 }
                 """));
+    }
+
+    @Test
+    void testOptionalListOfConfiguredPrototype() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeItemConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME item config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeItemConfigBlueprint {
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.List;
+                        import java.util.Optional;
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * Items.
+                             *
+                             * @return items
+                             */
+                            @Option.Configured
+                            Optional<List<AcmeItemConfig>> items();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var schema = result.sourceOutput().resolve("com/acme/AcmeConfig.java");
+        assertThat(Files.exists(schema), is(true));
+
+        var actual = Files.readString(schema);
+        assertThat(actual, matches("""
+                //...
+                package com.acme;
+                //...
+                @Configured(
+                    description = "ACME config",
+                    options = {
+                        @ConfiguredOption(
+                            key = "items",
+                            description = "Items",
+                            type = AcmeItemConfig.class,
+                            kind = ConfiguredOption.Kind.LIST)
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                //...
+                }
+                """));
+        assertThat(actual,
+                   containsString("config.get(\"items\").asList(AcmeItemConfig::create).ifPresent(this::items);"));
+    }
+
+    @Test
+    void testOptionalSetOfConfiguredPrototype() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeItemConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME item config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeItemConfigBlueprint {
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.Optional;
+                        import java.util.Set;
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * Items.
+                             *
+                             * @return items
+                             */
+                            @Option.Configured
+                            Optional<Set<AcmeItemConfig>> items();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var schema = result.sourceOutput().resolve("com/acme/AcmeConfig.java");
+        assertThat(Files.exists(schema), is(true));
+
+        var actual = Files.readString(schema);
+        assertThat(actual, matches("""
+                //...
+                package com.acme;
+                //...
+                @Configured(
+                    description = "ACME config",
+                    options = {
+                        @ConfiguredOption(
+                            key = "items",
+                            description = "Items",
+                            type = AcmeItemConfig.class,
+                            kind = ConfiguredOption.Kind.LIST)
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                //...
+                }
+                """));
+        assertThat(actual,
+                   containsString("config.get(\"items\").asList(AcmeItemConfig::create)"
+                                          + ".map(LinkedHashSet::new).ifPresent(this::items);"));
+    }
+
+    @Test
+    void testOptionalMapOfConfiguredPrototype() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeItemConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME item config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeItemConfigBlueprint {
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.Map;
+                        import java.util.Optional;
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * Items.
+                             *
+                             * @return items
+                             */
+                            @Option.Configured
+                            Optional<Map<String, AcmeItemConfig>> items();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var schema = result.sourceOutput().resolve("com/acme/AcmeConfig.java");
+        assertThat(Files.exists(schema), is(true));
+
+        var actual = Files.readString(schema);
+        assertThat(actual, matches("""
+                //...
+                package com.acme;
+                //...
+                @Configured(
+                    description = "ACME config",
+                    options = {
+                        @ConfiguredOption(
+                            key = "items",
+                            description = "Items",
+                            type = AcmeItemConfig.class,
+                            kind = ConfiguredOption.Kind.MAP)
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                //...
+                }
+                """));
+        assertThat(actual,
+                   containsString("config.get(\"items\").asNodeList().orElseGet(java.util.List::of)"
+                                          + ".forEach(node -> items.put(node.get(\"name\").asString()"
+                                          + ".orElse(node.name()), node.as(AcmeItemConfig::create).get()));"));
     }
 
     @Test

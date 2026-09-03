@@ -20,20 +20,26 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
+import java.lang.ref.WeakReference;
 import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.Method;
@@ -48,6 +54,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     private static final System.Logger LOGGER = System.getLogger(ClassPathContentHandler.class.getName());
 
     private final AtomicBoolean populatedInMemoryCache = new AtomicBoolean();
+    private final Map<String, CachedClassPathMetadata> inMemoryMetadata = new ConcurrentHashMap<>();
     private final ClassLoader classLoader;
     private final String root;
     private final String rootWithTrailingSlash;
@@ -55,7 +62,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     private final TemporaryStorage tmpStorage;
 
     ClassPathContentHandler(ClasspathHandlerConfig config) {
-        super(config);
+        super(config, config.preCompressedCrossOriginSourcingEnabled().orElse(false));
 
         this.classLoader = config.classLoader()
                 .or(() -> Optional.ofNullable(Thread.currentThread().getContextClassLoader()))
@@ -72,6 +79,32 @@ class ClassPathContentHandler extends FileBasedContentHandler {
             return new SingleFileClassPathContentHandler(config);
         }
         return new ClassPathContentHandler(config);
+    }
+
+    static String cleanRoot(String location) {
+        String cleanRoot = location;
+        if (cleanRoot.startsWith("/")) {
+            cleanRoot = cleanRoot.substring(1);
+        }
+        while (cleanRoot.endsWith("/")) {
+            cleanRoot = cleanRoot.substring(0, cleanRoot.length() - 1);
+        }
+
+        if (cleanRoot.isEmpty()) {
+            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
+        }
+        return cleanRoot;
+    }
+
+    static boolean sameJarOrigin(String logicalResource,
+                                 URL identityUrl,
+                                 String sidecarResource,
+                                 URL sidecarUrl) throws IOException, URISyntaxException {
+        JarURLConnection identityConnection = ResourceConnections.openJarConnection(identityUrl);
+        JarURLConnection sidecarConnection = ResourceConnections.openJarConnection(sidecarUrl);
+        return identityConnection.getJarFileURL().toURI().equals(sidecarConnection.getJarFileURL().toURI())
+                && logicalResource.equals(identityConnection.getEntryName())
+                && sidecarResource.equals(sidecarConnection.getEntryName());
     }
 
     @Override
@@ -91,6 +124,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        inMemoryMetadata.clear();
         super.releaseCache();
     }
 
@@ -107,11 +141,15 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
 
         // we have a resource that we support, let's try to use one from the cache
-        Optional<CachedHandler> cached = cacheHandler(requestedResource);
-
+        Optional<CachedHandler> cached = cachedClassPathHandler(requestedResource);
         if (cached.isPresent()) {
+            CachedHandler cachedRecord = cached.get();
+            if (cachedRecord instanceof CachedHandlerRedirect) {
+                return cachedRecord.handle(handlerCache(), method, request, response, requestedResource);
+            }
+            CachedHandler handler = selectCachedClassPathHandler(requestedResource, cachedRecord, request);
             // this requested resource is cached and can be safely returned
-            return cached.get().handle(handlerCache(), method, request, response, requestedResource);
+            return handler.handle(handlerCache(), method, request, response, requestedResource);
         }
 
         // if it is not cached, find the resource and cache it (or return 404 and do not cache)
@@ -119,6 +157,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         // try to find the resource on classpath (cannot use root URL and then resolve, as root and sub-resource
         // may be from different jar files/directories
         URL url = classLoader.getResource(requestedResource);
+        String logicalResource = requestedResource;
 
         String welcomeFileName = welcomePageName();
         if (welcomeFileName != null) {
@@ -136,14 +175,19 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                     if (inMemoryMaybe.isPresent()) {
                         // reference to the same definition, never times out
                         cacheInMemory(requestedResource, inMemoryMaybe.get());
-                        return inMemoryMaybe.get().handle(handlerCache(),
-                                                          method,
-                                                          request,
-                                                          response,
-                                                          requestedResource);
+                        CachedHandler cachedHandler = cacheClassPathHandler(requestedResource,
+                                                                            welcomeFileResource,
+                                                                            welcomeUrl,
+                                                                            inMemoryMaybe.get());
+                        CachedHandler handler = selectClassPathHandler(welcomeFileResource,
+                                                                       cachedHandler,
+                                                                       request,
+                                                                       welcomeUrl);
+                        return handler.handle(handlerCache(), method, request, response, requestedResource);
                     }
 
                     url = welcomeUrl;
+                    logicalResource = welcomeFileResource;
                 } else {
                     // must redirect
                     String redirectLocation = rawPath + "/";
@@ -168,39 +212,49 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
 
         // now read the URL - we have direct support for files and jar files, others are handled by stream only
-        Optional<CachedHandler> handler = cachedHandler(requestedResource, url);
+        Optional<CachedHandler> handler = cachedHandler(logicalResource, url);
 
         if (handler.isEmpty()) {
             return false;
         }
 
-        CachedHandler cachedHandler = handler.get();
-        cacheHandler(requestedResource, cachedHandler);
+        CachedHandler cachedHandler = cacheClassPathHandler(requestedResource, logicalResource, url, handler.get());
 
-        return cachedHandler.handle(handlerCache(), method, request, response, requestedResource);
+        CachedHandler selected = selectClassPathHandler(logicalResource, cachedHandler, request, url);
+        return selected.handle(handlerCache(), method, request, response, requestedResource);
     }
 
     Optional<CachedHandler> cachedHandler(String requestedResource, URL url) throws IOException, URISyntaxException {
-        return switch (url.getProtocol()) {
-        case "file" -> fileHandler(Paths.get(url.toURI()));
-        case "jar" -> jarHandler(requestedResource, url);
-        default -> urlStreamHandler(url);
-        };
+        return cachedHandler(requestedResource, url, fileName(url), false);
     }
 
-    static String cleanRoot(String location) {
-        String cleanRoot = location;
-        if (cleanRoot.startsWith("/")) {
-            cleanRoot = cleanRoot.substring(1);
+    Optional<CachedHandler> cachedHandler(String requestedResource,
+                                          URL url,
+                                          String logicalFileName,
+                                          boolean sidecar) throws IOException, URISyntaxException {
+        return switch (url.getProtocol()) {
+        case "file" -> {
+            Path path = Paths.get(url.toURI());
+            if (!sidecar || preCompressedCrossOriginSourcingEnabled()) {
+                yield fileHandler(path, logicalFileName);
+            }
+            Path secureRoot = path.getParent();
+            if (secureRoot == null) {
+                yield Optional.empty();
+            }
+            Optional<Path> resolvedPath = exactPath(path);
+            if (resolvedPath.isEmpty()) {
+                yield Optional.empty();
+            }
+            yield Optional.of(CachedHandlerPath.create(path,
+                                                       resolvedPath.get(),
+                                                       detectType(logicalFileName),
+                                                       false,
+                                                       secureRoot));
         }
-        while (cleanRoot.endsWith("/")) {
-            cleanRoot = cleanRoot.substring(0, cleanRoot.length() - 1);
-        }
-
-        if (cleanRoot.isEmpty()) {
-            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
-        }
-        return cleanRoot;
+        case "jar" -> jarHandler(requestedResource, url, logicalFileName);
+        default -> urlStreamHandler(url, logicalFileName);
+        };
     }
 
     void addToInMemoryCache(String requestedResource, URL url) throws IOException {
@@ -209,16 +263,84 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         Optional<Instant> lastModified = lastModified(url);
         MediaType contentType = detectType(fileName(url));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (InputStream in = url.openStream()) {
+        try (InputStream in = ResourceConnections.openStream(url)) {
             in.transferTo(baos);
         }
         byte[] entityBytes = baos.toByteArray();
 
+        CachedHandlerInMemory handler;
         if (lastModified.isPresent()) {
-            cacheInMemory(requestedResource, contentType, entityBytes, lastModified.get());
+            handler = cacheInMemory(requestedResource, contentType, entityBytes, lastModified.get());
         } else {
-            cacheInMemory(requestedResource, contentType, entityBytes);
+            handler = cacheInMemory(requestedResource, contentType, entityBytes);
         }
+        cacheClassPathHandler(requestedResource, requestedResource, url, handler);
+    }
+
+    CachedHandler selectClassPathHandler(String logicalResource,
+                                         CachedHandler identityHandler,
+                                         ServerRequest request,
+                                         URL identityUrl) throws IOException, URISyntaxException {
+        String logicalFileName = fileName(logicalResource);
+        return selectHandler(identityHandler, request, (coding, suffix) -> {
+            String sidecarResource = logicalResource + "." + suffix;
+            String sidecarCacheKey = sidecarMemoryCacheKey(logicalResource, coding);
+            Enumeration<URL> sidecarUrls = classLoader.getResources(sidecarResource);
+            while (sidecarUrls.hasMoreElements()) {
+                URL sidecarUrl = sidecarUrls.nextElement();
+                Optional<URL> trustedSidecarUrl = sameOrigin(logicalResource,
+                                                            identityUrl,
+                                                            sidecarResource,
+                                                            sidecarUrl,
+                                                            suffix);
+                if (trustedSidecarUrl.isPresent()) {
+                    // Sidecar bytes still use the shared in-memory cache so the memory limit remains global.
+                    Optional<CachedHandlerInMemory> cached = cacheInMemory(sidecarCacheKey);
+                    if (cached.isPresent()) {
+                        return Optional.of(cached.get());
+                    }
+                    return cachedHandler(sidecarCacheKey, trustedSidecarUrl.get(), logicalFileName, true);
+                }
+            }
+            return Optional.empty();
+        });
+    }
+
+    CachedHandler selectCachedClassPathHandler(String requestedResource,
+                                               CachedHandler identityHandler,
+                                               ServerRequest request) throws IOException, URISyntaxException {
+        if (identityHandler instanceof CachedClassPathHandler cachedHandler) {
+            return selectClassPathHandler(cachedHandler.logicalResource(),
+                                          cachedHandler,
+                                          request,
+                                          cachedHandler.identityUrl());
+        }
+        throw new IllegalStateException("Cached classpath handler is missing resource metadata: " + requestedResource);
+    }
+
+    CachedHandler cacheClassPathHandler(String requestedResource,
+                                        String logicalResource,
+                                        URL identityUrl,
+                                        CachedHandler delegate) {
+        CachedClassPathHandler handler = new CachedClassPathHandler(delegate, logicalResource, identityUrl);
+        if (delegate instanceof CachedHandlerInMemory) {
+            inMemoryMetadata.put(requestedResource, new CachedClassPathMetadata(logicalResource, identityUrl, handler));
+        } else {
+            cacheHandler(requestedResource, handler);
+        }
+        return handler;
+    }
+
+    Optional<CachedHandler> cachedClassPathHandler(String requestedResource) {
+        CachedClassPathMetadata metadata = inMemoryMetadata.get(requestedResource);
+        if (metadata != null) {
+            Optional<CachedHandlerInMemory> inMemoryHandler = cacheInMemory(requestedResource);
+            if (inMemoryHandler.isPresent()) {
+                return Optional.of(metadata.cachedHandler(inMemoryHandler.get()));
+            }
+            inMemoryMetadata.remove(requestedResource, metadata);
+        }
+        return handlerCache().get(requestedResource);
     }
 
     private static String fileName(URL url) {
@@ -229,6 +351,35 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
 
         return path;
+    }
+
+    private static String fileName(String resource) {
+        int index = resource.lastIndexOf('/');
+        if (index > -1) {
+            return resource.substring(index + 1);
+        }
+        return resource;
+    }
+
+    private static Optional<URL> sameFileOrigin(URL identityUrl,
+                                                URL sidecarUrl,
+                                                String suffix) throws IOException, URISyntaxException {
+        var identityPath = Paths.get(identityUrl.toURI()).toRealPath();
+        var expectedSidecar = identityPath.resolveSibling(identityPath.getFileName() + "." + suffix);
+        var sidecarPath = Paths.get(sidecarUrl.toURI()).toRealPath();
+        if (expectedSidecar.equals(sidecarPath)) {
+            return Optional.of(expectedSidecar.toUri().toURL());
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<Path> exactPath(Path path) {
+        try {
+            Path realPath = path.toRealPath();
+            return realPath.equals(path) ? Optional.of(realPath) : Optional.empty();
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
     }
 
     private String requestedResource(String rawPath, String requestedPath, boolean mapped) throws URISyntaxException {
@@ -249,27 +400,26 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return rawPath.endsWith("/") ? result + "/" : result;
     }
 
-    private Optional<CachedHandler> jarHandler(String requestedResource, URL url) throws IOException {
-        JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
-        JarEntry jarEntry = jarUrlConnection.getJarEntry();
+    private Optional<CachedHandler> jarHandler(String requestedResource,
+                                               URL url,
+                                               String logicalFileName) throws IOException {
+        JarURLConnection jarUrlConnection = ResourceConnections.openJarConnection(url);
 
-        if (jarEntry.isDirectory()) {
-            // we cannot cache this - as we consider this to be 404
-            return Optional.empty();
-        }
-
-        var contentLength = jarEntry.getSize();
-        var contentType = detectType(fileName(url));
+        long contentLength;
+        var contentType = detectType(logicalFileName);
         Optional<Instant> lastModified;
 
-        JarFile jarFile = jarUrlConnection.getJarFile();
-        try {
-            lastModified = lastModified(jarFile.getName());
-        } finally {
-            if (!jarUrlConnection.getUseCaches()) {
-                jarFile.close();
+        try (JarFile jarFile = jarUrlConnection.getJarFile()) {
+            JarEntry jarEntry = jarUrlConnection.getJarEntry();
+            if (jarEntry.isDirectory()) {
+                // we cannot cache this - as we consider this to be 404
+                return Optional.empty();
             }
+
+            contentLength = jarEntry.getSize();
+            lastModified = lastModified(jarFile.getName());
         }
+
         /*
         We have all the information we need to process a jar file
         Now we have two options:
@@ -278,12 +428,20 @@ class ClassPathContentHandler extends FileBasedContentHandler {
          */
         if (contentLength <= Integer.MAX_VALUE && canCacheInMemory((int) contentLength)) {
             // we may be able to cache this entry
-            var cached = cacheInMemory(requestedResource,
+            Optional<CachedHandlerInMemory> cached;
+            try {
+                cached = cacheInMemory(requestedResource,
                                        (int) contentLength,
                                        inMemorySupplier(url,
                                                         lastModified.orElse(null),
                                                         contentType,
                                                         contentLength));
+            } catch (InternalServerException e) {
+                if (e.getCause() instanceof IOException ioException) {
+                    throw ioException;
+                }
+                throw e;
+            }
             if (cached.isPresent()) {
                 // we have successfully cached the entry in memory
                 return Optional.of(cached.get());
@@ -304,10 +462,9 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                                              Instant lastModified,
                                                              MediaType contentType,
                                                              long contentLength) {
-
         return () -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (InputStream in = url.openStream()) {
+            try (InputStream in = ResourceConnections.openStream(url)) {
                 in.transferTo(baos);
             } catch (IOException e) {
                 throw new InternalServerException("Cannot load resource", e);
@@ -320,8 +477,29 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         };
     }
 
-    private Optional<CachedHandler> urlStreamHandler(URL url) throws IOException {
-        return Optional.of(CachedHandlerUrlStream.create(detectType(fileName(url)), url));
+    private Optional<CachedHandler> urlStreamHandler(URL url,
+                                                     String logicalFileName) throws IOException {
+        return Optional.of(CachedHandlerUrlStream.create(detectType(logicalFileName), url));
+    }
+
+    private Optional<URL> sameOrigin(String logicalResource,
+                                     URL identityUrl,
+                                     String sidecarResource,
+                                     URL sidecarUrl,
+                                     String suffix) throws IOException, URISyntaxException {
+        if (preCompressedCrossOriginSourcingEnabled()) {
+            return Optional.of(sidecarUrl);
+        }
+        if (identityUrl == null || !identityUrl.getProtocol().equals(sidecarUrl.getProtocol())) {
+            return Optional.empty();
+        }
+        return switch (identityUrl.getProtocol()) {
+        case "file" -> sameFileOrigin(identityUrl, sidecarUrl, suffix);
+        case "jar" -> sameJarOrigin(logicalResource, identityUrl, sidecarResource, sidecarUrl)
+                ? Optional.of(sidecarUrl)
+                : Optional.empty();
+        default -> Optional.empty();
+        };
     }
 
     private void addToInMemoryCache(String resource) throws IOException {
@@ -374,12 +552,65 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     }
 
     private Optional<Instant> lastModifiedFromJar(URL url) throws IOException {
-        JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
-        JarFile jarFile = jarUrlConnection.getJarFile();
-        return lastModified(jarFile.getName());
+        JarURLConnection jarUrlConnection = ResourceConnections.openJarConnection(url);
+        try (JarFile jarFile = jarUrlConnection.getJarFile()) {
+            return lastModified(jarFile.getName());
+        }
     }
 
     private Optional<Instant> lastModified(String path) throws IOException {
         return lastModified(Paths.get(path));
+    }
+
+    private static final class CachedClassPathMetadata {
+        private final String logicalResource;
+        private final URL identityUrl;
+        private volatile WeakReference<CachedClassPathHandler> cachedHandler;
+
+        private CachedClassPathMetadata(String logicalResource,
+                                        URL identityUrl,
+                                        CachedClassPathHandler cachedHandler) {
+            this.logicalResource = logicalResource;
+            this.identityUrl = identityUrl;
+            this.cachedHandler = new WeakReference<>(cachedHandler);
+        }
+
+        private CachedClassPathHandler cachedHandler(CachedHandlerInMemory currentHandler) {
+            CachedClassPathHandler handler = cachedHandler.get();
+            if (handler != null && handler.delegate() == currentHandler) {
+                return handler;
+            }
+            handler = new CachedClassPathHandler(currentHandler, logicalResource, identityUrl);
+            cachedHandler = new WeakReference<>(handler);
+            return handler;
+        }
+    }
+
+    record CachedClassPathHandler(CachedHandler delegate,
+                                  String logicalResource,
+                                  URL identityUrl) implements CachedHandler {
+        @Override
+        public Optional<PreparedContent> prepare(LruCache<String, CachedHandler> cache,
+                                                 String requestedResource) throws IOException {
+            return delegate.prepare(cache, requestedResource);
+        }
+
+        @Override
+        public Optional<PreparedContent> prepareSidecar(SidecarCache sidecarCache,
+                                                        String coding,
+                                                        LruCache<String, CachedHandler> cache,
+                                                        String requestedResource) throws IOException {
+            return delegate.prepareSidecar(sidecarCache, coding, cache, requestedResource);
+        }
+
+        @Override
+        public boolean available() throws IOException {
+            return delegate.available();
+        }
+
+        @Override
+        public SidecarCache sidecarCache() {
+            return delegate.sidecarCache();
+        }
     }
 }

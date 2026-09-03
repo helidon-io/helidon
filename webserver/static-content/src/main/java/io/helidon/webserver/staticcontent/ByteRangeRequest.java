@@ -22,17 +22,42 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.http.BadRequestException;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
 
 record ByteRangeRequest(long fileLength, long offset, long length) {
     private static final Pattern RANGE_PATTERN = Pattern.compile("(\\d+)?-(\\d+)?(?:, )?");
 
-    static List<ByteRangeRequest> parse(ServerRequest req, ServerResponse res, String headerValues, long fileLength) {
+    static List<ByteRangeRequest> parse(String headerValues, long fileLength) {
+        return parseRanges(headerValues, fileLength);
+    }
+
+    static List<ByteRangeRequest> parse(ServerRequest req,
+                                        String headerValues,
+                                        long fileLength,
+                                        String etag,
+                                        boolean weakEtag) {
+        if (!ifRangeMatches(req, etag, weakEtag)) {
+            return List.of();
+        }
+
+        return parseRanges(headerValues, fileLength);
+    }
+
+    Header contentRangeHeader() {
+        long last = (offset + length) - 1;
+        return HeaderValues.create(HeaderNames.CONTENT_RANGE,
+                                   true,
+                                   false,
+                                   "bytes " + offset + "-" + last + "/" + fileLength);
+    }
+
+    private static List<ByteRangeRequest> parseRanges(String headerValues,
+                                                      long fileLength) {
         Matcher matcher = RANGE_PATTERN.matcher(headerValues);
 
         List<ByteRangeRequest> parts = new ArrayList<>();
@@ -72,37 +97,47 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
                     last = Math.min(second, fileLength - 1);
                 }
             }
-            parts.add(ByteRangeRequest.create(req, res, from, last, fileLength));
+            parts.add(ByteRangeRequest.create(from, last, fileLength));
         }
         if (!found) {
             throw new BadRequestException("Invalid range header");
         }
         if (fileLength == 0 && !satisfiableEmptyRange) {
-            res.header(HeaderNames.CONTENT_RANGE, "*/0");
-            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true)
+                    .header(HeaderValues.create(HeaderNames.CONTENT_RANGE, "bytes */0"));
         }
 
         return parts;
     }
 
-    void setContentRange(ServerResponse response) {
-        // status: 206 Partial Content
-        // Content-Range: bytes 0-1023/146515
-        // Content-Length: 1024
-        long last = (offset + length) - 1;
-        response.header(HeaderValues.create(HeaderNames.CONTENT_RANGE, true,
-                                            false,
-                                            "bytes " + offset + "-" + last + "/" + fileLength));
-        response.contentLength(length);
-        response.status(Status.PARTIAL_CONTENT_206);
-    }
-
-    private static ByteRangeRequest create(ServerRequest req, ServerResponse res, long offset, long last, long fileLength) {
-        if (offset >= fileLength || last < offset) {
-            res.header(HeaderNames.CONTENT_RANGE, "*/" + fileLength);
-            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+    private static boolean ifRangeMatches(ServerRequest req, String etag, boolean weakEtag) {
+        if (!req.headers().contains(HeaderNames.IF_RANGE)) {
+            return true;
         }
 
+        Header ifRangeHeader = req.headers().get(HeaderNames.IF_RANGE);
+        if (ifRangeHeader.valueCount() != 1) {
+            return false;
+        }
+
+        String ifRange = ifRangeHeader.get().trim();
+        if (ifRange.startsWith("\"") || StaticContentHandler.isWeakETag(ifRange)) {
+            return !weakEtag
+                    && etag != null
+                    && !StaticContentHandler.isWeakETag(ifRange)
+                    && StaticContentHandler.unquoteETag(ifRange).equals(StaticContentHandler.unquoteETag(etag));
+        }
+
+        return false;
+    }
+
+    private static ByteRangeRequest create(long offset, long last, long fileLength) {
+        if (offset >= fileLength || last < offset) {
+            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true)
+                    .header(HeaderValues.create(HeaderNames.CONTENT_RANGE, "bytes */" + fileLength));
+        }
+
+        last = Math.min(last, fileLength - 1);
         long length = (last - offset) + 1;
 
         return new ByteRangeRequest(fileLength, offset, length);

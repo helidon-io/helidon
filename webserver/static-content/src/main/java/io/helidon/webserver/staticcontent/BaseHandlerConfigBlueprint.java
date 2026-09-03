@@ -127,6 +127,7 @@ interface BaseHandlerConfigBlueprint {
 
     /**
      * Configures the capacity of the cache used for resource metadata.
+     * Pre-compressed sidecar lookup state is attached to the corresponding normal resource record.
      * <p>
      * To cache content (bytes) in memory, use {@link io.helidon.webserver.staticcontent.BaseHandlerConfig#memoryCache()}
      *
@@ -134,4 +135,26 @@ interface BaseHandlerConfigBlueprint {
      */
     @Option.Configured
     Optional<Integer> recordCacheCapacity();
+
+    /**
+     * Whether pre-compressed sidecar resources should be selected for this handler; feature-registered handlers inherit
+     * the feature value when absent, directly created handlers default to disabled, and file system handlers configured
+     * with a single file always require handler-level opt-in.
+     *
+     * @return whether pre-compressed sidecar resources should be used
+     */
+    @Option.Configured
+    Optional<Boolean> preCompressedEnabled();
+
+    /**
+     * Pre-compressed content coding to file suffix mappings; handler mappings replace inherited feature-level mappings
+     * rather than merging with them, an explicit empty map disables sidecar lookups for this handler, codings must be
+     * unique concrete valid HTTP tokens other than {@code identity} and {@code *}, and suffixes have leading dots ignored
+     * and must not contain path separators.
+     *
+     * @return content coding to file suffix mappings
+     */
+    @Option.Configured
+    @Option.Singular("preCompressedEncoding")
+    Optional<Map<String, String>> preCompressedEncodings();
 }

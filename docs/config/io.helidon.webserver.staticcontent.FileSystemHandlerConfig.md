@@ -19,6 +19,17 @@ File system based static content handler configuration
 <tbody>
 <tr>
 <td>
+<code>pre-<wbr>compressed-<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+</td>
+<td>Whether pre-compressed sidecar resources should be selected for this handler; feature-registered handlers inherit the feature value when absent, directly created handlers default to disabled, and file system handlers configured with a single file always require handler-level opt-in</td>
+</tr>
+<tr>
+<td>
 <code>cached-<wbr>files</code>
 </td>
 <td>
@@ -38,6 +49,17 @@ File system based static content handler configuration
 <td>
 </td>
 <td>Maps a filename extension to the response content type</td>
+</tr>
+<tr>
+<td>
+<code>pre-<wbr>compressed-<wbr>encodings</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
+</td>
+<td>
+</td>
+<td>Pre-compressed content coding to file suffix mappings; handler mappings replace inherited feature-level mappings rather than merging with them, an explicit empty map disables sidecar lookups for this handler, codings must be unique concrete valid HTTP tokens other than <code>identity</code> and <code>*</code>, and suffixes have leading dots ignored and must not contain path separators</td>
 </tr>
 <tr>
 <td>

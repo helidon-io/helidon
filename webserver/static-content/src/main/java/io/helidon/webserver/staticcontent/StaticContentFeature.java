@@ -45,7 +45,10 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
     private final MemoryCache memoryCache;
     private final TemporaryStorage temporaryStorage;
     private final Map<String, MediaType> contentTypeMapping;
+    private final Map<String, String> preCompressedEncodings;
     private final boolean enabled;
+    private final boolean preCompressedEnabled;
+    private final boolean preCompressedCrossOriginSourcingEnabled;
     private final Set<String> sockets;
     private final Optional<String> welcome;
 
@@ -54,6 +57,10 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
         this.enabled = config.enabled() && !(config.classpath().isEmpty() && config.path().isEmpty());
         if (enabled) {
             this.contentTypeMapping = config.contentTypes();
+            this.preCompressedEnabled = config.preCompressedEnabled();
+            this.preCompressedCrossOriginSourcingEnabled = config.preCompressedCrossOriginSourcingEnabled();
+            this.preCompressedEncodings = StaticContentConfigSupport.normalizePreCompressedEncodings(
+                    config.preCompressedEncodings());
             this.memoryCache = config.memoryCache()
                         .orElseGet(MemoryCache::create);
             this.sockets = config.sockets();
@@ -71,6 +78,9 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
             this.memoryCache = null;
             this.temporaryStorage = null;
             this.contentTypeMapping = null;
+            this.preCompressedEnabled = false;
+            this.preCompressedCrossOriginSourcingEnabled = false;
+            this.preCompressedEncodings = Map.of();
         }
     }
 
@@ -199,11 +209,18 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                     continue;
                 }
 
+                ClasspathHandlerConfig sourceConfig = handlerConfig;
                 handlerConfig = ClasspathHandlerConfig.builder()
-                        .from(handlerConfig)
+                        .from(sourceConfig)
                         .memoryCache(handlerCache)
                         .temporaryStorage(handlerTmpStorage)
                         .update(it -> welcome.ifPresent(it::welcome))
+                        .preCompressedEnabled(sourceConfig.preCompressedEnabled().orElse(preCompressedEnabled))
+                        .preCompressedCrossOriginSourcingEnabled(
+                                sourceConfig.preCompressedCrossOriginSourcingEnabled()
+                                        .orElse(preCompressedCrossOriginSourcingEnabled))
+                        .preCompressedEncodings(sourceConfig.preCompressedEncodings()
+                                .orElse(preCompressedEncodings))
                         .classLoader(handlerClassLoader)
                         .contentTypes(contentTypeMap)
                         .build();
@@ -233,13 +250,16 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                     continue;
                 }
 
+                FileSystemHandlerConfig sourceConfig = handlerConfig;
                 handlerConfig = FileSystemHandlerConfig.builder()
-                        .from(handlerConfig)
+                        .from(sourceConfig)
                         .memoryCache(handlerCache)
+                        .preCompressedEncodings(sourceConfig.preCompressedEncodings()
+                                .orElse(preCompressedEncodings))
                         .contentTypes(contentTypeMap)
                         .build();
 
-                HttpService service = createService(handlerConfig);
+                HttpService service = FileSystemContentHandler.create(handlerConfig, preCompressedEnabled);
                 featureContext.socket(handlerSocket)
                         .httpRouting()
                         .register(handlerConfig.context(), service);

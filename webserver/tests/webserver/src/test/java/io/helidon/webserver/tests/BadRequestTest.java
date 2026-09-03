@@ -17,8 +17,10 @@
 package io.helidon.webserver.tests;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.BadRequestException;
@@ -30,7 +32,13 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.ContentDecoder;
+import io.helidon.http.encoding.ContentEncoder;
+import io.helidon.http.encoding.ContentEncoding;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRouting;
@@ -67,6 +75,12 @@ class BadRequestTest {
         builder.get("/bad-request", (req, res) -> {
             throw new BadRequestException("Bad request in routing");
         });
+        builder.get("/internal-error", (req, res) -> {
+            throw new IllegalStateException("Internal error in routing");
+        });
+        builder.any("/direct-handler-error", (req, res) -> {
+            throw new IllegalStateException("Internal error in routing");
+        });
         builder.route(Http1Route.route(Method.GET,
                                        "/",
                                        (req, res) -> res.send("Hi")))
@@ -77,7 +91,10 @@ class BadRequestTest {
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder builder) {
-        builder.directHandlers(DirectHandlers.builder()
+        builder.contentEncoding(ContentEncodingContext.builder()
+                        .addContentEncoding(new TestEncoding())
+                        .build())
+                .directHandlers(DirectHandlers.builder()
                                        .addHandler(DirectHandler.EventType.BAD_REQUEST, BadRequestTest::badRequestHandler)
                                        .build());
     }
@@ -93,6 +110,83 @@ class BadRequestTest {
                 .requestEntity(String.class);
 
         assertThat(response, is("Hi"));
+    }
+
+    @Test
+    void testBadRequestErrorHandlerDoesNotReparseMalformedAcceptEncoding() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/bad-request")
+                .header(HeaderNames.ACCEPT_ENCODING, "t est")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().as(String.class), is("Bad request in routing"));
+        }
+    }
+
+    @Test
+    void testMalformedAcceptEncodingUsesBadRequestHandler() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .header(HeaderNames.ACCEPT_ENCODING, "g zip")
+                .request()) {
+
+            assertThat(response.status(), is(Status.create(Status.BAD_REQUEST_400.code(), CUSTOM_REASON_PHRASE)));
+            assertThat(response.entity().as(String.class), is(CUSTOM_ENTITY));
+        }
+    }
+
+    @Test
+    void testRoutingErrorHandlerPreservesValidContentEncoding() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "/bad-request",
+                                                      null,
+                                                      List.of("Accept-Encoding: test, identity;q=0"));
+
+        assertThat(response, containsString("200 OK"));
+        assertThat(response, containsString("Content-Encoding: test"));
+        assertThat(response, containsString("encoded:Bad request in routing"));
+    }
+
+    @Test
+    void testDefaultErrorHandlerPreservesValidContentEncoding() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "/internal-error",
+                                                      null,
+                                                      List.of("Accept-Encoding: test, identity;q=0"));
+
+        assertThat(response, containsString("500 Internal Server Error"));
+        assertThat(response, containsString("Content-Encoding: test"));
+        assertThat(response, containsString("encoded:Internal Server Error"));
+    }
+
+    @Test
+    void testDirectHandlerHeadPreservesValidContentEncoding() {
+        String encodedEntity = "encoded:Internal Server Error";
+        String encodedLength = String.valueOf(encodedEntity.getBytes(StandardCharsets.UTF_8).length);
+
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/direct-handler-error")
+                .header(HeaderNames.ACCEPT_ENCODING, "test, identity;q=0")
+                .request()) {
+
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
+            assertThat(response.headers(), hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, encodedLength));
+            assertThat(response.entity().as(String.class), is(encodedEntity));
+        }
+
+        try (Http1ClientResponse response = client.method(Method.HEAD)
+                .uri("/direct-handler-error")
+                .header(HeaderNames.ACCEPT_ENCODING, "test, identity;q=0")
+                .request()) {
+
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
+            assertThat(response.headers(), hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, encodedLength));
+            assertThat(response.entity().hasEntity(), is(false));
+        }
     }
 
     @Test
@@ -515,5 +609,74 @@ class BadRequestTest {
         assertThat(response, containsString("Connection: close"));
         assertThat(response, containsString(CUSTOM_ENTITY));
         assertThat(socketClient.receive(), is(""));
+    }
+
+    private record TestEncoding() implements ContentEncoding {
+        @Override
+        public Set<String> ids() {
+            return Set.of("test");
+        }
+
+        @Override
+        public boolean supportsEncoding() {
+            return true;
+        }
+
+        @Override
+        public boolean supportsDecoding() {
+            return false;
+        }
+
+        @Override
+        public ContentDecoder decoder() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ContentEncoder encoder() {
+            return new ContentEncoder() {
+                @Override
+                public OutputStream apply(OutputStream network) {
+                    return new OutputStream() {
+                        private boolean prefixWritten;
+
+                        @Override
+                        public void write(int b) throws IOException {
+                            writePrefix();
+                            network.write(b);
+                        }
+
+                        @Override
+                        public void write(byte[] bytes, int offset, int length) throws IOException {
+                            writePrefix();
+                            network.write(bytes, offset, length);
+                        }
+
+                        private void writePrefix() throws IOException {
+                            if (!prefixWritten) {
+                                network.write("encoded:".getBytes(StandardCharsets.UTF_8));
+                                prefixWritten = true;
+                            }
+                        }
+                    };
+                }
+
+                @Override
+                public void headers(WritableHeaders<?> headers) {
+                    headers.add(HeaderValues.create(HeaderNames.CONTENT_ENCODING, "test"));
+                    headers.remove(HeaderNames.CONTENT_LENGTH);
+                }
+            };
+        }
+
+        @Override
+        public String name() {
+            return "test";
+        }
+
+        @Override
+        public String type() {
+            return "test";
+        }
     }
 }

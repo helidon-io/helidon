@@ -540,8 +540,8 @@ public final class Option {
 
     /**
      * Applying this annotation to a {@link io.helidon.builder.api.Prototype.Blueprint}-annotated interface method will cause
-     * the generated class to also include additional "add*()" methods. This will only apply, however, if the method is for
-     * a {@link java.util.Map}, {@link java.util.List}, or {@link java.util.Set}.
+     * the generated class to also include an additional singular add or put method. This will only apply, however, if the
+     * method is for a {@link java.util.Map}, {@link java.util.List}, {@link java.util.Set}, or an optional map.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
@@ -556,8 +556,8 @@ public final class Option {
          * }</pre>
          * an additional generated method named {@code addPickle(Pickle val)} will be placed on the builder of the generated
          * class.
-         * <p>This annotation only applies to getter methods that return a Map, List, or Set. If left undefined then the add
-         * method
+         * <p>This annotation only applies to getter methods that return a Map, List, Set, or Optional of Map. If left
+         * undefined then the singular method
          * will use the default method name, dropping any "s" that might be present at the end of the method name (e.g.,
          * pickles -> pickle).
          *

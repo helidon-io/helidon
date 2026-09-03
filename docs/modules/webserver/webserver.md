@@ -1475,6 +1475,127 @@ length rather than from a hash of the resource bytes. If content is replaced
 between service lifetimes, make sure its observed millisecond timestamp or known
 length changes; otherwise the replacement can reuse the same ETag.
 
+#### Pre-compressed Files
+
+Static content handlers can serve existing pre-compressed sidecar files when a
+request advertises a matching `Accept-Encoding` value. For a logical resource
+named `big-file.html`, Helidon checks for sidecars such as `big-file.html.br` and
+`big-file.html.gz` after the logical resource has been resolved by the normal
+static-content rules.
+
+The feature is disabled by default. Set `pre-compressed-enabled` to `true` at
+the feature level or on an individual handler to opt in. The default sidecar
+entries are `br -> br` and `gzip -> gz`. A custom
+`pre-compressed-encodings` map replaces the defaults, so include `br` and
+`gzip` explicitly if they should remain available. An explicitly empty
+`pre-compressed-encodings` map disables sidecar lookup for that configuration
+level. Each key must be a unique concrete content coding other than `identity`
+or `*`, and must be a valid HTTP token. The value identifies the corresponding
+sidecar file suffix; Helidon ignores leading dots and rejects suffixes that
+contain path separators.
+
+Pre-compressed lookup is disabled by default for a static-content handler
+configured with a single filesystem file, even when it is enabled at the
+feature level. Set `pre-compressed-enabled` to `true` on that individual handler
+to authorize serving sibling sidecar files. A sidecar must resolve to the
+derived sibling path itself; Helidon ignores sidecars reached through symbolic
+links or other filesystem redirection.
+
+When pre-compressed negotiation runs, Helidon merges `Vary: Accept-Encoding`.
+When a sidecar is selected, Helidon sends the logical resource media type and
+sets `Content-Encoding`. Direct requests for literal sidecar filenames, such as
+`/big-file.html.gz`, are handled as ordinary static-file requests. A sidecar is
+selected when the request accepts its concrete coding either explicitly or
+through `*`. An equal-quality wildcard does not displace implicit `identity`,
+but a wildcard can select a sidecar when `identity` has a lower quality or is
+rejected. Sidecar lookup hits are cached with the resolved logical resource.
+Misses are retried on later requests so newly added sidecars can be discovered.
+A handler restart refreshes cached lookup state. Record-cache eviction also
+refreshes it when the logical resource is not retained by `MemoryCache`;
+memory-cached resources retain the lookup state for the lifetime of the
+handler. Classpath sidecar bytes cached in memory still count against the
+configured memory cache capacity.
+
+Helidon recognizes `gzip` and `x-gzip` as sidecar aliases, and likewise
+`compress` and `x-compress`. When the request explicitly accepts an alias,
+Helidon emits that accepted spelling in the response `Content-Encoding` header.
+
+A selected sidecar is a distinct response representation. Its bytes determine
+`Content-Length`, its file metadata determines `Last-Modified`, and its strong
+ETag differs from the identity representation. Conditional requests are evaluated
+against the selected representation. `304 Not Modified` responses retain its
+`Content-Encoding`, `Vary`, and ETag metadata. `412 Precondition Failed`
+responses retain `Vary` and the selected representation's ETag but omit
+`Content-Encoding`. Byte ranges and `Content-Range` apply to the encoded sidecar
+bytes. A sidecar ETag satisfies `If-Range` only when it strongly matches, in
+which case Helidon can send a range of the selected sidecar.
+
+> [!NOTE]
+> Helidon derives static-content ETags from resource metadata rather than
+> hashing the content bytes. Sidecar ETags are strong and
+> representation-specific. Deployments that replace a static resource must
+> ensure its observed last-modified time changes at millisecond precision. In
+> particular, replacing a sidecar with different bytes of the same length while
+> preserving that timestamp can reuse the previous ETag, so caches can continue
+> to treat the sidecar as unchanged.
+
+When listener content encoding is configured, static content can dynamically
+encode the logical resource when that runtime candidate is the best acceptable
+representation. Wildcard values can select runtime encoders when `identity` is
+rejected or has a lower quality. If `identity` is omitted, the implicit
+`identity` representation is preferred over a runtime encoder matched only by
+the wildcard. For equal-quality concrete codings, Helidon follows the client
+`Accept-Encoding` header order. If the header order does not decide the result,
+Helidon prefers sidecars over runtime encoders and then uses alphabetical order
+of normalized content-coding names as a deterministic tie-break for sidecars.
+Explicit `identity` follows the same client-order rule for equal-quality ties.
+For equal quality, implicit `identity` follows acceptable
+concrete sidecar and runtime candidates but precedes wildcard-derived runtime
+candidates. If no acceptable sidecar or runtime encoder exists and the client
+rejects `identity`, Helidon responds with `406 Not Acceptable`. Dynamically
+encoded static responses ignore byte ranges and use weak entity tags. When
+pre-compressed lookup is disabled, range requests are served
+from the identity representation when identity is acceptable, even if listener
+content encoding is configured and the request includes `Accept-Encoding`. If
+identity is rejected but an acceptable listener content encoder is configured,
+Helidon ignores the range and sends the complete dynamically encoded
+representation. If no acceptable representation exists, Helidon responds with
+`406 Not Acceptable` and `Vary: Accept-Encoding`. Malformed `Accept-Encoding`
+values, such as invalid coding tokens, unsupported parameters, or invalid `q`
+values, are rejected with `400 Bad Request`.
+
+```yaml [application.yaml]
+server:
+  features:
+    static-content:
+      pre-compressed-enabled: true
+      pre-compressed-cross-origin-sourcing-enabled: true
+      pre-compressed-encodings:
+        br: br
+        gzip: gz
+      classpath:
+        - context: "/assets"
+          location: "/public"
+        - context: "/isolated-assets"
+          location: "/isolated"
+          pre-compressed-cross-origin-sourcing-enabled: false
+      path:
+        - context: "/"
+          location: "/var/www/public"
+          pre-compressed-enabled: false
+```
+
+Classpath sidecars must come from the same classpath resource origin as the
+logical resource by default. Helidon validates same-origin sidecars for `file:`
+resources and entries in the same `jar:` resource. Other classpath URL protocols
+require `pre-compressed-cross-origin-sourcing-enabled` when sidecars should be
+selected. The feature-level `pre-compressed-cross-origin-sourcing-enabled`
+option provides the default for all classpath handlers. A classpath handler can
+override that default explicitly. Enable cross-origin sourcing only when the
+application intentionally sources sidecars from different classpath entries.
+Helidon does not validate that sidecar files are fresher than the logical
+resource.
+
 ### Media Types Support
 
 WebServer and WebClient share the HTTP media support of Helidon, and any
@@ -1743,11 +1864,22 @@ HTTP encoding can improve bandwidth utilization and transfer speeds in certain
 scenarios. It requires a few extra CPU cycles for compressing and uncompressing,
 but these can be offset if data is transferred over low-bandwidth network links.
 
-A client advertises the compression encodings it supports at request time, and
-the WebServer responds by selecting an encoding it supports and setting it in a
-header, effectively *negotiating* the content encoding of the response. If none
-of the advertised encodings is supported by the WebServer, the response is
-returned uncompressed.
+When automatic response encoding is enabled, a client advertises the compression
+encodings it supports at request time, and the WebServer responds by selecting
+an encoding it supports and setting it in a header, effectively *negotiating*
+the content encoding of the response. Equal-quality concrete encodings follow
+the client `Accept-Encoding` header order, while wildcard matches use the
+configured provider order. When `identity` is omitted and is not excluded by
+`*;q=0`, its implicit quality is `1.0`, and it is selected ahead of an
+equal-quality encoding matched only by the wildcard. For non-empty buffered
+responses and streaming responses that reach automatic response encoding,
+WebServer merges `Vary: Accept-Encoding` even when the request omits
+`Accept-Encoding` or negotiation selects `identity`. If none of the advertised
+encodings is supported by the WebServer, the response is returned uncompressed
+unless the client rejects `identity`, in which case WebServer responds with
+`406 Not Acceptable` and includes `Vary: Accept-Encoding`. When automatic
+response encoding is disabled, this negotiation is skipped and the
+response-encoding layer leaves the representation unchanged.
 
 Handlers can encode the response and set the appropriate header to preempt
 encoding by the WebServer. For instance, if a Handler sets the
@@ -1791,8 +1923,15 @@ classpath):
 
 HTTP compression negotiation is controlled by clients using the
 `Accept-Encoding` header. The value of this header is a comma-separated list of
-encodings. The WebServer will select one of these encodings for compression
-purposes; it currently supports `gzip` and `deflate`.
+acceptable encodings and optional preferences. The WebServer selects the
+highest-priority available encoding, including implicit `identity` when
+acceptable; it currently supports `gzip` and `deflate` compression. If none of
+the available representations is acceptable, the WebServer responds with
+`406 Not Acceptable`.
+
+When automatic response encoding is enabled, malformed `Accept-Encoding`
+values, such as invalid coding tokens, unsupported parameters, or invalid `q`
+values, are rejected with `400 Bad Request`.
 
 For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP
 compression has been enabled as shown above, the response shall include the
