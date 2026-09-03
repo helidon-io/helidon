@@ -1116,6 +1116,41 @@ class Http2ConnectionWriterTest {
     }
 
     @Test
+    void oversizedDataWriteFailureTerminatesWriter() {
+        SocketWriterException writeFailure = new SocketWriterException();
+        AtomicInteger writes = new AtomicInteger();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            if (writes.incrementAndGet() == 2) {
+                throw writeFailure;
+            }
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        FlowControl.Outbound flowControl = flowControl();
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+
+        SocketWriterException thrown = assertThrows(SocketWriterException.class,
+                                                     () -> writer.writeHeaders(headers(),
+                                                                               1,
+                                                                               Http2Flag.HeaderFlags.create(
+                                                                                       Http2Flag.END_OF_HEADERS),
+                                                                               terminalDataFrame(new byte[16_385]),
+                                                                               flowControl));
+        IllegalStateException terminal = assertThrows(IllegalStateException.class,
+                                                       () -> writer.writeHeaders(headers(),
+                                                                                 3,
+                                                                                 Http2Flag.HeaderFlags.create(
+                                                                                         Http2Flag.END_OF_HEADERS),
+                                                                                 flowControl));
+
+        assertThat(thrown, is(writeFailure));
+        assertThat(terminal.getCause(), is(writeFailure));
+        verify(dataWriter, times(2)).writeNow(any(BufferData.class));
+        verify(dataWriter).close();
+        verify(flowControl, times(0)).decrementWindowSize(16_384);
+    }
+
+    @Test
     void preservesBatchedWriteFailureWhenCloseThrowsSameFailure() {
         SocketWriterException writeFailure = new SocketWriterException();
         DataWriter dataWriter = mock(DataWriter.class);

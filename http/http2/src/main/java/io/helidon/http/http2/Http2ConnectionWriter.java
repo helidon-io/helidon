@@ -239,7 +239,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         int maxFrameSize = flowControl.maxFrameSize();
         if (maxFrameSize <= 0 || dataLength > maxFrameSize || dataLength > MAX_BATCHED_FRAME_PAYLOAD_LENGTH) {
             return writeHeaders(headers, streamId, flags, flowControl)
-                    + writeData(dataFrame, flowControl, onEndStreamFrameWritten);
+                    + writeDataAfterHeaders(dataFrame, flowControl, onEndStreamFrameWritten);
         }
 
         int bytesWritten;
@@ -329,6 +329,22 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 && frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
             onEndStreamFrameWritten.run();
         }
+    }
+
+    private int writeDataAfterHeaders(Http2FrameData frame,
+                                      FlowControl.Outbound flowControl,
+                                      Runnable onEndStreamFrameWritten) {
+        int written = 0;
+        try {
+            for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
+                written += splitAndWrite(f, flowControl, NO_OP, true);
+            }
+        } catch (Throwable t) {
+            failWriter(t);
+            throw t;
+        }
+        runEndStreamCallback(frame, onEndStreamFrameWritten);
+        return written;
     }
 
     private void lockedWrite(Http2FrameData frame) {
