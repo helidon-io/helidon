@@ -86,14 +86,14 @@ class JdbcOffsetTemporalGenerationTest {
                 final class OffsetTimeMapper implements JdbcClient.RowMapper<OffsetTime> {
                     @Override
                     public OffsetTime map(JdbcClient.Row row) {
-                        return OffsetTime.parse(row.required(1, String.class));
+                        return OffsetTime.parse(row.get(1, String.class));
                     }
                 }
 
                 final class OffsetDateTimeMapper implements JdbcClient.RowMapper<OffsetDateTime> {
                     @Override
                     public OffsetDateTime map(JdbcClient.Row row) {
-                        return OffsetDateTime.parse(row.required(1, String.class));
+                        return OffsetDateTime.parse(row.get(1, String.class));
                     }
                 }
 

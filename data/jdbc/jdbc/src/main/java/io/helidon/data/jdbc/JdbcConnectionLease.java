@@ -47,8 +47,14 @@ interface JdbcConnectionLease extends AutoCloseable {
      */
     Connection connection();
 
+    /**
+     * Releases the logical lease.
+     *
+     * @throws io.helidon.data.DataException when JDBC reports an SQL failure
+     * @throws IllegalStateException when the driver reports an unchecked failure
+     */
     @Override
-    void close() throws SQLException;
+    void close();
 
     /**
      * Supplies an owned or transaction-bound lease for one operation.
@@ -60,9 +66,10 @@ interface JdbcConnectionLease extends AutoCloseable {
          *
          * @param dataSource operation datasource
          * @return acquired lease
-         * @throws SQLException when a connection cannot be acquired
+         * @throws io.helidon.data.DataException when the connection cannot be acquired
+         * @throws IllegalStateException when the driver reports an unchecked failure
          */
-        JdbcConnectionLease acquire(DataSource dataSource) throws SQLException;
+        JdbcConnectionLease acquire(DataSource dataSource);
     }
 
     /**
@@ -105,11 +112,16 @@ interface JdbcConnectionLease extends AutoCloseable {
          *
          * @param dataSource source of the owned connection
          * @return validated connection lease
-         * @throws SQLException when acquisition or validation fails
+         * @throws io.helidon.data.DataException when acquisition or validation fails
          */
-        static Owned acquire(DataSource dataSource) throws SQLException {
-            Connection connection = JdbcExceptionTranslator.invoke("acquiring a connection",
-                                                                   dataSource::getConnection);
+        static Owned acquire(DataSource dataSource) {
+            Connection connection;
+            try {
+                connection = JdbcExceptionTranslator.invoke("acquiring a connection",
+                                                            dataSource::getConnection);
+            } catch (SQLException | RuntimeException | Error failure) {
+                throw JdbcExceptionTranslator.translateFailure("connection acquisition", failure);
+            }
             try {
                 if (!JdbcExceptionTranslator.invoke("inspecting automatic commit mode",
                                                     connection::getAutoCommit)) {
@@ -118,7 +130,7 @@ interface JdbcConnectionLease extends AutoCloseable {
                 return new Owned(connection);
             } catch (SQLException | RuntimeException | Error failure) {
                 Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, failure);
-                throw rethrow(reportedFailure);
+                throw JdbcExceptionTranslator.translateFailure("connection validation", reportedFailure);
             }
         }
 
@@ -134,17 +146,18 @@ interface JdbcConnectionLease extends AutoCloseable {
          * Closes the owned connection, or invalidates it when ordinary close cannot confirm release.
          * The first close failure remains the reported failure even when best-effort invalidation succeeds.
          *
-         * @throws SQLException when ordinary close reports an SQL failure
+         * @throws io.helidon.data.DataException when JDBC reports an SQL failure
+         * @throws IllegalStateException when the driver reports an unchecked failure
          */
         @Override
-        public void close() throws SQLException {
+        public void close() {
             if (closed) {
                 return;
             }
 
             Throwable failure = null;
             try {
-                connection.close();
+                JdbcExceptionTranslator.invokeVoid("closing a connection", connection::close);
             } catch (SQLException | RuntimeException | Error closeFailure) {
                 // Connection.close may fail before a pool return or physical release. Invalidate immediately rather
                 // than leaving the runner with a terminal lease whose connection has no remaining cleanup path.
@@ -156,25 +169,8 @@ interface JdbcConnectionLease extends AutoCloseable {
             }
 
             if (failure != null) {
-                throw rethrow(failure);
+                throw JdbcExceptionTranslator.translateFailure("connection release", failure);
             }
-        }
-
-        /**
-         * Restores the declared or unchecked category of a connection failure.
-         *
-         * @param failure connection failure to throw
-         * @return never returns
-         * @throws SQLException when the failure is an SQL exception
-         */
-        private static SQLException rethrow(Throwable failure) throws SQLException {
-            if (failure instanceof SQLException sqlException) {
-                throw sqlException;
-            }
-            if (failure instanceof RuntimeException runtimeException) {
-                throw runtimeException;
-            }
-            throw (Error) failure;
         }
     }
 }

@@ -57,7 +57,7 @@ public interface GenericHierarchyRepository extends GenericQueryRepository<Strin
     final class InheritedStringMapper extends GenericRowMapper<String> {
         @Override
         public String map(JdbcClient.Row row) {
-            return row.required(1, String.class);
+            return row.get(1, String.class);
         }
     }
 }

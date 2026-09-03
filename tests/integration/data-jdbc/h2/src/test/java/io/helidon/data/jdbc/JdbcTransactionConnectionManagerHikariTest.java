@@ -47,14 +47,14 @@ class JdbcTransactionConnectionManagerHikariTest {
     @Test
     void oneConnectionPoolRemainsReusableAfterCommitAndRollback() {
         try (HikariDataSource dataSource = dataSource("tx_pool")) {
-            JdbcClient setupClient = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+            JdbcClient setupClient = JdbcTestClients.create(dataSource);
             setupClient.create("CREATE TABLE ITEMS (ID INT PRIMARY KEY)").execute();
             ServiceRegistryManager registryManager = ServiceRegistryManager.create();
             try {
                 TxSupport support = registryManager.registry().get(TxSupport.class);
                 JdbcTransactionConnectionManager manager =
                         registryManager.registry().get(JdbcTransactionConnectionManager.class);
-                JdbcClient client = new JdbcClientImpl(dataSource, manager);
+                JdbcClient client = transactionAwareClient(dataSource, manager);
 
                 support.transaction(Tx.Type.REQUIRED, () -> {
                     client.create("INSERT INTO ITEMS VALUES (?)").bind(1, 1).execute();
@@ -85,7 +85,7 @@ class JdbcTransactionConnectionManagerHikariTest {
     @Test
     void unknownCommitOutcomeInvalidatesTheConnectionBeforeTheNextPoolBorrower() throws Exception {
         try (HikariDataSource pool = dataSource("tx_unknown_pool")) {
-            new JdbcClientImpl(pool, JdbcConnectionLease.ownedProvider())
+            JdbcTestClients.create(pool)
                     .create("CREATE TABLE ITEMS (ID INT PRIMARY KEY)")
                     .execute();
             Connection failingConnection = mock(Connection.class, delegatesTo(pool.getConnection()));
@@ -96,7 +96,7 @@ class JdbcTransactionConnectionManagerHikariTest {
                 TxSupport support = registryManager.registry().get(TxSupport.class);
                 JdbcTransactionConnectionManager manager =
                         registryManager.registry().get(JdbcTransactionConnectionManager.class);
-                JdbcClient client = new JdbcClientImpl(dataSource, manager);
+                JdbcClient client = transactionAwareClient(dataSource, manager);
 
                 TxException failure = assertThrows(TxException.class,
                                                    () -> support.transaction(Tx.Type.REQUIRED, () -> {
@@ -121,7 +121,7 @@ class JdbcTransactionConnectionManagerHikariTest {
     @Test
     void unknownRollbackOutcomeInvalidatesTheConnectionBeforeTheNextPoolBorrower() throws Exception {
         try (HikariDataSource pool = dataSource("tx_unknown_rollback_pool")) {
-            new JdbcClientImpl(pool, JdbcConnectionLease.ownedProvider())
+            JdbcTestClients.create(pool)
                     .create("CREATE TABLE ITEMS (ID INT PRIMARY KEY)")
                     .execute();
             Connection failingConnection = mock(Connection.class, delegatesTo(pool.getConnection()));
@@ -132,7 +132,7 @@ class JdbcTransactionConnectionManagerHikariTest {
                 TxSupport support = registryManager.registry().get(TxSupport.class);
                 JdbcTransactionConnectionManager manager =
                         registryManager.registry().get(JdbcTransactionConnectionManager.class);
-                JdbcClient client = new JdbcClientImpl(dataSource, manager);
+                JdbcClient client = transactionAwareClient(dataSource, manager);
 
                 TxException failure = assertThrows(TxException.class,
                                                    () -> support.transaction(Tx.Type.REQUIRED, () -> {
@@ -149,6 +149,23 @@ class JdbcTransactionConnectionManagerHikariTest {
                 registryManager.shutdown();
             }
         }
+    }
+
+    /**
+     * Creates a client with the configuration retained by the runtime and the
+     * transaction connection manager exercised by these tests.
+     *
+     * @param dataSource data source used by the client
+     * @param manager transaction connection manager under test
+     * @return transaction aware client
+     */
+    private static JdbcClient transactionAwareClient(DataSource dataSource,
+                                                     JdbcTransactionConnectionManager manager) {
+        JdbcClientConfig config = JdbcClientConfig.builder()
+                .dataSource("test-data-source")
+                .buildPrototype();
+        JdbcClientImpl.CachePolicy cachePolicy = JdbcClientConfigSupport.cachePolicy(config);
+        return new JdbcClientImpl(config, dataSource, manager, cachePolicy);
     }
 
     private static HikariDataSource dataSource(String databaseName) {

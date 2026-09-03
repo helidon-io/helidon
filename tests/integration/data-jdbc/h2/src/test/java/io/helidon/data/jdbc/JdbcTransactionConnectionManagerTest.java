@@ -67,7 +67,7 @@ class JdbcTransactionConnectionManagerTest {
     void ordinaryOperationsRemainUsableAfterInvalidLifecycleCalls() throws Exception {
         JdbcDataSource dataSource = initializedDataSource("no_tx_state");
         JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
-        JdbcClient client = new JdbcClientImpl(dataSource, manager);
+        JdbcClient client = transactionAwareClient(dataSource, manager);
 
         assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one(), is(0L));
         assertThrows(IllegalStateException.class, manager::end);
@@ -94,12 +94,12 @@ class JdbcTransactionConnectionManagerTest {
             assertThat(second.connection(), sameInstance(physical));
         }
 
-        JdbcClient client = new JdbcClientImpl(dataSource, manager);
+        JdbcClient client = transactionAwareClient(dataSource, manager);
         assertThat(client.create("INSERT INTO ITEMS VALUES (?)").bind(1, 20).execute(), is(1L));
         int generated = client.create("INSERT INTO ITEMS DEFAULT VALUES")
                 .generatedKeys()
                 .addColumn("ID")
-                .map(row -> row.required(1, Integer.class))
+                .map(row -> row.get(1, Integer.class))
                 .one();
         assertThat(generated, greaterThan(0));
         assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one(), is(2L));
@@ -121,7 +121,7 @@ class JdbcTransactionConnectionManagerTest {
         JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
         manager.start("jdbc");
         manager.begin("tx-2");
-        JdbcClient client = new JdbcClientImpl(firstDataSource, manager);
+        JdbcClient client = transactionAwareClient(firstDataSource, manager);
         client.create("INSERT INTO ITEMS VALUES (?)").bind(1, 1).execute();
 
         assertThrows(DataException.class, () -> manager.acquire(secondDataSource));
@@ -244,7 +244,7 @@ class JdbcTransactionConnectionManagerTest {
         manager.start("jdbc");
         manager.begin("fixed");
 
-        assertThrows(SQLException.class, () -> manager.acquire(failing));
+        assertThrows(DataException.class, () -> manager.acquire(failing));
         assertThrows(DataException.class, () -> manager.acquire(failing));
         assertThrows(DataException.class, () -> manager.acquire(second));
         assertThat(failing.connectionRequests(), is(1));
@@ -400,7 +400,7 @@ class JdbcTransactionConnectionManagerTest {
         manager.start("jdbc");
         manager.begin("setup-failure");
 
-        assertThrows(SQLException.class, () -> manager.acquire(fixture.dataSource()));
+        assertThrows(DataException.class, () -> manager.acquire(fixture.dataSource()));
         assertThat(fixture.connection().calls("abort"), is(1L));
         assertThat(fixture.connection().calls("close"), is(1L));
         assertThrows(DataException.class, () -> manager.acquire(fixture.dataSource()));
@@ -423,7 +423,7 @@ class JdbcTransactionConnectionManagerTest {
         manager.start("jdbc");
         manager.begin("get-auto-commit-failure");
 
-        assertThrows(SQLException.class, () -> manager.acquire(fixture.dataSource()));
+        assertThrows(DataException.class, () -> manager.acquire(fixture.dataSource()));
         assertThat(fixture.connection().calls("abort"), is(1L));
         assertThat(fixture.connection().calls("close"), is(1L));
         assertThrows(DataException.class, () -> manager.acquire(fixture.dataSource()));
@@ -472,7 +472,7 @@ class JdbcTransactionConnectionManagerTest {
             TxSupport support = registryManager.registry().get(TxSupport.class);
             JdbcTransactionConnectionManager manager =
                     registryManager.registry().get(JdbcTransactionConnectionManager.class);
-            JdbcClient client = new JdbcClientImpl(dataSource, manager);
+            JdbcClient client = transactionAwareClient(dataSource, manager);
 
             assertThat(support.type(), is("jdbc"));
             Tx.transaction(Tx.Type.REQUIRED, () -> {
@@ -504,7 +504,7 @@ class JdbcTransactionConnectionManagerTest {
             TxSupport support = registryManager.registry().get(TxSupport.class);
             JdbcTransactionConnectionManager manager =
                     registryManager.registry().get(JdbcTransactionConnectionManager.class);
-            JdbcClient client = new JdbcClientImpl(dataSource, manager);
+            JdbcClient client = transactionAwareClient(dataSource, manager);
 
             Future<Long> result = executor.submit(() -> {
                 support.transaction(Tx.Type.REQUIRED, () -> {
@@ -574,7 +574,7 @@ class JdbcTransactionConnectionManagerTest {
             TxSupport support = registryManager.registry().get(TxSupport.class);
             JdbcTransactionConnectionManager manager =
                     registryManager.registry().get(JdbcTransactionConnectionManager.class);
-            JdbcClient client = new JdbcClientImpl(dataSource, manager);
+            JdbcClient client = transactionAwareClient(dataSource, manager);
 
             assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
                 support.transaction(Tx.Type.NEW, () -> {
@@ -624,7 +624,7 @@ class JdbcTransactionConnectionManagerTest {
                                                   JdbcTransactionConnectionManager manager,
                                                   JdbcDataSource dataSource,
                                                   ExecutorService executor) throws Exception {
-        JdbcClient client = new JdbcClientImpl(dataSource, manager);
+        JdbcClient client = transactionAwareClient(dataSource, manager);
         CountDownLatch entered = new CountDownLatch(2);
         CountDownLatch committed = new CountDownLatch(2);
         Callable<Long> task = () -> {
@@ -694,6 +694,23 @@ class JdbcTransactionConnectionManagerTest {
                 primaryFailure.addSuppressed(cleanupFailure);
             }
         }
+    }
+
+    /**
+     * Creates a client with the configuration retained by the runtime and the
+     * transaction connection manager exercised by these tests.
+     *
+     * @param dataSource data source used by the client
+     * @param manager transaction connection manager under test
+     * @return transaction aware client
+     */
+    private static JdbcClient transactionAwareClient(DataSource dataSource,
+                                                     JdbcTransactionConnectionManager manager) {
+        JdbcClientConfig config = JdbcClientConfig.builder()
+                .dataSource("test-data-source")
+                .buildPrototype();
+        JdbcClientImpl.CachePolicy cachePolicy = JdbcClientConfigSupport.cachePolicy(config);
+        return new JdbcClientImpl(config, dataSource, manager, cachePolicy);
     }
 
     /**

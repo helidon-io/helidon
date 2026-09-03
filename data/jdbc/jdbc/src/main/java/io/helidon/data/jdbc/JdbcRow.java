@@ -56,6 +56,7 @@ final class JdbcRow implements JdbcClient.Row {
 
     @Override
     public <T> Optional<T> optional(int index, Class<T> type) {
+        Objects.requireNonNull(type, "The target type must not be null.");
         ensureReadable();
         validateIndex(index);
         return Optional.ofNullable(read(index, type));
@@ -63,8 +64,9 @@ final class JdbcRow implements JdbcClient.Row {
 
     @Override
     public <T> Optional<T> optional(String label, Class<T> type) {
-        ensureReadable();
         Objects.requireNonNull(label, "The column label must not be null.");
+        Objects.requireNonNull(type, "The target type must not be null.");
+        ensureReadable();
         if (label.isBlank()) {
             throw new IllegalArgumentException("The column label must not be blank.");
         }
@@ -72,26 +74,28 @@ final class JdbcRow implements JdbcClient.Row {
     }
 
     @Override
-    public <T> T required(int index, Class<T> type) {
+    public <T> T get(int index, Class<T> type) {
+        Objects.requireNonNull(type, "The target type must not be null.");
         ensureReadable();
         validateIndex(index);
         T value = read(index, type);
         if (value == null) {
-            throw new DataException("Required result column " + index + " contains SQL NULL.");
+            throw new DataException("The result column " + index + " contains SQL NULL.");
         }
         return value;
     }
 
     @Override
-    public <T> T required(String label, Class<T> type) {
-        ensureReadable();
+    public <T> T get(String label, Class<T> type) {
         Objects.requireNonNull(label, "The column label must not be null.");
+        Objects.requireNonNull(type, "The target type must not be null.");
+        ensureReadable();
         if (label.isBlank()) {
             throw new IllegalArgumentException("The column label must not be blank.");
         }
         T value = read(columns.index(label), type);
         if (value == null) {
-            throw new DataException("Required result column '" + label + "' contains SQL NULL.");
+            throw new DataException("The result column '" + label + "' contains SQL NULL.");
         }
         return value;
     }
@@ -113,7 +117,6 @@ final class JdbcRow implements JdbcClient.Row {
      * @return database value, possibly {@code null}
      */
     private <T> T read(int index, Class<T> requestedType) {
-        Objects.requireNonNull(requestedType, "The target type must not be null.");
         Class<?> targetType = JdbcScalarAccess.normalized(requestedType);
         if (!JdbcScalarAccess.supported(targetType)) {
             throw new IllegalArgumentException("JDBC does not support the scalar type '"

@@ -19,17 +19,6 @@ Configuration for a JDBC client
 <tbody>
 <tr>
 <td>
-<code>data-<wbr>source</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Name used to look up a data source</td>
-</tr>
-<tr>
-<td>
 <code>name</code>
 </td>
 <td>
@@ -42,28 +31,16 @@ Configuration for a JDBC client
 </tr>
 <tr>
 <td>
-<code>connection</code>
-</td>
-<td>
-<code>Connection<wbr>Config</code>
-</td>
-<td>
-</td>
-<td>Configuration for a direct database connection</td>
-</tr>
-<tr>
-<td>
 <a id="properties"></a>
-<a href="io.helidon.data.jdbc.JdbcPropertiesConfig.md">
+<a href="io.helidon.data.clients.jdbc.PropertiesConfig.md">
 <code>properties</code>
 </a>
 </td>
 <td>
-<code>Jdbc<wbr>Properties<wbr>Config</code>
 </td>
 <td>
 </td>
-<td>Options that configure Helidon Data JDBC behavior</td>
+<td>Configuration for properties</td>
 </tr>
 </tbody>
 </table>

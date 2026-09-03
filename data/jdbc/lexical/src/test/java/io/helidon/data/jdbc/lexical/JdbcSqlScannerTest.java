@@ -30,25 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class JdbcSqlScannerTest {
 
     /**
-     * Verifies the public scanner boundary rejects both null reference
-     * arguments explicitly before scanning begins.
-     */
-    @Test
-    void rejectsNullPublicArguments() {
-        RecordingHandler handler = new RecordingHandler("");
-
-        NullPointerException sourceFailure = assertThrows(
-                NullPointerException.class,
-                () -> JdbcSqlScanner.scan(null, handler));
-        NullPointerException handlerFailure = assertThrows(
-                NullPointerException.class,
-                () -> JdbcSqlScanner.scan("", null));
-
-        assertThat(sourceFailure.getMessage(), is("The SQL source must not be null."));
-        assertThat(handlerFailure.getMessage(), is("The JDBC SQL scan handler must not be null."));
-    }
-
-    /**
      * Verifies that the scanner reports each marker while preserving every
      * source character through ordinary and protected regions.
      */

@@ -54,7 +54,7 @@ class JdbcLargeUpdateFallbackTest {
         statement = mock(PreparedStatement.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        client = JdbcTestClients.create(dataSource);
     }
 
     /**

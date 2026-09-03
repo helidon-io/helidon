@@ -15,30 +15,22 @@
  */
 package io.helidon.data.jdbc;
 
-import java.util.Optional;
-
-import javax.sql.DataSource;
-
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
-import io.helidon.data.sql.common.ConnectionConfig;
+import io.helidon.data.sql.common.SqlConfig;
 import io.helidon.service.registry.Service;
 
 /**
  * Configuration for a JDBC client.
  * <p>
- * A client can use an existing {@link javax.sql.DataSource}, a named data
- * source, or direct connection settings. A data source object is available
- * only through the programmatic builder.
+ * A client can use a named data source or direct connection settings.
  * Registry managed clients are configured under {@code data.clients.jdbc}.
  */
 @Api.Preview
 @Prototype.Blueprint(createEmptyPublic = false, decorator = JdbcClientConfigSupport.Decorator.class)
 @Prototype.Configured(JdbcClientConfigFactory.CONFIG_KEY)
-@Prototype.CustomMethods(JdbcClientConfigSupport.CustomMethods.class)
-@Prototype.Implement("io.helidon.data.sql.common.SqlConfig")
-interface JdbcClientConfigBlueprint extends Prototype.Factory<JdbcClient> {
+interface JdbcClientConfigBlueprint extends SqlConfig, Prototype.Factory<JdbcClient> {
 
     /**
      * Logical name of this client.
@@ -50,38 +42,25 @@ interface JdbcClientConfigBlueprint extends Prototype.Factory<JdbcClient> {
     String name();
 
     /**
-     * Configuration for a direct database connection.
+     * Maximum number of SQL marker counts retained by this client.
+     * A value of zero disables retention while preserving marker validation.
+     * This value is owned by Helidon Data JDBC and is not passed to JDBC.
      *
-     * @return direct connection configuration or empty when none was supplied
+     * @return parameter count cache capacity
      */
-    @Option.Configured
-    Optional<ConnectionConfig> connection();
+    @Option.Configured("properties.jdbc.parameter-count-cache.capacity")
+    @Option.DefaultInt(256)
+    int parameterCountCacheCapacity();
 
     /**
-     * Name used to look up a data source.
+     * Maximum SQL string length admitted to the parameter count cache in
+     * UTF-16 code units. Longer SQL remains supported and is scanned without
+     * being retained. This value is owned by Helidon Data JDBC and is not
+     * passed to JDBC.
      *
-     * @return data source name or empty when none was supplied
+     * @return maximum cacheable SQL length
      */
-    @Option.Configured
-    Optional<String> dataSource();
-
-    /**
-     * Existing data source supplied by application code.
-     *
-     * @return existing data source or empty when none was supplied
-     */
-    @Option.Access("")
-    @Option.Confidential
-    Optional<DataSource> dataSourceInstance();
-
-    /**
-     * Options that configure Helidon Data JDBC behavior.
-     * These values are not passed to a data source, driver, connection,
-     * statement, or result set.
-     *
-     * @return JDBC client options
-     */
-    @Option.Configured
-    @Option.DefaultMethod("create")
-    JdbcPropertiesConfig properties();
+    @Option.Configured("properties.jdbc.parameter-count-cache.max-sql-length")
+    @Option.DefaultInt(4096)
+    int parameterCountCacheMaxSqlLength();
 }

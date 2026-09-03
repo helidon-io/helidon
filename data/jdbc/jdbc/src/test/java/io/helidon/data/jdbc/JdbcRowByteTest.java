@@ -45,7 +45,7 @@ class JdbcRowByteTest {
         when(resultSet.getByte(1)).thenReturn((byte) 2, (byte) 3);
         JdbcRow row = newRow(resultSet);
 
-        assertThat(row.required(1, Byte.class), is((byte) 2));
+        assertThat(row.get(1, Byte.class), is((byte) 2));
         assertThat(row.optional("byte_value", byte.class), is(Optional.of((byte) 3)));
 
         verify(resultSet, times(2)).getByte(1);
@@ -63,9 +63,9 @@ class JdbcRowByteTest {
         when(resultSet.wasNull()).thenReturn(false, true, true);
         JdbcRow row = newRow(resultSet);
 
-        assertThat(row.required(1, Byte.class), is((byte) 0));
+        assertThat(row.get(1, Byte.class), is((byte) 0));
         assertThat(row.optional(1, Byte.class), is(Optional.empty()));
-        assertThrows(DataException.class, () -> row.required(1, Byte.class));
+        assertThrows(DataException.class, () -> row.get(1, Byte.class));
 
         verify(resultSet, times(3)).getByte(1);
         verify(resultSet, times(3)).wasNull();

@@ -25,22 +25,23 @@ import java.util.Map;
 import io.helidon.data.DataException;
 
 /**
- * Creates application-visible JDBC diagnostics without retaining confidential
- * SQL, driver, or environment text.
+ * Translates failures raised by JDBC operations into safe application diagnostics.
  * <p>
- * Driver-owned {@link SQLException} and {@link RuntimeException} instances
- * never cross this boundary by reference. SQL exceptions are rebuilt from SQL
- * state and vendor code, non-SQL failures are represented by a stable provider
- * operation and throwable class, and exception graphs are copied with explicit
- * cycle and size limits. Provider-owned safe diagnostic types make repeated
- * sanitization idempotent.
+ * JDBC driver exceptions can include SQL text, bind values, connection URLs,
+ * credentials, and server details in their messages or related exceptions.
+ * Retaining an original driver exception would allow those details to bypass
+ * message sanitization. This translator therefore creates provider exceptions
+ * from approved SQL state and vendor code metadata without retaining the
+ * original driver exception. Copied exception relationships have cycle and
+ * size limits so malformed driver exception graphs cannot create unbounded
+ * provider state.
  * <p>
- * Fatal {@link Error} instances deliberately remain outside this diagnostic
- * boundary and propagate unchanged. Rebuilding an error could hide a JVM
- * integrity failure or require allocation while the VM is reporting resource
- * exhaustion. Callers sanitize nonfatal failures at the JDBC invocation which
- * establishes driver ownership, allowing application and mapper failures to
- * retain their identity.
+ * Runtime exceptions are sanitized only when the caller has established that
+ * they came directly from a JDBC invocation. Application and row mapper
+ * failures retain their original type and identity. Fatal {@link Error}
+ * instances also propagate unchanged because translating them could conceal a
+ * JVM failure or require allocation while the JVM is reporting resource
+ * exhaustion.
  */
 final class JdbcExceptionTranslator {
 
@@ -87,6 +88,25 @@ final class JdbcExceptionTranslator {
         String message = "The JDBC " + operation + " failed." + databaseDiagnostic(metadata)
                 + driverDocumentationGuidance(metadata);
         return new DataException(message, safeCause(cause, metadata));
+    }
+
+    /**
+     * Converts a JDBC boundary failure to an unchecked failure. SQL exceptions
+     * become sanitized data exceptions, existing runtime exceptions retain
+     * their type, and fatal errors propagate unchanged.
+     *
+     * @param operation stable JDBC operation label
+     * @param failure JDBC boundary failure
+     * @return sanitized data exception to throw
+     */
+    static DataException translateFailure(String operation, Throwable failure) {
+        if (failure instanceof SQLException sqlException) {
+            return translate(operation, sqlException);
+        }
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        throw (Error) failure;
     }
 
     /**
@@ -137,7 +157,12 @@ final class JdbcExceptionTranslator {
      * @return provider-owned primary failure
      */
     static Throwable prepare(String operation, Throwable failure) {
-        if (failure instanceof SafeSQLException || failure instanceof SafeDiagnosticException) {
+        if (safeDataException(failure)) {
+            // Restore the safe SQL cause so the runner can apply the terminal operation context.
+            return failure.getCause();
+        }
+        if (failure instanceof SafeSQLException
+                || failure instanceof SafeDiagnosticException) {
             return failure;
         }
         if (failure instanceof SQLException sqlException) {
@@ -157,7 +182,7 @@ final class JdbcExceptionTranslator {
      * @return sanitized provider-owned failure
      */
     static Throwable sanitize(String operation, Throwable failure) {
-        if (failure instanceof SafeSqlDiagnostic) {
+        if (failure instanceof SafeSqlDiagnostic || safeDataException(failure)) {
             return failure;
         }
         if (failure instanceof SafeDiagnosticException) {
@@ -265,6 +290,9 @@ final class JdbcExceptionTranslator {
      * @return provider-owned leaf diagnostic
      */
     private static Throwable relatedDiagnostic(String operation, Throwable failure) {
+        if (safeDataException(failure)) {
+            return relatedDiagnostic(operation, failure.getCause());
+        }
         if (failure instanceof SQLException sqlException) {
             String message = failure instanceof SafeSQLException ? failure.getMessage() : DRIVER_FAILURE;
             SqlMetadata metadata = sqlMetadata(sqlException);
@@ -288,6 +316,18 @@ final class JdbcExceptionTranslator {
         case UPDATE -> "update";
         case GENERATED_KEYS -> "generated keys operation";
         };
+    }
+
+    /**
+     * Determines whether a data exception contains only provider-owned SQL
+     * diagnostics and can safely cross another sanitization boundary.
+     *
+     * @param failure candidate failure
+     * @return whether the failure is already sanitized
+     */
+    private static boolean safeDataException(Throwable failure) {
+        return failure instanceof DataException dataException
+                && dataException.getCause() instanceof SafeSqlDiagnostic;
     }
 
     /**

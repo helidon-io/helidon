@@ -40,9 +40,7 @@ class JdbcClientCacheTest {
     @Test
     void disabledCachePreservesMarkerCountingAndValidation() {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClientImpl client = new JdbcClientImpl(dataSource,
-                                                   JdbcConnectionLease.ownedProvider(),
-                                                   new JdbcClientImpl.CachePolicy(0, 1));
+        JdbcClient client = JdbcTestClients.create(dataSource, 0, 1);
 
         assertSingleParameter(client.create("?"));
         assertSingleParameter(client.create("?"));
@@ -58,9 +56,7 @@ class JdbcClientCacheTest {
     @Test
     void customAdmissionLengthDoesNotChangeStatementSemantics() {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClientImpl client = new JdbcClientImpl(dataSource,
-                                                   JdbcConnectionLease.ownedProvider(),
-                                                   new JdbcClientImpl.CachePolicy(2, 1));
+        JdbcClient client = JdbcTestClients.create(dataSource, 2, 1);
 
         assertSingleParameter(client.create("?"));
         assertSingleParameter(client.create(" ?"));
@@ -68,10 +64,14 @@ class JdbcClientCacheTest {
         verifyNoMoreInteractions(dataSource);
     }
 
+    /**
+     * Verifies SQL longer than the default admission limit remains usable and
+     * does not access the data source while the statement is being created.
+     */
     @Test
     void supportsLongSqlWithoutAccessingTheDatasource() {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClientImpl client = client(dataSource);
+        JdbcClient client = client(dataSource);
         String sql = paddedSql(8_192);
 
         assertSingleParameter(client.create(sql));
@@ -79,49 +79,65 @@ class JdbcClientCacheTest {
         verifyNoMoreInteractions(dataSource);
     }
 
+    /**
+     * Verifies blank and malformed SQL fail before the client accesses the
+     * data source, including when malformed SQL exceeds the cache admission
+     * limit.
+     */
     @Test
     void validationFailuresDoNotAccessTheDatasource() {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClientImpl client = client(dataSource);
+        JdbcClient client = client(dataSource);
         String malformed = "select 'unterminated";
         String longMalformed = malformed + "x".repeat(8_192);
 
+        assertThrows(IllegalArgumentException.class, () -> client.create(" \t\n"));
         assertThrows(IllegalArgumentException.class, () -> client.create(malformed));
         assertThrows(IllegalArgumentException.class, () -> client.create(longMalformed));
 
         verifyNoMoreInteractions(dataSource);
     }
 
+    /**
+     * Verifies generated statement creation uses the supplied physical marker
+     * count without consulting the data source.
+     */
     @Test
-    @SuppressWarnings("helidon:api:internal")
     void createsGeneratedStatementFromTheValidatedPhysicalMarkerCount() {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClientImpl client = client(dataSource);
+        JdbcClient client = client(dataSource);
 
-        JdbcClient.Statement statement = JdbcClient.createGenerated(client, "select ?, '?' where ? = 1", 2);
+        JdbcClient.Statement statement = GeneratedJdbcData.createGenerated(client, "select ?, '?' where ? = 1", 2);
         statement.bind(1, 1).bind(2, 2);
 
         assertThrows(IllegalArgumentException.class, () -> statement.bind(3, 3));
         verifyNoMoreInteractions(dataSource);
     }
 
+    /**
+     * Verifies generated statement creation rejects invalid inputs before the
+     * client accesses the data source.
+     */
     @Test
-    @SuppressWarnings("helidon:api:internal")
     void rejectsAnInvalidGeneratedParameterCountWithoutAccessingTheDatasource() {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClientImpl client = client(dataSource);
+        JdbcClient client = client(dataSource);
 
-        assertThrows(NullPointerException.class, () -> JdbcClient.createGenerated(client, null, 0));
-        assertThrows(IllegalArgumentException.class, () -> JdbcClient.createGenerated(client, "select 1", -1));
-        assertThrows(IllegalArgumentException.class, () -> JdbcClient.createGenerated(client, "?", 2));
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.createGenerated(client, null, 0));
+        assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.createGenerated(client, "select 1", -1));
+        assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.createGenerated(client, "?", 2));
 
         verifyNoMoreInteractions(dataSource);
     }
 
+    /**
+     * Verifies concurrent creation for one repeated SQL statement preserves
+     * the shared client contract without accessing the data source.
+     */
     @Test
     void concurrentRepeatedSqlPreservesTheShareableClientContract() throws Exception {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClientImpl client = client(dataSource);
+        JdbcClient client = client(dataSource);
         String sql = "select '?', \"?\", ? /* concurrent */";
         CountDownLatch start = new CountDownLatch(1);
         List<Future<JdbcClient.Statement>> futures = new ArrayList<>();
@@ -143,10 +159,14 @@ class JdbcClientCacheTest {
         verifyNoMoreInteractions(dataSource);
     }
 
+    /**
+     * Verifies concurrent creation for distinct SQL statements preserves the
+     * shared client contract without accessing the data source.
+     */
     @Test
     void concurrentDistinctSqlPreservesTheShareableClientContract() throws Exception {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClientImpl client = client(dataSource);
+        JdbcClient client = client(dataSource);
         CountDownLatch start = new CountDownLatch(1);
         List<Future<JdbcClient.Statement>> futures = new ArrayList<>();
 
@@ -168,8 +188,8 @@ class JdbcClientCacheTest {
         verifyNoMoreInteractions(dataSource);
     }
 
-    private static JdbcClientImpl client(DataSource dataSource) {
-        return new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+    private static JdbcClient client(DataSource dataSource) {
+        return JdbcTestClients.create(dataSource);
     }
 
     private static String paddedSql(int length) {

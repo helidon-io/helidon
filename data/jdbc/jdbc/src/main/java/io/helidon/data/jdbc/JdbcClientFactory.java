@@ -17,7 +17,6 @@ package io.helidon.data.jdbc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
@@ -67,8 +66,7 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
 
         List<PreparedClient> preparedClients = new ArrayList<>(configs.size());
         for (JdbcClientConfig config : configs) {
-            JdbcClientImpl.CachePolicy cachePolicy = JdbcProviderPropertiesSupport.create(
-                    Objects.requireNonNull(config.properties(), "The JDBC client properties must not be null."));
+            JdbcClientImpl.CachePolicy cachePolicy = JdbcClientConfigSupport.cachePolicy(config);
             preparedClients.add(new PreparedClient(config, cachePolicy));
         }
 
@@ -77,6 +75,7 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
             try {
                 availableDataSources = List.copyOf(dataSources.get());
             } catch (RuntimeException failure) {
+                // Data source activation failures can retain provider details.
                 throw new DataException("The JDBC client factory could not inspect registered SQL data sources.",
                                         JdbcExceptionTranslator.sanitize("inspecting registered SQL data sources",
                                                                          failure));
@@ -88,9 +87,7 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
             JdbcClientConfig config = prepared.config();
             DataSource dataSource;
             ServiceInstance<DataSource> dataSourceService = null;
-            if (config.dataSourceInstance().isPresent()) {
-                dataSource = config.dataSourceInstance().get();
-            } else if (config.dataSource().isPresent()) {
+            if (config.dataSource().isPresent()) {
                 dataSource = null;
                 String dataSourceName = config.dataSource().get();
                 Qualifier named = Qualifier.createNamed(dataSourceName);
@@ -98,7 +95,8 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
                         .filter(instance -> instance.qualifiers().contains(named))
                         .toList();
                 if (matches.size() != 1) {
-                    throw dataSourceResolutionFailure(config.name(), dataSourceName, null);
+                    throw new DataException(JdbcClientConfigSupport.clientDescription(config.name())
+                                                    + " could not resolve SQL data source '" + dataSourceName + "'.");
                 }
                 dataSourceService = matches.getFirst();
             } else {
@@ -113,13 +111,7 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
         for (PlannedClient planned : plannedClients) {
             DataSource dataSource = planned.dataSource();
             if (dataSource == null) {
-                JdbcClientConfig config = planned.config();
-                try {
-                    dataSource = Objects.requireNonNull(planned.dataSourceService().get(),
-                                                        "The registered SQL data source must not be null.");
-                } catch (RuntimeException failure) {
-                    throw dataSourceResolutionFailure(config.name(), config.dataSource().orElseThrow(), failure);
-                }
+                dataSource = planned.dataSourceService().get();
             }
             resolvedClients.add(new ResolvedClient(planned.config(), planned.cachePolicy(), dataSource));
         }
@@ -136,18 +128,6 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
                                                          PROVIDER_QUALIFIER));
         }
         return List.copyOf(clients);
-    }
-
-    private static DataException dataSourceResolutionFailure(String clientName,
-                                                             String dataSourceName,
-                                                             RuntimeException cause) {
-        String message = JdbcClientConfigSupport.clientDescription(clientName) + " could not resolve SQL data source '"
-                + dataSourceName + "'.";
-        if (cause == null) {
-            return new DataException(message);
-        }
-        return new DataException(message,
-                                 JdbcExceptionTranslator.sanitize("resolving a SQL data source", cause));
     }
 
     /**

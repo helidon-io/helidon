@@ -38,7 +38,7 @@ class JdbcColumnLayoutTest {
             statement.execute("CREATE TABLE POKEMON (ID BIGINT PRIMARY KEY, NAME VARCHAR(80), CATEGORY VARCHAR(80))");
             statement.execute("INSERT INTO POKEMON VALUES (1, 'Pikachu', 'Electric')");
         }
-        client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        client = JdbcTestClients.create(dataSource);
     }
 
     /**
@@ -71,9 +71,9 @@ class JdbcColumnLayoutTest {
                        CATEGORY AS duplicate_value
                 FROM POKEMON
                 """)
-                .map(row -> new IndexedPokemon(row.required(1, Long.class),
-                                               row.required(2, String.class),
-                                               row.required(3, String.class)))
+                .map(row -> new IndexedPokemon(row.get(1, Long.class),
+                                               row.get(2, String.class),
+                                               row.get(3, String.class)))
                 .one();
 
         assertThat(pokemon, is(new IndexedPokemon(1, "Pikachu", "Electric")));
@@ -91,7 +91,7 @@ class JdbcColumnLayoutTest {
                        CATEGORY AS DETAIL
                 FROM POKEMON
                 """)
-                .map(row -> row.required("POKEMON_ID", Long.class))
+                .map(row -> row.get("POKEMON_ID", Long.class))
                 .one();
 
         assertThat(id, is(1L));
@@ -110,7 +110,7 @@ class JdbcColumnLayoutTest {
                                                             CATEGORY AS DETAIL
                                                      FROM POKEMON
                                                      """)
-                                                     .map(row -> row.required("DeTaIl", String.class))
+                                                     .map(row -> row.get("DeTaIl", String.class))
                                                      .one());
 
         assertThat(failure.getMessage(), is("The result contains more than one column labeled 'DeTaIl'."));
@@ -124,7 +124,7 @@ class JdbcColumnLayoutTest {
     void rejectsMissingLabelDeterministically() {
         DataException failure = assertThrows(DataException.class,
                                              () -> client.create("SELECT ID AS pokemon_id FROM POKEMON")
-                                                     .map(row -> row.required("name", String.class))
+                                                     .map(row -> row.get("name", String.class))
                                                      .one());
 
         assertThat(failure.getMessage(), is("The result does not contain a column labeled 'name'."));

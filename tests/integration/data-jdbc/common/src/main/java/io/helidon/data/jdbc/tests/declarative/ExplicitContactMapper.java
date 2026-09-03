@@ -29,7 +29,7 @@ import io.helidon.service.registry.Service;
 public final class ExplicitContactMapper implements JdbcClient.RowMapper<ContactLabel> {
     @Override
     public ContactLabel map(JdbcClient.Row row) {
-        return new ContactLabel(row.required("ID", Long.class),
-                                "explicit:" + row.required("NAME", String.class));
+        return new ContactLabel(row.get("ID", Long.class),
+                                "explicit:" + row.get("NAME", String.class));
     }
 }

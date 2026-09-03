@@ -49,14 +49,15 @@ class JdbcClientRegistryTest {
         DataSource dataSource = mock(DataSource.class);
         JdbcClientConfig pokemon = JdbcClient.builder()
                 .name("pokemon")
-                .dataSource(dataSource)
+                .dataSource("shared-source")
                 .buildPrototype();
         JdbcClientConfig audit = JdbcClient.builder()
                 .name("audit")
-                .dataSource(dataSource)
+                .dataSource("shared-source")
                 .buildPrototype();
         ServiceRegistryManager manager = manager();
         try {
+            Services.setNamed(DataSource.class, dataSource, "shared-source");
             Services.set(JdbcClientConfig.class, pokemon, audit);
 
             assertThat(Services.all(JdbcClientConfig.class), is(List.of(pokemon, audit)));
@@ -105,11 +106,12 @@ class JdbcClientRegistryTest {
                 "data.clients.jdbc.0.data-source", "yaml-source")));
         JdbcClientConfig programmatic = JdbcClient.builder()
                 .name("programmatic-client")
-                .dataSource(dataSource)
+                .dataSource("programmatic-source")
                 .buildPrototype();
         ServiceRegistryManager manager = manager();
         try {
             Services.set(Config.class, config);
+            Services.setNamed(DataSource.class, dataSource, "programmatic-source");
             Services.set(JdbcClientConfig.class, programmatic);
 
             assertThat(Services.all(JdbcClientConfig.class), is(List.of(programmatic)));
@@ -129,10 +131,11 @@ class JdbcClientRegistryTest {
     void createsGeneratedRepositoryFromProgrammaticConfiguration() {
         DataSource dataSource = mock(DataSource.class);
         JdbcClientConfig config = JdbcClient.builder()
-                .dataSource(dataSource)
+                .dataSource("default-source")
                 .buildPrototype();
         ServiceRegistryManager manager = manager();
         try {
+            Services.setNamed(DataSource.class, dataSource, "default-source");
             Services.set(JdbcClientConfig.class, config);
 
             OverflowRepository repository = Services.get(OverflowRepository.class);
@@ -150,9 +153,8 @@ class JdbcClientRegistryTest {
      */
     @Test
     void rejectsLateProgrammaticReplacement() {
-        DataSource dataSource = mock(DataSource.class);
         JdbcClientConfig config = JdbcClient.builder()
-                .dataSource(dataSource)
+                .dataSource("unused-source")
                 .buildPrototype();
         ServiceRegistryManager manager = manager();
         try {

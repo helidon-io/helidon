@@ -20,8 +20,10 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.data.DataException;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistryException;
 
 /**
  * Creates JDBC client configurations from application configuration.
@@ -45,25 +47,30 @@ final class JdbcClientConfigFactory implements Service.ServicesFactory<JdbcClien
 
     @Override
     public List<Service.QualifiedInstance<JdbcClientConfig>> services() {
+        Config rootConfig;
+        try {
+            rootConfig = config.get();
+        } catch (ServiceRegistryException failure) {
+            // Registry diagnostics can retain the failure raised while the configuration service was activated.
+            throw new DataException("JDBC client configuration could not be obtained.",
+                                    JdbcExceptionTranslator.sanitize("obtaining JDBC client configuration", failure));
+        }
+
         List<Config> configuredClients;
         try {
-            configuredClients = config.get()
+            configuredClients = rootConfig
                     .get(CONFIG_KEY)
                     .asNodeList()
                     .orElse(List.of());
-        } catch (RuntimeException failure) {
+        } catch (ConfigException failure) {
+            // Configuration diagnostics can contain paths and values that must not escape this boundary.
             throw new DataException("JDBC client configuration could not be read.",
                                     JdbcExceptionTranslator.sanitize("reading JDBC client configuration", failure));
         }
+
         List<JdbcClientConfig> clients = new ArrayList<>(configuredClients.size());
-        for (int index = 0; index < configuredClients.size(); index++) {
-            try {
-                clients.add(JdbcClientConfig.create(configuredClients.get(index)));
-            } catch (RuntimeException failure) {
-                throw new DataException("JDBC client configuration at position " + (index + 1) + " is invalid.",
-                                        JdbcExceptionTranslator.sanitize("creating a JDBC client configuration",
-                                                                         failure));
-            }
+        for (Config configuredClient : configuredClients) {
+            clients.add(JdbcClientConfig.create(configuredClient));
         }
         JdbcClientConfigSupport.validateAll(clients);
         return clients.stream()

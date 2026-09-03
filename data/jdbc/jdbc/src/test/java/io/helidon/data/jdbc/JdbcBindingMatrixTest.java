@@ -45,7 +45,6 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("helidon:api:internal")
 class JdbcBindingMatrixTest {
     private static final String SQL = "UPDATE TEST_VALUE SET VALUE = ?";
 
@@ -111,7 +110,7 @@ class JdbcBindingMatrixTest {
      */
     @Test
     void rejectsOffsetTemporalScalarsBeforeConnectionAcquisition() throws Exception {
-        JdbcClient client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        JdbcClient client = JdbcTestClients.create(dataSource);
 
         for (Object value : List.of(OffsetTime.parse("10:11:12+05:30"),
                                     OffsetDateTime.parse("2026-07-27T10:11:12+05:30"))) {
@@ -143,7 +142,7 @@ class JdbcBindingMatrixTest {
         String hostilePayload = "alpha'); DROP TABLE TEST_VALUE; -- :value ?";
         prepareOperation();
 
-        new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
+        JdbcTestClients.create(dataSource)
                 .create(originalSql)
                 .bind(1, hostilePayload)
                 .execute();
@@ -154,7 +153,7 @@ class JdbcBindingMatrixTest {
 
     @Test
     void validatesEveryBindPositionBeforeConnectionAcquisition() throws Exception {
-        JdbcClient.Statement operation = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
+        JdbcClient.Statement operation = JdbcTestClients.create(dataSource)
                 .create("UPDATE TEST_VALUE SET VALUE = ? WHERE ID = ?")
                 .bind(1, "value");
 
@@ -165,7 +164,7 @@ class JdbcBindingMatrixTest {
 
     @Test
     void rejectsNullTypesThatRequireDatabaseTypeNames() throws Exception {
-        JdbcClient client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        JdbcClient client = JdbcTestClients.create(dataSource);
 
         for (JDBCType type : List.of(JDBCType.ARRAY,
                                      JDBCType.DISTINCT,
@@ -173,7 +172,7 @@ class JdbcBindingMatrixTest {
                                      JDBCType.REF,
                                      JDBCType.STRUCT)) {
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-                                                            () -> JdbcClient.bindNull(client.create(SQL), 1, type));
+                                                            () -> GeneratedJdbcData.bindNull(client.create(SQL), 1, type));
             assertThat(failure.getMessage(),
                        is("The JDBC client cannot bind a null value of type '" + type
                                   + "' without a database type name."));
@@ -184,7 +183,7 @@ class JdbcBindingMatrixTest {
 
     private void assertBinding(Object value) throws Exception {
         prepareOperation();
-        new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
+        JdbcTestClients.create(dataSource)
                 .create(SQL)
                 .bind(1, value)
                 .execute();
@@ -227,7 +226,7 @@ class JdbcBindingMatrixTest {
 
     private void assertNullBinding(JDBCType nullType) throws Exception {
         prepareOperation();
-        JdbcClient.bindNull(new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider()).create(SQL),
+        GeneratedJdbcData.bindNull(JdbcTestClients.create(dataSource).create(SQL),
                             1,
                             nullType)
                 .execute();

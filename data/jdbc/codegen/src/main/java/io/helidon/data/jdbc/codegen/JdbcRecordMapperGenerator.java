@@ -63,7 +63,7 @@ final class JdbcRecordMapperGenerator {
                 TypedElementInfo component = plan.recordComponents().get(index);
                 Optional<TypeName> optionalType = JdbcScalarTypes.optionalScalarType(component.typeName());
                 field.addContent("row.")
-                        .addContent(optionalType.isPresent() ? "optional(" : "required(")
+                        .addContent(optionalType.isPresent() ? "optional(" : "get(")
                         .addContentLiteral(component.elementName())
                         .addContent(", ")
                         .addContent(optionalType.orElse(component.typeName()).boxed())

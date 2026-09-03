@@ -17,7 +17,6 @@ package io.helidon.data.jdbc.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanner;
@@ -50,11 +49,6 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
      * @return marker plan
      */
     static Result parse(String sql) {
-        Objects.requireNonNull(sql, "The SQL statement must not be null.");
-        if (sql.isBlank()) {
-            throw new IllegalArgumentException("The SQL statement must not be blank.");
-        }
-
         JdbcSqlMarkerLexer lexer = new JdbcSqlMarkerLexer(sql);
         JdbcSqlScanner.scan(sql, lexer);
         if (lexer.named && lexer.positional) {

@@ -61,7 +61,7 @@ class JdbcClientTransactionBoundaryTest {
     void registryManagedClientParticipatesInAnnotatedTransactions() {
         try (HikariDataSource pool = pool()) {
             CountingDataSource dataSource = new CountingDataSource(pool);
-            JdbcClient setup = JdbcClient.builder().dataSource(dataSource).build();
+            JdbcClient setup = JdbcTestClients.create(dataSource);
             initializeSchema(setup);
             dataSource.reset();
             ServiceRegistryManager manager = manager(dataSource);
@@ -93,7 +93,7 @@ class JdbcClientTransactionBoundaryTest {
     void standaloneClientDoesNotParticipateInAnnotatedTransaction() {
         try (HikariDataSource pool = pool()) {
             CountingDataSource dataSource = new CountingDataSource(pool);
-            JdbcClient setup = JdbcClient.builder().dataSource(dataSource).build();
+            JdbcClient setup = JdbcTestClients.create(dataSource);
             initializeSchema(setup);
             ServiceRegistryManager manager = manager(dataSource);
             try {
@@ -114,7 +114,7 @@ class JdbcClientTransactionBoundaryTest {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         GlobalServiceRegistry.registry(manager.registry());
         Services.set(JdbcClientConfig.class,
-                     JdbcClient.builder().dataSource(dataSource).buildPrototype());
+                     JdbcClient.builder().dataSource("standalone-source").buildPrototype());
         return manager;
     }
 

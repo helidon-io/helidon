@@ -53,7 +53,7 @@ public final class ImperativeSqlInjectionOperations implements SqlInjectionOpera
                 .bind(2, email)
                 .generatedKeys()
                 .addColumn(System.getProperty(GENERATED_KEY_COLUMN_PROPERTY, "id"))
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
     }
 
@@ -98,8 +98,8 @@ public final class ImperativeSqlInjectionOperations implements SqlInjectionOpera
     }
 
     private static ContactView contact(JdbcClient.Row row) {
-        return new ContactView(row.required("ID", Long.class),
-                               row.required("NAME", String.class),
+        return new ContactView(row.get("ID", Long.class),
+                               row.get("NAME", String.class),
                                row.optional("EMAIL", String.class));
     }
 }

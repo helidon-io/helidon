@@ -237,23 +237,23 @@ public abstract class AbstractJdbcScalarContract {
         client.create(SELECT_SQL)
                 .map(row -> {
                     assertAll("non-null scalar mappings",
-                              () -> assertThat(row.required(1, Boolean.class), is(VALUES.booleanValue())),
-                              () -> assertThat(row.required(2, Byte.class), is(VALUES.byteValue())),
-                              () -> assertThat(row.required(3, Short.class), is(VALUES.shortValue())),
-                              () -> assertThat(row.required(4, Integer.class), is(VALUES.integerValue())),
-                              () -> assertThat(row.required(5, Long.class), is(VALUES.longValue())),
-                              () -> assertThat(row.required(6, Float.class), is(VALUES.floatValue())),
-                              () -> assertThat(row.required(7, Double.class), is(VALUES.doubleValue())),
-                              () -> assertThat(row.required(8, BigDecimal.class),
+                              () -> assertThat(row.get(1, Boolean.class), is(VALUES.booleanValue())),
+                              () -> assertThat(row.get(2, Byte.class), is(VALUES.byteValue())),
+                              () -> assertThat(row.get(3, Short.class), is(VALUES.shortValue())),
+                              () -> assertThat(row.get(4, Integer.class), is(VALUES.integerValue())),
+                              () -> assertThat(row.get(5, Long.class), is(VALUES.longValue())),
+                              () -> assertThat(row.get(6, Float.class), is(VALUES.floatValue())),
+                              () -> assertThat(row.get(7, Double.class), is(VALUES.doubleValue())),
+                              () -> assertThat(row.get(8, BigDecimal.class),
                                                comparesEqualTo(VALUES.decimalValue())),
-                              () -> assertThat(row.required(9, String.class), is(VALUES.stringValue())),
-                              () -> assertThat(row.required(10, byte[].class), is(VALUES.bytesValue())),
-                              () -> assertThat(row.required(11, LocalDate.class), is(VALUES.localDateValue())),
-                              () -> assertThat(row.required(12, LocalTime.class), is(VALUES.localTimeValue())),
-                              () -> assertThat(row.required(13, LocalDateTime.class), is(VALUES.localDateTimeValue())),
-                              () -> assertThat(row.required(14, Date.class), is(VALUES.dateValue())),
-                              () -> assertThat(row.required(15, Time.class), is(VALUES.timeValue())),
-                              () -> assertThat(row.required(16, Timestamp.class), is(VALUES.timestampValue())));
+                              () -> assertThat(row.get(9, String.class), is(VALUES.stringValue())),
+                              () -> assertThat(row.get(10, byte[].class), is(VALUES.bytesValue())),
+                              () -> assertThat(row.get(11, LocalDate.class), is(VALUES.localDateValue())),
+                              () -> assertThat(row.get(12, LocalTime.class), is(VALUES.localTimeValue())),
+                              () -> assertThat(row.get(13, LocalDateTime.class), is(VALUES.localDateTimeValue())),
+                              () -> assertThat(row.get(14, Date.class), is(VALUES.dateValue())),
+                              () -> assertThat(row.get(15, Time.class), is(VALUES.timeValue())),
+                              () -> assertThat(row.get(16, Timestamp.class), is(VALUES.timestampValue())));
                     return true;
                 })
                 .one();
@@ -269,8 +269,8 @@ public abstract class AbstractJdbcScalarContract {
         client.create(SELECT_PORTABLE_CONVERSIONS_SQL)
                 .map(row -> {
                     assertAll("portable numeric scalar conversions",
-                              () -> assertThat(row.required(1, Long.class), is(4L)),
-                              () -> assertThat(row.required(2, BigDecimal.class),
+                              () -> assertThat(row.get(1, Long.class), is(4L)),
+                              () -> assertThat(row.get(2, BigDecimal.class),
                                                comparesEqualTo(BigDecimal.valueOf(4L))));
                     return true;
                 })

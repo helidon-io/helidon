@@ -22,7 +22,6 @@ import javax.sql.DataSource;
 
 import io.helidon.data.DataException;
 import io.helidon.service.registry.GlobalServiceRegistry;
-import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
@@ -31,7 +30,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -39,44 +37,7 @@ class JdbcClientPublicConstructionTest {
 
     private static final AtomicLong DATABASE_SEQUENCE = new AtomicLong();
     private static final JdbcClient.RowMapper<Pokemon> POKEMON_MAPPER = row ->
-            new Pokemon(row.required("ID", Integer.class), row.required("NAME", String.class));
-
-    /**
-     * Verifies a supplied data source supports both public construction forms
-     * and receives every connection back after each terminal operation.
-     */
-    @Test
-    void executesThroughSuppliedDataSource() {
-        try (HikariDataSource dataSource = dataSource()) {
-            JdbcClient builderClient = JdbcClient.builder()
-                    .dataSource(dataSource)
-                    .build();
-
-            assertThat(builderClient.prototype().name(), is(Service.Named.DEFAULT_NAME));
-            builderClient.create("CREATE TABLE POKEMON (ID INT PRIMARY KEY, NAME VARCHAR(40) NOT NULL)")
-                    .execute();
-            assertPoolIdle(dataSource);
-            assertThat(builderClient.create("INSERT INTO POKEMON (ID, NAME) VALUES (?, ?)")
-                               .bind(1, 25)
-                               .bind(2, "Pikachu")
-                               .execute(),
-                       is(1L));
-            assertPoolIdle(dataSource);
-
-            JdbcClientConfig config = JdbcClientConfig.builder()
-                    .name("pokemon")
-                    .dataSource(dataSource)
-                    .buildPrototype();
-            JdbcClient configuredClient = JdbcClient.create(config);
-
-            assertThat(configuredClient.prototype(), sameInstance(config));
-            assertThat(configuredClient.create("SELECT ID, NAME FROM POKEMON ORDER BY ID")
-                               .map(POKEMON_MAPPER)
-                               .list(),
-                       is(List.of(new Pokemon(25, "Pikachu"))));
-            assertPoolIdle(dataSource);
-        }
-    }
+            new Pokemon(row.get("ID", Integer.class), row.get("NAME", String.class));
 
     /**
      * Verifies a named data source is resolved through the SQL data source

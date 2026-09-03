@@ -47,7 +47,7 @@ class JdbcDatabaseFailureTest {
             statement.execute("INSERT INTO FAILURE_PARENT VALUES (1)");
             statement.execute("INSERT INTO FAILURE_VALUE VALUES (1, 1, 5, 5, 'baseline')");
         }
-        client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        client = JdbcTestClients.create(dataSource);
     }
 
     /**

@@ -33,10 +33,14 @@ import io.helidon.data.DataException;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceInstance;
+import io.helidon.service.registry.ServiceRegistryException;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,20 +58,21 @@ class JdbcClientFactoryTest {
             .build();
 
     /**
-     * Verifies default and named clients sharing one supplied data source are
-     * published once with both required qualifiers and no JDBC access.
+     * Verifies default and named clients sharing one registered data source
+     * are published with both required qualifiers and no JDBC access.
      */
     @Test
     void publishesQualifiedClientsSharingADataSource() {
         DataSource dataSource = mock(DataSource.class);
+        ServiceInstance<DataSource> instance = serviceInstance("shared-source", dataSource);
         JdbcClientConfig defaultConfig = JdbcClientConfig.builder()
-                .dataSource(dataSource)
+                .dataSource("shared-source")
                 .buildPrototype();
         JdbcClientConfig inventoryConfig = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource(dataSource)
+                .dataSource("shared-source")
                 .buildPrototype();
-        JdbcClientFactory factory = factory(List.of(defaultConfig, inventoryConfig), List::of);
+        JdbcClientFactory factory = factory(List.of(defaultConfig, inventoryConfig), () -> List.of(instance));
 
         List<Service.QualifiedInstance<JdbcClient>> clients = factory.services();
 
@@ -147,6 +152,80 @@ class JdbcClientFactoryTest {
         assertThat(failure.getMessage(),
                    is("JDBC client 'inventory' could not resolve SQL data source 'inventory-source'."));
         verify(unrelated, never()).get();
+    }
+
+    /**
+     * Verifies a registry failure during data source discovery is sanitized
+     * before it crosses the JDBC client factory boundary.
+     */
+    @Test
+    void sanitizesDataSourceDiscoveryFailure() {
+        String sensitiveDetail = "private-data-source-provider-detail";
+        JdbcClientConfig config = JdbcClientConfig.builder()
+                .name("inventory")
+                .dataSource("inventory-source")
+                .buildPrototype();
+        JdbcClientFactory factory = factory(
+                List.of(config),
+                () -> {
+                    throw new ServiceRegistryException(sensitiveDetail,
+                                                       new IllegalStateException("private-provider-cause"));
+                });
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(),
+                   is("The JDBC client factory could not inspect registered SQL data sources."));
+        assertThat(failure.getCause().toString(), not(containsString(sensitiveDetail)));
+        assertThat(failure.getCause().toString(), not(containsString("private-provider-cause")));
+        assertThat(failure.getCause().getCause(), nullValue());
+    }
+
+    /**
+     * Verifies a runtime failure during data source activation is sanitized
+     * before it crosses the JDBC client factory boundary.
+     */
+    @Test
+    void sanitizesDataSourceActivationFailure() {
+        String sensitiveDetail = "private-data-source-activation-detail";
+        JdbcClientConfig config = JdbcClientConfig.builder()
+                .name("inventory")
+                .dataSource("inventory-source")
+                .buildPrototype();
+        JdbcClientFactory factory = factory(List.of(config), () -> {
+            throw new IllegalStateException(sensitiveDetail,
+                                            new IllegalArgumentException("private-activation-cause"));
+        });
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(),
+                   is("The JDBC client factory could not inspect registered SQL data sources."));
+        assertThat(failure.getCause().toString(), not(containsString(sensitiveDetail)));
+        assertThat(failure.getCause().toString(), not(containsString("private-activation-cause")));
+        assertThat(failure.getCause().getCause(), nullValue());
+    }
+
+    /**
+     * Verifies an unexpected failure from an already resolved data source
+     * service propagates without being wrapped by the JDBC client factory.
+     */
+    @Test
+    void propagatesUnexpectedResolvedDataSourceFailure() {
+        DataSource dataSource = mock(DataSource.class);
+        ServiceInstance<DataSource> instance = serviceInstance("inventory-source", dataSource);
+        IllegalStateException unexpected = new IllegalStateException("unexpected resolved service failure");
+        when(instance.get()).thenThrow(unexpected);
+        JdbcClientConfig config = JdbcClientConfig.builder()
+                .name("inventory")
+                .dataSource("inventory-source")
+                .buildPrototype();
+
+        IllegalStateException failure = assertThrows(
+                IllegalStateException.class,
+                () -> factory(List.of(config), () -> List.of(instance)).services());
+
+        assertThat(failure, sameInstance(unexpected));
     }
 
     /**

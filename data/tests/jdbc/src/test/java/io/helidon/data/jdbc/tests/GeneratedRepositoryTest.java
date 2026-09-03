@@ -93,10 +93,10 @@ class GeneratedRepositoryTest {
                    is(1));
         assertThat(source,
                    containsString("new RecordMapperReuseRepository.Projection<String>("
-                                          + "row.required(\"value\", String.class))"));
+                                          + "row.get(\"value\", String.class))"));
         assertThat(source,
                    containsString("new RecordMapperReuseRepository.Projection<Integer>("
-                                          + "row.required(\"value\", Integer.class))"));
+                                          + "row.get(\"value\", Integer.class))"));
     }
 
     /**
@@ -111,7 +111,7 @@ class GeneratedRepositoryTest {
 
         assertThat(source, containsString("JdbcClient.RowMapper<GenericProjection<String>>"));
         assertThat(source,
-                   containsString("new GenericProjection<String>(row.required(\"value\", String.class))"));
+                   containsString("new GenericProjection<String>(row.get(\"value\", String.class))"));
     }
 
     /**

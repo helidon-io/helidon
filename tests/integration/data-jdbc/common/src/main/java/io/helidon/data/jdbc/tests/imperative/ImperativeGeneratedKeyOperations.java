@@ -51,21 +51,21 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
     @Override
     public long insertScalar(String name) {
         return generatedKeys(statement(name), keyColumn())
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
     }
 
     @Override
     public Optional<Long> insertOptionalScalar(String name) {
         return generatedKeys(statement(name), keyColumn())
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .optional();
     }
 
     @Override
     public List<Long> insertScalarList(String name) {
         return generatedKeys(statement(name), keyColumn())
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .list();
     }
 
@@ -75,8 +75,8 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
                 .bind(1, name)
                 .bind(2, email);
         return generatedKeys(statement, keyColumns("id", "name", "email"))
-                .map(row -> new ContactView(row.required("ID", Long.class),
-                                            row.required("NAME", String.class),
+                .map(row -> new ContactView(row.get("ID", Long.class),
+                                            row.get("NAME", String.class),
                                             row.optional("EMAIL", String.class)))
                 .one();
     }
@@ -84,15 +84,15 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
     @Override
     public ContactLabel insertMapped(String name) {
         return generatedKeys(statement(name), keyColumns("id", "name"))
-                .map(row -> new ContactLabel(row.required("ID", Long.class),
-                                             "preferred:" + row.required("NAME", String.class)))
+                .map(row -> new ContactLabel(row.get("ID", Long.class),
+                                             "preferred:" + row.get("NAME", String.class)))
                 .one();
     }
 
     @Override
     public long insertWithInvalidGeneratedKeyColumn(String name) {
         return generatedKeys(statement(name), "MISSING_KEY")
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
     }
 

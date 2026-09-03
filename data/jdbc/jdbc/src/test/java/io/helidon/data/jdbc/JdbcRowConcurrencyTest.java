@@ -49,8 +49,8 @@ class JdbcRowConcurrencyTest {
         JdbcRow row = newRow(resultSet);
         List<Callable<?>> reads = List.of(() -> row.optional(1, byte[].class),
                                           () -> row.optional("value", String.class),
-                                          () -> row.required(1, String.class),
-                                          () -> row.required("value", String.class));
+                                          () -> row.get(1, String.class),
+                                          () -> row.get("value", String.class));
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             for (Callable<?> read : reads) {
@@ -84,7 +84,7 @@ class JdbcRowConcurrencyTest {
         row.expire();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            Future<String> read = executor.submit(() -> row.required(1, String.class));
+            Future<String> read = executor.submit(() -> row.get(1, String.class));
             ExecutionException failure = assertThrows(ExecutionException.class,
                                                       () -> read.get(5, TimeUnit.SECONDS));
             assertThat(failure.getCause(), instanceOf(IllegalStateException.class));
@@ -106,9 +106,9 @@ class JdbcRowConcurrencyTest {
         when(resultSet.getString(1)).thenReturn("value");
         JdbcRow row = newRow(resultSet);
 
-        assertThat(row.required(1, String.class), is("value"));
+        assertThat(row.get(1, String.class), is("value"));
         row.expire();
-        assertThrows(IllegalStateException.class, () -> row.required(1, String.class));
+        assertThrows(IllegalStateException.class, () -> row.get(1, String.class));
 
         verify(resultSet).getString(1);
     }

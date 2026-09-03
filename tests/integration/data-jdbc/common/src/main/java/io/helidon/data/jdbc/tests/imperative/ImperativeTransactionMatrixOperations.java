@@ -58,7 +58,7 @@ public final class ImperativeTransactionMatrixOperations implements TransactionM
         case QUERY -> client.create(TransactionSql.QUERY).map(Long.class).one();
         case UPDATE -> client.create(TransactionSql.UPDATE).execute();
         case GENERATED_KEY -> generatedKeys(client.create(TransactionSql.GENERATED_KEY))
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
         };
     }

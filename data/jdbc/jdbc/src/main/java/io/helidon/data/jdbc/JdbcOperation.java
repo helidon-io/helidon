@@ -19,7 +19,6 @@ import java.sql.Date;
 import java.sql.JDBCType;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Objects;
 
 import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanner;
@@ -55,7 +54,7 @@ final class JdbcOperation {
                   JdbcPreparationPlan preparationPlan) {
         this.sql = sql;
         this.binds = binds;
-        this.preparationPlan = Objects.requireNonNull(preparationPlan, "The preparation plan must not be null.");
+        this.preparationPlan = preparationPlan;
     }
 
     /**
@@ -73,10 +72,6 @@ final class JdbcOperation {
      * @return number of positional bind markers
      */
     static int parameterCount(String sql) {
-        Objects.requireNonNull(sql, "The SQL statement must not be null.");
-        if (sql.isBlank()) {
-            throw new IllegalArgumentException("The SQL statement must not be blank.");
-        }
         MarkerCounter counter = new MarkerCounter();
         JdbcSqlScanner.scan(sql, counter);
         return counter.count;

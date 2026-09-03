@@ -26,6 +26,6 @@ import io.helidon.service.registry.Service;
 public final class SingleContactMapper implements JdbcClient.RowMapper<SingleMapperContact> {
     @Override
     public SingleMapperContact map(JdbcClient.Row row) {
-        return new SingleMapperContact("single:" + row.required(1, String.class));
+        return new SingleMapperContact("single:" + row.get(1, String.class));
     }
 }

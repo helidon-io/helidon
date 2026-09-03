@@ -24,6 +24,6 @@ import io.helidon.data.jdbc.tests.application.MissingContact;
 public final class UnregisteredContactMapper implements JdbcClient.RowMapper<MissingContact> {
     @Override
     public MissingContact map(JdbcClient.Row row) {
-        return new MissingContact(row.required(1, Long.class));
+        return new MissingContact(row.get(1, Long.class));
     }
 }

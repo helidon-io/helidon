@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 
 import io.helidon.common.LruCache;
 import io.helidon.data.DataException;
+import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.Services;
 
 /**
@@ -34,36 +35,10 @@ import io.helidon.service.registry.Services;
  */
 final class JdbcClientImpl implements JdbcClient {
 
-    private static final CachePolicy DEFAULT_CACHE_POLICY = new CachePolicy(256, 4_096);
-
     private final JdbcClientConfig prototype;
     private final JdbcRunner runner;
     private final CachePolicy cachePolicy;
     private final LruCache<String, Integer> parameterCounts;
-
-    /**
-     * Creates a client with a connection lease policy.
-     *
-     * @param dataSource data source used for terminal operations
-     * @param leaseProvider provider that decides whether an operation owns or borrows a connection
-     */
-    JdbcClientImpl(DataSource dataSource,
-                   JdbcConnectionLease.Provider leaseProvider) {
-        this(defaultPrototype(dataSource, DEFAULT_CACHE_POLICY), dataSource, leaseProvider, DEFAULT_CACHE_POLICY);
-    }
-
-    /**
-     * Creates a client with connection lease and cache policies.
-     *
-     * @param dataSource data source used for terminal operations
-     * @param leaseProvider provider that decides whether an operation owns or borrows a connection
-     * @param cachePolicy parameter count cache policy
-     */
-    JdbcClientImpl(DataSource dataSource,
-                   JdbcConnectionLease.Provider leaseProvider,
-                   CachePolicy cachePolicy) {
-        this(defaultPrototype(dataSource, cachePolicy), dataSource, leaseProvider, cachePolicy);
-    }
 
     /**
      * Creates a client with its source configuration and runtime policies.
@@ -77,11 +52,9 @@ final class JdbcClientImpl implements JdbcClient {
                    DataSource dataSource,
                    JdbcConnectionLease.Provider leaseProvider,
                    CachePolicy cachePolicy) {
-        this.prototype = Objects.requireNonNull(prototype, "The JDBC client configuration must not be null.");
-        this.runner = new JdbcRunner(Objects.requireNonNull(dataSource, "The data source must not be null."),
-                                     Objects.requireNonNull(leaseProvider,
-                                                            "The connection lease provider must not be null."));
-        this.cachePolicy = Objects.requireNonNull(cachePolicy, "The parameter count cache policy must not be null.");
+        this.prototype = prototype;
+        this.runner = new JdbcRunner(dataSource, leaseProvider);
+        this.cachePolicy = cachePolicy;
         this.parameterCounts = cachePolicy.capacity() == 0 ? null : LruCache.create(cachePolicy.capacity());
     }
 
@@ -92,22 +65,19 @@ final class JdbcClientImpl implements JdbcClient {
      * @return configured JDBC client
      */
     static JdbcClient create(JdbcClientConfig config) {
-        Objects.requireNonNull(config, "The JDBC client configuration must not be null.");
         JdbcClientConfigSupport.validate(config);
-        CachePolicy cachePolicy = JdbcProviderPropertiesSupport.create(
-                Objects.requireNonNull(config.properties(), "The JDBC client properties must not be null."));
+        CachePolicy cachePolicy = JdbcClientConfigSupport.cachePolicy(config);
         String clientDescription = JdbcClientConfigSupport.clientDescription(config.name());
         DataSource dataSource;
-        if (config.dataSourceInstance().isPresent()) {
-            dataSource = config.dataSourceInstance().get();
-        } else if (config.dataSource().isPresent()) {
+        if (config.dataSource().isPresent()) {
             String dataSourceName = config.dataSource().get();
             String resolutionMessage = clientDescription + " could not resolve SQL data source '"
                     + dataSourceName + "'.";
             Optional<DataSource> resolved;
             try {
                 resolved = Services.firstNamed(DataSource.class, dataSourceName);
-            } catch (RuntimeException failure) {
+            } catch (ServiceRegistryException failure) {
+                // Registry diagnostics can retain details from a data source provider activation failure.
                 throw new DataException(resolutionMessage,
                                         JdbcExceptionTranslator.sanitize("resolving a SQL data source", failure));
             }
@@ -140,6 +110,9 @@ final class JdbcClientImpl implements JdbcClient {
     @Override
     public Statement create(String sql) {
         Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        if (sql.isBlank()) {
+            throw new IllegalArgumentException("The SQL statement must not be blank.");
+        }
         int parameterCount = parameterCount(sql);
         return new JdbcStatement(runner, sql, parameterCount);
     }
@@ -154,32 +127,6 @@ final class JdbcClientImpl implements JdbcClient {
      */
     Statement createGenerated(String sql, int parameterCount) {
         return new JdbcStatement(runner, sql, parameterCount);
-    }
-
-    /**
-     * Creates the immutable configuration retained by an internally
-     * constructed client.
-     *
-     * @param dataSource data source used by the client
-     * @param cachePolicy parameter count cache policy
-     * @return immutable client configuration
-     */
-    private static JdbcClientConfig defaultPrototype(DataSource dataSource, CachePolicy cachePolicy) {
-        Objects.requireNonNull(cachePolicy, "The parameter count cache policy must not be null.");
-        JdbcParameterCountCacheConfig parameterCountCache = JdbcParameterCountCacheConfig.builder()
-                .capacity(cachePolicy.capacity())
-                .maxSqlLength(cachePolicy.maxSqlLength())
-                .buildPrototype();
-        JdbcProviderPropertiesConfig jdbcProperties = JdbcProviderPropertiesConfig.builder()
-                .parameterCountCache(parameterCountCache)
-                .buildPrototype();
-        JdbcPropertiesConfig properties = JdbcPropertiesConfig.builder()
-                .jdbc(jdbcProperties)
-                .buildPrototype();
-        return JdbcClientConfig.builder()
-                .dataSource(Objects.requireNonNull(dataSource, "The data source must not be null."))
-                .properties(properties)
-                .buildPrototype();
     }
 
     /**
