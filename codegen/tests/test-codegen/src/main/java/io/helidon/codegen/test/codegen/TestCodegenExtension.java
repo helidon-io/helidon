@@ -37,6 +37,7 @@ import io.helidon.common.types.TypeNames;
 class TestCodegenExtension implements CodegenExtension {
     private static final TypeName CRAZY = TypeName.create("io.helidon.codegen.test.codegen.use.CrazyAnnotation");
     private static final TypeName TARGET = TypeName.create(Target.class);
+    private static final TypeName TYPE_USE_MARKER = TypeName.create("io.helidon.codegen.test.codegen.use.TypeUseMarker");
 
     private final CodegenContext ctx;
 
@@ -170,33 +171,43 @@ class TestCodegenExtension implements CodegenExtension {
                                             .stream()
                                             .map(Modifier::modifierName)
                                             .collect(Collectors.joining(",")))
-                        .addContentLine("\";"));
-
-        typeInfo.elementInfo()
-                .forEach(it -> {
-                    if (it.kind() == ElementKind.METHOD) {
-                        classModel.addMethod(methodMods -> methodMods
-                                .name("methodModifiers")
-                                .returnType(TypeNames.STRING)
-                                .addContent("return \"")
-                                .addContent(it.elementModifiers()
-                                                    .stream()
-                                                    .map(Modifier::modifierName)
-                                                    .collect(Collectors.joining(",")))
-                                .addContentLine("\";"));
-                    }
-                    if (it.kind() == ElementKind.FIELD) {
-                        classModel.addMethod(fieldMods -> fieldMods
-                                .name("fieldModifiers")
-                                .returnType(TypeNames.STRING)
-                                .addContent("return \"")
-                                .addContent(it.elementModifiers()
-                                                    .stream()
-                                                    .map(Modifier::modifierName)
-                                                    .collect(Collectors.joining(",")))
-                                .addContentLine("\";"));
-                    }
-                });
+                        .addContentLine("\";"))
+                .addMethod(methodMods -> methodMods
+                        .name("methodModifiers")
+                        .returnType(TypeNames.STRING)
+                        .addContent("return \"")
+                        .addContent(elementModifiers(typeInfo, ElementKind.METHOD, "getField"))
+                        .addContentLine("\";"))
+                .addMethod(fieldMods -> fieldMods
+                        .name("fieldModifiers")
+                        .returnType(TypeNames.STRING)
+                        .addContent("return \"")
+                        .addContent(elementModifiers(typeInfo, ElementKind.FIELD, "field"))
+                        .addContentLine("\";"))
+                .addMethod(method -> method
+                        .name("primitiveMethodTypeUseAnnotationPresent")
+                        .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                        .addContentLine("return "
+                                                + hasMethodReturnTypeAnnotation(typeInfo,
+                                                                               "primitiveValue",
+                                                                               TYPE_USE_MARKER)
+                                                + ";"))
+                .addMethod(method -> method
+                        .name("declaredMethodTypeUseAnnotationPresent")
+                        .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                        .addContentLine("return "
+                                                + hasMethodReturnTypeAnnotation(typeInfo,
+                                                                               "declaredValue",
+                                                                               TYPE_USE_MARKER)
+                                                + ";"))
+                .addMethod(method -> method
+                        .name("arrayMethodTypeUseAnnotationPresent")
+                        .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                        .addContentLine("return "
+                                                + hasMethodReturnTypeAnnotation(typeInfo,
+                                                                               "arrayValue",
+                                                                               TYPE_USE_MARKER)
+                                                + ";"));
 
         ctx.filer().writeSourceFile(classModel.build());
     }
@@ -237,7 +248,34 @@ class TestCodegenExtension implements CodegenExtension {
                 .build();
     }
 
-    private Annotation targetAnnotation(ElementType elementType) {
+    private static String elementModifiers(TypeInfo typeInfo, ElementKind kind, String elementName) {
+        if (kind != ElementKind.FIELD && kind != ElementKind.METHOD) {
+            throw new IllegalArgumentException("kind: " + kind);
+        }
+        return typeInfo.elementInfo()
+                .stream()
+                .filter(e -> e.kind() == kind && e.elementName().equals(elementName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Failed to find " + kind + " element named: " + elementName))
+                .elementModifiers()
+                .stream()
+                .map(Modifier::modifierName)
+                .collect(Collectors.joining(","));
+    }
+
+    private static boolean hasMethodReturnTypeAnnotation(TypeInfo typeInfo, String methodName, TypeName annotationType) {
+        return typeInfo.elementInfo()
+                .stream()
+                .filter(it -> it.kind() == ElementKind.METHOD && it.elementName().equals(methodName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Failed to find method: " + methodName))
+                .typeName()
+                .annotations()
+                .stream()
+                .anyMatch(it -> it.typeName().equals(annotationType));
+    }
+
+    private static Annotation targetAnnotation(ElementType elementType) {
         return Annotation.builder()
                 .typeName(TARGET)
                 .property("value", elementType)
