@@ -143,14 +143,14 @@ public class Http2ConnectionWriterJmhTest {
                                       BufferData.create(RESPONSE_BYTES));
         }
 
-        private void reset(FlowControl.Outbound flowControl) {
-            data.data().rewind();
-            ((BenchmarkFlowControl) flowControl).reset();
-        }
-
         @TearDown
         public void tearDown() {
             dataWriter.unregister();
+        }
+
+        private void reset(FlowControl.Outbound flowControl) {
+            data.data().rewind();
+            ((BenchmarkFlowControl) flowControl).reset();
         }
     }
 
@@ -162,11 +162,6 @@ public class Http2ConnectionWriterJmhTest {
         private BenchmarkFlowControl(int initialWindowSize) {
             this.initialWindowSize = initialWindowSize;
             this.remainingWindowSize = initialWindowSize;
-        }
-
-        private void reset() {
-            windowUpdated = false;
-            remainingWindowSize = initialWindowSize;
         }
 
         @Override
@@ -212,18 +207,15 @@ public class Http2ConnectionWriterJmhTest {
         public int maxFrameSize() {
             return MAX_FRAME_SIZE;
         }
+
+        private void reset() {
+            windowUpdated = false;
+            remainingWindowSize = initialWindowSize;
+        }
     }
 
     private static final class BenchmarkDataWriter implements DataWriter {
         private final ThreadLocal<Blackhole> blackholes = new ThreadLocal<>();
-
-        private void register(Blackhole blackhole) {
-            blackholes.set(blackhole);
-        }
-
-        private void unregister() {
-            blackholes.remove();
-        }
 
         @Override
         public void write(BufferData... buffers) {
@@ -243,6 +235,14 @@ public class Http2ConnectionWriterJmhTest {
         @Override
         public void writeNow(BufferData buffer) {
             blackhole().consume(buffer);
+        }
+
+        private void register(Blackhole blackhole) {
+            blackholes.set(blackhole);
+        }
+
+        private void unregister() {
+            blackholes.remove();
         }
 
         private Blackhole blackhole() {
