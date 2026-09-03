@@ -271,7 +271,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         // will create a copy, so we could invoke this method multiple times
         ClientUri resolvedUri = resolvedUri();
 
-        WebClientServiceResponse serviceResponse = invokeServices(callChain, whenSent, whenComplete, resolvedUri);
+        WebClientServiceResponse serviceResponse = invokeServices(http2Client.webClient(),
+                                                                  callChain,
+                                                                  whenSent,
+                                                                  whenComplete,
+                                                                  resolvedUri);
 
         CompletableFuture<Void> complete = new CompletableFuture<>();
         complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))

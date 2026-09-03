@@ -102,6 +102,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>tracing.<wbr>Extended<wbr>Tracer<wbr>Config](io.helidon.tracing.ExtendedTracerConfig.md)
 - [io.<wbr>helidon.<wbr>tracing.<wbr>Tracer](io.helidon.tracing.Tracer.md)
 - [io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>opentelemetry.<wbr>Open<wbr>Telemetry<wbr>Tracer](io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md)
+- [io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Client<wbr>AltSvc<wbr>Config](io.helidon.webclient.api.ClientAltSvcConfig.md)
 - [io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Http<wbr>Client<wbr>Config](io.helidon.webclient.api.HttpClientConfig.md)
 - [io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Http<wbr>Config<wbr>Base](io.helidon.webclient.api.HttpConfigBase.md)
 - [io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Proxy](io.helidon.webclient.api.Proxy.md)

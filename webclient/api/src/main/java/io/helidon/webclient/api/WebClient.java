@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
@@ -116,6 +117,20 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
     @Api.Internal
     default List<String> tcpProtocolIds() {
         return List.of();
+    }
+
+    /**
+     * Notify active HTTP protocol implementations about a transport response received by this client.
+     * <p>
+     * This notification lets one protocol observe response metadata produced by another protocol without creating
+     * dependencies between protocol modules. For example, a protocol may use an {@code Alt-Svc} response header to
+     * discover an alternative service.
+     *
+     * @param response received protocol response
+     */
+    @Api.Internal
+    default void responseReceived(WebClientProtocolResponse response) {
+        Objects.requireNonNull(response, "response");
     }
 
     /**

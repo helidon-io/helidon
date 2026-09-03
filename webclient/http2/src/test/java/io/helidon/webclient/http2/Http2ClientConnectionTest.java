@@ -18,9 +18,11 @@ package io.helidon.webclient.http2;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -36,6 +38,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
@@ -59,6 +62,12 @@ import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientConnectionTarget;
+import io.helidon.webclient.api.ConnectionKey;
+import io.helidon.webclient.api.DnsAddressLookup;
+import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.ResolvedClientTarget;
+import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClient;
 
 import org.junit.jupiter.api.Test;
@@ -2241,6 +2250,28 @@ class Http2ClientConnectionTest {
         }
     }
 
+    @Test
+    void retainsResolvedPhysicalTarget() {
+        Tls tls = Tls.builder().enabled(false).build();
+        ConnectionKey connectionKey = ConnectionKey.create("https",
+                                                           "origin.example",
+                                                           443,
+                                                           tls,
+                                                           (_, _) -> InetAddress.getLoopbackAddress(),
+                                                           DnsAddressLookup.IPV4,
+                                                           Proxy.noProxy());
+        ClientConnectionTarget logicalTarget = ClientConnectionTarget.create(connectionKey, "https");
+        ResolvedClientTarget resolvedTarget = logicalTarget.resolve("origin.example", 8443, 17);
+        TcpClientConnection tcpConnection = mock(TcpClientConnection.class);
+        when(tcpConnection.resolvedTarget()).thenReturn(Optional.of(resolvedTarget));
+
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(tcpConnection)) {
+            Http2ClientConnection connection = new Http2ClientConnection(test.client, tcpConnection);
+
+            assertThat(connection.resolvedTarget(), is(Optional.of(resolvedTarget)));
+        }
+    }
+
     @FunctionalInterface
     private interface ConnectionFactory<T extends Http2ClientConnection> {
         T create(Http2ClientImpl client, ClientConnection clientConnection);
@@ -2264,6 +2295,10 @@ class Http2ClientConnectionTest {
         private final ClientConnection clientConnection;
 
         private MockedConnectionTestContext() {
+            this(mock(ClientConnection.class));
+        }
+
+        private MockedConnectionTestContext(ClientConnection clientConnection) {
             Http2ClientProtocolConfig protocolConfig = Http2ClientProtocolConfig.builder()
                     .ping(true)
                     .pingTimeout(Duration.ofMillis(100))
@@ -2274,7 +2309,7 @@ class Http2ClientConnectionTest {
                     .buildPrototype();
 
             this.client = mock(Http2ClientImpl.class);
-            this.clientConnection = mock(ClientConnection.class);
+            this.clientConnection = clientConnection;
             WebClient webClient = mock(WebClient.class);
 
             doAnswer(invocation -> {

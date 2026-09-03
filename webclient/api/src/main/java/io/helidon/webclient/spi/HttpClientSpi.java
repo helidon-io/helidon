@@ -16,10 +16,14 @@
 
 package io.helidon.webclient.spi;
 
+import java.util.Objects;
+
+import io.helidon.common.Api;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.ReleasableResource;
+import io.helidon.webclient.api.WebClientProtocolResponse;
 
 /**
  * Integration for HTTP versions to provide a single API.
@@ -69,6 +73,20 @@ public interface HttpClientSpi extends ReleasableResource {
      */
     ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest,
                                    ClientUri clientUri);
+
+    /**
+     * Notification invoked after the WebClient receives a transport response, regardless of the protocol that produced
+     * it.
+     * <p>
+     * An implementation may inspect response metadata relevant to its protocol. For example, it may learn about an
+     * alternative service from an {@code Alt-Svc} response header received over another protocol.
+     *
+     * @param response received protocol response
+     */
+    @Api.Internal
+    default void responseReceived(WebClientProtocolResponse response) {
+        Objects.requireNonNull(response, "response");
+    }
 
     /**
      * For TCP based protocols, we can do ALPN negotiation, obtain a connection, and then let the client handle the protocol.

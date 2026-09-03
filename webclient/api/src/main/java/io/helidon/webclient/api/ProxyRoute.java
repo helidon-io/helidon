@@ -180,6 +180,16 @@ public final class ProxyRoute {
     }
 
     /**
+     * Whether this direct route is bound to the address that matched an IP-based {@code no-proxy} rule.
+     *
+     * @return whether the route is address-bound
+     */
+    @Api.Internal
+    public boolean addressBound() {
+        return noProxyAddress != null;
+    }
+
+    /**
      * Whether HTTP/1.1 must use absolute-form request targets on this route.
      *
      * @return whether this is an HTTP forward-proxy route

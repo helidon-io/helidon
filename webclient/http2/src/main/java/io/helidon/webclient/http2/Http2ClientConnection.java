@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -67,6 +68,8 @@ import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ResolvedClientTarget;
+import io.helidon.webclient.api.TcpClientConnection;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -96,6 +99,7 @@ public class Http2ClientConnection {
     private final PendingInboundHeaders pendingInboundHeaders;
     private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
+    private final ResolvedClientTarget resolvedTarget;
     private final SocketContext ctx;
     private final Http2ConnectionWriter writer;
     private final DataReader reader;
@@ -152,6 +156,9 @@ public class Http2ClientConnection {
                 .blockTimeout(protocolConfig.flowControlBlockTimeout())
                 .build();
         this.connection = connection;
+        this.resolvedTarget = connection instanceof TcpClientConnection tcpConnection
+                ? tcpConnection.resolvedTarget().orElse(null)
+                : null;
         this.ctx = connection.helidonSocket();
         this.dataWriter = connection.writer();
         this.reader = connection.reader();
@@ -211,25 +218,6 @@ public class Http2ClientConnection {
         return create(connection, http2Client, sendSettings, _ -> { });
     }
 
-    private static <T extends Http2ClientConnection> T create(T connection,
-                                                              Http2ClientImpl http2Client,
-                                                              boolean sendSettings,
-                                                              Consumer<T> beforeStart) {
-        Http2ClientConnection rawConnection = connection;
-        boolean success = false;
-        try {
-            beforeStart.accept(connection);
-            rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
-            rawConnection.awaitInitialSettings();
-            success = true;
-        } finally {
-            if (!success) {
-                rawConnection.close();
-            }
-        }
-        return connection;
-    }
-
     static Http2Settings settings(Http2ClientProtocolConfig config) {
         Http2Settings.Builder b = Http2Settings.builder();
         if (config.maxHeaderListSize() > 0) {
@@ -241,43 +229,8 @@ public class Http2ClientConnection {
                 .build();
     }
 
-    private static Http2Settings mergeSettings(Http2Settings currentSettings, Http2Settings receivedSettings) {
-        Http2Settings.Builder builder = Http2Settings.builder();
-        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.HEADER_TABLE_SIZE);
-        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.ENABLE_PUSH);
-        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_CONCURRENT_STREAMS);
-        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.INITIAL_WINDOW_SIZE);
-        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_FRAME_SIZE);
-        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_HEADER_LIST_SIZE);
-        return builder.build();
-    }
-
-    private static <T> void mergeSetting(Http2Settings.Builder builder,
-                                         Http2Settings currentSettings,
-                                         Http2Settings receivedSettings,
-                                         Http2Setting<T> setting) {
-        if (receivedSettings.hasValue(setting)) {
-            builder.add(setting, receivedSettings.value(setting));
-        } else if (currentSettings.hasValue(setting)) {
-            builder.add(setting, currentSettings.value(setting));
-        }
-    }
-
-    private static boolean clientStreamId(int streamId) {
-        return streamId > 0 && streamId % 2 == 1;
-    }
-
-    private static boolean endOfHeaders(Http2FrameHeader frameHeader) {
-        return switch (frameHeader.type()) {
-        case HEADERS -> frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders();
-        case CONTINUATION -> frameHeader.flags(Http2FrameTypes.CONTINUATION).endOfHeaders();
-        default -> false;
-        };
-    }
-
-    private static BufferData pingData(long pingId) {
-        return BufferData.create(Long.BYTES)
-                .writeInt64(pingId);
+    Optional<ResolvedClientTarget> resolvedTarget() {
+        return Optional.ofNullable(resolvedTarget);
     }
 
     Http2ConnectionWriter writer() {
@@ -508,6 +461,104 @@ public class Http2ClientConnection {
     @Api.Internal
     public void closeNow() {
         closeConnection(new IllegalStateException("HTTP/2 connection is closed"));
+    }
+
+    boolean handle(Http2FrameHeader frameHeader, BufferData data) {
+        int streamId = frameHeader.streamId();
+        validateFrameStreamId(frameHeader, streamId);
+        validateHeaderContinuation(frameHeader, streamId);
+
+        return switch (frameHeader.type()) {
+        case GO_AWAY -> handleGoAwayFrame(streamId, frameHeader, data);
+        case SETTINGS -> handleSettingsFrame(streamId, frameHeader, data);
+        case WINDOW_UPDATE -> handleWindowUpdateFrame(streamId, frameHeader, data);
+        case PING -> handlePingFrame(streamId, frameHeader, data);
+        case RST_STREAM -> {
+            handleRstStreamFrame(streamId, data);
+            yield true;
+        }
+        case DATA -> {
+            handleDataFrame(streamId, frameHeader, data);
+            yield true;
+        }
+        case HEADERS, CONTINUATION -> handleHeadersFrame(streamId, frameHeader, data);
+        default -> {
+            LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
+            yield true;
+        }
+        };
+    }
+
+    /**
+     * Hook invoked on the connection thread once an inbound header block has
+     * been decoded and survived the post-decode stream-membership check, but
+     * before it is logged and delivered to the stream. Production code leaves
+     * this empty; tests can override it to force close timing in the narrow
+     * post-decode/pre-delivery window.
+     *
+     * @param stream live stream about to receive the decoded headers
+     * @param headers decoded headers
+     * @param endOfStream whether the block also closes the remote side
+     */
+    void beforeDeliverInboundHeaders(Http2ClientStream stream, Http2Headers headers, boolean endOfStream) {
+    }
+
+    private static <T extends Http2ClientConnection> T create(T connection,
+                                                              Http2ClientImpl http2Client,
+                                                              boolean sendSettings,
+                                                              Consumer<T> beforeStart) {
+        Http2ClientConnection rawConnection = connection;
+        boolean success = false;
+        try {
+            beforeStart.accept(connection);
+            rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
+            rawConnection.awaitInitialSettings();
+            success = true;
+        } finally {
+            if (!success) {
+                rawConnection.close();
+            }
+        }
+        return connection;
+    }
+
+    private static Http2Settings mergeSettings(Http2Settings currentSettings, Http2Settings receivedSettings) {
+        Http2Settings.Builder builder = Http2Settings.builder();
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.HEADER_TABLE_SIZE);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.ENABLE_PUSH);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_CONCURRENT_STREAMS);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.INITIAL_WINDOW_SIZE);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_FRAME_SIZE);
+        mergeSetting(builder, currentSettings, receivedSettings, Http2Setting.MAX_HEADER_LIST_SIZE);
+        return builder.build();
+    }
+
+    private static <T> void mergeSetting(Http2Settings.Builder builder,
+                                         Http2Settings currentSettings,
+                                         Http2Settings receivedSettings,
+                                         Http2Setting<T> setting) {
+        if (receivedSettings.hasValue(setting)) {
+            builder.add(setting, receivedSettings.value(setting));
+        } else if (currentSettings.hasValue(setting)) {
+            builder.add(setting, currentSettings.value(setting));
+        }
+    }
+
+    private static boolean clientStreamId(int streamId) {
+        return streamId > 0 && streamId % 2 == 1;
+    }
+
+    private static boolean endOfHeaders(Http2FrameHeader frameHeader) {
+        return switch (frameHeader.type()) {
+        case HEADERS -> frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders();
+        case CONTINUATION -> frameHeader.flags(Http2FrameTypes.CONTINUATION).endOfHeaders();
+        default -> false;
+        };
+    }
+
+    private static BufferData pingData(long pingId) {
+        return BufferData.create(Long.BYTES)
+                .writeInt64(pingId);
     }
 
     private void close(RuntimeException failure) {
@@ -828,32 +879,6 @@ public class Http2ClientConnection {
         return handle(frameHeader, data);
     }
 
-    boolean handle(Http2FrameHeader frameHeader, BufferData data) {
-        int streamId = frameHeader.streamId();
-        validateFrameStreamId(frameHeader, streamId);
-        validateHeaderContinuation(frameHeader, streamId);
-
-        return switch (frameHeader.type()) {
-        case GO_AWAY -> handleGoAwayFrame(streamId, frameHeader, data);
-        case SETTINGS -> handleSettingsFrame(streamId, frameHeader, data);
-        case WINDOW_UPDATE -> handleWindowUpdateFrame(streamId, frameHeader, data);
-        case PING -> handlePingFrame(streamId, frameHeader, data);
-        case RST_STREAM -> {
-            handleRstStreamFrame(streamId, data);
-            yield true;
-        }
-        case DATA -> {
-            handleDataFrame(streamId, frameHeader, data);
-            yield true;
-        }
-        case HEADERS, CONTINUATION -> handleHeadersFrame(streamId, frameHeader, data);
-        default -> {
-            LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
-            yield true;
-        }
-        };
-    }
-
     private BufferData readFrameData(Http2FrameHeader frameHeader) {
         if (frameHeader.length() == 0) {
             return BufferData.empty();
@@ -920,20 +945,6 @@ public class Http2ClientConnection {
 
     private Http2Headers decodeInboundHeaders(Http2ClientStream stream, Http2FrameData... headerFrames) {
         return decodeInboundHeaders(stream, stream.inboundHeaderDecodeBasis(), headerFrames);
-    }
-
-    /**
-     * Hook invoked on the connection thread once an inbound header block has
-     * been decoded and survived the post-decode stream-membership check, but
-     * before it is logged and delivered to the stream. Production code leaves
-     * this empty; tests can override it to force close timing in the narrow
-     * post-decode/pre-delivery window.
-     *
-     * @param stream live stream about to receive the decoded headers
-     * @param headers decoded headers
-     * @param endOfStream whether the block also closes the remote side
-     */
-    void beforeDeliverInboundHeaders(Http2ClientStream stream, Http2Headers headers, boolean endOfStream) {
     }
 
     /**

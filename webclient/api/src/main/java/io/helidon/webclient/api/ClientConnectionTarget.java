@@ -612,6 +612,21 @@ public final class ClientConnectionTarget {
         return route;
     }
 
+    private static UriAuthority altSvcOriginAuthority(UriAuthority originAuthority) {
+        if (originAuthority == null) {
+            return null;
+        }
+        UriHost host = originAuthority.host();
+        if (host.kind() != UriHost.Kind.DNS) {
+            return originAuthority;
+        }
+        String canonicalHost = host.value().toLowerCase(Locale.ROOT);
+        if (host.value().equals(canonicalHost)) {
+            return originAuthority;
+        }
+        return UriAuthority.create(UriHost.create(canonicalHost), originAuthority.port());
+    }
+
     /**
      * DNS-free identity used to look up a logical WebClient connection target before selecting its proxy route.
      */
@@ -645,6 +660,32 @@ public final class ClientConnectionTarget {
          */
         public boolean currentTlsGeneration() {
             return tlsGeneration == connectionKey.tls().generation();
+        }
+
+        /**
+         * Create the canonical origin identity used for Alt-Svc discovery.
+         * <p>
+         * URI schemes and DNS host names are compared without regard to case. All connection policy, transport, local
+         * address, authority, TLS identity, and TLS generation partitions are retained.
+         * <p>
+         * This key is only an Alt-Svc identity. Callers must retain and use the request's original lookup key for
+         * routing, physical target creation, and connection-pool identity.
+         *
+         * @return canonical Alt-Svc origin key
+         */
+        @Api.Internal
+        public LookupKey altSvcOriginKey() {
+            ConnectionKey canonicalConnectionKey = connectionKey.altSvcOriginKey();
+            UriAuthority canonicalOriginAuthority = altSvcOriginAuthority(originAuthorityOverride);
+            if (connectionKey == canonicalConnectionKey && originAuthorityOverride == canonicalOriginAuthority) {
+                return this;
+            }
+            return new LookupKey(canonicalConnectionKey,
+                                 scheme,
+                                 canonicalOriginAuthority,
+                                 transportAddress,
+                                 localAddress,
+                                 tlsGeneration);
         }
 
         @Override

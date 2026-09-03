@@ -196,6 +196,7 @@ enum HeaderNameEnum implements HeaderName {
         static final String AGE_NAME = "Age";
         static final String ALLOW_NAME = "Allow";
         static final String ALT_SVC_NAME = "Alt-Svc";
+        static final String ALT_USED_NAME = "Alt-Used";
         static final String CACHE_CONTROL_NAME = "Cache-Control";
         static final String CONNECTION_NAME = "Connection";
         static final String CONTENT_DISPOSITION_NAME = "Content-Disposition";

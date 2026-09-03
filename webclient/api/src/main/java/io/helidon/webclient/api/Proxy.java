@@ -30,6 +30,7 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -894,7 +895,11 @@ public class Proxy {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("type").asString().map(ProxyType::valueOf).ifPresent(this::type);
+            config.get("type")
+                    .asString()
+                    .map(it -> it.toUpperCase(Locale.ROOT))
+                    .map(ProxyType::valueOf)
+                    .ifPresent(this::type);
 
             if (this.type != ProxyType.SYSTEM && this.type != ProxyType.NONE) {
                 config.get("host").asString().ifPresent(this::host);

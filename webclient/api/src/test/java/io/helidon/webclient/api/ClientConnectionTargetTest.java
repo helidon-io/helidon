@@ -762,6 +762,177 @@ class ClientConnectionTargetTest {
     }
 
     @Test
+    void canonicalizesAltSvcLookupOriginDnsCaseInBothDirections() {
+        DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
+        ClientUri mixedCaseUri = ClientUri.create(URI.create("HTTPS://Example.COM:443/path"));
+        ClientUri lowerCaseUri = ClientUri.create(URI.create("https://example.com:443/path"));
+        ConnectionKey mixedCaseKey = ConnectionKey.create(mixedCaseUri,
+                                                          TLS,
+                                                          resolver,
+                                                          DnsAddressLookup.IPV4,
+                                                          Proxy.noProxy());
+        ConnectionKey lowerCaseKey = ConnectionKey.create(lowerCaseUri,
+                                                          TLS,
+                                                          resolver,
+                                                          DnsAddressLookup.IPV4,
+                                                          Proxy.noProxy());
+        ClientRequestHeaders mixedCaseHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        mixedCaseHeaders.set(HeaderNames.HOST, "Alt-Origin.Example:9443");
+        ClientRequestHeaders lowerCaseHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        lowerCaseHeaders.set(HeaderNames.HOST, "alt-origin.example:9443");
+        ClientConnectionTarget.LookupKey mixedCase = ClientConnectionTarget.lookupKey(mixedCaseKey,
+                                                                                       mixedCaseUri,
+                                                                                       mixedCaseHeaders);
+        ClientConnectionTarget.LookupKey lowerCase = ClientConnectionTarget.lookupKey(lowerCaseKey,
+                                                                                       lowerCaseUri,
+                                                                                       lowerCaseHeaders);
+
+        assertThat(mixedCase, not(lowerCase));
+        assertThat(mixedCase.altSvcOriginKey(), is(lowerCase.altSvcOriginKey()));
+        assertThat(lowerCase.altSvcOriginKey(), is(mixedCase.altSvcOriginKey()));
+        assertThat(mixedCase.altSvcOriginKey().hashCode(), is(lowerCase.altSvcOriginKey().hashCode()));
+        assertThat(lowerCase.altSvcOriginKey(), sameInstance(lowerCase));
+    }
+
+    @Test
+    void altSvcLookupOriginRetainsConnectionAndTargetPartitions() {
+        DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
+        DnsResolver otherResolver = (_, _) -> InetAddress.ofLiteral("127.0.0.2");
+        Tls tls = Tls.builder().build();
+        ClientUri uri = ClientUri.create(URI.create("https://origin.example/path"));
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        ConnectionKey connectionKey = ConnectionKey.create(uri,
+                                                           tls,
+                                                           resolver,
+                                                           DnsAddressLookup.IPV4,
+                                                           Proxy.noProxy());
+        ClientConnectionTarget target = ClientConnectionTarget.create(connectionKey, uri, headers);
+        ClientConnectionTarget.LookupKey base = target.lookupKey().altSvcOriginKey();
+
+        ClientUri otherPortUri = ClientUri.create(URI.create("https://origin.example:8443/path"));
+        ConnectionKey otherPortKey = ConnectionKey.create(otherPortUri,
+                                                          tls,
+                                                          resolver,
+                                                          DnsAddressLookup.IPV4,
+                                                          Proxy.noProxy());
+        ClientConnectionTarget.LookupKey otherPort = ClientConnectionTarget.lookupKey(otherPortKey,
+                                                                                       otherPortUri,
+                                                                                       headers)
+                .altSvcOriginKey();
+        ClientUri otherSchemeUri = ClientUri.create(URI.create("http://origin.example:443/path"));
+        ConnectionKey otherSchemeKey = ConnectionKey.create(otherSchemeUri,
+                                                            tls,
+                                                            resolver,
+                                                            DnsAddressLookup.IPV4,
+                                                            Proxy.noProxy());
+        ClientConnectionTarget.LookupKey otherScheme = ClientConnectionTarget.lookupKey(otherSchemeKey,
+                                                                                         otherSchemeUri,
+                                                                                         headers)
+                .altSvcOriginKey();
+        ConnectionKey otherTlsKey = ConnectionKey.create(uri,
+                                                         Tls.builder().build(),
+                                                         resolver,
+                                                         DnsAddressLookup.IPV4,
+                                                         Proxy.noProxy());
+        ClientConnectionTarget.LookupKey otherTls = ClientConnectionTarget.lookupKey(otherTlsKey, uri, headers)
+                .altSvcOriginKey();
+        ConnectionKey otherResolverKey = ConnectionKey.create(uri,
+                                                              tls,
+                                                              otherResolver,
+                                                              DnsAddressLookup.IPV4,
+                                                              Proxy.noProxy());
+        ClientConnectionTarget.LookupKey otherDnsResolver = ClientConnectionTarget.lookupKey(otherResolverKey,
+                                                                                              uri,
+                                                                                              headers)
+                .altSvcOriginKey();
+        ConnectionKey otherLookupKey = ConnectionKey.create(uri,
+                                                            tls,
+                                                            resolver,
+                                                            DnsAddressLookup.IPV6,
+                                                            Proxy.noProxy());
+        ClientConnectionTarget.LookupKey otherDnsLookup = ClientConnectionTarget.lookupKey(otherLookupKey, uri, headers)
+                .altSvcOriginKey();
+        Proxy proxy = Proxy.builder().host("proxy.example").port(8181).build();
+        ConnectionKey otherProxyKey = ConnectionKey.create(uri,
+                                                           tls,
+                                                           resolver,
+                                                           DnsAddressLookup.IPV4,
+                                                           proxy);
+        ClientConnectionTarget.LookupKey otherProxy = ClientConnectionTarget.lookupKey(otherProxyKey, uri, headers)
+                .altSvcOriginKey();
+        ClientRequestHeaders otherAuthorityHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        otherAuthorityHeaders.set(HeaderNames.HOST, "other.example:9443");
+        ClientConnectionTarget.LookupKey otherAuthority = ClientConnectionTarget.lookupKey(connectionKey,
+                                                                                            uri,
+                                                                                            otherAuthorityHeaders)
+                .altSvcOriginKey();
+        ClientConnectionTarget.LookupKey localBind = ClientConnectionTarget.create(
+                connectionKey,
+                target.scheme(),
+                target.originAuthority(),
+                target.proxyRoute(),
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
+                target.tlsGeneration()).lookupKey().altSvcOriginKey();
+        UnixDomainSocketAddress firstUnixAddress = UnixDomainSocketAddress.of("alt-svc-origin-first.sock");
+        ConnectionKey firstUnixKey = ConnectionKey.createUnixDomainSocket(uri,
+                                                                           tls,
+                                                                           resolver,
+                                                                           DnsAddressLookup.IPV4,
+                                                                           firstUnixAddress);
+        ClientConnectionTarget.LookupKey firstUnix = ClientConnectionTarget.createUnixDomainSocket(firstUnixKey,
+                                                                                                     uri,
+                                                                                                     headers,
+                                                                                                     firstUnixAddress)
+                .lookupKey()
+                .altSvcOriginKey();
+        UnixDomainSocketAddress secondUnixAddress = UnixDomainSocketAddress.of("alt-svc-origin-second.sock");
+        ConnectionKey secondUnixKey = ConnectionKey.createUnixDomainSocket(uri,
+                                                                            tls,
+                                                                            resolver,
+                                                                            DnsAddressLookup.IPV4,
+                                                                            secondUnixAddress);
+        ClientConnectionTarget.LookupKey secondUnix = ClientConnectionTarget.createUnixDomainSocket(secondUnixKey,
+                                                                                                      uri,
+                                                                                                      headers,
+                                                                                                      secondUnixAddress)
+                .lookupKey()
+                .altSvcOriginKey();
+
+        assertThat(base, not(otherPort));
+        assertThat(base, not(otherScheme));
+        assertThat(base, not(otherTls));
+        assertThat(base, not(otherDnsResolver));
+        assertThat(base, not(otherDnsLookup));
+        assertThat(base, not(otherProxy));
+        assertThat(base, not(otherAuthority));
+        assertThat(base, not(localBind));
+        assertThat(base, not(firstUnix));
+        assertThat(firstUnix, not(secondUnix));
+    }
+
+    @Test
+    void altSvcLookupOriginRetainsCapturedTlsGeneration() {
+        Tls tls = Tls.builder().trustAll(true).build();
+        ClientUri uri = ClientUri.create(URI.create("https://origin.example/path"));
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        ConnectionKey connectionKey = ConnectionKey.create(uri,
+                                                           tls,
+                                                           (_, _) -> InetAddress.getLoopbackAddress(),
+                                                           DnsAddressLookup.IPV4,
+                                                           Proxy.noProxy());
+        ClientConnectionTarget.LookupKey beforeReload = ClientConnectionTarget.lookupKey(connectionKey, uri, headers)
+                .altSvcOriginKey();
+
+        tls.reload(TlsMaterial.builder().trustAll(true).build());
+        ClientConnectionTarget.LookupKey afterReload = ClientConnectionTarget.lookupKey(connectionKey, uri, headers)
+                .altSvcOriginKey();
+
+        assertThat(beforeReload, not(afterReload));
+        assertThat(beforeReload.currentTlsGeneration(), is(false));
+        assertThat(afterReload.currentTlsGeneration(), is(true));
+    }
+
+    @Test
     void createsTargetFromLookupKeyOnCacheMiss() {
         AtomicInteger resolutions = new AtomicInteger();
         Proxy proxy = Proxy.builder()

@@ -27,8 +27,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 class HttpClientConfigTest {
+
+    @Test
+    void altSvcIsDisabledByDefault() {
+        assertThat(HttpClientConfig.create().altSvc().isEmpty(), is(true));
+    }
 
     @Test
     void testUnixBaseAddressKeepsConfiguredPath() {
@@ -39,5 +45,28 @@ class HttpClientConfigTest {
                 .orElseThrow();
 
         assertThat(socketAddress.getPath(), is(Path.of("/tmp/client.sock")));
+    }
+
+    @Test
+    void programmaticAltSvcConfigurationOptsInWithDefaults() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .altSvc(ClientAltSvcConfig.create())
+                .build();
+
+        ClientAltSvcConfig altSvc = config.altSvc().orElseThrow();
+        assertThat(altSvc.enabled(), is(true));
+        assertThat(altSvc.protocols().isEmpty(), is(true));
+    }
+
+    @Test
+    void parsesAltSvcConfiguration() {
+        Config config = Config.just(ConfigSources.create(Map.of("alt-svc.enabled", "false",
+                                                               "alt-svc.protocols.0", "h2",
+                                                               "alt-svc.protocols.1", "future-protocol")));
+
+        ClientAltSvcConfig altSvc = HttpClientConfig.create(config).altSvc().orElseThrow();
+
+        assertThat(altSvc.enabled(), is(false));
+        assertThat(altSvc.protocols(), containsInAnyOrder("h2", "future-protocol"));
     }
 }

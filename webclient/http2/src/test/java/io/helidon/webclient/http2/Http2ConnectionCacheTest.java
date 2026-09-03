@@ -18,19 +18,31 @@ package io.helidon.webclient.http2;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
+import io.helidon.webclient.api.AltSvcHeader;
 import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
@@ -128,6 +140,113 @@ class Http2ConnectionCacheTest {
     }
 
     @Test
+    void unrelatedInvalidationDoesNotWaitForHandlerSetup() throws Exception {
+        Clock clock = Clock.fixed(Instant.parse("2026-08-27T00:00:00Z"), ZoneOffset.UTC);
+        Http2ClientConnectionHandler handler = new Http2ClientConnectionHandler(1);
+        Http2AltSvcCache alternatives = Http2AltSvcCache.create(clock, handler::retire);
+        Tls tls = Tls.builder().trustAll(true).build();
+        ClientConnectionTarget originTarget = ClientConnectionTarget.create(
+                ConnectionKey.create("https",
+                                     "origin.example",
+                                     443,
+                                     tls,
+                                     (_, _) -> InetAddress.getLoopbackAddress(),
+                                     DnsAddressLookup.IPV4,
+                                     Proxy.noProxy()),
+                "https");
+        Instant firstObservation = clock.instant();
+        WritableHeaders<?> firstHeaders = WritableHeaders.create();
+        firstHeaders.add(HeaderValues.create(HeaderNames.ALT_SVC, "h2=\":8443\"; ma=3600"));
+        AltSvcHeader firstAdvertisement = AltSvcHeader.create(ClientResponseHeaders.create(firstHeaders), firstObservation)
+                .orElseThrow();
+        alternatives.record(originTarget, firstAdvertisement, true, false, firstObservation);
+
+        CountDownLatch setupStarted = new CountDownLatch(1);
+        CountDownLatch releaseSetup = new CountDownLatch(1);
+        Http2ClientImpl http2Client = mock(Http2ClientImpl.class);
+        Http2ClientRequestImpl request = mock(Http2ClientRequestImpl.class);
+        WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
+        Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(), _ -> null, true);
+        when(http2Client.protocolConfig()).thenReturn(Http2ClientProtocolConfig.create());
+        when(request.connection()).thenReturn(Optional.empty());
+        when(request.tls()).thenAnswer(_ -> {
+            setupStarted.countDown();
+            if (!releaseSetup.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Timed out waiting to release handler setup");
+            }
+            throw new IllegalStateException("Expected test setup failure");
+        });
+
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            Future<?> establishing = executor.submit(() -> handler.http2(http2Client,
+                                                                          originTarget,
+                                                                          request,
+                                                                          ClientUri.create(URI.create(
+                                                                                  "https://origin.example")),
+                                                                          serviceRequest,
+                                                                          fallbackHandler));
+            try {
+                assertThat(setupStarted.await(5, TimeUnit.SECONDS), is(true));
+                Instant replacementObservation = firstObservation.plusNanos(1);
+                WritableHeaders<?> replacementHeaders = WritableHeaders.create();
+                replacementHeaders.add(HeaderValues.create(HeaderNames.ALT_SVC, "h2=\":9443\"; ma=3600"));
+                AltSvcHeader replacement = AltSvcHeader.create(ClientResponseHeaders.create(replacementHeaders),
+                                                               replacementObservation)
+                        .orElseThrow();
+                Future<?> invalidation = executor.submit(() -> alternatives.record(originTarget,
+                                                                                     replacement,
+                                                                                     true,
+                                                                                     false,
+                                                                                     replacementObservation));
+
+                assertThat(invalidation.get(5, TimeUnit.SECONDS), nullValue());
+            } finally {
+                releaseSetup.countDown();
+            }
+            assertThrows(ExecutionException.class, () -> establishing.get(5, TimeUnit.SECONDS));
+        } finally {
+            alternatives.close();
+        }
+    }
+
+    @Test
+    void expiredAlternativeRaceDoesNotCompleteRequestAsFailed() {
+        Clock clock = Clock.fixed(Instant.parse("2026-08-24T00:00:00Z"), ZoneOffset.UTC);
+        Http2AltSvcCache alternatives = Http2AltSvcCache.create(clock, _ -> { });
+        Tls tls = Tls.builder().trustAll(true).build();
+        ClientConnectionTarget originTarget = ClientConnectionTarget.create(
+                ConnectionKey.create("https",
+                                     "origin.example",
+                                     443,
+                                     tls,
+                                     (_, _) -> InetAddress.getLoopbackAddress(),
+                                     DnsAddressLookup.IPV4,
+                                     Proxy.noProxy()),
+                "https");
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+        responseHeaders.add(HeaderValues.create(HeaderNames.ALT_SVC, "h2=\":8443\"; ma=0"));
+        AltSvcHeader advertisement = AltSvcHeader.create(ClientResponseHeaders.create(responseHeaders), clock.instant())
+                .orElseThrow();
+        alternatives.record(originTarget, advertisement, true, false, clock.instant());
+        Http2AltSvcCache.Selection selection = alternatives.select(originTarget, false, _ -> true);
+        Http2ClientConnectionHandler handler = new Http2ClientConnectionHandler(1, alternatives::current);
+        Http2ClientImpl http2Client = mock(Http2ClientImpl.class);
+        Http2ClientRequestImpl request = mock(Http2ClientRequestImpl.class);
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(whenSent, _ -> null, true);
+        when(http2Client.protocolConfig()).thenReturn(Http2ClientProtocolConfig.create());
+
+        AlternativeConnectionException failure = assertThrows(
+                AlternativeConnectionException.class,
+                () -> handler.newAlternativeStream(http2Client, selection, request, fallbackHandler));
+
+        assertThat(failure.selection(), sameInstance(selection));
+        assertThat(failure.reason(), is(AlternativeConnectionException.Reason.STALE));
+        assertThat(whenSent.isDone(), is(false));
+        alternatives.close();
+    }
+
+    @Test
     void removingOneTargetRetainsSharedHttp2Support() {
         Tls tls = Tls.builder().enabled(false).build();
         Proxy proxy = Proxy.noProxy();
@@ -198,9 +317,25 @@ class Http2ConnectionCacheTest {
                                                                           serviceRequest,
                                                                           fallbackHandler)
                     .handler();
-            cache.markSupported(connectionKey);
+            cache.markSupported(firstTarget);
 
             assertThat(firstTarget, not(secondTarget));
+            assertThat(firstHandler, not(sameInstance(secondHandler)));
+            assertThat(cache.supports(connectionKey), is(true));
+
+            cache.remove(firstTarget, firstHandler);
+
+            assertThat(cache.supports(connectionKey), is(false));
+
+            firstHandler = cache.newStream(http2Client,
+                                           firstTarget,
+                                           request,
+                                           initialUri,
+                                           serviceRequest,
+                                           fallbackHandler)
+                    .handler();
+            cache.markSupported(secondTarget);
+
             assertThat(firstHandler, not(sameInstance(secondHandler)));
             assertThat(cache.supports(connectionKey), is(true));
 

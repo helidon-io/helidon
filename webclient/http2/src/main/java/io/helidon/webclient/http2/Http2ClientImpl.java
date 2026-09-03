@@ -17,20 +17,32 @@
 package io.helidon.webclient.http2;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.http2.Http2FrameListener;
+import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2LoggingFrameListener;
+import io.helidon.webclient.api.AltSvcHeader;
+import io.helidon.webclient.api.ClientAltSvcConfig;
+import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.ProxyRoute;
+import io.helidon.webclient.api.SniMode;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.api.WebClientCookieManager;
+import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.spi.HttpClientSpi;
 
@@ -47,12 +59,29 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final Http2FrameListener sendListener;
     private final Http2FrameListener recvListener;
+    private final boolean altSvcNotificationsEnabled;
+    private final boolean altSvcEnabled;
+    private final boolean responseNotificationsManagedByWebClient;
     private volatile boolean closed;
 
     Http2ClientImpl(WebClient webClient, Http2ClientConfig clientConfig) {
+        this(webClient, clientConfig, false);
+    }
+
+    Http2ClientImpl(WebClient webClient,
+                    Http2ClientConfig clientConfig,
+                    boolean responseNotificationsManagedByWebClient) {
         this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
+        Optional<ClientAltSvcConfig> altSvc = clientConfig.altSvc()
+                .filter(ClientAltSvcConfig::enabled);
+        this.altSvcNotificationsEnabled = altSvc.isPresent();
+        this.altSvcEnabled = altSvc
+                .map(config -> config.protocols().isEmpty()
+                        || config.protocols().contains(Http2Client.PROTOCOL_ID))
+                .orElse(false);
+        this.responseNotificationsManagedByWebClient = responseNotificationsManagedByWebClient;
         if (clientConfig.shareConnectionCache()) {
             this.connectionCache = Http2ConnectionCache.shared();
             this.clientCache = null;
@@ -93,11 +122,78 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     @Override
     public SupportLevel supports(FullClientRequest<?> clientRequest, ClientUri clientUri) {
-        if (connectionCache.supports(Http2ConnectionKeys.create(clientUri, clientRequest, clientConfig))) {
+        ConnectionKey connectionKey = Http2ConnectionKeys.create(clientUri, clientRequest, clientConfig);
+        if (connectionCache.supports(connectionKey)) {
             return SupportLevel.SUPPORTED;
         }
 
+        if (altSvcEnabled) {
+            boolean explicitConnection = clientRequest.connection().isPresent();
+            if (!connectionCache.mayContainAlternative(connectionKey.host(), explicitConnection)) {
+                return SupportLevel.NOT_SUPPORTED;
+            }
+            ClientRequestHeaders headers = clientRequest.headers();
+            if (clientRequest.sni()
+                    .or(clientConfig::sni)
+                    .filter(sni -> sni.mode() == SniMode.HOST_HEADER)
+                    .isPresent()) {
+                connectionKey = Http2ConnectionKeys.create(clientUri, clientRequest, clientConfig, headers);
+            }
+            Optional<ProxyRoute> selectedRoute = clientRequest.selectedProxyRoute();
+            boolean alternativeAvailable;
+            if (selectedRoute.isPresent()) {
+                ClientConnectionTarget target = ClientConnectionTarget.create(connectionKey,
+                                                                                clientUri,
+                                                                                headers,
+                                                                                selectedRoute.get());
+                alternativeAvailable = connectionCache.alternativeAvailable(target, explicitConnection);
+            } else {
+                ClientConnectionTarget.LookupKey lookupKey = ClientConnectionTarget.lookupKey(connectionKey,
+                                                                                               clientUri,
+                                                                                               headers);
+                Http2AltSvcCache.Candidate candidate = connectionCache.currentAlternative(lookupKey,
+                                                                                           explicitConnection);
+                if (candidate == null) {
+                    alternativeAvailable = false;
+                } else {
+                    boolean originAuthorityOverride = headers.contains(Http2Headers.AUTHORITY_NAME)
+                            || headers.contains(HeaderNames.HOST);
+                    ClientConnectionTarget target = originAuthorityOverride
+                            ? ClientConnectionTarget.create(connectionKey,
+                                                            clientUri,
+                                                            headers,
+                                                            candidate.proxyRoute())
+                            : ClientConnectionTarget.create(connectionKey,
+                                                            clientUri.scheme(),
+                                                            candidate.proxyRoute());
+                    alternativeAvailable = connectionCache.alternativeAvailable(target, explicitConnection);
+                }
+            }
+            if (alternativeAvailable) {
+                return SupportLevel.SUPPORTED;
+            }
+        }
+
         return SupportLevel.NOT_SUPPORTED;
+    }
+
+    @Override
+    public void responseReceived(WebClientProtocolResponse response) {
+        if (!altSvcEnabled
+                || !response.secure()
+                || !(Http1Client.PROTOCOL_ID.equals(response.protocolId())
+                        || Http2Client.PROTOCOL_ID.equals(response.protocolId()))
+                || response.status().code() == Status.MISDIRECTED_REQUEST_421_CODE) {
+            return;
+        }
+
+        var receivedAt = response.receivedAt();
+        AltSvcHeader.create(response.headers(), receivedAt)
+                .ifPresent(header -> connectionCache.recordAlternative(response.target().logicalTarget(),
+                                                                        header,
+                                                                        response.secure(),
+                                                                        response.explicitConnection(),
+                                                                        receivedAt));
     }
 
     @Override
@@ -184,7 +280,19 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                     .shareConnectionCache(false)
                     .build();
             try {
-                Http1Client http1Client = fallbackWebClient.client(Http1Client.PROTOCOL);
+                var provider = Http1Client.PROTOCOL.provider();
+                var configType = provider.configType();
+                var http1ProtocolConfig = fallbackWebClient.prototype()
+                        .protocolConfigs()
+                        .stream()
+                        .filter(config -> provider.protocolId().equals(config.type()))
+                        .filter(config -> configType.isAssignableFrom(config.getClass()))
+                        .map(configType::cast)
+                        .findFirst()
+                        .orElseGet(provider::defaultConfig);
+                WebClient forwardingWebClient = new Http2ResponseForwardingWebClient(fallbackWebClient,
+                                                                                      this::publishResponse);
+                Http1Client http1Client = provider.protocol(forwardingWebClient, http1ProtocolConfig);
                 fallbackResources = new Http1FallbackResources(fallbackWebClient, http1Client);
                 http1FallbackResources.set(fallbackResources);
                 return http1Client;
@@ -211,6 +319,26 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     Http2ClientProtocolConfig protocolConfig() {
         return protocolConfig;
+    }
+
+    boolean altSvcEnabled() {
+        return altSvcEnabled;
+    }
+
+    boolean altSvcNotificationsEnabled() {
+        return altSvcNotificationsEnabled;
+    }
+
+    boolean responseNotificationsManagedByWebClient() {
+        return responseNotificationsManagedByWebClient;
+    }
+
+    void publishResponse(WebClientProtocolResponse response) {
+        if (responseNotificationsManagedByWebClient) {
+            webClient.responseReceived(response);
+        } else {
+            responseReceived(response);
+        }
     }
 
     Http2ConnectionCache connectionCache() {

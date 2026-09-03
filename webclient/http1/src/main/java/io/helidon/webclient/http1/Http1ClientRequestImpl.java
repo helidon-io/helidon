@@ -314,7 +314,11 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         // will create a copy, so we could invoke this method multiple times
         ClientUri resolvedUri = resolvedUri();
 
-        WebClientServiceResponse serviceResponse = invokeServices(callChain, whenSent, whenComplete, resolvedUri);
+        WebClientServiceResponse serviceResponse = invokeServices(http1Client.webClient(),
+                                                                  callChain,
+                                                                  whenSent,
+                                                                  whenComplete,
+                                                                  resolvedUri);
 
         CompletableFuture<Void> complete = new CompletableFuture<>();
         complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))

@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +51,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http1.Http1ConnectionListener;
+import io.helidon.webclient.api.ClientAltSvcConfig;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientRequestBase;
@@ -59,11 +61,12 @@ import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.ProxyRoute;
 import io.helidon.webclient.api.TcpClientConnection;
+import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
 
-abstract class Http1CallChainBase implements WebClientService.Chain {
+abstract class Http1CallChainBase implements WebClientService.TransportChain {
     private static final Supplier<IllegalArgumentException> INVALID_SIZE_EXCEPTION_SUPPLIER =
             () -> new IllegalArgumentException("Chunk size is invalid");
 
@@ -79,9 +82,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     private final Http1ClientImpl http1Client;
     private final Http1ConnectionListener sendListener;
     private final Http1ConnectionListener recvListener;
+    private final boolean explicitConnectionRequest;
+    private final boolean altSvcEnabled;
 
     private ClientConnection effectiveConnection;
     private boolean forwardProxy;
+    private WebClientProtocolResponse pendingProtocolResponse;
 
     Http1CallChainBase(Http1ClientImpl http1Client,
                        Http1ClientRequestImpl clientRequest,
@@ -97,6 +103,11 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         this.whenComplete = whenComplete;
         this.sendListener = http1Client.sendListener();
         this.recvListener = http1Client.recvListener();
+        this.explicitConnectionRequest = clientRequest.connection().isPresent()
+                && !clientRequest.ownsExplicitConnection();
+        this.altSvcEnabled = clientConfig.altSvc()
+                .map(ClientAltSvcConfig::enabled)
+                .orElse(false);
     }
 
     static WebClientServiceResponse createServiceResponse(Http1ClientImpl http1Client,
@@ -258,6 +269,23 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
     }
 
+    @Override
+    public String protocolId() {
+        return Http1Client.PROTOCOL_ID;
+    }
+
+    @Override
+    public Optional<WebClientProtocolResponse> protocolResponse(WebClientServiceResponse response) {
+        return Optional.ofNullable(takeProtocolResponse());
+    }
+
+    void publishProtocolResponse() {
+        WebClientProtocolResponse response = takeProtocolResponse();
+        if (response != null) {
+            http1Client.webClient().responseReceived(response);
+        }
+    }
+
     abstract WebClientServiceResponse doProceed(ClientConnection connection,
                                                 WebClientServiceRequest request,
                                                 ClientRequestHeaders headers,
@@ -343,6 +371,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 ? readResponseHead(connection, reader, Http1CallChainBase::isPreContinueInterimResponse)
                 : readResponseHead(connection, reader);
 
+        captureProtocolResponse(connection, responseHead.status(), responseHead.headers());
         return createServiceResponse(http1Client,
                                      serviceRequest,
                                      connection,
@@ -350,6 +379,26 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                      responseHead.status(),
                                      responseHead.headers(),
                                      whenComplete);
+    }
+
+    void captureProtocolResponse(ClientConnection connection,
+                                 Status status,
+                                 ClientResponseHeaders headers) {
+        // One terminal callback is available per chain; nested redirect chains publish their own responses.
+        if (altSvcEnabled
+                && pendingProtocolResponse == null
+                && headers.contains(HeaderNames.ALT_SVC)
+                && connection instanceof TcpClientConnection tcpConnection) {
+            var target = tcpConnection.resolvedTarget().orElse(null);
+            if (target != null) {
+                pendingProtocolResponse = WebClientProtocolResponse.create(target,
+                                                                           explicitConnectionRequest,
+                                                                           protocolId(),
+                                                                           status,
+                                                                           headers,
+                                                                           Instant.now());
+            }
+        }
     }
 
     Http1ConnectionListener sendListener() {
@@ -543,6 +592,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         String rawFragment = fragment.rawValue();
         int fragmentLength = requestTarget.endsWith(rawFragment) ? rawFragment.length() : fragment.value().length();
         return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
+    }
+
+    private WebClientProtocolResponse takeProtocolResponse() {
+        WebClientProtocolResponse response = pendingProtocolResponse;
+        pendingProtocolResponse = null;
+        return response;
     }
 
     private ClientConnection obtainConnection(ClientConnectionTarget connectionTarget,

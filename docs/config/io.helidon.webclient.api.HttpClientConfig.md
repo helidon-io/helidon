@@ -369,6 +369,20 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 </tr>
 <tr>
 <td>
+<a id="alt-svc"></a>
+<a href="io.helidon.webclient.api.ClientAltSvcConfig.md">
+<code>alt-<wbr>svc</code>
+</a>
+</td>
+<td>
+<code>Client<wbr>AltSvc<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Client policy for accepting and using HTTP <code>Alt-<wbr>Svc</code> response advertisements</td>
+</tr>
+<tr>
+<td>
 <code>properties</code>
 </td>
 <td>
