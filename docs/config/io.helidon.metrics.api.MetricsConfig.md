@@ -236,6 +236,17 @@ Configuration settings for metrics
 <tbody>
 <tr>
 <td>
+<code>prometheus.<wbr>histogram<wbr>Flavor</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Histogram flavor to use for Prometheus output</td>
+</tr>
+<tr>
+<td>
 <code>rest-<wbr>request-<wbr>enabled</code>
 </td>
 <td>
