@@ -45,9 +45,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class ClientWsConnectionTest {
@@ -65,6 +67,207 @@ class ClientWsConnectionTest {
         assertThat(defaults.maxBufferedMessageSize().toBytes(), is(Size.create(1, Size.Unit.MIB).toBytes()));
         assertThat(configured.maxBufferedMessageSize().toBytes(), is(16L));
         assertThat(mapped.maxBufferedMessageSize().toBytes(), is(Size.create(2, Size.Unit.MIB).toBytes()));
+    }
+
+    @Test
+    void clientProtocolConfigHasFrameLengthDefaultAndOverride() {
+        WsClientProtocolConfig defaults = WsClientProtocolConfig.create();
+        WsClientProtocolConfig configured = WsClientProtocolConfig.builder()
+                .maxFrameLength(16)
+                .build();
+        Config config = Config.create(ConfigSources.create(Map.of("max-frame-length", "32")));
+        WsClientProtocolConfig mapped = WsClientProtocolConfig.create(config);
+
+        assertAll(
+                () -> assertThat(defaults.maxFrameLength(), is(1024 * 1024)),
+                () -> assertThat(configured.maxFrameLength(), is(16)),
+                () -> assertThat(mapped.maxFrameLength(), is(32))
+        );
+    }
+
+    @Test
+    void clientProtocolConfigRejectsNonPositiveFrameLength() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> WsClientProtocolConfig.builder().maxFrameLength(0).build());
+        assertThrows(IllegalArgumentException.class,
+                     () -> WsClientProtocolConfig.builder().maxFrameLength(-1).build());
+        assertThrows(IllegalArgumentException.class,
+                     () -> WsClientProtocolConfig.create(
+                             Config.create(ConfigSources.create(Map.of("max-frame-length", "0")))));
+        assertThrows(IllegalArgumentException.class,
+                     () -> WsClientProtocolConfig.create(
+                             Config.create(ConfigSources.create(Map.of("max-frame-length", "-1")))));
+    }
+
+    @Test
+    void publicFactoriesApplyDefaultFrameLimit() {
+        CapturingDataWriter withoutSubProtocolWriter = new CapturingDataWriter();
+        CapturingDataWriter withSubProtocolWriter = new CapturingDataWriter();
+        WsListener listener = new WsListener() {
+        };
+        ClientWsConnection withoutSubProtocol = ClientWsConnection.create(
+                new TestClientConnection(largeFrameHeaderReader(), withoutSubProtocolWriter),
+                listener);
+        ClientWsConnection withSubProtocol = ClientWsConnection.create(
+                new TestClientConnection(largeFrameHeaderReader(), withSubProtocolWriter),
+                listener,
+                "test");
+
+        withoutSubProtocol.run();
+        withSubProtocol.run();
+
+        byte[] withoutSubProtocolCloseFrame = withoutSubProtocolWriter.data.get();
+        byte[] withSubProtocolCloseFrame = withSubProtocolWriter.data.get();
+        assertThat(withoutSubProtocolCloseFrame, notNullValue());
+        assertThat(withSubProtocolCloseFrame, notNullValue());
+        assertAll(
+                () -> assertThat(withoutSubProtocol.protocolConfig().maxFrameLength(), is(1024 * 1024)),
+                () -> assertThat(withSubProtocol.protocolConfig().maxFrameLength(), is(1024 * 1024)),
+                () -> assertThat(maskedCloseCode(withoutSubProtocolCloseFrame), is(WsCloseCodes.TOO_BIG)),
+                () -> assertThat(maskedCloseCode(withSubProtocolCloseFrame), is(WsCloseCodes.TOO_BIG))
+        );
+    }
+
+    @Test
+    void acceptsFrameAtClientLimit() {
+        byte[] expected = "1234567890123456".getBytes(StandardCharsets.UTF_8);
+        BufferData inboundFrameData = BufferData.growing(2 + expected.length);
+        inboundFrameData.write(0x82);
+        inboundFrameData.write(expected.length);
+        inboundFrameData.write(expected);
+        AtomicReference<byte[]> inbound = new AtomicReference<>(inboundFrameData.readBytes());
+        AtomicReference<byte[]> received = new AtomicReference<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CapturingDataWriter dataWriter = new CapturingDataWriter();
+        WsListener listener = new WsListener() {
+            @Override
+            public void onMessage(WsSession session, BufferData buffer, boolean last) {
+                received.set(buffer.readBytes());
+            }
+
+            @Override
+            public void onError(WsSession session, Throwable throwable) {
+                error.set(throwable);
+            }
+        };
+        WsClientProtocolConfig protocolConfig = WsClientProtocolConfig.builder()
+                .maxFrameLength(expected.length)
+                .build();
+        ClientWsConnection connection = new ClientWsConnection(
+                new TestClientConnection(DataReader.create(() -> inbound.getAndSet(null)), dataWriter),
+                listener,
+                null,
+                protocolConfig);
+
+        connection.run();
+
+        assertAll(
+                () -> assertThat(received.get(), is(expected)),
+                () -> assertThat(error.get(), is(nullValue())),
+                () -> assertThat(dataWriter.data.get(), is(nullValue()))
+        );
+    }
+
+    @Test
+    void closesWhenFrameExceedsClientLimit() {
+        CapturingDataWriter dataWriter = new CapturingDataWriter();
+        AtomicInteger messageInvocations = new AtomicInteger();
+        AtomicInteger closeInvocations = new AtomicInteger();
+        AtomicReference<Integer> closeCode = new AtomicReference<>();
+        AtomicReference<String> closeReason = new AtomicReference<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        WsListener listener = new WsListener() {
+            @Override
+            public void onMessage(WsSession session, BufferData buffer, boolean last) {
+                messageInvocations.incrementAndGet();
+            }
+
+            @Override
+            public void onClose(WsSession session, int status, String reason) {
+                closeInvocations.incrementAndGet();
+                closeCode.set(status);
+                closeReason.set(reason);
+            }
+
+            @Override
+            public void onError(WsSession session, Throwable throwable) {
+                error.set(throwable);
+            }
+        };
+        WsClientProtocolConfig protocolConfig = WsClientProtocolConfig.builder()
+                .maxFrameLength(16)
+                .build();
+        ClientWsConnection connection = new ClientWsConnection(new TestClientConnection(oversizedFrameReader(), dataWriter),
+                                                               listener,
+                                                               null,
+                                                               protocolConfig);
+
+        connection.run();
+
+        byte[] closeFrame = dataWriter.data.get();
+        assertThat(closeFrame, notNullValue());
+        assertAll(
+                () -> assertThat(messageInvocations.get(), is(0)),
+                () -> assertThat(closeInvocations.get(), is(1)),
+                () -> assertThat(closeCode.get(), is(WsCloseCodes.TOO_BIG)),
+                () -> assertThat(closeReason.get(), is("Payload too large")),
+                () -> assertThat(error.get(), is(nullValue())),
+                () -> assertThat(closeFrame[0] & 0x0F, is(0x08)),
+                () -> assertThat(maskedCloseCode(closeFrame), is(WsCloseCodes.TOO_BIG))
+        );
+    }
+
+    @Test
+    void oversizedFrameNotifiesCloseBeforeWaitingForSendLock() throws Exception {
+        BlockingDataWriter dataWriter = new BlockingDataWriter();
+        CountDownLatch closeNotified = new CountDownLatch(1);
+        AtomicReference<Throwable> listenerFailure = new AtomicReference<>();
+        WsListener listener = new WsListener() {
+            @Override
+            public void onClose(WsSession session, int status, String reason) {
+                session.close(WsCloseCodes.NORMAL_CLOSE, "handled");
+                closeNotified.countDown();
+            }
+
+            @Override
+            public void onError(WsSession session, Throwable throwable) {
+                listenerFailure.set(throwable);
+            }
+        };
+        WsClientProtocolConfig protocolConfig = WsClientProtocolConfig.builder()
+                .maxFrameLength(16)
+                .build();
+        ClientWsConnection connection = new ClientWsConnection(new TestClientConnection(oversizedFrameReader(), dataWriter),
+                                                               listener,
+                                                               null,
+                                                               protocolConfig);
+
+        AtomicReference<Throwable> sendFailure = new AtomicReference<>();
+        Thread sendThread = new Thread(() -> invoke(() -> connection.send("hello", true), sendFailure), "client-ws-send");
+        sendThread.start();
+        dataWriter.awaitFirstWrite();
+
+        AtomicReference<Throwable> runFailure = new AtomicReference<>();
+        Thread runThread = new Thread(() -> invoke(connection::run, runFailure), "client-ws-run");
+        runThread.start();
+
+        boolean notifiedBeforeRelease;
+        try {
+            notifiedBeforeRelease = closeNotified.await(TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } finally {
+            dataWriter.releaseFirstWrite();
+            sendThread.join(TimeUnit.SECONDS.toMillis(TEST_TIMEOUT_SECONDS));
+            runThread.join(TimeUnit.SECONDS.toMillis(TEST_TIMEOUT_SECONDS));
+        }
+
+        assertAll(
+                () -> assertThat(notifiedBeforeRelease, is(true)),
+                () -> assertThat(listenerFailure.get(), is(nullValue())),
+                () -> assertThat(sendFailure.get(), is(nullValue())),
+                () -> assertThat(runFailure.get(), is(nullValue())),
+                () -> assertThat(sendThread.isAlive(), is(false)),
+                () -> assertThat(runThread.isAlive(), is(false))
+        );
     }
 
     @Test
@@ -273,6 +476,23 @@ class ClientWsConnectionTest {
             TimeUnit.MILLISECONDS.sleep(10);
         }
         return closeSent.get();
+    }
+
+    private static DataReader oversizedFrameReader() {
+        BufferData inboundFrameData = BufferData.growing(2);
+        inboundFrameData.write(0x82);
+        inboundFrameData.write(17);
+        AtomicReference<byte[]> inbound = new AtomicReference<>(inboundFrameData.readBytes());
+        return DataReader.create(() -> inbound.getAndSet(null));
+    }
+
+    private static DataReader largeFrameHeaderReader() {
+        BufferData inboundFrameData = BufferData.growing(10);
+        inboundFrameData.write(0x82);
+        inboundFrameData.write(127);
+        inboundFrameData.writeInt64(1024 * 1024 + 1L);
+        AtomicReference<byte[]> inbound = new AtomicReference<>(inboundFrameData.readBytes());
+        return DataReader.create(() -> inbound.getAndSet(null));
     }
 
     private static DataReader oversizedMessageReader() {
