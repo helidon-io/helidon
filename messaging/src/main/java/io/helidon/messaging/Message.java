@@ -46,7 +46,7 @@ public interface Message<T> {
      * @throws NullPointerException if {@code entity} is {@code null}
      */
     static <T> Builder<T> builder(T entity) {
-        return new Builder<>(entity);
+        return new Builder<>(Objects.requireNonNull(entity, "entity"));
     }
 
     /**
@@ -100,6 +100,7 @@ public interface Message<T> {
      * @return header value, or empty when the exact name is absent
      */
     default Optional<HeaderValue> headerValue(String name) {
+        Objects.requireNonNull(name, "name");
         return headers().last(name);
     }
 
@@ -114,6 +115,7 @@ public interface Message<T> {
      * @throws IllegalStateException if the last value is present but is not text
      */
     default Optional<String> header(String name) {
+        Objects.requireNonNull(name, "name");
         Optional<HeaderValue> value = headerValue(name);
         if (value.isEmpty()) {
             return Optional.empty();
@@ -135,7 +137,7 @@ public interface Message<T> {
         private final MessageMetadata.Builder localMetadata = MessageMetadata.builder();
 
         private Builder(T entity) {
-            this.entity = Objects.requireNonNull(entity, "entity");
+            this.entity = entity;
         }
 
         /**
@@ -146,6 +148,8 @@ public interface Message<T> {
          * @return updated builder
          */
         public Builder<T> header(String name, String value) {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             headers.set(name, value);
             return this;
         }
@@ -158,6 +162,8 @@ public interface Message<T> {
          * @return updated builder
          */
         public Builder<T> header(String name, HeaderValue value) {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             headers.set(name, value);
             return this;
         }
@@ -170,6 +176,8 @@ public interface Message<T> {
          * @return updated builder
          */
         public Builder<T> addHeader(String name, String value) {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             headers.add(name, value);
             return this;
         }
@@ -182,6 +190,8 @@ public interface Message<T> {
          * @return updated builder
          */
         public Builder<T> addHeader(String name, HeaderValue value) {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             headers.add(name, value);
             return this;
         }
@@ -193,6 +203,7 @@ public interface Message<T> {
          * @return updated builder
          */
         public Builder<T> addHeader(MessageHeader header) {
+            Objects.requireNonNull(header, "header");
             headers.add(header);
             return this;
         }
@@ -217,6 +228,8 @@ public interface Message<T> {
          * @return updated builder
          */
         public Builder<T> localMetadata(String name, String value) {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             localMetadata.set(name, value);
             return this;
         }
@@ -229,6 +242,8 @@ public interface Message<T> {
          * @return updated builder
          */
         public Builder<T> localMetadata(String name, HeaderValue value) {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             localMetadata.set(name, value);
             return this;
         }
