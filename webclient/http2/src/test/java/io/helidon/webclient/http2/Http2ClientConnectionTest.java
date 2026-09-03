@@ -77,6 +77,7 @@ import org.mockito.InOrder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -2131,7 +2132,7 @@ class Http2ClientConnectionTest {
             test.allowWrites();
 
             test.assertConnectionClosed();
-            assertNull(connection.tryStream(STREAM_CONFIG));
+            assertThat(connection.tryStream(STREAM_CONFIG), is(nullValue()));
         }
     }
 
