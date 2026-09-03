@@ -297,13 +297,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             runEndStreamCallback(dataFrame, onEndStreamFrameWritten);
         } else {
             Http2FrameData remainingFrame = splitFrames.length == 2 ? splitFrames[1] : dataFrame;
-            try {
-                flowControl.blockTillUpdate();
-                bytesWritten += splitAndWrite(remainingFrame, flowControl, NO_OP, true);
-            } catch (Throwable t) {
-                failWriter(t);
-                throw t;
-            }
+            flowControl.blockTillUpdate();
+            bytesWritten += splitAndWrite(remainingFrame, flowControl, NO_OP, true);
             runEndStreamCallback(dataFrame, onEndStreamFrameWritten);
         }
         return bytesWritten;
@@ -335,13 +330,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                                       FlowControl.Outbound flowControl,
                                       Runnable onEndStreamFrameWritten) {
         int written = 0;
-        try {
-            for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
-                written += splitAndWrite(f, flowControl, NO_OP, true);
-            }
-        } catch (Throwable t) {
-            failWriter(t);
-            throw t;
+        for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
+            written += splitAndWrite(f, flowControl, NO_OP, true);
         }
         runEndStreamCallback(frame, onEndStreamFrameWritten);
         return written;

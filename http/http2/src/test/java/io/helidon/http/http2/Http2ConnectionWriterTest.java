@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.nullValue;
@@ -802,6 +803,62 @@ class Http2ConnectionWriterTest {
     }
 
     @Test
+    void streamCancellationWhileWaitingForConnectionWindowDoesNotTerminateWriter() throws InterruptedException {
+        ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofSeconds(5))
+                .build();
+        connection.outbound().decrementWindowSize(connection.outbound().getRemainingWindowSize());
+        FlowControl.Outbound delegate = connection.createStreamFlowControl(1, 1024, 16384)
+                .outbound();
+        CountDownLatch waitingForCredit = new CountDownLatch(1);
+        FlowControl.Outbound flowControl = mock(FlowControl.Outbound.class, delegatesTo(delegate));
+        doAnswer(_ -> {
+            waitingForCredit.countDown();
+            delegate.blockTillUpdate();
+            return null;
+        }).when(flowControl).blockTillUpdate();
+        DataWriter dataWriter = mock(DataWriter.class);
+        AtomicInteger callbackCalls = new AtomicInteger();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        Thread responseWriter = Thread.ofVirtual().start(() -> {
+            try {
+                writer.writeHeaders(headers(),
+                                    1,
+                                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                    terminalDataFrame(new byte[] {1}),
+                                    flowControl,
+                                    callbackCalls::incrementAndGet);
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        });
+
+        try {
+            assertThat("writer must wait for connection flow-control credit",
+                       waitingForCredit.await(1, TimeUnit.SECONDS),
+                       is(true));
+        } finally {
+            flowControl.streamClosed();
+        }
+        responseWriter.join(TimeUnit.SECONDS.toMillis(2));
+
+        assertThat("response writer must terminate", responseWriter.isAlive(), is(false));
+        assertThat(failure.get(), instanceOf(Http2Exception.class));
+        assertThat(((Http2Exception) failure.get()).code(), is(Http2ErrorCode.CANCEL));
+        assertThat(callbackCalls.get(), is(0));
+
+        int written = writer.writeHeaders(headers(),
+                                          3,
+                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                          FlowControl.Outbound.NOOP);
+
+        assertThat(written, greaterThan(Http2FrameHeader.LENGTH));
+        verify(dataWriter, times(2)).writeNow(any(BufferData.class));
+        verify(dataWriter, times(0)).close();
+    }
+
+    @Test
     void combinedWriteAccountsForPartialFlowControlWindow() {
         AtomicBoolean callbackCalled = new AtomicBoolean();
         AtomicInteger actualBytes = new AtomicInteger();
@@ -1148,6 +1205,36 @@ class Http2ConnectionWriterTest {
         verify(dataWriter, times(2)).writeNow(any(BufferData.class));
         verify(dataWriter).close();
         verify(flowControl, times(0)).decrementWindowSize(16_384);
+    }
+
+    @Test
+    void oversizedDataFlowControlCancellationDoesNotTerminateWriter() {
+        Http2Exception cancellation = new Http2Exception(Http2ErrorCode.CANCEL,
+                                                         "Stream closed while waiting for flow-control credit");
+        DataWriter dataWriter = mock(DataWriter.class);
+        FlowControl.Outbound flowControl = flowControl();
+        when(flowControl.cut(any(Http2FrameData.class))).thenReturn(new Http2FrameData[0]);
+        doAnswer(_ -> {
+            throw cancellation;
+        }).when(flowControl).blockTillUpdate();
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+
+        Http2Exception thrown = assertThrows(Http2Exception.class,
+                                             () -> writer.writeHeaders(headers(),
+                                                                       1,
+                                                                       Http2Flag.HeaderFlags.create(
+                                                                               Http2Flag.END_OF_HEADERS),
+                                                                       terminalDataFrame(new byte[16_385]),
+                                                                       flowControl));
+        int written = writer.writeHeaders(headers(),
+                                          3,
+                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                          FlowControl.Outbound.NOOP);
+
+        assertThat(thrown, is(cancellation));
+        assertThat(written, greaterThan(Http2FrameHeader.LENGTH));
+        verify(dataWriter, times(2)).writeNow(any(BufferData.class));
+        verify(dataWriter, times(0)).close();
     }
 
     @Test
