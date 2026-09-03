@@ -38,6 +38,9 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry;
 public class PrometheusPublisher implements MicrometerMetricsPublisher,
                                             RuntimeType.Api<PrometheusPublisherConfig> {
 
+    private static final System.Logger LOGGER = System.getLogger(PrometheusPublisher.class.getName());
+    private static final String HISTOGRAM_FLAVOR_PROPERTY = "histogramFlavor";
+
     private final PrometheusPublisherConfig config;
 
     private PrometheusPublisher(PrometheusPublisherConfig config) {
@@ -117,6 +120,7 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
 
         return (lookupFunction, spanContextSupplierProvider) -> {
             PrometheusConfig prometheusConfig = prometheusConfig(lookupFunction);
+            warnIfLegacyHistogramFlavorConfigured(prometheusConfig);
             PrometheusMeterRegistry registry = spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
                     ? new PrometheusMeterRegistry(prometheusConfig)
                     : new PrometheusMeterRegistry(prometheusConfig,
@@ -159,6 +163,14 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
                 return config.interval().orElse(PrometheusConfig.super.step());
             }
         };
+    }
+
+    private void warnIfLegacyHistogramFlavorConfigured(PrometheusConfig prometheusConfig) {
+        String propertyName = prometheusConfig.prefix() + "." + HISTOGRAM_FLAVOR_PROPERTY;
+        if (prometheusConfig.get(propertyName) != null) {
+            LOGGER.log(System.Logger.Level.WARNING,
+                       "Configuration property " + propertyName + " is no longer supported and is ignored");
+        }
     }
 
     private void configureNaming(PrometheusMeterRegistry registry) {

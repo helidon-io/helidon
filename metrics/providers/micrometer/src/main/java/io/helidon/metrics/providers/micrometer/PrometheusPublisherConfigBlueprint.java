@@ -43,7 +43,7 @@ interface PrometheusPublisherConfigBlueprint extends MetricsPublisherConfig, Pro
 
     /**
      * Prefix for Micrometer Prometheus property lookups; this setting does not add a prefix to exported metric names, and
-     * the legacy {@code prometheus.histogramFlavor} property is not supported by the current Prometheus registry.
+     * the legacy {@code prometheus.histogramFlavor} property is accepted for compatibility but ignored with a warning.
      *
      * @return property lookup prefix
      */

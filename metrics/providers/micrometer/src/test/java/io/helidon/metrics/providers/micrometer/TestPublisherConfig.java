@@ -16,6 +16,13 @@
 
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
@@ -135,5 +142,53 @@ class TestPublisherConfig {
                      () -> PrometheusPublisher.builder()
                              .namingConvention(builder -> builder.nonLetterPrefix(""))
                              .build());
+    }
+
+    @Test
+    void testLegacyHistogramFlavorIsAcceptedAndIgnored() {
+        String configText = """
+                metrics:
+                  prometheus:
+                    histogramFlavor: VictoriaMetrics
+                  publishers:
+                    prometheus:
+                """;
+
+        var metricsConfig = MetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML)
+                                                         .get("metrics"));
+        var publisher = (PrometheusPublisher) metricsConfig.publishers().getFirst();
+        List<LogRecord> logRecords = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                logRecords.add(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        Logger logger = Logger.getLogger(PrometheusPublisher.class.getName());
+        logger.addHandler(handler);
+
+        PrometheusMeterRegistry registry = null;
+        try {
+            registry = publisher.prometheusRegistry()
+                    .apply(key -> metricsConfig.lookupConfig(key).orElse(null), new NoOpSpanContextSupplierProvider());
+            assertThat("Warning count", logRecords, hasSize(1));
+            assertThat("Warning level", logRecords.getFirst().getLevel(), is(Level.WARNING));
+            assertThat("Warning message",
+                       logRecords.getFirst().getMessage(),
+                       containsString("prometheus.histogramFlavor is no longer supported and is ignored"));
+        } finally {
+            if (registry != null) {
+                registry.close();
+            }
+            logger.removeHandler(handler);
+        }
     }
 }
