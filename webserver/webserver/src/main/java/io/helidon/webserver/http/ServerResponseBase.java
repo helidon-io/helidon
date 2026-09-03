@@ -530,7 +530,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
                 ContentEncoder encoder = responseContentEncoder(false);
                 return new DeferredContentEncoderOutputStream(network -> applyContentEncoder(encoder, network),
                                                               outputStream,
-                                                              () -> statusAllowsEntity(status()));
+                                                              () -> statusAllowsEntity(status()),
+                                                              () -> contentEncodingDiscarded = true);
             }
             return outputStream;
         }
@@ -709,14 +710,17 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         private final Function<OutputStream, OutputStream> encoder;
         private final OutputStream outputStream;
         private final BooleanSupplier statusAllowsEntity;
+        private final Runnable encodingDiscarded;
         private OutputStream encodedOutputStream;
 
         private DeferredContentEncoderOutputStream(Function<OutputStream, OutputStream> encoder,
                                                    OutputStream outputStream,
-                                                   BooleanSupplier statusAllowsEntity) {
+                                                   BooleanSupplier statusAllowsEntity,
+                                                   Runnable encodingDiscarded) {
             this.encoder = encoder;
             this.outputStream = outputStream;
             this.statusAllowsEntity = statusAllowsEntity;
+            this.encodingDiscarded = encodingDiscarded;
         }
 
         @Override
@@ -736,12 +740,20 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
         @Override
         public void flush() throws IOException {
+            discardIfDeferred();
             outputStream().flush();
         }
 
         @Override
         public void close() throws IOException {
+            discardIfDeferred();
             outputStream().close();
+        }
+
+        private void discardIfDeferred() {
+            if (encodedOutputStream == null && !statusAllowsEntity.getAsBoolean()) {
+                encodingDiscarded.run();
+            }
         }
 
         private OutputStream outputStream() {

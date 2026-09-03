@@ -527,6 +527,16 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void entityStatusRejectedAfterDeferredExplicitEncoderIsClosed() throws IOException {
+        assertEntityStatusRejectedAfterDeferredEncoderFinalization(true);
+    }
+
+    @Test
+    void entityStatusRejectedAfterDeferredExplicitEncoderIsFlushed() throws IOException {
+        assertEntityStatusRejectedAfterDeferredEncoderFinalization(false);
+    }
+
+    @Test
     void flushedFixedLengthResponseRejectsStatusChange() throws IOException {
         assertFlushedResponseRejectsStatusChange(true);
     }
@@ -1053,6 +1063,38 @@ class Http1ServerResponseTest {
             responseText.append(new String(buffer.readBytes(), StandardCharsets.ISO_8859_1));
         }
         return responseText.toString();
+    }
+
+    private static void assertEntityStatusRejectedAfterDeferredEncoderFinalization(boolean closeOutput)
+            throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.contentEncoder(GzipEncoding.create().encoder());
+        response.status(Status.NO_CONTENT_204);
+
+        OutputStream output = response.outputStream();
+        if (closeOutput) {
+            output.close();
+        } else {
+            output.flush();
+        }
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> response.status(Status.OK_200));
+        if (!closeOutput) {
+            output.close();
+        }
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("content encoding was discarded")),
+                () -> assertThat(responseText, containsString("HTTP/1.1 204 No Content\r\n")),
+                () -> assertNoEntityHeaders(Status.NO_CONTENT_204, responseText),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
     }
 
     private static void assertFlushedResponseRejectsStatusChange(boolean fixedLength) throws IOException {
