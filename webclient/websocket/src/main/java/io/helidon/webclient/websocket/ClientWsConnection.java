@@ -361,12 +361,7 @@ public class ClientWsConnection implements WsSession, Runnable {
     }
 
     private ServerWsFrame readFrame() {
-        try {
-            return ServerWsFrame.read(helidonSocket, connection.reader(), Integer.MAX_VALUE);
-        } catch (WsCloseException e) {
-            close(e.closeCode(), e.getMessage());
-            throw e;
-        }
+        return ServerWsFrame.read(helidonSocket, connection.reader(), protocolConfig.maxFrameLength());
     }
 
     private enum ContinuationType {
