@@ -23,9 +23,9 @@ Expected: a value equal to or greater than <44877.471663551245>
 
 ## Adding JMH tests
 
-New JMH benchmark classes should be created in `src/main/java/io/helidon/tests/benchmark/jmh/`. Benchmarks that use
-the legacy webserver baseline runner end with `JmhTest`; subsystem benchmarks can instead provide a dedicated JUnit
-runner under `src/test/java`.
+New JMH benchmark classes should be created under `src/main/java` using a package appropriate for the subsystem being measured.
+Benchmarks that use the legacy webserver baseline runner end with `JmhTest`; subsystem benchmarks can instead provide a dedicated
+JUnit runner under `src/test/java`.
 
 Before running any module-scoped benchmark command below from a clean checkout, install the repository artifacts from
 the repository root:

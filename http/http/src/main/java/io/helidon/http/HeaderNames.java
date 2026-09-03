@@ -344,7 +344,7 @@ public final class HeaderNames {
      */
     public static final String REFRESH_NAME = Strings.REFRESH_NAME;
     /**
-     * The {@value #REFERER_NAME} header name.
+     * The {@value #REFRESH_NAME} header name.
      */
     public static final HeaderName REFRESH = HeaderNameEnum.REFRESH;
     /**
@@ -702,15 +702,20 @@ public final class HeaderNames {
      */
     public static final HeaderName TRANSFER_ENCODING = HeaderNameEnum.TRANSFER_ENCODING;
     /**
-     * The {@value} header name.
-     * Tracking Status Value, value suggested to be sent in response to a DNT(do-not-track).
+     * The {@value} name of the tracking status value ABNF production from the retired DNT specification.
+     *
+     * @deprecated The retired DNT specification defines {@value} as an ABNF production for values of the
+     *             {@code Tk} header field, not as an HTTP header field name
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     public static final String TSV_NAME = Strings.TSV_NAME;
     /**
-     * The {@value #TSV_NAME} header name.
-     * Tracking Status Value, value suggested to be sent in response to a DNT(do-not-track).
+     * Legacy header-name representation of the {@value #TSV_NAME} ABNF production name.
+     *
+     * @deprecated The retired DNT specification defines {@value #TSV_NAME} as an ABNF production for values of the
+     *             {@code Tk} header field, not as an HTTP header field name
      */
-    // The retired W3C DNT specification defines TSV as a value of the Tk header, not as a header name.
+    @Deprecated(since = "27.0.0", forRemoval = true)
     public static final HeaderName TSV = createNonIndexed(TSV_NAME);
     /**
      * The {@value} header name.

@@ -396,22 +396,64 @@ Interfaces:
 
 ### Option
 
-<!--@mdc ::table-collapse -->
-| Annotation             | Description                                                                                                                                                                                                                                                                          |
-|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Option.Singular`      | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)                                                              |
-| `Option.Configured`    | For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless `@Prototype.Configured` is specified on the blueprint interface                                                                                              |
-| `Option.Required`      | We can recognize required options through signature in most cases (any option that does not return an `Optional` and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive’s default value |
-| `Option.Provider`      | Loads option values through a discovered provider contract. Configured provider options independently select instance identity and outer object/list configuration syntax; non-configured provider options use discovered implementations directly.                            |
-| `Option.AllowedValues` | Allowed values for the property, not required for `enum`, where we create this automatically, though we can configure description of each value (works automatically for `enum` defined in the same module); the description is used for generated documentation                     |
-| `Option.SameGeneric`   | Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as `Map<Class<Object>, Object>` - `<T> Builder put(Class<T>, T)`)                                                                                         |
-| `Option.Redundant`     | Marks an option that is not used by equals and hashCode methods                                                                                                                                                                                                                      |
-| `Option.Confidential`  | Marks an option that will not be visible in `toString()`                                                                                                                                                                                                                             |
-| `Option.Deprecated`    | Marks a deprecated option that has a replacement option in this builder, use Java’s deprecation for other cases, they will be honored in the generated code                                                                                                                          |
-| `Option.Type`          | Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment                                                                      |
-| `Option.Decorator`     | Support for field decoration (to do side-effects on setter call)                                                                                                                                                                                                                     |
-| `Option.ProtypedBy`    | When using a third party runtime type and we have a prototype that builds it, we can specify the prototype class name (or fully qualified class name if in a different package) to add prototype methods and to read from configuration using that prototype                         |
-<!--@mdc :: -->
+<table>
+<thead>
+<tr>
+<th>Annotation</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Option.<wbr>Singular</code></td>
+<td>For collection based options. Adds setter for a single value (for <code>List&lt;String&gt; algorithms()</code>, there would be the following setters: <code>algorithms(<wbr>List&lt;String&gt;)</code>, <code>add<wbr>Algorithms(<wbr>List&lt;String&gt;)</code>, <code>add<wbr>Algorithm(<wbr>String)</code>). For <code>Map&lt;String, String&gt; labels()</code>, generated setters include <code>labels(<wbr>Map&lt;String, String&gt;)</code> and <code>put<wbr>Label(<wbr>String, String)</code>.</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Configured</code></td>
+<td>For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless <code>@Prototype.<wbr>Configured</code> is specified on the blueprint interface</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Required</code></td>
+<td>We can recognize required options through signature in most cases (any option that does not return an <code>Optional</code> and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive’s default value</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Provider</code></td>
+<td>Loads option values through a discovered provider contract. Configured provider options independently select instance identity and outer object/list configuration syntax; non-configured provider options use discovered implementations directly.</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Allowed<wbr>Values</code></td>
+<td>Allowed values for the property, not required for <code>enum</code>, where we create this automatically, though we can configure description of each value (works automatically for <code>enum</code> defined in the same module); the description is used for generated documentation</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Same<wbr>Generic</code></td>
+<td>Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as <code>Map&lt;Class&lt;Object&gt;, Object&gt;</code> - <code>&lt;T&gt; Builder put(<wbr>Class&lt;T&gt;, T)</code>)</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Redundant</code></td>
+<td>Marks an option that is not used by equals and hashCode methods</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Confidential</code></td>
+<td>Marks an option that will not be visible in <code>to<wbr>String()</code></td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Deprecated</code></td>
+<td>Marks a deprecated option that has a replacement option in this builder, use Java’s deprecation for other cases, they will be honored in the generated code</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Type</code></td>
+<td>Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Decorator</code></td>
+<td>Support for field decoration (to do side-effects on setter call)</td>
+</tr>
+<tr>
+<td><code>Option.<wbr>Protyped<wbr>By</code></td>
+<td>When using a third party runtime type and we have a prototype that builds it, we can specify the prototype class name (or fully qualified class name if in a different package) to add prototype methods and to read from configuration using that prototype</td>
+</tr>
+</tbody>
+</table>
 
 #### Provider Options
 

@@ -1785,7 +1785,7 @@ classpath):
 | Encoding type | TypeName       | Maven groupId:artifactId                                 |
 |---------------|----------------|----------------------------------------------------------|
 | **gzip**      | GzipEncoding   | `io.helidon.http.encoding:helidon-http-encoding-gzip`    |
-| **deflate**   | DeflateSupport | `io.helidon.http.encoding:helidon-http-encoding-deflate` |
+| **deflate**   | DeflateEncoding | `io.helidon.http.encoding:helidon-http-encoding-deflate` |
 
 #### HTTP Compression Negotiation
 
