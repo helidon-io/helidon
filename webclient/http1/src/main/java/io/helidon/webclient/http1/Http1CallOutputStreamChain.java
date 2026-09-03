@@ -521,6 +521,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 method = Method.GET;
                 sendEntity = false;
             }
+            connection.closeResource();
             while (numberOfRedirects < originalRequest.maxRedirects()) {
                 numberOfRedirects++;
                 URI newUri = URI.create(redirectedUri);
@@ -531,7 +532,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     redirectUri.port(lastUri.port());
                 }
                 lastUri = redirectUri;
-                connection.closeResource();
                 boolean sendEmptyEntity = false;
                 if (sendEntity && !lastRequest.canReplayEntityTo(redirectUri)) {
                     // User code already provided bytes for the original origin; do not replay them across origins.
