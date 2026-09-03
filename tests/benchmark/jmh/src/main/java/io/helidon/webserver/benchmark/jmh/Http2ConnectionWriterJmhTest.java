@@ -51,6 +51,7 @@ public class Http2ConnectionWriterJmhTest {
     private static final int CONCURRENT_THREADS = 8;
     private static final String FRAGMENTED_HEADER_VALUE = "~".repeat(18_000);
     private static final byte[] RESPONSE_BYTES = {1};
+    private static final byte[] PARTIAL_RESPONSE_BYTES = {1, 2};
     private static final PeerInfo PEER_INFO = new BenchmarkPeerInfo();
 
     @Benchmark
@@ -79,6 +80,18 @@ public class Http2ConnectionWriterJmhTest {
 
     @Benchmark
     @Threads(1)
+    public int partialWindow(ConnectionState connection, FrameState frame) {
+        return connection.write(frame, frame.partialData, frame.partialWindow);
+    }
+
+    @Benchmark
+    @Threads(CONCURRENT_THREADS)
+    public int partialWindowConcurrent(ConnectionState connection, FrameState frame) {
+        return connection.write(frame, frame.partialData, frame.partialWindow);
+    }
+
+    @Benchmark
+    @Threads(1)
     public int fragmentedHeaders(ConnectionState connection, FrameState frame) {
         return connection.write(frame, frame.fragmentedHeaders, frame.fundedWindow);
     }
@@ -101,18 +114,29 @@ public class Http2ConnectionWriterJmhTest {
         }
 
         private int write(FrameState frame, FlowControl.Outbound flowControl) {
-            return write(frame, frame.headers, flowControl);
+            return write(frame, frame.headers, frame.data, flowControl);
+        }
+
+        private int write(FrameState frame, Http2FrameData data, FlowControl.Outbound flowControl) {
+            return write(frame, frame.headers, data, flowControl);
         }
 
         private int write(FrameState frame, Http2Headers headers, FlowControl.Outbound flowControl) {
+            return write(frame, headers, frame.data, flowControl);
+        }
+
+        private int write(FrameState frame,
+                          Http2Headers headers,
+                          Http2FrameData data,
+                          FlowControl.Outbound flowControl) {
             try {
                 return writer.writeHeaders(headers,
                                            1,
                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                           frame.data,
+                                           data,
                                            flowControl);
             } finally {
-                frame.reset(flowControl);
+                frame.reset(data, flowControl);
             }
         }
     }
@@ -121,10 +145,12 @@ public class Http2ConnectionWriterJmhTest {
     public static class FrameState {
         private final BenchmarkFlowControl fundedWindow = new BenchmarkFlowControl(RESPONSE_BYTES.length);
         private final BenchmarkFlowControl exhaustedWindow = new BenchmarkFlowControl(0);
+        private final BenchmarkFlowControl partialWindow = new BenchmarkFlowControl(1);
         private BenchmarkDataWriter dataWriter;
         private Http2FrameData data;
         private Http2Headers fragmentedHeaders;
         private Http2Headers headers;
+        private Http2FrameData partialData;
 
         @Setup
         public void setup(ConnectionState connection, Blackhole blackhole) {
@@ -141,6 +167,12 @@ public class Http2ConnectionWriterJmhTest {
                                                                Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
                                                                1),
                                       BufferData.create(RESPONSE_BYTES));
+            partialData = new Http2FrameData(Http2FrameHeader.create(PARTIAL_RESPONSE_BYTES.length,
+                                                                      Http2FrameTypes.DATA,
+                                                                      Http2Flag.DataFlags.create(
+                                                                              Http2Flag.END_OF_STREAM),
+                                                                      1),
+                                             BufferData.create(PARTIAL_RESPONSE_BYTES));
         }
 
         @TearDown
@@ -148,7 +180,7 @@ public class Http2ConnectionWriterJmhTest {
             dataWriter.unregister();
         }
 
-        private void reset(FlowControl.Outbound flowControl) {
+        private void reset(Http2FrameData data, FlowControl.Outbound flowControl) {
             data.data().rewind();
             ((BenchmarkFlowControl) flowControl).reset();
         }
