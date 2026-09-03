@@ -28,6 +28,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.service.registry.Services;
 import io.helidon.tracing.Scope;
+import io.helidon.tracing.SamplerType;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
@@ -42,6 +43,21 @@ class TestDataPropagation {
 
     private final OpenTelemetryDataPropagationProvider provider = new OpenTelemetryDataPropagationProvider();
     private final ExecutorService executor = Contexts.wrap(Executors.newVirtualThreadPerTaskExecutor());
+
+    @Test
+    void testUnsampledSpanContext() {
+        Tracer tracer = OpenTelemetryTracer.builder()
+                .serviceName("test-unsampled")
+                .samplerType(SamplerType.RATIO)
+                .samplerParam(0)
+                .build();
+        Span span = tracer.spanBuilder("test-span").start();
+        try {
+            assertThat("Span is not sampled", span.context().sampled(), is(false));
+        } finally {
+            span.end();
+        }
+    }
 
     @Test
     void testSyncPropagation() {

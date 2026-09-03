@@ -15,13 +15,11 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,9 +42,20 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.Collector;
-import io.prometheus.client.exporter.common.TextFormat;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import io.prometheus.metrics.expositionformats.ExpositionFormatWriter;
+import io.prometheus.metrics.expositionformats.OpenMetricsTextFormatWriter;
+import io.prometheus.metrics.expositionformats.PrometheusTextFormatWriter;
+import io.prometheus.metrics.model.snapshots.CounterSnapshot;
+import io.prometheus.metrics.model.snapshots.DataPointSnapshot;
+import io.prometheus.metrics.model.snapshots.GaugeSnapshot;
+import io.prometheus.metrics.model.snapshots.HistogramSnapshot;
+import io.prometheus.metrics.model.snapshots.InfoSnapshot;
+import io.prometheus.metrics.model.snapshots.MetricSnapshot;
+import io.prometheus.metrics.model.snapshots.MetricSnapshots;
+import io.prometheus.metrics.model.snapshots.StateSetSnapshot;
+import io.prometheus.metrics.model.snapshots.SummarySnapshot;
+import io.prometheus.metrics.model.snapshots.UnknownSnapshot;
 
 /**
  * Retrieves and prepares meter output from the specified meter registry according to the formats supported by the Prometheus
@@ -54,8 +63,8 @@ import io.prometheus.client.exporter.common.TextFormat;
  * <p>
  * Because the Prometheus exposition format is flat, and because some meter types have multiple values, the meter names
  * in the output repeat the actual meter name with suffixes to indicate the specific quantities (e.g.,
- * count, total, max) each reported value conveys. Further, meter names in the output might need the prefix
- * "m_" if the actual meter name starts with a digit or underscore and underscores replace special characters.
+ * count, total, max) each reported value conveys. The active Prometheus naming convention controls how meter and tag names
+ * are normalized.
  * </p>
  */
 public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
@@ -63,9 +72,15 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
      * Mapping from supported media types to the corresponding Prometheus registry content types.
      */
     public static final Map<MediaType, String> MEDIA_TYPE_TO_FORMAT = Map.of(
-            MediaTypes.TEXT_PLAIN, TextFormat.CONTENT_TYPE_004,
-            MediaTypes.APPLICATION_OPENMETRICS_TEXT, TextFormat.CONTENT_TYPE_OPENMETRICS_100);
+            MediaTypes.TEXT_PLAIN, PrometheusTextFormatWriter.CONTENT_TYPE,
+            MediaTypes.APPLICATION_OPENMETRICS_TEXT, OpenMetricsTextFormatWriter.CONTENT_TYPE);
 
+    private static final Map<MediaType, ExpositionFormatWriter> MEDIA_TYPE_TO_WRITER = Map.of(
+            MediaTypes.TEXT_PLAIN, PrometheusTextFormatWriter.create(),
+            MediaTypes.APPLICATION_OPENMETRICS_TEXT, OpenMetricsTextFormatWriter.builder()
+                    .setCreatedTimestampsEnabled(false)
+                    .setExemplarsOnAllMetricTypesEnabled(true)
+                    .build());
     private static final Pattern SPECIAL_CHARACTERS_MAPPED_TO_UNDERSCORE_PATTERN = Pattern.compile("[-+.!?@#$%^&*`'\\s]+");
     private static final Pattern NON_DIGIT_OR_UNDERSCORE_PREFIX_PATTERN = Pattern.compile("^[0-9_]+.*");
     private static final Pattern NON_IDENTIFIER_PATTERN = Pattern.compile("[^A-Za-z0-9_:]");
@@ -117,25 +132,11 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         return result;
     }
 
-    /**
-     * Returns the Prometheus-format meter name suffixes for the given meter type.
-     *
-     * @param meterType {@link io.micrometer.core.instrument.Meter.Type} of interest
-     * @return suffixes used in reporting the corresponding meter's value(s)
-     */
-    static Set<String> meterNameSuffixes(Meter.Type meterType) {
-        return switch (meterType) {
-            case COUNTER -> Set.of("_total");
-            case DISTRIBUTION_SUMMARY, LONG_TASK_TIMER, TIMER -> Set.of("_count", "_sum", "_max", "_bucket");
-            case GAUGE, OTHER -> Set.of();
-        };
-    }
-
     static Optional<PrometheusMeterRegistry> prometheusMeterRegistry(MeterRegistry meterRegistry) {
         io.micrometer.core.instrument.MeterRegistry mMeterRegistry;
         try {
             mMeterRegistry = meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
-        } catch (ClassCastException ignored) {
+        } catch (ClassCastException _) {
             return Optional.empty();
         }
         if (mMeterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
@@ -182,27 +183,16 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     }
 
     /**
-     * Prepares a set containing the names of meters from the specified Prometheus meter registry which match
+     * Prepares a set containing the names of metric families from the specified Prometheus meter registry which match
      * the specified meter name selections.
      * <p>
-     * For meters with multiple values, the Prometheus registry essentially creates and actually displays in its output
-     * additional or "child" meters. A child meter's name is the parent's name plus a suffix consisting
-     * of the child meter's units (if any) plus the child name. For example, the timer {@code myDelay}  has child meters
-     * {@code myDelay_seconds_count}, {@code myDelay_seconds_sum}, and {@code myDelay_seconds_max}. (The output contains
-     * repetitions of the parent meter's name for each quantile, but that does not affect the meter names we need to ask
-     * the Prometheus meter registry to retrieve for us when we scrape.)
-     * </p>
-     * <p>
-     * We interpret any name selection passed to this method as specifying a parent name. We can ask the Prometheus meter
-     * registry to select specific meters by meter name when we scrape, but we need to pass it an expanded name selection that
-     * includes the relevant child meter names as well as the parent name. One way to choose those is first to collect the
-     * names from the Prometheus meter registry itself and derive the names to have the meter registry select by from those
-     * matching meters, their units, etc.
+     * The new Prometheus registry selects metric families, not individual emitted samples. Timers and distribution summaries
+     * use a base family for count, sum, buckets, and quantiles and a separate family for the maximum value.
      * </p>
      *
      * @param prometheusMeterRegistry Prometheus meter registry to query
      * @param names           meter names to select
-     * @return set of matching meter names (with units and suffixes as needed) to match the names as stored in the meter registry
+     * @return names of matching metric families as stored in the Prometheus registry
      */
     Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
                                      Set<String> names) {
@@ -210,31 +200,19 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         Set<String> result = new HashSet<>();
 
         for (Meter meter : prometheusMeterRegistry.getMeters()) {
-            String meterName = meter.getId().getName();
+            Meter.Id meterId = meter.getId();
+            String meterName = LegacyPrometheusMeterFilter.originalGaugeName(meterId.getName());
             if (!names.isEmpty() && !names.contains(meterName)) {
                 continue;
             }
-            Set<String> allUnitsForMeterName = new HashSet<>();
-            allUnitsForMeterName.add("");
-            Set<String> allSuffixesForMeterName = new HashSet<>();
-            allSuffixesForMeterName.add("");
 
-            prometheusMeterRegistry.find(meterName)
-                    .meters()
-                    .forEach(m -> {
-                        Meter.Id meterId = m.getId();
-                        String normalizedUnit = normalizeUnit(meterId.getBaseUnit());
-                        if (!normalizedUnit.isBlank()) {
-                            allUnitsForMeterName.add("_" + normalizedUnit);
-                        }
-                        allSuffixesForMeterName.addAll(meterNameSuffixes(meterId.getType()));
-                    });
-
-            String normalizedMeterName = normalizeNameToPrometheus(meterName);
-
-            allUnitsForMeterName
-                    .forEach(units -> allSuffixesForMeterName
-                            .forEach(suffix -> result.add(normalizedMeterName + units + suffix)));
+            String conventionName = prometheusMeterRegistry.config()
+                    .namingConvention()
+                    .name(meterId.getName(), meterId.getType(), meterId.getBaseUnit());
+            result.add(conventionName);
+            if (meterId.getType() == Meter.Type.TIMER || meterId.getType() == Meter.Type.DISTRIBUTION_SUMMARY) {
+                result.add(conventionName + "_max");
+            }
         }
         return result;
     }
@@ -254,21 +232,6 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         helpAndType.setLength(0);
         metricData.setLength(0);
         return result.toString();
-    }
-
-    private static String normalizeUnit(String unit) {
-        return unit == null ? "" : unit;
-    }
-
-    private static Set<String> commonLabelNames(List<Collector.MetricFamilySamples.Sample> samples) {
-        if (samples.isEmpty()) {
-            return Set.of();
-        }
-        Set<String> result = new HashSet<>(samples.getFirst().labelNames);
-        samples.stream()
-                .skip(1)
-                .forEach(sample -> result.retainAll(sample.labelNames));
-        return result;
     }
 
     private static Map<String, Set<String>> meterTagNamesByFamily(PrometheusMeterRegistry prometheusMeterRegistry) {
@@ -291,11 +254,58 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         return result;
     }
 
+    private static MetricSnapshot withDataPoints(MetricSnapshot snapshot,
+                                                 List<? extends DataPointSnapshot> dataPoints) {
+        if (snapshot instanceof CounterSnapshot counterSnapshot) {
+            return new CounterSnapshot(counterSnapshot.getMetadata(),
+                                       dataPoints.stream()
+                                               .map(CounterSnapshot.CounterDataPointSnapshot.class::cast)
+                                               .toList());
+        }
+        if (snapshot instanceof GaugeSnapshot gaugeSnapshot) {
+            return new GaugeSnapshot(gaugeSnapshot.getMetadata(),
+                                     dataPoints.stream()
+                                             .map(GaugeSnapshot.GaugeDataPointSnapshot.class::cast)
+                                             .toList());
+        }
+        if (snapshot instanceof HistogramSnapshot histogramSnapshot) {
+            return new HistogramSnapshot(histogramSnapshot.isGaugeHistogram(),
+                                         histogramSnapshot.getMetadata(),
+                                         dataPoints.stream()
+                                                 .map(HistogramSnapshot.HistogramDataPointSnapshot.class::cast)
+                                                 .toList());
+        }
+        if (snapshot instanceof SummarySnapshot summarySnapshot) {
+            return new SummarySnapshot(summarySnapshot.getMetadata(),
+                                       dataPoints.stream()
+                                               .map(SummarySnapshot.SummaryDataPointSnapshot.class::cast)
+                                               .toList());
+        }
+        if (snapshot instanceof InfoSnapshot infoSnapshot) {
+            return new InfoSnapshot(infoSnapshot.getMetadata(),
+                                    dataPoints.stream()
+                                            .map(InfoSnapshot.InfoDataPointSnapshot.class::cast)
+                                            .toList());
+        }
+        if (snapshot instanceof StateSetSnapshot stateSetSnapshot) {
+            return new StateSetSnapshot(stateSetSnapshot.getMetadata(),
+                                        dataPoints.stream()
+                                                .map(StateSetSnapshot.StateSetDataPointSnapshot.class::cast)
+                                                .toList());
+        }
+        if (snapshot instanceof UnknownSnapshot unknownSnapshot) {
+            return new UnknownSnapshot(unknownSnapshot.getMetadata(),
+                                       dataPoints.stream()
+                                               .map(UnknownSnapshot.UnknownDataPointSnapshot.class::cast)
+                                               .toList());
+        }
+        throw new IllegalStateException("Unsupported Prometheus metric snapshot type: " + snapshot.getClass().getName());
+    }
+
     private String scrapeSelected(PrometheusMeterRegistry prometheusMeterRegistry, Set<String> meterNamesOfInterest) {
-        Enumeration<Collector.MetricFamilySamples> metricFamilySamples = meterNamesOfInterest == null
-                ? prometheusMeterRegistry.getPrometheusRegistry().metricFamilySamples()
-                : prometheusMeterRegistry.getPrometheusRegistry().filteredMetricFamilySamples(meterNamesOfInterest);
-        List<Collector.MetricFamilySamples> matchingFamilies = new ArrayList<>();
+        MetricSnapshots snapshots = meterNamesOfInterest == null
+                ? prometheusMeterRegistry.getPrometheusRegistry().scrape()
+                : prometheusMeterRegistry.getPrometheusRegistry().scrape(meterNamesOfInterest::contains);
         var namingConvention = prometheusMeterRegistry.config().namingConvention();
         boolean selectsGeneratedLabel = tagSelection.keySet().stream()
                 .map(namingConvention::tagKey)
@@ -303,48 +313,46 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         Map<String, Set<String>> meterTagNamesByFamily = selectsGeneratedLabel
                 ? meterTagNamesByFamily(prometheusMeterRegistry)
                 : Map.of();
+        MetricSnapshots.Builder matchingSnapshotsBuilder = MetricSnapshots.builder();
 
-        while (metricFamilySamples.hasMoreElements()) {
-            Collector.MetricFamilySamples family = metricFamilySamples.nextElement();
+        for (MetricSnapshot snapshot : snapshots) {
             Set<String> meterTagNames = selectsGeneratedLabel
-                    ? meterTagNamesByFamily.getOrDefault(family.name, Set.of())
-                    : commonLabelNames(family.samples);
-            List<Collector.MetricFamilySamples.Sample> matchingSamples = family.samples.stream()
-                    .filter(sample -> matchesTagSelection(prometheusMeterRegistry, meterTagNames, sample))
+                    ? meterTagNamesByFamily.getOrDefault(snapshot.getMetadata().getPrometheusName(), Set.of())
+                    : Set.of();
+            List<? extends DataPointSnapshot> matchingDataPoints = snapshot.getDataPoints().stream()
+                    .filter(dataPoint -> matchesTagSelection(prometheusMeterRegistry,
+                                                             meterTagNames,
+                                                             dataPoint))
                     .toList();
-            if (!matchingSamples.isEmpty()) {
-                matchingFamilies.add(new Collector.MetricFamilySamples(family.name,
-                                                                        family.unit,
-                                                                        family.type,
-                                                                        family.help,
-                                                                        matchingSamples));
+            if (!matchingDataPoints.isEmpty()) {
+                matchingSnapshotsBuilder.metricSnapshot(withDataPoints(snapshot, matchingDataPoints));
             }
         }
-        if (matchingFamilies.isEmpty()) {
+
+        MetricSnapshots matchingSnapshots = matchingSnapshotsBuilder.build();
+        if (matchingSnapshots.size() == 0) {
             return "";
         }
 
-        StringWriter result = new StringWriter();
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
         try {
-            TextFormat.writeFormat(MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
-                                   result,
-                                   Collections.enumeration(matchingFamilies));
+            MEDIA_TYPE_TO_WRITER.get(resultMediaType).write(result, matchingSnapshots);
         } catch (IOException e) {
             throw new UncheckedIOException("Error preparing Prometheus metrics output", e);
         }
-        return result.toString();
+        return result.toString(StandardCharsets.UTF_8);
     }
 
     private boolean matchesTagSelection(PrometheusMeterRegistry prometheusMeterRegistry,
                                         Set<String> meterTagNames,
-                                        Collector.MetricFamilySamples.Sample sample) {
+                                        DataPointSnapshot dataPoint) {
         for (Map.Entry<String, Set<String>> selection : tagSelection.entrySet()) {
             String tagName = prometheusMeterRegistry.config().namingConvention().tagKey(selection.getKey());
-            if (!meterTagNames.contains(tagName)) {
+            if (MICROMETER_GENERATED_LABEL_NAMES.contains(tagName) && !meterTagNames.contains(tagName)) {
                 return false;
             }
-            int labelIndex = sample.labelNames.indexOf(tagName);
-            if (labelIndex < 0 || !selection.getValue().contains(sample.labelValues.get(labelIndex))) {
+            String tagValue = dataPoint.getLabels().get(tagName);
+            if (tagValue == null || !selection.getValue().contains(tagValue)) {
                 return false;
             }
         }

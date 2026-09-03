@@ -7333,7 +7333,7 @@ Fourth Party Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 micrometer-registry-prometheus  VMware
 Apache 2.0
-Used by: [helidon-integrations-micrometer, helidon-integrations-micrometer-cdi, helidon-metrics-providers-micrometer]
+Used by: [helidon-metrics-providers-micrometer]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 micrometer-registry-prometheus (io.micrometer:micrometer-registry-prometheus)
   Copyright 2017,2022 VMware, Inc.
@@ -8373,12 +8373,13 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-simpleclient  The Prometheus Authors
+Prometheus Java Client  The Prometheus Authors
 Apache 2.0
-Used by: [helidon-integrations-micrometer, helidon-integrations-micrometer-cdi, helidon-metrics-prometheus]
+Used by: [helidon-metrics-providers-micrometer]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Copyright: prometheus
-=== Source URL: https://github.com/prometheus/client_java/tree/parent-0.16.0/simpleclient
+Dependency: io.prometheus:prometheus-metrics-model
+Copyright: The Prometheus Authors
+=== Source URL: https://github.com/prometheus/client_java/tree/v1.7.0/prometheus-metrics-model
 License: Apache 2.0
 
  ./LICENSE
@@ -8402,9 +8403,9 @@ Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
 -------------- Separator --------------
 
 
-Dependency: io.prometheus:simpleclient_tracer_common
+Dependency: io.prometheus:prometheus-metrics-exposition-textformats
 Copyright: The Prometheus Authors
-=== Source URL: https://github.com/prometheus/client_java/tree/parent-0.16.0/simpleclient_tracer/simpleclient_tracer_common
+=== Source URL: https://github.com/prometheus/client_java/tree/v1.7.0/prometheus-metrics-exposition-textformats
 License: Apache 2.0
 
  ./LICENSE
@@ -8421,9 +8422,9 @@ Apache 2.0
 
 
 
-Dependency: io.prometheus:simpleclient_tracer_otel
+Dependency: io.prometheus:prometheus-metrics-tracer-common
 Copyright: The Prometheus Authors
-=== Source URL: https://github.com/prometheus/client_java/tree/parent-0.16.0/simpleclient_tracer/simpleclient_tracer_otel
+=== Source URL: https://github.com/prometheus/client_java/tree/v1.7.0/prometheus-metrics-tracer-common
 License: Apache 2.0
 
  ./LICENSE
@@ -8440,9 +8441,10 @@ Apache 2.0
 
 
 
-Dependency: io.prometheus:simpleclient_tracer_otel_agent
+Dependency: io.prometheus:prometheus-metrics-core, io.prometheus:prometheus-metrics-config,
+            io.prometheus:prometheus-metrics-exposition-formats
 Copyright: The Prometheus Authors
-=== Source URL: https://github.com/prometheus/client_java/tree/parent-0.16.0/simpleclient_tracer/simpleclient_tracer_otel_agent
+=== Source URL: https://github.com/prometheus/client_java/tree/v1.7.0
 License: Apache 2.0
 
  ./LICENSE
@@ -8460,7 +8462,6 @@ Apache 2.0
 
 
 
- === Entry created by OSCS on 2022-09-12T08:41:03.530
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 slf4j-api  QOS.ch
