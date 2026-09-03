@@ -26,6 +26,6 @@ import io.helidon.service.registry.Service;
 public final class AlphaEqualWeightMapper implements JdbcClient.RowMapper<EqualWeightContact> {
     @Override
     public EqualWeightContact map(JdbcClient.Row row) {
-        return new EqualWeightContact("alpha:" + row.required(1, String.class));
+        return new EqualWeightContact("alpha:" + row.get(1, String.class));
     }
 }

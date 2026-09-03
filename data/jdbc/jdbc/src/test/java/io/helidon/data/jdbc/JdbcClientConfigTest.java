@@ -15,95 +15,127 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Consumer;
-
-import javax.sql.DataSource;
+import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.DataException;
 import io.helidon.data.sql.common.SqlConfig;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryException;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class JdbcClientConfigTest {
 
     /**
-     * Verifies the public builder retains its effective immutable
-     * configuration without accessing the supplied data source.
+     * Verifies the public builder creates a standalone client from inherited
+     * direct connection settings without opening a connection.
+     *
+     * @throws SQLException when the test driver registration cannot be changed
      */
     @Test
-    void buildsClientFromExistingDataSource() {
-        DataSource dataSource = mock(DataSource.class);
+    void buildsClientFromDirectConnection() throws SQLException {
+        RecordingDriver driver = new RecordingDriver("jdbc:test:direct-builder");
+        DriverManager.registerDriver(driver);
+        try {
+            JdbcClient client = JdbcClient.builder()
+                    .connection(connection -> connection
+                            .url(driver.url())
+                            .jdbcDriverClassName(driver.getClass().getName()))
+                    .build();
 
-        JdbcClient client = JdbcClient.builder()
-                .dataSource(dataSource)
-                .build();
-
-        assertThat(client.prototype().name(), is(Service.Named.DEFAULT_NAME));
-        assertThat(client.prototype().dataSourceInstance().orElseThrow(), sameInstance(dataSource));
-        verifyZeroInteractions(dataSource);
+            assertThat(client.prototype().name(), is(Service.Named.DEFAULT_NAME));
+            assertThat(client.prototype().connection().orElseThrow().url(), is(driver.url()));
+            assertThat(driver.connectionAttempts(), is(0));
+        } finally {
+            DriverManager.deregisterDriver(driver);
+        }
     }
 
     /**
      * Verifies the public factory retains the exact immutable configuration
-     * supplied by the application.
+     * supplied by the application without opening a connection.
+     *
+     * @throws SQLException when the test driver registration cannot be changed
      */
     @Test
-    void createsClientFromImmutableConfiguration() {
-        DataSource dataSource = mock(DataSource.class);
-        JdbcClientConfig config = JdbcClientConfig.builder()
-                .name("inventory")
-                .dataSource(dataSource)
-                .buildPrototype();
+    void createsClientFromImmutableConfiguration() throws SQLException {
+        RecordingDriver driver = new RecordingDriver("jdbc:test:immutable-configuration");
+        DriverManager.registerDriver(driver);
+        try {
+            JdbcClientConfig config = JdbcClientConfig.builder()
+                    .name("inventory")
+                    .connection(connection -> connection
+                            .url(driver.url())
+                            .jdbcDriverClassName(driver.getClass().getName()))
+                    .buildPrototype();
 
-        JdbcClient client = JdbcClient.create(config);
+            JdbcClient client = JdbcClient.create(config);
 
-        assertThat(client.prototype(), sameInstance(config));
-        assertThat(client.prototype().name(), is("inventory"));
-        verifyZeroInteractions(dataSource);
+            assertThat(client.prototype(), sameInstance(config));
+            assertThat(client.prototype().name(), is("inventory"));
+            assertThat(driver.connectionAttempts(), is(0));
+        } finally {
+            DriverManager.deregisterDriver(driver);
+        }
     }
 
     /**
      * Verifies the runtime type consumer factory delegates through the same
-     * public builder and construction path.
+     * public builder and direct connection construction path.
+     *
+     * @throws SQLException when the test driver registration cannot be changed
      */
     @Test
-    void createsClientFromBuilderConsumer() {
-        DataSource dataSource = mock(DataSource.class);
+    void createsClientFromBuilderConsumer() throws SQLException {
+        RecordingDriver driver = new RecordingDriver("jdbc:test:builder-consumer");
+        DriverManager.registerDriver(driver);
+        try {
+            JdbcClient client = JdbcClient.create(builder -> builder
+                    .name("reporting")
+                    .connection(connection -> connection
+                            .url(driver.url())
+                            .jdbcDriverClassName(driver.getClass().getName())));
 
-        JdbcClient client = JdbcClient.create(builder -> builder
-                .name("reporting")
-                .dataSource(dataSource));
-
-        assertThat(client.prototype().name(), is("reporting"));
-        assertThat(client.prototype().dataSourceInstance().orElseThrow(), sameInstance(dataSource));
-        verifyZeroInteractions(dataSource);
+            assertThat(client.prototype().name(), is("reporting"));
+            assertThat(driver.connectionAttempts(), is(0));
+        } finally {
+            DriverManager.deregisterDriver(driver);
+        }
     }
 
     /**
-     * Verifies the client configuration retains the shared SQL source choices
-     * while a data source object remains programmatic only.
+     * Verifies the client configuration inherits both shared SQL source
+     * choices and remains assignable to the shared contract.
      */
     @Test
-    void preservesSqlConfigurationSourcesWithoutReadingDataSourceObjects() {
-        String sensitiveValue = "jdbc:example://private-host/secret-database";
+    void inheritsSqlConfigurationSources() {
         Config configNode = Config.just(ConfigSources.create(Map.of(
                 "name", "reporting",
-                "data-source", "reporting-source",
-                "data-source-instance", sensitiveValue)));
+                "data-source", "reporting-source")));
         JdbcClientConfig namedConfig = JdbcClientConfig.create(configNode);
         JdbcClientConfig directConfig = JdbcClientConfig.builder()
                 .connection(connection -> connection.url("jdbc:example:local"))
@@ -112,7 +144,6 @@ class JdbcClientConfigTest {
 
         assertThat(sqlConfig, sameInstance(namedConfig));
         assertThat(namedConfig.dataSource().orElseThrow(), is("reporting-source"));
-        assertThat(namedConfig.dataSourceInstance().isEmpty(), is(true));
         assertThat(directConfig.connection().orElseThrow().url(), is("jdbc:example:local"));
     }
 
@@ -124,78 +155,49 @@ class JdbcClientConfigTest {
     void rejectsInvalidSourceSelectionWithoutExposingConfiguration() {
         String sensitiveValue = "jdbc:example://private-host/secret-database";
         Config configNode = Config.just(ConfigSources.create(Map.of(
-                "name", sensitiveValue,
-                "data-source-instance", sensitiveValue)));
-        DataSource dataSource = mock(DataSource.class);
+                "name", sensitiveValue)));
 
         DataException missingFailure = assertThrows(DataException.class, () -> JdbcClientConfig.create(configNode));
         DataException conflictFailure = assertThrows(
                 DataException.class,
                 () -> JdbcClient.builder()
                         .dataSource("private-source")
-                        .dataSource(dataSource)
+                        .connection(connection -> connection.url(sensitiveValue))
                         .buildPrototype());
 
-        assertThat(missingFailure.getMessage(), is("A JDBC client requires exactly one connection source."));
-        assertThat(conflictFailure.getMessage(), is("A JDBC client requires exactly one connection source."));
+        assertThat(missingFailure.getMessage(), is("Both connection and DataSource config options are missing"));
+        assertThat(conflictFailure.getMessage(), is("Both connection and DataSource config options are present"));
         assertThat(missingFailure.getMessage(), not(containsString(sensitiveValue)));
         assertThat(conflictFailure.getMessage(), not(containsString("private-source")));
+        assertThat(conflictFailure.getMessage(), not(containsString(sensitiveValue)));
     }
 
     /**
-     * Verifies every combination of multiple connection sources is rejected
-     * before a client can be constructed.
+     * Verifies selecting both inherited connection sources is rejected before
+     * a client can be constructed.
      */
     @Test
-    void rejectsEveryConflictingConnectionSourceCombination() {
-        DataSource dataSource = mock(DataSource.class);
-
-        assertSourceConflict(() -> JdbcClient.builder()
-                .dataSource(dataSource)
-                .connection(connection -> connection.url("jdbc:example:local"))
-                .buildPrototype());
+    void rejectsConflictingConnectionSources() {
         assertSourceConflict(() -> JdbcClient.builder()
                 .dataSource("inventory-source")
                 .connection(connection -> connection.url("jdbc:example:local"))
                 .buildPrototype());
-        assertSourceConflict(() -> JdbcClient.builder()
-                .dataSource(dataSource)
-                .dataSource("inventory-source")
-                .connection(connection -> connection.url("jdbc:example:local"))
-                .buildPrototype());
-        verifyZeroInteractions(dataSource);
     }
 
     /**
-     * Verifies invalid client and source names and incomplete direct
-     * connection settings fail during configuration validation.
+     * Verifies invalid client and data source names fail during configuration validation.
      */
     @Test
-    void rejectsInvalidConnectionSourceDetails() {
-        DataSource dataSource = mock(DataSource.class);
-
+    void rejectsInvalidClientAndDataSourceNames() {
         DataException blankClientName = assertThrows(
                 DataException.class,
-                () -> JdbcClient.builder().name("  ").dataSource(dataSource).buildPrototype());
+                () -> JdbcClient.builder().name("  ").dataSource("inventory-source").buildPrototype());
         DataException blankDataSourceName = assertThrows(
                 DataException.class,
                 () -> JdbcClient.builder().dataSource("  ").buildPrototype());
-        DataException blankUrl = assertThrows(
-                DataException.class,
-                () -> JdbcClient.builder().connection(connection -> connection.url("  ")).buildPrototype());
-        DataException blankDriver = assertThrows(
-                DataException.class,
-                () -> JdbcClient.builder()
-                        .connection(connection -> connection
-                                .url("jdbc:example:local")
-                                .jdbcDriverClassName("  "))
-                        .buildPrototype());
 
         assertThat(blankClientName.getMessage(), is("A JDBC client name must not be blank."));
         assertThat(blankDataSourceName.getMessage(), is("A JDBC data source name must not be blank."));
-        assertThat(blankUrl.getMessage(), is("The direct JDBC connection URL must not be blank."));
-        assertThat(blankDriver.getMessage(), is("The JDBC driver class name must not be blank."));
-        verifyZeroInteractions(dataSource);
     }
 
     /**
@@ -203,26 +205,73 @@ class JdbcClientConfigTest {
      * configuration when a public client is constructed.
      */
     @Test
-    void preservesTypedProviderOptions() {
-        DataSource dataSource = mock(DataSource.class);
-        JdbcPropertiesConfig properties = JdbcPropertiesConfig.builder()
-                .jdbc(JdbcProviderPropertiesConfig.builder()
-                              .parameterCountCache(JdbcParameterCountCacheConfig.builder()
-                                                           .capacity(17)
-                                                           .maxSqlLength(2_048)
-                                                           .buildPrototype())
-                              .buildPrototype())
+    void preservesParameterCountCacheConfiguration() {
+        JdbcClientConfig config = JdbcClient.builder()
+                .dataSource("inventory-source")
+                .parameterCountCacheCapacity(17)
+                .parameterCountCacheMaxSqlLength(2_048)
                 .buildPrototype();
 
-        JdbcClient client = JdbcClient.builder()
-                .dataSource(dataSource)
-                .properties(properties)
-                .build();
+        assertThat(config.parameterCountCacheCapacity(), is(17));
+        assertThat(config.parameterCountCacheMaxSqlLength(), is(2_048));
+    }
 
-        assertThat(client.prototype().properties(), sameInstance(properties));
-        assertThat(client.prototype().properties().jdbc().parameterCountCache().capacity(), is(17));
-        assertThat(client.prototype().properties().jdbc().parameterCountCache().maxSqlLength(), is(2_048));
-        verifyZeroInteractions(dataSource);
+    /**
+     * Verifies named data source lookup sanitizes Service Registry activation
+     * details before returning a public client construction failure.
+     */
+    @Test
+    void sanitizesNamedDataSourceRegistryFailure() {
+        String sensitiveDetail = "private-named-data-source-detail";
+        ServiceRegistry originalRegistry = GlobalServiceRegistry.registry();
+        ServiceRegistry failingRegistry = mock(ServiceRegistry.class);
+        when(failingRegistry.first(any(Lookup.class)))
+                .thenThrow(new ServiceRegistryException(sensitiveDetail,
+                                                        new IllegalStateException("private-provider-cause")));
+        GlobalServiceRegistry.registry(failingRegistry);
+        try {
+            JdbcClientConfig config = JdbcClient.builder()
+                    .name("inventory")
+                    .dataSource("inventory-source")
+                    .buildPrototype();
+
+            DataException failure = assertThrows(DataException.class, () -> JdbcClient.create(config));
+
+            assertThat(failure.getMessage(),
+                       is("JDBC client 'inventory' could not resolve SQL data source 'inventory-source'."));
+            assertThat(failure.getCause().toString(), not(containsString(sensitiveDetail)));
+            assertThat(failure.getCause().toString(), not(containsString("private-provider-cause")));
+            assertThat(failure.getCause().getCause(), nullValue());
+        } finally {
+            GlobalServiceRegistry.registry(originalRegistry);
+        }
+    }
+
+    /**
+     * Verifies an unrelated runtime failure from named data source lookup is
+     * not reclassified as a Service Registry failure.
+     */
+    @Test
+    void propagatesUnexpectedNamedDataSourceRegistryFailure() {
+        ServiceRegistry originalRegistry = GlobalServiceRegistry.registry();
+        ServiceRegistry failingRegistry = mock(ServiceRegistry.class);
+        IllegalStateException unexpected = new IllegalStateException("unexpected registry failure");
+        when(failingRegistry.first(any(Lookup.class))).thenThrow(unexpected);
+        GlobalServiceRegistry.registry(failingRegistry);
+        try {
+            JdbcClientConfig config = JdbcClient.builder()
+                    .name("inventory")
+                    .dataSource("inventory-source")
+                    .buildPrototype();
+
+            IllegalStateException failure = assertThrows(
+                    IllegalStateException.class,
+                    () -> JdbcClient.create(config));
+
+            assertThat(failure, sameInstance(unexpected));
+        } finally {
+            GlobalServiceRegistry.registry(originalRegistry);
+        }
     }
 
     /**
@@ -260,15 +309,16 @@ class JdbcClientConfigTest {
     }
 
     /**
-     * Verifies generated diagnostic text does not reveal details from the
-     * programmatically supplied data source.
+     * Verifies generated diagnostic text does not reveal an inherited direct
+     * connection password.
      */
     @Test
-    void redactsDataSourceFromConfigurationText() {
-        String sensitiveValue = "jdbc:example://private-host/secret-database";
-        DataSource dataSource = mock(DataSource.class);
-        when(dataSource.toString()).thenReturn(sensitiveValue);
-        JdbcClientConfig.Builder builder = JdbcClient.builder().dataSource(dataSource);
+    void redactsDirectConnectionPasswordFromConfigurationText() {
+        String sensitiveValue = "private-database-password";
+        JdbcClientConfig.Builder builder = JdbcClient.builder()
+                .connection(connection -> connection
+                        .url("jdbc:example:local")
+                        .password(sensitiveValue));
         JdbcClientConfig config = builder.buildPrototype();
 
         assertThat(builder.toString(), not(containsString(sensitiveValue)));
@@ -289,17 +339,74 @@ class JdbcClientConfigTest {
         NullPointerException consumerFailure = assertThrows(
                 NullPointerException.class,
                 () -> JdbcClient.create((Consumer<JdbcClientConfig.Builder>) null));
-        NullPointerException dataSourceFailure = assertThrows(
-                NullPointerException.class,
-                () -> JdbcClient.builder().dataSource((DataSource) null));
 
         assertThat(configFailure.getMessage(), is("The JDBC client configuration must not be null."));
         assertThat(consumerFailure.getMessage(), is("The JDBC client builder consumer must not be null."));
-        assertThat(dataSourceFailure.getMessage(), is("The data source must not be null."));
     }
 
     private static void assertSourceConflict(Runnable construction) {
         DataException failure = assertThrows(DataException.class, construction::run);
-        assertThat(failure.getMessage(), is("A JDBC client requires exactly one connection source."));
+        assertThat(failure.getMessage(), is("Both connection and DataSource config options are present"));
+    }
+
+    /**
+     * JDBC driver that records connection attempts without retaining
+     * connection configuration.
+     */
+    private static final class RecordingDriver implements Driver {
+
+        private final String url;
+        private int connectionAttempts;
+
+        private RecordingDriver(String url) {
+            this.url = url;
+        }
+
+        @Override
+        public Connection connect(String url, Properties info) {
+            if (!acceptsURL(url)) {
+                return null;
+            }
+            connectionAttempts++;
+            return null;
+        }
+
+        @Override
+        public boolean acceptsURL(String url) {
+            return this.url.equals(url);
+        }
+
+        @Override
+        public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
+            return new DriverPropertyInfo[0];
+        }
+
+        @Override
+        public int getMajorVersion() {
+            return 1;
+        }
+
+        @Override
+        public int getMinorVersion() {
+            return 0;
+        }
+
+        @Override
+        public boolean jdbcCompliant() {
+            return false;
+        }
+
+        @Override
+        public Logger getParentLogger() {
+            return Logger.getLogger(RecordingDriver.class.getName());
+        }
+
+        private String url() {
+            return url;
+        }
+
+        private int connectionAttempts() {
+            return connectionAttempts;
+        }
     }
 }

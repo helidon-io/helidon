@@ -54,8 +54,8 @@ public final class ImperativeContactOperations implements ContactOperations {
     @Override
     public List<ContactView> findAll() {
         return client.create(TestSql.FIND_ALL)
-                .map(row -> new ContactView(row.required("ID", Long.class),
-                                            row.required("NAME", String.class),
+                .map(row -> new ContactView(row.get("ID", Long.class),
+                                            row.get("NAME", String.class),
                                             row.optional("EMAIL", String.class)))
                 .list();
     }
@@ -70,8 +70,8 @@ public final class ImperativeContactOperations implements ContactOperations {
     public ContactView oneByName(String name) {
         return client.create(TestSql.FIND_BY_NAME)
                 .bind(1, name)
-                .map(row -> new ContactView(row.required("ID", Long.class),
-                                            row.required("NAME", String.class),
+                .map(row -> new ContactView(row.get("ID", Long.class),
+                                            row.get("NAME", String.class),
                                             row.optional("EMAIL", String.class)))
                 .one();
     }
@@ -86,8 +86,8 @@ public final class ImperativeContactOperations implements ContactOperations {
     public Optional<ContactView> findByName(String name) {
         return client.create(TestSql.FIND_BY_NAME)
                 .bind(1, name)
-                .map(row -> new ContactView(row.required("ID", Long.class),
-                                            row.required("NAME", String.class),
+                .map(row -> new ContactView(row.get("ID", Long.class),
+                                            row.get("NAME", String.class),
                                             row.optional("EMAIL", String.class)))
                 .optional();
     }
@@ -103,8 +103,8 @@ public final class ImperativeContactOperations implements ContactOperations {
         return client.create(TestSql.FIND_BY_EMAIL)
                 .bind(1, email)
                 .bind(2, email)
-                .map(row -> new ContactView(row.required("ID", Long.class),
-                                            row.required("NAME", String.class),
+                .map(row -> new ContactView(row.get("ID", Long.class),
+                                            row.get("NAME", String.class),
                                             row.optional("EMAIL", String.class)))
                 .list();
     }
@@ -145,8 +145,8 @@ public final class ImperativeContactOperations implements ContactOperations {
     @Override
     public ContactView oneFromAll() {
         return client.create(TestSql.FIND_ONE_FROM_ALL)
-                .map(row -> new ContactView(row.required("ID", Long.class),
-                                            row.required("NAME", String.class),
+                .map(row -> new ContactView(row.get("ID", Long.class),
+                                            row.get("NAME", String.class),
                                             row.optional("EMAIL", String.class)))
                 .one();
     }
@@ -161,8 +161,8 @@ public final class ImperativeContactOperations implements ContactOperations {
     public ContactView missingRecordLabel(long id) {
         return client.create(TestSql.FIND_WITH_MISSING_LABEL)
                 .bind(1, id)
-                .map(row -> new ContactView(row.required("ID", Long.class),
-                                            row.required("NAME", String.class),
+                .map(row -> new ContactView(row.get("ID", Long.class),
+                                            row.get("NAME", String.class),
                                             row.optional("EMAIL", String.class)))
                 .one();
     }
@@ -190,7 +190,7 @@ public final class ImperativeContactOperations implements ContactOperations {
                 .bind(1, name)
                 .bind(2, email);
         return generatedKeys(statement)
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
     }
 
@@ -205,7 +205,7 @@ public final class ImperativeContactOperations implements ContactOperations {
         JdbcClient.Statement statement = client.create(TestSql.INSERT_NULL_NAME)
                 .bind(1, email);
         return generatedKeys(statement)
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
     }
 
@@ -220,7 +220,7 @@ public final class ImperativeContactOperations implements ContactOperations {
         JdbcClient.Statement statement = client.create(TestSql.INSERT_WITHOUT_EMAIL)
                 .bind(1, name);
         return generatedKeys(statement)
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
     }
 
@@ -235,7 +235,7 @@ public final class ImperativeContactOperations implements ContactOperations {
         JdbcClient.Statement statement = client.create(TestSql.INSERT_WITHOUT_EMAIL)
                 .bind(1, name);
         return generatedKeys(statement)
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
     }
 

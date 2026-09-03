@@ -53,6 +53,10 @@
             <artifactId>helidon-data-jdbc</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.data.sql</groupId>
+            <artifactId>helidon-data-sql-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>
@@ -133,6 +137,7 @@
                     <ignoredNonTestScopedDependencies>
                         <dependency>io.helidon.builder:helidon-builder-api</dependency>
                         <dependency>io.helidon.config:helidon-config</dependency>
+                        <dependency>io.helidon.data.sql:helidon-data-sql-common</dependency>
                     </ignoredNonTestScopedDependencies>
                 </configuration>
             </plugin>

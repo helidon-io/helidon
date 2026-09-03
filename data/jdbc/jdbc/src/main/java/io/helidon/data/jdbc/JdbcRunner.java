@@ -22,7 +22,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -61,9 +60,8 @@ final class JdbcRunner {
      * @param leaseProvider connection lease provider
      */
     JdbcRunner(DataSource dataSource, JdbcConnectionLease.Provider leaseProvider) {
-        this.dataSource = Objects.requireNonNull(dataSource, "The datasource must not be null.");
-        this.leaseProvider = Objects.requireNonNull(leaseProvider,
-                                                   "The connection lease provider must not be null.");
+        this.dataSource = dataSource;
+        this.leaseProvider = leaseProvider;
         this.queryHandler = new JdbcQueryHandler();
         this.updateHandler = new JdbcUpdateHandler(queryHandler);
     }
@@ -162,8 +160,17 @@ final class JdbcRunner {
         T result = null;
         Throwable failure = null;
         try {
-            lease = JdbcExceptionTranslator.invoke("acquiring a connection lease",
-                                                   () -> leaseProvider.acquire(dataSource));
+            // The lease provider converts checked JDBC failures before they cross its contract boundary.
+            try {
+                lease = leaseProvider.acquire(dataSource);
+            } catch (DataException leaseFailure) {
+                if (leaseFailure.getCause() instanceof SQLException sqlException) {
+                    // Restore the SQL category inside the runner so the public
+                    // diagnostic retains the terminal context.
+                    throw sqlException;
+                }
+                throw leaseFailure;
+            }
             Connection connection = lease.connection();
             statement = prepare(connection, operation);
             applyOptions(statement, options);

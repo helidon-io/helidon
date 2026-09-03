@@ -41,7 +41,7 @@ public final class PreferredContactMapper implements JdbcClient.RowMapper<Contac
 
     @Override
     public ContactLabel map(JdbcClient.Row row) {
-        return new ContactLabel(row.required("ID", Long.class),
-                                prefix.apply(row.required("NAME", String.class)));
+        return new ContactLabel(row.get("ID", Long.class),
+                                prefix.apply(row.get("NAME", String.class)));
     }
 }

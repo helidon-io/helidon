@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Runs imperative applications and declarative Helidon Data repositories with
  * JDBC.
  */
+@Features.Name("Data JDBC")
+@Features.Description("JDBC provider for Helidon Data")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Data", "JDBC"})
 module io.helidon.data.jdbc {
 
     requires transitive java.sql;
@@ -25,12 +32,13 @@ module io.helidon.data.jdbc {
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
-    requires io.helidon.data;
+    requires transitive io.helidon.data;
     requires io.helidon.data.jdbc.lexical;
     requires transitive io.helidon.data.sql.common;
     requires transitive io.helidon.service.registry;
     requires io.helidon.transaction;
 
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
     exports io.helidon.data.jdbc;

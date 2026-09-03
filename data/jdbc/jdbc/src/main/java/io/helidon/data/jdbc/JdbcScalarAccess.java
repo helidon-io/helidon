@@ -26,7 +26,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -79,8 +78,6 @@ final class JdbcScalarAccess {
      * @throws SQLException when the JDBC driver rejects the binding
      */
     static void bind(PreparedStatement statement, int index, Object value) throws SQLException {
-        Objects.requireNonNull(statement, "The prepared statement must not be null.");
-        Objects.requireNonNull(value, "The bind value must not be null.");
         if (value instanceof Boolean booleanValue) {
             statement.setBoolean(index, booleanValue);
         } else if (value instanceof Byte byteValue) {
@@ -124,7 +121,6 @@ final class JdbcScalarAccess {
      * @return normalized scalar type
      */
     static Class<?> normalized(Class<?> type) {
-        Objects.requireNonNull(type, "The target type must not be null.");
         return type.isPrimitive() ? PRIMITIVE_WRAPPERS.getOrDefault(type, type) : type;
     }
 
@@ -138,8 +134,6 @@ final class JdbcScalarAccess {
      * @throws SQLException when the JDBC driver rejects the conversion
      */
     static Object read(ResultSet resultSet, int index, Class<?> targetType) throws SQLException {
-        Objects.requireNonNull(resultSet, "The result set must not be null.");
-        Objects.requireNonNull(targetType, "The target type must not be null.");
         if (targetType == Boolean.class) {
             return nullable(resultSet, resultSet.getBoolean(index));
         } else if (targetType == Byte.class) {

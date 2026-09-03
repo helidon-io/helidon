@@ -97,7 +97,7 @@ class ImperativeJdbcClientH2Test {
                     IllegalStateException.class,
                     () -> client.create("SELECT NAME FROM CONTACT")
                             .map(row -> {
-                                row.required(1, String.class);
+                                row.get(1, String.class);
                                 throw new IllegalStateException("deliberate imperative mapper failure");
                             })
                             .list());

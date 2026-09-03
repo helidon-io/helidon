@@ -56,7 +56,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("helidon:api:internal")
 class JdbcRunnerFailureTest {
     private DataSource dataSource;
     private Connection connection;
@@ -73,7 +72,7 @@ class JdbcRunnerFailureTest {
         when(connection.prepareStatement("UPDATE TEST_VALUE SET VALUE = 1")).thenReturn(statement);
         when(connection.prepareStatement("INSERT INTO TEST_VALUE DEFAULT VALUES",
                                          Statement.RETURN_GENERATED_KEYS)).thenReturn(statement);
-        client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        client = JdbcTestClients.create(dataSource);
     }
 
     /**
@@ -97,7 +96,7 @@ class JdbcRunnerFailureTest {
         DataException keyFailure = assertThrows(DataException.class,
                                                 () -> client.create("INSERT INTO TEST_VALUE DEFAULT VALUES")
                                                         .generatedKeys()
-                                                        .map(row -> row.required(1, Long.class))
+                                                        .map(row -> row.get(1, Long.class))
                                                         .one());
         assertThat(keyFailure.getMessage(), containsString("no expected result"));
         verify(statement).close();
@@ -155,7 +154,7 @@ class JdbcRunnerFailureTest {
 
         assertOwnedAutoCommitFailure(() -> client.create("INSERT INTO TEST_VALUE DEFAULT VALUES")
                 .generatedKeys()
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .list());
         verify(connection, never()).prepareStatement("INSERT INTO TEST_VALUE DEFAULT VALUES",
                                                      Statement.RETURN_GENERATED_KEYS);
@@ -213,6 +212,10 @@ class JdbcRunnerFailureTest {
         verify(statement, never()).execute();
     }
 
+    /**
+     * Verifies that an owned lease translates a checked close failure before
+     * it crosses the lease contract and still completes invalidation once.
+     */
     @Test
     void failedOwnedLeaseCloseInvalidatesOnlyOnceBeforeBecomingTerminal() throws Exception {
         SQLException closeFailure = new SQLException("connection close failed", "08006", 97);
@@ -230,9 +233,12 @@ class JdbcRunnerFailureTest {
         }).when(connection).abort(any());
         JdbcConnectionLease lease = JdbcConnectionLease.ownedProvider().acquire(dataSource);
 
-        SQLException failure = assertThrows(SQLException.class, lease::close);
+        DataException failure = assertThrows(DataException.class, lease::close);
 
-        assertThat(failure, sameInstance(closeFailure));
+        assertThat(failure.getMessage(), containsString("The JDBC connection release failed."));
+        assertThat(failure.getMessage(), not(containsString("connection close failed")));
+        assertSafeSqlCause(failure.getCause(), closeFailure);
+        assertThat(failure.getCause(), not(sameInstance(closeFailure)));
         InOrder cleanup = inOrder(connection);
         cleanup.verify(connection).close();
         cleanup.verify(connection).abort(any());
@@ -299,14 +305,13 @@ class JdbcRunnerFailureTest {
     }
 
     @Test
-    @SuppressWarnings("helidon:api:internal")
     void closesStatementAndConnectionWhenTypedNullBindingFails() throws Exception {
         SQLException bindFailure = new SQLException("null bind failed", "22000", 93);
         when(connection.prepareStatement("UPDATE TEST_VALUE SET VALUE = ?")).thenReturn(statement);
         doThrow(bindFailure).when(statement).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
 
         DataException failure = assertThrows(DataException.class,
-                                             () -> JdbcClient.bindNull(
+                                             () -> GeneratedJdbcData.bindNull(
                                                              client.create("UPDATE TEST_VALUE SET VALUE = ?"),
                                                              1,
                                                              JDBCType.VARCHAR)
@@ -340,7 +345,7 @@ class JdbcRunnerFailureTest {
         when(statement.execute()).thenThrow(executeFailure);
         assertExecutionFailure(() -> client.create("INSERT INTO TEST_VALUE DEFAULT VALUES")
                 .generatedKeys()
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .list(), executeFailure);
     }
 
@@ -412,7 +417,7 @@ class JdbcRunnerFailureTest {
 
         assertExecutionFailure(() -> client.create("INSERT INTO TEST_VALUE DEFAULT VALUES")
                 .generatedKeys()
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one(), keyFailure);
     }
 
@@ -481,7 +486,7 @@ class JdbcRunnerFailureTest {
 
         assertSanitizedRuntimeFailure(() -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute(),
                                       connectionCloseFailure,
-                                      "closing a connection lease");
+                                      "closing a connection");
         InOrder connectionCleanup = inOrder(statement, connection);
         connectionCleanup.verify(statement).close();
         connectionCleanup.verify(connection).close();
@@ -887,7 +892,7 @@ class JdbcRunnerFailureTest {
         when(metadata.getColumnLabel(1)).thenThrow(labelFailure);
 
         assertSanitizedRuntimeFailure(() -> client.create("SELECT VALUE FROM TEST_VALUE")
-                                              .map(row -> row.required("VALUE", String.class))
+                                              .map(row -> row.get("VALUE", String.class))
                                               .one(),
                                       labelFailure,
                                       "reading a JDBC result column label");
@@ -1098,7 +1103,7 @@ class JdbcRunnerFailureTest {
     private long generatedKey() {
         return client.create("INSERT INTO TEST_VALUE DEFAULT VALUES")
                 .generatedKeys()
-                .map(row -> row.required(1, Long.class))
+                .map(row -> row.get(1, Long.class))
                 .one();
     }
 

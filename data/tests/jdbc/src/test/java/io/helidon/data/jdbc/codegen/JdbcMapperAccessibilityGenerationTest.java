@@ -108,7 +108,7 @@ class JdbcMapperAccessibilityGenerationTest {
                             private static final class Mapper implements JdbcClient.RowMapper<String> {
                                 @Override
                                 public String map(JdbcClient.Row row) {
-                                    return row.required(1, String.class);
+                                    return row.get(1, String.class);
                                 }
                             }
 

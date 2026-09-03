@@ -50,8 +50,6 @@ final class JdbcConnectionSourceSupport {
      * @return data source adapter
      */
     static DataSource directDataSource(String componentDescription, ConnectionConfig config) {
-        Objects.requireNonNull(componentDescription, "The component description must not be null.");
-        Objects.requireNonNull(config, "The connection configuration must not be null.");
         Driver driver;
         try {
             driver = SqlDriver.create(config).driver();
@@ -60,7 +58,7 @@ final class JdbcConnectionSourceSupport {
             throw new DataException(componentDescription + " could not resolve a JDBC driver for its direct connection.",
                                     JdbcExceptionTranslator.sanitize("resolving a JDBC driver", cause));
         }
-        return new DirectDataSource(config, Objects.requireNonNull(driver, "The JDBC driver must not be null."));
+        return new DirectDataSource(config, driver);
     }
 
     /**

@@ -38,7 +38,7 @@ class JdbcBindSnapshotDatabaseTest {
             statement.execute("DROP TABLE IF EXISTS BINARY_VALUE");
             statement.execute("CREATE TABLE BINARY_VALUE (ID INTEGER PRIMARY KEY, DATA_VALUE VARBINARY(20))");
         }
-        JdbcClient client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        JdbcClient client = JdbcTestClients.create(dataSource);
         byte[] source = {7, 8, 9};
         JdbcClient.Statement insert = client.create("INSERT INTO BINARY_VALUE(ID, DATA_VALUE) VALUES (1, ?)")
                 .bind(1, source);

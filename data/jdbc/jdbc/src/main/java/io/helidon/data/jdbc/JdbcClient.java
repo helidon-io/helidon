@@ -15,7 +15,6 @@
  */
 package io.helidon.data.jdbc;
 
-import java.sql.JDBCType;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -81,72 +80,6 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     static JdbcClient create(Consumer<JdbcClientConfig.Builder> consumer) {
         Objects.requireNonNull(consumer, "The JDBC client builder consumer must not be null.");
         return builder().update(consumer).build();
-    }
-
-    /**
-     * Creates a statement description for generated repository
-     * code that has already validated the positional JDBC SQL.
-     * <p>
-     * This internal code-generation bridge carries the physical marker count
-     * computed by the annotation processor. A statement from Helidon's JDBC
-     * provider avoids rescanning static SQL and accessing the runtime
-     * marker-count cache. An alternate provider falls back to its supported
-     * {@link #create(String)} operation and therefore has no generated-only
-     * method to implement.
-     *
-     * @param client JDBC client
-     * @param sql validated SQL containing positional JDBC markers
-     * @param parameterCount exact number of physical JDBC markers
-     * @return statement description
-     * @throws NullPointerException if the client or SQL is {@code null}
-     * @throws IllegalArgumentException if the parameter count is negative or
-     *                                  greater than the SQL text length
-     */
-    @Api.Internal
-    static Statement createGenerated(JdbcClient client, String sql, int parameterCount) {
-        Objects.requireNonNull(client, "The JDBC client must not be null.");
-        Objects.requireNonNull(sql, "The SQL statement must not be null.");
-        // A physical marker occupies at least one code unit. This constant-time
-        // guard prevents an invalid internal caller from requesting an
-        // unrelated or unbounded bind array without rescanning generated SQL.
-        if (parameterCount < 0 || parameterCount > sql.length()) {
-            throw new IllegalArgumentException(
-                    "The JDBC parameter count must be between zero and the SQL statement length.");
-        }
-        if (client instanceof JdbcClientImpl clientImpl) {
-            return clientImpl.createGenerated(sql, parameterCount);
-        }
-        return client.create(sql);
-    }
-
-    /**
-     * Binds SQL {@code NULL} for a generated declarative repository.
-     * <p>
-     * This internal code-generation bridge is not part of the statement
-     * implementor contract. It accepts only a statement created by Helidon's
-     * JDBC provider. Types that require a database type name are not
-     * supported.
-     *
-     * @param statement statement created by Helidon's JDBC provider
-     * @param index one-based JDBC position
-     * @param type SQL type of the null value
-     * @return the statement
-     * @throws NullPointerException if the statement or type is {@code null}
-     * @throws IllegalArgumentException if the position or type is invalid,
-     *                                  or the type requires a database type name
-     * @throws IllegalStateException if a terminal operation has started
-     * @throws UnsupportedOperationException if the statement was not created
-     *                                       by Helidon's JDBC provider
-     */
-    @Api.Internal
-    static Statement bindNull(Statement statement, int index, JDBCType type) {
-        Objects.requireNonNull(statement, "The JDBC statement must not be null.");
-        Objects.requireNonNull(type, "The JDBC null type must not be null.");
-        if (statement instanceof JdbcStatement jdbcStatement) {
-            return jdbcStatement.bindNull(index, type);
-        }
-        throw new UnsupportedOperationException(
-                "Typed SQL null binding requires a statement created by Helidon's JDBC provider.");
     }
 
     /**
@@ -408,7 +341,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         <T> Optional<T> optional(String label, Class<T> type);
 
         /**
-         * Reads a required value by one-based column index.
+         * Reads a non-null value by the column index, starting at one.
          *
          * @param index one-based column index
          * @param type requested scalar type
@@ -419,10 +352,10 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @throws IllegalStateException if the row is no longer active or the
          *                                  caller is not the callback thread
          */
-        <T> T required(int index, Class<T> type);
+        <T> T get(int index, Class<T> type);
 
         /**
-         * Reads a required value by column label.
+         * Reads a non-null value by column label.
          *
          * @param label column label
          * @param type requested scalar type
@@ -434,6 +367,6 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @throws IllegalStateException if the row is no longer active or the
          *                                  caller is not the callback thread
          */
-        <T> T required(String label, Class<T> type);
+        <T> T get(String label, Class<T> type);
     }
 }

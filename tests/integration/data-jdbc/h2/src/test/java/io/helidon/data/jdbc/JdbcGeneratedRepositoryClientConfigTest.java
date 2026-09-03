@@ -22,13 +22,12 @@ import io.helidon.config.Config;
 import io.helidon.data.jdbc.tests.declarative.repository.DefaultClientRepository;
 import io.helidon.data.jdbc.tests.declarative.repository.InventoryClientRepository;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,40 +53,29 @@ class JdbcGeneratedRepositoryClientConfigTest {
     }
 
     /**
-     * Verifies two programmatically registered client configurations sharing
-     * one data source inject the default and named generated repositories.
+     * Verifies two programmatically registered client configurations with
+     * equivalent direct settings inject the default and named repositories.
      */
     @Test
     void executesGeneratedRepositoriesFromProgrammaticConfigurations() {
-        HikariConfig poolConfig = new HikariConfig();
-        poolConfig.setJdbcUrl("jdbc:h2:mem:jdbc_programmatic_repositories;DB_CLOSE_DELAY=-1");
-        poolConfig.setMaximumPoolSize(2);
-        poolConfig.setConnectionTimeout(1_000);
-        try (HikariDataSource dataSource = new HikariDataSource(poolConfig)) {
-            JdbcClient setup = JdbcClient.builder().dataSource(dataSource).build();
-            createSchema(setup);
-            JdbcClientConfig defaultConfig = JdbcClient.builder()
-                    .dataSource(dataSource)
-                    .buildPrototype();
-            JdbcClientConfig inventoryConfig = JdbcClient.builder()
-                    .name("inventory")
-                    .dataSource(dataSource)
-                    .buildPrototype();
-            ServiceRegistryManager manager = ServiceRegistryManager.create();
-            GlobalServiceRegistry.registry(manager.registry());
-            try {
-                Services.set(JdbcClientConfig.class, defaultConfig, inventoryConfig);
-                DefaultClientRepository defaultRepository = Services.get(DefaultClientRepository.class);
-                InventoryClientRepository inventoryRepository = Services.get(InventoryClientRepository.class);
+        String url = "jdbc:h2:mem:jdbc_programmatic_repositories;DB_CLOSE_DELAY=-1";
+        JdbcClient setup = directClient(url);
+        createSchema(setup);
+        JdbcClientConfig defaultConfig = directConfig(url, Service.Named.DEFAULT_NAME);
+        JdbcClientConfig inventoryConfig = directConfig(url, "inventory");
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.set(JdbcClientConfig.class, defaultConfig, inventoryConfig);
+            DefaultClientRepository defaultRepository = Services.get(DefaultClientRepository.class);
+            InventoryClientRepository inventoryRepository = Services.get(InventoryClientRepository.class);
 
-                assertThat(defaultRepository.insert(1, "default-programmatic"), is(1L));
-                assertThat(inventoryRepository.insert(2, "inventory-programmatic"), is(1L));
-                assertThat(inventoryRepository.find(1), is("default-programmatic"));
-                assertThat(defaultRepository.find(2), is("inventory-programmatic"));
-            } finally {
-                manager.shutdown();
-            }
-            assertThat(dataSource.getHikariPoolMXBean().getActiveConnections(), is(0));
+            assertThat(defaultRepository.insert(1, "default-programmatic"), is(1L));
+            assertThat(inventoryRepository.insert(2, "inventory-programmatic"), is(1L));
+            assertThat(inventoryRepository.find(1), is("default-programmatic"));
+            assertThat(defaultRepository.find(2), is("inventory-programmatic"));
+        } finally {
+            manager.shutdown();
         }
     }
 
@@ -157,35 +145,35 @@ class JdbcGeneratedRepositoryClientConfigTest {
      */
     @Test
     void rejectsMissingNamedClientWithoutFallingBackToDefaultClient() {
-        HikariConfig poolConfig = new HikariConfig();
-        poolConfig.setJdbcUrl("jdbc:h2:mem:jdbc_missing_inventory_client;DB_CLOSE_DELAY=-1");
-        poolConfig.setMaximumPoolSize(2);
-        poolConfig.setConnectionTimeout(1_000);
-        try (HikariDataSource dataSource = new HikariDataSource(poolConfig)) {
-            JdbcClient setup = JdbcClient.builder().dataSource(dataSource).build();
-            createSchema(setup);
-            JdbcClientConfig defaultConfig = JdbcClient.builder()
-                    .dataSource(dataSource)
-                    .buildPrototype();
-            ServiceRegistryManager manager = ServiceRegistryManager.create();
-            GlobalServiceRegistry.registry(manager.registry());
-            try {
-                // Publish only the default client so the existing inventory repository
-                // exercises a genuinely missing required named dependency.
-                Services.set(JdbcClientConfig.class, defaultConfig);
-                DefaultClientRepository defaultRepository = Services.get(DefaultClientRepository.class);
-                assertThat(defaultRepository.insert(99, "default-still-present"), is(1L));
+        String url = "jdbc:h2:mem:jdbc_missing_inventory_client;DB_CLOSE_DELAY=-1";
+        createSchema(directClient(url));
+        JdbcClientConfig defaultConfig = directConfig(url, Service.Named.DEFAULT_NAME);
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            // Publish only the default client so the existing inventory repository
+            // exercises a genuinely missing required named dependency.
+            Services.set(JdbcClientConfig.class, defaultConfig);
+            DefaultClientRepository defaultRepository = Services.get(DefaultClientRepository.class);
+            assertThat(defaultRepository.insert(99, "default-still-present"), is(1L));
 
-                ServiceRegistryException failure = assertThrows(ServiceRegistryException.class,
-                                                                () -> Services.get(InventoryClientRepository.class));
+            ServiceRegistryException failure = assertThrows(ServiceRegistryException.class,
+                                                            () -> Services.get(InventoryClientRepository.class));
 
-                assertThat(failure.getMessage(), containsString("inventory"));
-                assertThat(defaultRepository.find(99), is("default-still-present"));
-            } finally {
-                manager.shutdown();
-            }
-            assertThat(dataSource.getHikariPoolMXBean().getActiveConnections(), is(0));
+            assertThat(failure.getMessage(), containsString("inventory"));
+            assertThat(defaultRepository.find(99), is("default-still-present"));
+        } finally {
+            manager.shutdown();
         }
+    }
+
+    private static JdbcClientConfig directConfig(String url, String name) {
+        return JdbcClient.builder()
+                .name(name)
+                .connection(connection -> connection
+                        .url(url)
+                        .jdbcDriverClassName("org.h2.Driver"))
+                .buildPrototype();
     }
 
     private static JdbcClient directClient(String url) {

@@ -59,8 +59,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     private final ThreadLocal<State> local = new ThreadLocal<>();
 
     @Override
-    public JdbcConnectionLease acquire(DataSource dataSource) throws SQLException {
-        Objects.requireNonNull(dataSource, "The JDBC datasource must not be null.");
+    public JdbcConnectionLease acquire(DataSource dataSource) {
         State state = local.get();
         if (state == null) {
             return JdbcConnectionLease.Owned.acquire(dataSource);
@@ -102,7 +101,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                                                             dataSource::getConnection);
             } catch (SQLException | RuntimeException | Error failure) {
                 failJdbcAssociation(state, state.activeJdbc, association);
-                throw failure;
+                throw JdbcExceptionTranslator.translateFailure("transaction connection acquisition", failure);
             }
             try {
                 if (!JdbcExceptionTranslator.invoke("inspecting transaction automatic commit mode",
@@ -117,7 +116,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             } catch (SQLException | RuntimeException | Error failure) {
                 Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, failure);
                 failJdbcAssociation(state, state.activeJdbc, association);
-                throw rethrowConnectionFailure(reportedFailure);
+                throw JdbcExceptionTranslator.translateFailure("transaction connection setup", reportedFailure);
             }
         }
         return new TransactionLease(association.connection);
@@ -130,7 +129,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             state = new State();
             local.set(state);
         }
-        state.invocationTypes.push(Objects.requireNonNull(type, "The transaction support type must not be null."));
+        state.invocationTypes.push(type);
     }
 
     @Override
@@ -145,7 +144,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void begin(String txIdentity) {
-        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         State state = requireState("begin a transaction");
         requireNoActiveTransaction(state, "begin a transaction");
         if (state.jdbcTransactions.containsKey(txIdentity) || state.foreignTransactions.containsKey(txIdentity)) {
@@ -176,7 +174,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void suspend(String txIdentity) {
-        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         State state = requireState("suspend a transaction");
         if (txIdentity.equals(state.activeJdbc)) {
             Association association = requireAssociation(state, txIdentity);
@@ -209,7 +206,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void resume(String txIdentity) {
-        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         State state = requireState("resume a transaction");
         requireNoActiveTransaction(state, "resume a transaction");
         Association association = state.jdbcTransactions.get(txIdentity);
@@ -243,7 +239,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      * @param commit whether a JDBC association should commit
      */
     private void complete(String txIdentity, boolean commit) {
-        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         State state = requireState("complete a transaction");
         Association association = state.jdbcTransactions.get(txIdentity);
         if (association == null) {
@@ -369,23 +364,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
-     * Restores the declared or unchecked category of a connection failure.
-     *
-     * @param failure failure to throw
-     * @return never returns
-     * @throws SQLException when the failure is an SQL exception
-     */
-    private static SQLException rethrowConnectionFailure(Throwable failure) throws SQLException {
-        if (failure instanceof SQLException sqlException) {
-            throw sqlException;
-        }
-        if (failure instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-        throw (Error) failure;
-    }
-
-    /**
      * Creates a diagnostic for a known transaction outcome followed by unsafe cleanup.
      *
      * @param outcome confirmed transaction outcome
@@ -421,7 +399,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      */
     private static Object transactionIdentity(DataSource dataSource) {
         return dataSource instanceof IdentitySource source
-                ? Objects.requireNonNull(source.transactionIdentity(), "The stable datasource identity must not be null.")
+                ? source.transactionIdentity()
                 : dataSource;
     }
 

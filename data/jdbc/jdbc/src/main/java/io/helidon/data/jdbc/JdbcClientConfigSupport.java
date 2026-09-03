@@ -16,11 +16,8 @@
 package io.helidon.data.jdbc;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
-import javax.sql.DataSource;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.data.DataException;
@@ -28,7 +25,7 @@ import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.service.registry.Service;
 
 /**
- * Custom methods for the JDBC client configuration builder.
+ * Validation support for JDBC client configuration.
  */
 final class JdbcClientConfigSupport {
 
@@ -41,8 +38,8 @@ final class JdbcClientConfigSupport {
      * @param config configuration to validate
      */
     static void validate(JdbcClientConfig config) {
-        Objects.requireNonNull(config, "The JDBC client configuration must not be null.");
-        validate(config.name(), config.connection(), config.dataSource(), config.dataSourceInstance());
+        validate(config.name(), config.connection(), config.dataSource());
+        cachePolicy(config);
     }
 
     /**
@@ -51,7 +48,6 @@ final class JdbcClientConfigSupport {
      * @param configurations configurations to validate
      */
     static void validateAll(Iterable<JdbcClientConfig> configurations) {
-        Objects.requireNonNull(configurations, "The JDBC client configurations must not be null.");
         Set<String> names = new HashSet<>();
         for (JdbcClientConfig config : configurations) {
             validate(config);
@@ -77,74 +73,45 @@ final class JdbcClientConfigSupport {
                 : "JDBC client '" + name + "'";
     }
 
+    /**
+     * Creates the immutable cache policy for one JDBC client.
+     *
+     * @param config client configuration
+     * @return validated cache policy
+     */
+    static JdbcClientImpl.CachePolicy cachePolicy(JdbcClientConfig config) {
+        return cachePolicy(config.parameterCountCacheCapacity(), config.parameterCountCacheMaxSqlLength());
+    }
+
     private static void validate(String name,
                                  Optional<ConnectionConfig> connection,
-                                 Optional<String> dataSource,
-                                 Optional<DataSource> dataSourceInstance) {
-        Objects.requireNonNull(name, "The JDBC client name must not be null.");
-        Objects.requireNonNull(connection, "The direct JDBC connection configuration must not be null.");
-        Objects.requireNonNull(dataSource, "The data source name configuration must not be null.");
-        Objects.requireNonNull(dataSourceInstance, "The existing data source configuration must not be null.");
+                                 Optional<String> dataSource) {
         if (name.isBlank()) {
             throw new DataException("A JDBC client name must not be blank.");
         }
         int sourceCount = connection.isPresent() ? 1 : 0;
         sourceCount += dataSource.isPresent() ? 1 : 0;
-        sourceCount += dataSourceInstance.isPresent() ? 1 : 0;
         if (sourceCount != 1) {
             throw new DataException("A JDBC client requires exactly one connection source.");
         }
         if (dataSource.filter(String::isBlank).isPresent()) {
             throw new DataException("A JDBC data source name must not be blank.");
         }
-        if (connection.isPresent()) {
-            ConnectionConfig connectionConfig = connection.get();
-            String url = Objects.requireNonNull(connectionConfig.url(),
-                                                "The direct JDBC connection URL must not be null.");
-            if (url.isBlank()) {
-                throw new DataException("The direct JDBC connection URL must not be blank.");
-            }
-            Objects.requireNonNull(connectionConfig.username(),
-                                   "The JDBC username configuration must not be null.");
-            Objects.requireNonNull(connectionConfig.password(),
-                                   "The JDBC password configuration must not be null.");
-            Optional<String> driverClassName = Objects.requireNonNull(
-                    connectionConfig.jdbcDriverClassName(),
-                    "The JDBC driver class name configuration must not be null.");
-            if (driverClassName.filter(String::isBlank).isPresent()) {
-                throw new DataException("The JDBC driver class name must not be blank.");
-            }
-        }
+    }
+
+    private static JdbcClientImpl.CachePolicy cachePolicy(int capacity, int maxSqlLength) {
+        return new JdbcClientImpl.CachePolicy(capacity, maxSqlLength);
     }
 
     /**
-     * Methods copied to the generated builder.
-     */
-    static final class CustomMethods {
-
-        private CustomMethods() {
-        }
-
-        /**
-         * Supplies an existing data source for direct client construction.
-         *
-         * @param builder builder to update
-         * @param dataSource existing data source
-         */
-        @Prototype.BuilderMethod
-        static void dataSource(JdbcClientConfig.BuilderBase<?, ?> builder, DataSource dataSource) {
-            builder.dataSourceInstance(Objects.requireNonNull(dataSource, "The data source must not be null."));
-        }
-    }
-
-    /**
-     * Validates the connection source selected by the application.
+     * Validates client configuration supplied by the application.
      */
     static final class Decorator implements Prototype.BuilderDecorator<JdbcClientConfig.BuilderBase<?, ?>> {
 
         @Override
         public void decorate(JdbcClientConfig.BuilderBase<?, ?> builder) {
-            validate(builder.name(), builder.connection(), builder.dataSource(), builder.dataSourceInstance());
+            validate(builder.name(), builder.connection(), builder.dataSource());
+            cachePolicy(builder.parameterCountCacheCapacity(), builder.parameterCountCacheMaxSqlLength());
         }
     }
 }

@@ -18,18 +18,24 @@ package io.helidon.data.jdbc;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.Errors.ErrorMessagesException;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.DataException;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistryException;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class JdbcClientConfigFactoryTest {
 
@@ -93,39 +99,90 @@ class JdbcClientConfigFactoryTest {
     }
 
     /**
-     * Verifies a configuration source failure does not retain source details.
+     * Verifies a configuration service failure does not retain registry or
+     * source details.
      */
     @Test
-    void sanitizesConfigurationSourceFailure() {
+    void sanitizesConfigurationServiceFailure() {
         String sensitiveDetail = "private-configuration-source-detail";
         JdbcClientConfigFactory factory = new JdbcClientConfigFactory(
                 () -> {
-                    throw new IllegalStateException(sensitiveDetail);
+                    throw new ServiceRegistryException(sensitiveDetail,
+                                                       new IllegalStateException("private-configuration-cause"));
                 });
 
         DataException failure = assertThrows(DataException.class, factory::services);
 
-        assertThat(failure.getMessage(), is("JDBC client configuration could not be read."));
-        assertThat(failure.getCause().toString(), not(containsString(sensitiveDetail)));
+        assertThat(failure.getMessage(), is("JDBC client configuration could not be obtained."));
+        assertThat(diagnostic(failure), not(containsString(sensitiveDetail)));
+        assertThat(diagnostic(failure), not(containsString("private-configuration-cause")));
     }
 
     /**
-     * Verifies configuration creation failures identify only the list
-     * position and do not expose direct connection settings.
+     * Verifies an unrelated runtime failure from a configuration supplier is
+     * not reclassified as a configuration or registry failure.
      */
     @Test
-    void sanitizesInvalidYamlConfiguration() {
-        String sensitiveUrl = "jdbc:example://private-host/database?token=private-token";
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.clients.jdbc.0.connection.url", sensitiveUrl,
-                "data.clients.jdbc.0.connection.jdbc-driver-class-name", "  ")));
+    void propagatesUnexpectedConfigurationSupplierFailure() {
+        IllegalStateException unexpected = new IllegalStateException("unexpected application failure");
+        JdbcClientConfigFactory factory = new JdbcClientConfigFactory(() -> {
+            throw unexpected;
+        });
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, factory::services);
+
+        assertThat(failure, sameInstance(unexpected));
+    }
+
+    /**
+     * Verifies a configuration parsing failure is sanitized before it crosses
+     * the JDBC client configuration boundary.
+     */
+    @Test
+    void sanitizesConfigurationParsingFailure() {
+        String sensitiveDetail = "private-configuration-value";
+        Config rootConfig = mock(Config.class);
+        Config clientsConfig = mock(Config.class);
+        when(rootConfig.get(JdbcClientConfigFactory.CONFIG_KEY)).thenReturn(clientsConfig);
+        when(clientsConfig.asNodeList()).thenThrow(
+                new ConfigException(sensitiveDetail, new IllegalStateException("private-configuration-cause")));
 
         DataException failure = assertThrows(
                 DataException.class,
+                () -> new JdbcClientConfigFactory(() -> rootConfig).services());
+
+        assertThat(failure.getMessage(), is("JDBC client configuration could not be read."));
+        assertThat(diagnostic(failure), not(containsString(sensitiveDetail)));
+        assertThat(diagnostic(failure), not(containsString("private-configuration-cause")));
+    }
+
+    /**
+     * Verifies generated builder validation failures remain actionable
+     * without exposing confidential client configuration values.
+     */
+    @Test
+    void propagatesInvalidYamlConfigurationFailure() {
+        String sensitiveUser = "private-database-user";
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.clients.jdbc.0.connection.username", sensitiveUser,
+                "data.clients.jdbc.0.connection.password", "private-database-password")));
+
+        ErrorMessagesException failure = assertThrows(
+                ErrorMessagesException.class,
                 () -> new JdbcClientConfigFactory(() -> config).services());
 
-        assertThat(failure.getMessage(), is("JDBC client configuration at position 1 is invalid."));
-        assertThat(failure.toString(), not(containsString(sensitiveUrl)));
-        assertThat(failure.toString(), not(containsString("private-token")));
+        assertThat(failure.getMessage(), containsString("Property \"url\" must not be null, but not set"));
+        assertThat(diagnostic(failure), not(containsString(sensitiveUser)));
+        assertThat(diagnostic(failure), not(containsString("private-database-password")));
+    }
+
+    private static String diagnostic(Throwable failure) {
+        StringBuilder diagnostic = new StringBuilder();
+        Throwable current = failure;
+        while (current != null) {
+            diagnostic.append(current).append('\n');
+            current = current.getCause();
+        }
+        return diagnostic.toString();
     }
 }

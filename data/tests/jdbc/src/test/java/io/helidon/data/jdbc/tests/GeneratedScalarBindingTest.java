@@ -56,9 +56,9 @@ class GeneratedScalarBindingTest {
         assertThat(source.split("bindParameter\\(jdbcStatement,", -1).length - 1, is(16));
         assertThat(source, containsString("void bindParameter("));
         assertThat(source, containsString("if (value == null) {"));
-        assertThat(source, containsString("JdbcClient.bindNull(statement, index, nullType);"));
+        assertThat(source, containsString("GeneratedJdbcData.bindNull(statement, index, nullType);"));
         assertThat(source, containsString("statement.bind(index, value);"));
-        assertThat(source, containsString("JdbcClient.createGenerated(jdbcClient, SQL_BIND_ALL, 16);"));
+        assertThat(source, containsString("GeneratedJdbcData.createGenerated(jdbcClient, SQL_BIND_ALL, 16);"));
         assertThat(source, not(containsString("if (booleanValue == null) {")));
 
         String[] parameterNames = {
@@ -116,7 +116,7 @@ class GeneratedScalarBindingTest {
         String source = generatedSource(OverflowRepository.class);
 
         assertThat(source, containsString("if (name == null) {"));
-        assertThat(source, containsString("JdbcClient.bindNull(jdbcStatement, 1, JDBCType.VARCHAR);"));
+        assertThat(source, containsString("GeneratedJdbcData.bindNull(jdbcStatement, 1, JDBCType.VARCHAR);"));
         assertThat(source, not(containsString("void bindParameter(")));
     }
 

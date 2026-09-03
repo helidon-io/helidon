@@ -58,7 +58,7 @@ final class JdbcScalarMapperGenerator {
                                        boolean nullable) {
         method.addContent(".generatedKeys()");
         addGeneratedKeyColumns(method, columnNames);
-        method.addContent(nullable ? ".map(row -> row.optional(1, " : ".map(row -> row.required(1, ")
+        method.addContent(nullable ? ".map(row -> row.optional(1, " : ".map(row -> row.get(1, ")
                 .addContent(mappedType.boxed())
                 .addContent(".class))");
     }

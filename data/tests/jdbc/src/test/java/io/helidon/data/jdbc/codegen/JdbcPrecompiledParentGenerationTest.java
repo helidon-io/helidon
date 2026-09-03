@@ -94,7 +94,7 @@ class JdbcPrecompiledParentGenerationTest {
                         public final class KeyMapper implements JdbcClient.RowMapper<Key> {
                             @Override
                             public Key map(JdbcClient.Row row) {
-                                return new Key(row.required(1, Long.class));
+                                return new Key(row.get(1, Long.class));
                             }
                         }
                         """)
@@ -144,6 +144,6 @@ class JdbcPrecompiledParentGenerationTest {
         assertThat(source, containsString(".map(int.class).one()"));
         assertThat(source, containsString(".generatedKeys().addColumn(\"ID\").map(keyMapper).one()"));
         assertThat(source, containsString("JdbcClient.RowMapper<Projection<String>>"));
-        assertThat(source, containsString("new Projection<String>(row.required(\"value\", String.class))"));
+        assertThat(source, containsString("new Projection<String>(row.get(\"value\", String.class))"));
     }
 }

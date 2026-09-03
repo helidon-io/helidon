@@ -45,7 +45,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("helidon:api:internal")
 class JdbcBindSnapshotTest {
     private static final String UPDATE_SQL = "UPDATE TEST_VALUE SET VALUE = ?";
 
@@ -64,7 +63,7 @@ class JdbcBindSnapshotTest {
         when(connection.prepareStatement(UPDATE_SQL)).thenReturn(preparedStatement);
         when(preparedStatement.execute()).thenReturn(false);
         when(preparedStatement.getLargeUpdateCount()).thenReturn(1L, -1L);
-        client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        client = JdbcTestClients.create(dataSource);
     }
 
     @Test
@@ -186,9 +185,8 @@ class JdbcBindSnapshotTest {
     }
 
     @Test
-    @SuppressWarnings("helidon:api:internal")
     void typedNullUsesOnlyTheDeclaredJdbcType() throws Exception {
-        JdbcClient.bindNull(client.create(UPDATE_SQL), 1, JDBCType.TIMESTAMP).execute();
+        GeneratedJdbcData.bindNull(client.create(UPDATE_SQL), 1, JDBCType.TIMESTAMP).execute();
 
         verify(preparedStatement).setNull(1, JDBCType.TIMESTAMP.getVendorTypeNumber());
         verify(preparedStatement, never()).setObject(anyInt(), any());

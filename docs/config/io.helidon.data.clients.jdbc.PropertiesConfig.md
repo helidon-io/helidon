@@ -1,8 +1,8 @@
-# io.<wbr>helidon.<wbr>data.<wbr>jdbc.<wbr>Jdbc<wbr>Properties<wbr>Config
+# io.<wbr>helidon.<wbr>data.<wbr>clients.<wbr>jdbc.<wbr>Properties<wbr>Config
 
 ## Description
 
-Configuration blueprint for client properties owned by the JDBC provider
+Configuration for data.clients.jdbc.properties
 
 ## Configuration options
 
@@ -11,7 +11,6 @@ Configuration blueprint for client properties owned by the JDBC provider
 <thead>
 <tr>
 <th>Key</th>
-<th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
@@ -19,14 +18,11 @@ Configuration blueprint for client properties owned by the JDBC provider
 <tr>
 <td>
 <a id="jdbc"></a>
-<a href="io.helidon.data.jdbc.JdbcProviderPropertiesConfig.md">
+<a href="io.helidon.data.clients.jdbc.properties.JdbcConfig.md">
 <code>jdbc</code>
 </a>
 </td>
-<td>
-<code>Jdbc<wbr>Provider<wbr>Properties<wbr>Config</code>
-</td>
-<td>JDBC provider properties</td>
+<td>Configuration for jdbc</td>
 </tr>
 </tbody>
 </table>

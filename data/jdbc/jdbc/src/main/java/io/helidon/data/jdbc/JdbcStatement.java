@@ -33,8 +33,8 @@ final class JdbcStatement implements JdbcClient.Statement {
     private final String sql;
     private final JdbcOperation.Bind[] binds;
 
-    // A terminal operation freezes the statement, so later changes or execution attempts must fail.
-    private boolean terminalStarted;
+    // A terminal operation freezes the statement and places it in its terminal state.
+    private boolean terminalState;
 
     /**
      * Creates an empty statement description.
@@ -85,9 +85,10 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     @Override
     public <T> JdbcClient.Rows<T> map(JdbcClient.RowMapper<T> mapper) {
+        Objects.requireNonNull(mapper, "The row mapper must not be null.");
         ensureMutable();
         return new JdbcRows<>(this,
-                              Objects.requireNonNull(mapper, "The row mapper must not be null."),
+                              mapper,
                               JdbcPreparationPlan.query());
     }
 
@@ -100,14 +101,14 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     @Override
     public <T> JdbcClient.Rows<T> map(Class<T> scalarType) {
-        ensureMutable();
         Objects.requireNonNull(scalarType, "The scalar type must not be null.");
+        ensureMutable();
         if (!JdbcScalarAccess.supported(scalarType)) {
             throw new IllegalArgumentException("JDBC does not support scalar values of type '"
                                                        + scalarType.getTypeName() + "'.");
         }
         return new JdbcRows<>(this,
-                              row -> row.required(1, scalarType),
+                              row -> row.get(1, scalarType),
                               JdbcPreparationPlan.query(),
                               scalarType);
     }
@@ -131,7 +132,6 @@ final class JdbcStatement implements JdbcClient.Statement {
      * @return this statement
      */
     JdbcClient.Statement bindNull(int index, JDBCType type) {
-        Objects.requireNonNull(type, "The JDBC null type must not be null.");
         switch (type) {
         case NULL, REF_CURSOR -> throw new IllegalArgumentException(
                 "The JDBC client does not support null values of type '" + type + "'.");
@@ -196,7 +196,7 @@ final class JdbcStatement implements JdbcClient.Statement {
      * Rejects changes after a terminal operation claims this stage.
      */
     void ensureMutable() {
-        if (terminalStarted) {
+        if (terminalState) {
             throw new IllegalStateException("A JDBC statement can perform only one terminal operation.");
         }
     }
@@ -234,7 +234,7 @@ final class JdbcStatement implements JdbcClient.Statement {
                 throw new IllegalStateException("A bind value is missing at JDBC position " + (index + 1) + ".");
             }
         }
-        terminalStarted = true;
+        terminalState = true;
         return new JdbcOperation(sql, binds.clone(), plan);
     }
 }

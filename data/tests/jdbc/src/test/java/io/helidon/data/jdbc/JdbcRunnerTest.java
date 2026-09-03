@@ -50,7 +50,13 @@ class JdbcRunnerTest {
     @Test
     void rejectsNullImperativeBindValueBeforeConnectionAcquisition() {
         DataSource dataSource = mock(DataSource.class);
-        JdbcClient client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+        JdbcClientConfig config = JdbcClientConfig.builder()
+                .dataSource("test-data-source")
+                .buildPrototype();
+        JdbcClient client = new JdbcClientImpl(config,
+                                               dataSource,
+                                               JdbcConnectionLease.ownedProvider(),
+                                               JdbcClientConfigSupport.cachePolicy(config));
 
         NullPointerException nullValue = assertThrows(NullPointerException.class,
                                                       () -> client.create("INSERT INTO POKEMON(NAME) VALUES (?)")

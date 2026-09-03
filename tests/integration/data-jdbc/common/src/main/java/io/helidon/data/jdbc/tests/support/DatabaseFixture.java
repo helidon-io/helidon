@@ -69,8 +69,8 @@ public final class DatabaseFixture {
     public Optional<ContactView> committedByName(String name) {
         return client.create(TestSql.FIND_BY_NAME)
                 .bind(1, name)
-                .map(row -> new ContactView(row.required("ID", Long.class),
-                                            row.required("NAME", String.class),
+                .map(row -> new ContactView(row.get("ID", Long.class),
+                                            row.get("NAME", String.class),
                                             row.optional("EMAIL", String.class)))
                 .optional();
     }

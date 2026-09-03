@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
@@ -24,6 +25,7 @@ import io.helidon.data.DataException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -37,6 +39,32 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcTransactionConnectionManagerFailureTest {
+
+    /**
+     * Verifies that transaction connection acquisition translates checked SQL
+     * failures without retaining the driver exception or its message.
+     */
+    @Test
+    void sanitizesSqlConnectionAcquisitionFailure() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        SQLException driverFailure = new SQLException("private transaction URL", "08001", 91);
+        when(dataSource.getConnection()).thenThrow(driverFailure);
+        JdbcTransactionConnectionManager manager = activeManager("sql-acquisition");
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> manager.acquire(dataSource));
+
+        assertThat(failure.getMessage(), containsString("The JDBC transaction connection acquisition failed."));
+        assertThat(failure.getMessage(), not(containsString("private transaction URL")));
+        assertThat(failure.getCause(), instanceOf(SQLException.class));
+        SQLException safeCause = (SQLException) failure.getCause();
+        assertThat(safeCause, not(sameInstance(driverFailure)));
+        assertThat(safeCause.getMessage(), is("The JDBC driver reported a failure."));
+        assertThat(safeCause.getSQLState(), is("08001"));
+        assertThat(safeCause.getErrorCode(), is(91));
+        manager.rollback("sql-acquisition");
+        manager.end();
+    }
 
     @Test
     void sanitizesRuntimeConnectionAcquisitionFailure() throws Exception {

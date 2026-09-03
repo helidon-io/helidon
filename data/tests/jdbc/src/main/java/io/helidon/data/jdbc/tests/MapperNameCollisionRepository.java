@@ -80,7 +80,7 @@ public interface MapperNameCollisionRepository {
     final class Class implements JdbcClient.RowMapper<String> {
         @Override
         public String map(JdbcClient.Row row) {
-            return row.required(1, String.class);
+            return row.get(1, String.class);
         }
     }
 
@@ -91,7 +91,7 @@ public interface MapperNameCollisionRepository {
     final class NamedJdbcClient implements JdbcClient.RowMapper<String> {
         @Override
         public String map(JdbcClient.Row row) {
-            return row.required(1, String.class);
+            return row.get(1, String.class);
         }
     }
 
@@ -102,7 +102,7 @@ public interface MapperNameCollisionRepository {
     final class ExplicitRowMapper implements JdbcClient.RowMapper<String> {
         @Override
         public String map(JdbcClient.Row row) {
-            return row.required(1, String.class);
+            return row.get(1, String.class);
         }
     }
 
