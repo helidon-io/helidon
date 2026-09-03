@@ -175,8 +175,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                             String.valueOf(actualLength)));
                 }
             }
-            if (noEntityResponse && configuredHeadLength >= 0) {
-                headers.contentLength(configuredHeadLength);
+            if (noEntityResponse) {
+                if (configuredHeadLength >= 0) {
+                    headers.contentLength(configuredHeadLength);
+                }
+                normalizeNoEntityHeaders(headers, responseStatus);
             }
             isSent = true;
 

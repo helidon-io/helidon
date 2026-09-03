@@ -620,6 +620,31 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void directNoEntityStatusesNormalizeExplicitEncoderFramingHeaders() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            Http2ServerStream stream = mock(Http2ServerStream.class);
+            Http2ServerResponse response = createResponse(stream, Method.GET, ContentEncodingContext.create());
+            response.status(status);
+            response.contentEncoder(testEncoderWithContentLength());
+
+            response.send();
+
+            var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+            verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+            verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+            verify(stream, never()).writeData(any(), anyBoolean());
+            verify(stream, never()).writeTrailers(any());
+            Http2Headers sentHeaders = responseHeaders.getValue();
+            Headers sentHttpHeaders = sentHeaders.httpHeaders();
+            assertAll(
+                    () -> assertThat(sentHeaders.status(), is(status)),
+                    () -> assertNoEntityContentLength(status, sentHttpHeaders),
+                    () -> assertThat(sentHttpHeaders.get(HeaderNames.CONTENT_ENCODING).get(), is("test"))
+            );
+        }
+    }
+
+    @Test
     void filteredNoEntityStatusesBypassNegotiatedGzip() {
         for (Status status : NO_ENTITY_STATUSES) {
             ContentEncodingContext contentEncodingContext = ContentEncodingContext.builder()
@@ -978,6 +1003,21 @@ class Http2ServerResponseTest {
 
     private static ContentEncoder testEncoder() {
         return testEncoder(() -> { });
+    }
+
+    private static ContentEncoder testEncoderWithContentLength() {
+        return new ContentEncoder() {
+            @Override
+            public OutputStream apply(OutputStream network) {
+                return network;
+            }
+
+            @Override
+            public void headers(WritableHeaders<?> headers) {
+                headers.set(HeaderNames.CONTENT_ENCODING, "test");
+                headers.set(HeaderNames.CONTENT_LENGTH, "23");
+            }
+        };
     }
 
     private static ContentEncoder testEncoder(Runnable onWrite) {
