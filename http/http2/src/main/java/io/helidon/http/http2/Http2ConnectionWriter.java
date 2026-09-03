@@ -295,12 +295,16 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
         if (splitFrames.length == 1) {
             runEndStreamCallback(dataFrame, onEndStreamFrameWritten);
-        } else if (splitFrames.length == 2) {
-            flowControl.blockTillUpdate();
-            bytesWritten += splitAndWrite(splitFrames[1], flowControl, onEndStreamFrameWritten);
         } else {
-            flowControl.blockTillUpdate();
-            bytesWritten += splitAndWrite(dataFrame, flowControl, onEndStreamFrameWritten);
+            Http2FrameData remainingFrame = splitFrames.length == 2 ? splitFrames[1] : dataFrame;
+            try {
+                flowControl.blockTillUpdate();
+                bytesWritten += splitAndWrite(remainingFrame, flowControl, NO_OP, true);
+            } catch (Throwable t) {
+                failWriter(t);
+                throw t;
+            }
+            runEndStreamCallback(dataFrame, onEndStreamFrameWritten);
         }
         return bytesWritten;
     }
@@ -621,6 +625,13 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private int splitAndWrite(Http2FrameData frame,
                               FlowControl.Outbound flowControl,
                               Runnable onEndStreamFrameWritten) {
+        return splitAndWrite(frame, flowControl, onEndStreamFrameWritten, false);
+    }
+
+    private int splitAndWrite(Http2FrameData frame,
+                              FlowControl.Outbound flowControl,
+                              Runnable onEndStreamFrameWritten,
+                              boolean terminateOnFailure) {
         int written = 0;
         Http2FrameData currFrame = frame;
         while (true) {
@@ -636,6 +647,11 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                     // write send-able part and block until window update with the rest
                     written += noLockWriteData(splitFrames[0], flowControl);
                 }
+            } catch (Throwable t) {
+                if (terminateOnFailure) {
+                    failWriter(t);
+                }
+                throw t;
             } finally {
                 streamLock.unlock();
             }

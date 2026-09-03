@@ -1261,10 +1261,18 @@ class Http2ConnectionWriterTest {
                                                                                frame,
                                                                                flowControl,
                                                                                callbackCalls::incrementAndGet));
+        IllegalStateException terminal = assertThrows(IllegalStateException.class,
+                                                       () -> writer.writeHeaders(headers(),
+                                                                                 3,
+                                                                                 Http2Flag.HeaderFlags.create(
+                                                                                         Http2Flag.END_OF_HEADERS),
+                                                                                 flowControl));
 
         assertThat(thrown, is(writeFailure));
+        assertThat(terminal.getCause(), is(writeFailure));
         assertThat(callbackCalls.get(), is(0));
         verify(dataWriter, times(2)).writeNow(any(BufferData.class));
+        verify(dataWriter).close();
         verify(flowControl, times(0)).decrementWindowSize(1);
     }
 
@@ -1297,10 +1305,18 @@ class Http2ConnectionWriterTest {
                                                                                frame,
                                                                                flowControl,
                                                                                callbackCalls::incrementAndGet));
+        IllegalStateException terminal = assertThrows(IllegalStateException.class,
+                                                       () -> writer.writeHeaders(headers(),
+                                                                                 3,
+                                                                                 Http2Flag.HeaderFlags.create(
+                                                                                         Http2Flag.END_OF_HEADERS),
+                                                                                 flowControl));
 
         assertThat(thrown, is(writeFailure));
+        assertThat(terminal.getCause(), is(writeFailure));
         assertThat(callbackCalls.get(), is(0));
         verify(dataWriter, times(2)).writeNow(any(BufferData.class));
+        verify(dataWriter).close();
         verify(flowControl).decrementWindowSize(1);
     }
 
