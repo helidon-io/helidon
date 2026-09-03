@@ -53,11 +53,11 @@ class MessageNullPayloadTest {
                 return MessageHeaders.empty();
             }
         };
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("messages", String.class);
-        builder.payloadSink(channel, ignored -> { });
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("messages", String.class);
+        assembler.payloadSink(channel, ignored -> { });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             NullPointerException failure = assertThrows(NullPointerException.class,
@@ -72,11 +72,11 @@ class MessageNullPayloadTest {
         AtomicInteger entityCalls = new AtomicInteger();
         MessagingException entityFailure = new MessagingException("entity unavailable");
         Message<String> unavailable = unavailableMessage(entityCalls, entityFailure);
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("unavailable", String.class);
-        builder.messageSink(channel, ignored -> { });
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("unavailable", String.class);
+        assembler.messageSink(channel, ignored -> { });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             MessagingException failure = assertThrows(MessagingException.class,
@@ -99,11 +99,11 @@ class MessageNullPayloadTest {
                 1,
                 new MessagingException("mapping failed"));
         AtomicReference<Message<String>> delivered = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("dead-letter", String.class);
-        builder.messageSink(channel, delivered::set);
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("dead-letter", String.class);
+        assembler.messageSink(channel, delivered::set);
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             graph.emitter(channel).emit(deadLetter);
         }
@@ -120,11 +120,11 @@ class MessageNullPayloadTest {
                 "source",
                 1,
                 new MessagingException("handler failed"));
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("dead-letter", String.class);
-        builder.messageSink(channel, ignored -> { });
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("dead-letter", String.class);
+        assembler.messageSink(channel, ignored -> { });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             IllegalArgumentException failure = assertThrows(
@@ -138,13 +138,13 @@ class MessageNullPayloadTest {
 
     @Test
     void imperativePayloadProcessorRejectsNullResult() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel("target", String.class);
-        builder.payloadProcessor(source, target, ignored -> null)
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> source = assembler.channel("source", String.class);
+        MessagingChannel<String> target = assembler.channel("target", String.class);
+        assembler.payloadProcessor(source, target, ignored -> null)
                 .payloadSink(target, ignored -> { });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             BatchDeliveryException failure = assertThrows(BatchDeliveryException.class,
                                                           () -> graph.emitter(source).emit("payload"));

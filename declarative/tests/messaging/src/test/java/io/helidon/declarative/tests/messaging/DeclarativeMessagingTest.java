@@ -121,9 +121,9 @@ class DeclarativeMessagingTest {
         List<Message<Integer>> messages = new CopyOnWriteArrayList<>();
         CountDownLatch drained = new CountDownLatch(2);
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Integer> channel = builder.channel("imperative-input-output", Integer.class);
-        builder.messageSource(channel,
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<Integer> channel = assembler.channel("imperative-input-output", Integer.class);
+        assembler.messageSource(channel,
                               Stream.of(Message.create(1),
                                         Message.builder(2)
                                                  .header("source", "message")
@@ -136,7 +136,7 @@ class DeclarativeMessagingTest {
 
         assertThat(messages, empty());
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             boolean completed = drained.await(10, TimeUnit.SECONDS);
@@ -156,13 +156,13 @@ class DeclarativeMessagingTest {
     void testImperativeChannelCanUseAnotherChannelAsInput() {
         List<Message<Integer>> downstreamMessages = new CopyOnWriteArrayList<>();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Integer> upstream = builder.channel("imperative-upstream", Integer.class);
-        MessagingChannel<Integer> downstream = builder.channel("imperative-downstream", Integer.class);
-        builder.route(upstream, downstream)
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<Integer> upstream = assembler.channel("imperative-upstream", Integer.class);
+        MessagingChannel<Integer> downstream = assembler.channel("imperative-downstream", Integer.class);
+        assembler.route(upstream, downstream)
                 .messageSink(downstream, downstreamMessages::add);
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             graph.emitter(upstream).emit(42);
 
@@ -175,11 +175,11 @@ class DeclarativeMessagingTest {
     void testImperativeChannelCanUseOutgoingConnector() {
         List<Message<?>> sentMessages = new CopyOnWriteArrayList<>();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-connector", String.class);
-        builder.outgoingConnector(channel, sink(sentMessages));
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("imperative-connector", String.class);
+        assembler.outgoingConnector(channel, sink(sentMessages));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             graph.emitter(channel)
                     .emit(Message.builder("connector message")
@@ -197,9 +197,9 @@ class DeclarativeMessagingTest {
         List<MessageBatch<String>> batches = new CopyOnWriteArrayList<>();
         List<List<String>> connectorBatches = new CopyOnWriteArrayList<>();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-batch", String.class);
-        builder.batchSink(channel, batches::add)
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("imperative-batch", String.class);
+        assembler.batchSink(channel, batches::add)
                 .outgoingConnector(channel, new NoOpOutgoingConnector() {
                     @Override
                     public void sendBatch(MessageBatch<?> messages) {
@@ -211,7 +211,7 @@ class DeclarativeMessagingTest {
                     }
                 });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             graph.emitter(channel)
                     .emit(MessageBatch.create(List.of(Message.builder("first")
@@ -230,16 +230,16 @@ class DeclarativeMessagingTest {
     @Test
     void testOutgoingConnectorFailureFailsChannelEmit() {
         MessagingException expectedFailure = new MessagingException("connector failed", new IOException("I/O failed"));
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-connector-failure", String.class);
-        builder.outgoingConnector(channel, new NoOpOutgoingConnector() {
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("imperative-connector-failure", String.class);
+        assembler.outgoingConnector(channel, new NoOpOutgoingConnector() {
             @Override
             public void sendBatch(MessageBatch<?> batch) {
                 throw expectedFailure;
             }
         });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             BatchDeliveryException thrown = assertBatchFailure(expectedFailure,
                                                                 () -> graph.emitter(channel).emit("test message"));
@@ -257,9 +257,9 @@ class DeclarativeMessagingTest {
                                                                      new IOException("output I/O failed"));
         AtomicReference<Throwable> actualFailure = new AtomicReference<>();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-required-outputs", String.class);
-        builder.messageSink(channel, message -> {
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("imperative-required-outputs", String.class);
+        assembler.messageSink(channel, message -> {
                     invokedOutputs.add("first");
                     firstOutputEntered.countDown();
                     try {
@@ -275,7 +275,7 @@ class DeclarativeMessagingTest {
                 })
                 .messageSink(channel, message -> invokedOutputs.add("third"));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             var emitter = graph.emitter(channel);
             Thread.ofVirtual().start(() -> {
@@ -308,9 +308,9 @@ class DeclarativeMessagingTest {
         AtomicInteger secondOutputAttempts = new AtomicInteger();
         MessagingException expectedFailure = new MessagingException("temporary output failure");
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-fan-out-retry", String.class);
-        builder.messageSink(channel, message -> deliveries.add("first"))
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("imperative-fan-out-retry", String.class);
+        assembler.messageSink(channel, message -> deliveries.add("first"))
                 .messageSink(channel, message -> {
                     deliveries.add("second");
                     if (secondOutputAttempts.getAndIncrement() == 0) {
@@ -319,7 +319,7 @@ class DeclarativeMessagingTest {
                 })
                 .messageSink(channel, message -> deliveries.add("third"));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             var emitter = graph.emitter(channel);
             assertBatchFailure(expectedFailure, () -> emitter.emit("test message"));

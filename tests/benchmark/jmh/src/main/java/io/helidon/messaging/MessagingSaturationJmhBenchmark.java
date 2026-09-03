@@ -161,15 +161,15 @@ public class MessagingSaturationJmhBenchmark {
                     .maxInFlightMessages(1)
                     .shutdownTimeout(Duration.ofSeconds(30))
                     .build();
-            MessagingGraph.Builder builder = MessagingGraph.builder().executionConfig(executionConfig);
+            MessagingGraph.Assembler assembler = MessagingGraph.assembler().executionConfig(executionConfig);
             try {
-                MessagingChannel<String> channel = builder.channel("saturated", String.class);
-                builder.payloadSink(channel, ignored -> Blackhole.consumeCPU(WORK_TOKENS));
-                graph = builder.build();
+                MessagingChannel<String> channel = assembler.channel("saturated", String.class);
+                assembler.payloadSink(channel, ignored -> Blackhole.consumeCPU(WORK_TOKENS));
+                graph = assembler.build();
                 graph.start();
                 emitter = graph.emitter(channel);
             } catch (RuntimeException | Error failure) {
-                closeAfterSetupFailure(builder, failure);
+                closeAfterSetupFailure(assembler, failure);
                 throw failure;
             }
         }
@@ -187,10 +187,10 @@ public class MessagingSaturationJmhBenchmark {
             }
         }
 
-        private void closeAfterSetupFailure(MessagingGraph.Builder builder, Throwable failure) {
+        private void closeAfterSetupFailure(MessagingGraph.Assembler assembler, Throwable failure) {
             try {
                 if (graph == null) {
-                    builder.close();
+                    assembler.close();
                 } else {
                     graph.close();
                     graph = null;

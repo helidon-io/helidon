@@ -32,7 +32,10 @@ import java.util.stream.Stream;
 import io.helidon.common.GenericType;
 import io.helidon.messaging.spi.OutgoingConnector;
 
-final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
+/**
+ * Default messaging graph assembler.
+ */
+final class DefaultMessagingGraphAssembler implements MessagingGraph.Assembler {
     private final List<SourceDefinition> sources = new ArrayList<>();
     private final Set<Stream<?>> sourceIdentities = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Set<OutgoingConnector> connectorIdentities = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -47,7 +50,7 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     private int sourceSequence;
 
     @Override
-    public MessagingGraph.Builder executionConfig(MessagingExecutionConfig config) {
+    public MessagingGraph.Assembler executionConfig(MessagingExecutionConfig config) {
         requireUninitialized();
         executionConfig = Objects.requireNonNull(config);
         return this;
@@ -89,18 +92,18 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     @Override
-    public <T> MessagingGraph.Builder payloadSource(MessagingChannel<T> channel, Stream<? extends T> source) {
+    public <T> MessagingGraph.Assembler payloadSource(MessagingChannel<T> channel, Stream<? extends T> source) {
         return source(channel, source, false);
     }
 
     @Override
-    public <T> MessagingGraph.Builder messageSource(MessagingChannel<T> channel,
-                                                     Stream<? extends Message<? extends T>> source) {
+    public <T> MessagingGraph.Assembler messageSource(MessagingChannel<T> channel,
+                                                       Stream<? extends Message<? extends T>> source) {
         return source(channel, source, true);
     }
 
     @Override
-    public <T> MessagingGraph.Builder route(MessagingChannel<T> source, MessagingChannel<T> target) {
+    public <T> MessagingGraph.Assembler route(MessagingChannel<T> source, MessagingChannel<T> target) {
         DefaultMessagingChannel<T> actualSource = channel(source);
         DefaultMessagingChannel<T> actualTarget = channel(target);
         if (!source.payloadType().equals(target.payloadType())) {
@@ -120,9 +123,9 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     @Override
-    public <I, O> MessagingGraph.Builder payloadProcessor(MessagingChannel<I> source,
-                                                          MessagingChannel<O> target,
-                                                          Function<? super I, ? extends O> processor) {
+    public <I, O> MessagingGraph.Assembler payloadProcessor(MessagingChannel<I> source,
+                                                            MessagingChannel<O> target,
+                                                            Function<? super I, ? extends O> processor) {
         DefaultMessagingChannel<I> actualSource = channel(source);
         DefaultMessagingChannel<O> actualTarget = channel(target);
         Function<? super I, ? extends O> actualProcessor = Objects.requireNonNull(processor);
@@ -144,7 +147,7 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     @Override
-    public <I, O> MessagingGraph.Builder messageProcessor(
+    public <I, O> MessagingGraph.Assembler messageProcessor(
             MessagingChannel<I> source,
             MessagingChannel<O> target,
             Function<? super Message<I>, ? extends Message<? extends O>> processor) {
@@ -168,7 +171,7 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     @Override
-    public <T> MessagingGraph.Builder payloadSink(MessagingChannel<T> source, Consumer<? super T> sink) {
+    public <T> MessagingGraph.Assembler payloadSink(MessagingChannel<T> source, Consumer<? super T> sink) {
         DefaultMessagingChannel<T> actualSource = channel(source);
         Consumer<? super T> actualSink = Objects.requireNonNull(sink);
         actualSource.addOutput(message -> actualSink.accept(source.payloadType().cast(message.entity())));
@@ -177,8 +180,8 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     @Override
-    public <T> MessagingGraph.Builder messageSink(MessagingChannel<T> source,
-                                                   Consumer<? super Message<T>> sink) {
+    public <T> MessagingGraph.Assembler messageSink(MessagingChannel<T> source,
+                                                     Consumer<? super Message<T>> sink) {
         DefaultMessagingChannel<T> actualSource = channel(source);
         Consumer<? super Message<T>> actualSink = Objects.requireNonNull(sink);
         actualSource.addOutput(message -> actualSink.accept(castMessage(message)));
@@ -187,8 +190,8 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     @Override
-    public <T> MessagingGraph.Builder batchSink(MessagingChannel<T> source,
-                                                Consumer<MessageBatch<T>> sink) {
+    public <T> MessagingGraph.Assembler batchSink(MessagingChannel<T> source,
+                                                  Consumer<MessageBatch<T>> sink) {
         DefaultMessagingChannel<T> actualSource = channel(source);
         Consumer<MessageBatch<T>> actualSink = Objects.requireNonNull(sink);
         actualSource.addBatchOutput(actualSink);
@@ -197,11 +200,11 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     @Override
-    public <T> MessagingGraph.Builder outgoingConnector(MessagingChannel<T> source, OutgoingConnector connector) {
+    public <T> MessagingGraph.Assembler outgoingConnector(MessagingChannel<T> source, OutgoingConnector connector) {
         DefaultMessagingChannel<T> actualSource = channel(source);
         OutgoingConnector actualConnector = Objects.requireNonNull(connector);
         if (!connectorIdentities.add(actualConnector)) {
-            throw new IllegalArgumentException("Outgoing connector is already owned by this messaging graph builder");
+            throw new IllegalArgumentException("Outgoing connector is already owned by this messaging graph assembler");
         }
         try {
             graph().addBinding(actualConnector);
@@ -242,11 +245,11 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
         }
     }
 
-    private <T> MessagingGraph.Builder source(MessagingChannel<T> channel, Stream<?> source, boolean messageSource) {
+    private <T> MessagingGraph.Assembler source(MessagingChannel<T> channel, Stream<?> source, boolean messageSource) {
         DefaultMessagingChannel<T> actualChannel = channel(channel);
         Stream<?> actualSource = Objects.requireNonNull(source);
         if (sourceIdentities.contains(actualSource)) {
-            throw new IllegalArgumentException("Stream source is already owned by this messaging graph builder");
+            throw new IllegalArgumentException("Stream source is already owned by this messaging graph assembler");
         }
         if (sourceChannels.contains(actualChannel)) {
             throw new IllegalArgumentException("Messaging channel " + channel.name()
@@ -317,7 +320,7 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
 
     private void requireMutable() {
         if (buildAttempted) {
-            throw new IllegalStateException("Messaging graph builder cannot be reused after build or close");
+            throw new IllegalStateException("Messaging graph assembler cannot be reused after build or close");
         }
     }
 
@@ -336,7 +339,7 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
         DefaultMessagingChannel<?> defaultChannel = channels.get(channel);
         if (defaultChannel == null || defaultChannel.graph() != graph()) {
             throw new IllegalArgumentException("Messaging channel " + channel.name()
-                                                       + " belongs to another messaging graph builder");
+                                                       + " belongs to another messaging graph assembler");
         }
         return (DefaultMessagingChannel<T>) defaultChannel;
     }

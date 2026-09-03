@@ -44,11 +44,11 @@ class DefaultMessagingChannelTest {
     @Test
     void customPayloadIsDelivered() {
         List<CustomPayload> delivered = new ArrayList<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<CustomPayload> channel = builder.channel("custom", CustomPayload.class);
-        builder.messageSink(channel, message -> delivered.add(message.entity()));
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<CustomPayload> channel = assembler.channel("custom", CustomPayload.class);
+        assembler.messageSink(channel, message -> delivered.add(message.entity()));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             CustomPayload payload = new CustomPayload("payload");
 
@@ -61,15 +61,15 @@ class DefaultMessagingChannelTest {
     @Test
     void independentlyBuiltInputsCanFeedOneChannel() {
         List<String> delivered = new ArrayList<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> first = builder.channel("first", String.class);
-        MessagingChannel<String> second = builder.channel("second", String.class);
-        MessagingChannel<String> merged = builder.channel("merged", String.class);
-        builder.route(first, merged)
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> first = assembler.channel("first", String.class);
+        MessagingChannel<String> second = assembler.channel("second", String.class);
+        MessagingChannel<String> merged = assembler.channel("merged", String.class);
+        assembler.route(first, merged)
                 .route(second, merged)
                 .messageSink(merged, message -> delivered.add(message.entity()));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             graph.emitter(first).emit("first");
             graph.emitter(second).emit("second");
@@ -82,9 +82,9 @@ class DefaultMessagingChannelTest {
     void earlierOutputSuccessMakesLaterConfirmedFailureIndeterminate() {
         AtomicInteger firstOutputInvocations = new AtomicInteger();
         RuntimeException itemFailure = new RuntimeException("second output rejected the item");
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("fan-out", String.class);
-        builder.batchSink(channel, ignored -> firstOutputInvocations.incrementAndGet())
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("fan-out", String.class);
+        assembler.batchSink(channel, ignored -> firstOutputInvocations.incrementAndGet())
                 .batchSink(channel, batch -> {
                     throw new BatchDeliveryException("second output failed",
                                                      itemFailure,
@@ -93,7 +93,7 @@ class DefaultMessagingChannelTest {
                 });
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("message")));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             BatchDeliveryException failure = assertThrows(
@@ -111,9 +111,9 @@ class DefaultMessagingChannelTest {
         AtomicInteger firstOutputInvocations = new AtomicInteger();
         AtomicInteger laterOutputInvocations = new AtomicInteger();
         RuntimeException itemFailure = new RuntimeException("second output failed");
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("fan-out", String.class);
-        builder.batchSink(channel, ignored -> firstOutputInvocations.incrementAndGet())
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("fan-out", String.class);
+        assembler.batchSink(channel, ignored -> firstOutputInvocations.incrementAndGet())
                 .batchSink(channel, batch -> {
                     throw new BatchDeliveryException(
                             "mixed second output failure",
@@ -130,7 +130,7 @@ class DefaultMessagingChannelTest {
                                                                  Message.create("third"),
                                                                  Message.create("fourth")));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             BatchDeliveryException failure = assertThrows(
@@ -151,18 +151,18 @@ class DefaultMessagingChannelTest {
     @Test
     void targetAdmissionRejectionBeforeDispatchIsNotAttempted() {
         AtomicInteger targetInvocations = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel(
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> source = assembler.channel("source", String.class);
+        MessagingChannel<String> target = assembler.channel(
                 "target",
                 GenericType.create(String.class),
                 MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
-        builder.route(source, target)
+        assembler.route(source, target)
                 .batchSink(target, ignored -> targetInvocations.incrementAndGet());
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("first"),
                                                                  Message.create("second")));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             BatchDeliveryException failure = assertThrows(
@@ -182,19 +182,19 @@ class DefaultMessagingChannelTest {
     void earlierFanOutSuccessMakesTargetAdmissionRejectionIndeterminate() {
         AtomicInteger earlierOutputInvocations = new AtomicInteger();
         AtomicInteger targetInvocations = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel(
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> source = assembler.channel("source", String.class);
+        MessagingChannel<String> target = assembler.channel(
                 "target",
                 GenericType.create(String.class),
                 MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
-        builder.batchSink(source, ignored -> earlierOutputInvocations.incrementAndGet())
+        assembler.batchSink(source, ignored -> earlierOutputInvocations.incrementAndGet())
                 .route(source, target)
                 .batchSink(target, ignored -> targetInvocations.incrementAndGet());
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("first"),
                                                                  Message.create("second")));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             BatchDeliveryException failure = assertThrows(
@@ -212,10 +212,10 @@ class DefaultMessagingChannelTest {
     @Test
     void targetCancellationAfterDispatchRemainsIndeterminate() {
         AtomicInteger targetInvocations = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel("target", String.class);
-        builder.route(source, target)
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> source = assembler.channel("source", String.class);
+        MessagingChannel<String> target = assembler.channel("target", String.class);
+        assembler.route(source, target)
                 .batchSink(target, ignored -> {
                     targetInvocations.incrementAndGet();
                     throw new MessagingRejectedException(
@@ -225,7 +225,7 @@ class DefaultMessagingChannelTest {
                 });
         MessageBatch<String> batch = MessageBatch.create(Message.create("message"));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             BatchDeliveryException failure = assertThrows(
@@ -243,13 +243,13 @@ class DefaultMessagingChannelTest {
         AtomicInteger sourceSideEffects = new AtomicInteger();
         AtomicInteger targetInvocations = new AtomicInteger();
         AtomicReference<Emitter<String>> targetEmitter = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel(
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> source = assembler.channel("source", String.class);
+        MessagingChannel<String> target = assembler.channel(
                 "target",
                 GenericType.create(String.class),
                 MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
-        builder.batchSink(source, ignored -> {
+        assembler.batchSink(source, ignored -> {
                     sourceSideEffects.incrementAndGet();
                     targetEmitter.get().emit(MessageBatch.create(List.of(Message.create("first"),
                                                                          Message.create("second"))));
@@ -257,7 +257,7 @@ class DefaultMessagingChannelTest {
                 .batchSink(target, ignored -> targetInvocations.incrementAndGet());
         MessageBatch<String> batch = MessageBatch.create(Message.create("source-message"));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             targetEmitter.set(graph.emitter(target));
 
@@ -276,13 +276,13 @@ class DefaultMessagingChannelTest {
     void processorSideEffectsBeforeTargetRejectionRemainIndeterminate() {
         AtomicInteger processorInvocations = new AtomicInteger();
         AtomicInteger targetInvocations = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel(
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> source = assembler.channel("source", String.class);
+        MessagingChannel<String> target = assembler.channel(
                 "target",
                 GenericType.create(String.class),
                 MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
-        builder.payloadProcessor(source, target, payload -> {
+        assembler.payloadProcessor(source, target, payload -> {
                     processorInvocations.incrementAndGet();
                     return payload;
                 })
@@ -290,7 +290,7 @@ class DefaultMessagingChannelTest {
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("first"),
                                                                  Message.create("second")));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             BatchDeliveryException failure = assertThrows(
@@ -308,9 +308,9 @@ class DefaultMessagingChannelTest {
     @Test
     void closingBeforeStartClosesStreamInput() {
         AtomicBoolean streamClosed = new AtomicBoolean();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Object> channel = builder.channel("stream", Object.class);
-        MessagingGraph graph = builder.payloadSource(channel,
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<Object> channel = assembler.channel("stream", Object.class);
+        MessagingGraph graph = assembler.payloadSource(channel,
                                                       Stream.empty().onClose(() -> streamClosed.set(true)))
                 .payloadSink(channel, ignored -> { })
                 .build();
@@ -325,9 +325,9 @@ class DefaultMessagingChannelTest {
     void activeUnboundedStreamClosesGracefully() throws InterruptedException {
         CountDownLatch delivered = new CountDownLatch(1);
         AtomicBoolean streamClosed = new AtomicBoolean();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Integer> channel = builder.channel("stream", Integer.class);
-        MessagingGraph graph = builder.payloadSource(channel,
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<Integer> channel = assembler.channel("stream", Integer.class);
+        MessagingGraph graph = assembler.payloadSource(channel,
                                                       Stream.generate(() -> 1)
                                                               .onClose(() -> streamClosed.set(true)))
                 .messageSink(channel, ignored -> delivered.countDown())

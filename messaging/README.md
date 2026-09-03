@@ -422,17 +422,17 @@ The imperative API builds and owns a typed messaging graph directly in Java. It 
 ### Build and run a graph
 
 ```java
-try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
-    MessagingChannel<String> input = builder.channel("input", String.class);
-    MessagingChannel<String> output = builder.channel("output", String.class);
+try (MessagingGraph.Assembler assembler = MessagingGraph.assembler()) {
+    MessagingChannel<String> input = assembler.channel("input", String.class);
+    MessagingChannel<String> output = assembler.channel("output", String.class);
 
-    builder.messageProcessor(input, output, message ->
+    assembler.messageProcessor(input, output, message ->
                     Message.builder(message.entity().toUpperCase())
                             .header("trace-id", message.header("trace-id").orElse("unknown"))
                             .build())
             .messageSink(output, message -> System.out.println(message.entity()));
 
-    try (MessagingGraph graph = builder.build()) {
+    try (MessagingGraph graph = assembler.build()) {
         graph.start();
 
         Emitter<String> emitter = graph.emitter(input);
@@ -449,26 +449,26 @@ must complete before an emitter can emit.
 
 ### Assemble a topology
 
-The builder supports these elements:
+The assembler supports these elements:
 
 | Method | Purpose |
 | --- | --- |
-| `payloadSource` | Feed payloads from a builder/graph-owned `Stream`. |
-| `messageSource` | Feed message envelopes from a builder/graph-owned `Stream`. |
+| `payloadSource` | Feed payloads from an assembler/graph-owned `Stream`. |
+| `messageSource` | Feed message envelopes from an assembler/graph-owned `Stream`. |
 | `route` | Forward a batch unchanged between channels of the same payload type. |
 | `payloadProcessor` | Transform each payload; input headers are not propagated. |
 | `messageProcessor` | Transform each message and explicitly control the resulting headers. |
 | `payloadSink` | Consume each payload. |
 | `messageSink` | Consume each message envelope. |
 | `batchSink` | Consume a complete batch once. |
-| `outgoingConnector` | Add a builder/graph-owned connector as a required output. |
+| `outgoingConnector` | Add an assembler/graph-owned connector as a required output. |
 
 Every channel must have at least one output. Synchronous routing cycles are rejected. A channel can have at most one
 stream source, and downstream paths from distinct stream sources cannot converge.
 
-The imperative builder registers streams as sources and can attach an `OutgoingConnector` directly. The built graph
-exposes typed emitters for application-originated input. The builder owns registered streams and connectors until a
-successful build transfers them to the graph. The builder does not currently expose an incoming-connector registration
+The imperative assembler registers streams as sources and can attach an `OutgoingConnector` directly. The built graph
+exposes typed emitters for application-originated input. The assembler owns registered streams and connectors until a
+successful build transfers them to the graph. The assembler does not currently expose an incoming-connector registration
 method. Declarative connector configuration and `@Messaging.OnFailure` policies are not applied to an imperative graph.
 
 ### Emit batches
@@ -498,7 +498,7 @@ MessagingExecutionConfig execution = MessagingExecutionConfig.builder()
         .shutdownTimeout(Duration.ofSeconds(10))
         .build();
 
-MessagingGraph.Builder builder = MessagingGraph.builder()
+MessagingGraph.Assembler assembler = MessagingGraph.assembler()
         .executionConfig(execution);
 ```
 
@@ -507,7 +507,7 @@ admission and message limits; the shutdown timeout remains graph-wide. Delivery 
 channel, while different channels may execute concurrently.
 
 Closing a running graph stops new external admission, drains admitted work, and closes graph-owned streams and
-connectors. Closing an unbuilt builder releases resources already transferred to it. Failures from asynchronous stream
+connectors. Closing an unbuilt assembler releases resources already transferred to it. Failures from asynchronous stream
 sources are reported when the graph closes.
 
 An imperative emission has the same at-least-once behavior as a declarative emission: for each delivery, outputs run

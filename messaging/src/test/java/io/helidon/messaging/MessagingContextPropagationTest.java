@@ -51,14 +51,14 @@ class MessagingContextPropagationTest {
         Optional<Context> previousContext = Contexts.context();
         AtomicReference<Context> handlerContext = new AtomicReference<>();
         AtomicReference<Thread> handlerThread = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("orders", String.class);
-        builder.payloadSink(channel, ignored -> {
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("orders", String.class);
+        assembler.payloadSink(channel, ignored -> {
             handlerContext.set(currentContext());
             handlerThread.set(Thread.currentThread());
         });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             Contexts.runInContext(callerContext, () -> graph.emitter(channel).emit("order"));
@@ -109,9 +109,9 @@ class MessagingContextPropagationTest {
         AtomicReference<Optional<Context>> secondCallerContext = new AtomicReference<>();
         AtomicReference<Context> firstHandlerContext = new AtomicReference<>();
         AtomicReference<Context> secondHandlerContext = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("orders", String.class);
-        builder.payloadSink(channel, value -> {
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> channel = assembler.channel("orders", String.class);
+        assembler.payloadSink(channel, value -> {
             if (value.equals("first")) {
                 firstHandlerContext.set(currentContext());
             } else {
@@ -119,7 +119,7 @@ class MessagingContextPropagationTest {
             }
         });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             runWithoutContext(() -> graph.emitter(channel).emit("first"), firstCallerContext)
@@ -146,11 +146,11 @@ class MessagingContextPropagationTest {
         AtomicReference<Thread> processorThread = new AtomicReference<>();
         AtomicReference<Thread> intermediateThread = new AtomicReference<>();
         AtomicReference<Thread> targetThread = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> input = builder.channel("input", String.class);
-        MessagingChannel<String> intermediate = builder.channel("intermediate", String.class);
-        MessagingChannel<String> target = builder.channel("target", String.class);
-        builder.payloadProcessor(input, intermediate, value -> {
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> input = assembler.channel("input", String.class);
+        MessagingChannel<String> intermediate = assembler.channel("intermediate", String.class);
+        MessagingChannel<String> target = assembler.channel("target", String.class);
+        assembler.payloadProcessor(input, intermediate, value -> {
                     processorContext.set(currentContext());
                     processorThread.set(Thread.currentThread());
                     return value;
@@ -165,7 +165,7 @@ class MessagingContextPropagationTest {
                     targetThread.set(Thread.currentThread());
                 });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
 
             Contexts.runInContext(callerContext, () -> graph.emitter(input).emit("order"));
@@ -188,14 +188,14 @@ class MessagingContextPropagationTest {
         AtomicReference<Emitter<String>> childEmitter = new AtomicReference<>();
         AtomicReference<Optional<Context>> childCallerContext = new AtomicReference<>();
         AtomicReference<Context> childHandlerContext = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> parent = builder.channel("parent", String.class);
-        MessagingChannel<String> child = builder.channel("child", String.class);
-        builder.payloadSink(parent, ignored -> await(
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> parent = assembler.channel("parent", String.class);
+        MessagingChannel<String> child = assembler.channel("child", String.class);
+        assembler.payloadSink(parent, ignored -> await(
                         runWithoutContext(() -> childEmitter.get().emit("child"), childCallerContext)))
                 .payloadSink(child, ignored -> childHandlerContext.set(currentContext()));
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             childEmitter.set(graph.emitter(child));
 
@@ -220,10 +220,10 @@ class MessagingContextPropagationTest {
         AtomicReference<Thread> secondHandlerThread = new AtomicReference<>();
         AtomicReference<Optional<Context>> firstRestoredContext = new AtomicReference<>();
         AtomicReference<Optional<Context>> secondRestoredContext = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> first = builder.channel("first", String.class);
-        MessagingChannel<String> second = builder.channel("second", String.class);
-        builder.payloadSink(first, ignored -> {
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> first = assembler.channel("first", String.class);
+        MessagingChannel<String> second = assembler.channel("second", String.class);
+        assembler.payloadSink(first, ignored -> {
                     firstHandlerContext.set(currentContext());
                     firstHandlerThread.set(Thread.currentThread());
                     awaitTogether(bothEntered);
@@ -234,7 +234,7 @@ class MessagingContextPropagationTest {
                     awaitTogether(bothEntered);
                 });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             CompletableFuture<Void> firstDelivery = runInContext(
                     firstCaller,

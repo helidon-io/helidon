@@ -176,10 +176,10 @@ public class MessagingRuntimeJmhBenchmark {
          */
         @Setup(Level.Trial)
         public void setUp() {
-            MessagingGraph.Builder builder = MessagingGraph.builder();
-            MessagingChannel<String> channel = builder.channel(CHANNEL, String.class);
-            builder.payloadSink(channel, sink);
-            graph = builder.build();
+            MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+            MessagingChannel<String> channel = assembler.channel(CHANNEL, String.class);
+            assembler.payloadSink(channel, sink);
+            graph = assembler.build();
             try {
                 graph.start();
                 emitter = graph.emitter(channel);
@@ -239,10 +239,10 @@ public class MessagingRuntimeJmhBenchmark {
             this.messages = List.copyOf(messages);
             this.batch = MessageBatch.create(this.messages);
 
-            MessagingGraph.Builder builder = MessagingGraph.builder();
-            MessagingChannel<String> channel = builder.channel(CHANNEL, String.class);
-            builder.payloadSink(channel, sink);
-            graph = builder.build();
+            MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+            MessagingChannel<String> channel = assembler.channel(CHANNEL, String.class);
+            assembler.payloadSink(channel, sink);
+            graph = assembler.build();
             try {
                 graph.start();
                 emitter = graph.emitter(channel);

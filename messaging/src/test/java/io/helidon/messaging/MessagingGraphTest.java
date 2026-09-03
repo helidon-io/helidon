@@ -663,9 +663,9 @@ class MessagingGraphTest {
         CountDownLatch releaseSink = new CountDownLatch(1);
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
         AtomicReference<MessagingGraph> graphReference = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder().executionConfig(config(SHUTDOWN_TIMEOUT));
-        MessagingChannel<String> channel = builder.channel("orders", String.class);
-        builder.payloadSink(channel, ignored -> {
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler().executionConfig(config(SHUTDOWN_TIMEOUT));
+        MessagingChannel<String> channel = assembler.channel("orders", String.class);
+        assembler.payloadSink(channel, ignored -> {
             try {
                 graphReference.get().close();
                 graphReference.get().close();
@@ -676,7 +676,7 @@ class MessagingGraphTest {
             }
             await(releaseSink);
         });
-        MessagingGraph graph = builder.build();
+        MessagingGraph graph = assembler.build();
         graphReference.set(graph);
         graph.start();
 
@@ -813,9 +813,9 @@ class MessagingGraphTest {
         CountDownLatch releaseLock = new CountDownLatch(1);
         AtomicInteger produced = new AtomicInteger();
         AtomicInteger delivered = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder().executionConfig(config(SHUTDOWN_TIMEOUT));
-        MessagingChannel<Integer> channel = builder.channel("stream", Integer.class);
-        DefaultMessagingGraph graph = (DefaultMessagingGraph) builder.payloadSource(
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler().executionConfig(config(SHUTDOWN_TIMEOUT));
+        MessagingChannel<Integer> channel = assembler.channel("stream", Integer.class);
+        DefaultMessagingGraph graph = (DefaultMessagingGraph) assembler.payloadSource(
                         channel,
                         Stream.generate(() -> {
                             int next = produced.incrementAndGet();
@@ -1012,10 +1012,10 @@ class MessagingGraphTest {
         List<String> delivered = new CopyOnWriteArrayList<>();
         CountDownLatch streamDelivered = new CountDownLatch(1);
         Message<String> streamMessage = message("from-stream");
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> upstream = builder.channel("upstream", String.class);
-        MessagingChannel<String> downstream = builder.channel("downstream", String.class);
-        builder.route(upstream, downstream)
+        MessagingGraph.Assembler assembler = MessagingGraph.assembler();
+        MessagingChannel<String> upstream = assembler.channel("upstream", String.class);
+        MessagingChannel<String> downstream = assembler.channel("downstream", String.class);
+        assembler.route(upstream, downstream)
                 .messageSource(downstream, Stream.of(streamMessage))
                 .messageSink(downstream, message -> {
                     delivered.add(message.entity());
@@ -1024,7 +1024,7 @@ class MessagingGraphTest {
                     }
                 });
 
-        try (MessagingGraph graph = builder.build()) {
+        try (MessagingGraph graph = assembler.build()) {
             graph.start();
             await(streamDelivered);
             graph.emitter(upstream).emit(message("from-upstream"));
