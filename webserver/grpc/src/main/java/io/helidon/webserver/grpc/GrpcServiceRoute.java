@@ -103,7 +103,7 @@ class GrpcServiceRoute extends GrpcRoute {
     }
 
     /**
-     * Creates a gRPC route for a service instance annotated with {@link @Grpc}.
+     * Creates a gRPC route for a generated service descriptor.
      * Registers interceptors for context on all the routes.
      *
      * @param service the service

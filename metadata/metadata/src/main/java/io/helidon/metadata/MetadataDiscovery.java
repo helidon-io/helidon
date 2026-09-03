@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public interface MetadataDiscovery {
      */
     enum Mode {
         /**
-         * Automatic mode, works as follows:
+         * Automatic mode works as follows.
          * <ul>
          * <li>If {@link MetadataConstants#MANIFEST_FILE} is found, and it is considered merged (more than one line with
          * {@link MetadataConstants#MANIFEST_ID_LINE} exists),

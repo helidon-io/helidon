@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,14 +93,16 @@ class ConfigDiff {
     }
 
     /**
+     * Reports whether this diff has no changes.
      *
-     * @return {@code} true if there were no changes; {@code false} otherwise
+     * @return {@code true} if there were no changes; {@code false} otherwise
      */
     boolean isEmpty() {
         return changedKeys.isEmpty();
     }
 
     /**
+     * Returns changed configuration keys.
      *
      * @return the {@code Config.Key}s that were added, removed, or the values
      * for which were changed
@@ -110,6 +112,7 @@ class ConfigDiff {
     }
 
     /**
+     * Returns the newer configuration.
      *
      * @return the newer {@code Config} used in the comparison
      */

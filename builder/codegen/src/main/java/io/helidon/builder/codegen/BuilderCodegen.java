@@ -98,7 +98,7 @@ class BuilderCodegen implements CodegenExtension {
     }
 
     /**
-     *
+     * Generates custom prototype methods.
      * @param classModel     prototype class model builder
      * @param customMethods  custom methods to code generate
      * @param implementation true for implementation, false for prototype

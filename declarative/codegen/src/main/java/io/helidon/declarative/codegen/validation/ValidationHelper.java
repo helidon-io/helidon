@@ -109,7 +109,7 @@ final class ValidationHelper {
     }
 
     /**
-     *
+     * Adds validation code for a constraint.
      * @param context       validation code generation context
      * @param constraint    the constraint - must be an annotation of the element or its type parameters
      * @param location      location of the check (i.e. parameter, return value etc.)
