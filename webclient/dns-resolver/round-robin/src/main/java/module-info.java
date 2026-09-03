@@ -21,6 +21,7 @@
  */
 module io.helidon.webclient.dns.resolver.roundrobin {
 
+    requires io.helidon.common;
     requires transitive io.helidon.webclient.api;
 
     exports io.helidon.webclient.dns.resolver.roundrobin;
