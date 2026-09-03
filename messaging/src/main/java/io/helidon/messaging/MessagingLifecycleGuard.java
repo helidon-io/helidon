@@ -32,7 +32,6 @@ import io.helidon.service.registry.Service;
 final class MessagingLifecycleGuard {
     private final AtomicReference<ChannelRegistry> registry = new AtomicReference<>();
 
-    @Service.Inject
     MessagingLifecycleGuard() {
     }
 

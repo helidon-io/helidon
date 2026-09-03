@@ -264,25 +264,6 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
     }
 
-    void addIncomingConnector(String name, IncomingConnector connector) {
-        addIncomingConnector(name, connector, new IncomingConnectorContext() {
-            @Override
-            public String channel() {
-                return name;
-            }
-
-            @Override
-            public ConnectorDeliveryReservation reserveDelivery() {
-                throw new UnsupportedOperationException("Test incoming context does not deliver messages");
-            }
-
-            @Override
-            public Optional<ConnectorDeliveryReservation> tryReserveDelivery() {
-                throw new UnsupportedOperationException("Test incoming context does not deliver messages");
-            }
-        });
-    }
-
     void seal() {
         lifecycleLock.lock();
         try {

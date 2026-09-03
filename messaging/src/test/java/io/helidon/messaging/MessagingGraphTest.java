@@ -18,6 +18,7 @@ package io.helidon.messaging;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.messaging.spi.Connector;
+import io.helidon.messaging.spi.ConnectorDeliveryReservation;
 import io.helidon.messaging.spi.IncomingConnector;
 import io.helidon.messaging.spi.IncomingConnectorContext;
 import io.helidon.messaging.spi.OutgoingConnector;
@@ -61,8 +63,8 @@ class MessagingGraphTest {
         ManagedSource first = ManagedSource.running("first", events, firstReady, allReady);
         ManagedSource second = ManagedSource.running("second", events, secondReady, allReady);
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
-        graph.addIncomingConnector("first", first);
-        graph.addIncomingConnector("second", second);
+        graph.addIncomingConnector("first", first, testIncomingContext("first"));
+        graph.addIncomingConnector("second", second, testIncomingContext("second"));
 
         graph.start();
         awaitCondition(() -> events.contains("admit-first") && events.contains("admit-second"));
@@ -152,7 +154,7 @@ class MessagingGraphTest {
         DeliveryEngine engine = engine(config, "orders");
         DefaultMessagingGraph graph = new DefaultMessagingGraph(engine);
         graph.addBinding(outgoing);
-        graph.addIncomingConnector("incoming", incoming);
+        graph.addIncomingConnector("incoming", incoming, testIncomingContext("incoming"));
 
         graph.start();
         awaitCondition(() -> events.contains("admit-incoming"));
@@ -217,7 +219,7 @@ class MessagingGraphTest {
         List<String> events = new CopyOnWriteArrayList<>();
         DualConnector connector = new DualConnector(events);
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
-        graph.addIncomingConnector("dual", connector);
+        graph.addIncomingConnector("dual", connector, testIncomingContext("dual"));
 
         graph.start();
         awaitCondition(() -> events.contains("incoming-admit"));
@@ -247,7 +249,7 @@ class MessagingGraphTest {
         List<String> incomingEvents = new CopyOnWriteArrayList<>();
         DualConnector incoming = new DualConnector(incomingEvents);
         DefaultMessagingGraph incomingGraph = graph(config(SHUTDOWN_TIMEOUT));
-        incomingGraph.addIncomingConnector("dual", incoming);
+        incomingGraph.addIncomingConnector("dual", incoming, testIncomingContext("dual"));
 
         incomingGraph.close();
 
@@ -258,7 +260,7 @@ class MessagingGraphTest {
     void concurrentStartCallersShareOneSuccessfulStartup() throws Exception {
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
         StartupBlockingSource source = new StartupBlockingSource();
-        graph.addIncomingConnector("source", source);
+        graph.addIncomingConnector("source", source, testIncomingContext("source"));
 
         AsyncTask owner = async(graph::start);
         await(source.running());
@@ -334,7 +336,7 @@ class MessagingGraphTest {
         Duration shutdownTimeout = Duration.ofMillis(250);
         StartupBlockingSource source = new StartupBlockingSource();
         DefaultMessagingGraph graph = graph(config(shutdownTimeout));
-        graph.addIncomingConnector("source", source);
+        graph.addIncomingConnector("source", source, testIncomingContext("source"));
 
         AsyncTask startup = async(graph::start);
         try {
@@ -466,7 +468,7 @@ class MessagingGraphTest {
         StartupBlockingSource incoming = new StartupBlockingSource();
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
         graph.addBinding(outgoing);
-        graph.addIncomingConnector("incoming", incoming);
+        graph.addIncomingConnector("incoming", incoming, testIncomingContext("incoming"));
 
         assertThat(assertThrows(IllegalStateException.class, graph::start), sameInstance(startupFailure));
 
@@ -517,7 +519,7 @@ class MessagingGraphTest {
             }
         };
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
-        graph.addIncomingConnector("source", source);
+        graph.addIncomingConnector("source", source, testIncomingContext("source"));
 
         AsyncTask owner = async(graph::start);
         await(readinessEntered);
@@ -580,8 +582,8 @@ class MessagingGraphTest {
         ManagedSource first = ManagedSource.running("first", events, new AtomicBoolean(), () -> true);
         ManagedSource second = ManagedSource.readinessFailure("second", events, startupFailure);
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
-        graph.addIncomingConnector("first", first);
-        graph.addIncomingConnector("second", second);
+        graph.addIncomingConnector("first", first, testIncomingContext("first"));
+        graph.addIncomingConnector("second", second, testIncomingContext("second"));
 
         IllegalStateException thrown = assertThrows(IllegalStateException.class, graph::start);
 
@@ -605,8 +607,8 @@ class MessagingGraphTest {
         ManagedSource first = ManagedSource.running("first", events, new AtomicBoolean(), () -> true);
         ManagedSource second = ManagedSource.admissionFailure("second", events, startupFailure);
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
-        graph.addIncomingConnector("first", first);
-        graph.addIncomingConnector("second", second);
+        graph.addIncomingConnector("first", first, testIncomingContext("first"));
+        graph.addIncomingConnector("second", second, testIncomingContext("second"));
 
         graph.start();
         awaitState(graph, DefaultMessagingGraph.State.FAILED);
@@ -782,7 +784,7 @@ class MessagingGraphTest {
         };
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
         graphReference.set(graph);
-        graph.addIncomingConnector("source", source);
+        graph.addIncomingConnector("source", source, testIncomingContext("source"));
         graph.start();
 
         await(closeReturned);
@@ -932,7 +934,7 @@ class MessagingGraphTest {
         ManagedSource source = ManagedSource.runtimeFailure("source", events, runtimeFailure);
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
         graph.addBinding(resource);
-        graph.addIncomingConnector("source", source);
+        graph.addIncomingConnector("source", source, testIncomingContext("source"));
         graph.start();
 
         source.fail();
@@ -954,7 +956,9 @@ class MessagingGraphTest {
     void sourceFailureDuringDrainIsReported() {
         IllegalStateException sourceFailure = new IllegalStateException("source stop failed");
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
-        graph.addIncomingConnector("source", new StopFailingSource(sourceFailure));
+        graph.addIncomingConnector("source",
+                                   new StopFailingSource(sourceFailure),
+                                   testIncomingContext("source"));
         graph.start();
 
         IllegalStateException failure = assertThrows(IllegalStateException.class, graph::close);
@@ -994,7 +998,7 @@ class MessagingGraphTest {
             }
         };
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
-        graph.addIncomingConnector("shared-failure", source);
+        graph.addIncomingConnector("shared-failure", source, testIncomingContext("shared-failure"));
 
         assertThat(assertThrows(IllegalStateException.class, graph::start), sameInstance(sharedFailure));
         assertThat(sharedFailure.getSuppressed().length, is(0));
@@ -1033,7 +1037,7 @@ class MessagingGraphTest {
     void closeCancelsSourceStartupPromptly() throws Exception {
         DefaultMessagingGraph graph = graph(config(Duration.ofSeconds(30)));
         StartupBlockingSource source = new StartupBlockingSource();
-        graph.addIncomingConnector("blocked", source);
+        graph.addIncomingConnector("blocked", source, testIncomingContext("blocked"));
         AsyncTask startup = async(graph::start);
 
         try {
@@ -1057,7 +1061,7 @@ class MessagingGraphTest {
     void normalManagedSourceTerminationFailsRunningGraph() {
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
         NormalEndingSource source = new NormalEndingSource();
-        graph.addIncomingConnector("ending", source);
+        graph.addIncomingConnector("ending", source, testIncomingContext("ending"));
 
         graph.start();
         awaitState(graph, DefaultMessagingGraph.State.FAILED);
@@ -1210,10 +1214,11 @@ class MessagingGraphTest {
                                                      new AtomicBoolean(), () -> true);
         TrackingBinding binding = new TrackingBinding("sink", new CopyOnWriteArrayList<>());
 
-        graph.addIncomingConnector("first", source);
+        graph.addIncomingConnector("first", source, testIncomingContext("first"));
         graph.addBinding(binding);
 
-        assertThrows(IllegalArgumentException.class, () -> graph.addIncomingConnector("second", source));
+        assertThrows(IllegalArgumentException.class,
+                     () -> graph.addIncomingConnector("second", source, testIncomingContext("second")));
         assertThrows(IllegalArgumentException.class, () -> graph.addBinding(binding));
         graph.close();
     }
@@ -1225,7 +1230,7 @@ class MessagingGraphTest {
         MessagingExecutionConfig config = config(SHUTDOWN_TIMEOUT);
         DefaultMessagingGraph graph = graph(config);
         graph.addChannel("known", new NoOpChannel(), config);
-        graph.addIncomingConnector("source", source);
+        graph.addIncomingConnector("source", source, testIncomingContext("source"));
         graph.addRoute("known", "missing");
 
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, graph::prepare);
@@ -1312,7 +1317,7 @@ class MessagingGraphTest {
         DefaultMessagingGraph graph = graph(config);
         graph.addChannel("first", new NoOpChannel(), config);
         graph.addChannel("second", new NoOpChannel(), config);
-        graph.addIncomingConnector("source", source);
+        graph.addIncomingConnector("source", source, testIncomingContext("source"));
         graph.addRoute("first", "second");
         graph.addRoute("second", "first");
 
@@ -1326,6 +1331,25 @@ class MessagingGraphTest {
 
     private static DefaultMessagingGraph graph(MessagingExecutionConfig config) {
         return new DefaultMessagingGraph(new DeliveryEngine(config));
+    }
+
+    private static IncomingConnectorContext testIncomingContext(String channel) {
+        return new IncomingConnectorContext() {
+            @Override
+            public String channel() {
+                return channel;
+            }
+
+            @Override
+            public ConnectorDeliveryReservation reserveDelivery() {
+                throw new UnsupportedOperationException("Test incoming context does not deliver messages");
+            }
+
+            @Override
+            public Optional<ConnectorDeliveryReservation> tryReserveDelivery() {
+                throw new UnsupportedOperationException("Test incoming context does not deliver messages");
+            }
+        };
     }
 
     private static void addChannel(DefaultMessagingGraph graph,

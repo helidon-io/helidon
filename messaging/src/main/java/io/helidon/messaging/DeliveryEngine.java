@@ -1589,22 +1589,18 @@ final class DeliveryEngine implements AutoCloseable {
         private void requireOpen() {
             ReservationState current = state.get();
             switch (current) {
-            case OPEN:
+            case OPEN -> {
                 return;
-            case STARTED:
-                throw new IllegalStateException("Connector delivery reservation was already started");
-            case STARTING:
-                throw new IllegalStateException("Connector delivery reservation is already being started");
-            case CLOSED:
-                throw rejected(dispatcher.channel,
-                               MessagingRejectedException.Reason.CANCELLED,
-                               "Connector delivery reservation is closed");
-            case SHUTDOWN:
-                throw rejected(dispatcher.channel,
-                               MessagingRejectedException.Reason.SHUTDOWN,
-                               "Messaging runtime is shutting down");
-            default:
-                throw new IllegalStateException("Unsupported connector delivery reservation state: " + current);
+            }
+            case STARTED -> throw new IllegalStateException("Connector delivery reservation was already started");
+            case STARTING -> throw new IllegalStateException("Connector delivery reservation is already being started");
+            case CLOSED -> throw rejected(dispatcher.channel,
+                                          MessagingRejectedException.Reason.CANCELLED,
+                                          "Connector delivery reservation is closed");
+            case SHUTDOWN -> throw rejected(dispatcher.channel,
+                                            MessagingRejectedException.Reason.SHUTDOWN,
+                                            "Messaging runtime is shutting down");
+            default -> throw new IllegalStateException("Unsupported connector delivery reservation state: " + current);
             }
         }
 
