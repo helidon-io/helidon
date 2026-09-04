@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
@@ -55,6 +56,15 @@ class MetricsFactoryFactoryTest {
 
         assertThat(serviceResolvedFactory, sameInstance(currentFactory));
         assertThat(Services.get(MetricsFactory.class), sameInstance(currentFactory));
+    }
+
+    @Test
+    void discoversMeterBuilderCustomizerFromServiceLoader() {
+        assertThat(Services.all(MeterBuilderCustomizer.class)
+                           .stream()
+                           .map(customizer -> customizer.getClass().getName())
+                           .toList(),
+                   hasItem(TestMeterBuilderCustomizer.class.getName()));
     }
 
     @Test
