@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
@@ -40,11 +41,13 @@ import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.HttpTransportObserverSupport.ConnectionObservationContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
@@ -55,6 +58,7 @@ import io.helidon.webserver.http.HttpRouting;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_1_1;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -67,6 +71,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 class Http1ConnectionTest {
     private static final byte[] CONNECTION_CLOSE_REQUEST = ("""
@@ -266,6 +271,46 @@ class Http1ConnectionTest {
                                                           () -> connection.handle(FixedLimit.create()));
 
         assertThat(exception.getCause(), instanceOf(DataReader.InsufficientDataAvailableException.class));
+    }
+
+    @Test
+    void validPrologueSelectsHttp11() throws InterruptedException {
+        byte[] request = "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+                .getBytes(StandardCharsets.US_ASCII);
+        AtomicBoolean delivered = new AtomicBoolean();
+        DataReader reader = DataReader.create(() -> delivered.compareAndSet(false, true) ? request : null);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        when(listenerContext.contentEncodingContext()).thenReturn(mock(ContentEncodingContext.class));
+        when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
+        when(listenerContext.directHandlers()).thenReturn(DirectHandlers.create());
+
+        ConnectionContext ctx = mock(
+                ConnectionContext.class,
+                withSettings().extraInterfaces(ConnectionObservationContext.class));
+        ConnectionObservation transportObservation = mock(ConnectionObservation.class);
+        when(((ConnectionObservationContext) ctx).httpTransportObservation())
+                .thenReturn(transportObservation);
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+        when(ctx.dataWriter()).thenReturn(mock(DataWriter.class));
+        when(ctx.dataReader()).thenReturn(reader);
+        when(ctx.router()).thenReturn(Router.empty());
+        PeerInfo remotePeer = mock(PeerInfo.class);
+        when(remotePeer.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(remotePeer);
+
+        LimitAlgorithm.Token token = mock(LimitAlgorithm.Token.class);
+        Limit limit = mock(Limit.class);
+        when(limit.tryAcquireOutcome(true))
+                .thenReturn(LimitAlgorithm.Outcome.immediateAcceptance("test", "test", token));
+        Http1Connection connection = new Http1Connection(ctx, Http1Config.create(), Map.of());
+
+        try {
+            connection.handle(limit);
+        } catch (CloseConnectionException ignored) {
+            // End of the supplied request data.
+        }
+
+        verify(transportObservation).protocolSelected(PROTOCOL_HTTP_1_1);
     }
 
     private static Http1Connection createConnection(DataWriter dataWriter) {

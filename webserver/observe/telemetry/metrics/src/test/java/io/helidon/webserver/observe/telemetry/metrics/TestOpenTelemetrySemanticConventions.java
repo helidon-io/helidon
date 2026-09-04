@@ -47,6 +47,8 @@ import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasAtt
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasDouble;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasString;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE;
+import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.NETWORK_PROTOCOL_NAME;
+import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.NETWORK_PROTOCOL_VERSION;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -219,6 +221,9 @@ class TestOpenTelemetrySemanticConventions {
                     if (route != null) {
                         routesSeen.add((String) route);
                     }
+
+                    assertThat("Network protocol name", attributes.get(NETWORK_PROTOCOL_NAME), is("http"));
+                    assertThat("Network protocol version", attributes.get(NETWORK_PROTOCOL_VERSION), is("1.1"));
 
                     var portObj = attributes.get(SERVER_PORT);
                     if (portObj != null) {

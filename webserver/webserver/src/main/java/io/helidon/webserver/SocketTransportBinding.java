@@ -51,10 +51,16 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.Handshake;
+import io.helidon.http.HttpTransportObserver.Role;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 import io.helidon.webserver.spi.TransportBinding;
 
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_UNIX;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
@@ -606,23 +612,45 @@ abstract class SocketTransportBinding implements TransportBinding {
                         break;
                     }
                     SocketChannel socket = localServerSocket.accept();
-                    ConnectionHandler handler = new ConnectionHandler(transportContext.listenerContext(),
-                                                                      trustedProxyMatcher,
-                                                                      acceptToken,
-                                                                      requestLimit,
-                                                                      connectionProviders,
-                                                                      socket,
-                                                                      serverChannelId,
-                                                                      transportContext.router(),
-                                                                      tls,
-                                                                      listenerTls,
-                                                                      connectionHandlers::remove);
+                    ConnectionObservation connectionObservation = null;
+                    ConnectionHandler handler;
+                    try {
+                        connectionObservation = HttpTransportObserverSupport.observer(transportContext.listenerContext())
+                                .connectionOpened(Role.SERVER,
+                                                  configuredAddress instanceof UnixDomainSocketAddress
+                                                          ? TRANSPORT_UNIX
+                                                          : TRANSPORT_TCP,
+                                                  tls.enabled()
+                                                          ? Handshake.TLS
+                                                          : Handshake.NONE);
+                        handler = new ConnectionHandler(transportContext.listenerContext(),
+                                                        trustedProxyMatcher,
+                                                        acceptToken,
+                                                        requestLimit,
+                                                        connectionProviders,
+                                                        socket,
+                                                        serverChannelId,
+                                                        transportContext.router(),
+                                                        tls,
+                                                        listenerTls,
+                                                        connectionObservation,
+                                                        connectionHandlers::remove);
+                    } catch (RuntimeException | Error failure) {
+                        if (connectionObservation != null) {
+                            connectionObservation.close(ConnectionOutcome.ERROR);
+                        }
+                        closeAcceptedSocket(socket, failure);
+                        acceptToken.ignore();
+                        acceptToken = null;
+                        throw failure;
+                    }
                     connectionHandlers.add(handler);
 
                     try {
                         if (!running) {
                             connectionHandlers.remove(handler);
                             closeAcceptedSocket(socket, null);
+                            connectionObservation.close(ConnectionOutcome.LOCAL_CLOSE);
                             acceptToken.ignore();
                             acceptToken = null;
                             continue;
@@ -631,6 +659,7 @@ abstract class SocketTransportBinding implements TransportBinding {
                         if (!running) {
                             connectionHandlers.remove(handler);
                             closeAcceptedSocket(socket, null);
+                            connectionObservation.close(ConnectionOutcome.LOCAL_CLOSE);
                             acceptToken.ignore();
                             acceptToken = null;
                             continue;
@@ -645,6 +674,7 @@ abstract class SocketTransportBinding implements TransportBinding {
                         connectionHandlers.remove(handler);
                         LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
                         closeAcceptedSocket(socket, e);
+                        connectionObservation.close(ConnectionOutcome.ERROR);
 
                         // we never started the handler, so we must release the semaphore here
                         acceptToken.dropped();
@@ -654,6 +684,7 @@ abstract class SocketTransportBinding implements TransportBinding {
                         // we may get an SSL handshake errors, which should only fail one socket, not the listener
                         LOGGER.log(TRACE, "Failed to handle accepted socket", e);
                         closeAcceptedSocket(socket, e);
+                        connectionObservation.close(ConnectionOutcome.ERROR);
 
                         // we never started the handler, so we must release the semaphore here
                         acceptToken.ignore();

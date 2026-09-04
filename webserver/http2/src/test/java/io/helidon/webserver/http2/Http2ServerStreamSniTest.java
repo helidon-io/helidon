@@ -36,6 +36,7 @@ import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
@@ -75,6 +76,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -356,6 +358,24 @@ class Http2ServerStreamSniTest {
                 () -> assertThat(writer.dataFrame, is(nullValue()))
         );
         return writer;
+    }
+
+    @Test
+    void failedRejectedResponseWriteReportsStreamError() {
+        IllegalStateException failure = new IllegalStateException("write failed");
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter(failure);
+        Http2ServerStream stream = stream(streams, writer);
+        AtomicReference<StreamOutcome> outcome = new AtomicReference<>();
+        stream.transportObservation(outcome::set);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithoutAuthority(), false);
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, stream::run);
+
+        assertThat(thrown, sameInstance(failure));
+        assertThat(outcome.get(), is(StreamOutcome.ERROR));
     }
 
     @Test
@@ -1868,12 +1888,21 @@ class Http2ServerStreamSniTest {
     }
 
     private static final class RecordingStreamWriter implements Http2StreamWriter {
+        private final RuntimeException writeFailure;
         private Status status;
         private Http2Headers headers;
         private Http2Flag.HeaderFlags headerFlags;
         private Http2FrameData dataFrame;
         private int rstStreamCount;
         private final List<Http2ErrorCode> rstStreamCodes = new ArrayList<>();
+
+        private RecordingStreamWriter() {
+            this(null);
+        }
+
+        private RecordingStreamWriter(RuntimeException writeFailure) {
+            this.writeFailure = writeFailure;
+        }
 
         @Override
         public void write(Http2FrameData frame) {
@@ -1892,6 +1921,9 @@ class Http2ServerStreamSniTest {
                                 int streamId,
                                 Http2Flag.HeaderFlags flags,
                                 FlowControl.Outbound flowControl) {
+            if (writeFailure != null) {
+                throw writeFailure;
+            }
             this.status = headers.status();
             this.headers = headers;
             this.headerFlags = flags;
@@ -1905,6 +1937,9 @@ class Http2ServerStreamSniTest {
                                 Http2Flag.HeaderFlags flags,
                                 Http2FrameData dataFrame,
                                 FlowControl.Outbound flowControl) {
+            if (writeFailure != null) {
+                throw writeFailure;
+            }
             this.status = headers.status();
             this.headers = headers;
             this.headerFlags = flags;
@@ -2030,7 +2065,7 @@ class Http2ServerStreamSniTest {
         }
 
         private void completeTerminalWrite() {
-            assertThat(terminalCallback, is(org.hamcrest.Matchers.notNullValue()));
+            assertThat(terminalCallback, is(notNullValue()));
             terminalCallback.run();
             terminalCallback = null;
         }

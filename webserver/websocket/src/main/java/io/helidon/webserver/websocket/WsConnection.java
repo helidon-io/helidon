@@ -37,6 +37,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.LocalCloseConnectionException;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.websocket.ClientWsFrame;
@@ -296,7 +297,7 @@ public class WsConnection implements ServerConnection, WsSession {
     @Override
     public WsSession terminate() {
         close(WsCloseCodes.NORMAL_CLOSE, "Terminate");
-        throw new CloseConnectionException("Terminate from WebSocket");
+        throw new LocalCloseConnectionException("Terminate from WebSocket");
     }
 
     @Override

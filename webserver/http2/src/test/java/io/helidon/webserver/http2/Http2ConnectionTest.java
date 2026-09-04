@@ -51,6 +51,12 @@ import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.Direction;
+import io.helidon.http.HttpTransportObserver.Initiator;
+import io.helidon.http.HttpTransportObserver.StreamObservation;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -77,6 +83,7 @@ import io.helidon.http.http2.WindowSize;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.HttpTransportObserverSupport.ConnectionObservationContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.Router;
@@ -109,6 +116,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 class Http2ConnectionTest {
 
@@ -392,7 +400,7 @@ class Http2ConnectionTest {
         Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(selector));
 
         assertThrows(CloseConnectionException.class,
-                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
+                     () -> connection.handle(mock(Limit.class)));
         queuedHandler.get().run();
 
         verify(handler, never()).init();
@@ -454,7 +462,11 @@ class Http2ConnectionTest {
                                    .toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))));
         ExecutorService executor = mock(ExecutorService.class);
         DataReader reader = DataReader.create(input::poll);
-        ConnectionContext ctx = http2Context(writer, reader);
+        ConnectionObservation connectionObservation = mock(ConnectionObservation.class);
+        StreamObservation streamObservation = mock(StreamObservation.class);
+        when(connectionObservation.streamOpened(Direction.BIDIRECTIONAL, Initiator.REMOTE))
+                .thenReturn(streamObservation);
+        ConnectionContext ctx = http2Context(writer, reader, connectionObservation);
         when(ctx.executor()).thenReturn(executor);
         Http2Connection connection = new Http2Connection(ctx,
                                                          Http2Config.builder()
@@ -475,9 +487,11 @@ class Http2ConnectionTest {
                                                              false),
                                          headers);
 
-        connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
+        connection.handle(mock(Limit.class));
 
         verify(executor, never()).submit(any(Runnable.class));
+        verify(connectionObservation).streamOpened(Direction.BIDIRECTIONAL, Initiator.REMOTE);
+        verify(streamObservation).close(StreamOutcome.REJECTED);
         BufferData goAwayData = writtenFrames.get(writtenFrames.size() - 1);
         byte[] headerBytes = new byte[Http2FrameHeader.LENGTH];
         goAwayData.read(headerBytes);
@@ -731,6 +745,50 @@ class Http2ConnectionTest {
     }
 
     @Test
+    void opensObservationBeforeInvalidRequestTargetIsReset() throws InterruptedException {
+        Http2Headers headers = Http2Headers.create(WritableHeaders.create());
+        headers.method(Method.GET);
+        headers.scheme("http");
+        headers.authority("localhost");
+        BufferData headersData = BufferData.growing(256);
+        headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                      Http2HuffmanEncoder.create(),
+                      headersData);
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(
+                headersData.available(),
+                Http2FrameTypes.HEADERS,
+                Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                1),
+                                                headersData)));
+        input.add(frameBytes(new Http2GoAway(1, Http2ErrorCode.NO_ERROR, "")
+                                     .toFrameData(Http2Settings.builder().build(),
+                                                  0,
+                                                  Http2Flag.NoFlags.create())));
+        DataWriter writer = mock(DataWriter.class);
+        DataReader reader = DataReader.create(input::poll);
+        ConnectionObservation connectionObservation = mock(ConnectionObservation.class);
+        StreamObservation streamObservation = mock(StreamObservation.class);
+        when(connectionObservation.streamOpened(Direction.BIDIRECTIONAL, Initiator.REMOTE))
+                .thenReturn(streamObservation);
+        ConnectionContext ctx = http2Context(writer, reader, connectionObservation);
+        ExecutorService executor = mock(ExecutorService.class);
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+
+        connection.handle(mock(Limit.class));
+
+        verify(connectionObservation).streamOpened(Direction.BIDIRECTIONAL, Initiator.REMOTE);
+        verify(streamObservation).close(StreamOutcome.RESET);
+        verify((ConnectionObservationContext) ctx).httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
+        verify(executor, never()).submit(any(Runnable.class));
+    }
+
+    @Test
     void windowUpdateForActiveStreamRefreshesIdleTime() throws InterruptedException {
         Queue<byte[]> input = new ConcurrentLinkedQueue<>();
         Http2Headers h2Headers = Http2Headers.create(WritableHeaders.create());
@@ -770,7 +828,7 @@ class Http2ConnectionTest {
                                      .toFrameData(null, 1, Http2Flag.NoFlags.create())));
 
         assertThrows(CloseConnectionException.class,
-                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
+                     () -> connection.handle(mock(Limit.class)));
 
         assertThat(connection.idleTime(), lessThan(Duration.ofSeconds(5)));
     }
@@ -1100,7 +1158,7 @@ class Http2ConnectionTest {
                                                          List.of());
 
         connection.expectPreface();
-        connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
+        connection.handle(mock(Limit.class));
 
         BufferData goAwayData = writtenFrames.get(writtenFrames.size() - 1);
         byte[] headerBytes = new byte[Http2FrameHeader.LENGTH];
@@ -1260,6 +1318,19 @@ class Http2ConnectionTest {
                                                                                                            | Http2Flag.END_OF_STREAM),
                                                                      1),
                                              headersData));
+    }
+
+    private static ConnectionContext http2Context(DataWriter writer,
+                                                  DataReader reader,
+                                                  ConnectionObservation connectionObservation) {
+        ConnectionContext ctx = mock(ConnectionContext.class,
+                                     withSettings().extraInterfaces(ConnectionObservationContext.class));
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(ctx.dataWriter()).thenReturn(writer);
+        when(ctx.dataReader()).thenReturn(reader);
+        when(((ConnectionObservationContext) ctx).httpTransportObservation()).thenReturn(connectionObservation);
+        return ctx;
     }
 
     private static byte[] frameBytes(Http2FrameData frameData) {

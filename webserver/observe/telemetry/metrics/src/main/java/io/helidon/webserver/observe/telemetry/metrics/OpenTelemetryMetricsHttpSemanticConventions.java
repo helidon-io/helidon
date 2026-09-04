@@ -65,6 +65,8 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     static final String ERROR_TYPE = ErrorAttributes.ERROR_TYPE.getKey();
     static final String STATUS_CODE = HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey();
     static final String HTTP_ROUTE = HttpAttributes.HTTP_ROUTE.getKey();
+    static final String NETWORK_PROTOCOL_NAME = "network.protocol.name";
+    static final String NETWORK_PROTOCOL_VERSION = "network.protocol.version";
     static final String SERVER_ADDRESS = ServerAttributes.SERVER_ADDRESS.getKey();
     static final String SERVER_PORT = ServerAttributes.SERVER_PORT.getKey();
     // Helidon
@@ -200,6 +202,8 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
+                    .put(AttributeKey.stringKey(NETWORK_PROTOCOL_NAME), "http")
+                    .put(AttributeKey.stringKey(NETWORK_PROTOCOL_VERSION), req.prologue().protocolVersion())
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
 
             req.matchingPattern().filter(route -> !route.isBlank())
@@ -211,12 +215,6 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             if (isOptedIn(config, SERVER_PORT)) {
                 attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.requestedUri().port());
             }
-
-            /*
-            The OpenTelemetry semantic conventions describe network.protocol.name and version, but these are
-            required only if the protocol is not http, and it always is http in this particular class. Further, we
-            don't currently have a way to get the HTTP version at runtime from a request.
-             */
 
             httpRequestDuration.record((endTime - startTime) / 1_000_000_000.0, attrBuilder.build());
         }

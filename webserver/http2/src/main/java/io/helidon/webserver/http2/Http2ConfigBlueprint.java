@@ -31,7 +31,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 /**
  * HTTP/2 server configuration.
  */
-@Prototype.Blueprint(decorator = Http2ConfigBlueprint.Http2ConfigDecorator.class)
+@Prototype.Blueprint(decorator = Http2ConfigSupport.Decorator.class)
 @Prototype.Configured(root = false, value = Http2ConnectionProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
 @Prototype.IncludeDefaultMethods({"maxBufferedEntitySize", "log", "altSvc"})
@@ -191,20 +191,5 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
      */
     default String type() {
         return Http2ConnectionProvider.CONFIG_NAME;
-    }
-
-    class Http2ConfigDecorator implements Prototype.BuilderDecorator<Http2Config.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(Http2Config.BuilderBase<?, ?> target) {
-            if (target.name().isEmpty()) {
-                target.name("@default");
-            }
-
-            if (target.requestedUriDiscovery().isEmpty()) {
-                target.requestedUriDiscovery(RequestedUriDiscoveryContext.builder()
-                                                     .socketId(target.name().orElse("@default"))
-                                                     .build());
-            }
-        }
     }
 }

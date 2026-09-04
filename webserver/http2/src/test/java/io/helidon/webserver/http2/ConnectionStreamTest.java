@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
@@ -32,6 +33,8 @@ import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.HttpTransportObserver.StreamObservation;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
@@ -168,6 +171,8 @@ class ConnectionStreamTest {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingConnectionWriter writer = new RecordingConnectionWriter();
         Http2ServerStream stream = stream(streams, writer);
+        RecordingStreamObservation observation = new RecordingStreamObservation();
+        stream.transportObservation(observation);
 
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         streams.activate(STREAM_ID);
@@ -179,10 +184,15 @@ class ConnectionStreamTest {
 
         assertThat(writer.hasPendingTerminalCallback(), Matchers.is(true));
         assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+        assertThat(observation.outcome(), nullValue());
 
         writer.completeTerminalWrite();
 
         assertThat(streams.isActive(STREAM_ID), Matchers.is(false));
+        assertThat(observation.outcome(), Matchers.is(StreamOutcome.COMPLETED));
+        assertThat(observation.completions(), Matchers.is(1));
+        stream.transportClosed(StreamOutcome.ERROR);
+        assertThat(observation.completions(), Matchers.is(1));
     }
 
     @Test
@@ -516,6 +526,23 @@ class ConnectionStreamTest {
         assertThat(streams.isActive(STREAM_ID), Matchers.is(false));
     }
 
+    @Test
+    void remoteResetCompletesTransportObservationOnce() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        Http2ServerStream stream = stream(streams, new RecordingConnectionWriter());
+        RecordingStreamObservation observation = new RecordingStreamObservation();
+        stream.transportObservation(observation);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        streams.activate(STREAM_ID);
+        stream.headers(responseHeaders(), false);
+
+        stream.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+        stream.transportClosed(StreamOutcome.ERROR);
+
+        assertThat(observation.outcome(), Matchers.is(StreamOutcome.RESET));
+        assertThat(observation.completions(), Matchers.is(1));
+    }
+
     private static Http2ServerStream mockStream(int streamId) {
         Http2ServerStream s = mock(Http2ServerStream.class);
         when(s.streamId()).thenReturn(streamId);
@@ -727,6 +754,25 @@ class ConnectionStreamTest {
 
         @Override
         public void remoteComplete(int streamId) {
+        }
+    }
+
+    private static final class RecordingStreamObservation implements StreamObservation {
+        private final AtomicInteger completions = new AtomicInteger();
+        private final AtomicReference<StreamOutcome> outcome = new AtomicReference<>();
+
+        @Override
+        public void close(StreamOutcome outcome) {
+            this.outcome.set(outcome);
+            completions.incrementAndGet();
+        }
+
+        private int completions() {
+            return completions.get();
+        }
+
+        private StreamOutcome outcome() {
+            return outcome.get();
         }
     }
 

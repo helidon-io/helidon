@@ -45,6 +45,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.LocalCloseConnectionException;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.websocket.WsCloseCodes;
 import io.helidon.websocket.WsCloseException;
@@ -69,6 +70,13 @@ import static org.mockito.Mockito.when;
 
 class WsConnectionTest {
     private static final long TEST_TIMEOUT_SECONDS = 5;
+
+    @Test
+    void terminateSignalsAPlannedLocalClose() {
+        WsConnection connection = createConnection(mock(DataWriter.class));
+
+        assertThrows(LocalCloseConnectionException.class, connection::terminate);
+    }
 
     @Test
     void sendWrapsUncheckedIOException() {

@@ -431,7 +431,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
     }
 
-    private static void writeHeaders(io.helidon.http.Headers headers, BufferData buffer, boolean validate) {
+    private static void writeHeaders(Headers headers, BufferData buffer, boolean validate) {
         if (validate) {
             headers.forEach(Header::validate);
         }
@@ -592,7 +592,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private final boolean headRequest;
         private Status writeForbiddenStatus;
         private boolean forcedChunked;
-
         private BufferData firstBuffer;
         private boolean closed;
         private long bytesWritten;

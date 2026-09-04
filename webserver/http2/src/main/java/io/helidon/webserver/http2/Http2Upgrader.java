@@ -123,6 +123,7 @@ public class Http2Upgrader implements Http1Upgrader {
         connection.upgradeConnectionData(newPrologue, http2Headers);
         connection.expectPreface();
         writeUpgradeResponse(ctx.dataWriter());
+        connection.protocolSelected();
         return connection;
     }
 

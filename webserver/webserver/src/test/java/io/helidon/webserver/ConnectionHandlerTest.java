@@ -37,6 +37,8 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 
@@ -71,6 +73,7 @@ class ConnectionHandlerTest {
         LimitAlgorithm.Token token = mock(LimitAlgorithm.Token.class);
         SocketChannel socket = mock(SocketChannel.class);
         when(socket.getRemoteAddress()).thenThrow(failure);
+        ConnectionObservation transportObservation = mock(ConnectionObservation.class);
         ConnectionHandler handler = new ConnectionHandler(listenerContext,
                                                           Optional.of(new TrustedProxyMatcher(AllowList.builder()
                                                                                                        .allowAll(true)
@@ -83,6 +86,7 @@ class ConnectionHandlerTest {
                                                           Router.empty(),
                                                           mock(Tls.class),
                                                           virtualHosts,
+                                                          transportObservation,
                                                           it -> { });
 
         try (TestLogHandler logHandler = TestLogHandler.install()) {
@@ -92,6 +96,7 @@ class ConnectionHandlerTest {
             assertThat(record.getMessage(), containsString("Unexpected throwable while handling connection"));
             assertThat(record.getThrown(), sameInstance(failure));
             verify(token).ignore();
+            verify(transportObservation).close(ConnectionOutcome.ERROR);
         }
     }
 
@@ -125,6 +130,7 @@ class ConnectionHandlerTest {
         VirtualHostRegistry virtualHosts = VirtualHostRegistry.create("server", virtualHostConfig, tls);
         ConnectionProviders connectionProviders =
                 ConnectionProviders.create(List.of(new TestConnectionSelector(failure)));
+        ConnectionObservation transportObservation = mock(ConnectionObservation.class);
         ConnectionHandler handler = new ConnectionHandler(listenerContext,
                                                           Optional.empty(),
                                                           mock(LimitAlgorithm.Token.class),
@@ -135,6 +141,7 @@ class ConnectionHandlerTest {
                                                           Router.empty(),
                                                           tls,
                                                           virtualHosts,
+                                                          transportObservation,
                                                           _ -> { });
 
         try (TestLogHandler logHandler = TestLogHandler.install(failure)) {
@@ -145,6 +152,7 @@ class ConnectionHandlerTest {
             assertThat(thread.isAlive(), is(false));
             assertThat(record.getThrown(), sameInstance(failure));
             assertThat(record.getLevel(), is(expectedLevel));
+            verify(transportObservation).close(ConnectionOutcome.ERROR);
         }
     }
 

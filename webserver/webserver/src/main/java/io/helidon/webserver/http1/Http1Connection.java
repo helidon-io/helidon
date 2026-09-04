@@ -60,6 +60,7 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
+import io.helidon.webserver.HttpTransportObserverSupport;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.SniRequestSupport;
@@ -75,6 +76,7 @@ import io.helidon.webserver.spi.ServerConnection;
 import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
 import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_1_1;
 import static io.helidon.webserver.ProxyProtocolData.Family.IPv4;
 import static io.helidon.webserver.ProxyProtocolData.Family.IPv6;
 import static java.lang.System.Logger.Level.DEBUG;
@@ -113,6 +115,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private long currentEntitySizeRead;
 
     private volatile Thread myThread;
+    private boolean protocolSelected;
     private volatile boolean canRun = true;
     private volatile boolean currentlyReadingPrologue;
     private volatile ZonedDateTime lastRequestTimestamp;
@@ -184,6 +187,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 currentEntitySizeRead = 0;
                 if (http1Config.validatePrologue()) {
                     validatePrologue(prologue);
+                }
+                if (!protocolSelected) {
+                    HttpTransportObserverSupport.connection(ctx).protocolSelected(PROTOCOL_HTTP_1_1);
+                    protocolSelected = true;
                 }
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 if (http1Config.validateRequestHeaders()) {
@@ -288,7 +295,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         }
                     }
                 }
-
                 LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;

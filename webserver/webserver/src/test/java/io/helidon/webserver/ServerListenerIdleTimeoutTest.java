@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.context.Context;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -363,6 +364,7 @@ class ServerListenerIdleTimeoutTest {
                                   MediaContext.create(),
                                   ContentEncodingContext.create(),
                                   DirectHandlers.create(),
+                                  List.of(),
                                   (failedListener, _) -> failedListener.stop());
     }
 
@@ -489,7 +491,7 @@ class ServerListenerIdleTimeoutTest {
         private final AtomicInteger gracefulCloses = new AtomicInteger();
 
         @Override
-        public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+        public void handle(Limit limit) {
             handling.countDown();
             while (releaseHandling.getCount() != 0) {
                 try {
@@ -554,7 +556,7 @@ class ServerListenerIdleTimeoutTest {
         private final CountDownLatch releaseHandling = new CountDownLatch(1);
 
         @Override
-        public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+        public void handle(Limit limit) {
             handling.countDown();
             while (releaseHandling.getCount() != 0) {
                 try {
@@ -622,7 +624,7 @@ class ServerListenerIdleTimeoutTest {
         }
 
         @Override
-        public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+        public void handle(Limit limit) {
             handling.countDown();
             while (releaseHandling.getCount() != 0) {
                 try {

@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
@@ -48,7 +49,13 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.Direction;
+import io.helidon.http.HttpTransportObserver.Initiator;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
@@ -78,6 +85,7 @@ import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.HttpTransportObserverSupport;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpRouting;
@@ -87,6 +95,7 @@ import io.helidon.webserver.spi.ServerConnection;
 import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
 import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_2;
 import static io.helidon.http.http2.Http2Util.PREFACE_LENGTH;
 import static io.helidon.webserver.ProxyProtocolData.Family.IPv4;
 import static io.helidon.webserver.ProxyProtocolData.Family.IPv6;
@@ -140,6 +149,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final long maxClientConcurrentStreams;
     private final Http2ConnectionChecks connectionChecks;
     private final Header altSvcHeader;
+    private final ConnectionObservation httpTransportObservation;
     private int emptyFrames = 0;
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
@@ -168,6 +178,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     List<Http2SubProtocolSelector> subProviders,
                     Header altSvcHeader) {
         this.ctx = ctx;
+        this.httpTransportObservation = HttpTransportObserverSupport.connection(ctx);
         this.http2Config = http2Config;
         this.altSvcHeader = altSvcHeader;
         this.maxEmptyFrames = http2Config.maxEmptyFrames();
@@ -222,6 +233,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 // already handled
                 return;
             }
+            HttpTransportObserverSupport.connectionOutcome(ctx, ConnectionOutcome.ERROR);
             ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 exception, code: %s, message: %s",
                     e.code(),
                     e.getMessage());
@@ -332,6 +344,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     @Override
     public Duration idleTime() {
         return Duration.between(lastRequestTimestamp, DateTime.timestamp());
+    }
+
+    void protocolSelected() {
+        httpTransportObservation.protocolSelected(PROTOCOL_HTTP_2);
     }
 
     @Override
@@ -545,6 +561,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (!Http2Util.isPreface(bytes)) {
             throw new IllegalStateException("Invalid HTTP/2 connection preface");
         }
+        protocolSelected();
         ctx.log(LOGGER, TRACE, "Processed preface data");
         state = State.READ_FRAME;
     }
@@ -738,18 +755,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             boolean hasEntity = upgradeHasEntity(upgradeHeaders);
             // we now have all information needed to execute
             Http2ServerStream stream = stream(1).stream();
+            stream.transportObservation(
+                    httpTransportObservation.streamOpened(Direction.BIDIRECTIONAL, Initiator.REMOTE));
             activateStream(1);
             stream.prologue(upgradePrologue);
             stream.requestLimit(limit);
             stream.headers(upgradeHeaders, !hasEntity);
             upgradeHeaders = null;
-            ctx.executor()
-                    .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+            submitStream(stream);
         }
     }
 
     private static boolean upgradeHasEntity(Http2Headers headers) {
-        io.helidon.http.Headers httpHeaders = headers.httpHeaders();
+        Headers httpHeaders = headers.httpHeaders();
         if (!httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             return httpHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         }
@@ -874,8 +892,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
 
         StreamContext streamContext = stream(streamId);
-        Http2ServerStream resettingStream = streamContext.stream();
-        if (resettingStream.discardsInboundAfterReset()) {
+        Http2ServerStream stream = streamContext.stream();
+        if (stream.discardsInboundAfterReset()) {
             boolean endOfHeaders = frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders();
             if (!endOfHeaders) {
                 locallyResetHeaders.begin(frameHeader, inProgressFrame().copy());
@@ -885,7 +903,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             }
 
             boolean endOfStream = frameHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
-            completeDroppedInboundHeaders(resettingStream,
+            completeDroppedInboundHeaders(stream,
                                           endOfStream,
                                           frameHeader.length(),
                                           new Http2FrameData(frameHeader, inProgressFrame()));
@@ -893,8 +911,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             return;
         }
 
-        boolean trailers = streamContext.stream().checkHeadersReceivable();
+        boolean trailers = stream.checkHeadersReceivable();
         boolean newStream = !trailers;
+        if (newStream && frameHeader.type() == Http2FrameType.HEADERS) {
+            stream.transportObservation(
+                    httpTransportObservation.streamOpened(Direction.BIDIRECTIONAL, Initiator.REMOTE));
+        }
 
         // first frame, expecting continuation
         if (frameHeader.type() == Http2FrameType.HEADERS && !frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders()) {
@@ -909,13 +931,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         boolean endOfStream;
         Http2Headers headers;
         LongConsumer decodedHeaderSizeConsumer = decodedHeaderSizeConsumer();
-        Http2ServerStream stream = streamContext.stream();
-        if (initConnectionHeaders) {
-            ctx.remotePeer().tlsCertificates()
-                    .flatMap(TlsUtils::parseCn)
-                    .ifPresent(cn -> connectionHeaders.add(X_HELIDON_CN, cn));
-            initConnectionHeaders = false;
-        }
+        initializeConnectionHeaders();
 
         if (frameHeader.type() == Http2FrameType.CONTINUATION) {
             // end of continuations with header frames
@@ -1019,8 +1035,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         this.lastRequestTimestamp = DateTime.timestamp();
         // we now have all information needed to execute
-        ctx.executor()
-                .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+        submitStream(stream);
+    }
+
+    private void initializeConnectionHeaders() {
+        if (!initConnectionHeaders) {
+            return;
+        }
+        ctx.remotePeer().tlsCertificates()
+                .flatMap(TlsUtils::parseCn)
+                .ifPresent(cn -> connectionHeaders.add(X_HELIDON_CN, cn));
+
+        initConnectionHeaders = false;
     }
 
     private boolean validateRequestTrailers(Http2Headers headers,
@@ -1185,10 +1211,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void activateStream(int streamId) {
         streams.doMaintenance();
+        StreamContext streamContext = Objects.requireNonNull(streams.get(streamId), "HTTP/2 stream context");
+        Http2ServerStream stream = streamContext.stream();
         while (streams.size() + 1 > maxClientConcurrentStreams) {
             Http2StreamAdmissionGate.AwaitResult result = streamAdmissionGate.awaitPublication();
             streams.doMaintenance();
             if (result == Http2StreamAdmissionGate.AwaitResult.FAILED) {
+                stream.transportClosed(StreamOutcome.ERROR);
                 streams.remove(streamId);
                 streams.doMaintenance();
                 throw new CloseConnectionException("HTTP/2 connection failed during stream admission.");
@@ -1198,17 +1227,30 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             }
         }
         if (streams.size() + 1 > maxClientConcurrentStreams) {
+            stream.transportClosed(StreamOutcome.REJECTED);
             streams.remove(streamId);
             streams.doMaintenance();
             throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
                                      "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
         }
         if (streamAdmissionGate.failed()) {
+            stream.transportClosed(StreamOutcome.ERROR);
             streams.remove(streamId);
             streams.doMaintenance();
             throw new CloseConnectionException("HTTP/2 connection failed during stream admission.");
         }
         streams.activate(streamId);
+    }
+
+    private void submitStream(Http2ServerStream stream) {
+        try {
+            ctx.executor()
+                    .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+        } catch (RuntimeException | Error failure) {
+            stream.transportClosed(StreamOutcome.REJECTED);
+            streams.remove(stream.streamId());
+            throw failure;
+        }
     }
 
     private void pingFrame() {
@@ -1260,6 +1302,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         Http2GoAway go = Http2GoAway.create(inProgressFrame());
         receiveFrameListener.frame(ctx, 0, go);
         state = State.FINISHED;
+        HttpTransportObserverSupport.connectionOutcome(ctx,
+                                                       go.errorCode() == Http2ErrorCode.NO_ERROR
+                                                               ? ConnectionOutcome.REMOTE_CLOSE
+                                                               : ConnectionOutcome.ERROR);
         if (go.errorCode() != Http2ErrorCode.NO_ERROR) {
             ctx.log(LOGGER, DEBUG, "Received go away. Error code: %s", go.errorCode());
         }
@@ -1456,12 +1502,15 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             try {
                 stream.run();
             } catch (SocketWriterException e) {
+                stream.transportClosed(StreamOutcome.ERROR);
                 handlerThread.interrupt();
                 LOGGER.log(DEBUG, "Socket writer error on writer thread", e);
             } catch (ServerConnectionException e) {
+                stream.transportClosed(StreamOutcome.ERROR);
                 handlerThread.interrupt();
                 LOGGER.log(TRACE, "server I/O issue on HTTP/2 stream thread", e);
             } catch (UncheckedIOException e) {
+                stream.transportClosed(StreamOutcome.ERROR);
                 // Broken connection
                 if (e.getCause() instanceof SocketException) {
                     // Interrupt handler thread
@@ -1471,6 +1520,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     LOGGER.log(ERROR, "Unhandled exception on HTTP/2 stream thread", e);
                 }
             } catch (Throwable e) {
+                stream.transportClosed(StreamOutcome.ERROR);
                 LOGGER.log(ERROR, "Unhandled exception on HTTP/2 stream thread", e);
             } finally {
                 // 5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag

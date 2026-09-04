@@ -27,8 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Exception;
@@ -41,12 +44,14 @@ import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2Util;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.HttpTransportObserverSupport.ConnectionObservationContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_2;
 import static io.helidon.http.http2.Http2Setting.ENABLE_PUSH;
 import static io.helidon.http.http2.Http2Setting.HEADER_TABLE_SIZE;
 import static io.helidon.http.http2.Http2Setting.INITIAL_WINDOW_SIZE;
@@ -64,17 +69,24 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 class UpgradeSettingsTest {
 
     static final long MAX_UNSIGNED_INT = 0xFFFFFFFFL;
 
     private final ConnectionContext ctx;
+    private final ConnectionObservation transportObservation;
     private final HttpPrologue prologue;
 
     public UpgradeSettingsTest() {
-        ctx = mock(ConnectionContext.class);
+        ctx = mock(ConnectionContext.class,
+                   withSettings().extraInterfaces(ConnectionObservationContext.class));
+        transportObservation = mock(ConnectionObservation.class);
+        when(((ConnectionObservationContext) ctx).httpTransportObservation())
+                .thenReturn(transportObservation);
         prologue = HttpPrologue.create("http/1.1",
                                        "http",
                                        "1.1",
@@ -133,6 +145,13 @@ class UpgradeSettingsTest {
     }
 
     @Test
+    void successfulUpgradeSelectsHttp2() {
+        upgrade("AAEAABAAAAIAAAAB");
+
+        verify(transportObservation).protocolSelected(PROTOCOL_HTTP_2);
+    }
+
+    @Test
     void invalidMaxFrameSizeDoesNotReplaceLastValidSettings() {
         Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
 
@@ -148,7 +167,7 @@ class UpgradeSettingsTest {
         Http2Exception exception = assertThrows(Http2Exception.class,
                                                 () -> connection.clientSettings(invalidSettings));
 
-        assertThat(exception.code(), is(io.helidon.http.http2.Http2ErrorCode.PROTOCOL));
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
         assertThat(connection.clientSettings().value(MAX_FRAME_SIZE), is(16384L));
     }
 
@@ -213,7 +232,12 @@ class UpgradeSettingsTest {
             return null;
         }).when(dataWriter).writeNow(any(BufferData.class));
 
-        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        ConnectionContext connectionContext = mock(
+                ConnectionContext.class,
+                withSettings().extraInterfaces(ConnectionObservationContext.class));
+        ConnectionObservation transportObservation = mock(ConnectionObservation.class);
+        when(((ConnectionObservationContext) connectionContext).httpTransportObservation())
+                .thenReturn(transportObservation);
         when(connectionContext.router()).thenReturn(Router.empty());
         when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
         when(connectionContext.dataWriter()).thenReturn(dataWriter);
@@ -225,7 +249,11 @@ class UpgradeSettingsTest {
                                                          Http2Config.builder().sendErrorDetails(true).build(),
                                                          List.of());
         connection.expectPreface();
-        connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
+        connection.handle(mock(Limit.class));
+
+        verify(transportObservation).protocolSelected(PROTOCOL_HTTP_2);
+        verify((ConnectionObservationContext) connectionContext)
+                .httpTransportOutcome(ConnectionOutcome.ERROR);
 
         assertThat(writtenFrames.size(), greaterThanOrEqualTo(2));
 
@@ -266,7 +294,7 @@ class UpgradeSettingsTest {
                                                          Http2Config.builder().sendErrorDetails(true).build(),
                                                          List.of());
         connection.expectPreface();
-        connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
+        connection.handle(mock(Limit.class));
 
         assertThat(writtenFrames.size(), greaterThanOrEqualTo(1));
 

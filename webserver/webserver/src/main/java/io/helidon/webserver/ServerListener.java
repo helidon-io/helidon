@@ -27,6 +27,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -42,12 +43,14 @@ import io.helidon.common.concurrency.limits.Limit.InitializationContext;
 import io.helidon.common.context.Context;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
+import io.helidon.http.HttpTransportObserver;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Services;
+import io.helidon.webserver.HttpTransportObserverSupport.ObserverLifecycle;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.PortTransportBinding;
 import io.helidon.webserver.spi.ProtocolConfig;
@@ -55,6 +58,7 @@ import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingFactory;
 
 import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.WARNING;
 
 class ServerListener implements TransportBindingContext, ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
@@ -73,6 +77,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private final Timer idleConnectionTimer;
     private final FatalListenerFailureHandler fatalListenerFailureHandler;
     private final List<TransportBinding> transportBindings;
+    private final List<ObserverLifecycle> httpTransportObserverLifecycles;
 
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
@@ -81,6 +86,8 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private final Limit requestLimit;
 
     private final AtomicBoolean lifecycleStarted = new AtomicBoolean();
+    private volatile HttpTransportObserver httpTransportObserver = HttpTransportObserver.noop();
+    private List<ObserverLifecycle> startedHttpTransportObservers = List.of();
 
     ServerListener(String socketName,
                    ListenerConfig listenerConfig,
@@ -90,6 +97,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                    MediaContext defaultMediaContext,
                    ContentEncodingContext defaultContentEncodingContext,
                    DirectHandlers defaultDirectHandlers,
+                   List<ObserverLifecycle> httpTransportObserverLifecycles,
                    FatalListenerFailureHandler fatalListenerFailureHandler) {
         this(socketName,
              listenerConfig,
@@ -101,6 +109,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
              defaultDirectHandlers,
              () -> Services.get(MetricsFactory.class),
              () -> Services.get(MeterRegistry.class),
+             httpTransportObserverLifecycles,
              fatalListenerFailureHandler);
     }
 
@@ -114,6 +123,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                    DirectHandlers defaultDirectHandlers,
                    Supplier<MetricsFactory> metricsFactory,
                    Supplier<MeterRegistry> meterRegistry,
+                   List<ObserverLifecycle> httpTransportObserverLifecycles,
                    FatalListenerFailureHandler fatalListenerFailureHandler) {
 
         List<ProtocolConfig> protocolConfigs = listenerConfig.protocols();
@@ -166,6 +176,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
 
         this.router = router;
         this.idleConnectionTimer = idleConnectionTimer;
+        this.httpTransportObserverLifecycles = List.copyOf(httpTransportObserverLifecycles);
         this.fatalListenerFailureHandler = Objects.requireNonNull(fatalListenerFailureHandler, "fatalListenerFailureHandler");
         this.transportBindings = planTransportBindings(protocolConfigs);
         int maxConnections = listenerConfig.maxConnections();
@@ -290,7 +301,9 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         if (!lifecycleStarted.compareAndSet(true, false)) {
             return;
         }
-        Throwable failure = stopResources();
+        long stopAtNanos = stopAtNanos(gracePeriod);
+        Throwable failure = stopResources(transportBindings, stopAtNanos);
+        failure = LifecycleFailures.add(failure, stopHttpTransportObservers(stopAtNanos));
         try {
             router.afterStop();
         } catch (RuntimeException | Error e) {
@@ -310,6 +323,18 @@ class ServerListener implements TransportBindingContext, ListenerContext {
             checkCancelledStartup(cancelled);
             router.beforeStart();
             beforeStartSucceeded = true;
+            List<HttpTransportObserver> observers = new ArrayList<>();
+            List<ObserverLifecycle> started = new ArrayList<>();
+            for (ObserverLifecycle lifecycle : httpTransportObserverLifecycles) {
+                try {
+                    observers.add(Objects.requireNonNull(lifecycle.start(), "HTTP transport observer"));
+                    started.add(lifecycle);
+                } catch (Throwable failure) {
+                    LOGGER.log(WARNING, "Failed to start HTTP transport observer for listener " + socketName, failure);
+                }
+            }
+            startedHttpTransportObservers = List.copyOf(started);
+            httpTransportObserver = HttpTransportObserver.compose(observers);
             lifecycleStarted.set(true);
             checkCancelledStartup(cancelled);
             startIt(cancelled, startAttemptedBindings);
@@ -321,6 +346,10 @@ class ServerListener implements TransportBindingContext, ListenerContext {
 
     boolean hasTls() {
         return tls.enabled();
+    }
+
+    HttpTransportObserver httpTransportObserver() {
+        return httpTransportObserver;
     }
 
     void reloadTls(Tls tls) {
@@ -485,14 +514,9 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         }
     }
 
-    private Throwable stopResources() {
-        return stopResources(transportBindings);
-    }
-
-    private Throwable stopResources(List<TransportBinding> bindings) {
+    private Throwable stopResources(List<TransportBinding> bindings, long stopAtNanos) {
         Throwable failure = null;
         List<BindingStop> bindingStops = new ArrayList<>();
-        long stopAtNanos = stopAtNanos(gracePeriod);
 
         // Stop listening for connections
         for (TransportBinding binding : bindings) {
@@ -559,9 +583,13 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private void rollbackFailedStart(Throwable startupFailure,
                                      boolean beforeStartSucceeded,
                                      List<TransportBinding> startAttemptedBindings) {
+        long stopAtNanos = stopAtNanos(gracePeriod);
         suppressCleanupFailure(startupFailure, () ->
-                LifecycleFailures.throwIfFailed(stopResources(startAttemptedBindings),
+                LifecycleFailures.throwIfFailed(stopResources(startAttemptedBindings, stopAtNanos),
                                                 "Failed to roll back listener " + socketName));
+        suppressCleanupFailure(startupFailure, () ->
+                LifecycleFailures.throwIfFailed(stopHttpTransportObservers(stopAtNanos),
+                                                "Failed to stop HTTP transport observers for listener " + socketName));
         if (beforeStartSucceeded && lifecycleStarted.compareAndSet(true, false)) {
             suppressCleanupFailure(startupFailure, router::afterStop);
         }
@@ -573,6 +601,73 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         } catch (RuntimeException | Error e) {
             LifecycleFailures.add(startupFailure, e);
         }
+    }
+
+    private Throwable stopHttpTransportObservers(long stopAtNanos) {
+        httpTransportObserver = HttpTransportObserver.noop();
+        List<ObserverLifecycle> started = startedHttpTransportObservers;
+        startedHttpTransportObservers = List.of();
+        List<Future<Void>> completions = new ArrayList<>(started.size());
+        Throwable result = null;
+        for (int i = started.size() - 1; i >= 0; i--) {
+            try {
+                CompletionStage<Void> completion = Objects.requireNonNull(started.get(i).stop(),
+                                                                          "HTTP transport observer stop completion");
+                completions.add(Objects.requireNonNull(completion.toCompletableFuture(),
+                                                       "HTTP transport observer stop future"));
+            } catch (Throwable failure) {
+                result = LifecycleFailures.add(result, failure);
+            }
+        }
+        boolean interrupted = false;
+        for (Future<Void> future : completions) {
+            boolean done = false;
+            while (!done) {
+                try {
+                    if (future.isDone()) {
+                        future.get();
+                        done = true;
+                        continue;
+                    }
+                    long remainingNanos = remainingNanos(stopAtNanos);
+                    if (remainingNanos == 0) {
+                        result = LifecycleFailures.add(result,
+                                                       new IllegalStateException(
+                                                               "Timed out stopping HTTP transport observers for listener "
+                                                                       + socketName,
+                                                               new TimeoutException()));
+                        done = true;
+                        continue;
+                    }
+                    future.get(remainingNanos, TimeUnit.NANOSECONDS);
+                    done = true;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    result = LifecycleFailures.add(result,
+                                                   new IllegalStateException(
+                                                           "Interrupted while stopping HTTP transport observers for listener "
+                                                                   + socketName,
+                                                           e));
+                } catch (TimeoutException e) {
+                    result = LifecycleFailures.add(result,
+                                                   new IllegalStateException(
+                                                           "Timed out stopping HTTP transport observers for listener "
+                                                                   + socketName,
+                                                           e));
+                    done = true;
+                } catch (ExecutionException e) {
+                    result = LifecycleFailures.add(result, e.getCause() == null ? e : e.getCause());
+                    done = true;
+                } catch (RuntimeException | Error e) {
+                    result = LifecycleFailures.add(result, e);
+                    done = true;
+                }
+            }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+        return result;
     }
 
     private void shutdownSharedExecutor(long timeoutNanos) {

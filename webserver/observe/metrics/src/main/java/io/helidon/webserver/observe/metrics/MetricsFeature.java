@@ -20,12 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
+import io.helidon.http.HttpTransportObserver;
 import io.helidon.http.Status;
 import io.helidon.http.media.json.JsonSupport;
 import io.helidon.json.JsonObject;
@@ -34,6 +36,7 @@ import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 import io.helidon.service.registry.Services;
+import io.helidon.webserver.HttpTransportObserverSupport.ObserverLifecycle;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
@@ -48,7 +51,7 @@ import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
 import static io.helidon.http.Status.NOT_FOUND_404;
 import static io.helidon.http.Status.OK_200;
 
-class MetricsFeature {
+class MetricsFeature implements ObserverLifecycle {
 
     /**
      * Prefix for key performance indicator metrics names.
@@ -65,6 +68,7 @@ class MetricsFeature {
     private final MetricsConfig metricsConfig;
     private final MeterRegistry meterRegistry;
     private final List<MeterRegistryFormatterProvider> formatterProviders;
+    private final HttpTransportMetricsObserver transportObserver;
     private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     MetricsFeature(MetricsObserverConfig config) {
@@ -85,6 +89,7 @@ class MetricsFeature {
             this.metricsConfig = this.meterRegistry.metricsFactory().metricsConfig();
         }
         this.formatterProviders = formatterProviders.get();
+        this.transportObserver = new HttpTransportMetricsObserver(this.meterRegistry);
     }
 
     /**
@@ -120,6 +125,16 @@ class MetricsFeature {
     void register(HttpRouting.Builder routing, String endpoint) {
         configureVendorMetrics(routing);
         routing.register(endpoint, new MetricsService());
+    }
+
+    @Override
+    public HttpTransportObserver start() {
+        return transportObserver.start();
+    }
+
+    @Override
+    public CompletionStage<Void> stop() {
+        return transportObserver.stop();
     }
 
     Optional<?> output(ServerRequest req,

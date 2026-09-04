@@ -40,6 +40,8 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.HttpTransportObserver.StreamObservation;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerResponseHeaders;
@@ -118,6 +120,11 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
     private final ReentrantLock resetCompletionLock = new ReentrantLock();
     private final ReentrantLock runnerLock = new ReentrantLock();
+    private StreamOutcome transportCompletionOutcome = StreamOutcome.COMPLETED;
+    private boolean localTransportClosed;
+    private boolean remoteTransportClosed;
+    private boolean transportObservationStarted;
+    private boolean transportObservationClosed;
     private boolean wasLastDataFrame = false;
     private boolean hasEntity = true;
     private volatile Http2Headers headers;
@@ -139,6 +146,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     private HttpPrologue prologue;
     // must be volatile, as it is accessed both from connection thread and from stream thread
     private volatile Limit requestLimit;
+    private volatile StreamObservation transportObservation = StreamObservation.noop();
 
     /**
      * A new HTTP/2 server stream.
@@ -307,6 +315,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
         resetSubProtocol(handler, rstStream);
         abortInboundData();
+        transportClosed(StreamOutcome.RESET);
         return rapidReset;
     }
 
@@ -341,6 +350,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     void closeFromLocal() {
         publishCloseFromLocal();
         cleanupAfterLocalClose();
+        transportHalfClosed(true);
     }
 
     @Override
@@ -356,6 +366,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     @Override
     void failPublication() {
         streamAdmissionGate.fail();
+        transportClosed(StreamOutcome.ERROR);
     }
 
     @Override
@@ -367,6 +378,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             throw e;
         }
         streamAdmissionGate.completePublication();
+        transportHalfClosed(true);
     }
 
     @Override
@@ -554,6 +566,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
 
         boolean budgetExhausted = false;
         boolean discardLimitExceeded = false;
+        boolean closedFromRemote = false;
         resetCompletionLock.lock();
         try {
             boolean ignoringInboundData = ignoringInboundDataSnapshot || ignoreInboundDataAfterReset;
@@ -576,6 +589,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                         } else {
                             state = Http2StreamState.HALF_CLOSED_REMOTE;
                         }
+                        closedFromRemote = true;
                     }
                 }
             }
@@ -591,6 +605,9 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
         if (budgetExhausted) {
             closeRejectedStream(Http2ErrorCode.ENHANCE_YOUR_CALM, true, endOfStream);
+        }
+        if (closedFromRemote) {
+            transportClosedFromRemote();
         }
     }
 
@@ -611,6 +628,47 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     @Override
     public Http2StreamState streamState() {
         return state;
+    }
+
+    void transportObservation(StreamObservation transportObservation) {
+        StreamObservation observation = Objects.requireNonNull(transportObservation, "transportObservation");
+        StreamOutcome closeOutcome = null;
+        resetCompletionLock.lock();
+        try {
+            if (!transportObservationStarted) {
+                transportObservationStarted = true;
+                this.transportObservation = observation;
+                if (transportObservationClosed) {
+                    closeOutcome = transportCompletionOutcome;
+                }
+            } else {
+                closeOutcome = StreamOutcome.CANCELLED;
+            }
+        } finally {
+            resetCompletionLock.unlock();
+        }
+        if (closeOutcome != null) {
+            observation.close(closeOutcome);
+        }
+    }
+
+    void transportClosed(StreamOutcome outcome) {
+        StreamObservation observation = null;
+        resetCompletionLock.lock();
+        try {
+            if (!transportObservationClosed) {
+                transportObservationClosed = true;
+                transportCompletionOutcome = Objects.requireNonNull(outcome, "outcome");
+                if (transportObservationStarted) {
+                    observation = transportObservation;
+                }
+            }
+        } finally {
+            resetCompletionLock.unlock();
+        }
+        if (observation != null) {
+            observation.close(outcome);
+        }
     }
 
     @Override
@@ -656,6 +714,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             connectionFailed = e.getCause() instanceof SocketException;
             throw e;
         } catch (CloseConnectionException e) {
+            transportClosed(StreamOutcome.RESET);
             Http2ErrorCode errorCode = e.getCause() instanceof Http2Exception h2Exception
                     ? h2Exception.code()
                     : Http2ErrorCode.STREAM_CLOSED;
@@ -677,6 +736,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
             completed = true;
         } catch (Http2Exception e) {
+            transportClosed(StreamOutcome.RESET);
             ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 stream exception, code: %s, message: %s",
                     e.code(),
                     e.getMessage());
@@ -808,6 +868,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
         Http2Headers http2Headers = Http2Headers.create(headers)
                 .status(responseStatus);
+        transportCompletionOutcome(StreamOutcome.REJECTED);
         boolean resetRequestBody = prepareRejectedStream(false);
         AtomicBoolean rejectedStreamCompleted = new AtomicBoolean();
         Runnable completeRejectedStream = () -> completeRejectedResponse(resetRequestBody,
@@ -849,6 +910,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 }
             }
         } catch (Http2Exception writeFailure) {
+            transportClosed(StreamOutcome.ERROR);
             try {
                 if (rejectedStreamCompleted.compareAndSet(false, true)) {
                     boolean resetRequestBodyAfterFailure = prepareRejectedStream(true);
@@ -859,6 +921,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
             throw writeFailure;
         } catch (RuntimeException | Error writeFailure) {
+            transportClosed(StreamOutcome.ERROR);
             if (connectionWriter != null) {
                 streamAdmissionGate.fail();
             }
@@ -893,6 +956,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         } finally {
             resetCompletionLock.unlock();
         }
+        transportClosedFromRemote();
     }
 
     int writeHeaders(Http2Headers http2Headers, final boolean endOfStream) {
@@ -977,6 +1041,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     + writeDataFrame(frameData, endOfStream);
         } catch (UncheckedIOException e) {
             if (endOfStream) {
+                transportClosed(StreamOutcome.ERROR);
                 closeFromLocal();
             }
             throw new ServerConnectionException("Failed to write headers", e);
@@ -984,6 +1049,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             throw e;
         } catch (RuntimeException e) {
             if (endOfStream) {
+                transportClosed(StreamOutcome.ERROR);
                 closeFromLocal();
             }
             throw e;
@@ -1010,6 +1076,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             return writeDataFrame(frameData, endOfStream);
         } catch (UncheckedIOException e) {
             if (endOfStream) {
+                transportClosed(StreamOutcome.ERROR);
                 closeFromLocal();
             }
             throw new ServerConnectionException("Failed to write frame data", e);
@@ -1017,6 +1084,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             throw e;
         } catch (RuntimeException e) {
             if (endOfStream) {
+                transportClosed(StreamOutcome.ERROR);
                 closeFromLocal();
             }
             throw e;
@@ -1077,6 +1145,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     }
 
     void resetProtocolError(int currentFrameLength, boolean endOfStream) {
+        transportClosed(StreamOutcome.RESET);
         Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
         boolean sendReset = false;
         boolean resetWritten = false;
@@ -1194,6 +1263,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         if (trackedPublication) {
             streamAdmissionGate.completePublication();
         }
+        transportClosed(StreamOutcome.RESET);
         abortInboundData();
     }
 
@@ -1317,6 +1387,14 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 }
                 throw e;
             }
+            StreamOutcome outcome;
+            resetCompletionLock.lock();
+            try {
+                outcome = transportCompletionOutcome;
+            } finally {
+                resetCompletionLock.unlock();
+            }
+            transportClosed(outcome);
         }
     }
 
@@ -1574,6 +1652,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     }
                 } else {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
+                    transportCompletionOutcome(StreamOutcome.REJECTED);
                     response.status(Status.SERVICE_UNAVAILABLE_503)
                             .send("Too Many Concurrent Requests");
                     response.commit();
@@ -1627,6 +1706,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
             streams.remove(streamId);
             abortInboundData();
+            transportClosed(StreamOutcome.COMPLETED);
         });
         runnerLock.lock();
         try {
@@ -1682,6 +1762,41 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             return handlerState == Http2StreamState.CLOSED;
         } finally {
             runnerLock.unlock();
+        }
+    }
+
+    private void transportHalfClosed(boolean local) {
+        StreamOutcome outcome = null;
+        resetCompletionLock.lock();
+        try {
+            if (local) {
+                localTransportClosed = true;
+            } else {
+                remoteTransportClosed = true;
+            }
+            if (localTransportClosed && remoteTransportClosed) {
+                outcome = transportCompletionOutcome;
+            }
+        } finally {
+            resetCompletionLock.unlock();
+        }
+        if (outcome != null) {
+            transportClosed(outcome);
+        }
+    }
+
+    private void transportClosedFromRemote() {
+        transportHalfClosed(false);
+    }
+
+    private void transportCompletionOutcome(StreamOutcome outcome) {
+        resetCompletionLock.lock();
+        try {
+            if (transportCompletionOutcome == StreamOutcome.COMPLETED) {
+                transportCompletionOutcome = outcome;
+            }
+        } finally {
+            resetCompletionLock.unlock();
         }
     }
 
