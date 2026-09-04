@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -55,9 +56,14 @@ public class MetricsFormatterJmhBenchmark {
     @Param({"10", "100", "1000"})
     private int cardinality;
 
-    private MeterRegistry meterRegistry;
-    private MeterRegistryFormatter unfilteredFormatter;
-    private MeterRegistryFormatter tagSelectedFormatter;
+    private MeterRegistry oneMatchMeterRegistry;
+    private MeterRegistry allMatchMeterRegistry;
+    private MeterRegistryFormatter prometheusUnfilteredFormatter;
+    private MeterRegistryFormatter prometheusOneSelectedFormatter;
+    private MeterRegistryFormatter prometheusAllSelectedFormatter;
+    private MeterRegistryFormatter jsonUnfilteredFormatter;
+    private MeterRegistryFormatter jsonOneSelectedFormatter;
+    private MeterRegistryFormatter jsonAllSelectedFormatter;
 
     @Setup(Level.Trial)
     public void setUp() {
@@ -65,41 +71,96 @@ public class MetricsFormatterJmhBenchmark {
                 .warnOnMultipleRegistries(false)
                 .build();
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        oneMatchMeterRegistry = createMeterRegistry(metricsFactory, metricsConfig, false);
+        allMatchMeterRegistry = createMeterRegistry(metricsFactory, metricsConfig, true);
 
-        for (int i = 0; i < cardinality; i++) {
-            String selectionTagValue = i == cardinality - 1 ? SELECTED_TAG_VALUE : UNSELECTED_TAG_VALUE;
-            var gaugeBuilder = metricsFactory.gaugeBuilder(METER_NAME, () -> 1)
-                    .addTag(metricsFactory.tagCreate(SERIES_TAG_NAME, Integer.toString(i)))
-                    .addTag(metricsFactory.tagCreate(SELECTION_TAG_NAME, selectionTagValue));
-            meterRegistry.getOrCreate(gaugeBuilder);
-        }
-
-        unfilteredFormatter = formatter(metricsConfig, Map.of());
-        tagSelectedFormatter = formatter(metricsConfig,
-                                          Map.<String, Collection<String>>of(
-                                                  SELECTION_TAG_NAME, Set.of(SELECTED_TAG_VALUE)));
+        prometheusUnfilteredFormatter = formatter(MediaTypes.TEXT_PLAIN,
+                                                   metricsConfig,
+                                                   oneMatchMeterRegistry,
+                                                   Map.of());
+        prometheusOneSelectedFormatter = formatter(MediaTypes.TEXT_PLAIN,
+                                                    metricsConfig,
+                                                    oneMatchMeterRegistry,
+                                                    selection());
+        prometheusAllSelectedFormatter = formatter(MediaTypes.TEXT_PLAIN,
+                                                    metricsConfig,
+                                                    allMatchMeterRegistry,
+                                                    selection());
+        jsonUnfilteredFormatter = formatter(MediaTypes.APPLICATION_JSON,
+                                            metricsConfig,
+                                            oneMatchMeterRegistry,
+                                            Map.of());
+        jsonOneSelectedFormatter = formatter(MediaTypes.APPLICATION_JSON,
+                                             metricsConfig,
+                                             oneMatchMeterRegistry,
+                                             selection());
+        jsonAllSelectedFormatter = formatter(MediaTypes.APPLICATION_JSON,
+                                             metricsConfig,
+                                             allMatchMeterRegistry,
+                                             selection());
     }
 
     @TearDown(Level.Trial)
     public void tearDown() {
-        meterRegistry.close();
+        oneMatchMeterRegistry.close();
+        allMatchMeterRegistry.close();
     }
 
     @Benchmark
-    public Object formatUnfiltered() {
-        return unfilteredFormatter.format().orElseThrow();
+    public Object formatPrometheusUnfiltered() {
+        return prometheusUnfilteredFormatter.format().orElseThrow();
     }
 
     @Benchmark
-    public Object formatTagSelected() {
-        return tagSelectedFormatter.format().orElseThrow();
+    public Object formatPrometheusTagSelectedOne() {
+        return prometheusOneSelectedFormatter.format().orElseThrow();
     }
 
-    private MeterRegistryFormatter formatter(MetricsConfig metricsConfig,
+    @Benchmark
+    public Object formatPrometheusTagSelectedAll() {
+        return prometheusAllSelectedFormatter.format().orElseThrow();
+    }
+
+    @Benchmark
+    public Object formatJsonUnfiltered() {
+        return jsonUnfilteredFormatter.format().orElseThrow();
+    }
+
+    @Benchmark
+    public Object formatJsonTagSelectedOne() {
+        return jsonOneSelectedFormatter.format().orElseThrow();
+    }
+
+    @Benchmark
+    public Object formatJsonTagSelectedAll() {
+        return jsonAllSelectedFormatter.format().orElseThrow();
+    }
+
+    private MeterRegistry createMeterRegistry(MetricsFactory metricsFactory,
+                                              MetricsConfig metricsConfig,
+                                              boolean selectAll) {
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        for (int i = 0; i < cardinality; i++) {
+            String selectionTagValue = selectAll || i == cardinality - 1
+                    ? SELECTED_TAG_VALUE
+                    : UNSELECTED_TAG_VALUE;
+            meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(METER_NAME, () -> 1)
+                                              .addTag(metricsFactory.tagCreate(SERIES_TAG_NAME, Integer.toString(i)))
+                                              .addTag(metricsFactory.tagCreate(SELECTION_TAG_NAME, selectionTagValue)));
+        }
+        return meterRegistry;
+    }
+
+    private Map<String, Collection<String>> selection() {
+        return Map.of(SELECTION_TAG_NAME, Set.of(SELECTED_TAG_VALUE));
+    }
+
+    private MeterRegistryFormatter formatter(MediaType mediaType,
+                                              MetricsConfig metricsConfig,
+                                              MeterRegistry meterRegistry,
                                               Map<String, Collection<String>> tagSelection) {
         return Services.all(MeterRegistryFormatterProvider.class).stream()
-                .map(provider -> provider.formatter(MediaTypes.TEXT_PLAIN,
+                .map(provider -> provider.formatter(mediaType,
                                                     metricsConfig,
                                                     meterRegistry,
                                                     tagSelection,
