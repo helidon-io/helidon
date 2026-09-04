@@ -116,6 +116,11 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         outputStreamRedirect(request.outputStreamRedirect());
         outputStreamRedirects(request.outputStreamRedirects());
+        if (method.equals(request.method())) {
+            headers(request.headers());
+            headers().remove(HeaderNames.HOST);
+            headers().remove(HeaderNames.COOKIE);
+        }
     }
 
     @Override

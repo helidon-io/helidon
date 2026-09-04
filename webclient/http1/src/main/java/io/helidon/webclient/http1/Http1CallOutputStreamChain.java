@@ -513,8 +513,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
-            if (lastStatus == Status.TEMPORARY_REDIRECT_307
-                    || lastStatus == Status.PERMANENT_REDIRECT_308) {
+            if (RedirectionProcessor.keepsMethodAndEntity(lastStatus)) {
                 method = originalRequest.method();
                 sendEntity = true;
             } else {
@@ -567,8 +566,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     boolean closeRedirectProbeConnection = sendEntity && !sendEmptyEntity;
                     try {
                         checkRedirectHeaders(response.headers());
-                        if (response.status() != Status.TEMPORARY_REDIRECT_307
-                                && response.status() != Status.PERMANENT_REDIRECT_308) {
+                        if (!RedirectionProcessor.keepsMethodAndEntity(response.status())) {
                             method = Method.GET;
                             sendEntity = false;
                         }

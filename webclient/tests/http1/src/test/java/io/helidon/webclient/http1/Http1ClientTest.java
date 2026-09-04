@@ -95,6 +95,9 @@ class Http1ClientTest {
     static void routing(HttpRules rules) {
         rules.put("/test", Http1ClientTest::responseHandler);
         rules.put("/redirectKeepMethod", Http1ClientTest::redirectKeepMethod);
+        rules.put("/redirectChainStart", Http1ClientTest::redirectChainStart);
+        rules.put("/redirectChainSecond", Http1ClientTest::redirectChainSecond);
+        rules.put("/redirectChainFinal", Http1ClientTest::redirectChainFinal);
         rules.put("/redirect", Http1ClientTest::redirect);
         rules.get("/afterRedirect", Http1ClientTest::afterRedirectGet);
         rules.put("/afterRedirect", Http1ClientTest::afterRedirectPut);
@@ -411,6 +414,19 @@ class Http1ClientTest {
     }
 
     @Test
+    void testOutputStreamChainedRedirectsWithCustomReasonPhrases() {
+        try (HttpClientResponse response = injectedHttp1client.put("/redirectChainStart")
+                .sendExpectContinue(true)
+                .outputStream(output -> {
+                    output.write("Test entity".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Test entity"));
+        }
+    }
+
+    @Test
     void testReadTimeoutPerRequest() {
         String testEntity = "Test entity";
         try (HttpClientResponse response = injectedHttp1client.put("/delayedEndpoint")
@@ -484,6 +500,22 @@ class Http1ClientTest {
         res.status(Status.TEMPORARY_REDIRECT_307)
                 .header(HeaderNames.LOCATION, "/afterRedirect")
                 .send();
+    }
+
+    private static void redirectChainStart(ServerRequest req, ServerResponse res) {
+        res.status(Status.create(307, "Custom Temporary Redirect"))
+                .header(HeaderNames.LOCATION, "/redirectChainSecond")
+                .send();
+    }
+
+    private static void redirectChainSecond(ServerRequest req, ServerResponse res) {
+        res.status(Status.create(308, "Custom Permanent Redirect"))
+                .header(HeaderNames.LOCATION, "/redirectChainFinal")
+                .send();
+    }
+
+    private static void redirectChainFinal(ServerRequest req, ServerResponse res) {
+        res.send(req.content().as(String.class));
     }
 
     private static void afterRedirectGet(ServerRequest req, ServerResponse res) {

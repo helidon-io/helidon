@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequestBase;
@@ -117,6 +118,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.readContinueTimeout(request.readContinueTimeout());
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         this.outputStreamRedirect(request.outputStreamRedirect);
+        if (method.equals(request.method())) {
+            headers(request.headers());
+            headers().remove(HeaderNames.HOST);
+            headers().remove(HeaderNames.COOKIE);
+        }
     }
 
     @Override

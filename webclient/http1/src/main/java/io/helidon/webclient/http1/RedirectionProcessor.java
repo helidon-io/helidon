@@ -37,8 +37,9 @@ class RedirectionProcessor {
     }
 
     static boolean keepsMethodAndEntity(Status status) {
-        return status == Status.TEMPORARY_REDIRECT_307
-                || status == Status.PERMANENT_REDIRECT_308;
+        int statusCode = status.code();
+        return statusCode == Status.TEMPORARY_REDIRECT_307.code()
+                || statusCode == Status.PERMANENT_REDIRECT_308.code();
     }
 
     static void validateEntityRedirect(Http1ClientRequestImpl request,

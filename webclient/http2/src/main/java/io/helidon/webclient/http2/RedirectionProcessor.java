@@ -32,12 +32,15 @@ class RedirectionProcessor {
     }
 
     static boolean redirectionStatusCode(Status status) {
-        return status.family() == Status.Family.REDIRECTION;
+        // 304 is not a redirect; it instructs a cache to reuse its stored representation.
+        return status.code() != Status.NOT_MODIFIED_304.code()
+                && status.family() == Status.Family.REDIRECTION;
     }
 
     static boolean keepsMethodAndEntity(Status status) {
-        return status == Status.TEMPORARY_REDIRECT_307
-                || status == Status.PERMANENT_REDIRECT_308;
+        int statusCode = status.code();
+        return statusCode == Status.TEMPORARY_REDIRECT_307.code()
+                || statusCode == Status.PERMANENT_REDIRECT_308.code();
     }
 
     static void validateEntityRedirect(Http2ClientRequestImpl request,
