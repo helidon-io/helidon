@@ -55,8 +55,23 @@ The HTTP/2 provider applies `ma`, `Age`, `Date`, `clear`, and `persist` to its c
 connection caches share that state; disabling connection-cache sharing isolates it. `persist` does not make discovery
 state durable across a process or beyond the cache lifecycle.
 
-HTTP/3 cannot use TCP ALPN or an HTTP/1.1 upgrade because it runs over QUIC. The common client policy, response
-notification, and parsed `Alt-Svc` model can also support an HTTP/3 provider.
+HTTP/3 support is available through the `webclient/http3` module. Because HTTP/3 is UDP and not TCP based, it does not
+follow the same ALPN or upgrade path as HTTP/1.1 and HTTP/2. The generic client can move to HTTP/3 through explicit
+`protocolId("h3")`, the typed `Http3Client`, or Alt-Svc discovery. Client Alt-Svc use is opt-in through the common
+`alt-svc` configuration. Within a present configuration, `enabled` defaults to `true`; an empty `protocols` list allows
+all available supporting providers, while a non-empty list is an exact, case-sensitive ALPN protocol filter.
+
+Initial Alt-Svc support accepts advertisements only from HTTPS origins and only for alternatives on the same host,
+although the port may differ. Using an alternative does not change the request scheme or authority. `h2c` alternatives
+are not supported. Plain HTTP origins cannot be upgraded to TLS-based HTTP/2 or HTTP/3 until the RFC 8164
+`/.well-known/http-opportunistic` opt-in is implemented. Alt-Svc never bypasses a selected proxy; WebClient uses a
+configured fallback protocol if that proxy route cannot carry the alternative. A no-proxy rule that selects a direct
+route remains eligible.
+
+The configured TLS policy is honored as-is for the alternative, including custom or permissive settings. Consequently,
+`trust-all`, disabled endpoint identification, or another unsafe TLS policy makes Alt-Svc steering equally unsafe. Each
+supporting protocol provider applies `ma`, `Age`, `Date`, and `persist` to its own discovery state and cache lifecycle;
+`persist` does not make that state durable across a process or beyond the cache lifecycle.
 
 To provide HTTP version support extension, the implementation must provide `webclient.spi.HttpClientSpiProvider`.
 

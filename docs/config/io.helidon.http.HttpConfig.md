@@ -88,8 +88,10 @@ Common configuration of HTTP protocol, regardless of its version
 
 - [io.<wbr>helidon.<wbr>webclient.<wbr>http1.<wbr>Http1Client<wbr>Protocol<wbr>Config](io.helidon.webclient.http1.Http1ClientProtocolConfig.md)
 - [io.<wbr>helidon.<wbr>webclient.<wbr>http2.<wbr>Http2Client<wbr>Protocol<wbr>Config](io.helidon.webclient.http2.Http2ClientProtocolConfig.md)
+- [io.<wbr>helidon.<wbr>webclient.<wbr>http3.<wbr>Http3Client<wbr>Protocol<wbr>Config](io.helidon.webclient.http3.Http3ClientProtocolConfig.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>http1.<wbr>Http1Config](io.helidon.webserver.http1.Http1Config.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>http2.<wbr>Http2Config](io.helidon.webserver.http2.Http2Config.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>http3.<wbr>Http3Config](io.helidon.webserver.http3.Http3Config.md)
 
 ---
 
