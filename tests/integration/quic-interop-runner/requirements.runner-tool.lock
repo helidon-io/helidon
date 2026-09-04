@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2026 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Direct requirements from quic-interop-runner commit
+# 97319f8c0be2bc0be67b025522a64c9231018d37 and their complete dependency set.
+# Platform-specific hashes cover CPython 3.12 on Linux musl amd64 and arm64.
+
+appdirs==1.4.4 \
+    --hash=sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128
+lxml==6.1.1 \
+    --hash=sha256:766b010012d59470072c1816b5b6c69f1d243e5db36ea5968e94accf430a4635 \
+    --hash=sha256:aa366a1e55b8ebfe8ca8ddc3cfe75c8ebade181aeb0f661d0cb05986b647f72a
+packaging==26.2 \
+    --hash=sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e
+prettytable==3.18.0 \
+    --hash=sha256:b3346e0e6f79180833aebaac088ae926340586cf6d7d991b9eb125b65f72313a
+pycryptodome==3.23.0 \
+    --hash=sha256:53ecbafc2b55353edcebd64bf5da94a2a2cdf5090a6915bcca6eca6cc452585a \
+    --hash=sha256:dea827b4d55ee390dc89b2afe5927d4308a8b538ae91d9c6f7a5090f397af1aa
+pyshark==0.6 \
+    --hash=sha256:98e8a1ebdcbfbb6e8defd0c96736ea51bf8234339f980b15dd3545f87f5146d4
+random-slugs==1.0.4 \
+    --hash=sha256:0573169c01cd9e7dd5b024cb6c7d1c18b0ca13f4d0d48d977e02c8848febf7c8
+termcolor==3.3.0 \
+    --hash=sha256:cf642efadaf0a8ebbbf4bc7a31cec2f9b5f21a9f726f4ccbb08192c9c26f43a5
+wcwidth==0.8.2 \
+    --hash=sha256:d63947694a0539a1d51e01eda7caf800c291020e6cdd7e28ad7b14dd33ad4f85

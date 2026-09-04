@@ -1,0 +1,8 @@
+*
+!.dockerignore
+!Dockerfile.h3spec
+!Dockerfile.server
+!README.md
+!target/
+!target/libs/
+!target/libs/**

@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2026 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+bash=5.2.37-r0
+curl=8.14.1-r2
+libexpat=2.8.2-r0
+openssl=3.3.7-r0
+py3-pip=24.3.1-r0
+python3=3.12.13-r0
+tar=1.35-r2
+tshark=4.4.2-r0

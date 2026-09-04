@@ -42,6 +42,9 @@
         <module>tls-revocation-config</module>
         <module>h2spec</module>
         <module>h2spec-client</module>
+        <module>h3spec</module>
+        <module>h3i</module>
+        <module>quic-interop-runner</module>
         <module>context-http-propagation</module>
     </modules>
 
