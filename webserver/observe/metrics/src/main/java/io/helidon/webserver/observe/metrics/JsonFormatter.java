@@ -52,6 +52,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.SystemTagsManager;
+import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
 /**
@@ -282,13 +283,22 @@ class JsonFormatter implements MeterRegistryFormatter {
     }
 
     private boolean matchesTags(Meter.Id meterId) {
-        Map<String, String> meterTags = meterId.tagsMap();
-        return tagSelection.entrySet()
-                .stream()
-                .allMatch(entry -> {
-                    String meterTagValue = meterTags.get(entry.getKey());
-                    return meterTagValue != null && entry.getValue().contains(meterTagValue);
-                });
+        if (tagSelection.isEmpty()) {
+            return true;
+        }
+        for (Map.Entry<String, Set<String>> selection : tagSelection.entrySet()) {
+            boolean matches = false;
+            for (Tag tag : meterId.tags()) {
+                if (tag.key().equals(selection.getKey()) && selection.getValue().contains(tag.value())) {
+                    matches = true;
+                    break;
+                }
+            }
+            if (!matches) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private abstract static class MetricOutputBuilder {
