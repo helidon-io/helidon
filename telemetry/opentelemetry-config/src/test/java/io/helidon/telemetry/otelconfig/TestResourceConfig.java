@@ -54,6 +54,12 @@ import static org.hamcrest.Matchers.sameInstance;
 
 class TestResourceConfig {
 
+    private static final String IMAGE_DIGEST = "sha256:"
+            + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    private static final String CHECKOUT_REPO_DIGEST = "registry.example.com/retail/checkout@" + IMAGE_DIGEST;
+    private static final String CHECKOUT_MIRROR_REPO_DIGEST = "mirror.example.com/retail/checkout@" + IMAGE_DIGEST;
+    private static final String PROGRAMMATIC_REPO_DIGEST = "registry.example.com/programmatic@" + IMAGE_DIGEST;
+    private static final String PROGRAMMATIC_MIRROR_REPO_DIGEST = "mirror.example.com/programmatic@" + IMAGE_DIGEST;
     private static final AttributeKey<String> CUSTOM_STRING = AttributeKey.stringKey("custom.string");
     private static final AttributeKey<Long> CUSTOM_LONG = AttributeKey.longKey("custom.long");
     private static final AttributeKey<Double> CUSTOM_DOUBLE = AttributeKey.doubleKey("custom.double");
@@ -75,8 +81,8 @@ class TestResourceConfig {
                             container-image-name: registry.example.com/retail/checkout
                             container-image-tags: [latest, "2.1"]
                             container-image-repo-digests:
-                              - "checkout@sha256:first"
-                              - "checkout@sha256:second"
+                              - "%s"
+                              - "%s"
                             attributes:
                               strings:
                                 custom.string: common
@@ -108,7 +114,7 @@ class TestResourceConfig {
                                   custom.precedence: logging
                                   service.name: logging-service
                                   service.namespace: logging-namespace
-                        """,
+                        """.formatted(CHECKOUT_REPO_DIGEST, CHECKOUT_MIRROR_REPO_DIGEST),
                 MediaTypes.APPLICATION_YAML));
 
         var spanExporter = new CapturingSpanExporter();
@@ -136,7 +142,7 @@ class TestResourceConfig {
                    is("registry.example.com/retail/checkout"));
         assertThat(resourceConfig.containerImageTags(), is(List.of("latest", "2.1")));
         assertThat(resourceConfig.containerImageRepoDigests(),
-                   is(List.of("checkout@sha256:first", "checkout@sha256:second")));
+                   is(List.of(CHECKOUT_REPO_DIGEST, CHECKOUT_MIRROR_REPO_DIGEST)));
 
         try (var sdk = telemetryConfig.openTelemetrySdk()) {
             sdk.getTracer("resource-test").spanBuilder("test-span").startSpan().end();
@@ -160,7 +166,7 @@ class TestResourceConfig {
                 .containerId("programmatic-container")
                 .containerImageName("registry.example.com/programmatic")
                 .containerImageTags(List.of("latest", "3.0"))
-                .containerImageRepoDigests(List.of("programmatic@sha256:first", "programmatic@sha256:second"))
+                .containerImageRepoDigests(List.of(PROGRAMMATIC_REPO_DIGEST, PROGRAMMATIC_MIRROR_REPO_DIGEST))
                 .attributes(Attributes.builder()
                                     .put(CUSTOM_STRING, "programmatic-string")
                                     .put(CUSTOM_LONG, 7L)
@@ -189,7 +195,7 @@ class TestResourceConfig {
                        is("registry.example.com/programmatic"));
             assertThat(resource.getAttribute(ContainerAttributes.CONTAINER_IMAGE_TAGS), is(List.of("latest", "3.0")));
             assertThat(resource.getAttribute(ContainerAttributes.CONTAINER_IMAGE_REPO_DIGESTS),
-                       is(List.of("programmatic@sha256:first", "programmatic@sha256:second")));
+                       is(List.of(PROGRAMMATIC_REPO_DIGEST, PROGRAMMATIC_MIRROR_REPO_DIGEST)));
             assertThat(resource.getAttribute(CUSTOM_STRING), is("programmatic-string"));
             assertThat(resource.getAttribute(CUSTOM_LONG), is(7L));
             assertThat(resource.getAttribute(CUSTOM_DOUBLE), is(8.5));
@@ -255,7 +261,7 @@ class TestResourceConfig {
                    is("registry.example.com/retail/checkout"));
         assertThat(resource.getAttribute(ContainerAttributes.CONTAINER_IMAGE_TAGS), is(List.of("latest", "2.1")));
         assertThat(resource.getAttribute(ContainerAttributes.CONTAINER_IMAGE_REPO_DIGESTS),
-                   is(List.of("checkout@sha256:first", "checkout@sha256:second")));
+                   is(List.of(CHECKOUT_REPO_DIGEST, CHECKOUT_MIRROR_REPO_DIGEST)));
         assertThat(resource.getAttribute(CUSTOM_STRING), is("common"));
         assertThat(resource.getAttribute(CUSTOM_LONG), is(3L));
         assertThat(resource.getAttribute(CUSTOM_DOUBLE), is(4.5));

@@ -38,6 +38,7 @@ The Helidon OpenTelemetry configuration format, the Helidon OpenTelemetry API,
 and this documentation all follow this hierarchy:
 
 - [Top-level telemetry](#configuration-options)
+  - [Resource attributes](#resource-attributes)
   - Signals
     - [Tracing](#tracing-configuration)
     - [Metrics](#metrics-configuration)
@@ -294,8 +295,8 @@ telemetry:
     container-image-name: registry.example.com/retail/checkout
     container-image-tags: [latest, "2.1"]
     container-image-repo-digests:
-      - "checkout@sha256:first"
-      - "checkout@sha256:second"
+      - "registry.example.com/retail/checkout@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      - "mirror.example.com/retail/checkout@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
     attributes:
       strings:
         service.version: "2.1"
@@ -320,8 +321,11 @@ OpenTelemetryResourceConfig resourceConfig = OpenTelemetryResourceConfig.builder
         .containerId("container-123")
         .containerImageName("registry.example.com/retail/checkout")
         .containerImageTags(List.of("latest", "2.1"))
-        .containerImageRepoDigests(List.of("checkout@sha256:first",
-                                           "checkout@sha256:second"))
+        .containerImageRepoDigests(List.of(
+                "registry.example.com/retail/checkout@sha256:"
+                        + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                "mirror.example.com/retail/checkout@sha256:"
+                        + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"))
         .attributes(Attributes.builder().put("service.version", "2.1"))
         .build();
 
