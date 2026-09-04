@@ -16,18 +16,16 @@
 
 package io.helidon.config.metadata.docs;
 
+import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.logging.LogManager;
 
 import io.helidon.config.metadata.model.CmModel;
-import io.helidon.logging.common.LogConfig;
 
 /**
  * Config docs generator entry point.
  */
 public final class Main {
-    static {
-        LogConfig.initClass();
-    }
 
     private Main() {
     }
@@ -42,10 +40,24 @@ public final class Main {
             System.err.println("Usage: output_directory");
             System.exit(1);
         }
-        LogConfig.configureRuntime();
+        configureLogging();
         var outputDir = Paths.get(args[0]).toAbsolutePath().normalize();
         var metadata = CmModel.loadAll(Main.class.getClassLoader());
         var docs = new CmDocCodegen(outputDir, metadata);
         docs.process();
+    }
+
+    private static void configureLogging() {
+        if (System.getProperty("java.util.logging.config.file") == null
+            && System.getProperty("java.util.logging.config.class") == null) {
+
+            try (var is = Main.class.getResourceAsStream("logging.properties")) {
+                if (is != null) {
+                    LogManager.getLogManager().readConfiguration(is);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

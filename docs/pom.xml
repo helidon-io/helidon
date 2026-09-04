@@ -76,10 +76,6 @@
                         <configuration>
                             <commandlineArgs>${project.basedir}/config</commandlineArgs>
                             <mainClass>io.helidon.config.metadata.docs.Main</mainClass>
-                            <classpathFilenameExclusions>
-                                <exclusion>helidon-logging-slf4j-${helidon.version}.jar</exclusion>
-                                <exclusion>helidon-logging-log4j-${helidon.version}.jar</exclusion>
-                            </classpathFilenameExclusions>
                         </configuration>
                     </execution>
                 </executions>
