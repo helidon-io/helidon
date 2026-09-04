@@ -520,7 +520,7 @@ class Http2ConnectionTest {
                                                          List.of(selector));
 
         assertThrows(CloseConnectionException.class,
-                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
+                     () -> connection.handle(mock(Limit.class)));
 
         verify(executor, times(1)).submit(any(Runnable.class));
     }
