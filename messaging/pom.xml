@@ -63,16 +63,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config.metadata</groupId>
-            <artifactId>helidon-config-metadata-model</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config.metadata</groupId>
-            <artifactId>helidon-config-metadata-docs</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

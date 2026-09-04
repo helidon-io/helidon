@@ -58,6 +58,15 @@
 </tr>
 <tr>
 <td>
+<a id="helidon"></a>
+<a href="io.helidon.HelidonConfig.md">
+<code>helidon</code>
+</a>
+</td>
+<td>Configuration for helidon</td>
+</tr>
+<tr>
+<td>
 <a id="metrics"></a>
 <a href="io.helidon.MetricsConfig.md">
 <code>metrics</code>
