@@ -184,6 +184,7 @@
         <module>telemetry</module>
         <module>json</module>
         <module>validation</module>
+        <module>quic</module>
     </modules>
 
     <build>

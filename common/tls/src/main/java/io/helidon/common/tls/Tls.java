@@ -348,12 +348,54 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         return enabled;
     }
 
-    Optional<X509KeyManager> keyManager() {
+    /**
+     * The key manager in use, if available.
+     *
+     * @return key manager, or an empty optional when TLS is disabled or no key manager is configured
+     */
+    @Api.Internal
+    public Optional<X509KeyManager> keyManager() {
+        if (!enabled) {
+            return Optional.empty();
+        }
         return tlsManager.keyManager();
     }
 
-    Optional<X509TrustManager> trustManager() {
+    /**
+     * The trust manager in use, if available.
+     *
+     * @return trust manager, or an empty optional when TLS is disabled or no trust manager is configured
+     */
+    @Api.Internal
+    public Optional<X509TrustManager> trustManager() {
+        if (!enabled) {
+            return Optional.empty();
+        }
         return tlsManager.trustManager();
+    }
+
+    /**
+     * The effective trust manager in use, including the JVM default trust manager when this instance uses the built-in
+     * configured manager without explicit trust material.
+     *
+     * @return effective trust manager, or an empty optional when it cannot be obtained through public JSSE APIs
+     */
+    @Api.Internal
+    public Optional<X509TrustManager> resolvedTrustManager() {
+        if (!enabled) {
+            return Optional.empty();
+        }
+        Optional<X509TrustManager> trustManager = tlsManager.trustManager();
+        if (trustManager.isPresent()) {
+            return trustManager;
+        }
+        if (tlsManager.getClass() == ConfiguredTlsManager.class
+                && tlsConfig.sslContext().isEmpty()
+                && tlsConfig.trust().isEmpty()
+                && !tlsConfig.trustAll()) {
+            return Optional.of(ConfiguredTlsManager.defaultTrustManager());
+        }
+        return Optional.empty();
     }
 
     static void validateReloadSource(Tls tls) {
