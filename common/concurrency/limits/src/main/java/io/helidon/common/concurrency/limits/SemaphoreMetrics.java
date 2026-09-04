@@ -21,7 +21,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -93,31 +92,28 @@ class SemaphoreMetrics {
 
     void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {
         if (semaphore != null) {
-            Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
-                    name + "_queue_length", semaphore::getQueueLength);
-            queueLengthBuilder.tags(tags);
-            meterRegistry.getOrCreate(queueLengthBuilder, SemaphoreMetrics.class.getName());
+            meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(name + "_queue_length", semaphore::getQueueLength)
+                                              .tags(tags)
+                                              .origin(SemaphoreMetrics.class.getName()));
         }
 
-        Gauge.Builder<Integer> concurrentRequestsBuilder = metricsFactory.gaugeBuilder(
-                name + "_concurrent_requests", concurrentRequests::get);
-        concurrentRequestsBuilder.tags(tags);
-        meterRegistry.getOrCreate(concurrentRequestsBuilder, SemaphoreMetrics.class.getName());
+        meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(name + "_concurrent_requests", concurrentRequests::get)
+                                          .tags(tags)
+                                          .origin(SemaphoreMetrics.class.getName()));
 
-        Gauge.Builder<Integer> rejectedRequestsBuilder = metricsFactory.gaugeBuilder(
-                name + "_rejected_requests", rejectedRequests::get);
-        rejectedRequestsBuilder.tags(tags);
-        meterRegistry.getOrCreate(rejectedRequestsBuilder, SemaphoreMetrics.class.getName());
+        meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(name + "_rejected_requests", rejectedRequests::get)
+                                          .tags(tags)
+                                          .origin(SemaphoreMetrics.class.getName()));
 
-        Timer.Builder rttTimerBuilder = metricsFactory.timerBuilder(name + "_rtt")
-                .baseUnit(Timer.BaseUnits.MILLISECONDS);
-        rttTimerBuilder.tags(tags);
-        rttTimer = meterRegistry.getOrCreate(rttTimerBuilder, SemaphoreMetrics.class.getName());
+        rttTimer = meterRegistry.getOrCreate(metricsFactory.timerBuilder(name + "_rtt")
+                                                     .baseUnit(Timer.BaseUnits.MILLISECONDS)
+                                                     .tags(tags)
+                                                     .origin(SemaphoreMetrics.class.getName()));
 
-        Timer.Builder waitTimerBuilder = metricsFactory.timerBuilder(name + "_queue_wait_time")
-                .baseUnit(Timer.BaseUnits.MILLISECONDS);
-        waitTimerBuilder.tags(tags);
-        queueWaitTimer = meterRegistry.getOrCreate(waitTimerBuilder, SemaphoreMetrics.class.getName());
+        queueWaitTimer = meterRegistry.getOrCreate(metricsFactory.timerBuilder(name + "_queue_wait_time")
+                                                           .baseUnit(Timer.BaseUnits.MILLISECONDS)
+                                                           .tags(tags)
+                                                           .origin(SemaphoreMetrics.class.getName()));
     }
 
     /**

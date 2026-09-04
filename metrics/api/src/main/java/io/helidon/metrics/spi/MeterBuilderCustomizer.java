@@ -15,38 +15,22 @@
  */
 package io.helidon.metrics.spi;
 
-import java.util.Objects;
-
 import io.helidon.metrics.api.Meter;
 
 /**
- * Customizes meter builders before a meter registry uses them to locate or create meters.
+ * Customizes meter builders before a meter registry uses them to locate or create meters. A customizer can inspect
+ * {@link io.helidon.metrics.api.Meter.Builder#origin()} for the originating type name, when available.
  *
  * @since 27.0.0
  */
+@FunctionalInterface
 public interface MeterBuilderCustomizer {
 
     /**
      * Customizes a meter builder.
      *
-     * @param builder meter builder to customize
+     * @param builder meter builder to customize; must not be {@code null}
      * @since 27.0.0
      */
-    default void customize(Meter.Builder<?, ?> builder) {
-        Objects.requireNonNull(builder);
-    }
-
-    /**
-     * Customizes a meter builder on behalf of the originating component.
-     * <p>
-     * The default implementation delegates to {@link #customize(Meter.Builder)}.
-     *
-     * @param builder meter builder to customize
-     * @param origin fully-qualified name of the type which originated the meter
-     * @since 27.0.0
-     */
-    default void customize(Meter.Builder<?, ?> builder, String origin) {
-        Objects.requireNonNull(origin);
-        customize(builder);
-    }
+    void customize(Meter.Builder<?, ?> builder);
 }

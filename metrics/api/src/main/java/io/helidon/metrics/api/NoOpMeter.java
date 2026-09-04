@@ -150,6 +150,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
         private final Type type;
         private String description;
         private String unit;
+        private String origin;
 
         private Builder(String name, Type type) {
             this.name = name;
@@ -178,6 +179,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
             return identity();
         }
 
+        public B origin(String origin) {
+            this.origin = Objects.requireNonNull(origin);
+            return identity();
+        }
+
         public B identity() {
             return (B) this;
         }
@@ -196,6 +202,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         public Optional<String> description() {
             return Optional.ofNullable(description);
+        }
+
+        public Optional<String> origin() {
+            return Optional.ofNullable(origin);
         }
 
         @Override

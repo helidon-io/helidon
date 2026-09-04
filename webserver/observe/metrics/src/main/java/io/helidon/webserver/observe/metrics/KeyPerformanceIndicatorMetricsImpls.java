@@ -115,8 +115,8 @@ class KeyPerformanceIndicatorMetricsImpls {
             totalCount = add(kpiMeterRegistry.getOrCreate(
                     metricsFactory.counterBuilder(meterNamePrefix + meterName(REQUESTS_COUNT_NAME))
                             .description(
-                                    "Each request (regardless of HTTP method) will increase this counter"),
-                    KeyPerformanceIndicatorMetricsImpls.class.getName()));
+                                    "Each request (regardless of HTTP method) will increase this counter")
+                            .origin(KeyPerformanceIndicatorMetricsImpls.class.getName())));
         }
 
         @Override
@@ -190,24 +190,26 @@ class KeyPerformanceIndicatorMetricsImpls {
                     metricsFactory.gaugeBuilder(meterNamePrefix + meterName(INFLIGHT_REQUESTS_NAME),
                                   inflightRequestsCount,
                                   AtomicInteger::get)
-                            .description("Measures the number of requests currently being processed"),
-                    KeyPerformanceIndicatorMetricsImpls.class.getName()));
+                            .description("Measures the number of requests currently being processed")
+                            .origin(KeyPerformanceIndicatorMetricsImpls.class.getName())));
 
             longRunningRequests = add(kpiMeterRegistry.getOrCreate(
                     metricsFactory.counterBuilder(meterNamePrefix + meterName(LONG_RUNNING_REQUESTS_NAME))
-                            .description("Measures the total number of long-running requests and rates at which they occur"),
-                    KeyPerformanceIndicatorMetricsImpls.class.getName()));
+                            .description(
+                                    "Measures the total number of long-running requests and rates at which they occur")
+                            .origin(KeyPerformanceIndicatorMetricsImpls.class.getName())));
 
             load = add(kpiMeterRegistry.getOrCreate(metricsFactory.counterBuilder(meterNamePrefix + meterName(LOAD_NAME))
-                                                            .description(LOAD_DESCRIPTION),
-                                                    KeyPerformanceIndicatorMetricsImpls.class.getName()));
+                                                            .description(LOAD_DESCRIPTION)
+                                                            .origin(
+                                                                    KeyPerformanceIndicatorMetricsImpls.class.getName())));
 
             deferredRequests = new DeferredRequests();
             add(kpiMeterRegistry.getOrCreate(metricsFactory.gaugeBuilder(meterNamePrefix + meterName(DEFERRED_NAME),
                                                            deferredRequests,
                                                            DeferredRequests::value)
-                                                     .description("Measures deferred requests"),
-                                             KeyPerformanceIndicatorMetricsImpls.class.getName()));
+                                                     .description("Measures deferred requests")
+                                                     .origin(KeyPerformanceIndicatorMetricsImpls.class.getName())));
         }
 
         @Override

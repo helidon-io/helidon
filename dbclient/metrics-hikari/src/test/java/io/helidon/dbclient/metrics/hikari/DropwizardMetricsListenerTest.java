@@ -44,9 +44,9 @@ class DropwizardMetricsListenerTest {
         List<String> origins = new ArrayList<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, String origin) {
+            public void customize(Meter.Builder<?, ?> builder) {
                 if (builder.name().startsWith(PREFIX)) {
-                    origins.add(origin);
+                    builder.origin().ifPresent(origins::add);
                     builder.addTag(CUSTOM_TAG);
                 }
             }

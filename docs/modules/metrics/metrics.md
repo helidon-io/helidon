@@ -670,16 +670,15 @@ An integration which needs equivalent classification can implement it using
 ordinary meter tags:
 
 1. Choose an integration-owned tag name and values.
-2. Provide a [`MeterBuilderCustomizer`][meter-builder-customizer] service. Use
-   `customize(Meter.Builder)` for meters registered without origin information.
-   Override `customize(Meter.Builder, String)` to select a tag value based on
-   the fully-qualified name of the type which originated a meter. Helidon
-   supplies the provider class name automatically for meters contributed by a
-   `MetersProvider`.
+2. Provide a [`MeterBuilderCustomizer`][meter-builder-customizer] service.
+   Override `customize(Meter.Builder)` and inspect `Meter.Builder.origin()` to
+   select a tag value based on the fully-qualified name of the type which
+   originated a meter. Helidon supplies the provider class name automatically
+   for meters contributed by a `MetersProvider`.
 3. Create the tag using `MetricsFactory.tagCreate` and add it to the builder
-   before registration. For other origin-aware registrations, use
-   `MeterRegistry.getOrCreate(builder, origin)`. Do not use the deprecated scope
-   methods.
+   before registration. Other meter producers can provide origin information
+   using `Meter.Builder.origin(String)` and then register the builder using
+   `MeterRegistry.getOrCreate(builder)`. Do not use the deprecated scope methods.
 4. Translate any integration-specific selection into a tag-selection map and
    pass it to the provider-neutral
    [`MeterRegistryFormatterProvider.formatter`][formatter-provider] overload.

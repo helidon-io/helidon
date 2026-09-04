@@ -140,20 +140,20 @@ class MetricsFactoryFactoryTest {
     }
 
     @Test
-    void noOpRegistryAppliesMeterBuilderCustomizersOnceUsingRegistrationOrigin() {
+    void noOpRegistryAppliesMeterBuilderCustomizersOnceUsingBuilderOrigin() {
         AtomicInteger basicCustomizationCount = new AtomicInteger();
         AtomicInteger originCustomizationCount = new AtomicInteger();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
             public void customize(Meter.Builder<?, ?> builder) {
-                basicCustomizationCount.incrementAndGet();
-                builder.addTag(new NoOpTag("customized", "basic"));
-            }
-
-            @Override
-            public void customize(Meter.Builder<?, ?> builder, String origin) {
-                originCustomizationCount.incrementAndGet();
-                builder.addTag(new NoOpTag("origin", origin));
+                var origin = builder.origin();
+                if (origin.isPresent()) {
+                    originCustomizationCount.incrementAndGet();
+                    builder.addTag(new NoOpTag("origin", origin.get()));
+                } else {
+                    basicCustomizationCount.incrementAndGet();
+                    builder.addTag(new NoOpTag("customized", "basic"));
+                }
             }
         };
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
@@ -167,10 +167,10 @@ class MetricsFactoryFactoryTest {
             MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
 
             Counter basicCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("customized-counter"));
-            Counter firstOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("same-counter"),
-                                                                   FirstOrigin.class.getName());
-            Counter secondOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("same-counter"),
-                                                                    SecondOrigin.class.getName());
+            Counter firstOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("same-counter")
+                                                                           .origin(FirstOrigin.class.getName()));
+            Counter secondOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("same-counter")
+                                                                            .origin(SecondOrigin.class.getName()));
 
             assertThat("Basic customization count", basicCustomizationCount.get(), is(1));
             assertThat("Origin customization count", originCustomizationCount.get(), is(2));
@@ -183,41 +183,27 @@ class MetricsFactoryFactoryTest {
     }
 
     @Test
-    void noOpRegistryRejectsNullRegistrationOrigin() {
+    void noOpBuilderRejectsNullOrigin() {
         MetricsFactory metricsFactory = new NoOpMetricsFactory();
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
 
-        assertThrows(NullPointerException.class,
-                     () -> meterRegistry.getOrCreate(metricsFactory.counterBuilder("test"), null));
+        assertThrows(NullPointerException.class, () -> metricsFactory.counterBuilder("test").origin(null));
     }
 
     @Test
-    void originAwareRegistrationFallsBackForLegacyRegistry() {
-        AtomicInteger legacyInvocationCount = new AtomicInteger();
-        MetricsFactory noOpMetricsFactory = new NoOpMetricsFactory();
-        MeterRegistry noOpMeterRegistry = noOpMetricsFactory.createMeterRegistry(MetricsConfig.create());
-        Counter expected = noOpMeterRegistry.getOrCreate(noOpMetricsFactory.counterBuilder("expected"));
-        MeterRegistry legacyRegistry = (MeterRegistry) Proxy.newProxyInstance(
-                MeterRegistry.class.getClassLoader(),
-                new Class<?>[] {MeterRegistry.class},
+    void originDefaultsPreserveLegacyBuilderCompatibility() {
+        Counter.Builder legacyBuilder = (Counter.Builder) Proxy.newProxyInstance(
+                Counter.Builder.class.getClassLoader(),
+                new Class<?>[] {Counter.Builder.class},
                 (proxy, method, args) -> {
                     if (method.isDefault()) {
                         return InvocationHandler.invokeDefault(proxy, method, args);
                     }
-                    if (method.getName().equals("getOrCreate") && method.getParameterCount() == 1) {
-                        legacyInvocationCount.incrementAndGet();
-                        return expected;
-                    }
                     throw new UnsupportedOperationException(method.toString());
                 });
 
-        Counter result = legacyRegistry.getOrCreate(noOpMetricsFactory.counterBuilder("test"), FirstOrigin.class.getName());
-
-        assertThat(result, sameInstance(expected));
-        assertThat(legacyInvocationCount.get(), is(1));
-        assertThrows(NullPointerException.class,
-                     () -> legacyRegistry.getOrCreate(noOpMetricsFactory.counterBuilder("test"), null));
-        assertThat("Null origin does not invoke legacy registration", legacyInvocationCount.get(), is(1));
+        assertThat(legacyBuilder.origin("ignored"), sameInstance(legacyBuilder));
+        assertThat(legacyBuilder.origin(), is(Optional.empty()));
+        assertThrows(NullPointerException.class, () -> legacyBuilder.origin(null));
     }
 
     @Test

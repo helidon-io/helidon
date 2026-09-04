@@ -179,6 +179,23 @@ public interface Meter extends Wrapper {
         }
 
         /**
+         * Sets the fully-qualified name of the type which originated the meter. The origin is context for
+         * {@link io.helidon.metrics.spi.MeterBuilderCustomizer meter builder customization}; it is not part of the meter
+         * identity or output.
+         * <p>
+         * The default implementation validates but does not retain the origin for compatibility with existing builder
+         * implementations.
+         *
+         * @param origin fully-qualified name of the type which originated the meter
+         * @return updated builder
+         * @since 27.0.0
+         */
+        default B origin(String origin) {
+            Objects.requireNonNull(origin);
+            return identity();
+        }
+
+        /**
          * Returns the name the builder will use.
          *
          * @return name
@@ -205,6 +222,19 @@ public interface Meter extends Wrapper {
          * @return base unit if set; empty otherwise
          */
         Optional<String> baseUnit();
+
+        /**
+         * Returns the fully-qualified name of the type which originated the meter, if set.
+         * <p>
+         * The origin is customization context and is not part of the meter identity or output. The default implementation
+         * returns empty for compatibility with existing builder implementations.
+         *
+         * @return originating type name, if set
+         * @since 27.0.0
+         */
+        default Optional<String> origin() {
+            return Optional.empty();
+        }
 
         /**
          * Always returns empty because core metrics does not assign scopes.

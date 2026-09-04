@@ -162,26 +162,6 @@ public interface MeterRegistry extends Wrapper {
     <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder);
 
     /**
-     * Locates or creates a meter using the originating type name as provider-neutral context for meter builder
-     * customization.
-     * <p>
-     * The default implementation delegates to {@link #getOrCreate(Meter.Builder)} for compatibility with existing meter
-     * registry implementations.
-     *
-     * @param builder builder to use in finding or creating a meter
-     * @param origin  fully-qualified name of the type which originated the meter
-     * @param <B>     builder for the meter
-     * @param <M>     type of the meter
-     * @return the previously-registered meter with the same name and tags or, if none, the newly-registered one
-     * @since 27.0.0
-     */
-    default <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, String origin) {
-        Objects.requireNonNull(builder);
-        Objects.requireNonNull(origin);
-        return getOrCreate(builder);
-    }
-
-    /**
      * Locates a previously-registered counter.
      *
      * @param name name to match
