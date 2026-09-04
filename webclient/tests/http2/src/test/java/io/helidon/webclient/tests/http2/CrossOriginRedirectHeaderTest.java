@@ -77,6 +77,7 @@ class CrossOriginRedirectHeaderTest {
     private static final AtomicReference<String> CROSS_ORIGIN_BODY_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<String> CROSS_ORIGIN_PROTOCOL_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<Boolean> CROSS_ORIGIN_EXPECT_CAPTURE = new AtomicReference<>();
+    private static final AtomicReference<String> CROSS_ORIGIN_AUTHORITY_CAPTURE = new AtomicReference<>();
 
     private static WebServer trustedServer;
     private static WebServer redirectTargetServer;
@@ -95,6 +96,7 @@ class CrossOriginRedirectHeaderTest {
                     CROSS_ORIGIN_CAPTURE.set(capturedHeaders(req));
                     CROSS_ORIGIN_PROTOCOL_CAPTURE.set(req.prologue().protocolVersion());
                     CROSS_ORIGIN_EXPECT_CAPTURE.set(req.headers().contains(HeaderNames.EXPECT));
+                    CROSS_ORIGIN_AUTHORITY_CAPTURE.set(req.requestedUri().authority());
                     try (InputStream inputStream = req.content().inputStream()) {
                         CROSS_ORIGIN_BODY_CAPTURE.set(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
                         res.send("captured");
@@ -175,6 +177,7 @@ class CrossOriginRedirectHeaderTest {
         CROSS_ORIGIN_BODY_CAPTURE.set(null);
         CROSS_ORIGIN_PROTOCOL_CAPTURE.set(null);
         CROSS_ORIGIN_EXPECT_CAPTURE.set(null);
+        CROSS_ORIGIN_AUTHORITY_CAPTURE.set(null);
     }
 
     @Test
@@ -792,6 +795,18 @@ class CrossOriginRedirectHeaderTest {
     @Test
     void followsCrossOrigin308WithEntityWhenEnabled() {
         followsCrossOriginRedirectWithEntityWhenEnabled("/redirect/cross-origin-keep-method-308");
+    }
+
+    @Test
+    void redirectRegeneratesAuthorityForTarget() {
+        try (Http2ClientResponse response = newClient()
+                .put("/redirect/cross-origin-keep-method")
+                .header(io.helidon.http.http2.Http2Headers.AUTHORITY_NAME, "stale.example")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        assertThat(CROSS_ORIGIN_AUTHORITY_CAPTURE.get(), is("localhost:" + redirectTargetServer.port()));
     }
 
     private static Http2Client newClient() {

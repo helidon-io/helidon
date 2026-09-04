@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
+import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
@@ -123,6 +124,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
             headers(request.headers());
             headers().remove(HeaderNames.HOST);
             headers().remove(HeaderNames.COOKIE);
+            headers().remove(Http2Headers.AUTHORITY_NAME);
         }
     }
 
