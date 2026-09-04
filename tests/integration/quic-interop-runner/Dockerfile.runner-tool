@@ -1,0 +1,123 @@
+#
+# Copyright (c) 2026 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+FROM docker:27.5.1-dind@sha256:aa3df78ecf320f5fafdce71c659f1629e96e9de0968305fe1de670e0ca9176ce AS runner-tool-sbom
+
+ENV DOCKER_HOST="unix:///var/run/docker.sock"
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
+CMD ["dockerd", "--host=unix:///var/run/docker.sock"]
+
+COPY apk.runner-tool.requirements /tmp/apk.runner-tool.requirements
+COPY apk.runner-tool.aarch64.lock /tmp/apk.runner-tool.aarch64.lock
+COPY apk.runner-tool.x86_64.lock /tmp/apk.runner-tool.x86_64.lock
+COPY runner_tool_apk_lock.sh /tmp/runner_tool_apk_lock.sh
+
+RUN sh /tmp/runner_tool_apk_lock.sh \
+        verify-install \
+        /tmp/apk.runner-tool.requirements \
+        /tmp && \
+    rm \
+        /tmp/apk.runner-tool.requirements \
+        /tmp/apk.runner-tool.aarch64.lock \
+        /tmp/apk.runner-tool.x86_64.lock \
+        /tmp/runner_tool_apk_lock.sh
+
+RUN mkdir -p /opt/quic-interop-runner && \
+    curl -fsSL \
+        -o /tmp/quic-interop-runner.tar.gz \
+        https://github.com/quic-interop/quic-interop-runner/archive/97319f8c0be2bc0be67b025522a64c9231018d37.tar.gz && \
+    echo "6c8f4f0dfdbb9f97182e321c9dff192520b0e372600f7d4379880f8916a44129  /tmp/quic-interop-runner.tar.gz" \
+        | sha256sum -c - && \
+    tar -xzf /tmp/quic-interop-runner.tar.gz --strip-components=1 -C /opt/quic-interop-runner && \
+    rm /tmp/quic-interop-runner.tar.gz
+
+COPY requirements.runner-tool.lock /tmp/requirements.runner-tool.lock
+
+RUN pip3 install \
+        --no-cache-dir \
+        --only-binary=:all: \
+        --require-hashes \
+        -r /tmp/requirements.runner-tool.lock && \
+    rm /tmp/requirements.runner-tool.lock && \
+    chmod +x /opt/quic-interop-runner/certs.sh
+
+COPY adapt_runner_tool.py /tmp/adapt_runner_tool.py
+
+RUN python3 /tmp/adapt_runner_tool.py && \
+    rm /tmp/adapt_runner_tool.py
+
+WORKDIR /opt/quic-interop-runner
+
+COPY Dockerfile /workspace/Dockerfile
+COPY run_endpoint.sh /workspace/run_endpoint.sh
+COPY target/helidon-tests-integration-quic-interop-runner.jar /workspace/target/helidon-tests-integration-quic-interop-runner.jar
+COPY target/libs/ /workspace/target/libs/
+COPY runner_tool_sbom.py /tmp/runner_tool_sbom.py
+
+RUN set -eux; \
+    case "$(apk --print-arch)" in \
+        x86_64) \
+            syft_arch=amd64; \
+            syft_sha256=0e91737aee2b5baf1d255b959630194a302335d848ff97bb07921eb6205b5f5a; \
+            ;; \
+        aarch64) \
+            syft_arch=arm64; \
+            syft_sha256=6f6cdcdc695721d91ce756e3b5bc3e3416599c464101f5e32e9c3f33054ee6d9; \
+            ;; \
+        *) \
+            echo >&2 "Unsupported runner-tool architecture: $(apk --print-arch)"; \
+            exit 1; \
+            ;; \
+    esac; \
+    syft_archive="/tmp/syft_1.44.0_linux_${syft_arch}.tar.gz"; \
+    curl -fsSL \
+        -o "${syft_archive}" \
+        "https://github.com/anchore/syft/releases/download/v1.44.0/syft_1.44.0_linux_${syft_arch}.tar.gz"; \
+    echo "${syft_sha256}  ${syft_archive}" | sha256sum -c -; \
+    tar -xzf "${syft_archive}" -C /tmp syft; \
+    rm "${syft_archive}"; \
+    mkdir -p /usr/share/helidon/sbom; \
+    SYFT_CHECK_FOR_APP_UPDATE=false SYFT_FORMAT_PRETTY=true \
+        /tmp/syft scan dir:/ \
+        --exclude ./dev \
+        --exclude ./proc \
+        --exclude ./run \
+        --exclude ./sys \
+        --exclude ./tmp/runner_tool_sbom.py \
+        --exclude ./tmp/syft \
+        --exclude ./tmp/quic-interop-runner-tool.spdx.json \
+        --output spdx-json=/tmp/quic-interop-runner-tool.spdx.json; \
+    grep -q '"spdxVersion": "SPDX-2.3"' \
+        /tmp/quic-interop-runner-tool.spdx.json; \
+    grep -q '"name": "pycryptodome"' \
+        /tmp/quic-interop-runner-tool.spdx.json; \
+    mv /tmp/quic-interop-runner-tool.spdx.json \
+        /usr/share/helidon/sbom/quic-interop-runner-tool.spdx.json; \
+    python3 /tmp/runner_tool_sbom.py \
+        /usr/share/helidon/sbom/quic-interop-runner-tool.spdx.json \
+        /usr/share/helidon/sbom/quic-interop-runner-tool.packages.json; \
+    rm /tmp/runner_tool_sbom.py; \
+    rm /tmp/syft
+
+FROM runner-tool-sbom AS runner-tool
+
+COPY sbom.runner-tool.lock.json /tmp/sbom.runner-tool.lock.json
+
+RUN cmp \
+        /tmp/sbom.runner-tool.lock.json \
+        /usr/share/helidon/sbom/quic-interop-runner-tool.packages.json && \
+    rm /tmp/sbom.runner-tool.lock.json
