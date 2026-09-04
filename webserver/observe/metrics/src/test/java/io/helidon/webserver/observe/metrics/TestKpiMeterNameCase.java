@@ -188,8 +188,8 @@ class TestKpiMeterNameCase {
         AtomicReference<MetricsFactory> metricsFactoryRef = new AtomicReference<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
-                if (origin == KeyPerformanceIndicatorMetricsImpls.class) {
+            public void customize(Meter.Builder<?, ?> builder, String origin) {
+                if (origin.equals(KeyPerformanceIndicatorMetricsImpls.class.getName())) {
                     builder.addTag(metricsFactoryRef.get().tagCreate("metric-origin", "kpi"));
                 }
             }

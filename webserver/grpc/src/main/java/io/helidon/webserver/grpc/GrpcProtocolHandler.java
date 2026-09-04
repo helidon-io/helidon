@@ -789,24 +789,26 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             Counter.Builder callStartedBuilder = metricsFactory.counterBuilder("grpc.server.call.started")
                     .tags(List.of(grpcMethod));
-            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder, GrpcRouting.class);
+            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder, GrpcRouting.class.getName());
 
             Timer.Builder callDurationOkBuilder = metricsFactory.timerBuilder("grpc.server.call.duration")
                     .baseUnit(Timer.BaseUnits.MILLISECONDS)
                     .tags(List.of(grpcMethod, okTag));
-            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder, GrpcRouting.class);
+            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder, GrpcRouting.class.getName());
 
             DistributionSummary.Builder sendMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
                             "grpc.server.call.sent_total_compressed_message_size",
                             metricsFactory.distributionStatisticsConfigBuilder())
                     .tags(List.of(grpcMethod, okTag));
-            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder, GrpcRouting.class);
+            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder,
+                                                                             GrpcRouting.class.getName());
 
             DistributionSummary.Builder recvMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
                             "grpc.server.call.rcvd_total_compressed_message_size",
                             metricsFactory.distributionStatisticsConfigBuilder())
                     .tags(List.of(grpcMethod, okTag));
-            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder, GrpcRouting.class);
+            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder,
+                                                                             GrpcRouting.class.getName());
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });

@@ -36,10 +36,10 @@ class MetricOriginTest {
 
     @Test
     void usesStableDbClientOriginForMetadataMeters() {
-        List<Class<?>> origins = new ArrayList<>();
+        List<String> origins = new ArrayList<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
+            public void customize(Meter.Builder<?, ?> builder, String origin) {
                 if (TEST_METER_NAMES.contains(builder.name())) {
                     origins.add(origin);
                 }
@@ -58,7 +58,7 @@ class MetricOriginTest {
             MetricTimer timer = MetricTimer.builder().build();
             timer.metric(registry, MeterMetadata.builder().name("test-timer").build());
 
-            assertThat(origins, contains(DbClientMetrics.class, DbClientMetrics.class));
+            assertThat(origins, contains(DbClientMetrics.class.getName(), DbClientMetrics.class.getName()));
         } finally {
             manager.shutdown();
         }

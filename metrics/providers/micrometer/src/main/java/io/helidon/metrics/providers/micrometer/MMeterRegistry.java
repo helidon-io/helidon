@@ -278,12 +278,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    public Iterable<String> scopes() {
-        return List.of();
-    }
-
-    @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags) {
         /*
         This method uses only config, not any mutable data structures, so no need to lock.
@@ -291,13 +285,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         Objects.requireNonNull(name);
         Objects.requireNonNull(tags);
         return metricsConfig.isMeterEnabled(name);
-    }
-
-    @Override
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> ignoredScope) {
-        Objects.requireNonNull(ignoredScope);
-        return isMeterEnabled(name, tags);
     }
 
     @Override
@@ -315,7 +302,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
-            HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder, Class<?> origin) {
+            HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder, String origin) {
         Objects.requireNonNull(builder);
         Objects.requireNonNull(origin);
         metricsFactory.customize(builder, origin);
@@ -371,20 +358,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    public Optional<io.helidon.metrics.api.Meter> remove(io.helidon.metrics.api.Meter.Id id, String ignoredScope) {
-        Objects.requireNonNull(ignoredScope);
-        return internalRemove(id);
-    }
-
-    @Override
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    public Optional<io.helidon.metrics.api.Meter> remove(String name, Iterable<Tag> tags, String ignoredScope) {
-        Objects.requireNonNull(ignoredScope);
-        return internalRemove(MMeter.PlainId.create(name, tags));
-    }
-
-    @Override
     public boolean isDeleted(io.helidon.metrics.api.Meter meter) {
         return meter instanceof MMeter<?> helidonMeter && helidonMeter.isDeleted();
     }
@@ -396,13 +369,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     io.micrometer.core.instrument.MeterRegistry delegate() {
         return delegate;
-    }
-
-    @Override
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    public Iterable<io.helidon.metrics.api.Meter> meters(Iterable<String> ignoredScopeSelection) {
-        Objects.requireNonNull(ignoredScopeSelection);
-        return meters();
     }
 
     @Override

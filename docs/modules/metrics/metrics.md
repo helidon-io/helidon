@@ -672,9 +672,10 @@ ordinary meter tags:
 1. Choose an integration-owned tag name and values.
 2. Provide a [`MeterBuilderCustomizer`][meter-builder-customizer] service. Use
    `customize(Meter.Builder)` for meters registered without origin information.
-   Override `customize(Meter.Builder, Class<?>)` to select a tag value based on
-   the component which originated a meter. Helidon supplies the provider class
-   automatically for meters contributed by a `MetersProvider`.
+   Override `customize(Meter.Builder, String)` to select a tag value based on
+   the fully-qualified name of the type which originated a meter. Helidon
+   supplies the provider class name automatically for meters contributed by a
+   `MetersProvider`.
 3. Create the tag using `MetricsFactory.tagCreate` and add it to the builder
    before registration. For other origin-aware registrations, use
    `MeterRegistry.getOrCreate(builder, origin)`. Do not use the deprecated scope

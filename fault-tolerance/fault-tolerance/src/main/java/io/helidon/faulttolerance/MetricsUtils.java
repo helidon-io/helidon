@@ -71,21 +71,21 @@ class MetricsUtils {
         Gauge.Builder<T> builder = metricsFactory.gaugeBuilder(name, supplier);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        meterRegistry.getOrCreate(builder, FaultTolerance.class);
+        meterRegistry.getOrCreate(builder, FaultTolerance.class.getName());
     }
 
     static Counter counterBuilder(MetricsFactory metricsFactory, MeterRegistry meterRegistry, String name, Tag... tags) {
         Counter.Builder builder = metricsFactory.counterBuilder(name);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        return meterRegistry.getOrCreate(builder, FaultTolerance.class);
+        return meterRegistry.getOrCreate(builder, FaultTolerance.class.getName());
     }
 
     static Timer timerBuilder(MetricsFactory metricsFactory, MeterRegistry meterRegistry, String name, Tag... tags) {
         Timer.Builder builder = metricsFactory.timerBuilder(name);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        return meterRegistry.getOrCreate(builder, FaultTolerance.class);
+        return meterRegistry.getOrCreate(builder, FaultTolerance.class.getName());
     }
 
 }

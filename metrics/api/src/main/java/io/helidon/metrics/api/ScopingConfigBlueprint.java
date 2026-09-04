@@ -22,9 +22,9 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * No-op, will be removed.
+ * Scoping configuration retained for compatibility; core metrics ignores its settings.
  *
- * @deprecated No-op, will be removed.
+ * @deprecated Core metrics ignores these settings, and this type will be removed.
  */
 @Deprecated(forRemoval = true, since = "27.0.0")
 @Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
@@ -33,18 +33,18 @@ import io.helidon.builder.api.Prototype;
 interface ScopingConfigBlueprint {
 
     /**
-     * No-op, will be removed.
+     * Legacy scope tag name retained for compatibility.
      *
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics ignores scope tag names, and this constant will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     String SCOPE_TAG_NAME_DEFAULT = "scope";
 
     /**
-     * No-op, will be removed.
+     * Returns the configured default scope value.
      *
-     * @return ignored value
-     * @deprecated No-op, will be removed.
+     * @return configured default scope value
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured("default")
@@ -52,10 +52,10 @@ interface ScopingConfigBlueprint {
     Optional<String> defaultValue();
 
     /**
-     * No-op, will be removed.
+     * Returns the configured scope tag name.
      *
-     * @return ignored value
-     * @deprecated No-op, will be removed.
+     * @return configured scope tag name
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
@@ -63,10 +63,10 @@ interface ScopingConfigBlueprint {
     Optional<String> tagName();
 
     /**
-     * No-op, will be removed.
+     * Returns the configured settings for individual scopes.
      *
-     * @return ignored settings
-     * @deprecated No-op, will be removed.
+     * @return configured scope settings
+     * @deprecated Core metrics ignores these settings, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured

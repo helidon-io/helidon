@@ -56,10 +56,10 @@ public interface Meter extends Wrapper {
     Type type();
 
     /**
-     * No-op, will be removed.
+     * Always returns empty because core metrics does not assign scopes.
      *
      * @return empty
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics does not assign scopes, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<String> scope() {
@@ -207,10 +207,10 @@ public interface Meter extends Wrapper {
         Optional<String> baseUnit();
 
         /**
-         * No-op, will be removed.
+         * Always returns empty because core metrics does not assign scopes.
          *
          * @return empty
-         * @deprecated No-op, will be removed.
+         * @deprecated Core metrics does not assign scopes, and this method will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         default Optional<String> scope() {
@@ -263,49 +263,49 @@ public interface Meter extends Wrapper {
     }
 
     /**
-     * No-op, will be removed.
+     * Legacy scope constants retained for compatibility.
      *
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics ignores scope values, and this type will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     class Scope {
 
         /**
-         * No-op, will be removed.
+         * Legacy application scope value retained for compatibility.
          *
-         * @deprecated No-op, will be removed.
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String APPLICATION = "application";
 
         /**
-         * No-op, will be removed.
+         * Legacy base scope value retained for compatibility.
          *
-         * @deprecated No-op, will be removed.
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String BASE = "base";
 
         /**
-         * No-op, will be removed.
+         * Legacy vendor scope value retained for compatibility.
          *
-         * @deprecated No-op, will be removed.
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String VENDOR = "vendor";
 
         /**
-         * No-op, will be removed.
+         * Legacy built-in scope values retained for compatibility.
          *
-         * @deprecated No-op, will be removed.
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         public static final Set<String> BUILT_IN_SCOPES = Set.of(BASE, VENDOR, APPLICATION);
 
         /**
-         * No-op, will be removed.
+         * Legacy default scope value retained for compatibility.
          *
-         * @deprecated No-op, will be removed.
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String DEFAULT = APPLICATION;

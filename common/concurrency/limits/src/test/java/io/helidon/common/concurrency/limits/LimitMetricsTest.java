@@ -193,9 +193,9 @@ class LimitMetricsTest {
         AtomicReference<MetricsFactory> metricsFactoryRef = new AtomicReference<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
-                if (origin == SemaphoreMetrics.class || origin == AimdMetrics.class) {
-                    builder.addTag(metricsFactoryRef.get().tagCreate("metric-origin", origin.getSimpleName()));
+            public void customize(Meter.Builder<?, ?> builder, String origin) {
+                if (origin.equals(SemaphoreMetrics.class.getName()) || origin.equals(AimdMetrics.class.getName())) {
+                    builder.addTag(metricsFactoryRef.get().tagCreate("metric-origin", origin));
                 }
             }
         };
@@ -216,8 +216,8 @@ class LimitMetricsTest {
 
             metrics.register(metricsFactory, meterRegistry, List.of());
 
-            Tag semaphoreOrigin = metricsFactory.tagCreate("metric-origin", SemaphoreMetrics.class.getSimpleName());
-            Tag aimdOrigin = metricsFactory.tagCreate("metric-origin", AimdMetrics.class.getSimpleName());
+            Tag semaphoreOrigin = metricsFactory.tagCreate("metric-origin", SemaphoreMetrics.class.getName());
+            Tag aimdOrigin = metricsFactory.tagCreate("metric-origin", AimdMetrics.class.getName());
             assertThat("Semaphore meter uses the semaphore origin",
                        hasMeter(meterRegistry,
                                 Meter.Type.GAUGE,

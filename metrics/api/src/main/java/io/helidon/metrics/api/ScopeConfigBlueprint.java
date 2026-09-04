@@ -23,9 +23,9 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * No-op, will be removed.
+ * Scope configuration retained for compatibility; core metrics ignores its settings.
  *
- * @deprecated No-op, will be removed.
+ * @deprecated Core metrics ignores these settings, and this type will be removed.
  */
 @Deprecated(forRemoval = true, since = "27.0.0")
 @Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
@@ -35,20 +35,20 @@ import io.helidon.builder.api.Prototype;
 interface ScopeConfigBlueprint {
 
     /**
-     * No-op, will be removed.
+     * Returns the configured scope name.
      *
-     * @return ignored value
-     * @deprecated No-op, will be removed.
+     * @return configured scope name
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
     String name();
 
     /**
-     * No-op, will be removed.
+     * Returns whether the scope is configured as enabled.
      *
-     * @return ignored value
-     * @deprecated No-op, will be removed.
+     * @return configured value
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
@@ -56,31 +56,31 @@ interface ScopeConfigBlueprint {
     boolean enabled();
 
     /**
-     * No-op, will be removed.
+     * Returns the configured meter-name inclusion pattern.
      *
-     * @return ignored value
-     * @deprecated No-op, will be removed.
+     * @return configured inclusion pattern
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured("filter.include")
     Optional<Pattern> include();
 
     /**
-     * No-op, will be removed.
+     * Returns the configured meter-name exclusion pattern.
      *
-     * @return ignored value
-     * @deprecated No-op, will be removed.
+     * @return configured exclusion pattern
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured("filter.exclude")
     Optional<Pattern> exclude();
 
     /**
-     * No-op, will be removed.
+     * Always returns {@code true} because core metrics does not apply scope filtering.
      *
      * @param name ignored; must not be {@code null}
      * @return true
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics does not apply scope filtering, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default boolean isMeterEnabled(String name) {

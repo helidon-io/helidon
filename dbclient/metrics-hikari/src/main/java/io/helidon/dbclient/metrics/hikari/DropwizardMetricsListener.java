@@ -127,7 +127,7 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
                 .getOrCreate(metricsFactory.gaugeBuilder(prefix + name,
                                                          gauge,
                                                          g -> g.getValue().doubleValue()),
-                             DropwizardMetricsListener.class);
+                             DropwizardMetricsListener.class.getName());
     }
 
     private io.helidon.metrics.api.Gauge registerGauge(String name, Counter counter) {
@@ -135,7 +135,7 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
                 .getOrCreate(metricsFactory.gaugeBuilder(prefix + name,
                                                          counter,
                                                          Counter::getCount),
-                             DropwizardMetricsListener.class);
+                             DropwizardMetricsListener.class.getName());
     }
 
     private void removeGauge(String name) {

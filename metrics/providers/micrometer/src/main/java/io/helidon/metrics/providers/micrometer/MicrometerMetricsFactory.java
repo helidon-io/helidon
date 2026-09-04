@@ -393,7 +393,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
         meterBuilderCustomizers.forEach(customizer -> customizer.customize(builder));
     }
 
-    void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
+    void customize(Meter.Builder<?, ?> builder, String origin) {
         meterBuilderCustomizers.forEach(customizer -> customizer.customize(builder, origin));
     }
 
@@ -407,7 +407,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
             MMeterRegistry registry,
             Collection<MetersProvider> metersProviders) {
         metersProviders.forEach(metersProvider -> metersProvider.meterBuilders(factory, registry)
-                .forEach(builder -> registry.getOrCreate((B) builder, metersProvider.getClass())));
+                .forEach(builder -> registry.getOrCreate((B) builder, metersProvider.getClass().getName())));
 
         return registry;
     }

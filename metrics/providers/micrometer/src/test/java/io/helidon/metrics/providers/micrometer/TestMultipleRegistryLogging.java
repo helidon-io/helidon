@@ -284,11 +284,11 @@ class TestMultipleRegistryLogging {
         String ordinaryOriginMeterName = "originCustomized";
         String sharedMeterName = "sharedOriginCustomized";
         MetersProvider metersProvider = metricsFactory -> List.of(metricsFactory.counterBuilder(providerMeterName));
-        Map<Class<?>, AtomicInteger> originCustomizationCounts = Map.of(
-                metersProvider.getClass(), new AtomicInteger(),
-                OrdinaryOrigin.class, new AtomicInteger(),
-                FirstOrigin.class, new AtomicInteger(),
-                SecondOrigin.class, new AtomicInteger());
+        Map<String, AtomicInteger> originCustomizationCounts = Map.of(
+                metersProvider.getClass().getName(), new AtomicInteger(),
+                OrdinaryOrigin.class.getName(), new AtomicInteger(),
+                FirstOrigin.class.getName(), new AtomicInteger(),
+                SecondOrigin.class.getName(), new AtomicInteger());
         AtomicInteger basicCustomizationCount = new AtomicInteger();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
@@ -300,7 +300,7 @@ class TestMultipleRegistryLogging {
             }
 
             @Override
-            public void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
+            public void customize(Meter.Builder<?, ?> builder, String origin) {
                 AtomicInteger customizationCount = originCustomizationCounts.get(origin);
                 if (customizationCount != null
                         && (builder.name().equals(providerMeterName)
@@ -325,15 +325,15 @@ class TestMultipleRegistryLogging {
                     .orElseThrow();
             Counter regularCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("regularCustomized"));
             Counter ordinaryOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(ordinaryOriginMeterName),
-                                                                       OrdinaryOrigin.class);
+                                                                       OrdinaryOrigin.class.getName());
             Counter firstOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(sharedMeterName),
-                                                                    FirstOrigin.class);
+                                                                    FirstOrigin.class.getName());
             Counter secondOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(sharedMeterName),
-                                                                     SecondOrigin.class);
+                                                                     SecondOrigin.class.getName());
 
             assertThat("Basic customizer invocation count", basicCustomizationCount.get(), is(1));
             originCustomizationCounts.forEach((origin, count) ->
-                                                       assertThat("Customization count for " + origin.getName(),
+                                                       assertThat("Customization count for " + origin,
                                                                   count.get(),
                                                                   is(1)));
             assertThat("Provider customization",
@@ -348,13 +348,13 @@ class TestMultipleRegistryLogging {
                        is("regular"));
             assertThat("Ordinary origin customization",
                        ordinaryOriginCounter.id().tagsMap(),
-                       hasEntry("origin", OrdinaryOrigin.class.getSimpleName()));
+                       hasEntry("origin", OrdinaryOrigin.class.getName()));
             assertThat("First shared-name origin customization",
                        firstOriginCounter.id().tagsMap(),
-                       hasEntry("origin", FirstOrigin.class.getSimpleName()));
+                       hasEntry("origin", FirstOrigin.class.getName()));
             assertThat("Second shared-name origin customization",
                        secondOriginCounter.id().tagsMap(),
-                       hasEntry("origin", SecondOrigin.class.getSimpleName()));
+                       hasEntry("origin", SecondOrigin.class.getName()));
             assertThat("Origin tags distinguish otherwise identical builders",
                        secondOriginCounter,
                        not(sameInstance(firstOriginCounter)));
@@ -1061,8 +1061,8 @@ class TestMultipleRegistryLogging {
         };
     }
 
-    private static String originValue(Class<?> origin, MetersProvider metersProvider) {
-        return origin == metersProvider.getClass() ? "provider" : origin.getSimpleName();
+    private static String originValue(String origin, MetersProvider metersProvider) {
+        return origin.equals(metersProvider.getClass().getName()) ? "provider" : origin;
     }
 
     private static class FirstOrigin {

@@ -116,7 +116,7 @@ class KeyPerformanceIndicatorMetricsImpls {
                     metricsFactory.counterBuilder(meterNamePrefix + meterName(REQUESTS_COUNT_NAME))
                             .description(
                                     "Each request (regardless of HTTP method) will increase this counter"),
-                    KeyPerformanceIndicatorMetricsImpls.class));
+                    KeyPerformanceIndicatorMetricsImpls.class.getName()));
         }
 
         @Override
@@ -191,23 +191,23 @@ class KeyPerformanceIndicatorMetricsImpls {
                                   inflightRequestsCount,
                                   AtomicInteger::get)
                             .description("Measures the number of requests currently being processed"),
-                    KeyPerformanceIndicatorMetricsImpls.class));
+                    KeyPerformanceIndicatorMetricsImpls.class.getName()));
 
             longRunningRequests = add(kpiMeterRegistry.getOrCreate(
                     metricsFactory.counterBuilder(meterNamePrefix + meterName(LONG_RUNNING_REQUESTS_NAME))
                             .description("Measures the total number of long-running requests and rates at which they occur"),
-                    KeyPerformanceIndicatorMetricsImpls.class));
+                    KeyPerformanceIndicatorMetricsImpls.class.getName()));
 
             load = add(kpiMeterRegistry.getOrCreate(metricsFactory.counterBuilder(meterNamePrefix + meterName(LOAD_NAME))
                                                             .description(LOAD_DESCRIPTION),
-                                                    KeyPerformanceIndicatorMetricsImpls.class));
+                                                    KeyPerformanceIndicatorMetricsImpls.class.getName()));
 
             deferredRequests = new DeferredRequests();
             add(kpiMeterRegistry.getOrCreate(metricsFactory.gaugeBuilder(meterNamePrefix + meterName(DEFERRED_NAME),
                                                            deferredRequests,
                                                            DeferredRequests::value)
                                                      .description("Measures deferred requests"),
-                                             KeyPerformanceIndicatorMetricsImpls.class));
+                                             KeyPerformanceIndicatorMetricsImpls.class.getName()));
         }
 
         @Override

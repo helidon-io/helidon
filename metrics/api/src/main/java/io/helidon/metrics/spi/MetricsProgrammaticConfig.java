@@ -44,10 +44,11 @@ public interface MetricsProgrammaticConfig {
     }
 
     /**
-     * No-op, will be removed.
+     * Returns the retained default scope value; the default implementation returns empty and core metrics ignores any
+     * supplied value.
      *
-     * @return empty
-     * @deprecated No-op, will be removed.
+     * @return default scope value
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<String> scopeDefaultValue() {
@@ -55,10 +56,11 @@ public interface MetricsProgrammaticConfig {
     }
 
     /**
-     * No-op, will be removed.
+     * Returns the retained scope tag name; the default implementation returns empty and core metrics ignores any supplied
+     * value.
      *
-     * @return empty
-     * @deprecated No-op, will be removed.
+     * @return scope tag name
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<String> scopeTagName() {

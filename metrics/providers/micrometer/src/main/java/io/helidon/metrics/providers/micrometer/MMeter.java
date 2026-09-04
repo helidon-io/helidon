@@ -188,12 +188,6 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
             return identity();
         }
 
-        @Deprecated(since = "27.0.0", forRemoval = true)
-        public HB scope(String ignored) {
-            Objects.requireNonNull(ignored);
-            return identity();
-        }
-
         public HB identity() {
             return (HB) this;
         }
@@ -204,11 +198,6 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
         public Map<String, String> tagsMap() {
             return new TreeMap<>(tags);
-        }
-
-        @Deprecated(since = "27.0.0", forRemoval = true)
-        public Optional<String> scope() {
-            return Optional.empty();
         }
 
         public Optional<String> description() {
