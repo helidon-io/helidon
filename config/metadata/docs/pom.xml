@@ -26,8 +26,6 @@
         <artifactId>helidon-config-metadata-project</artifactId>
         <version>4.5.4-SNAPSHOT</version>
     </parent>
-
-    <groupId>io.helidon.config.metadata</groupId>
     <artifactId>helidon-config-metadata-docs</artifactId>
     <name>Helidon Config Metadata Docs</name>
 
@@ -44,10 +42,6 @@
         <dependency>
             <groupId>io.helidon.config.metadata</groupId>
             <artifactId>helidon-config-metadata-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.logging</groupId>
-            <artifactId>helidon-logging-common</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.jknack</groupId>
