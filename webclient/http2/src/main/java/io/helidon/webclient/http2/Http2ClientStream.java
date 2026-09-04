@@ -777,7 +777,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 if (trailerBlock) {
                     int discardedDataLength = buffer.failAndDiscard(e);
                     try {
-                        failInboundLocked(e);
+                        failInboundLocked(e, false);
                         reset(e.code());
                         incrementInboundWindowSizeLocked(discardedDataLength);
                     } finally {
@@ -968,12 +968,18 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     private void failInboundLocked(Http2Exception failure) {
+        failInboundLocked(failure, true);
+    }
+
+    private void failInboundLocked(Http2Exception failure, boolean completeTrailers) {
         inboundFailure = failure;
         StreamBuffer buffer = this.buffer;
         if (buffer != null) {
             buffer.fail(failure);
         }
-        trailers.completeExceptionally(failure);
+        if (completeTrailers) {
+            trailers.completeExceptionally(failure);
+        }
         close();
     }
 
