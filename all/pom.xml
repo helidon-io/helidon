@@ -528,6 +528,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http-http3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http-metrics</artifactId>
         </dependency>
         <dependency>
