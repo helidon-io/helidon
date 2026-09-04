@@ -47,6 +47,7 @@ public interface ConnectionContext extends SocketContext {
      * Data writer to write response bytes.
      *
      * @return data writer
+     * @throws UnsupportedOperationException when the transport provides only stream-scoped byte I/O
      */
     DataWriter dataWriter();
 
@@ -54,6 +55,7 @@ public interface ConnectionContext extends SocketContext {
      * Data reader to read request bytes.
      *
      * @return data reader
+     * @throws UnsupportedOperationException when the transport provides only stream-scoped byte I/O
      */
     DataReader dataReader();
 

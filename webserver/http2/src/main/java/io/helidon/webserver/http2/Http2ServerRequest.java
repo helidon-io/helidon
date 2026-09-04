@@ -56,9 +56,8 @@ class Http2ServerRequest implements RoutingRequest {
     private static final RequestedUriDiscoveryContext DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT =
             RequestedUriDiscoveryContext.builder()
                     .build();
+    private static final Runnable NO_OP = () -> { };
 
-    private static final Runnable NO_OP_RUNNABLE = () -> {
-    };
     private final Http2Headers http2Headers;
     private final ServerRequestHeaders headers;
     private final ConnectionContext ctx;
@@ -111,8 +110,8 @@ class Http2ServerRequest implements RoutingRequest {
         if (hasEntity) {
             this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(streamFilter,
                                                                                  decoder,
-                                                                                 it -> entitySupplier.get(),
-                                                                                 NO_OP_RUNNABLE,
+                                                                                 _ -> entitySupplier.get(),
+                                                                                 NO_OP,
                                                                                  this.headers,
                                                                                  ctx.listenerContext().mediaContext(),
                                                                                  maxPayloadSize,
