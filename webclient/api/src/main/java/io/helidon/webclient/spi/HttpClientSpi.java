@@ -30,6 +30,16 @@ import io.helidon.webclient.api.WebClientProtocolResponse;
  */
 public interface HttpClientSpi extends ReleasableResource {
     /**
+     * Whether requests created by this provider support dispatch after generic WebClient services have run.
+     *
+     * @return whether this provider supports post-service request handoff
+     */
+    @Api.Internal
+    default boolean supportsServiceHandoff() {
+        return false;
+    }
+
+    /**
      * Return whether this HTTP version can handle the provided request.
      * <p>
      * Examples:

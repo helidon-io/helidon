@@ -84,6 +84,28 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
     }
 
     /**
+     * Origin to which an internally inherited transport address is bound. An empty value means that the address was
+     * explicitly configured by the caller and is not origin-bound.
+     *
+     * @return inherited address origin, if any
+     */
+    @Api.Internal
+    default Optional<ClientRequestOrigin> inheritedAddressOrigin() {
+        return Optional.empty();
+    }
+
+    /**
+     * Set an internally inherited transport address and bind it to its effective origin.
+     *
+     * @param address transport address
+     * @param origin effective origin for which the address was selected
+     */
+    @Api.Internal
+    default void inheritedAddress(SocketAddress address, ClientRequestOrigin origin) {
+        address(address);
+    }
+
+    /**
      * Read timeout.
      *
      * @return read timeout of this request
@@ -114,6 +136,78 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
     }
 
     /**
+     * Protocol ID explicitly requested through the generic HTTP client.
+     *
+     * @return requested protocol ID, or an empty optional when protocol selection is automatic
+     */
+    @Api.Internal
+    default Optional<String> requestedProtocolId() {
+        return Optional.empty();
+    }
+
+    /**
+     * Origin to which an internally inherited connection is bound. An empty value means that the connection was
+     * explicitly configured by the caller and is not origin-bound.
+     *
+     * @return inherited connection origin, if any
+     */
+    @Api.Internal
+    default Optional<ClientRequestOrigin> inheritedConnectionOrigin() {
+        return Optional.empty();
+    }
+
+    /**
+     * Set an internally inherited connection and bind it to its effective origin.
+     *
+     * @param connection inherited connection
+     * @param origin effective origin for which the connection was selected
+     */
+    @Api.Internal
+    default void inheritedConnection(ClientConnection connection, ClientRequestOrigin origin) {
+        connection(connection);
+    }
+
+    /**
+     * Current TLS reload generation. Request implementations that use this value to associate response state with a
+     * request must override this method and return the generation captured when request submission started.
+     *
+     * @return current TLS reload generation
+     */
+    @Api.Internal
+    default long tlsGeneration() {
+        return tls().generation();
+    }
+
+    /**
+     * Update the TLS reload generation to the generation captured by the final logical connection target.
+     *
+     * @param tlsGeneration captured TLS reload generation
+     */
+    @Api.Internal
+    default void tlsGeneration(long tlsGeneration) {
+    }
+
+    /**
+     * Redirect security state shared between HTTP protocol implementations.
+     *
+     * @return redirect security state
+     */
+    @Api.Internal
+    default RedirectSecurityState redirectSecurityState() {
+        return RedirectSecurityState.initial();
+    }
+
+    /**
+     * Update redirect security state while handing a request between protocol implementations.
+     *
+     * @param state redirect security state
+     */
+    @Api.Internal
+    default void redirectSecurityState(RedirectSecurityState state) {
+        Objects.requireNonNull(state, "state");
+    }
+
+    /**
      * Proxy configuration (may be no-proxy).
      *
      * @return proxy
@@ -128,6 +222,50 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      */
     @Api.Internal
     default Optional<ProxyRoute> selectedProxyRoute() {
+        return Optional.empty();
+    }
+
+    /**
+     * Origin to which the internally selected proxy route is bound.
+     *
+     * @return selected route origin, if any
+     */
+    @Api.Internal
+    default Optional<ClientRequestOrigin> inheritedSelectedProxyRouteOrigin() {
+        return Optional.empty();
+    }
+
+    /**
+     * Retain an inherited proxy route and its effective origin.
+     *
+     * @param proxyRoute inherited proxy route
+     * @param origin effective origin for which the route was selected
+     */
+    @Api.Internal
+    default void inheritedSelectedProxyRoute(ProxyRoute proxyRoute, ClientRequestOrigin origin) {
+        selectedProxyRoute(proxyRoute);
+    }
+
+    /**
+     * Last effective route selected during the current or most recently completed invocation.
+     * <p>
+     * This is response metadata only. A new invocation must use {@link #selectedProxyRoute()}, which is cleared when the
+     * preceding terminal operation completes.
+     *
+     * @return last selected route, or empty before route selection
+     */
+    @Api.Internal
+    default Optional<ProxyRoute> lastSelectedProxyRoute() {
+        return Optional.empty();
+    }
+
+    /**
+     * Origin to which the most recently selected proxy route is bound.
+     *
+     * @return most recently selected route origin, if any
+     */
+    @Api.Internal
+    default Optional<ClientRequestOrigin> inheritedLastSelectedProxyRouteOrigin() {
         return Optional.empty();
     }
 

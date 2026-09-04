@@ -16,16 +16,23 @@
 
 package io.helidon.webclient.tests.http2;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.CookieManager;
+import java.net.CookieStore;
+import java.net.HttpCookie;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,14 +41,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.GenericType;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
-import io.helidon.http.media.MediaContextConfig;
+import io.helidon.http.media.MediaSupport;
+import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http2.Http2Client;
@@ -60,19 +69,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CrossOriginRedirectHeaderTest {
     private static final HeaderName API_KEY_HEADER = HeaderNames.create("X-Api-Key");
+    private static final HeaderName WRITER_HEADER = HeaderNames.create("X-Writer-Metadata");
+    private static final HeaderName WRITER_OVERRIDE_HEADER = HeaderNames.create("X-Writer-Override");
     private static final String API_KEY_HEADER_CONFIG_NAME = "x-API-key";
     private static final String AUTHORIZATION = "Bearer secret-token";
     private static final String PROXY_AUTHORIZATION = "Basic proxy-secret";
     private static final String API_KEY = "key-0xDEADBEEF";
     private static final String REQUEST_BODY = "sensitive-body";
     private static final String BLOCKED_REDIRECT_MESSAGE = "Cross-origin redirect with request entity is disabled.";
+    private static final String WRITER_AUTHORITY = "writer.example";
 
     private static final AtomicReference<CapturedHeaders> SAME_ORIGIN_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<CapturedHeaders> CROSS_ORIGIN_CAPTURE = new AtomicReference<>();
@@ -82,6 +96,11 @@ class CrossOriginRedirectHeaderTest {
     private static final AtomicReference<String> CROSS_ORIGIN_CONTENT_TYPE_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<Boolean> CROSS_ORIGIN_EXPECT_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<String> CROSS_ORIGIN_AUTHORITY_CAPTURE = new AtomicReference<>();
+    private static final AtomicReference<CapturedWriterHeaders> WRITER_CAPTURE = new AtomicReference<>();
+    private static final AtomicReference<CapturedWriterFinalHeaders> WRITER_FINAL_CAPTURE = new AtomicReference<>();
+    private static final AtomicReference<String> PRESERVED_WRITER_CAPTURE = new AtomicReference<>();
+    private static final AtomicReference<String> DISCARDED_WRITER_CAPTURE = new AtomicReference<>();
+    private static final AtomicReference<String> PATH_COOKIE_CAPTURE = new AtomicReference<>();
 
     private static WebServer trustedServer;
     private static WebServer redirectTargetServer;
@@ -119,6 +138,14 @@ class CrossOriginRedirectHeaderTest {
                         res.status(Status.INTERNAL_SERVER_ERROR_500)
                                 .send(e.getMessage());
                     }
+                }).put("/capture-entity", (req, res) -> {
+                    WRITER_CAPTURE.set(new CapturedWriterHeaders(
+                            req.headers().first(HeaderNames.AUTHORIZATION).orElse(null),
+                            req.headers().first(HeaderNames.COOKIE).orElse(null),
+                            req.headers().first(WRITER_HEADER).orElse(null),
+                            req.headers().first(HeaderNames.CONTENT_TYPE).orElse(null),
+                            req.content().as(String.class)));
+                    res.send("captured");
                 }).get("/redirect/back-to-trusted", (req, res) -> {
                     res.status(Status.FOUND_302)
                             .header(HeaderNames.LOCATION,
@@ -179,6 +206,58 @@ class CrossOriginRedirectHeaderTest {
                                             "http://localhost:" + redirectTargetServer.port() + "/capture-query")
                                     .send();
                         })
+                        .put("/redirect/cross-origin-entity", (req, res) -> {
+                            req.content().as(String.class);
+                            res.status(Status.TEMPORARY_REDIRECT_307)
+                                    .header(HeaderNames.LOCATION,
+                                            "http://localhost:" + redirectTargetServer.port() + "/capture-entity")
+                                    .send();
+                        })
+                        .put("/redirect/writer-preserve", (req, res) -> {
+                            req.content().as(String.class);
+                            res.status(Status.TEMPORARY_REDIRECT_307)
+                                    .header(HeaderNames.LOCATION, "/redirect/writer-to-get")
+                                    .send();
+                        })
+                        .put("/redirect/writer-to-get", (req, res) -> {
+                            PRESERVED_WRITER_CAPTURE.set(req.headers()
+                                                                 .first(WRITER_OVERRIDE_HEADER)
+                                                                 .orElse(null));
+                            req.content().as(String.class);
+                            res.status(Status.SEE_OTHER_303)
+                                    .header(HeaderNames.LOCATION, "/capture-writer-get")
+                                    .send();
+                        })
+                        .get("/capture-writer-get", (req, res) -> {
+                            DISCARDED_WRITER_CAPTURE.set(req.headers()
+                                                                 .first(WRITER_OVERRIDE_HEADER)
+                                                                 .orElse(null));
+                            res.send();
+                        })
+                        .put("/source/path-cookie-redirect", (req, res) -> {
+                            req.content().as(String.class);
+                            res.status(Status.TEMPORARY_REDIRECT_307)
+                                    .header(HeaderNames.LOCATION, "/other/path-cookie-target")
+                                    .send();
+                        })
+                        .put("/other/path-cookie-target", (req, res) -> {
+                            PATH_COOKIE_CAPTURE.set(req.headers().contains(HeaderNames.COOKIE)
+                                                            ? String.join("; ",
+                                                                          req.headers()
+                                                                                  .get(HeaderNames.COOKIE)
+                                                                                  .allValues())
+                                                            : "");
+                            res.send(req.content().as(String.class));
+                        })
+                        .put("/capture-writer-final", (req, res) -> {
+                            WRITER_FINAL_CAPTURE.set(new CapturedWriterFinalHeaders(
+                                    req.headers().first(HeaderNames.HOST).orElse(null),
+                                    req.headers().contains(HeaderNames.COOKIE)
+                                            ? String.join("; ", req.headers().get(HeaderNames.COOKIE).allValues())
+                                            : null,
+                                    req.content().as(String.class)));
+                            res.send();
+                        })
                         .get("/capture", (req, res) -> {
                             SAME_ORIGIN_CAPTURE.set(capturedHeaders(req));
                             res.send("captured");
@@ -207,6 +286,11 @@ class CrossOriginRedirectHeaderTest {
         CROSS_ORIGIN_CONTENT_TYPE_CAPTURE.set(null);
         CROSS_ORIGIN_EXPECT_CAPTURE.set(null);
         CROSS_ORIGIN_AUTHORITY_CAPTURE.set(null);
+        WRITER_CAPTURE.set(null);
+        WRITER_FINAL_CAPTURE.set(null);
+        PRESERVED_WRITER_CAPTURE.set(null);
+        DISCARDED_WRITER_CAPTURE.set(null);
+        PATH_COOKIE_CAPTURE.set(null);
     }
 
     @Test
@@ -535,16 +619,6 @@ class CrossOriginRedirectHeaderTest {
     }
 
     @Test
-    void followsH2cFallbackOutputStream307RedirectWithEntityWhenEnabled() throws Exception {
-        followsH2cFallbackOutputStreamRedirectWithEntityWhenEnabled(307);
-    }
-
-    @Test
-    void followsH2cFallbackOutputStream308RedirectWithEntityWhenEnabled() throws Exception {
-        followsH2cFallbackOutputStreamRedirectWithEntityWhenEnabled(308);
-    }
-
-    @Test
     void followsH2cFallbackOutputStream302RedirectWithMaxRedirectsOne() throws Exception {
         try (RedirectingHttp1Server firstHop = new RedirectingHttp1Server(302)) {
             Http2Client client = newClient(firstHop.port(), true, true, null, false);
@@ -568,33 +642,6 @@ class CrossOriginRedirectHeaderTest {
     @Test
     void h2cFallbackOutputStreamRedirectHonorsRequestExpectContinueOverride() throws Exception {
         followsH2cFallbackOutputStreamRedirectWithEntityWhenEnabled(307, true, false, false);
-    }
-
-    @Test
-    void rejectedH2cFallbackRedirectDoesNotSerializeEntity() throws Exception {
-        AtomicInteger writerInvocations = new AtomicInteger();
-        try (RedirectingHttp1Server firstHop = new RedirectingHttp1Server(307)) {
-            Http2Client client = Http2Client.builder()
-                    .servicesDiscoverServices(false)
-                    .baseUri("http://127.0.0.1:" + firstHop.port())
-                    .protocolConfig(it -> it.priorKnowledge(false))
-                    .shareConnectionCache(false)
-                    .followRedirects(true)
-                    .followCrossOriginEntityRedirects(false)
-                    .mediaContext(new TrackingMediaContext(writerInvocations))
-                    .build();
-            try {
-                IllegalStateException exception = assertThrows(IllegalStateException.class,
-                                                               () -> client.put("/token")
-                                                                       .submit(new TrackedEntity()));
-                assertThat(exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
-            } finally {
-                client.closeResource();
-            }
-        }
-        assertThat(writerInvocations.get(), is(0));
-        assertThat(CROSS_ORIGIN_CAPTURE.get(), is(nullValue()));
-        assertThat(CROSS_ORIGIN_BODY_CAPTURE.get(), is(nullValue()));
     }
 
     @Test
@@ -703,7 +750,9 @@ class CrossOriginRedirectHeaderTest {
                                                                            }
                                                                            it.close();
                                                                        }));
-                assertThat(exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
+                assertThat(exception.getMessage(),
+                           containsString("Cannot replay a one-shot request body after redirect status "
+                                                  + redirectStatus));
             } finally {
                 client.closeResource();
             }
@@ -730,10 +779,6 @@ class CrossOriginRedirectHeaderTest {
 
         assertThat(CROSS_ORIGIN_CAPTURE.get(), is(nullValue()));
         assertThat(CROSS_ORIGIN_BODY_CAPTURE.get(), is(nullValue()));
-    }
-
-    private static void followsH2cFallbackOutputStreamRedirectWithEntityWhenEnabled(int redirectStatus) throws Exception {
-        followsH2cFallbackOutputStreamRedirectWithEntityWhenEnabled(redirectStatus, false, null, null);
     }
 
     private static void followsH2cFallbackOutputStreamRedirectWithEntityWhenEnabled(int redirectStatus,
@@ -820,16 +865,6 @@ class CrossOriginRedirectHeaderTest {
     }
 
     @Test
-    void followsAlreadySentOutputStream307RedirectWithEntityWhenEnabled() {
-        followsAlreadySentOutputStreamRedirectWithEntityWhenEnabled("/redirect/cross-origin-keep-method");
-    }
-
-    @Test
-    void followsAlreadySentOutputStream308RedirectWithEntityWhenEnabled() {
-        followsAlreadySentOutputStreamRedirectWithEntityWhenEnabled("/redirect/cross-origin-keep-method-308");
-    }
-
-    @Test
     void followsExpectContinueOutputStream307RedirectWithEntityWhenEnabled() {
         followsExpectContinueOutputStreamRedirectWithEntityWhenEnabled("/redirect/cross-origin-keep-method");
     }
@@ -883,6 +918,263 @@ class CrossOriginRedirectHeaderTest {
         }
 
         assertThat(CROSS_ORIGIN_AUTHORITY_CAPTURE.get(), is("localhost:" + redirectTargetServer.port()));
+    }
+
+    @Test
+    void sanitizesPreparedWriterHeadersBeforeCrossOriginReplay() {
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .followCrossOriginEntityRedirects(true)
+                .mediaContext(writerMediaContext(false))
+                .build();
+        try (Http2ClientResponse response = client.put("/redirect/cross-origin-entity")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+        } finally {
+            client.closeResource();
+        }
+
+        CapturedWriterHeaders captured = WRITER_CAPTURE.get();
+        assertThat(captured, is(notNullValue()));
+        assertThat(captured.authorization(), is(nullValue()));
+        assertThat(captured.cookie(), is(nullValue()));
+        assertThat(captured.writerMetadata(), is("preserved"));
+        assertThat(captured.contentType(), is("text/plain"));
+        assertThat(captured.body(), is("payload"));
+    }
+
+    @Test
+    void appliesWriterFinalAuthorityBeforeSelectingCookies() {
+        CookieStore cookieStore = new CookieManager().getCookieStore();
+        HttpCookie originalCookie = new HttpCookie("original-manager", "must-not-leak");
+        originalCookie.setPath("/");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), originalCookie);
+        HttpCookie writerCookie = new HttpCookie("writer-manager", "selected");
+        writerCookie.setPath("/");
+        cookieStore.add(URI.create("http://" + WRITER_AUTHORITY), writerCookie);
+        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
+                .automaticStoreEnabled(true)
+                .cookieStore(cookieStore));
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .cookieManager(cookieManager)
+                .mediaContext(writerMediaContext(true))
+                .build();
+
+        try (Http2ClientResponse response = client.put("/capture-writer-final")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+        } finally {
+            client.closeResource();
+        }
+
+        CapturedWriterFinalHeaders captured = WRITER_FINAL_CAPTURE.get();
+        assertThat(captured, is(notNullValue()));
+        assertThat(captured.host(), is(WRITER_AUTHORITY));
+        assertThat(captured.cookie(), not(containsString("original-manager")));
+        assertThat(captured.cookie(), containsString("writer-cookie=secret"));
+        assertThat(captured.cookie(), containsString("writer-manager"));
+        assertThat(captured.body(), is("payload"));
+    }
+
+    @Test
+    void removesWriterHeadersWhenRedirectChangesRequestToGet() {
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .addService(new WriterDefaultService())
+                .mediaContext(writerMediaContext(false))
+                .build();
+
+        try (Http2ClientResponse response = client.put("/redirect/writer-preserve")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+        } finally {
+            client.closeResource();
+        }
+
+        assertThat(PRESERVED_WRITER_CAPTURE.get(), is("writer-final"));
+        assertThat(DISCARDED_WRITER_CAPTURE.get(), is("final-default"));
+    }
+
+    @Test
+    void redirectRebuildsPathCookiesWithoutReplayingSourceStoreCookie() {
+        CookieStore cookieStore = new CookieManager().getCookieStore();
+        HttpCookie sourceCookie = new HttpCookie("source-manager", "must-not-leak");
+        sourceCookie.setPath("/source");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), sourceCookie);
+        HttpCookie targetCookie = new HttpCookie("target-manager", "selected");
+        targetCookie.setPath("/other");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), targetCookie);
+        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
+                .automaticStoreEnabled(true)
+                .cookieStore(cookieStore));
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .cookieManager(cookieManager)
+                .mediaContext(writerMediaContext(false))
+                .build();
+
+        try (Http2ClientResponse response = client.put("/source/path-cookie-redirect")
+                .header(HeaderNames.COOKIE, "user-cookie=kept")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().as(String.class), is("payload"));
+        } finally {
+            client.closeResource();
+        }
+
+        String cookies = PATH_COOKIE_CAPTURE.get();
+        assertThat(cookies, not(containsString("source-manager")));
+        assertThat(cookies, containsString("target-manager"));
+        assertThat(cookies, containsString("user-cookie=kept"));
+        assertThat(cookies, containsString("writer-cookie=secret"));
+    }
+
+    @Test
+    void nonInstanceWriterRedirectRebuildsPathCookiesWithoutReplayingSourceStoreCookie() {
+        CookieStore cookieStore = new CookieManager().getCookieStore();
+        HttpCookie sourceCookie = new HttpCookie("source-manager", "must-not-leak");
+        sourceCookie.setPath("/source");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), sourceCookie);
+        HttpCookie targetCookie = new HttpCookie("target-manager", "selected");
+        targetCookie.setPath("/other");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), targetCookie);
+        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
+                .automaticStoreEnabled(true)
+                .cookieStore(cookieStore));
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .cookieManager(cookieManager)
+                .mediaContext(writerMediaContext(false, false))
+                .build();
+
+        try (Http2ClientResponse response = client.put("/source/path-cookie-redirect")
+                .header(HeaderNames.COOKIE, "user-cookie=kept")
+                .header(HeaderNames.CONTENT_LENGTH, "7")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().as(String.class), is("payload"));
+        } finally {
+            client.closeResource();
+        }
+
+        String cookies = PATH_COOKIE_CAPTURE.get();
+        assertThat(cookies, not(containsString("source-manager")));
+        assertThat(cookies, containsString("target-manager"));
+        assertThat(cookies, containsString("user-cookie=kept"));
+        assertThat(cookies, containsString("writer-cookie=secret"));
+    }
+
+    private static MediaContext writerMediaContext(boolean overrideAuthority) {
+        return writerMediaContext(overrideAuthority, true);
+    }
+
+    private static MediaContext writerMediaContext(boolean overrideAuthority, boolean supportsInstanceWriter) {
+        EntityWriter<WriterEntity> writer = new EntityWriter<>() {
+            @Override
+            public boolean supportsInstanceWriter() {
+                return supportsInstanceWriter;
+            }
+
+            @Override
+            public InstanceWriter instanceWriter(GenericType<WriterEntity> type,
+                                                   WriterEntity object,
+                                                   WritableHeaders<?> requestHeaders) {
+                if (!supportsInstanceWriter) {
+                    throw new AssertionError("Instance writer must not be requested");
+                }
+                prepareHeaders(requestHeaders);
+                byte[] bytes = object.value().getBytes(StandardCharsets.UTF_8);
+                return new InstanceWriter() {
+                    @Override
+                    public OptionalLong contentLength() {
+                        return OptionalLong.of(bytes.length);
+                    }
+
+                    @Override
+                    public boolean alwaysInMemory() {
+                        return true;
+                    }
+
+                    @Override
+                    public void write(OutputStream stream) {
+                        throw new AssertionError("Always-in-memory writer must not stream");
+                    }
+
+                    @Override
+                    public byte[] instanceBytes() {
+                        return bytes;
+                    }
+                };
+            }
+
+            @Override
+            public void write(GenericType<WriterEntity> type,
+                              WriterEntity object,
+                              OutputStream outputStream,
+                              Headers requestHeaders,
+                              WritableHeaders<?> responseHeaders) {
+                throw new AssertionError("Server writer must not be used");
+            }
+
+            @Override
+            public void write(GenericType<WriterEntity> type,
+                              WriterEntity object,
+                              OutputStream outputStream,
+                              WritableHeaders<?> requestHeaders) {
+                if (!supportsInstanceWriter) {
+                    prepareHeaders(requestHeaders);
+                }
+                try (outputStream) {
+                    outputStream.write(object.value().getBytes(StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+
+            private void prepareHeaders(WritableHeaders<?> requestHeaders) {
+                requestHeaders.set(HeaderNames.AUTHORIZATION, "writer-secret");
+                if (overrideAuthority) {
+                    requestHeaders.set(HeaderNames.HOST, WRITER_AUTHORITY);
+                }
+                requestHeaders.add(HeaderNames.COOKIE, "writer-cookie=secret");
+                requestHeaders.set(WRITER_HEADER, "preserved");
+                requestHeaders.set(WRITER_OVERRIDE_HEADER, "writer-final");
+                requestHeaders.set(HeaderNames.CONTENT_TYPE, "text/plain");
+            }
+        };
+        MediaSupport support = new MediaSupport() {
+            @Override
+            public String name() {
+                return "writer-header-test";
+            }
+
+            @Override
+            public String type() {
+                return "writer-header-test";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
+                return new WriterResponse<>(SupportLevel.SUPPORTED, () -> (EntityWriter<T>) writer);
+            }
+        };
+        return MediaContext.builder()
+                .registerDefaults(true)
+                .mediaSupportsDiscoverServices(false)
+                .addMediaSupport(support)
+                .build();
     }
 
     private static Http2Client newClient() {
@@ -1007,7 +1299,8 @@ class CrossOriginRedirectHeaderTest {
                                                                    it.write(requestBodyBytes());
                                                                    it.close();
                                                                }));
-        assertThat(exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
+        assertThat(exception.getMessage(),
+                   containsString("HTTP/2 cannot replay a one-shot request entity after it was sent"));
         assertThat(CROSS_ORIGIN_CAPTURE.get(), is(nullValue()));
         assertThat(CROSS_ORIGIN_BODY_CAPTURE.get(), is(nullValue()));
     }
@@ -1028,25 +1321,6 @@ class CrossOriginRedirectHeaderTest {
         assertThat(captured.authorization(), is(nullValue()));
         assertThat(captured.apiKey(), is(nullValue()));
         assertThat(CROSS_ORIGIN_BODY_CAPTURE.get(), is(""));
-    }
-
-    private static void followsAlreadySentOutputStreamRedirectWithEntityWhenEnabled(String redirectPath) {
-        try (Http2ClientResponse response = newClient(true, true, true)
-                .put(redirectPath)
-                .maxRedirects(1)
-                .sendExpectContinue(false)
-                .outputStream(it -> {
-                    it.write(requestBodyBytes());
-                    it.close();
-                })) {
-            assertThat(response.status(), is(Status.OK_200));
-        }
-
-        CapturedHeaders captured = CROSS_ORIGIN_CAPTURE.get();
-        assertThat(captured, is(notNullValue()));
-        assertThat(captured.authorization(), is(nullValue()));
-        assertThat(captured.apiKey(), is(nullValue()));
-        assertThat(CROSS_ORIGIN_BODY_CAPTURE.get(), is(REQUEST_BODY));
     }
 
     private static void followsExpectContinueOutputStreamRedirectWithEntityWhenEnabled(String redirectPath) {
@@ -1091,6 +1365,16 @@ class CrossOriginRedirectHeaderTest {
         }
     }
 
+    private record WriterDefaultService() implements WebClientService {
+        @Override
+        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
+            String path = request.uri().toUri().getPath();
+            String defaultValue = path.equals("/redirect/writer-preserve") ? "source-default" : "final-default";
+            request.headers().setIfAbsent(HeaderValues.create(WRITER_OVERRIDE_HEADER, defaultValue));
+            return chain.proceed(request);
+        }
+    }
+
     private static CapturedHeaders capturedHeaders(ServerRequest request) {
         return new CapturedHeaders(request.headers().first(HeaderNames.AUTHORIZATION).orElse(null),
                                    request.headers().first(HeaderNames.PROXY_AUTHORIZATION).orElse(null),
@@ -1098,75 +1382,6 @@ class CrossOriginRedirectHeaderTest {
     }
 
     private record CapturedHeaders(String authorization, String proxyAuthorization, String apiKey) {
-    }
-
-    private record TrackedEntity() {
-    }
-
-    private static final class TrackingMediaContext implements MediaContext {
-        private final MediaContext delegate = MediaContext.create();
-        private final AtomicInteger writerInvocations;
-
-        private TrackingMediaContext(AtomicInteger writerInvocations) {
-            this.writerInvocations = writerInvocations;
-        }
-
-        @Override
-        public MediaContextConfig prototype() {
-            return delegate.prototype();
-        }
-
-        @Override
-        public <T> EntityReader<T> reader(GenericType<T> type, Headers headers) {
-            return delegate.reader(type, headers);
-        }
-
-        @Override
-        public <T> EntityWriter<T> writer(GenericType<T> type,
-                                          Headers requestHeaders,
-                                          WritableHeaders<?> responseHeaders) {
-            if (type.rawType() == TrackedEntity.class) {
-                return trackedEntityWriter();
-            }
-            return delegate.writer(type, requestHeaders, responseHeaders);
-        }
-
-        @Override
-        public <T> EntityReader<T> reader(GenericType<T> type, Headers requestHeaders, Headers responseHeaders) {
-            return delegate.reader(type, requestHeaders, responseHeaders);
-        }
-
-        @Override
-        public <T> EntityWriter<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-            if (type.rawType() == TrackedEntity.class) {
-                return trackedEntityWriter();
-            }
-            return delegate.writer(type, requestHeaders);
-        }
-
-        @SuppressWarnings("unchecked")
-        private <T> EntityWriter<T> trackedEntityWriter() {
-            return (EntityWriter<T>) new EntityWriter<TrackedEntity>() {
-                @Override
-                public void write(GenericType<TrackedEntity> type,
-                                  TrackedEntity object,
-                                  OutputStream outputStream,
-                                  Headers requestHeaders,
-                                  WritableHeaders<?> responseHeaders) {
-                    writerInvocations.incrementAndGet();
-                    throw new AssertionError("Entity writer should not be invoked");
-                }
-
-                @Override
-                public void write(GenericType<TrackedEntity> type,
-                                  TrackedEntity object,
-                                  OutputStream outputStream,
-                                  WritableHeaders<?> headers) {
-                    writerInvocations.incrementAndGet();
-                    throw new AssertionError("Entity writer should not be invoked");
-                }
-            };
-        }
     }
 
     private static final class RedirectingHttp1Server implements AutoCloseable {
@@ -1279,5 +1494,18 @@ class CrossOriginRedirectHeaderTest {
                 default -> throw new IllegalArgumentException("Unexpected redirect status: " + redirectStatus);
             };
         }
+    }
+
+    private record WriterEntity(String value) {
+    }
+
+    private record CapturedWriterHeaders(String authorization,
+                                         String cookie,
+                                         String writerMetadata,
+                                         String contentType,
+                                         String body) {
+    }
+
+    private record CapturedWriterFinalHeaders(String host, String cookie, String body) {
     }
 }

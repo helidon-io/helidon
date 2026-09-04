@@ -26,11 +26,19 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalLong;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.GenericType;
+import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -48,6 +56,11 @@ import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientCookieManager;
+import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.api.WebClientServiceResponse;
+import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webclient.spi.WebClientTransportObserverProvider;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
@@ -81,13 +94,15 @@ class Http1ClientTest {
     private static final Header REQ_EXPECT_100_HEADER_NAME = HeaderValues.createCached(
             HeaderNames.create("X-Req-Expect100"), "true");
     private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
-    private static final HeaderName ENTITY_METADATA_HEADER = HeaderNames.create("X-Entity-Metadata");
+    private static final HeaderName REQUEST_METADATA_HEADER = HeaderNames.create("X-Request-Metadata");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
     private static final String QUERY_ACCEPT = "application/json";
     private static final String QUERY_CONTENT_TYPE = "application/sql";
     private static final String QUERY_ENTITY = "select * from example";
     private static final String QUERY_LANGUAGE = "en";
     private static final long NO_CONTENT_LENGTH = -1L;
+    private static volatile CountDownLatch lifecycleUploadReceived = new CountDownLatch(0);
+    private static volatile CountDownLatch lifecycleResponseRelease = new CountDownLatch(0);
 
     private final String baseURI;
     private final WebClient injectedHttp1client;
@@ -127,6 +142,72 @@ class Http1ClientTest {
         rules.get("/queryRedirectGetTarget", Http1ClientTest::queryRedirectGetTarget);
         rules.get("/redirectDropEntity", Http1ClientTest::redirectDropEntity);
         rules.get("/afterDropEntity", Http1ClientTest::afterDropEntity);
+        rules.put("/lifecycle/start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+                .header(HeaderNames.LOCATION, "/lifecycle/hop")
+                .send());
+        rules.put("/lifecycle/hop", (req, res) -> {
+            req.content().as(String.class);
+            res.status(Status.PERMANENT_REDIRECT_308)
+                    .header(HeaderNames.LOCATION, "/lifecycle/final")
+                    .send();
+        });
+        rules.put("/lifecycle/final", (req, res) -> {
+            String entity = req.content().as(String.class);
+            lifecycleUploadReceived.countDown();
+            if (!lifecycleResponseRelease.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Timed out waiting to release lifecycle response");
+            }
+            res.send(entity);
+        });
+        rules.put("/lifecycle/fail-start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+                .header(HeaderNames.LOCATION, "/lifecycle/fail")
+                .send());
+        rules.get("/redirect/ftp", (req, res) -> res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, "ftp://example.com/file")
+                .send());
+        rules.put("/cookie/start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+                .header(HeaderNames.LOCATION, "/cookie/intermediate")
+                .send());
+        rules.put("/cookie/intermediate", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+                .header(HeaderNames.LOCATION, "/cookie/final")
+                .header(HeaderNames.SET_COOKIE, "intermediate=kept; Path=/")
+                .send());
+        rules.put("/cookie/final", (req, res) -> {
+            req.content().as(String.class);
+            res.header(HeaderNames.SET_COOKIE, "final=blocked; Path=/")
+                    .send("done");
+        });
+        rules.put("/cookie/loop-start", (req, res) -> res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, "/cookie/loop-intermediate")
+                .send());
+        rules.get("/cookie/loop-intermediate", (req, res) -> res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, "/cookie/loop-final")
+                .header(HeaderNames.SET_COOKIE, "loop=kept; Path=/")
+                .send());
+        rules.get("/cookie/loop-final", (req, res) -> res.send("loop-done"));
+        rules.put("/cookie/mixed-start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+                .header(HeaderNames.LOCATION, "/cookie/mixed-switch")
+                .send());
+        rules.put("/cookie/mixed-switch", (req, res) -> {
+            req.content().as(String.class);
+            res.status(Status.FOUND_302)
+                    .header(HeaderNames.LOCATION, "/cookie/mixed-intermediate")
+                    .header(HeaderNames.SET_COOKIE, "mixed-switch=kept; Path=/")
+                    .send();
+        });
+        rules.get("/cookie/mixed-intermediate", (req, res) -> res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, "/cookie/mixed-final")
+                .header(HeaderNames.SET_COOKIE, "mixed-intermediate=kept; Path=/")
+                .send());
+        rules.get("/cookie/mixed-final", (req, res) -> res.header(HeaderNames.SET_COOKIE,
+                                                                 "mixed-final=blocked; Path=/")
+                .send("mixed-done"));
+        rules.get("/cookie/echo", (req, res) -> res.send(req.headers().contains(HeaderNames.COOKIE)
+                                                                 ? String.join("; ",
+                                                                               req.headers()
+                                                                                       .get(HeaderNames.COOKIE)
+                                                                                       .allValues())
+                                                                 : "none"));
         rules.get("/afterRedirect", Http1ClientTest::afterRedirectGet);
         rules.put("/afterRedirect", Http1ClientTest::afterRedirectPut);
         rules.put("/chunkresponse", Http1ClientTest::chunkResponseHandler);
@@ -438,7 +519,7 @@ class Http1ClientTest {
 
         try (HttpClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
-                .header(ENTITY_METADATA_HEADER, "drop")
+                .header(REQUEST_METADATA_HEADER, "preserved")
                 .submit("Test entity")) {
             assertThat(response.lastEndpointUri().path().path(), is("/afterRedirect"));
             assertThat(response.status(), is(Status.NO_CONTENT_204));
@@ -449,7 +530,7 @@ class Http1ClientTest {
     void testSameMethodRedirectDropsEntityHeaders() {
         try (HttpClientResponse response = injectedHttp1client.get("/redirectDropEntity")
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
-                .header(ENTITY_METADATA_HEADER, "drop")
+                .header(REQUEST_METADATA_HEADER, "preserved")
                 .submit("Test entity")) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("GET without entity metadata"));
@@ -460,7 +541,7 @@ class Http1ClientTest {
     void testOutputStreamChainedRedirectsWithCustomReasonPhrases() {
         try (HttpClientResponse response = injectedHttp1client.put("/redirectChainStart")
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
-                .header(ENTITY_METADATA_HEADER, "drop")
+                .header(REQUEST_METADATA_HEADER, "preserved")
                 .sendExpectContinue(true)
                 .outputStream(output -> {
                     output.write("Test entity".getBytes(StandardCharsets.UTF_8));
@@ -567,6 +648,171 @@ class Http1ClientTest {
             assertThat(completions.get(), is(1));
             response.close();
             assertThat(completions.get(), is(2));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void servicedOutputStreamRedirectPreservesEveryHopLifecycleOnCallerThread() throws Exception {
+        LifecycleRecorder service = new LifecycleRecorder(null);
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .readContinueTimeout(Duration.ofMillis(100))
+                .addService(service)
+                .build();
+        lifecycleUploadReceived = new CountDownLatch(1);
+        lifecycleResponseRelease = new CountDownLatch(1);
+
+        try {
+            CompletableFuture<HttpClientResponse> responseFuture = CompletableFuture.supplyAsync(() -> client
+                    .put("/lifecycle/start")
+                    .outputStream(output -> {
+                        output.write("payload".getBytes(StandardCharsets.UTF_8));
+                        assertThat(service.requests().containsKey("/lifecycle/hop"), is(false));
+                        output.close();
+                    }));
+            assertThat(lifecycleUploadReceived.await(5, TimeUnit.SECONDS), is(true));
+            RequestLifecycle source = service.requests().get("/lifecycle/start");
+            RequestLifecycle target = service.requests().get("/lifecycle/final");
+            assertThat("source whenSent must complete after the final upload, before response headers",
+                       source.whenSent().isDone(),
+                       is(true));
+            assertThat(target.whenSent().isDone(), is(true));
+            assertThat(target.whenComplete().isDone(), is(false));
+            assertThat(responseFuture.isDone(), is(false));
+            lifecycleResponseRelease.countDown();
+
+            try (HttpClientResponse response = responseFuture.get(5, TimeUnit.SECONDS)) {
+                assertThat(response.as(String.class), is("payload"));
+            }
+
+            RequestLifecycle hop = service.requests().get("/lifecycle/hop");
+            assertThat(hop.responseStatus(), is(Status.PERMANENT_REDIRECT_308));
+            assertThat(target.responseStatus(), is(Status.OK_200));
+            assertThat(service.requests().keySet(),
+                       is(Set.of("/lifecycle/start", "/lifecycle/hop", "/lifecycle/final")));
+            assertThat(service.events().indexOf("/lifecycle/start:sent")
+                               < service.events().indexOf("/lifecycle/final:response"),
+                       is(true));
+            for (RequestLifecycle lifecycle : service.requests().values()) {
+                assertThat(lifecycle.thread(), is(source.thread()));
+                assertThat(lifecycle.whenSent().isDone(), is(true));
+                assertThat(lifecycle.whenComplete().isDone(), is(true));
+            }
+        } finally {
+            lifecycleResponseRelease.countDown();
+            lifecycleUploadReceived = new CountDownLatch(0);
+            lifecycleResponseRelease = new CountDownLatch(0);
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void servicedOutputStreamRedirectPropagatesTargetServiceFailure() {
+        LifecycleRecorder service = new LifecycleRecorder("/lifecycle/fail");
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .addService(service)
+                .build();
+
+        try {
+            IllegalStateException failure = assertThrows(IllegalStateException.class, () -> client
+                    .put("/lifecycle/fail-start")
+                    .outputStream(output -> {
+                        output.write("payload".getBytes(StandardCharsets.UTF_8));
+                        output.close();
+                    }));
+            assertThat(failure.getMessage(), is("simulated target service failure"));
+            RequestLifecycle target = service.requests().get("/lifecycle/fail");
+            assertThat(target.whenSent().isCompletedExceptionally(), is(true));
+            assertThat(target.whenComplete().isCompletedExceptionally(), is(true));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void servicedOutputStreamRedirectEnforcesInMemoryLimit() {
+        LifecycleRecorder service = new LifecycleRecorder(null);
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .maxInMemoryEntity(4)
+                .addService(service)
+                .build();
+
+        try {
+            UncheckedIOException failure = assertThrows(UncheckedIOException.class, () -> client
+                    .put("/lifecycle/start")
+                    .outputStream(output -> output.write("large".getBytes(StandardCharsets.UTF_8))));
+            assertThat(failure.getCause().getMessage(), containsString("configured in-memory limit of 4 bytes"));
+            assertThat(service.requests().containsKey("/lifecycle/hop"), is(false));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void outerServiceControlsFinalRedirectCookiesWhileIntermediateCookiesAreStored() {
+        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config.automaticStoreEnabled(true));
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .cookieManager(cookieManager)
+                .addService(new FinalCookieRemovingService())
+                .build();
+
+        try {
+            try (HttpClientResponse response = client.put("/cookie/start").outputStream(output -> {
+                output.write("payload".getBytes(StandardCharsets.UTF_8));
+                output.close();
+            })) {
+                assertThat(response.as(String.class), is("done"));
+            }
+            try (HttpClientResponse response = client.put("/cookie/loop-start").outputStream(output -> {
+                output.write("payload".getBytes(StandardCharsets.UTF_8));
+                output.close();
+            })) {
+                assertThat(response.as(String.class), is("loop-done"));
+            }
+            try (HttpClientResponse response = client.put("/cookie/mixed-start").outputStream(output -> {
+                output.write("payload".getBytes(StandardCharsets.UTF_8));
+                output.close();
+            })) {
+                assertThat(response.as(String.class), is("mixed-done"));
+            }
+            try (HttpClientResponse response = client.get("/cookie/echo").request()) {
+                String cookies = response.as(String.class);
+                assertThat(cookies, containsString("intermediate=kept"));
+                assertThat(cookies, containsString("loop=kept"));
+                assertThat(cookies, containsString("mixed-switch=kept"));
+                assertThat(cookies, containsString("mixed-intermediate=kept"));
+                assertThat(cookies.contains("final=blocked"), is(false));
+                assertThat(cookies.contains("mixed-final=blocked"), is(false));
+            }
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void rejectsNonHttpRedirectScheme() {
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .build();
+
+        try {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                             () -> client.get("/redirect/ftp").request());
+            assertThat(failure.getMessage(), containsString("Not supported scheme ftp"));
         } finally {
             client.closeResource();
         }
@@ -684,9 +930,12 @@ class Http1ClientTest {
 
     private static void afterDropEntity(ServerRequest req, ServerResponse res) {
         if (req.content().hasEntity()
-                || req.headers().contains(HeaderNames.CONTENT_TYPE)
-                || req.headers().contains(ENTITY_METADATA_HEADER)) {
+                || req.headers().contains(HeaderNames.CONTENT_TYPE)) {
             res.status(Status.BAD_REQUEST_400).send("Entity metadata was preserved");
+            return;
+        }
+        if (!req.headers().first(REQUEST_METADATA_HEADER).orElse("").equals("preserved")) {
+            res.status(Status.BAD_REQUEST_400).send("Request metadata was not preserved");
             return;
         }
         res.send("GET without entity metadata");
@@ -705,7 +954,7 @@ class Http1ClientTest {
     }
 
     private static void redirectChainFinal(ServerRequest req, ServerResponse res) {
-        if (req.headers().contains(ENTITY_METADATA_HEADER)
+        if (!req.headers().first(REQUEST_METADATA_HEADER).orElse("").equals("preserved")
                 || !req.headers().contains(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)) {
             res.status(Status.BAD_REQUEST_400).send("Unexpected redirected request headers");
             return;
@@ -723,7 +972,7 @@ class Http1ClientTest {
     }
 
     private static void afterRedirectPut(ServerRequest req, ServerResponse res) {
-        if (req.headers().contains(ENTITY_METADATA_HEADER)
+        if (!req.headers().first(REQUEST_METADATA_HEADER).orElse("").equals("preserved")
                 || !req.headers().contains(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)) {
             res.status(Status.BAD_REQUEST_400).send("Unexpected redirected request headers");
             return;
@@ -741,6 +990,100 @@ class Http1ClientTest {
     private static void delayedHandler(ServerRequest req, ServerResponse res) throws IOException, InterruptedException {
         TimeUnit.SECONDS.sleep(1);
         customHandler(req, res, false);
+    }
+
+    private static final class LifecycleRecorder implements WebClientService {
+        private final String failingPath;
+        private final Map<String, RequestLifecycle> requests = new ConcurrentHashMap<>();
+        private final List<String> events = new CopyOnWriteArrayList<>();
+
+        private LifecycleRecorder(String failingPath) {
+            this.failingPath = failingPath;
+        }
+
+        @Override
+        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
+            String path = request.uri().toUri().getPath();
+            RequestLifecycle lifecycle = new RequestLifecycle(request.whenSent().toCompletableFuture(),
+                                                              request.whenComplete().toCompletableFuture(),
+                                                              Thread.currentThread());
+            requests.put(path, lifecycle);
+            lifecycle.whenSent().whenComplete((_, _) -> events.add(path + ":sent"));
+            lifecycle.whenComplete().whenComplete((_, _) -> events.add(path + ":complete"));
+            if (path.equals(failingPath)) {
+                throw new IllegalStateException("simulated target service failure");
+            }
+            WebClientServiceResponse response = chain.proceed(request);
+            lifecycle.responseStatus(response.status());
+            events.add(path + ":response");
+            return response;
+        }
+
+        private Map<String, RequestLifecycle> requests() {
+            return requests;
+        }
+
+        private List<String> events() {
+            return events;
+        }
+    }
+
+    private record FinalCookieRemovingService() implements WebClientService {
+        @Override
+        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
+            String path = request.uri().toUri().getPath();
+            WebClientServiceResponse response = chain.proceed(request);
+            if (path.equals("/cookie/intermediate")
+                    || path.equals("/cookie/loop-intermediate")
+                    || path.equals("/cookie/mixed-switch")
+                    || path.equals("/cookie/mixed-intermediate")) {
+                request.headers().set(HeaderNames.create("X-Service-Mutated"), "true");
+                return response;
+            }
+            if (!path.equals("/cookie/start") && !path.equals("/cookie/mixed-start")) {
+                return response;
+            }
+            WritableHeaders<?> headers = WritableHeaders.create(response.headers());
+            headers.remove(HeaderNames.SET_COOKIE);
+            return WebClientServiceResponse.builder(response)
+                    .headers(ClientResponseHeaders.create(headers))
+                    .build();
+        }
+    }
+
+    private static final class RequestLifecycle {
+        private final CompletableFuture<WebClientServiceRequest> whenSent;
+        private final CompletableFuture<WebClientServiceResponse> whenComplete;
+        private final Thread thread;
+        private volatile Status responseStatus;
+
+        private RequestLifecycle(CompletableFuture<WebClientServiceRequest> whenSent,
+                                 CompletableFuture<WebClientServiceResponse> whenComplete,
+                                 Thread thread) {
+            this.whenSent = whenSent;
+            this.whenComplete = whenComplete;
+            this.thread = thread;
+        }
+
+        private CompletableFuture<WebClientServiceRequest> whenSent() {
+            return whenSent;
+        }
+
+        private CompletableFuture<WebClientServiceResponse> whenComplete() {
+            return whenComplete;
+        }
+
+        private Thread thread() {
+            return thread;
+        }
+
+        private Status responseStatus() {
+            return responseStatus;
+        }
+
+        private void responseStatus(Status responseStatus) {
+            this.responseStatus = responseStatus;
+        }
     }
 
     private static void responseHandler(ServerRequest req, ServerResponse res) throws IOException {

@@ -16,14 +16,13 @@
 
 package io.helidon.webclient.http2;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
@@ -31,12 +30,12 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
-import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.ClientRequest;
+import io.helidon.webclient.api.ClientRequestOrigin;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
-import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.RedirectSecurityState;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
@@ -47,45 +46,29 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final ClientRequest.OutputStreamHandler streamHandler;
-    private final EntityTrackingOutputStreamHandler fallbackStreamHandler;
     private final Http2ClientImpl client;
-    private Http2ClientResponseImpl redirectedResponse;
-
-    Http2CallOutputStreamChain(Http2ClientImpl http2Client,
-                               Http2ClientRequestImpl http2ClientRequest,
-                               CompletableFuture<WebClientServiceRequest> whenSent,
-                               CompletableFuture<WebClientServiceResponse> whenComplete,
-                               ClientRequest.OutputStreamHandler streamHandler) {
-        this(http2Client,
-             http2ClientRequest,
-             whenSent,
-             whenComplete,
-             streamHandler,
-             new EntityTrackingOutputStreamHandler(streamHandler));
-    }
+    private boolean requestEntitySent;
+    private int followedRedirects;
 
     Http2CallOutputStreamChain(Http2ClientImpl http2Client,
                                Http2ClientRequestImpl http2ClientRequest,
                                CompletableFuture<WebClientServiceRequest> whenSent,
                                CompletableFuture<WebClientServiceResponse> whenComplete,
                                ClientRequest.OutputStreamHandler streamHandler,
-                               EntityTrackingOutputStreamHandler fallbackStreamHandler) {
+                               int followedRedirects) {
         super(http2Client,
               http2ClientRequest,
               whenComplete,
               new Http1FallbackHandler(whenSent,
-                                       http1Request -> http1Request.outputStream(fallbackStreamHandler),
-                                       false));
+                                       http1Request -> http1Request.outputStream(streamHandler, followedRedirects),
+                                       () -> false,
+                                       http2ClientRequest::responseCookiesDeferred,
+                                       http2ClientRequest::handoffProtocolResponse));
 
         this.client = http2Client;
         this.whenSent = whenSent;
         this.streamHandler = streamHandler;
-        this.fallbackStreamHandler = fallbackStreamHandler;
-    }
-
-    @Override
-    public String protocolId() {
-        return redirectedResponse == null ? super.protocolId() : redirectedResponse.protocolId();
+        this.followedRedirects = followedRedirects;
     }
 
     @Override
@@ -101,7 +84,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                                  serviceRequest,
                                                                  clientRequest(),
                                                                  whenSent,
-                                                                 whenComplete());
+                                                                 whenComplete(),
+                                                                 followedRedirects);
         try {
             streamHandler.handle(outputStream);
         } catch (IOException e) {
@@ -109,17 +93,26 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         } catch (OutputStreamInterruptedException e) {
             interrupted = true;
         }
+        requestEntitySent = outputStream.bytesWritten > 0;
+        followedRedirects = outputStream.numberOfRedirects;
 
         if (interrupted || outputStream.interrupted()) {
             //If cos is marked as interrupted, we know that our interrupted exception has been thrown, but
             //it was intercepted by the user OutputStreamHandler and not rethrown.
             //This is a fallback mechanism to correctly handle such a situations.
-            redirectedResponse = outputStream.response;
+            if (outputStream.redirectFailure != null) {
+                throw outputStream.redirectFailure;
+            }
+            whenSent.complete(serviceRequest);
+            requestUri(outputStream.lastEndpointUri);
+            if (outputStream.response != null) {
+                clientRequest().redirectSecurityState(outputStream.response.redirectSecurityState());
+                return useResponse(outputStream.response.serviceRequest(), outputStream.response);
+            }
+            clientRequest().redirectSecurityState(outputStream.lastRequest.redirectSecurityState());
             stream(outputStream.stream);
             WebClientServiceResponse serviceResponse = outputStream.serviceResponse();
-            if (redirectedResponse == null) {
-                captureProtocolResponse(serviceResponse.status(), serviceResponse.headers());
-            }
+            captureProtocolResponse(serviceResponse.status(), serviceResponse.headers());
             return serviceResponse;
         } else if (!outputStream.closed()) {
             throw new IllegalStateException("Output stream was not closed in handler");
@@ -131,63 +124,10 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 clientConfig().mediaTypeParserMode());
         captureProtocolResponse(responseHeaders.status(), clientResponseHeaders);
 
-        if (clientRequest().followRedirects()
-                && RedirectionProcessor.redirectionStatusCode(responseHeaders.status())) {
-            publishProtocolResponse();
-            checkRedirectHeaders(responseHeaders);
-            URI newUri = URI.create(responseHeaders.httpHeaders().get(HeaderNames.LOCATION).get());
-            ClientUri redirectUri = ClientUri.create(newUri);
-            if (newUri.getHost() == null) {
-                UriInfo resolvedUri = outputStream.lastRequest.resolvedUri();
-                redirectUri.scheme(resolvedUri.scheme());
-                redirectUri.host(resolvedUri.host());
-                redirectUri.port(resolvedUri.port());
-            }
-            boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(outputStream.lastRequest.method(),
-                                                                           responseHeaders.status());
-            ClientRequest.OutputStreamHandler handler = streamHandler;
-            if (sendEntity && !outputStream.lastRequest.canReplayEntityTo(redirectUri)) {
-                // Replaying a method-preserving output-stream body to a new origin can leak credentials or form data.
-                if (outputStream.hasEntity()) {
-                    try {
-                        outputStream.stream.cancel();
-                    } finally {
-                        outputStream.stream.close();
-                    }
-                    throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
-                }
-                handler = OutputStream::close;
-            }
-            Method redirectedMethod = sendEntity ? outputStream.lastRequest.method() : Method.GET;
-            Http2ClientRequestImpl request = new Http2ClientRequestImpl(outputStream.lastRequest,
-                                                                        redirectedMethod,
-                                                                        redirectUri,
-                                                                        outputStream.lastRequest.properties(),
-                                                                        sendEntity);
-            request.outputStreamRedirect(false);
-            request.readTimeout(outputStream.originalRequest.readTimeout());
-            int numberOfRedirects = outputStream.numberOfRedirects() + 1;
-            try {
-                outputStream.stream.cancel();
-            } finally {
-                outputStream.stream.close();
-            }
-            if (numberOfRedirects > outputStream.lastRequest.maxRedirects()) {
-                throw RedirectionProcessor.maxRedirectsReached(outputStream.lastRequest.maxRedirects());
-            }
-            if (sendEntity) {
-                request.maxRedirects(outputStream.lastRequest.maxRedirects() - numberOfRedirects);
-            }
-            redirectedResponse = sendEntity
-                    ? (Http2ClientResponseImpl) request.outputStream(handler)
-                    : RedirectionProcessor.invokeWithFollowRedirects(request,
-                                                                     numberOfRedirects,
-                                                                     BufferData.EMPTY_BYTES);
-            return redirectedResponse.toServiceResponse(serviceRequest, whenComplete());
-        }
-
+        requestUri(outputStream.lastEndpointUri);
+        clientRequest().redirectSecurityState(outputStream.lastRequest.redirectSecurityState());
         stream(outputStream.stream);
-        return createServiceResponse(serviceRequest,
+        return createServiceResponse(outputStream.lastServiceRequest,
                                      clientConfig(),
                                      outputStream.stream,
                                      whenComplete(),
@@ -195,132 +135,35 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                      clientResponseHeaders);
     }
 
-    @Override
-    protected WebClientServiceResponse doProceed(WebClientServiceRequest serviceRequest, HttpClientResponse response) {
-        // h2c fallback returns an HTTP/1 response before an HTTP/2 stream exists; redirect handling continues here.
-        if (!clientRequest().followRedirects()
-                || !RedirectionProcessor.redirectionStatusCode(response.status())) {
-            return super.doProceed(serviceRequest, response);
-        }
-
-        ClientUri redirectUri;
-        Method method;
-        boolean sendEntity;
-        try (response) {
-            checkRedirectHeaders(response.headers());
-            URI newUri = URI.create(response.headers().get(HeaderNames.LOCATION).get());
-            redirectUri = ClientUri.create(newUri);
-            if (newUri.getHost() == null) {
-                UriInfo resolvedUri = clientRequest().resolvedUri();
-                redirectUri.scheme(resolvedUri.scheme());
-                redirectUri.host(resolvedUri.host());
-                redirectUri.port(resolvedUri.port());
-            }
-
-            if (RedirectionProcessor.keepsMethodAndEntity(clientRequest().method(), response.status())) {
-                method = clientRequest().method();
-                sendEntity = true;
-            } else {
-                method = Method.GET;
-                sendEntity = false;
-            }
-        }
-
-        if (clientRequest().maxRedirects() < 1) {
-            throw RedirectionProcessor.maxRedirectsReached(clientRequest().maxRedirects());
-        }
-
-        Http2ClientRequestImpl redirectedRequest = new Http2ClientRequestImpl(clientRequest(),
-                                                                              method,
-                                                                              redirectUri,
-                                                                              clientRequest().properties(),
-                                                                              sendEntity);
-        redirectedRequest.readTimeout(clientRequest().readTimeout());
-        redirectedRequest.maxRedirects(clientRequest().maxRedirects() - 1);
-        if (sendEntity) {
-            ClientRequest.OutputStreamHandler handler = streamHandler;
-            if (!redirectedRequest.canReplayEntityTo(redirectUri)) {
-                if (!fallbackStreamHandler.invoked() || fallbackStreamHandler.hasEntity()) {
-                    throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
-                }
-                handler = OutputStream::close;
-            }
-            redirectedResponse = (Http2ClientResponseImpl) redirectedRequest.outputStream(handler);
-            return redirectedResponse.toServiceResponse(serviceRequest, whenComplete());
-        }
-        redirectedResponse = (Http2ClientResponseImpl) redirectedRequest.request();
-        return redirectedResponse.toServiceResponse(serviceRequest, whenComplete());
+    boolean requestEntitySent() {
+        return requestEntitySent;
     }
 
-    @Override
-    void closeResponse() {
-        if (redirectedResponse != null) {
-            redirectedResponse.close();
-        } else {
-            super.closeResponse();
+    int followedRedirects() {
+        return followedRedirects;
+    }
+
+    static void closeRedirectStream(Http2ClientStream stream, Throwable failure) {
+        try {
+            stream.cancel();
+        } catch (RuntimeException | Error cleanupFailure) {
+            if (failure != cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+        }
+        try {
+            stream.close();
+        } catch (RuntimeException | Error cleanupFailure) {
+            if (failure != cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
         }
     }
 
-    static final class EntityTrackingOutputStreamHandler implements ClientRequest.OutputStreamHandler {
-        private final ClientRequest.OutputStreamHandler delegate;
-        private boolean invoked;
-        private boolean hasEntity;
-
-        EntityTrackingOutputStreamHandler(ClientRequest.OutputStreamHandler delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void handle(OutputStream stream) throws IOException {
-            invoked = true;
-            delegate.handle(new EntityTrackingOutputStream(stream, this));
-        }
-
-        private void markEntity() {
-            hasEntity = true;
-        }
-
-        private boolean invoked() {
-            return invoked;
-        }
-
-        private boolean hasEntity() {
-            return hasEntity;
-        }
-    }
-
-    private static final class EntityTrackingOutputStream extends OutputStream {
-        private final OutputStream delegate;
-        private final EntityTrackingOutputStreamHandler tracker;
-
-        private EntityTrackingOutputStream(OutputStream delegate, EntityTrackingOutputStreamHandler tracker) {
-            this.delegate = delegate;
-            this.tracker = tracker;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            tracker.markEntity();
-            delegate.write(b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            if (len > 0) {
-                tracker.markEntity();
-            }
-            delegate.write(b, off, len);
-        }
-
-        @Override
-        public void flush() throws IOException {
-            delegate.flush();
-        }
-
-        @Override
-        public void close() throws IOException {
-            delegate.close();
-        }
+    private static ClientUri responseCookieUri(RedirectSecurityState securityState, ClientUri endpointUri) {
+        return securityState.lastEffectiveOrigin()
+                .map(origin -> origin.apply(endpointUri))
+                .orElseGet(() -> ClientRequestOrigin.create(endpointUri).apply(endpointUri));
     }
 
     private static class ClientOutputStream extends OutputStream {
@@ -331,12 +174,11 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         private final CompletableFuture<WebClientServiceRequest> whenSent;
         private final CompletableFuture<WebClientServiceResponse> whenComplete;
         private final HttpClientConfig clientConfig;
-        private final WritableHeaders<?> headers;
+        private final ClientRequestHeaders headers;
         private final long contentLength;
         private final Http2CallOutputStreamChain callChain;
 
         private long bytesWritten;
-        private boolean hasEntity;
         private boolean noData = true;
         private boolean closed;
         private boolean interrupted;
@@ -344,18 +186,24 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         private final Http2ClientImpl client;
         private Http2ClientStream stream;
         private Http2ClientRequestImpl lastRequest;
+        private WebClientServiceRequest lastServiceRequest;
+        private ClientUri lastEndpointUri;
         private Http2ClientResponseImpl response;
         private WebClientServiceResponse serviceResponse;
+        private ByteArrayOutputStream redirectedEntity;
+        private Http2ClientRequestImpl redirectedRequest;
+        private RuntimeException redirectFailure;
 
         private ClientOutputStream(Http2ClientImpl client,
                                    Http2CallOutputStreamChain callChain,
                                    Http2ClientStream stream,
-                                   WritableHeaders<?> headers,
+                                   ClientRequestHeaders headers,
                                    HttpClientConfig clientConfig,
                                    WebClientServiceRequest request,
                                    Http2ClientRequestImpl originalRequest,
                                    CompletableFuture<WebClientServiceRequest> whenSent,
-                                   CompletableFuture<WebClientServiceResponse> whenComplete) {
+                                   CompletableFuture<WebClientServiceResponse> whenComplete,
+                                   int followedRedirects) {
             this.client = client;
             this.callChain = callChain;
             this.stream = stream;
@@ -365,6 +213,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             this.request = request;
             this.originalRequest = originalRequest;
             this.lastRequest = originalRequest;
+            this.lastServiceRequest = request;
+            this.lastEndpointUri = ClientUri.create(request.uri().toUri());
+            this.numberOfRedirects = followedRedirects;
             this.whenSent = whenSent;
             this.whenComplete = whenComplete;
         }
@@ -389,9 +240,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             }
 
             BufferData data = BufferData.create(b, off, len);
-            if (len > 0) {
-                hasEntity = true;
-            }
 
             if (noData) {
                 noData = false;
@@ -406,18 +254,52 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 return;
             }
             this.closed = true;
+            if (redirectedEntity != null) {
+                try {
+                    if (contentLength > 0 && contentLength != bytesWritten) {
+                        throw new IOException("Content length is set to " + contentLength
+                                                      + ", but the number of bytes written was " + bytesWritten);
+                    }
+                    response = RedirectionProcessor.invokeWithFollowRedirectsDeferringResponseCookies(
+                            redirectedRequest,
+                            numberOfRedirects,
+                            redirectedEntity.toByteArray());
+                    lastRequest = redirectedRequest;
+                    lastServiceRequest = response.serviceRequest();
+                    lastEndpointUri = response.lastEndpointUri();
+                    whenSent.complete(lastServiceRequest);
+                    interrupted = true;
+                    super.close();
+                    return;
+                } catch (IOException e) {
+                    redirectFailure = new UncheckedIOException(e);
+                    interrupted = true;
+                    throw e;
+                } catch (RuntimeException e) {
+                    redirectFailure = e;
+                    interrupted = true;
+                    throw e;
+                }
+            }
             if (noData) {
                 sendHeader();
             }
             stream.writeData(TERMINATING, true);
+            whenSent.complete(lastServiceRequest);
             super.close();
         }
 
         WebClientServiceResponse serviceResponse() {
-            if (response != null) {
-                return response.toServiceResponse(request, whenComplete);
+            if (serviceResponse != null) {
+                return serviceResponse;
             }
-            return serviceResponse;
+
+            return createServiceResponse(lastServiceRequest,
+                                         clientConfig,
+                                         stream,
+                                         whenComplete,
+                                         response.status(),
+                                         response.headers());
         }
 
         boolean closed() {
@@ -428,20 +310,22 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             return interrupted;
         }
 
-        boolean hasEntity() {
-            return hasEntity;
-        }
-
-        int numberOfRedirects() {
-            return numberOfRedirects;
-        }
-
         private void writeContent(BufferData buffer) throws IOException {
             bytesWritten += buffer.available();
             if (contentLength != -1 && bytesWritten > contentLength) {
                 throw new IOException("Content length was set to " + contentLength
                                               + ", but you are writing additional " + (bytesWritten - contentLength) + " "
                                               + "bytes");
+            }
+            if (redirectedEntity != null) {
+                int available = buffer.available();
+                if ((long) redirectedEntity.size() + available > clientConfig.maxInMemoryEntity()) {
+                    throw new IOException(
+                            "Redirected output-stream request entity exceeds the configured in-memory limit of "
+                                    + clientConfig.maxInMemoryEntity() + " bytes");
+                }
+                redirectedEntity.writeBytes(buffer.readBytes());
+                return;
             }
             stream.writeData(buffer, false);
         }
@@ -451,12 +335,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 headers.set(HeaderValues.EXPECT_100);
             }
 
-            Http2Headers http2Headers = prepareHeaders(request.method(),
-                                                       ClientRequestHeaders.create(headers),
-                                                       request.uri());
+            Http2Headers http2Headers = prepareHeaders(request.method(), headers, request.uri());
 
             stream.writeHeaders(http2Headers, false);
-            whenSent.complete(request);
 
             if (headers.containsToken(HeaderValues.EXPECT_100)) {
                 Status status = waitFor100Continue(stream, originalRequest.readContinueTimeout());
@@ -472,6 +353,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
                         callChain.publishProtocolResponse();
                         checkRedirectHeaders(responseHeaders);
+                        originalRequest.recordResponseCookies(responseCookieUri(originalRequest.redirectSecurityState(),
+                                                                                lastEndpointUri),
+                                                              ClientResponseHeaders.create(responseHeaders.httpHeaders()));
                         redirect(responseStatus, responseHeaders.httpHeaders());
                     } else {
                         //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
@@ -491,7 +375,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
         private void redirect(Status lastStatus, Headers headerValues) {
             String redirectedUri = headerValues.get(HeaderNames.LOCATION).get();
-            ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
             if (RedirectionProcessor.keepsMethodAndEntity(lastRequest.method(), lastStatus)) {
@@ -501,41 +384,58 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 method = Method.GET;
                 sendEntity = false;
             }
-            while (numberOfRedirects < originalRequest.maxRedirects()) {
-                numberOfRedirects++;
-                URI newUri = URI.create(redirectedUri);
-                ClientUri redirectUri = ClientUri.create(newUri);
-                if (newUri.getHost() == null) {
-                    redirectUri.scheme(lastUri.scheme());
-                    redirectUri.host(lastUri.host());
-                    redirectUri.port(lastUri.port());
+            while (true) {
+                ClientUri sourceUri;
+                ClientUri redirectUri;
+                try {
+                    if (numberOfRedirects >= originalRequest.maxRedirects()) {
+                        throw new IllegalStateException("Maximum number of request redirections ("
+                                                                + originalRequest.maxRedirects() + ") reached.");
+                    }
+                    sourceUri = lastEndpointUri;
+                    redirectUri = lastRequest.resolveRedirectUri(sourceUri, redirectedUri);
+                } catch (RuntimeException | Error failure) {
+                    if (stream != null) {
+                        closeRedirectStream(stream, failure);
+                        stream = null;
+                    }
+                    throw failure;
                 }
-                lastUri = redirectUri;
+                numberOfRedirects++;
                 // Queue RST_STREAM before releasing this stream's reservation, so redirected HEADERS
                 // are serialized after the abandoned upload is reset for max-concurrent-streams peers.
-                try {
-                    stream.cancel();
-                } finally {
-                    stream.close();
-                }
-                boolean sendEmptyEntity = false;
-                if (sendEntity && !lastRequest.canReplayEntityTo(redirectUri)) {
-                    // User code already provided bytes for the original origin; do not replay them across origins.
-                    if (hasEntity) {
-                        throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
+                if (stream != null) {
+                    try {
+                        stream.cancel();
+                    } finally {
+                        stream.close();
                     }
-                    sendEmptyEntity = true;
                 }
                 Http2ClientRequestImpl clientRequest = new Http2ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
                                                                                   lastRequest.properties(),
+                                                                                  sourceUri,
                                                                                   sendEntity);
+                if (!sendEntity) {
+                    clientRequest.discardEntityHeaders();
+                }
                 clientRequest.followRedirects(false);
                 clientRequest.readTimeout(originalRequest.readTimeout());
+                if (sendEntity && !clientConfig.services().isEmpty()) {
+                    clientRequest.redirectedWhenSent(whenSent);
+                    redirectedRequest = clientRequest;
+                    redirectedEntity = new ByteArrayOutputStream();
+                    lastRequest = clientRequest;
+                    return;
+                }
+                clientRequest.deferResponseCookies();
                 try {
                     Http2ClientResponseImpl response;
-                    if (sendEntity && !sendEmptyEntity) {
+                    if (sendEntity) {
+                        // The original handler still owns the pending bytes. Do not negotiate an HTTP/1 fallback that
+                        // could consume the redirect request without providing that stream to the handler.
+                        clientRequest.priorKnowledge(true);
                         clientRequest.outputStreamRedirect(true)
                                 .header(HeaderValues.EXPECT_100);
                         response = clientRequest.redirectProbe();
@@ -544,14 +444,18 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                         response = clientRequest.redirectProbe();
                     }
                     lastRequest = clientRequest;
+                    lastServiceRequest = response.serviceRequest();
+                    lastEndpointUri = response.lastEndpointUri();
 
-                    if (Http2Client.PROTOCOL_ID.equals(response.protocolId())) {
-                        stream = response.stream();
-                    }
+                    stream = response.protocolId().equals(Http2Client.PROTOCOL_ID) ? response.stream() : null;
 
                     if (RedirectionProcessor.redirectionStatusCode(response.status())) {
                         try (response) {
                             checkRedirectHeaders(response.headers());
+                            ClientUri endpointUri = response.lastEndpointUri();
+                            clientRequest.recordResponseCookies(responseCookieUri(response.redirectSecurityState(),
+                                                                                  endpointUri),
+                                    response.headers());
                             if (!RedirectionProcessor.keepsMethodAndEntity(lastRequest.method(), response.status())) {
                                 method = Method.GET;
                                 sendEntity = false;
@@ -559,27 +463,23 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                             redirectedUri = response.headers().get(HeaderNames.LOCATION).get();
                         }
                     } else {
-                        if (!sendEntity || sendEmptyEntity) {
-                            //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
-                            this.interrupted = true;
-                            this.response = response;
-                            //we are not sending anything by this OS, we need to interrupt it.
-                            throw new OutputStreamInterruptedException();
-                        }
+                        // The server returned a final response without accepting the pending body, or the redirect
+                        // changed to a bodyless request. The original handler must not write to that completed stream.
                         this.interrupted = true;
                         this.response = response;
                         throw new OutputStreamInterruptedException();
                     }
                 } catch (StreamTimeoutException ignored) {
-                    // We assume this is a timeout exception; if the socket got closed, the next read will throw the
-                    // appropriate exception.
+                    // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
                     // we treat this as receiving 100-Continue
                     this.stream = ignored.stream();
+                    this.lastRequest = clientRequest;
+                    this.lastServiceRequest = clientRequest.finalServiceRequest();
+                    this.lastEndpointUri = clientRequest.finalRequestUri();
                     return;
                 }
 
             }
-            throw RedirectionProcessor.maxRedirectsReached(originalRequest.maxRedirects());
         }
 
     }

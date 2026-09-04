@@ -62,7 +62,9 @@ final class Http2ResponseForwardingWebClient implements WebClient {
 
     @Override
     public void responseReceived(WebClientProtocolResponse response) {
-        responsePublisher.accept(Http1FallbackService.response(response));
+        WebClientProtocolResponse fallbackResponse = Http1FallbackService.response(response);
+        responsePublisher.accept(fallbackResponse);
+        Http1FallbackService.handoffResponse(fallbackResponse);
     }
 
     @Override

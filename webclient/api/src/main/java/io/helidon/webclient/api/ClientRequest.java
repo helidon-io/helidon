@@ -24,8 +24,10 @@ import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
@@ -49,6 +51,77 @@ import io.helidon.http.Status;
  * @param <T> type of the implementation, to support fluent API
  */
 public interface ClientRequest<T extends ClientRequest<T>> {
+    /**
+     * Accept a service-finalized request for a one-shot protocol handoff.
+     * <p>
+     * Implementations based on {@link ClientRequestBase} inherit support. Other implementations can override this method
+     * when they support dispatch after a generic client service chain has already run.
+     *
+     * @param serviceRequest service-finalized request
+     * @param responseConsumer consumer of the transport response before outer services decorate it
+     * @param whenSent future to complete when the transport finishes sending the request
+     * @param protocolConsumer consumer of the actual protocol before {@code whenSent} completes
+     * @return whether the request accepted the handoff
+     */
+    @Api.Internal
+    default boolean serviceRequestAfterServices(WebClientServiceRequest serviceRequest,
+                                                Consumer<WebClientServiceResponse> responseConsumer,
+                                                CompletableFuture<WebClientServiceRequest> whenSent,
+                                                Consumer<String> protocolConsumer) {
+        Objects.requireNonNull(serviceRequest, "serviceRequest");
+        Objects.requireNonNull(responseConsumer, "responseConsumer");
+        Objects.requireNonNull(whenSent, "whenSent");
+        Objects.requireNonNull(protocolConsumer, "protocolConsumer");
+        return false;
+    }
+
+    /**
+     * Accept a service-finalized request for a one-shot protocol handoff and identify whether common terminal cookie,
+     * origin, and entity preparation has already completed.
+     *
+     * @param serviceRequest service-finalized request
+     * @param responseConsumer consumer of the transport response before outer services decorate it
+     * @param whenSent future to complete when the transport finishes sending the request
+     * @param protocolConsumer consumer of the actual protocol before {@code whenSent} completes
+     * @param dispatchPrepared whether common terminal dispatch preparation has already completed
+     * @return whether the request accepted the handoff
+     */
+    @Api.Internal
+    default boolean serviceRequestAfterServices(WebClientServiceRequest serviceRequest,
+                                                Consumer<WebClientServiceResponse> responseConsumer,
+                                                CompletableFuture<WebClientServiceRequest> whenSent,
+                                                Consumer<String> protocolConsumer,
+                                                boolean dispatchPrepared) {
+        return serviceRequestAfterServices(serviceRequest, responseConsumer, whenSent, protocolConsumer);
+    }
+
+    /**
+     * Accept a service-finalized request, identify whether common terminal dispatch preparation has completed, and
+     * forward the exact transport response context to the enclosing protocol.
+     *
+     * @param serviceRequest service-finalized request
+     * @param responseConsumer consumer of the transport response before outer services decorate it
+     * @param whenSent future to complete when the transport finishes sending the request
+     * @param protocolConsumer consumer of the actual protocol before {@code whenSent} completes
+     * @param dispatchPrepared whether common terminal dispatch preparation has already completed
+     * @param protocolResponseConsumer consumer of the exact transport response context before services unwind
+     * @return whether the request accepted the handoff
+     */
+    @Api.Internal
+    default boolean serviceRequestAfterServices(WebClientServiceRequest serviceRequest,
+                                                Consumer<WebClientServiceResponse> responseConsumer,
+                                                CompletableFuture<WebClientServiceRequest> whenSent,
+                                                Consumer<String> protocolConsumer,
+                                                boolean dispatchPrepared,
+                                                Consumer<WebClientProtocolResponse> protocolResponseConsumer) {
+        Objects.requireNonNull(serviceRequest, "serviceRequest");
+        Objects.requireNonNull(responseConsumer, "responseConsumer");
+        Objects.requireNonNull(whenSent, "whenSent");
+        Objects.requireNonNull(protocolConsumer, "protocolConsumer");
+        Objects.requireNonNull(protocolResponseConsumer, "protocolResponseConsumer");
+        return false;
+    }
+
     /**
      * Configure URI.
      *

@@ -496,7 +496,9 @@ class Http1CrossOriginRedirectEntityTest {
                                                                            outputStream.write(requestBodyBytes());
                                                                            outputStream.close();
                                                                        }));
-                assertThat(exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
+                assertThat(exception.getMessage(),
+                           is("Cannot replay a one-shot request body after redirect status "
+                                      + redirectStatus + "."));
 
                 CapturedRequest originRequest = firstHop.awaitRequest();
                 assertThat(originRequest.path(), is("/token"));
@@ -511,7 +513,7 @@ class Http1CrossOriginRedirectEntityTest {
     @ParameterizedTest
     @ValueSource(ints = {307, 308})
     @Timeout(20)
-    void followsAlreadySentOutputStreamRedirectWithEntityWhenEnabled(int redirectStatus) throws Exception {
+    void rejectsAlreadySentOutputStreamRedirectWithEntityWhenEnabled(int redirectStatus) throws Exception {
         try (SecondHopServer secondHop = new SecondHopServer(InetAddress.getByName(SECOND_HOP_HOST));
              FirstHopServer firstHop = new FirstHopServer(InetAddress.getByName(FIRST_HOP_HOST),
                                                           secondHop.port(),
@@ -519,26 +521,25 @@ class Http1CrossOriginRedirectEntityTest {
                                                           redirectStatus)) {
             Http1Client client = newClient(firstHop.port(), true);
             try {
-                try (Http1ClientResponse response = client.post("/token")
-                        .maxRedirects(1)
-                        .sendExpectContinue(false)
-                        .readTimeout(REQUEST_TIMEOUT)
-                        .header(HeaderNames.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .outputStream(outputStream -> {
-                            outputStream.write(requestBodyBytes());
-                            outputStream.close();
-                        })) {
-                    assertThat(response.status().code(), is(200));
-                }
+                IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                               () -> client.post("/token")
+                                                                       .maxRedirects(1)
+                                                                       .sendExpectContinue(false)
+                                                                       .readTimeout(REQUEST_TIMEOUT)
+                                                                       .header(HeaderNames.CONTENT_TYPE,
+                                                                               "application/x-www-form-urlencoded")
+                                                                       .outputStream(outputStream -> {
+                                                                           outputStream.write(requestBodyBytes());
+                                                                           outputStream.close();
+                                                                       }));
+                assertThat(exception.getMessage(),
+                           is("Cannot replay a one-shot request body after redirect status "
+                                      + redirectStatus + "."));
 
                 CapturedRequest originRequest = firstHop.awaitRequest();
                 assertThat(originRequest.path(), is("/token"));
                 assertThat(originRequest.body(), is(REQUEST_BODY));
-
-                CapturedRequest redirectRequest = secondHop.awaitRequest();
-                assertThat(redirectRequest.path(), is("/steal"));
-                assertThat(redirectRequest.header("authorization"), is((String) null));
-                assertThat(redirectRequest.body(), is(REQUEST_BODY));
+                secondHop.assertNoRequest();
             } finally {
                 client.closeResource();
             }

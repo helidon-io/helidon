@@ -87,13 +87,15 @@ class UriPartTest extends TestParent {
     @Test
     void testFragmentIsNotSent() {
         String fragment = "super fragment#&?/";
-        String response = noSecurityClient.get()
+        try (HttpClientResponse response = noSecurityClient.get()
                 .path("obtainedQuery")
                 .queryParam("param", "empty")
                 .queryParam("empty", "")
                 .fragment(fragment)
-                .requestEntity(String.class);
-        assertThat(response.trim(), is(""));
+                .request()) {
+            assertThat(response.as(String.class).trim(), is(""));
+            assertThat(response.lastEndpointUri().fragment().value(), is(fragment));
+        }
     }
 
     @Test
@@ -103,8 +105,8 @@ class UriPartTest extends TestParent {
                 .skipUriEncoding(true)
                 .fragment(fragment)
                 .request()) {
-
             assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.lastEndpointUri().fragment().value(), is(fragment));
         }
     }
 

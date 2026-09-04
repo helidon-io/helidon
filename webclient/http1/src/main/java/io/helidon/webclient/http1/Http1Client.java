@@ -54,7 +54,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType
      * @return a new client
      */
     static Http1Client create(Http1ClientConfig clientConfig) {
-        return new Http1ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig);
+        return new Http1ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig, true);
     }
 
     /**

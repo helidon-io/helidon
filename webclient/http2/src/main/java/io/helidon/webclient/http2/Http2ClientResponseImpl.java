@@ -36,6 +36,7 @@ import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
+import io.helidon.webclient.api.RedirectSecurityState;
 import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -44,17 +45,19 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     private final HttpClientConfig httpClientConfig;
     private final String protocolId;
     private final Status responseStatus;
+    private final WebClientServiceRequest serviceRequest;
+    private final RedirectSecurityState redirectSecurityState;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
-    private final ReleasableResource stream;
+    private final ReleasableResource returnedResource;
+    private final ReleasableResource rawResource;
+    private final Http2ClientStream stream;
     private final CompletableFuture<Void> complete;
     private final Runnable closeResponseRunnable;
     private final CompletableFuture<ClientResponseTrailers> responseTrailers;
     private final InputStream inputStream;
     private final MediaContext mediaContext;
     private final ClientUri lastEndpointUri;
-    private final boolean hasRequestEntity;
-    private final Object requestEntity;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final long maxBufferedEntitySize;
     private boolean entityRequested;
@@ -62,33 +65,37 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     Http2ClientResponseImpl(HttpClientConfig httpClientConfig,
                             String protocolId,
                             Status status,
+                            WebClientServiceRequest serviceRequest,
                             ClientRequestHeaders requestHeaders,
+                            RedirectSecurityState redirectSecurityState,
                             ClientResponseHeaders responseHeaders,
                             CompletableFuture<ClientResponseTrailers> responseTrailers,
                             InputStream inputStream, // input stream is nullable - no response entity
                             MediaContext mediaContext,
                             ClientUri lastEndpointUri,
-                            ReleasableResource stream,
+                            ReleasableResource returnedResource,
+                            ReleasableResource rawResource,
+                            Http2ClientStream stream,
                             CompletableFuture<Void> complete,
                             Runnable closeResponseRunnable,
-                            long maxBufferedEntitySize,
-                            boolean hasRequestEntity,
-                            Object requestEntity) {
+                            long maxBufferedEntitySize) {
         this.httpClientConfig = httpClientConfig;
         this.protocolId = protocolId;
         this.responseStatus = status;
+        this.serviceRequest = serviceRequest;
+        this.redirectSecurityState = redirectSecurityState;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.responseTrailers = responseTrailers;
         this.inputStream = inputStream;
         this.mediaContext = mediaContext;
         this.lastEndpointUri = lastEndpointUri;
+        this.returnedResource = returnedResource;
+        this.rawResource = rawResource;
         this.stream = stream;
         this.complete = complete;
         this.closeResponseRunnable = closeResponseRunnable;
         this.maxBufferedEntitySize = maxBufferedEntitySize;
-        this.hasRequestEntity = hasRequestEntity;
-        this.requestEntity = requestEntity;
     }
 
     @Override
@@ -119,15 +126,24 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         try {
             return ClientResponseTrailers.create(this.responseTrailers.get(timeout.toMillis(), TimeUnit.MILLISECONDS));
         } catch (TimeoutException e) {
-            throw new IllegalStateException("Timeout " + timeout + " reached while waiting for trailers.", e);
+            IllegalStateException failure = new IllegalStateException(
+                    "Timeout " + timeout + " reached while waiting for trailers.", e);
+            failResponse(failure);
+            throw failure;
         } catch (InterruptedException e) {
-            throw new IllegalStateException("Interrupted while waiting for trailers.", e);
+            Thread.currentThread().interrupt();
+            IllegalStateException failure = new IllegalStateException("Interrupted while waiting for trailers.", e);
+            failResponse(failure);
+            throw failure;
         } catch (ExecutionException e) {
+            IllegalStateException failure;
             if (e.getCause() instanceof IllegalStateException ise) {
-                throw ise;
+                failure = ise;
             } else {
-                throw new IllegalStateException(e.getCause());
+                failure = new IllegalStateException(e.getCause());
             }
+            failResponse(failure);
+            throw failure;
         }
     }
 
@@ -148,32 +164,41 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                 maxBufferedEntitySize);
     }
 
-    Http2ClientStream stream() {
-        return (Http2ClientStream) stream;
+    @Override
+    public long maxBufferedEntitySize() {
+        return maxBufferedEntitySize;
     }
 
-    boolean hasRequestEntity() {
-        return hasRequestEntity;
+    @Override
+    public void serviceEntityConsumed() {
+        entityRequested = true;
     }
 
-    Object requestEntity() {
-        return requestEntity;
-    }
-
-    WebClientServiceResponse toServiceResponse(WebClientServiceRequest serviceRequest,
-                                               CompletableFuture<WebClientServiceResponse> whenComplete) {
-        WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
-        if (inputStream != null) {
-            builder.inputStream(inputStream);
-        }
-        return builder
+    WebClientServiceResponse serviceResponse(WebClientServiceRequest serviceRequest,
+                                             CompletableFuture<WebClientServiceResponse> whenComplete) {
+        WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder()
                 .serviceRequest(serviceRequest)
                 .whenComplete(whenComplete)
                 .status(responseStatus)
                 .headers(responseHeaders)
                 .trailers(responseTrailers)
-                .connection(stream)
-                .build();
+                .connection(this::close);
+        if (inputStream != null) {
+            builder.inputStream(inputStream);
+        }
+        return builder.build();
+    }
+
+    WebClientServiceRequest serviceRequest() {
+        return serviceRequest;
+    }
+
+    RedirectSecurityState redirectSecurityState() {
+        return redirectSecurityState;
+    }
+
+    Http2ClientStream stream() {
+        return stream;
     }
 
     private BufferData readBytes(int estimate) {
@@ -187,7 +212,12 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
             }
             return BufferData.create(buffer, 0, read);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            UncheckedIOException failure = new UncheckedIOException(e);
+            failResponse(failure);
+            throw failure;
+        } catch (RuntimeException | Error failure) {
+            failResponse(failure);
+            throw failure;
         }
     }
 
@@ -198,9 +228,56 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
 
     @Override
     public void close() {
-        if (!closed.getAndSet(true)) {
-            complete.complete(null);
-            closeResponseRunnable.run();
+        if (closed.compareAndSet(false, true)) {
+            Throwable failure = closeResources(null);
+            if (failure == null) {
+                complete.complete(null);
+            } else {
+                responseTrailers.completeExceptionally(failure);
+                complete.completeExceptionally(failure);
+            }
+            if (failure instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (failure instanceof Error error) {
+                throw error;
+            }
         }
+    }
+
+    private void failResponse(Throwable failure) {
+        if (closed.compareAndSet(false, true)) {
+            failure = closeResources(failure);
+            responseTrailers.completeExceptionally(failure);
+            complete.completeExceptionally(failure);
+        }
+    }
+
+    private Throwable closeResources(Throwable failure) {
+        if (returnedResource != rawResource) {
+            try {
+                returnedResource.closeResource();
+            } catch (RuntimeException | Error cleanupFailure) {
+                failure = mergeFailure(failure, cleanupFailure);
+            }
+        }
+        if (rawResource != null) {
+            try {
+                closeResponseRunnable.run();
+            } catch (RuntimeException | Error cleanupFailure) {
+                failure = mergeFailure(failure, cleanupFailure);
+            }
+        }
+        return failure;
+    }
+
+    private static Throwable mergeFailure(Throwable primary, Throwable secondary) {
+        if (primary == null) {
+            return secondary;
+        }
+        if (primary != secondary) {
+            primary.addSuppressed(secondary);
+        }
+        return primary;
     }
 }

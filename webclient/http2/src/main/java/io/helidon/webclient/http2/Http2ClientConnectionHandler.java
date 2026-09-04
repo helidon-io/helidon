@@ -123,7 +123,8 @@ class Http2ClientConnectionHandler {
     }
 
     static boolean http1FallbackAllowed(Http2ClientRequestImpl request) {
-        return request.tcpProtocolIds().contains(Http1Client.PROTOCOL_ID);
+        return !request.outputStreamRedirect()
+                && request.tcpProtocolIds().contains(Http1Client.PROTOCOL_ID);
     }
 
     static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri,
@@ -507,6 +508,7 @@ class Http2ClientConnectionHandler {
         if (requestTarget.transportAddress().isEmpty()
                 && http1Request instanceof FullClientRequest<?> fullClientRequest) {
             fullClientRequest.selectedProxyRoute(requestTarget.proxyRoute());
+            fullClientRequest.redirectSecurityState(request.redirectSecurityState());
         }
         return http1Request;
     }
