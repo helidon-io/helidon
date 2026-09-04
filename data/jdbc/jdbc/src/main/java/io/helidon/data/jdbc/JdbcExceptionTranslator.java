@@ -76,21 +76,6 @@ final class JdbcExceptionTranslator {
     }
 
     /**
-     * Translates a driver failure without deriving an identity from its SQL.
-     *
-     * @param operation operation name
-     * @param cause driver failure
-     * @return data-layer failure
-     */
-    static DataException translate(String operation, SQLException cause) {
-        SqlMetadata metadata = sqlMetadata(cause);
-        // A stable unkeyed SQL digest would let diagnostic readers identify predictable statements by comparison.
-        String message = "The JDBC " + operation + " failed." + databaseDiagnostic(metadata)
-                + driverDocumentationGuidance(metadata);
-        return new DataException(message, safeCause(cause, metadata));
-    }
-
-    /**
      * Converts a JDBC boundary failure to an unchecked failure. SQL exceptions
      * become sanitized data exceptions, existing runtime exceptions retain
      * their type, and fatal errors propagate unchanged.
@@ -249,14 +234,18 @@ final class JdbcExceptionTranslator {
     }
 
     /**
-     * Formats the safe JDBC metadata retained from an SQL failure.
+     * Translates a driver failure without deriving an identity from its SQL.
      *
-     * @param cause JDBC failure
-     * @return application-visible diagnostic suffix
+     * @param operation operation name
+     * @param cause driver failure
+     * @return data-layer failure
      */
-    static String sqlDiagnostic(SQLException cause) {
+    private static DataException translate(String operation, SQLException cause) {
         SqlMetadata metadata = sqlMetadata(cause);
-        return databaseDiagnostic(metadata) + driverDocumentationGuidance(metadata);
+        // A stable unkeyed SQL digest would let diagnostic readers identify predictable statements by comparison.
+        String message = "The JDBC " + operation + " failed." + databaseDiagnostic(metadata)
+                + driverDocumentationGuidance(metadata);
+        return new DataException(message, safeCause(cause, metadata));
     }
 
     /**
@@ -590,6 +579,22 @@ final class JdbcExceptionTranslator {
         }
 
         /**
+         * Copies safe SQL metadata without retaining a driver message or
+         * throwable reference.
+         *
+         * @param source driver-owned SQL exception
+         * @param diagnosticBudget shared diagnostic node budget
+         * @param metadata safe SQL metadata
+         * @return provider-owned SQL exception
+         */
+        private static SQLException copySqlException(SQLException source,
+                                                     DiagnosticBudget diagnosticBudget,
+                                                     SqlMetadata metadata) {
+            String message = source instanceof SafeSQLException ? source.getMessage() : DRIVER_FAILURE;
+            return new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode(), diagnosticBudget);
+        }
+
+        /**
          * Copies the reachable graph within the diagnostic budget.
          *
          * @return bounded provider-owned root exception
@@ -730,20 +735,6 @@ final class JdbcExceptionTranslator {
          */
         private void recordEdge(Throwable parent, Throwable child) {
             acceptedEdges.computeIfAbsent(parent, _ -> new ArrayList<>(2)).add(child);
-        }
-
-        /**
-         * Copies safe SQL metadata without retaining a driver message or
-         * throwable reference.
-         *
-         * @param source driver-owned SQL exception
-         * @return provider-owned SQL exception
-         */
-        private static SQLException copySqlException(SQLException source,
-                                                     DiagnosticBudget diagnosticBudget,
-                                                     SqlMetadata metadata) {
-            String message = source instanceof SafeSQLException ? source.getMessage() : DRIVER_FAILURE;
-            return new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode(), diagnosticBudget);
         }
 
         /**

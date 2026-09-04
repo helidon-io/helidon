@@ -19,6 +19,31 @@ Configuration for a JDBC client
 <tbody>
 <tr>
 <td>
+<a id="connection"></a>
+<a href="io.helidon.data.sql.common.ConnectionConfig.md">
+<code>connection</code>
+</a>
+</td>
+<td>
+<code>Connection<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Configuration of a direct connection to a database, with exactly one of <code>connection</code> and <code>data-<wbr>source</code> required</td>
+</tr>
+<tr>
+<td>
+<code>data-<wbr>source</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Name of the <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>, with exactly one of <code>connection</code> and <code>data-<wbr>source</code> required</td>
+</tr>
+<tr>
+<td>
 <code>name</code>
 </td>
 <td>

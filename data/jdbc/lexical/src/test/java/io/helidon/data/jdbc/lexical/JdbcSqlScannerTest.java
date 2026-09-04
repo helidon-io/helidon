@@ -323,6 +323,21 @@ class JdbcSqlScannerTest {
     }
 
     /**
+     * Verifies that the protected-region callback rejects a null region kind
+     * at its public boundary.
+     */
+    @Test
+    void rejectsNullProtectedRegionKind() {
+        JdbcSqlScanHandler handler = new JdbcSqlScanHandler() {
+        };
+
+        NullPointerException failure = assertThrows(NullPointerException.class,
+                                                     () -> handler.protectedRegion(null, 0, 0));
+
+        assertThat(failure.getMessage(), is("The protected region kind must not be null."));
+    }
+
+    /**
      * Verifies that malformed protected regions report a safe profile and
      * source offset without including the SQL source.
      */

@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -104,6 +105,7 @@ class AptContextImpl extends CodegenContextBase implements AptContext {
 
     @Override
     public TypeHierarchyResolver typeHierarchyResolver(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
+        Objects.requireNonNull(typeInfoLookup, "The type information lookup must not be null.");
         return new AptTypeHierarchyResolver(env, typeInfoLookup);
     }
 

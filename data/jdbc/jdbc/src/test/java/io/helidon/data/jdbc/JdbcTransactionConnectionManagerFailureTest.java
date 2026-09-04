@@ -23,6 +23,7 @@ import javax.sql.DataSource;
 import io.helidon.data.DataException;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -39,6 +40,26 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcTransactionConnectionManagerFailureTest {
+
+    /**
+     * Verifies that invalid lifecycle arguments fail before accessing or
+     * installing thread-local state.
+     */
+    @Test
+    void validatesLifecycleArgumentsBeforeAccessingThreadState() {
+        JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
+
+        assertNullArgument(() -> manager.start(null), "The transaction type must not be null.");
+        IllegalStateException failure = assertThrows(IllegalStateException.class, manager::end);
+        assertThat(failure.getMessage(),
+                   is("The provider cannot end a transaction lifecycle without a matching transaction lifecycle start."));
+
+        assertNullArgument(() -> manager.begin(null), "The transaction identity must not be null.");
+        assertNullArgument(() -> manager.commit(null), "The transaction identity must not be null.");
+        assertNullArgument(() -> manager.rollback(null), "The transaction identity must not be null.");
+        assertNullArgument(() -> manager.suspend(null), "The transaction identity must not be null.");
+        assertNullArgument(() -> manager.resume(null), "The transaction identity must not be null.");
+    }
 
     /**
      * Verifies that transaction connection acquisition translates checked SQL
@@ -126,6 +147,11 @@ class JdbcTransactionConnectionManagerFailureTest {
         manager.start(Jdbc.PROVIDER);
         manager.begin(identity);
         return manager;
+    }
+
+    private static void assertNullArgument(Executable invocation, String message) {
+        NullPointerException failure = assertThrows(NullPointerException.class, invocation);
+        assertThat(failure.getMessage(), is(message));
     }
 
     private static IllegalStateException driverRuntimeFailure(String secret) {

@@ -53,6 +53,15 @@ public final class ImperativeTransactionMatrixOperations implements TransactionM
         return Tx.transaction(policy.type(), () -> execute(operation));
     }
 
+    private static JdbcClient.GeneratedKeys generatedKeys(JdbcClient.Statement statement) {
+        JdbcClient.GeneratedKeys generatedKeys = statement.generatedKeys();
+        String column = System.getProperty(GENERATED_KEY_COLUMN_PROPERTY);
+        if (column != null) {
+            generatedKeys.addColumn(column);
+        }
+        return generatedKeys;
+    }
+
     private long execute(TransactionOperation operation) {
         return switch (operation) {
         case QUERY -> client.create(TransactionSql.QUERY).map(Long.class).one();
@@ -61,14 +70,5 @@ public final class ImperativeTransactionMatrixOperations implements TransactionM
                 .map(row -> row.get(1, Long.class))
                 .one();
         };
-    }
-
-    private static JdbcClient.GeneratedKeys generatedKeys(JdbcClient.Statement statement) {
-        JdbcClient.GeneratedKeys generatedKeys = statement.generatedKeys();
-        String column = System.getProperty(GENERATED_KEY_COLUMN_PROPERTY);
-        if (column != null) {
-            generatedKeys.addColumn(column);
-        }
-        return generatedKeys;
     }
 }

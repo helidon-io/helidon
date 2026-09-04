@@ -77,32 +77,6 @@ public class TypeHierarchyResolver {
         return new TypeHierarchyResolver(typeInfoLookup);
     }
 
-    static TypeName substitute(TypeName type, Map<String, TypeName> substitutions) {
-        TypeName replacement = typeVariable(type)
-                ? substitutions.get(genericName(type.className()))
-                : null;
-        if (replacement != null) {
-            return mergeTypeUseAnnotations(replacement, type);
-        }
-        TypeName.Builder builder = TypeName.builder(type)
-                .typeArguments(type.typeArguments()
-                                       .stream()
-                                       .map(argument -> substitute(argument, substitutions))
-                                       .toList())
-                .lowerBounds(type.lowerBounds()
-                                     .stream()
-                                     .map(bound -> substitute(bound, substitutions))
-                                     .toList())
-                .upperBounds(type.upperBounds()
-                                     .stream()
-                                     .map(bound -> substitute(bound, substitutions))
-                                     .toList());
-        type.componentType()
-                .map(component -> substitute(component, substitutions))
-                .ifPresent(builder::componentType);
-        return builder.build();
-    }
-
     /**
      * Returns effective interface methods with interface type variables resolved.
      * <p>
@@ -216,6 +190,32 @@ public class TypeHierarchyResolver {
         return Optional.empty();
     }
 
+    private static TypeName substitute(TypeName type, Map<String, TypeName> substitutions) {
+        TypeName replacement = typeVariable(type)
+                ? substitutions.get(genericName(type.className()))
+                : null;
+        if (replacement != null) {
+            return mergeTypeUseAnnotations(replacement, type);
+        }
+        TypeName.Builder builder = TypeName.builder(type)
+                .typeArguments(type.typeArguments()
+                                       .stream()
+                                       .map(argument -> substitute(argument, substitutions))
+                                       .toList())
+                .lowerBounds(type.lowerBounds()
+                                     .stream()
+                                     .map(bound -> substitute(bound, substitutions))
+                                     .toList())
+                .upperBounds(type.upperBounds()
+                                     .stream()
+                                     .map(bound -> substitute(bound, substitutions))
+                                     .toList());
+        type.componentType()
+                .map(component -> substitute(component, substitutions))
+                .ifPresent(builder::componentType);
+        return builder.build();
+    }
+
     private static Map<String, TypeName> substitutions(TypeInfo typeInfo,
                                                        Map<String, TypeName> inherited,
                                                        boolean rawType) {
@@ -242,44 +242,6 @@ public class TypeHierarchyResolver {
                        substitute(arguments.get(index), inherited));
         }
         return result;
-    }
-
-    private void collectMethods(TypeInfo rootInterface,
-                                TypeInfo typeInfo,
-                                Map<String, TypeName> inheritedSubstitutions,
-                                TypeName repositoryType,
-                                boolean rawType,
-                                Set<String> visited,
-                                Map<ElementSignature, List<MethodCandidate>> methods) {
-        if (!visited.add(typeInfo.typeName().resolvedName() + ':' + rawType)) {
-            return;
-        }
-
-        Map<String, TypeName> substitutions = substitutions(typeInfo, inheritedSubstitutions, rawType);
-        for (TypedElementInfo element : typeInfo.elementInfo()) {
-            if (element.kind() == ElementKind.METHOD
-                    && isOverrideCandidate(element)) {
-                // Default methods participate because they can satisfy or override an abstract declaration.
-                TypedElementInfo method = resolveEnvironmentMember(rootInterface, element)
-                        .orElseGet(() -> resolveMethod(element, substitutions, repositoryType));
-                methods.computeIfAbsent(TypeHierarchy.methodSignature(method), _ -> new ArrayList<>())
-                        .add(new MethodCandidate(method, typeInfo));
-            }
-        }
-
-        for (TypeInfo inheritedInterface : typeInfo.interfaceTypeInfo()) {
-            ResolvedHierarchyType resolved = resolveHierarchyType(inheritedInterface,
-                                                                  inheritedInterface.typeName(),
-                                                                  substitutions,
-                                                                  rawType);
-            collectMethods(rootInterface,
-                           TypeInfo.builder(inheritedInterface).typeName(resolved.type()).build(),
-                           substitutions,
-                           repositoryType,
-                           resolved.raw(),
-                           visited,
-                           methods);
-        }
     }
 
     private static boolean isOverrideCandidate(TypedElementInfo method) {
@@ -326,161 +288,9 @@ public class TypeHierarchyResolver {
                 .build();
     }
 
-    private ResolvedMethod effectiveMethod(TypeInfo interfaceInfo,
-                                           ElementSignature signature,
-                                           List<MethodCandidate> declarations) {
-        List<MethodCandidate> candidates = declarations.stream()
-                .filter(candidate -> declarations.stream()
-                        .noneMatch(other -> other != candidate
-                                && environmentOverrides(interfaceInfo, other.method(), candidate.method())
-                                        .orElseGet(() -> isSubtype(other.owner(), candidate.owner()))))
-                .toList();
-        MethodCandidate first = candidates.getFirst();
-
-        MethodCandidate selected = null;
-        for (MethodCandidate candidate : candidates) {
-            boolean compatible = candidates.stream()
-                    .allMatch(other -> environmentReturnTypeAssignable(interfaceInfo,
-                                                                       candidate.method(),
-                                                                       other.method())
-                            .orElseGet(() -> returnTypeAssignable(candidate.method().typeName(),
-                                                                 adaptMethodTypeVariables(other.method(),
-                                                                                          candidate.method()))));
-            if (compatible && (selected == null
-                    || morePrecise(interfaceInfo, candidate.method(), selected.method(), candidates))) {
-                selected = candidate;
-            }
-        }
-        if (selected == null) {
-            MethodCandidate second = candidates.size() == 1 ? first : candidates.get(1);
-            throw new CodegenException("Inherited method '" + signature.text()
-                                               + "' has return types that cannot be implemented by one method.",
-                                       first.method().originatingElementValue(),
-                                       second.method().originatingElementValue());
-        }
-        TypedElementInfo method = compatibleCheckedExceptions(selected.method(), candidates);
-        return new ResolvedMethod(method,
-                                  candidates.stream()
-                                          .map(MethodCandidate::method)
-                                          .toList());
-    }
-
     private static boolean isSubtype(TypeInfo candidate, TypeInfo existing) {
         return !candidate.typeName().genericTypeName().equals(existing.typeName().genericTypeName())
                 && candidate.findInHierarchy(existing.typeName().genericTypeName()).isPresent();
-    }
-
-    private boolean returnTypeAssignable(TypeName candidate, TypeName existing) {
-        if (sameType(candidate, existing)) {
-            return true;
-        }
-        if (typeVariable(candidate)) {
-            if (candidate.upperBounds().isEmpty()) {
-                return existing.equals(TypeNames.OBJECT);
-            }
-            return candidate.upperBounds()
-                    .stream()
-                    .anyMatch(bound -> returnTypeAssignable(bound, existing));
-        }
-        if (typeVariable(existing)) {
-            return false;
-        }
-        if (candidate.array()) {
-            if (existing.array()) {
-                TypeName candidateComponent = candidate.componentType().orElseThrow();
-                TypeName existingComponent = existing.componentType().orElseThrow();
-                if (candidateComponent.primitive() || existingComponent.primitive()) {
-                    return candidateComponent.equals(existingComponent);
-                }
-                return returnTypeAssignable(candidateComponent, existingComponent);
-            }
-            return existing.equals(TypeNames.OBJECT)
-                    || existing.equals(CLONEABLE)
-                    || existing.equals(SERIALIZABLE);
-        }
-        if (existing.array()) {
-            return false;
-        }
-        if (candidate.primitive() || existing.primitive()) {
-            return false;
-        }
-        if (existing.equals(TypeNames.OBJECT) && !candidate.primitive()) {
-            return true;
-        }
-        return resolveSupertype(candidate, existing.genericTypeName())
-                .filter(supertype -> parameterizationAssignable(supertype, existing))
-                .isPresent();
-    }
-
-    private Optional<TypeName> resolveModelSupertype(TypeName candidate, TypeName expected) {
-        if (sameErasure(candidate, expected)) {
-            return Optional.of(candidate);
-        }
-        return typeInfoLookup.apply(declarationType(candidate))
-                .flatMap(typeInfo -> resolveModelSupertype(typeInfo,
-                                                           candidate,
-                                                           expected,
-                                                           rawType(typeInfo, candidate),
-                                                           new HashSet<>()));
-    }
-
-    private Optional<TypeName> resolveModelSupertype(TypeInfo typeInfo,
-                                                     TypeName resolvedType,
-                                                     TypeName expected,
-                                                     boolean rawType,
-                                                     Set<String> visited) {
-        if (sameErasure(resolvedType, expected)) {
-            return Optional.of(resolvedType);
-        }
-        if (!visited.add(resolvedType.resolvedName() + ':' + rawType)) {
-            return Optional.empty();
-        }
-
-        Map<String, TypeName> substitutions = substitutions(TypeInfo.builder(typeInfo)
-                                                                    .typeName(resolvedType)
-                                                                    .build(),
-                                                               Map.of(),
-                                                               rawType);
-        for (TypeName implicitType : implicitSupertypes(typeInfo, resolvedType)) {
-            if (sameErasure(implicitType, expected)) {
-                return Optional.of(implicitType);
-            }
-            Optional<TypeName> found = typeInfoLookup.apply(declarationType(implicitType))
-                    .flatMap(implicitInfo -> resolveModelSupertype(implicitInfo,
-                                                                   implicitType,
-                                                                   expected,
-                                                                   rawType(implicitInfo, implicitType),
-                                                                   visited));
-            if (found.isPresent()) {
-                return found;
-            }
-        }
-        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
-            ResolvedHierarchyType resolved = resolveHierarchyType(interfaceInfo,
-                                                                  interfaceInfo.typeName(),
-                                                                  substitutions,
-                                                                  rawType);
-            Optional<TypeName> found = resolveModelSupertype(interfaceInfo,
-                                                             resolved.type(),
-                                                             expected,
-                                                             resolved.raw(),
-                                                             visited);
-            if (found.isPresent()) {
-                return found;
-            }
-        }
-        return typeInfo.superTypeInfo()
-                .flatMap(superInfo -> {
-                    ResolvedHierarchyType resolved = resolveHierarchyType(superInfo,
-                                                                          superInfo.typeName(),
-                                                                          substitutions,
-                                                                          rawType);
-                    return resolveModelSupertype(superInfo,
-                                                 resolved.type(),
-                                                 expected,
-                                                 resolved.raw(),
-                                                 visited);
-                });
     }
 
     private static List<TypeName> implicitSupertypes(TypeInfo typeInfo, TypeName resolvedType) {
@@ -501,96 +311,6 @@ public class TypeHierarchyResolver {
                 .build();
     }
 
-    private boolean parameterizationAssignable(TypeName candidate, TypeName existing) {
-        List<TypeName> existingArguments = existing.typeArguments();
-        if (existingArguments.isEmpty()) {
-            return true;
-        }
-        List<TypeName> candidateArguments = candidate.typeArguments();
-        if (candidateArguments.isEmpty()) {
-            // Java return type substitutability permits the corresponding unchecked raw conversion.
-            return true;
-        }
-        if (candidateArguments.size() != existingArguments.size()) {
-            return false;
-        }
-        for (int index = 0; index < candidateArguments.size(); index++) {
-            if (!typeArgumentContained(candidateArguments.get(index), existingArguments.get(index))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean typeArgumentContained(TypeName candidate, TypeName existing) {
-        if (sameType(candidate, existing)) {
-            return true;
-        }
-        if (!existing.wildcard()) {
-            return false;
-        }
-        if (existing.upperBounds().isEmpty() && existing.lowerBounds().isEmpty()) {
-            return true;
-        }
-        if (!existing.upperBounds().isEmpty()) {
-            if (candidate.wildcard() && !candidate.lowerBounds().isEmpty()) {
-                return false;
-            }
-            List<TypeName> candidateBounds = candidate.wildcard()
-                    ? candidate.upperBounds()
-                    : List.of(candidate);
-            if (candidateBounds.isEmpty()) {
-                candidateBounds = List.of(TypeNames.OBJECT);
-            }
-            List<TypeName> resolvedCandidateBounds = candidateBounds;
-            return existing.upperBounds()
-                    .stream()
-                    .allMatch(existingBound -> resolvedCandidateBounds.stream()
-                            .anyMatch(candidateBound -> returnTypeAssignable(candidateBound, existingBound)));
-        }
-        if (candidate.wildcard() && candidate.lowerBounds().isEmpty()) {
-            return false;
-        }
-        List<TypeName> candidateBounds = candidate.wildcard()
-                ? candidate.lowerBounds()
-                : List.of(candidate);
-        return existing.lowerBounds()
-                .stream()
-                .allMatch(existingBound -> candidateBounds.stream()
-                        .anyMatch(candidateBound -> returnTypeAssignable(existingBound, candidateBound)));
-    }
-
-    private TypedElementInfo compatibleCheckedExceptions(TypedElementInfo selected,
-                                                         List<MethodCandidate> candidates) {
-        LinkedHashSet<TypeName> exceptions = new LinkedHashSet<>();
-        for (TypeName selectedException : selected.throwsChecked()) {
-            boolean compatible = true;
-            for (MethodCandidate candidate : candidates) {
-                if (candidate.method() == selected) {
-                    continue;
-                }
-                Map<String, TypeName> aliases = methodTypeAliases(candidate.method(), selected);
-                boolean declared = candidate.method().throwsChecked()
-                        .stream()
-                        .map(exception -> substitute(exception, aliases))
-                        .anyMatch(exception -> returnTypeAssignable(selectedException, exception));
-                if (!declared) {
-                    compatible = false;
-                    break;
-                }
-            }
-            if (compatible) {
-                exceptions.add(selectedException);
-            }
-        }
-        if (exceptions.equals(selected.throwsChecked())) {
-            return selected;
-        }
-        return TypedElementInfo.builder(selected)
-                .throwsChecked(exceptions)
-                .build();
-    }
-
     private static TypeName adaptMethodTypeVariables(TypedElementInfo source, TypedElementInfo target) {
         return substitute(source.typeName(), methodTypeAliases(source, target));
     }
@@ -606,29 +326,6 @@ public class TypeHierarchyResolver {
             aliases.put(genericName(sourceParameters.get(index).className()), targetParameters.get(index));
         }
         return aliases;
-    }
-
-    private boolean morePrecise(TypeInfo interfaceInfo,
-                                TypedElementInfo candidate,
-                                TypedElementInfo existing,
-                                List<MethodCandidate> candidates) {
-        Optional<Boolean> compilerDecision = environmentReturnTypeAssignable(interfaceInfo, candidate, existing);
-        Optional<Boolean> reverseCompilerDecision = environmentReturnTypeAssignable(interfaceInfo, existing, candidate);
-        if (compilerDecision.orElse(false) != reverseCompilerDecision.orElse(false)) {
-            return compilerDecision.orElse(false);
-        }
-        int candidatePrecision = typePrecision(candidate.typeName());
-        int existingPrecision = typePrecision(existing.typeName());
-        if (candidatePrecision != existingPrecision) {
-            return candidatePrecision > existingPrecision;
-        }
-        int candidateExceptions = compatibleCheckedExceptions(candidate, candidates).throwsChecked().size();
-        int existingExceptions = compatibleCheckedExceptions(existing, candidates).throwsChecked().size();
-        if (candidateExceptions != existingExceptions) {
-            return candidateExceptions > existingExceptions;
-        }
-        return candidate.elementModifiers().contains(Modifier.DEFAULT)
-                && !existing.elementModifiers().contains(Modifier.DEFAULT);
     }
 
     private static int typePrecision(TypeName type) {
@@ -845,6 +542,309 @@ public class TypeHierarchyResolver {
         if (!annotations.contains(annotation)) {
             annotations.add(annotation);
         }
+    }
+
+    private void collectMethods(TypeInfo rootInterface,
+                                TypeInfo typeInfo,
+                                Map<String, TypeName> inheritedSubstitutions,
+                                TypeName repositoryType,
+                                boolean rawType,
+                                Set<String> visited,
+                                Map<ElementSignature, List<MethodCandidate>> methods) {
+        if (!visited.add(typeInfo.typeName().resolvedName() + ':' + rawType)) {
+            return;
+        }
+
+        Map<String, TypeName> substitutions = substitutions(typeInfo, inheritedSubstitutions, rawType);
+        for (TypedElementInfo element : typeInfo.elementInfo()) {
+            if (element.kind() == ElementKind.METHOD
+                    && isOverrideCandidate(element)) {
+                // Default methods participate because they can satisfy or override an abstract declaration.
+                TypedElementInfo method = resolveEnvironmentMember(rootInterface, element)
+                        .orElseGet(() -> resolveMethod(element, substitutions, repositoryType));
+                methods.computeIfAbsent(TypeHierarchy.methodSignature(method), _ -> new ArrayList<>())
+                        .add(new MethodCandidate(method, typeInfo));
+            }
+        }
+
+        for (TypeInfo inheritedInterface : typeInfo.interfaceTypeInfo()) {
+            ResolvedHierarchyType resolved = resolveHierarchyType(inheritedInterface,
+                                                                  inheritedInterface.typeName(),
+                                                                  substitutions,
+                                                                  rawType);
+            collectMethods(rootInterface,
+                           TypeInfo.builder(inheritedInterface).typeName(resolved.type()).build(),
+                           substitutions,
+                           repositoryType,
+                           resolved.raw(),
+                           visited,
+                           methods);
+        }
+    }
+
+    private ResolvedMethod effectiveMethod(TypeInfo interfaceInfo,
+                                           ElementSignature signature,
+                                           List<MethodCandidate> declarations) {
+        List<MethodCandidate> candidates = declarations.stream()
+                .filter(candidate -> declarations.stream()
+                        .noneMatch(other -> other != candidate
+                                && environmentOverrides(interfaceInfo, other.method(), candidate.method())
+                                        .orElseGet(() -> isSubtype(other.owner(), candidate.owner()))))
+                .toList();
+        MethodCandidate first = candidates.getFirst();
+
+        MethodCandidate selected = null;
+        for (MethodCandidate candidate : candidates) {
+            boolean compatible = candidates.stream()
+                    .allMatch(other -> environmentReturnTypeAssignable(interfaceInfo,
+                                                                       candidate.method(),
+                                                                       other.method())
+                            .orElseGet(() -> returnTypeAssignable(candidate.method().typeName(),
+                                                                 adaptMethodTypeVariables(other.method(),
+                                                                                          candidate.method()))));
+            if (compatible && (selected == null
+                    || morePrecise(interfaceInfo, candidate.method(), selected.method(), candidates))) {
+                selected = candidate;
+            }
+        }
+        if (selected == null) {
+            MethodCandidate second = candidates.size() == 1 ? first : candidates.get(1);
+            throw new CodegenException("Inherited method '" + signature.text()
+                                               + "' has return types that cannot be implemented by one method.",
+                                       first.method().originatingElementValue(),
+                                       second.method().originatingElementValue());
+        }
+        TypedElementInfo method = compatibleCheckedExceptions(selected.method(), candidates);
+        return new ResolvedMethod(method,
+                                  candidates.stream()
+                                          .map(MethodCandidate::method)
+                                          .toList());
+    }
+
+    private boolean returnTypeAssignable(TypeName candidate, TypeName existing) {
+        if (sameType(candidate, existing)) {
+            return true;
+        }
+        if (typeVariable(candidate)) {
+            if (candidate.upperBounds().isEmpty()) {
+                return existing.equals(TypeNames.OBJECT);
+            }
+            return candidate.upperBounds()
+                    .stream()
+                    .anyMatch(bound -> returnTypeAssignable(bound, existing));
+        }
+        if (typeVariable(existing)) {
+            return false;
+        }
+        if (candidate.array()) {
+            if (existing.array()) {
+                TypeName candidateComponent = candidate.componentType().orElseThrow();
+                TypeName existingComponent = existing.componentType().orElseThrow();
+                if (candidateComponent.primitive() || existingComponent.primitive()) {
+                    return candidateComponent.equals(existingComponent);
+                }
+                return returnTypeAssignable(candidateComponent, existingComponent);
+            }
+            return existing.equals(TypeNames.OBJECT)
+                    || existing.equals(CLONEABLE)
+                    || existing.equals(SERIALIZABLE);
+        }
+        if (existing.array()) {
+            return false;
+        }
+        if (candidate.primitive() || existing.primitive()) {
+            return false;
+        }
+        if (existing.equals(TypeNames.OBJECT) && !candidate.primitive()) {
+            return true;
+        }
+        return resolveSupertype(candidate, existing.genericTypeName())
+                .filter(supertype -> parameterizationAssignable(supertype, existing))
+                .isPresent();
+    }
+
+    private Optional<TypeName> resolveModelSupertype(TypeName candidate, TypeName expected) {
+        if (sameErasure(candidate, expected)) {
+            return Optional.of(candidate);
+        }
+        return typeInfoLookup.apply(declarationType(candidate))
+                .flatMap(typeInfo -> resolveModelSupertype(typeInfo,
+                                                           candidate,
+                                                           expected,
+                                                           rawType(typeInfo, candidate),
+                                                           new HashSet<>()));
+    }
+
+    private Optional<TypeName> resolveModelSupertype(TypeInfo typeInfo,
+                                                     TypeName resolvedType,
+                                                     TypeName expected,
+                                                     boolean rawType,
+                                                     Set<String> visited) {
+        if (sameErasure(resolvedType, expected)) {
+            return Optional.of(resolvedType);
+        }
+        if (!visited.add(resolvedType.resolvedName() + ':' + rawType)) {
+            return Optional.empty();
+        }
+
+        Map<String, TypeName> substitutions = substitutions(TypeInfo.builder(typeInfo)
+                                                                    .typeName(resolvedType)
+                                                                    .build(),
+                                                               Map.of(),
+                                                               rawType);
+        for (TypeName implicitType : implicitSupertypes(typeInfo, resolvedType)) {
+            if (sameErasure(implicitType, expected)) {
+                return Optional.of(implicitType);
+            }
+            Optional<TypeName> found = typeInfoLookup.apply(declarationType(implicitType))
+                    .flatMap(implicitInfo -> resolveModelSupertype(implicitInfo,
+                                                                   implicitType,
+                                                                   expected,
+                                                                   rawType(implicitInfo, implicitType),
+                                                                   visited));
+            if (found.isPresent()) {
+                return found;
+            }
+        }
+        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
+            ResolvedHierarchyType resolved = resolveHierarchyType(interfaceInfo,
+                                                                  interfaceInfo.typeName(),
+                                                                  substitutions,
+                                                                  rawType);
+            Optional<TypeName> found = resolveModelSupertype(interfaceInfo,
+                                                             resolved.type(),
+                                                             expected,
+                                                             resolved.raw(),
+                                                             visited);
+            if (found.isPresent()) {
+                return found;
+            }
+        }
+        return typeInfo.superTypeInfo()
+                .flatMap(superInfo -> {
+                    ResolvedHierarchyType resolved = resolveHierarchyType(superInfo,
+                                                                          superInfo.typeName(),
+                                                                          substitutions,
+                                                                          rawType);
+                    return resolveModelSupertype(superInfo,
+                                                 resolved.type(),
+                                                 expected,
+                                                 resolved.raw(),
+                                                 visited);
+                });
+    }
+
+    private boolean parameterizationAssignable(TypeName candidate, TypeName existing) {
+        List<TypeName> existingArguments = existing.typeArguments();
+        if (existingArguments.isEmpty()) {
+            return true;
+        }
+        List<TypeName> candidateArguments = candidate.typeArguments();
+        if (candidateArguments.isEmpty()) {
+            // Java return type substitutability permits the corresponding unchecked raw conversion.
+            return true;
+        }
+        if (candidateArguments.size() != existingArguments.size()) {
+            return false;
+        }
+        for (int index = 0; index < candidateArguments.size(); index++) {
+            if (!typeArgumentContained(candidateArguments.get(index), existingArguments.get(index))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean typeArgumentContained(TypeName candidate, TypeName existing) {
+        if (sameType(candidate, existing)) {
+            return true;
+        }
+        if (!existing.wildcard()) {
+            return false;
+        }
+        if (existing.upperBounds().isEmpty() && existing.lowerBounds().isEmpty()) {
+            return true;
+        }
+        if (!existing.upperBounds().isEmpty()) {
+            if (candidate.wildcard() && !candidate.lowerBounds().isEmpty()) {
+                return false;
+            }
+            List<TypeName> candidateBounds = candidate.wildcard()
+                    ? candidate.upperBounds()
+                    : List.of(candidate);
+            if (candidateBounds.isEmpty()) {
+                candidateBounds = List.of(TypeNames.OBJECT);
+            }
+            List<TypeName> resolvedCandidateBounds = candidateBounds;
+            return existing.upperBounds()
+                    .stream()
+                    .allMatch(existingBound -> resolvedCandidateBounds.stream()
+                            .anyMatch(candidateBound -> returnTypeAssignable(candidateBound, existingBound)));
+        }
+        if (candidate.wildcard() && candidate.lowerBounds().isEmpty()) {
+            return false;
+        }
+        List<TypeName> candidateBounds = candidate.wildcard()
+                ? candidate.lowerBounds()
+                : List.of(candidate);
+        return existing.lowerBounds()
+                .stream()
+                .allMatch(existingBound -> candidateBounds.stream()
+                        .anyMatch(candidateBound -> returnTypeAssignable(existingBound, candidateBound)));
+    }
+
+    private TypedElementInfo compatibleCheckedExceptions(TypedElementInfo selected,
+                                                         List<MethodCandidate> candidates) {
+        LinkedHashSet<TypeName> exceptions = new LinkedHashSet<>();
+        for (TypeName selectedException : selected.throwsChecked()) {
+            boolean compatible = true;
+            for (MethodCandidate candidate : candidates) {
+                if (candidate.method() == selected) {
+                    continue;
+                }
+                Map<String, TypeName> aliases = methodTypeAliases(candidate.method(), selected);
+                boolean declared = candidate.method().throwsChecked()
+                        .stream()
+                        .map(exception -> substitute(exception, aliases))
+                        .anyMatch(exception -> returnTypeAssignable(selectedException, exception));
+                if (!declared) {
+                    compatible = false;
+                    break;
+                }
+            }
+            if (compatible) {
+                exceptions.add(selectedException);
+            }
+        }
+        if (exceptions.equals(selected.throwsChecked())) {
+            return selected;
+        }
+        return TypedElementInfo.builder(selected)
+                .throwsChecked(exceptions)
+                .build();
+    }
+
+    private boolean morePrecise(TypeInfo interfaceInfo,
+                                TypedElementInfo candidate,
+                                TypedElementInfo existing,
+                                List<MethodCandidate> candidates) {
+        Optional<Boolean> compilerDecision = environmentReturnTypeAssignable(interfaceInfo, candidate, existing);
+        Optional<Boolean> reverseCompilerDecision = environmentReturnTypeAssignable(interfaceInfo, existing, candidate);
+        if (compilerDecision.orElse(false) != reverseCompilerDecision.orElse(false)) {
+            return compilerDecision.orElse(false);
+        }
+        int candidatePrecision = typePrecision(candidate.typeName());
+        int existingPrecision = typePrecision(existing.typeName());
+        if (candidatePrecision != existingPrecision) {
+            return candidatePrecision > existingPrecision;
+        }
+        int candidateExceptions = compatibleCheckedExceptions(candidate, candidates).throwsChecked().size();
+        int existingExceptions = compatibleCheckedExceptions(existing, candidates).throwsChecked().size();
+        if (candidateExceptions != existingExceptions) {
+            return candidateExceptions > existingExceptions;
+        }
+        return candidate.elementModifiers().contains(Modifier.DEFAULT)
+                && !existing.elementModifiers().contains(Modifier.DEFAULT);
     }
 
     /**

@@ -105,8 +105,9 @@ final class JdbcScalarTypes {
     static String nullJdbcTypeConstant(TypeName type) {
         String constant = NULL_TYPE_CONSTANTS.get(normalized(type));
         if (constant == null) {
-            throw new IllegalArgumentException("JDBC does not support the scalar type '"
-                                                       + type.resolvedName() + "'.");
+            throw new IllegalArgumentException(
+                    "Helidon Data JDBC provider does not support type '"
+                            + type.resolvedName() + "' as a portable scalar.");
         }
         return constant;
     }

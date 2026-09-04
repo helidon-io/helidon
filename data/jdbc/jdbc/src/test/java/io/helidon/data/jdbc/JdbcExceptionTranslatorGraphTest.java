@@ -210,7 +210,7 @@ class JdbcExceptionTranslatorGraphTest {
     }
 
     private static SQLException safeCause(SQLException source) {
-        DataException failure = JdbcExceptionTranslator.translate("query", source);
+        DataException failure = JdbcExceptionTranslator.translateFailure("query", source);
         return (SQLException) failure.getCause();
     }
 

@@ -95,6 +95,47 @@ final class JdbcTxSupport implements TxSupport {
     }
 
     /**
+     * Combines two failures while retaining their encounter order.
+     *
+     * @param primary first failure
+     * @param secondary later failure
+     * @return combined failure
+     */
+    private static Throwable merge(Throwable primary, Throwable secondary) {
+        if (primary == null) {
+            return secondary;
+        }
+        suppress(primary, secondary);
+        return primary;
+    }
+
+    /**
+     * Adds a later failure to a primary failure when both are present.
+     *
+     * @param primary primary failure
+     * @param secondary later failure
+     */
+    private static void suppress(Throwable primary, Throwable secondary) {
+        if (primary != null && secondary != null && primary != secondary) {
+            primary.addSuppressed(secondary);
+        }
+    }
+
+    /**
+     * Throws a structural cleanup failure after an otherwise successful completion.
+     *
+     * @param failure cleanup failure
+     */
+    private static void throwIfRemovalFailed(Throwable failure) {
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+    }
+
+    /**
      * Runs a task only when a local transaction is active.
      *
      * @param task application task
@@ -520,47 +561,6 @@ final class JdbcTxSupport implements TxSupport {
             notifyListeners(action, event);
         } catch (RuntimeException | Error cleanupFailure) {
             suppress(primaryFailure, cleanupFailure);
-        }
-    }
-
-    /**
-     * Combines two failures while retaining their encounter order.
-     *
-     * @param primary first failure
-     * @param secondary later failure
-     * @return combined failure
-     */
-    private static Throwable merge(Throwable primary, Throwable secondary) {
-        if (primary == null) {
-            return secondary;
-        }
-        suppress(primary, secondary);
-        return primary;
-    }
-
-    /**
-     * Adds a later failure to a primary failure when both are present.
-     *
-     * @param primary primary failure
-     * @param secondary later failure
-     */
-    private static void suppress(Throwable primary, Throwable secondary) {
-        if (primary != null && secondary != null && primary != secondary) {
-            primary.addSuppressed(secondary);
-        }
-    }
-
-    /**
-     * Throws a structural cleanup failure after an otherwise successful completion.
-     *
-     * @param failure cleanup failure
-     */
-    private static void throwIfRemovalFailed(Throwable failure) {
-        if (failure instanceof Error error) {
-            throw error;
-        }
-        if (failure instanceof RuntimeException runtimeException) {
-            throw runtimeException;
         }
     }
 

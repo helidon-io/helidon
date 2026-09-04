@@ -1065,6 +1065,46 @@ class JdbcRunnerFailureTest {
         order.verify(connection).close();
     }
 
+    private static void assertCleanupFailure(ThrowingInvocation invocation, SQLException expected) {
+        DataException failure = assertThrows(DataException.class, invocation::run);
+
+        assertSafeSqlCause(failure.getCause(), expected);
+    }
+
+    private static void assertSafeSqlCause(Throwable actual, SQLException expected) {
+        assertThat(actual, instanceOf(SQLException.class));
+        SQLException safe = (SQLException) actual;
+        assertThat(safe.getMessage(), is("The JDBC driver reported a failure."));
+        assertThat(safe.getSQLState(), is(expected.getSQLState()));
+        assertThat(safe.getErrorCode(), is(expected.getErrorCode()));
+    }
+
+    private static void assertSanitizedResultValueFailure(DataException failure) {
+        assertThat(failure.getMessage(), is("The JDBC provider could not read a result value."));
+        assertThat(failure.getCause(), nullValue());
+        assertThat(failure.getSuppressed().length, is(0));
+    }
+
+    private static IllegalStateException driverRuntimeFailure(String secret) {
+        IllegalStateException failure = new IllegalStateException(secret, new IllegalArgumentException("private cause"));
+        failure.addSuppressed(new IllegalArgumentException("private suppressed"));
+        return failure;
+    }
+
+    private static void assertSanitizedRuntimeFailure(ThrowingInvocation invocation,
+                                                      RuntimeException original,
+                                                      String operation) {
+        IllegalStateException failure = assertThrows(IllegalStateException.class, invocation::run);
+
+        assertThat(failure, not(sameInstance(original)));
+        assertThat(failure.getMessage(),
+                   is("The JDBC provider encountered an exception of type '" + original.getClass().getName()
+                              + "' while " + operation + "."));
+        assertThat(failure.getMessage(), not(containsString("private")));
+        assertThat(failure.getCause(), nullValue());
+        assertThat(failure.getSuppressed().length, is(0));
+    }
+
     private void prepareSuccessfulUpdate() throws Exception {
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);
@@ -1107,12 +1147,6 @@ class JdbcRunnerFailureTest {
                 .one();
     }
 
-    private static void assertCleanupFailure(ThrowingInvocation invocation, SQLException expected) {
-        DataException failure = assertThrows(DataException.class, invocation::run);
-
-        assertSafeSqlCause(failure.getCause(), expected);
-    }
-
     private void assertOwnedAutoCommitFailure(ThrowingInvocation invocation) throws SQLException {
         DataException failure = assertThrows(DataException.class, invocation::run);
 
@@ -1147,40 +1181,6 @@ class JdbcRunnerFailureTest {
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
-    }
-
-    private static void assertSafeSqlCause(Throwable actual, SQLException expected) {
-        assertThat(actual, instanceOf(SQLException.class));
-        SQLException safe = (SQLException) actual;
-        assertThat(safe.getMessage(), is("The JDBC driver reported a failure."));
-        assertThat(safe.getSQLState(), is(expected.getSQLState()));
-        assertThat(safe.getErrorCode(), is(expected.getErrorCode()));
-    }
-
-    private static void assertSanitizedResultValueFailure(DataException failure) {
-        assertThat(failure.getMessage(), is("The JDBC provider could not read a result value."));
-        assertThat(failure.getCause(), nullValue());
-        assertThat(failure.getSuppressed().length, is(0));
-    }
-
-    private static IllegalStateException driverRuntimeFailure(String secret) {
-        IllegalStateException failure = new IllegalStateException(secret, new IllegalArgumentException("private cause"));
-        failure.addSuppressed(new IllegalArgumentException("private suppressed"));
-        return failure;
-    }
-
-    private static void assertSanitizedRuntimeFailure(ThrowingInvocation invocation,
-                                                      RuntimeException original,
-                                                      String operation) {
-        IllegalStateException failure = assertThrows(IllegalStateException.class, invocation::run);
-
-        assertThat(failure, not(sameInstance(original)));
-        assertThat(failure.getMessage(),
-                   is("The JDBC provider encountered an exception of type '" + original.getClass().getName()
-                              + "' while " + operation + "."));
-        assertThat(failure.getMessage(), not(containsString("private")));
-        assertThat(failure.getCause(), nullValue());
-        assertThat(failure.getSuppressed().length, is(0));
     }
 
     @FunctionalInterface

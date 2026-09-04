@@ -58,10 +58,10 @@ class TypeHierarchyResolverTest {
     }
 
     /**
-     * Verifies that structured type use annotations survive substitution.
+     * Verifies that resolving a member type preserves structured type use annotations.
      */
     @Test
-    void preservesTypeUseAnnotationsDuringSubstitution() {
+    void preservesTypeUseAnnotationsWhenResolvingMemberType() {
         Annotation annotation = Annotation.create(TypeName.create("example.ResultType"));
         TypeName variable = TypeName.builder()
                 .className("T")
@@ -69,35 +69,35 @@ class TypeHierarchyResolverTest {
                 .addAnnotation(annotation)
                 .build();
 
-        TypeName resolved = TypeHierarchyResolver.substitute(variable, Map.of("T", TypeNames.STRING));
+        TypeName resolved = resolveStringMemberType(variable);
 
         assertThat(resolved, is(TypeNames.STRING));
         assertThat(resolved.annotations(), hasItem(annotation));
     }
 
     /**
-     * Verifies that annotations retained in a generic declaration survive substitution.
+     * Verifies that resolving a member type preserves annotations encoded in a generic declaration.
      */
     @Test
-    void preservesEncodedTypeUseAnnotationsDuringSubstitution() {
+    void preservesEncodedTypeUseAnnotationsWhenResolvingMemberType() {
         TypeName variable = TypeName.createFromGenericDeclaration("@example.ResultType(\"mapped\") T");
 
-        TypeName resolved = TypeHierarchyResolver.substitute(variable, Map.of("T", TypeNames.STRING));
+        TypeName resolved = resolveStringMemberType(variable);
 
         Annotation annotation = resolved.findAnnotation(TypeName.create("example.ResultType")).orElseThrow();
         assertThat(annotation.stringValue().orElseThrow(), is("mapped"));
     }
 
     /**
-     * Verifies that a concrete default package type is not treated as a type variable.
+     * Verifies that resolving a member type does not treat a concrete default package type as a type variable.
      */
     @Test
-    void doesNotSubstituteAConcreteDefaultPackageType() {
+    void doesNotTreatAConcreteDefaultPackageMemberTypeAsATypeVariable() {
         TypeName concreteType = TypeName.builder()
                 .className("T")
                 .build();
 
-        TypeName resolved = TypeHierarchyResolver.substitute(concreteType, Map.of("T", TypeNames.STRING));
+        TypeName resolved = resolveStringMemberType(concreteType);
 
         assertThat(resolved, is(concreteType));
     }
@@ -128,7 +128,7 @@ class TypeHierarchyResolverTest {
                 .addTypeArgument(variable)
                 .build();
 
-        TypeName resolved = TypeHierarchyResolver.create(type -> Optional.empty())
+        TypeName resolved = TypeHierarchyResolver.create(_ -> Optional.empty())
                 .resolveMemberType(boxDeclaration, concreteBoxType, optionalVariable);
 
         assertThat(resolved,
@@ -186,7 +186,7 @@ class TypeHierarchyResolverTest {
                                               .build())
                 .build();
 
-        TypeHierarchyResolver.ResolvedMethod resolved = TypeHierarchyResolver.create(type -> Optional.empty())
+        TypeHierarchyResolver.ResolvedMethod resolved = TypeHierarchyResolver.create(_ -> Optional.empty())
                 .effectiveInterfaceMethods(repository)
                 .getFirst();
 
@@ -212,7 +212,7 @@ class TypeHierarchyResolverTest {
                 .addInterfaceTypeInfo(parent)
                 .build();
 
-        TypeHierarchyResolver.ResolvedMethod resolved = TypeHierarchyResolver.create(type -> Optional.empty())
+        TypeHierarchyResolver.ResolvedMethod resolved = TypeHierarchyResolver.create(_ -> Optional.empty())
                 .effectiveInterfaceMethods(repository)
                 .getFirst();
 
@@ -242,7 +242,7 @@ class TypeHierarchyResolverTest {
                 .addInterfaceTypeInfo(stringParent)
                 .build();
 
-        TypeHierarchyResolver.ResolvedMethod resolved = TypeHierarchyResolver.create(type -> Optional.empty())
+        TypeHierarchyResolver.ResolvedMethod resolved = TypeHierarchyResolver.create(_ -> Optional.empty())
                 .effectiveInterfaceMethods(repository)
                 .getFirst();
 
@@ -274,7 +274,7 @@ class TypeHierarchyResolverTest {
                 .addInterfaceTypeInfo(parent)
                 .build();
 
-        TypeHierarchyResolver.ResolvedMethod resolved = TypeHierarchyResolver.create(type -> Optional.empty())
+        TypeHierarchyResolver.ResolvedMethod resolved = TypeHierarchyResolver.create(_ -> Optional.empty())
                 .effectiveInterfaceMethods(repository)
                 .getFirst();
 
@@ -343,7 +343,7 @@ class TypeHierarchyResolverTest {
                                          repository("example.IntegerRepository", integerMethod));
 
         CodegenException failure = assertThrows(CodegenException.class,
-                                                () -> TypeHierarchyResolver.create(type -> Optional.empty())
+                                                () -> TypeHierarchyResolver.create(_ -> Optional.empty())
                                                         .effectiveInterfaceMethods(repository));
 
         assertThat(failure.getMessage(),
@@ -351,12 +351,39 @@ class TypeHierarchyResolverTest {
         assertThat(failure.originatingElements(), is(List.of(stringOrigin, integerOrigin)));
     }
 
+    /**
+     * Resolves a member type against an enclosing type whose variable is bound to {@link String}.
+     *
+     * @param memberType member type to resolve
+     * @return resolved member type
+     */
+    private static TypeName resolveStringMemberType(TypeName memberType) {
+        TypeName variable = TypeName.createFromGenericDeclaration("T");
+        TypeName declarationType = TypeName.create("example.GenericType");
+        TypeInfo declaration = TypeInfo.builder()
+                .typeName(TypeName.builder(declarationType)
+                                  .addTypeArgument(variable)
+                                  .build())
+                .rawType(declarationType)
+                .declaredType(TypeName.builder(declarationType)
+                                      .addTypeParameter("T")
+                                      .addTypeArgument(variable)
+                                      .build())
+                .kind(ElementKind.CLASS)
+                .build();
+        TypeName useSiteType = TypeName.builder(declarationType)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        return TypeHierarchyResolver.create(_ -> Optional.empty())
+                .resolveMemberType(declaration, useSiteType, memberType);
+    }
+
     private static TypeName effectiveReturnType(TypeName first, TypeName second) {
         TypeInfo repository = repository(repository("example.FirstRepository",
                                                     method("find", first, Modifier.ABSTRACT)),
                                          repository("example.SecondRepository",
                                                     method("find", second, Modifier.ABSTRACT)));
-        return TypeHierarchyResolver.create(type -> Optional.empty())
+        return TypeHierarchyResolver.create(_ -> Optional.empty())
                 .effectiveInterfaceMethods(repository)
                 .getFirst()
                 .method()

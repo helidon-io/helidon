@@ -20,6 +20,8 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>common.<wbr>tls.<wbr>Tls](io.helidon.common.tls.Tls.md)
 - [io.<wbr>helidon.<wbr>common.<wbr>tls.<wbr>TlsMaterial](io.helidon.common.tls.TlsMaterial.md)
 - [io.<wbr>helidon.<wbr>data.<wbr>jdbc.<wbr>Jdbc<wbr>Client](io.helidon.data.jdbc.JdbcClient.md)
+- [io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>common.<wbr>Connection<wbr>Config](io.helidon.data.sql.common.ConnectionConfig.md)
+- [io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>common.<wbr>SqlConfig](io.helidon.data.sql.common.SqlConfig.md)
 - [io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>Data<wbr>Source<wbr>Config](io.helidon.data.sql.datasource.DataSourceConfig.md)
 - [io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>hikari.<wbr>Hikari<wbr>Data<wbr>Source<wbr>Config](io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig.md)
 - [io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>jdbc.<wbr>Jdbc<wbr>Data<wbr>Source<wbr>Config](io.helidon.data.sql.datasource.jdbc.JdbcDataSourceConfig.md)

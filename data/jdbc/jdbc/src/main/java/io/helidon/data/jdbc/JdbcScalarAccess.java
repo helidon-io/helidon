@@ -109,8 +109,9 @@ final class JdbcScalarAccess {
                 || value instanceof LocalDateTime) {
             statement.setObject(index, value);
         } else {
-            throw new IllegalArgumentException("JDBC does not support bind values of type '"
-                                                       + value.getClass().getTypeName() + "'.");
+            throw new IllegalArgumentException(
+                    "Helidon Data JDBC provider does not support type '"
+                            + value.getClass().getTypeName() + "' as a portable scalar.");
         }
     }
 
@@ -168,8 +169,9 @@ final class JdbcScalarAccess {
                 || targetType == LocalDateTime.class) {
             return resultSet.getObject(index, targetType);
         }
-        throw new IllegalArgumentException("JDBC does not support the scalar type '"
-                                                   + targetType.getTypeName() + "'.");
+        throw new IllegalArgumentException(
+                "Helidon Data JDBC provider does not support type '"
+                        + targetType.getTypeName() + "' as a portable scalar.");
     }
 
     /**

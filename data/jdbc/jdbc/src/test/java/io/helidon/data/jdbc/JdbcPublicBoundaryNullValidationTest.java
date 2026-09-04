@@ -37,6 +37,16 @@ class JdbcPublicBoundaryNullValidationTest {
     private static final String SQL = "UPDATE TEST_VALUE SET VALUE = VALUE";
 
     /**
+     * Verifies that the client configuration decorator rejects a null target
+     * at the SPI boundary.
+     */
+    @Test
+    void validatesClientConfigurationDecoratorTarget() {
+        assertNullFailure("The JDBC client configuration builder must not be null.",
+                          () -> new JdbcClientConfigSupport.Decorator().decorate(null));
+    }
+
+    /**
      * Verifies that a null generated column is rejected before the finalized
      * generated key stage reports its lifecycle state.
      */

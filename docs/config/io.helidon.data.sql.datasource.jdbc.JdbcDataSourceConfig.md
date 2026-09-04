@@ -36,12 +36,30 @@ JDBC Data source configuration
 </tr>
 <tr>
 <td>
+<code>password</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Password for the database connection</td>
+</tr>
+<tr>
+<td>
 <code>catalog</code>
 </td>
 <td>
 <code>String</code>
 </td>
 <td>Set the default catalog name to be set on connections</td>
+</tr>
+<tr>
+<td>
+<code>jdbc-<wbr>driver-<wbr>class-<wbr>name</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>JDBC driver class for database connection</td>
 </tr>
 <tr>
 <td>
@@ -66,12 +84,30 @@ JDBC Data source configuration
 </tr>
 <tr>
 <td>
+<code>url</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Database connection url</td>
+</tr>
+<tr>
+<td>
 <code>properties</code>
 </td>
 <td>
 <code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>Add properties (name/value pair) that will be used to configure the DataSource/Driver</td>
+</tr>
+<tr>
+<td>
+<code>username</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Username for the database connection</td>
 </tr>
 </tbody>
 </table>

@@ -17,6 +17,7 @@ package io.helidon.data.jdbc.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanner;
@@ -67,6 +68,7 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
 
     @Override
     public void protectedRegion(RegionKind kind, int start, int end) {
+        Objects.requireNonNull(kind, "The protected region kind must not be null.");
         jdbcSql.append(source, start, end);
     }
 

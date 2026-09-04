@@ -20,6 +20,8 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.JDBCType;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -43,6 +45,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class JdbcBindingMatrixTest {
@@ -105,29 +108,56 @@ class JdbcBindingMatrixTest {
     }
 
     /**
-     * Proves offset-bearing temporal values are rejected as portable binds and
-     * scalar mappings before a JDBC connection can be acquired.
-     */
+     * Proves offset-bearing temporal values are rejected as portable binds,
+     * scalar mappings, and reads before JDBC acquisition or conversion.
+    */
     @Test
-    void rejectsOffsetTemporalScalarsBeforeConnectionAcquisition() throws Exception {
+    void rejectsOffsetTemporalScalarsBeforeJdbcAccess() throws Exception {
         JdbcClient client = JdbcTestClients.create(dataSource);
+        ResultSet resultSet = mock(ResultSet.class);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(metadata.getColumnCount()).thenReturn(1);
+        when(metadata.getColumnLabel(1)).thenReturn("VALUE");
+        JdbcOperation operation = new JdbcOperation("SELECT VALUE",
+                                                    new JdbcOperation.Bind[0],
+                                                    JdbcPreparationPlan.query());
+        JdbcRow row = new JdbcRow(resultSet, JdbcColumnLayout.create(metadata, operation), operation);
 
         for (Object value : List.of(OffsetTime.parse("10:11:12+05:30"),
                                     OffsetDateTime.parse("2026-07-27T10:11:12+05:30"))) {
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
                                                             () -> client.create(SQL).bind(1, value));
             assertThat(failure.getMessage(),
-                       is("JDBC does not support bind values of type '" + value.getClass().getTypeName() + "'."));
+                       is("Helidon Data JDBC provider does not support type '"
+                                  + value.getClass().getTypeName() + "' as a portable scalar."));
+            IllegalArgumentException accessFailure = assertThrows(IllegalArgumentException.class,
+                                                                  () -> JdbcScalarAccess.bind(statement, 1, value));
+            assertThat(accessFailure.getMessage(),
+                       is("Helidon Data JDBC provider does not support type '"
+                                  + value.getClass().getTypeName() + "' as a portable scalar."));
         }
         for (Class<?> type : List.of(OffsetTime.class, OffsetDateTime.class)) {
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
                                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
                                                                     .map(type));
             assertThat(failure.getMessage(),
-                       is("JDBC does not support scalar values of type '" + type.getTypeName() + "'."));
+                       is("Helidon Data JDBC provider does not support type '"
+                                  + type.getTypeName() + "' as a portable scalar."));
+            IllegalArgumentException accessFailure = assertThrows(IllegalArgumentException.class,
+                                                                  () -> JdbcScalarAccess.read(resultSet, 1, type));
+            assertThat(accessFailure.getMessage(),
+                       is("Helidon Data JDBC provider does not support type '"
+                                  + type.getTypeName() + "' as a portable scalar."));
+            IllegalArgumentException rowFailure = assertThrows(IllegalArgumentException.class,
+                                                               () -> row.get(1, type));
+            assertThat(rowFailure.getMessage(),
+                       is("Helidon Data JDBC provider does not support type '"
+                                  + type.getTypeName() + "' as a portable scalar."));
         }
 
         verify(dataSource, never()).getConnection();
+        verifyZeroInteractions(statement);
+        verifyZeroInteractions(resultSet);
     }
 
     /**

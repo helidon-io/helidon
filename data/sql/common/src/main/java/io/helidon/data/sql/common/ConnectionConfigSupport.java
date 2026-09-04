@@ -16,6 +16,7 @@
 
 package io.helidon.data.sql.common;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
@@ -36,6 +37,7 @@ final class ConnectionConfigSupport {
 
         @Override
         public void decorate(ConnectionConfig.BuilderBase<?, ?> target) {
+            Objects.requireNonNull(target, "The connection configuration builder must not be null.");
             Optional<String> url = target.url();
             if (url.isEmpty()) {
                 return;
