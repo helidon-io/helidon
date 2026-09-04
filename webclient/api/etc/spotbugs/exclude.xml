@@ -60,4 +60,14 @@
         <Method name="startTlsHandshake"/>
         <Bug pattern="NP_NULL_ON_SOME_PATH"/>
     </Match>
+    <Match>
+        <!--
+        ProducerOutputStream is an in-memory view over EntityWriterPreflight's bounded ring buffer, not an operating-system
+        resource. The entity-writer contract requires the writer itself to close it; produce verifies that contract and
+        reports a writer that returns without closing instead of silently closing on its behalf.
+        -->
+        <Class name="io.helidon.webclient.api.EntityWriterPreflight"/>
+        <Method name="produce"/>
+        <Bug pattern="OS_OPEN_STREAM"/>
+    </Match>
 </FindBugsFilter>

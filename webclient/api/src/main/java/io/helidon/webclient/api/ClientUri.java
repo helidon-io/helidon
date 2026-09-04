@@ -36,6 +36,8 @@ public class ClientUri implements UriInfo {
     private UriInfo.Builder uriBuilder;
     private boolean skipUriEncoding = false;
     private boolean hasQuery;
+    private String preservedRawQuery;
+    private String preservedParsedQuery;
 
     private ClientUri() {
         this.base = null;
@@ -49,6 +51,8 @@ public class ClientUri implements UriInfo {
         this.skipUriEncoding = baseUri.skipUriEncoding;
         this.query = UriQueryWriteable.create().from(baseUri.query());
         this.hasQuery = baseUri.hasQuery;
+        this.preservedRawQuery = baseUri.preservedRawQuery;
+        this.preservedParsedQuery = baseUri.preservedParsedQuery;
     }
 
     private ClientUri(UriInfo baseUri) {
@@ -58,6 +62,7 @@ public class ClientUri implements UriInfo {
         this.skipUriEncoding = false;
         this.query = UriQueryWriteable.create().from(baseUri.query());
         this.hasQuery = !baseUri.query().rawValue().isEmpty();
+        preserveRawQuery(baseUri.query().rawValue());
     }
 
     /**
@@ -189,6 +194,8 @@ public class ClientUri implements UriInfo {
             this.uriBuilder = UriInfo.builder();
             this.query.clear();
             this.hasQuery = false;
+            this.preservedRawQuery = null;
+            this.preservedParsedQuery = null;
         }
 
         if (uri.getScheme() != null) {
@@ -201,15 +208,21 @@ public class ClientUri implements UriInfo {
             uriBuilder.port(uri.getPort());
         }
 
-        uriBuilder.path(resolvePath(uriBuilder.path().path(), uri.getPath()));
+        uriBuilder.path(UriPath.create(resolvePath(uriBuilder.path().rawPath(), uri.getRawPath())));
 
         String queryString = uri.getRawQuery();
         if (queryString != null) {
+            String rawQuery = rawQuery();
             // class URI does not decode +'s, so we do it here
             if (!queryString.isEmpty()) {
                 query.fromQueryString(queryString.replaceAll("\\+", "%20"));
             }
             hasQuery = true;
+            if (queryString.isEmpty()) {
+                preserveRawQuery(rawQuery);
+            } else {
+                preserveRawQuery(rawQuery.isEmpty() ? queryString : rawQuery + '&' + queryString);
+            }
         }
 
         if (uri.getRawFragment() != null) {
@@ -226,7 +239,8 @@ public class ClientUri implements UriInfo {
      * @return updated URI
      */
     public ClientUri resolvePath(String path) {
-        uriBuilder.path(resolvePath(uriBuilder.path().path(), path));
+        String rawPath = path == null ? null : UriPath.createFromDecoded(path).rawPath();
+        uriBuilder.path(UriPath.create(resolvePath(uriBuilder.path().rawPath(), rawPath)));
         return this;
     }
 
@@ -242,6 +256,8 @@ public class ClientUri implements UriInfo {
         this.query.clear();
         this.query.from(uri.query());
         this.hasQuery = uri.hasQuery();
+        this.preservedRawQuery = uri.preservedRawQuery;
+        this.preservedParsedQuery = uri.preservedParsedQuery;
         return this;
     }
 
@@ -338,7 +354,8 @@ public class ClientUri implements UriInfo {
     public String pathWithQueryAndFragment() {
         UriInfo info = uriBuilder.query(query).build();
 
-        String queryString = skipUriEncoding ? info.query().value() : info.query().rawValue();
+        String rawQuery = rawQuery();
+        String queryString = skipUriEncoding ? query.value() : rawQuery;
         String path = skipUriEncoding ? info.path().path() : info.path().rawPath();
 
         if (path.isEmpty()) {
@@ -363,13 +380,32 @@ public class ClientUri implements UriInfo {
             if (i > -1) {
                 String queryString = path.substring(i + 1);
                 if (!queryString.isEmpty()) {
+                    String rawQuery = rawQuery();
                     query.fromQueryString(queryString);
+                    preserveRawQuery(rawQuery.isEmpty() ? queryString : rawQuery + '&' + queryString);
+                } else {
+                    preserveRawQuery(rawQuery());
                 }
                 hasQuery = true;
                 path = path.substring(0, i);
             }
         }
         return path;
+    }
+
+    private String rawQuery() {
+        String parsedQuery = query.rawValue();
+        if (preservedRawQuery != null && parsedQuery.equals(preservedParsedQuery)) {
+            return preservedRawQuery;
+        }
+        preservedRawQuery = null;
+        preservedParsedQuery = null;
+        return parsedQuery;
+    }
+
+    private void preserveRawQuery(String rawQuery) {
+        this.preservedRawQuery = rawQuery;
+        this.preservedParsedQuery = query.rawValue();
     }
 
     private String resolvePath(String path, String resolvePath) {

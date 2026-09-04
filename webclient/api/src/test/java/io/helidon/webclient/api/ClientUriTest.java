@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
+import java.util.List;
 
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
@@ -26,6 +27,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ClientUriTest {
@@ -190,5 +193,103 @@ class ClientUriTest {
         clientUri.resolve(uri);
         assertThat(clientUri.query().get("filter"), is("a b c"));
         assertThat(clientUri.query().getRaw("filter"), is("a%20b%20c"));
+    }
+
+    @Test
+    void preservesRawQueryWireFormAndDecodedAccess() {
+        String rawQuery = "first=one&space=a%20b&first=two&plus=a+b&escaped=%2f%25";
+        ClientUri clientUri = ClientUri.create(URI.create("http://localhost:8080/path?" + rawQuery + "#fragment"));
+
+        assertThat(clientUri.pathWithQueryAndFragment(), is("/path?" + rawQuery + "#fragment"));
+        assertThat(clientUri.toUri(), is(URI.create("http://localhost:8080/path?" + rawQuery + "#fragment")));
+        assertThat(clientUri.query().all("first"), is(List.of("one", "two")));
+        assertThat(clientUri.query().get("space"), is("a b"));
+        assertThat(clientUri.query().get("plus"), is("a b"));
+        assertThat(clientUri.query().get("escaped"), is("/%"));
+        assertThat(clientUri.query().getRaw("plus"), is("a%20b"));
+    }
+
+    @Test
+    void writableQueryMutationUsesCurrentSerialization() {
+        String rawQuery = "first=one&second=%2f&first=two";
+        ClientUri clientUri = ClientUri.create(URI.create("http://localhost/path?" + rawQuery));
+
+        clientUri.writeableQuery().set("second", "changed");
+
+        String requestTarget = clientUri.pathWithQueryAndFragment();
+        assertThat(requestTarget, startsWith("/path?"));
+        assertThat(requestTarget, not(is("/path?" + rawQuery)));
+        assertThat(clientUri.query().get("second"), is("changed"));
+    }
+
+    @Test
+    void copiesAndResolvesPreservedRawQuery() {
+        String rawUri = "http://localhost:8080/path?one=1&two=%2F&one=2#fragment";
+        ClientUri original = ClientUri.create(URI.create(rawUri));
+        ClientUri copy = ClientUri.create(original);
+        ClientUri resolved = ClientUri.create().resolve(original);
+
+        assertThat(copy.toUri(), is(URI.create(rawUri)));
+        assertThat(resolved.toUri(), is(URI.create(rawUri)));
+    }
+
+    @Test
+    void preservesEmptyQueryDelimiterWithFragment() {
+        String rawUri = "http://localhost:8080/path?#fragment";
+        ClientUri clientUri = ClientUri.create(URI.create(rawUri));
+
+        assertThat(clientUri.hasQuery(), is(true));
+        assertThat(clientUri.pathWithQueryAndFragment(), is("/path?#fragment"));
+        assertThat(ClientUri.create(clientUri).toUri(), is(URI.create(rawUri)));
+    }
+
+    @Test
+    void preservesRawPathAndDecodedPathAccess() {
+        String rawPath = "/capture/a%2Fb/%25/%2E;name=a%2Fb";
+        ClientUri clientUri = ClientUri.create(URI.create("http://localhost:8080" + rawPath));
+
+        assertThat(clientUri.path().rawPath(), is(rawPath));
+        assertThat(clientUri.path().path(), is("/capture/a/b/%/."));
+        assertThat(clientUri.pathWithQueryAndFragment(), is(rawPath));
+        assertThat(clientUri.toUri(), is(URI.create("http://localhost:8080" + rawPath)));
+    }
+
+    @Test
+    void queryAndFragmentReferencesRetainInheritedRawPath() {
+        URI source = URI.create("http://localhost/capture/a%2Fb/%25");
+        ClientUri queryRedirect = ClientUri.create(source).resolve(URI.create("?value=%2F"));
+        ClientUri fragmentRedirect = ClientUri.create(source).resolve(URI.create("#next"));
+
+        assertThat(queryRedirect.pathWithQueryAndFragment(), is("/capture/a%2Fb/%25?value=%2F"));
+        assertThat(fragmentRedirect.pathWithQueryAndFragment(), is("/capture/a%2Fb/%25#next"));
+        assertThat(queryRedirect.path().path(), is("/capture/a/b/%"));
+        assertThat(fragmentRedirect.path().path(), is("/capture/a/b/%"));
+    }
+
+    @Test
+    void decodedPathResolutionRetainsExistingRawPath() {
+        ClientUri clientUri = ClientUri.create(URI.create("http://localhost/capture/a%2Fb/%25"));
+
+        clientUri.resolvePath("next%/part");
+
+        assertThat(clientUri.path().rawPath(), is("/capture/a%2Fb/%25/next%25/part"));
+        assertThat(clientUri.path().path(), is("/capture/a/b/%/next%/part"));
+    }
+
+    @Test
+    void skipEncodingContinuesToUseDecodedQuery() {
+        ClientUri clientUri = ClientUri.create(URI.create("http://localhost/path?value=%2F%20value"))
+                .skipUriEncoding(true);
+
+        assertThat(clientUri.pathWithQueryAndFragment(), is("/path?value=/ value"));
+    }
+
+    @Test
+    void emptyRelativeQueryDoesNotAppendSeparator() {
+        ClientUri clientUri = ClientUri.create(URI.create("http://localhost/path?first=one"));
+
+        clientUri.resolve(URI.create("?"));
+
+        assertThat(clientUri.pathWithQueryAndFragment(), is("/path?first=one"));
     }
 }

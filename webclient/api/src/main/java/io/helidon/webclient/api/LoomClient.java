@@ -37,6 +37,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.http.Method;
 import io.helidon.service.registry.Service;
 import io.helidon.webclient.spi.ClientProtocolProvider;
+import io.helidon.webclient.spi.ClientProtocolProviderCacheLifecycle;
 import io.helidon.webclient.spi.HttpClientSpi;
 import io.helidon.webclient.spi.HttpClientSpiProvider;
 import io.helidon.webclient.spi.Protocol;
@@ -226,13 +227,31 @@ class LoomClient implements WebClient {
     @Override
     public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol) {
         ClientProtocolProvider<T, C> provider = protocol.provider();
-        return (T) clientsByProtocol.computeIfAbsent(provider.protocolId(),
-                                                     protocolId -> {
-                                                         C config = protocolConfigs.config(provider.protocolId(),
-                                                                                           provider.configType(),
-                                                                                           provider::defaultConfig);
-                                                         return protocol.provider().protocol(this, config);
-                                                     });
+        String protocolId = provider.protocolId();
+        if (!(provider instanceof ClientProtocolProviderCacheLifecycle<?, ?> rawLifecycle)) {
+            return (T) clientsByProtocol.computeIfAbsent(protocolId,
+                                                         ignored -> createProtocolClient(provider, protocolId));
+        }
+
+        ClientProtocolProviderCacheLifecycle<T, C> lifecycle =
+                (ClientProtocolProviderCacheLifecycle<T, C>) rawLifecycle;
+        Object current = clientsByProtocol.get(protocolId);
+        if (current != null && !lifecycle.cacheReplacementReady((T) current)) {
+            return (T) current;
+        }
+        return (T) clientsByProtocol.compute(protocolId,
+                                             (ignored, cached) -> cached != null
+                                                     && !lifecycle.cacheReplacementReady((T) cached)
+                                                     ? cached
+                                                     : createProtocolClient(provider, protocolId));
+    }
+
+    private <T, C extends ProtocolConfig> T createProtocolClient(ClientProtocolProvider<T, C> provider,
+                                                                 String protocolId) {
+        C config = protocolConfigs.config(protocolId,
+                                          provider.configType(),
+                                          provider::defaultConfig);
+        return provider.protocol(this, config);
     }
 
     @Override

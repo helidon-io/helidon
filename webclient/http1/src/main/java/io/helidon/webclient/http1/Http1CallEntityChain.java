@@ -62,8 +62,6 @@ class Http1CallEntityChain extends Http1CallChainBase {
                      forwardProxy(),
                      protocolConfig().validateRequestHeaders(),
                      sendListener());
-        // we have completed writing the headers
-        whenSent.complete(serviceRequest);
 
         if (entity.length > 0) {
             writeBuffer.write(entity);
@@ -73,6 +71,20 @@ class Http1CallEntityChain extends Http1CallChainBase {
 
         if (entity.length > 0 && sendListener().enabled()) {
             sendListener().data(connection.helidonSocket(), entity, 0, entity.length);
+        }
+        whenSent.complete(serviceRequest);
+
+        if (originalRequest().outputStreamRedirect()) {
+            ResponseHead responseHead = readResponseHead(connection,
+                                                         reader,
+                                                         Http1CallChainBase::isPreContinueInterimResponse);
+            return createServiceResponseWithTrailers(originalRequest().http1Client(),
+                                                     serviceRequest,
+                                                     connection,
+                                                     reader,
+                                                     responseHead.status(),
+                                                     responseHead.headers(),
+                                                     whenComplete());
         }
 
         return readResponse(serviceRequest, connection, reader);

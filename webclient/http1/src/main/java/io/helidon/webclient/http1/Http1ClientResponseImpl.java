@@ -18,6 +18,7 @@ package io.helidon.webclient.http1;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -25,6 +26,9 @@ import java.util.List;
 import java.util.OptionalLong;
 import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.GenericType;
@@ -33,9 +37,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.ParserMode;
-import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
@@ -54,6 +56,9 @@ import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.HttpTransportObserverSupport;
+import io.helidon.webclient.api.ReleasableResource;
+import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.Source;
 import io.helidon.webclient.spi.SourceHandlerProvider;
 
@@ -76,6 +81,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final MediaContext mediaContext;
     private final CompletableFuture<Void> whenComplete;
     private final Http1TransportObservation transportObservation;
+    private final CompletableFuture<ClientResponseTrailers> transportTrailers;
+    private final CompletableFuture<ClientResponseTrailers> responseTrailers;
     private final boolean hasTrailers;
     private final List<String> trailerNames;
     private final boolean entityAllowed;
@@ -91,6 +98,63 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private boolean entityFullyRead = false;
     private boolean invalidNoEntityChunkedFraming;
     private boolean closeConnectionOnClose;
+    private WebClientServiceResponse serviceResponse;
+    private WebClientServiceResponse rawServiceResponse;
+
+    Http1ClientResponseImpl(HttpClientConfig clientConfig,
+                            Http1ClientProtocolConfig protocolConfig,
+                            Status responseStatus,
+                            Method requestMethod,
+                            ClientRequestHeaders requestHeaders,
+                            ClientResponseHeaders responseHeaders,
+                            ClientConnection connection,
+                            InputStream inputStream,
+                            MediaContext mediaContext,
+                            ClientUri lastEndpointUri,
+                            CompletableFuture<Void> whenComplete) {
+        this(clientConfig,
+             protocolConfig,
+             responseStatus,
+             requestMethod,
+             requestHeaders,
+             responseHeaders,
+             connection,
+             inputStream,
+             mediaContext,
+             lastEndpointUri,
+             whenComplete,
+             null,
+             null,
+             null);
+    }
+
+    Http1ClientResponseImpl(HttpClientConfig clientConfig,
+                            Http1ClientProtocolConfig protocolConfig,
+                            Status responseStatus,
+                            Method requestMethod,
+                            ClientRequestHeaders requestHeaders,
+                            ClientResponseHeaders responseHeaders,
+                            ClientConnection connection,
+                            InputStream inputStream,
+                            MediaContext mediaContext,
+                            ClientUri lastEndpointUri,
+                            CompletableFuture<Void> whenComplete,
+                            Http1TransportObservation transportObservation) {
+        this(clientConfig,
+             protocolConfig,
+             responseStatus,
+             requestMethod,
+             requestHeaders,
+             responseHeaders,
+             connection,
+             inputStream,
+             mediaContext,
+             lastEndpointUri,
+             whenComplete,
+             null,
+             null,
+             transportObservation);
+    }
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
                             Http1ClientProtocolConfig protocolConfig,
@@ -103,6 +167,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                             MediaContext mediaContext,
                             ClientUri lastEndpointUri,
                             CompletableFuture<Void> whenComplete,
+                            CompletableFuture<ClientResponseTrailers> transportTrailers,
+                            CompletableFuture<ClientResponseTrailers> responseTrailers,
                             Http1TransportObservation transportObservation) {
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;
@@ -116,6 +182,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
         this.transportObservation = transportObservation;
+        this.transportTrailers = transportTrailers == null ? new CompletableFuture<>() : transportTrailers;
+        this.responseTrailers = responseTrailers == null ? this.transportTrailers : responseTrailers;
         boolean successfulConnect = Http1CallChainBase.isSuccessfulConnect(requestMethod, responseStatus);
         this.entityAllowed = successfulConnect || Http1CallChainBase.statusAllowsEntity(responseStatus);
         this.trailers = LazyValue.create(this::readTrailers);
@@ -160,7 +228,13 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         } else {
             this.hasTrailers = false;
             this.trailerNames = List.of();
+            this.transportTrailers.complete(ClientResponseTrailers.create());
         }
+    }
+
+    @Override
+    public String protocolId() {
+        return Http1Client.PROTOCOL_ID;
     }
 
     @Override
@@ -178,13 +252,34 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         if (hasTrailers && !this.entityRequested) {
             throw new IllegalStateException("Trailers requested before reading entity.");
         }
-        if (headerTerminated) {
-            return ClientResponseTrailers.create();
+        if (connection != null
+                && (headerTerminated || !entityAllowed)
+                && (!transportTrailers.isDone() || transportTrailers.isCompletedExceptionally())) {
+            completeTransportTrailers();
         }
-        if (hasTrailers) {
-            return ClientResponseTrailers.create(this.trailers.get());
-        } else {
-            return ClientResponseTrailers.create();
+        Duration timeout = clientConfig.readTimeout()
+                .orElseGet(() -> clientConfig.socketOptions().readTimeout());
+        try {
+            return responseTrailers.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            IllegalStateException failure = new IllegalStateException(
+                    "Timeout " + timeout + " reached while waiting for trailers.", e);
+            failResponse(failure);
+            throw failure;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            IllegalStateException failure = new IllegalStateException("Interrupted while waiting for trailers.", e);
+            failResponse(failure);
+            throw failure;
+        } catch (ExecutionException e) {
+            IllegalStateException failure;
+            if (e.getCause() instanceof IllegalStateException illegalStateException) {
+                failure = illegalStateException;
+            } else {
+                failure = new IllegalStateException(e.getCause());
+            }
+            failResponse(failure);
+            throw failure;
         }
     }
 
@@ -195,32 +290,69 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     @Override
+    public long maxBufferedEntitySize() {
+        return protocolConfig.maxBufferedEntitySize().toBytes();
+    }
+
+    @Override
+    public void serviceEntityConsumed() {
+        entityRequested = true;
+        if (connection != null) {
+            completeTransportTrailers();
+        }
+        entityFullyRead = true;
+    }
+
+    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            try {
-                if (closeConnectionOnClose
-                        || headers().containsToken(HeaderValues.CONNECTION_CLOSE)
-                        || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
-                    closeConnection();
-                } else {
-                    if (inputStream == null
-                            && entityLength == ENTITY_LENGTH_CHUNKED
-                            && hasTrailers
-                            && !trailers.isLoaded()) {
+            Throwable failure = closeReturnedServiceResource(null);
+            if (connection != null) {
+                try {
+                    if (closeConnectionOnClose
+                            || headers().containsToken(HeaderValues.CONNECTION_CLOSE)
+                            || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
                         closeConnection();
-                    } else if (entityFullyRead || consumeUnreadEntity()) {
-                        releaseConnection();
-                    } else if (inputStream == null && connection.reader().available() > 0) {
-                        // No-body response bytes that cannot be consumed as safe framing make reuse unsafe.
-                        closeConnection();
-                    } else if (entityLength == 0) {
-                        releaseConnection();
                     } else {
-                        closeConnection();
+                        if (inputStream == null
+                                && entityLength == ENTITY_LENGTH_CHUNKED
+                                && hasTrailers
+                                && !trailers.isLoaded()) {
+                            closeConnection();
+                        } else if (entityFullyRead || consumeUnreadEntity()) {
+                            releaseConnection();
+                        } else if (inputStream == null && connection.reader().available() > 0) {
+                            // No-body response bytes that cannot be consumed as safe framing make reuse unsafe.
+                            closeConnection();
+                        } else if (entityLength == 0) {
+                            releaseConnection();
+                        } else {
+                            closeConnection();
+                        }
                     }
+                } catch (RuntimeException | Error cleanupFailure) {
+                    failure = mergeFailure(failure, cleanupFailure);
                 }
-            } finally {
+            }
+            if (!transportTrailers.isDone()) {
+                if (hasTrailers) {
+                    transportTrailers.completeExceptionally(
+                            new IllegalStateException("HTTP/1 response closed before trailers were read."));
+                } else {
+                    transportTrailers.complete(ClientResponseTrailers.create());
+                }
+            }
+            if (failure == null) {
                 whenComplete.complete(null);
+            } else {
+                responseTrailers.completeExceptionally(failure);
+                whenComplete.completeExceptionally(failure);
+            }
+            if (failure instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (failure instanceof Error error) {
+                throw error;
             }
         }
     }
@@ -243,7 +375,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     ClientConnection connection() {
-        return closeConnectionOnClose ? new CloseOnReleaseClientConnection(connection) : connection;
+        return connection;
     }
 
     void closeConnectionOnClose() {
@@ -270,6 +402,49 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             transportObservation.cancel();
         }
         connection.releaseResource();
+    }
+
+    boolean closesConnectionOnClose() {
+        return closeConnectionOnClose;
+    }
+
+    WebClientServiceRequest serviceRequest() {
+        return serviceResponse.serviceRequest();
+    }
+
+    WebClientServiceResponse serviceResponse() {
+        return serviceResponse;
+    }
+
+    void serviceResponse(WebClientServiceResponse serviceResponse, WebClientServiceResponse rawServiceResponse) {
+        this.serviceResponse = serviceResponse;
+        this.rawServiceResponse = rawServiceResponse;
+    }
+
+    void completeWithoutClosingConnection() {
+        if (closed.compareAndSet(false, true)) {
+            Throwable failure = closeReturnedServiceResource(null);
+            if (!transportTrailers.isDone()) {
+                if (hasTrailers) {
+                    transportTrailers.completeExceptionally(
+                            new IllegalStateException("HTTP/1 response closed before trailers were read."));
+                } else {
+                    transportTrailers.complete(ClientResponseTrailers.create());
+                }
+            }
+            if (failure == null) {
+                whenComplete.complete(null);
+            } else {
+                responseTrailers.completeExceptionally(failure);
+                whenComplete.completeExceptionally(failure);
+            }
+            if (failure instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (failure instanceof Error error) {
+                throw error;
+            }
+        }
     }
 
     private Headers readTrailers() {
@@ -313,6 +488,24 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         entityFullyRead = true;
         invalidNoEntityChunkedFraming = false;
         return result;
+    }
+
+    private void completeTransportTrailers() {
+        try {
+            ClientResponseTrailers result;
+            if (headerTerminated) {
+                result = ClientResponseTrailers.create();
+            } else if (hasTrailers) {
+                result = ClientResponseTrailers.create(this.trailers.get());
+            } else {
+                result = ClientResponseTrailers.create();
+            }
+            transportTrailers.complete(result);
+        } catch (RuntimeException | Error e) {
+            transportTrailers.completeExceptionally(e);
+            failResponse(e);
+            throw e;
+        }
     }
 
     private void readNoEntityChunkedFraming() {
@@ -409,78 +602,76 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private void entityFullyRead() {
         try {
-            this.entityFullyRead = true;
+            serviceEntityConsumed();
             inputStream.close();
-            this.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            UncheckedIOException failure = new UncheckedIOException(e);
+            failResponse(failure);
+            throw failure;
+        } catch (RuntimeException | Error failure) {
+            failResponse(failure);
+            throw failure;
         }
+        close();
     }
 
     private BufferData readBytes(int estimate) {
-        BufferData bufferData = BufferData.create(estimate);
-        int bytesRead = bufferData.readFrom(inputStream);
-        if (bytesRead == -1) {
-            return null;
+        try {
+            BufferData bufferData = BufferData.create(estimate);
+            int bytesRead = bufferData.readFrom(inputStream);
+            if (bytesRead == -1) {
+                return null;
+            }
+            return bufferData;
+        } catch (RuntimeException | Error failure) {
+            failResponse(failure);
+            throw failure;
         }
-        return bufferData;
     }
 
-    private record CloseOnReleaseClientConnection(ClientConnection delegate) implements ClientConnection {
-        @Override
-        public DataReader reader() {
-            return delegate.reader();
+    private void failResponse(Throwable failure) {
+        if (closed.compareAndSet(false, true)) {
+            failure = closeReturnedServiceResource(failure);
+            if (connection != null) {
+                try {
+                    if (transportObservation != null) {
+                        transportObservation.fail(failure);
+                    }
+                    connection.closeResource();
+                } catch (RuntimeException | Error cleanupFailure) {
+                    failure = mergeFailure(failure, cleanupFailure);
+                }
+            }
+            transportTrailers.completeExceptionally(failure);
+            responseTrailers.completeExceptionally(failure);
+            whenComplete.completeExceptionally(failure);
         }
+    }
 
-        @Override
-        public DataWriter writer() {
-            return delegate.writer();
+    private Throwable closeReturnedServiceResource(Throwable failure) {
+        if (serviceResponse == null) {
+            return failure;
         }
+        ReleasableResource returnedResource = serviceResponse.connection();
+        ReleasableResource rawResource = rawServiceResponse == null ? null : rawServiceResponse.connection();
+        if (returnedResource == rawResource) {
+            return failure;
+        }
+        try {
+            returnedResource.closeResource();
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure = mergeFailure(failure, cleanupFailure);
+        }
+        return failure;
+    }
 
-        @Override
-        public String channelId() {
-            return delegate.channelId();
+    private static Throwable mergeFailure(Throwable primary, Throwable secondary) {
+        if (primary == null) {
+            return secondary;
         }
-
-        @Override
-        public HelidonSocket helidonSocket() {
-            return delegate.helidonSocket();
+        if (primary != secondary) {
+            primary.addSuppressed(secondary);
         }
-
-        @Override
-        public void readTimeout(Duration readTimeout) {
-            delegate.readTimeout(readTimeout);
-        }
-
-        @Override
-        public boolean allowExpectContinue() {
-            return delegate.allowExpectContinue();
-        }
-
-        @Override
-        public void allowExpectContinue(boolean allowExpectContinue) {
-            delegate.allowExpectContinue(allowExpectContinue);
-        }
-
-        @Override
-        public boolean isConnected() {
-            return delegate.isConnected();
-        }
-
-        @Override
-        public ClientConnection connect() {
-            delegate.connect();
-            return this;
-        }
-
-        @Override
-        public void releaseResource() {
-            delegate.closeResource();
-        }
-
-        @Override
-        public void closeResource() {
-            delegate.closeResource();
-        }
+        return primary;
     }
 }

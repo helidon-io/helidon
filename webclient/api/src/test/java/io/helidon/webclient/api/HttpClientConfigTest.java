@@ -22,6 +22,7 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.HeaderNames;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +33,33 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 class HttpClientConfigTest {
 
     @Test
+    void redirectSecurityDefaultsAreFailSafe() {
+        HttpClientConfig config = HttpClientConfig.create();
+
+        assertThat(config.followCrossOriginEntityRedirects(), is(false));
+        assertThat(config.redirectSensitiveHeaders(),
+                   containsInAnyOrder(HeaderNames.AUTHORIZATION,
+                                      HeaderNames.COOKIE,
+                                      HeaderNames.PROXY_AUTHORIZATION));
+    }
+
+    @Test
     void altSvcIsDisabledByDefault() {
         assertThat(HttpClientConfig.create().altSvc().isEmpty(), is(true));
+    }
+
+    @Test
+    void requiredRedirectSensitiveHeadersSurviveCustomConfiguration() {
+        var customHeader = HeaderNames.create("X-Redirect-Sensitive");
+        HttpClientConfig config = HttpClientConfig.builder()
+                .addRedirectSensitiveHeader(customHeader)
+                .build();
+
+        assertThat(config.redirectSensitiveHeaders(),
+                   containsInAnyOrder(HeaderNames.AUTHORIZATION,
+                                      HeaderNames.COOKIE,
+                                      HeaderNames.PROXY_AUTHORIZATION,
+                                      customHeader));
     }
 
     @Test

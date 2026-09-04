@@ -16,12 +16,11 @@
 
 package io.helidon.webclient.http1;
 
-import java.net.URI;
-
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientRequestOrigin;
 import io.helidon.webclient.api.ClientUri;
 
 class RedirectionProcessor {
@@ -45,17 +44,6 @@ class RedirectionProcessor {
                         || statusCode == Status.FOUND_302.code()));
     }
 
-    static void validateEntityRedirect(Http1ClientRequestImpl request,
-                                       Status status,
-                                       ClientUri redirectUri,
-                                       byte[] entity) {
-        if (keepsMethodAndEntity(request.method(), status)
-                && entity.length > 0
-                && !request.canReplayEntityTo(redirectUri)) {
-            throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
-        }
-    }
-
     static IllegalStateException maxRedirectsReached(int maxRedirects) {
         return new IllegalStateException("Maximum number of request redirections ("
                                                  + maxRedirects + ") reached.");
@@ -66,17 +54,43 @@ class RedirectionProcessor {
     }
 
     static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, int initial, byte[] entity) {
+        return invokeWithFollowRedirects(request, initial, entity, false);
+    }
+
+    static Http1ClientResponseImpl invokeWithFollowRedirectsDeferringResponseCookies(Http1ClientRequestImpl request,
+                                                                                     int initial,
+                                                                                     byte[] entity) {
+        return invokeWithFollowRedirects(request, initial, entity, true);
+    }
+
+    private static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request,
+                                                                     int initial,
+                                                                     byte[] entity,
+                                                                     boolean deferResponseCookies) {
         //Request object which should be used for invoking the next request. This will change in case of any redirection.
         Http1ClientRequestImpl clientRequest = request;
         //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
         byte[] entityToBeSent = entity;
         int followedRedirects = initial;
         while (true) {
+            if (deferResponseCookies) {
+                clientRequest.deferResponseCookies();
+            }
             Http1ClientResponseImpl clientResponse = clientRequest.invokeRequestWithEntity(entityToBeSent);
             if (!redirectionStatusCode(clientResponse.status())) {
+                request.redirectSecurityState(clientRequest.redirectSecurityState());
                 return clientResponse;
             }
             try (clientResponse) {
+                if (deferResponseCookies) {
+                    ClientUri endpointUri = clientResponse.lastEndpointUri();
+                    ClientUri cookieUri = clientRequest.redirectSecurityState()
+                            .lastEffectiveOrigin()
+                            .map(origin -> origin.apply(endpointUri))
+                            .orElseGet(() -> ClientRequestOrigin.create(endpointUri).apply(endpointUri));
+                    clientRequest.recordResponseCookies(cookieUri,
+                                                        clientResponse.headers());
+                }
                 if (followedRedirects >= request.maxRedirects()) {
                     throw maxRedirectsReached(request.maxRedirects());
                 }
@@ -87,35 +101,26 @@ class RedirectionProcessor {
                                                             + "It is not clear where to redirect.");
                 }
                 String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).get();
-                URI newUri = URI.create(redirectedUri);
-                ClientUri redirectUri = ClientUri.create(newUri);
-
-                if (newUri.getHost() == null) {
-                    //To keep the information about the latest host, we need to use uri from the last performed request
-                    //Example:
-                    //request -> my-test.com -> response redirect -> my-example.com
-                    //new request -> my-example.com -> response redirect -> /login
-                    //with using the last request uri host etc, we prevent my-test.com/login from happening
-                    ClientUri resolvedUri = clientRequest.resolvedUri();
-                    redirectUri.scheme(resolvedUri.scheme());
-                    redirectUri.host(resolvedUri.host());
-                    redirectUri.port(resolvedUri.port());
-                }
+                ClientUri sourceUri = clientResponse.lastEndpointUri();
+                ClientUri redirectUri = clientRequest.resolveRedirectUri(sourceUri, redirectedUri);
                 // Method and entity must be retained for 307 and 308, and for QUERY with 301 and 302.
-                validateEntityRedirect(clientRequest, clientResponse.status(), redirectUri, entityToBeSent);
                 if (keepsMethodAndEntity(clientRequest.method(), clientResponse.status())) {
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                clientRequest.method(),
                                                                redirectUri,
-                                                               request.properties(),
-                                                               true);
+                                                               clientRequest.properties(),
+                                                               sourceUri,
+                                                               true,
+                                                               entityToBeSent.length > 0);
                 } else {
                     //It is possible to change to GET and send no entity with all other redirect codes
                     entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                Method.GET,
                                                                redirectUri,
-                                                               request.properties(),
+                                                               clientRequest.properties(),
+                                                               sourceUri,
+                                                               false,
                                                                false);
                 }
             }

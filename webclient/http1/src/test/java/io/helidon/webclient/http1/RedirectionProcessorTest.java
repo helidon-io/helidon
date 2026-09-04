@@ -70,6 +70,8 @@ class RedirectionProcessorTest {
                                                                      Method.PUT,
                                                                      ClientUri.create(URI.create("http://localhost/target")),
                                                                      Map.of(),
+                                                                     request.resolvedUri(),
+                                                                     true,
                                                                      true);
 
         assertThat(redirect.headers(), hasHeader(TEST_ACCEPT));

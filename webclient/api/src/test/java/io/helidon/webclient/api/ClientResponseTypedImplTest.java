@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class ClientResponseTypedImplTest {
+    private static final String PROTOCOL_ID = "http/1.1";
     private static final GenericType<Optional<String>> OPTIONAL_STRING = new GenericType<Optional<String>>() { };
 
     @Test
@@ -92,6 +93,11 @@ class ClientResponseTypedImplTest {
         }
 
         @Override
+        public String protocolId() {
+            return PROTOCOL_ID;
+        }
+
+        @Override
         public Status status() {
             return status;
         }
@@ -140,6 +146,11 @@ class ClientResponseTypedImplTest {
 
         TestClientResponseTyped(Status status) {
             this.status = status;
+        }
+
+        @Override
+        public String protocolId() {
+            return PROTOCOL_ID;
         }
 
         @Override

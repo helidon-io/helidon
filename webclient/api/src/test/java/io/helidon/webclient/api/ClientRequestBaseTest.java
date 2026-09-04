@@ -16,7 +16,11 @@
 
 package io.helidon.webclient.api;
 
+import java.net.SocketAddress;
 import java.net.URI;
+import java.net.UnixDomainSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,8 +28,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.buffers.LazyString;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.uri.UriPath;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
@@ -38,9 +48,19 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientRequestBaseTest {
+
+    @Test
+    void redirectStateDoesNotUseRequestProperties() {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example");
+        request.property("user-property", "value");
+        request.redirectSecurityState(request.redirectSecurityState().forRedirect(false));
+
+        assertThat(request.properties(), is(Map.of("user-property", "value")));
+    }
 
     @Test
     void rejectsMultipleHostHeaderBeforeRequest() {
@@ -593,17 +613,186 @@ class ClientRequestBaseTest {
         assertThat(request.selectedProxyRoute(), is(Optional.empty()));
     }
 
+    @Test
+    void finalizedHeadersAreDeepSnapshots() {
+        HeaderName mutableName = HeaderNames.create("X-Mutable");
+        byte[] mutableValue = "before".getBytes(StandardCharsets.UTF_8);
+        HttpClientConfig config = HttpClientConfig.builder()
+                .addService((chain, request) -> {
+                    request.headers().set(HeaderValues.create(mutableName,
+                                                              new LazyString(mutableValue, StandardCharsets.UTF_8)));
+                    WebClientServiceResponse response = chain.proceed(request);
+                    byte[] replacement = "after!".getBytes(StandardCharsets.UTF_8);
+                    System.arraycopy(replacement, 0, mutableValue, 0, replacement.length);
+                    return response;
+                })
+                .build();
+        TestRequest request = new TestRequest(config, Method.GET, "http://service.example");
+
+        request.request();
+
+        ClientRequestHeaders firstSnapshot = request.capturedHeaders();
+        assertThat(firstSnapshot.first(mutableName).orElseThrow(), is("before"));
+        firstSnapshot.set(mutableName, "caller-change");
+        assertThat(request.capturedHeaders().first(mutableName).orElseThrow(), is("before"));
+    }
+
+    @Test
+    void uriRetargetDropsInheritedConnectionAndRouteButKeepsExplicitAddress() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .addService((chain, request) -> {
+                    request.uri().host("other.example");
+                    return chain.proceed(request);
+                })
+                .build();
+        TestRequest request = new TestRequest(config, Method.GET, "http://service.example");
+        ClientRequestOrigin sourceOrigin = ClientRequestOrigin.create(request.resolvedUri(), request.headers());
+        ClientConnection inheritedConnection = new TestConnection();
+        SocketAddress explicitAddress = UnixDomainSocketAddress.of("/tmp/helidon-explicit.sock");
+        ProxyRoute inheritedRoute = ProxyRoute.direct(Proxy.noProxy(), "http", "service.example", 80, false);
+        request.inheritedConnection(inheritedConnection, sourceOrigin);
+        request.address(explicitAddress);
+        request.inheritedSelectedProxyRoute(inheritedRoute, sourceOrigin);
+
+        request.request();
+
+        assertThat(request.endpointConnection(), is((ClientConnection) null));
+        assertThat(request.endpointAddress(), sameInstance(explicitAddress));
+        assertThat(request.endpointRoute(), is((ProxyRoute) null));
+    }
+
+    @Test
+    void hostRetargetDropsInheritedAddressAndRouteButKeepsExplicitConnection() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .addService((chain, request) -> {
+                    request.headers().set(HeaderNames.HOST, "other.example");
+                    return chain.proceed(request);
+                })
+                .build();
+        TestRequest request = new TestRequest(config, Method.GET, "http://service.example");
+        ClientRequestOrigin sourceOrigin = ClientRequestOrigin.create(request.resolvedUri(), request.headers());
+        ClientConnection explicitConnection = new TestConnection();
+        SocketAddress inheritedAddress = UnixDomainSocketAddress.of("/tmp/helidon-inherited.sock");
+        ProxyRoute inheritedRoute = ProxyRoute.direct(Proxy.noProxy(), "http", "service.example", 80, false);
+        request.connection(explicitConnection);
+        request.inheritedAddress(inheritedAddress, sourceOrigin);
+        request.inheritedSelectedProxyRoute(inheritedRoute, sourceOrigin);
+
+        request.request();
+
+        assertThat(request.endpointConnection(), sameInstance(explicitConnection));
+        assertThat(request.endpointAddress(), is((SocketAddress) null));
+        assertThat(request.endpointRoute(), is((ProxyRoute) null));
+    }
+
+    @Test
+    void matchingFinalOriginKeepsInheritedBindings() {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example");
+        ClientRequestOrigin sourceOrigin = ClientRequestOrigin.create(request.resolvedUri(), request.headers());
+        ClientConnection inheritedConnection = new TestConnection();
+        SocketAddress inheritedAddress = UnixDomainSocketAddress.of("/tmp/helidon-inherited.sock");
+        ProxyRoute inheritedRoute = ProxyRoute.direct(Proxy.noProxy(), "http", "service.example", 80, false);
+        request.inheritedConnection(inheritedConnection, sourceOrigin);
+        request.inheritedAddress(inheritedAddress, sourceOrigin);
+        request.inheritedSelectedProxyRoute(inheritedRoute, sourceOrigin);
+
+        request.request();
+
+        assertThat(request.endpointConnection(), sameInstance(inheritedConnection));
+        assertThat(request.endpointAddress(), sameInstance(inheritedAddress));
+        assertThat(request.endpointRoute(), sameInstance(inheritedRoute));
+    }
+
+    @Test
+    void hostSensitiveRedirectUsesPostStripOriginForBindingsAndCookies() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .addRedirectSensitiveHeader(HeaderNames.HOST)
+                .build();
+        WebClientCookieManager cookieManager = WebClientCookieManager.builder()
+                .automaticStoreEnabled(true)
+                .build();
+        WritableHeaders<?> virtualCookieHeaders = WritableHeaders.create();
+        virtualCookieHeaders.set(HeaderNames.SET_COOKIE, "virtual-cookie=stale; Path=/");
+        cookieManager.response(ClientUri.create(URI.create("http://virtual.example/")),
+                               ClientResponseHeaders.create(virtualCookieHeaders));
+        WritableHeaders<?> targetCookieHeaders = WritableHeaders.create();
+        targetCookieHeaders.set(HeaderNames.SET_COOKIE, "target-cookie=current; Path=/");
+        cookieManager.response(ClientUri.create(URI.create("http://uri.example/")),
+                               ClientResponseHeaders.create(targetCookieHeaders));
+
+        TestRequest request = new TestRequest(config,
+                                              cookieManager,
+                                              Method.GET,
+                                              "http://uri.example/target");
+        ClientUri sourceUri = ClientUri.create(URI.create("http://source.example/source"));
+        request.redirectSecurityState(RedirectSecurityState.initial()
+                                              .finalized(sourceUri,
+                                                         ClientRequestHeaders.create(WritableHeaders.create()))
+                                              .forRedirect(false));
+        request.headers().set(HeaderNames.HOST, "virtual.example");
+        ClientRequestOrigin virtualOrigin = ClientRequestOrigin.create(request.resolvedUri(), request.headers());
+        request.inheritedConnection(new TestConnection(), virtualOrigin);
+
+        request.request();
+
+        ClientRequestHeaders dispatchedHeaders = request.capturedHeaders();
+        assertThat(dispatchedHeaders.contains(HeaderNames.HOST), is(false));
+        String cookie = dispatchedHeaders.get(HeaderNames.COOKIE).get();
+        assertThat(cookie, containsString("target-cookie=current"));
+        assertThat(cookie.contains("virtual-cookie=stale"), is(false));
+        assertThat(request.endpointConnection(), is((ClientConnection) null));
+    }
+
+    @Test
+    void queryOnlyRetargetPreservesCookieOrder() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .addService((chain, request) -> {
+                    request.uri().writeableQuery().set("q", "after");
+                    request.headers().add(HeaderNames.COOKIE, "service=value");
+                    return chain.proceed(request);
+                })
+                .build();
+        WebClientCookieManager cookieManager = WebClientCookieManager.builder()
+                .automaticStoreEnabled(true)
+                .putDefaultCookie("default", "value")
+                .build();
+        WritableHeaders<?> storedCookieHeaders = WritableHeaders.create();
+        storedCookieHeaders.set(HeaderNames.SET_COOKIE, "stored=value; Path=/");
+        cookieManager.response(ClientUri.create(URI.create("http://service.example/")),
+                               ClientResponseHeaders.create(storedCookieHeaders));
+        TestRequest request = new TestRequest(config,
+                                              cookieManager,
+                                              Method.GET,
+                                              "http://service.example/path?q=before");
+        request.headers().set(HeaderNames.COOKIE, "explicit=value");
+
+        request.request();
+
+        assertThat(request.capturedHeaders().get(HeaderNames.COOKIE).allValues(),
+                   is(List.of("explicit=value", "stored=value", "default=value", "service=value")));
+    }
+
     private static final class TestRequest extends ClientRequestBase<TestRequest, HttpClientResponse> {
         private final AtomicInteger endpointCount = new AtomicInteger();
         private ProxyRoute routeSeenByEndpoint;
+        private ClientConnection endpointConnection;
+        private SocketAddress endpointAddress;
+        private ProxyRoute endpointRoute;
 
         private TestRequest(Method method, String uri) {
             this(HttpClientConfig.builder().build(), method, uri);
         }
 
         private TestRequest(HttpClientConfig clientConfig, Method method, String uri) {
+            this(clientConfig, WebClientCookieManager.builder().build(), method, uri);
+        }
+
+        private TestRequest(HttpClientConfig clientConfig,
+                            WebClientCookieManager cookieManager,
+                            Method method,
+                            String uri) {
             super(clientConfig,
-                  WebClientCookieManager.builder().build(),
+                  cookieManager,
                   "test",
                   method,
                   ClientUri.create(URI.create(uri)),
@@ -632,6 +821,9 @@ class ClientRequestBaseTest {
         private WebClientService.Chain endpoint() {
             return serviceRequest -> {
                 endpointCount.incrementAndGet();
+                endpointConnection = connection().orElse(null);
+                endpointAddress = address().orElse(null);
+                endpointRoute = selectedProxyRoute().orElse(null);
                 return WebClientServiceResponse.builder()
                         .serviceRequest(serviceRequest)
                         .whenComplete(new CompletableFuture<>())
@@ -644,6 +836,52 @@ class ClientRequestBaseTest {
 
         private int endpointCount() {
             return endpointCount.get();
+        }
+
+        private ClientRequestHeaders capturedHeaders() {
+            return finalizedRequestHeaders();
+        }
+
+        private ClientConnection endpointConnection() {
+            return endpointConnection;
+        }
+
+        private SocketAddress endpointAddress() {
+            return endpointAddress;
+        }
+
+        private ProxyRoute endpointRoute() {
+            return endpointRoute;
+        }
+    }
+
+    private static final class TestConnection implements ClientConnection {
+        @Override
+        public DataReader reader() {
+            return null;
+        }
+
+        @Override
+        public DataWriter writer() {
+            return null;
+        }
+
+        @Override
+        public String channelId() {
+            return "test";
+        }
+
+        @Override
+        public HelidonSocket helidonSocket() {
+            return null;
+        }
+
+        @Override
+        public void readTimeout(Duration readTimeout) {
+        }
+
+        @Override
+        public void closeResource() {
         }
     }
 

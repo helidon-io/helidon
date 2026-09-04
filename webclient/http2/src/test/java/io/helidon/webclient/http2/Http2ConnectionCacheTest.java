@@ -114,7 +114,8 @@ class Http2ConnectionCacheTest {
 
         Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(),
                                                                         _ -> fallbackResponse,
-                                                                        true);
+                                                                        () -> true,
+                                                                        request::responseCookiesDeferred);
         Http2ConnectionCache cache = Http2ConnectionCache.create();
         try {
             Http2ConnectionAttemptResult result = cache.newStream(http2Client,
@@ -166,7 +167,10 @@ class Http2ConnectionCacheTest {
         Http2ClientImpl http2Client = mock(Http2ClientImpl.class);
         Http2ClientRequestImpl request = mock(Http2ClientRequestImpl.class);
         WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
-        Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(), _ -> null, true);
+        Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(),
+                                                                        _ -> null,
+                                                                        () -> true,
+                                                                        request::responseCookiesDeferred);
         when(http2Client.protocolConfig()).thenReturn(Http2ClientProtocolConfig.create());
         when(request.connection()).thenReturn(Optional.empty());
         when(request.tls()).thenAnswer(_ -> {
@@ -233,7 +237,10 @@ class Http2ConnectionCacheTest {
         Http2ClientImpl http2Client = mock(Http2ClientImpl.class);
         Http2ClientRequestImpl request = mock(Http2ClientRequestImpl.class);
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
-        Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(whenSent, _ -> null, true);
+        Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(whenSent,
+                                                                        _ -> null,
+                                                                        () -> true,
+                                                                        request::responseCookiesDeferred);
         when(http2Client.protocolConfig()).thenReturn(Http2ClientProtocolConfig.create());
 
         AlternativeConnectionException failure = assertThrows(
@@ -300,7 +307,8 @@ class Http2ConnectionCacheTest {
 
         Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(),
                                                                         _ -> fallbackResponse,
-                                                                        true);
+                                                                        () -> true,
+                                                                        request::responseCookiesDeferred);
         Http2ConnectionCache cache = Http2ConnectionCache.create();
         try {
             Http2ClientConnectionHandler firstHandler = cache.newStream(http2Client,
@@ -405,7 +413,8 @@ class Http2ConnectionCacheTest {
         ClientUri initialUri = ClientUri.create(URI.create("http://target.example"));
         Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(),
                                                                         _ -> fallbackResponse,
-                                                                        true);
+                                                                        () -> true,
+                                                                        request::responseCookiesDeferred);
         Http2ConnectionCache cache = Http2ConnectionCache.create();
         Function<ClientConnectionTarget, Http2ConnectionAttemptResult> newStream = connectionTarget -> cache.newStream(
                 http2Client,

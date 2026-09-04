@@ -42,6 +42,12 @@ final class Http1FallbackService implements WebClientService {
                                                 response.receivedAt());
     }
 
+    static void handoffResponse(WebClientProtocolResponse response) {
+        Contexts.context()
+                .flatMap(context -> context.get(CONTEXT_KEY, FallbackContext.class))
+                .ifPresent(fallback -> fallback.fallbackHandler().handoffProtocolResponse(response));
+    }
+
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest clientRequest) {
         clientRequest.context()
