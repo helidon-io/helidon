@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.webserver.tests.websocket;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -38,9 +38,8 @@ class WsConversationService implements WsListener {
     private static final Long WAIT_SECONDS = 10L;
     private static final Logger LOGGER = Logger.getLogger(WsConversationService.class.getName());
 
-    private WsConversation conversation;
-    private Iterator<WsAction> actions;
-    private BlockingQueue<WsAction> received;
+    private final ConcurrentHashMap<WsSession, SessionState> sessions = new ConcurrentHashMap<>();
+    private volatile WsConversation conversation;
 
     WsConversationService() {
     }
@@ -59,16 +58,15 @@ class WsConversationService implements WsListener {
 
     @Override
     public void onOpen(WsSession session) {
-        Objects.requireNonNull(conversation);
-
-        received = new LinkedBlockingQueue<>();
-        actions = conversation.actions();
-        Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory()).submit(() -> {
-            while (actions.hasNext()) {
-                WsAction action = actions.next();
+        WsConversation conversation = Objects.requireNonNull(this.conversation);
+        SessionState state = new SessionState(conversation.actions(), new LinkedBlockingQueue<>());
+        sessions.put(session, state);
+        Thread.ofVirtual().start(() -> {
+            while (state.actions().hasNext()) {
+                WsAction action = state.actions().next();
                 switch (action.op) {
                     case SND -> sendMessage(action, session);
-                    case RCV -> waitMessage(action, session);
+                    case RCV -> waitMessage(action, session, state);
                 }
             }
         });
@@ -76,20 +74,26 @@ class WsConversationService implements WsListener {
 
     @Override
     public void onClose(WsSession session, int status, String reason) {
-        received = null;
-        actions = null;
-        conversation = null;
+        sessions.remove(session);
     }
 
     @Override
     public void onMessage(WsSession session, String text, boolean last) {
-        received.add(new WsAction(WsAction.Operation.RCV, WsAction.OperationType.TEXT, text));
+        SessionState state = sessions.get(session);
+        if (state != null) {
+            state.received().add(new WsAction(WsAction.Operation.RCV, WsAction.OperationType.TEXT, text));
+        }
     }
 
     @Override
     public void onMessage(WsSession session, BufferData buffer, boolean last) {
         int n = buffer.available();
-        received.add(new WsAction(WsAction.Operation.RCV, WsAction.OperationType.BINARY, buffer.readString(n, UTF_8)));
+        SessionState state = sessions.get(session);
+        if (state != null) {
+            state.received().add(new WsAction(WsAction.Operation.RCV,
+                                              WsAction.OperationType.BINARY,
+                                              buffer.readString(n, UTF_8)));
+        }
     }
 
     @Override
@@ -104,10 +108,10 @@ class WsConversationService implements WsListener {
         LOGGER.log(Level.FINE, () -> "Server: " + action);
     }
 
-    private void waitMessage(WsAction action, WsSession session) {
+    private void waitMessage(WsAction action, WsSession session, SessionState state) {
         try {
             LOGGER.log(Level.FINE, () -> "Server: " + action);
-            WsAction r = received.poll(WAIT_SECONDS, TimeUnit.SECONDS);
+            WsAction r = state.received().poll(WAIT_SECONDS, TimeUnit.SECONDS);
             assert r != null;
             if (!r.equals(action)) {
                 session.terminate();
@@ -115,5 +119,8 @@ class WsConversationService implements WsListener {
         } catch (Exception e) {
             session.terminate();
         }
+    }
+
+    private record SessionState(Iterator<WsAction> actions, BlockingQueue<WsAction> received) {
     }
 }

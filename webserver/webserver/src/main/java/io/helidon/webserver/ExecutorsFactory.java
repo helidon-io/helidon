@@ -45,7 +45,7 @@ final class ExecutorsFactory {
     }
 
     /**
-     * Used by {@link ServerListener} to allocate its reader executor.
+     * Used by {@link SocketTransportBinding} to allocate its reader executor.
      *
      * @return {@link ThreadPerTaskExecutor#create(java.util.concurrent.ThreadFactory)}
      */
