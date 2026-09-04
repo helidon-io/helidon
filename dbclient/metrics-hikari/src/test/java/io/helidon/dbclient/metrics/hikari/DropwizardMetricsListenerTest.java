@@ -41,10 +41,10 @@ class DropwizardMetricsListenerTest {
 
     @Test
     void removesMetersUsingCustomizedIdentity() {
-        List<Class<?>> origins = new ArrayList<>();
+        List<String> origins = new ArrayList<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
+            public void customize(Meter.Builder<?, ?> builder, String origin) {
                 if (builder.name().startsWith(PREFIX)) {
                     origins.add(origin);
                     builder.addTag(CUSTOM_TAG);
@@ -64,7 +64,8 @@ class DropwizardMetricsListenerTest {
             dropwizardRegistry.register("gauge", (Gauge<Integer>) () -> 1);
             dropwizardRegistry.counter("counter");
 
-            assertThat(origins, contains(DropwizardMetricsListener.class, DropwizardMetricsListener.class));
+            assertThat(origins,
+                       contains(DropwizardMetricsListener.class.getName(), DropwizardMetricsListener.class.getName()));
             assertThat(registry.gauge(PREFIX + "gauge", List.of(CUSTOM_TAG)).isPresent(), is(true));
             assertThat(registry.gauge(PREFIX + "counter", List.of(CUSTOM_TAG)).isPresent(), is(true));
 

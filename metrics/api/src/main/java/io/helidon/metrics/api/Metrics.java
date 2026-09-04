@@ -47,10 +47,10 @@ public class Metrics {
         String value() default "";
 
         /**
-         * No-op, will be removed.
+         * Scope value retained for compatibility; core metrics ignores it.
          *
-         * @return ignored value
-         * @deprecated No-op, will be removed.
+         * @return configured value
+         * @deprecated Core metrics ignores this value, and this element will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         String scope() default "application";
@@ -101,10 +101,10 @@ public class Metrics {
         String value() default "";
 
         /**
-         * No-op, will be removed.
+         * Scope value retained for compatibility; core metrics ignores it.
          *
-         * @return ignored value
-         * @deprecated No-op, will be removed.
+         * @return configured value
+         * @deprecated Core metrics ignores this value, and this element will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         String scope() default "application";
@@ -155,10 +155,10 @@ public class Metrics {
         String value() default "";
 
         /**
-         * No-op, will be removed.
+         * Scope value retained for compatibility; core metrics ignores it.
          *
-         * @return ignored value
-         * @deprecated No-op, will be removed.
+         * @return configured value
+         * @deprecated Core metrics ignores this value, and this element will be removed.
          */
         @Deprecated(forRemoval = true, since = "27.0.0")
         String scope() default "application";

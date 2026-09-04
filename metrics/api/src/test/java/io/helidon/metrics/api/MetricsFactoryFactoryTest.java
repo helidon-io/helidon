@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.config.Config;
@@ -129,6 +130,15 @@ class MetricsFactoryFactoryTest {
         assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", null));
     }
 
+    @SuppressWarnings("removal")
+    @Test
+    void noOpRegistryUsesDefaultScopedEnablementBridge() {
+        MeterRegistry meterRegistry = new NoOpMetricsFactory().globalRegistry();
+
+        assertThat(meterRegistry.isMeterEnabled("test", Map.of(), Optional.of("ignored")), is(true));
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", Map.of(), null));
+    }
+
     @Test
     void noOpRegistryAppliesMeterBuilderCustomizersOnceUsingRegistrationOrigin() {
         AtomicInteger basicCustomizationCount = new AtomicInteger();
@@ -141,9 +151,9 @@ class MetricsFactoryFactoryTest {
             }
 
             @Override
-            public void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
+            public void customize(Meter.Builder<?, ?> builder, String origin) {
                 originCustomizationCount.incrementAndGet();
-                builder.addTag(new NoOpTag("origin", origin.getSimpleName()));
+                builder.addTag(new NoOpTag("origin", origin));
             }
         };
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
@@ -158,15 +168,15 @@ class MetricsFactoryFactoryTest {
 
             Counter basicCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("customized-counter"));
             Counter firstOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("same-counter"),
-                                                                   FirstOrigin.class);
+                                                                   FirstOrigin.class.getName());
             Counter secondOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("same-counter"),
-                                                                    SecondOrigin.class);
+                                                                    SecondOrigin.class.getName());
 
             assertThat("Basic customization count", basicCustomizationCount.get(), is(1));
             assertThat("Origin customization count", originCustomizationCount.get(), is(2));
             assertThat(basicCounter.id().tagsMap(), hasEntry("customized", "basic"));
-            assertThat(firstOriginCounter.id().tagsMap(), hasEntry("origin", FirstOrigin.class.getSimpleName()));
-            assertThat(secondOriginCounter.id().tagsMap(), hasEntry("origin", SecondOrigin.class.getSimpleName()));
+            assertThat(firstOriginCounter.id().tagsMap(), hasEntry("origin", FirstOrigin.class.getName()));
+            assertThat(secondOriginCounter.id().tagsMap(), hasEntry("origin", SecondOrigin.class.getName()));
         } finally {
             manager.shutdown();
         }
@@ -201,7 +211,7 @@ class MetricsFactoryFactoryTest {
                     throw new UnsupportedOperationException(method.toString());
                 });
 
-        Counter result = legacyRegistry.getOrCreate(noOpMetricsFactory.counterBuilder("test"), FirstOrigin.class);
+        Counter result = legacyRegistry.getOrCreate(noOpMetricsFactory.counterBuilder("test"), FirstOrigin.class.getName());
 
         assertThat(result, sameInstance(expected));
         assertThat(legacyInvocationCount.get(), is(1));

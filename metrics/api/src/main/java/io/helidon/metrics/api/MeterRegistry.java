@@ -77,11 +77,11 @@ public interface MeterRegistry extends Wrapper {
     Collection<Meter> meters(Predicate<Meter> filter);
 
     /**
-     * No-op, will be removed.
+     * Returns all previously-registered meters, ignoring the scope selection.
      *
      * @param scopeSelection ignored; must not be {@code null}
      * @return all registered meters
-     * @deprecated No-op, will be removed.
+     * @deprecated Use {@link #meters()}. Scope selection is ignored and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Iterable<Meter> meters(Iterable<String> scopeSelection) {
@@ -90,10 +90,10 @@ public interface MeterRegistry extends Wrapper {
     }
 
     /**
-     * No-op, will be removed.
+     * Always returns an empty iterable and will be removed.
      *
      * @return empty iterable
-     * @deprecated No-op, will be removed.
+     * @deprecated Always returns an empty iterable and will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Iterable<String> scopes() {
@@ -112,7 +112,8 @@ public interface MeterRegistry extends Wrapper {
      * Returns whether the specified meter is enabled.
      * <p>
      * The default implementation delegates to the deprecated overload for compatibility with existing implementations.
-     * Implementations can override this method to apply provider-neutral enablement rules.
+     * Implementations should override this method to apply provider-neutral enablement rules. Legacy implementations
+     * which override the deprecated overload continue to work.
      *
      * @param name name of the meter to check
      * @param tags tags of the meter to check
@@ -125,16 +126,22 @@ public interface MeterRegistry extends Wrapper {
     }
 
     /**
-     * No-op, will be removed.
+     * Returns whether the specified meter is enabled, ignoring the scope.
+     * <p>
+     * The default implementation delegates to {@link #isMeterEnabled(String, Map)}. Implementations must override either
+     * this method or the scope-free overload.
      *
      * @param name  name of the meter to check
      * @param tags  tags of the meter to check
      * @param scope ignored; must not be {@code null}
      * @return true if the meter is enabled; false otherwise
-     * @deprecated No-op, will be removed.
+     * @deprecated Use {@link #isMeterEnabled(String, Map)}. Scope is ignored and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
-    boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope);
+    default boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
+        Objects.requireNonNull(scope);
+        return isMeterEnabled(name, tags);
+    }
 
     /**
      * Returns the default {@link io.helidon.metrics.api.Clock} in use by the registry.
@@ -155,19 +162,20 @@ public interface MeterRegistry extends Wrapper {
     <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder);
 
     /**
-     * Locates or creates a meter using the originating type as provider-neutral context for meter builder customization.
+     * Locates or creates a meter using the originating type name as provider-neutral context for meter builder
+     * customization.
      * <p>
      * The default implementation delegates to {@link #getOrCreate(Meter.Builder)} for compatibility with existing meter
      * registry implementations.
      *
      * @param builder builder to use in finding or creating a meter
-     * @param origin  type which originated the meter
+     * @param origin  fully-qualified name of the type which originated the meter
      * @param <B>     builder for the meter
      * @param <M>     type of the meter
      * @return the previously-registered meter with the same name and tags or, if none, the newly-registered one
      * @since 27.0.0
      */
-    default <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Class<?> origin) {
+    default <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, String origin) {
         Objects.requireNonNull(builder);
         Objects.requireNonNull(origin);
         return getOrCreate(builder);
@@ -249,12 +257,12 @@ public interface MeterRegistry extends Wrapper {
     Optional<Meter> remove(Meter.Id id);
 
     /**
-     * No-op, will be removed.
+     * Removes a previously-registered meter with the specified ID, ignoring the scope.
      *
      * @param id    ID for the meter to remove
      * @param scope ignored; must not be {@code null}
      * @return the removed meter; empty if the specified ID does not correspond to a registered meter
-     * @deprecated No-op, will be removed.
+     * @deprecated Use {@link #remove(Meter.Id)}. Scope is ignored and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<Meter> remove(Meter.Id id, String scope) {
@@ -272,13 +280,13 @@ public interface MeterRegistry extends Wrapper {
     Optional<Meter> remove(String name, Iterable<Tag> tags);
 
     /**
-     * No-op, will be removed.
+     * Removes a previously-registered meter with the specified name and tags, ignoring the scope.
      *
      * @param name  meter name
      * @param tags  tags for further identifying the meter
      * @param scope ignored; must not be {@code null}
      * @return the removed meter; empty if the specified name and tags do not correspond to a registered meter
-     * @deprecated No-op, will be removed.
+     * @deprecated Use {@link #remove(String, Iterable)}. Scope is ignored and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<Meter> remove(String name, Iterable<Tag> tags, String scope) {

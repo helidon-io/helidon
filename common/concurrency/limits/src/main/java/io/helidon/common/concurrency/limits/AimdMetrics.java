@@ -49,6 +49,6 @@ class AimdMetrics extends SemaphoreMetrics {
         Gauge.Builder<Integer> limitBuilder = metricsFactory.gaugeBuilder(name + "_limit", limit::get);
 
         limitBuilder.tags(tags);
-        meterRegistry.getOrCreate(limitBuilder, AimdMetrics.class);
+        meterRegistry.getOrCreate(limitBuilder, AimdMetrics.class.getName());
     }
 }

@@ -26,11 +26,12 @@ class ScopeConfigSupport {
     }
 
     /**
-     * No-op, will be removed.
+     * Sets the retained meter-name inclusion pattern from a string; core metrics ignores the setting.
      *
      * @param builderBase builder
-     * @param includeString ignored value
-     * @deprecated No-op, will be removed.
+     * @param includeString inclusion pattern
+     * @deprecated Use {@link ScopeConfig.Builder#include(Pattern)}. Core metrics ignores scope configuration, and this
+     * method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
@@ -41,11 +42,12 @@ class ScopeConfigSupport {
     }
 
     /**
-     * No-op, will be removed.
+     * Sets the retained meter-name exclusion pattern from a string; core metrics ignores the setting.
      *
      * @param builderBase builder
-     * @param excludeString ignored value
-     * @deprecated No-op, will be removed.
+     * @param excludeString exclusion pattern
+     * @deprecated Use {@link ScopeConfig.Builder#exclude(Pattern)}. Core metrics ignores scope configuration, and this
+     * method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")

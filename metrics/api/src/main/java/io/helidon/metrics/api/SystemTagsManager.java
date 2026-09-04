@@ -65,8 +65,8 @@ public interface SystemTagsManager {
     }
 
     /**
-     * This method is now a no-op, it simply returns the current {@link io.helidon.service.registry.ServiceRegistry}
-     * backed instance.
+     * Returns the current {@link io.helidon.service.registry.ServiceRegistry}-backed instance, ignoring the provided
+     * configuration.
      *
      * @param metricsConfig ignored; must not be {@code null}
      * @return tags manager from the service registry
@@ -93,11 +93,11 @@ public interface SystemTagsManager {
     }
 
     /**
-     * No-op, will be removed.
+     * Always returns empty because core metrics does not manage scope tags.
      *
      * @param candidateScope ignored; must not be {@code null}
      * @return empty
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics does not manage scope tags, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<Tag> scopeTag(Optional<String> candidateScope) {
@@ -144,11 +144,12 @@ public interface SystemTagsManager {
     Iterable<Tag> withoutSystemTags(Iterable<Tag> tags);
 
     /**
-     * No-op, will be removed.
+     * Returns tags without system tags. Scope tags are treated as ordinary tags.
      *
      * @param tags tags to filter; must not be {@code null}
      * @return non-null tags without system tags
-     * @deprecated No-op, will be removed.
+     * @deprecated Use {@link #withoutSystemTags(Iterable)}. Scope tags are treated as ordinary tags, and this method will
+     * be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Iterable<Tag> withoutSystemOrScopeTags(Iterable<Tag> tags) {
@@ -198,11 +199,11 @@ public interface SystemTagsManager {
     }
 
     /**
-     * No-op, will be removed.
+     * Always returns empty because core metrics does not assign scopes.
      *
      * @param candidateScope ignored; must not be {@code null}
      * @return empty
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics does not assign scopes, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<String> effectiveScope(Optional<String> candidateScope) {
@@ -211,12 +212,12 @@ public interface SystemTagsManager {
     }
 
     /**
-     * No-op, will be removed.
+     * Always returns empty because core metrics does not assign scopes.
      *
      * @param explicitScope ignored; must not be {@code null}
      * @param tags ignored; must not be {@code null}
      * @return empty
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics does not assign scopes, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<String> effectiveScope(Optional<String> explicitScope, Iterable<Tag> tags) {
@@ -226,10 +227,10 @@ public interface SystemTagsManager {
     }
 
     /**
-     * No-op, will be removed.
+     * Always returns empty because core metrics does not manage scope tags.
      *
      * @return empty
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics does not manage scope tags, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<String> scopeTagName() {

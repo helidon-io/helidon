@@ -39,10 +39,10 @@ class MetricsOriginTest {
 
     @Test
     void reportsFaultToleranceOriginForAllMeterTypes() {
-        Map<String, Class<?>> origins = new HashMap<>();
+        Map<String, String> origins = new HashMap<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
+            public void customize(Meter.Builder<?, ?> builder, String origin) {
                 if (METER_NAMES.contains(builder.name())) {
                     origins.put(builder.name(), origin);
                 }
@@ -61,9 +61,9 @@ class MetricsOriginTest {
             MetricsUtils.timerBuilder(metricsFactory, meterRegistry, TIMER_NAME);
 
             assertThat(origins,
-                       is(Map.of(GAUGE_NAME, FaultTolerance.class,
-                                 COUNTER_NAME, FaultTolerance.class,
-                                 TIMER_NAME, FaultTolerance.class)));
+                       is(Map.of(GAUGE_NAME, FaultTolerance.class.getName(),
+                                 COUNTER_NAME, FaultTolerance.class.getName(),
+                                 TIMER_NAME, FaultTolerance.class.getName())));
         } finally {
             manager.shutdown();
         }

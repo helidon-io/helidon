@@ -77,13 +77,13 @@ class ScopeApiDeprecationTest {
                 MeterRegistry.class.getClassLoader(),
                 new Class<?>[] {MeterRegistry.class},
                 (proxy, method, arguments) -> {
-                    if (method.isDefault()) {
-                        return InvocationHandler.invokeDefault(proxy, method, arguments);
-                    }
                     if (method.equals(legacyMethod)) {
                         legacyMethodInvoked.set(true);
                         receivedScope.set((Optional<?>) arguments[2]);
                         return false;
+                    }
+                    if (method.isDefault()) {
+                        return InvocationHandler.invokeDefault(proxy, method, arguments);
                     }
                     throw new AssertionError("Unexpected method invocation: " + method);
                 });

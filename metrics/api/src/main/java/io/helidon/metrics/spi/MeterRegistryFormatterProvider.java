@@ -72,7 +72,7 @@ public interface MeterRegistryFormatterProvider {
     }
 
     /**
-     * No-op, will be removed.
+     * Returns a formatter, if possible, ignoring the scope-specific arguments.
      *
      * @param mediaType media type of the desired output
      * @param metricsConfig {@link io.helidon.metrics.api.MetricsConfig} to influence the formatting
@@ -81,7 +81,8 @@ public interface MeterRegistryFormatterProvider {
      * @param scopeSelection ignored; must not be {@code null}
      * @param nameSelection meter names to format; empty means no name-based restriction
      * @return compatible formatter; empty if none
-     * @deprecated No-op, will be removed.
+     * @deprecated Use {@link #formatter(MediaType, MetricsConfig, MeterRegistry, Map, Iterable)}. Scope-specific arguments
+     * are ignored and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     Optional<MeterRegistryFormatter> formatter(MediaType mediaType,

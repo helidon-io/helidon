@@ -103,13 +103,6 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> ignoredScope) {
-        Objects.requireNonNull(ignoredScope);
-        return isMeterEnabled(name, tags);
-    }
-
-    @Override
     public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
         Objects.requireNonNull(builder);
         meterBuilderCustomizers.forEach(customizer -> customizer.customize(builder));
@@ -117,7 +110,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
-    public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Class<?> origin) {
+    public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, String origin) {
         Objects.requireNonNull(builder);
         Objects.requireNonNull(origin);
         meterBuilderCustomizers.forEach(customizer -> customizer.customize(builder, origin));

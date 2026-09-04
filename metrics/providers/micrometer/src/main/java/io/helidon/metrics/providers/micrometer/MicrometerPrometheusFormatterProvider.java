@@ -40,6 +40,19 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
     public MicrometerPrometheusFormatterProvider() {
     }
 
+    /**
+     * Returns a formatter, if possible, ignoring the scope-specific arguments.
+     *
+     * @param mediaType media type of the desired output
+     * @param metricsConfig metrics configuration
+     * @param meterRegistry meter registry from which to gather data
+     * @param ignoredScopeTagName ignored; must not be {@code null}
+     * @param ignoredScopeSelection ignored; must not be {@code null}
+     * @param nameSelection meter names to format; empty means no name-based restriction
+     * @return compatible formatter; empty if none
+     * @deprecated Use {@link #formatter(MediaType, MetricsConfig, MeterRegistry, Map, Iterable)}. Scope-specific arguments
+     * are ignored and this method will be removed.
+     */
     @Override
     @Deprecated(since = "27.0.0", forRemoval = true)
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,

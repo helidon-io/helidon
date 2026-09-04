@@ -40,9 +40,9 @@ interface MetricsConfigBlueprint {
     String METRICS_CONFIG_KEY = "metrics";
 
     /**
-     * No-op, will be removed.
+     * Legacy scope configuration key retained for compatibility.
      *
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics ignores scope configuration, and this constant will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     String SCOPE_CONFIG_KEY = "scoping";
@@ -122,10 +122,10 @@ interface MetricsConfigBlueprint {
     Optional<String> appTagName();
 
     /**
-     * No-op, will be removed.
+     * Returns scope settings retained for compatibility; core metrics ignores them.
      *
-     * @return ignored settings
-     * @deprecated No-op, will be removed.
+     * @return configured scope settings
+     * @deprecated Core metrics ignores these settings, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured(metadata = false)
@@ -217,11 +217,11 @@ interface MetricsConfigBlueprint {
     List<MetricsPublisher> publishers();
 
     /**
-     * No-op, will be removed.
+     * Always returns {@code true} because core metrics does not apply scope filtering.
      *
      * @param scope ignored; must not be {@code null}
      * @return true
-     * @deprecated No-op, will be removed.
+     * @deprecated Core metrics does not apply scope filtering, and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default boolean isScopeEnabled(String scope) {
@@ -241,12 +241,12 @@ interface MetricsConfigBlueprint {
     }
 
     /**
-     * No-op, will be removed.
+     * Determines whether the meter with the specified name is enabled, ignoring the scope.
      *
      * @param name  meter name
      * @param scope ignored; must not be {@code null}
      * @return whether the meter is enabled
-     * @deprecated No-op, will be removed.
+     * @deprecated Use {@link #isMeterEnabled(String)}. Scope is ignored and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default boolean isMeterEnabled(String name, String scope) {

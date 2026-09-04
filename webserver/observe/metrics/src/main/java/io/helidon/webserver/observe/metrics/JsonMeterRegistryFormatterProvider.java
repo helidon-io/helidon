@@ -56,7 +56,7 @@ public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatte
     }
 
     /**
-     * No-op, will be removed.
+     * Returns a formatter, if possible, ignoring the scope-specific arguments.
      *
      * @param mediaType media type of the desired output
      * @param metricsConfig metrics configuration
@@ -65,7 +65,8 @@ public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatte
      * @param scopeSelection ignored; must not be {@code null}
      * @param nameSelection meter names to format; empty means no name-based restriction
      * @return compatible formatter; empty if none
-     * @deprecated No-op, will be removed.
+     * @deprecated Use {@link #formatter(MediaType, MetricsConfig, MeterRegistry, Map, Iterable)}. Scope-specific arguments
+     * are ignored and this method will be removed.
      */
     @Deprecated(since = "27.0.0", forRemoval = true)
     @Override
