@@ -31,6 +31,8 @@ public class UriAuthorityNormalizationJmhTest {
     private static final String IDN = "bücher.example";
     private static final String IPV4 = "192.0.2.10:8443";
     private static final String IPV6 = "[2001:db8::1]:8443";
+    private static final String SNI_AUTHORITY = "Api.Example.COM:443";
+    private static final UriAuthority PARSED_SNI_AUTHORITY = UriAuthority.create(SNI_AUTHORITY);
 
     @Benchmark
     public UriHost hostDns() {
@@ -70,5 +72,15 @@ public class UriAuthorityNormalizationJmhTest {
     @Benchmark
     public int authorityPortOrDefault() {
         return UriAuthority.create(DNS).portOrDefault(443);
+    }
+
+    @Benchmark
+    public UriHost sniAuthorityReparse() {
+        return UriAuthority.create(SNI_AUTHORITY).host();
+    }
+
+    @Benchmark
+    public UriHost sniAuthorityReuse() {
+        return PARSED_SNI_AUTHORITY.host();
     }
 }

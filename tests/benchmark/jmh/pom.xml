@@ -109,6 +109,14 @@
             <artifactId>helidon-webserver-websocket</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-http3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http-http3</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-task</artifactId>
         </dependency>
@@ -149,6 +157,10 @@
             <artifactId>grpc-stub</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http3</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-json-binding</artifactId>
         </dependency>
@@ -183,6 +195,10 @@
         <dependency>
             <groupId>io.helidon.json</groupId>
             <artifactId>helidon-json-binding</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.quic</groupId>
+            <artifactId>helidon-quic</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
@@ -221,6 +237,10 @@
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-generator-annprocess</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
@@ -268,6 +288,9 @@
                         <exclude>**/*JmhRunnerTest.java</exclude>
                         <exclude>**/*$*</exclude>
                     </excludes>
+                    <systemPropertyVariables>
+                        <helidon.benchmark.evidence.mavenLocalRepository>${settings.localRepository}</helidon.benchmark.evidence.mavenLocalRepository>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
