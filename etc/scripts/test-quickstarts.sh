@@ -65,7 +65,7 @@ readonly HELIDON_VERSION
 # If needed we clone the helidon-examples repo
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
   echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
-  git clone --branch dev-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+  git clone --branch helidon-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
 
   # If in a tag, update the version on the fly
   if [ -n "$(git tag --points-at HEAD)" ] ; then
