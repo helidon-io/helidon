@@ -38,6 +38,8 @@ public class HttpCodecJmhBenchmark {
     private static final HeaderName CUSTOM_HEADER_NAME = HeaderNames.create("x-jmh-custom-header");
     private static final HeaderName MULTI_VALUE_HEADER_NAME = HeaderNames.create("x-jmh-multi-value");
     private static final Method CUSTOM_METHOD = Method.create("SEARCH");
+    private static final HttpMediaType SIMPLE_MEDIA_TYPE = HttpMediaType.create(SIMPLE_CONTENT_TYPE);
+    private static final HttpMediaType QUOTED_MEDIA_TYPE = HttpMediaType.create(QUOTED_CONTENT_TYPE);
 
     @Benchmark
     public HttpMediaType parseSimpleContentType() {
@@ -47,6 +49,16 @@ public class HttpCodecJmhBenchmark {
     @Benchmark
     public HttpMediaType parseQuotedContentType() {
         return HttpMediaType.create(QUOTED_CONTENT_TYPE);
+    }
+
+    @Benchmark
+    public String serializeSimpleContentType() {
+        return SIMPLE_MEDIA_TYPE.text();
+    }
+
+    @Benchmark
+    public String serializeQuotedContentType() {
+        return QUOTED_MEDIA_TYPE.text();
     }
 
     @Benchmark

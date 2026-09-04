@@ -34,7 +34,8 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 class HttpCodecJmhRunnerTest {
     private static final String METHODS =
-            "(parseSimpleContentType|parseQuotedContentType|writeHttp1Ascii|writeHttp1Latin1|"
+            "(parseSimpleContentType|parseQuotedContentType|serializeSimpleContentType|serializeQuotedContentType|"
+                    + "writeHttp1Ascii|writeHttp1Latin1|"
                     + "encodeHpackAscii|encodeHpackLatin1|writeHpackRequestAscii|writeHpackRequestLatin1|"
                     + "writeHpackResponseAscii|writeHpackResponseLatin1)";
 

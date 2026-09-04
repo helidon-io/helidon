@@ -141,12 +141,9 @@ final class HttpMediaTypeImpl implements HttpMediaType {
 
     private static void appendParameterValue(StringBuilder target, String value) {
         Objects.requireNonNull(value);
-        try {
-            HttpToken.validate(value);
+        if (HttpToken.isValid(value)) {
             target.append(value);
             return;
-        } catch (IllegalArgumentException _) {
-            // A valid non-token parameter value must use quoted-string syntax.
         }
 
         target.append('"');
