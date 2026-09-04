@@ -30,6 +30,7 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.TlsNioSocket;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -71,6 +72,98 @@ public class TlsNioSocketJmhTest {
     @Benchmark
     public byte[] tlsReplayFirstUnwrap(ReplayState state) {
         return state.socket.get();
+    }
+
+    @Benchmark
+    public byte[] tlsPostHandshakeRead(PostHandshakeReadState state) {
+        return state.socket.get();
+    }
+
+    @Benchmark
+    public void tlsPostHandshakeWrite(PostHandshakeWriteState state) {
+        state.socket.write(state.buffer);
+    }
+
+    @State(Scope.Thread)
+    public static class PostHandshakeReadState {
+        private final ByteBuffer networkData = ByteBuffer.allocate(1);
+
+        private ServerSocketChannel server;
+        private SocketChannel clientChannel;
+        private SocketChannel serverChannel;
+        private TlsNioSocket socket;
+
+        @Setup(Level.Trial)
+        public void setup() throws IOException {
+            server = ServerSocketChannel.open();
+            server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            clientChannel = SocketChannel.open(server.getLocalAddress());
+            serverChannel = server.accept();
+            socket = TlsNioSocket.client(clientChannel, new PassThroughSslEngine(), "client");
+            socket.handshake();
+        }
+
+        @Setup(Level.Invocation)
+        public void supplyNetworkData() throws IOException {
+            networkData.clear();
+            networkData.put((byte) 'R');
+            networkData.flip();
+            while (networkData.hasRemaining()) {
+                serverChannel.write(networkData);
+            }
+        }
+
+        @TearDown(Level.Trial)
+        public void tearDown() throws IOException {
+            clientChannel.close();
+            serverChannel.close();
+            server.close();
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class PostHandshakeWriteState {
+        private static final byte[] APPLICATION_DATA = {(byte) 'W'};
+
+        private final ByteBuffer networkData = ByteBuffer.allocate(1);
+
+        private ServerSocketChannel server;
+        private SocketChannel clientChannel;
+        private SocketChannel serverChannel;
+        private TlsNioSocket socket;
+        private BufferData buffer;
+
+        @Setup(Level.Trial)
+        public void setup() throws IOException {
+            server = ServerSocketChannel.open();
+            server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            clientChannel = SocketChannel.open(server.getLocalAddress());
+            serverChannel = server.accept();
+            socket = TlsNioSocket.client(clientChannel, new PassThroughSslEngine(), "client");
+            socket.handshake();
+        }
+
+        @Setup(Level.Invocation)
+        public void prepareApplicationData() {
+            buffer = BufferData.create(APPLICATION_DATA);
+        }
+
+        @TearDown(Level.Invocation)
+        public void drainNetworkData() throws IOException {
+            networkData.clear();
+            while (networkData.hasRemaining()) {
+                if (serverChannel.read(networkData) < 0) {
+                    throw new IOException("TLS benchmark peer closed before receiving data");
+                }
+            }
+        }
+
+        @TearDown(Level.Trial)
+        public void tearDown() throws IOException {
+            clientChannel.close();
+            serverChannel.close();
+            server.close();
+        }
     }
 
     @State(Scope.Thread)
@@ -248,6 +341,39 @@ public class TlsNioSocketJmhTest {
             return new SSLEngineResult(SSLEngineResult.Status.OK,
                                        SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
                                        available,
+                                       1);
+        }
+    }
+
+    private static final class PassThroughSslEngine extends IdleSslEngine {
+        @Override
+        public SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst) {
+            ByteBuffer src = srcs[offset];
+            if (!src.hasRemaining()) {
+                return new SSLEngineResult(SSLEngineResult.Status.OK,
+                                           SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                           0,
+                                           0);
+            }
+            dst.put(src.get());
+            return new SSLEngineResult(SSLEngineResult.Status.OK,
+                                       SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                       1,
+                                       1);
+        }
+
+        @Override
+        public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length) {
+            if (!src.hasRemaining()) {
+                return new SSLEngineResult(SSLEngineResult.Status.BUFFER_UNDERFLOW,
+                                           SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                           0,
+                                           0);
+            }
+            dsts[offset].put(src.get());
+            return new SSLEngineResult(SSLEngineResult.Status.OK,
+                                       SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                       1,
                                        1);
         }
     }

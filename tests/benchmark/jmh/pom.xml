@@ -97,6 +97,27 @@
             <artifactId>helidon-webserver-grpc</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-http3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http-http3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-micrometer</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-task</artifactId>
         </dependency>
@@ -127,6 +148,10 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http3</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
@@ -161,6 +186,10 @@
             <artifactId>helidon-json-binding</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.quic</groupId>
+            <artifactId>helidon-quic</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
@@ -179,6 +208,10 @@
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-generator-annprocess</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
@@ -223,6 +256,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <skipTests>true</skipTests>
+                    <systemPropertyVariables>
+                        <helidon.benchmark.evidence.mavenLocalRepository>${settings.localRepository}</helidon.benchmark.evidence.mavenLocalRepository>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

@@ -42,11 +42,11 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 
 public class Http2FlowControlJmhTest {
+    private static final Runnable NO_OP = () -> { };
     private static final int FRAME_SIZE = 1024;
     private static final int PARTIAL_WINDOW_SIZE = FRAME_SIZE / 2;
     private static final int CONCURRENT_THREADS = 8;
     private static final PeerInfo PEER_INFO = new BenchmarkPeerInfo();
-    private static final Runnable NO_OP = () -> { };
     private static final FlowControl.Outbound WIDE_WINDOW = new BenchmarkFlowControl(false);
     private static final FlowControl.Outbound PARTIAL_WINDOW = new BenchmarkFlowControl(true);
 

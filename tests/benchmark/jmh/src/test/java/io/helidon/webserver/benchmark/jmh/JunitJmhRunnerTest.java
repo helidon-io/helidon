@@ -47,6 +47,12 @@ public class JunitJmhRunnerTest {
     private static final String HTTP2_REUSE_BENCHMARK =
             ".*HttpJmhTest.http2MaxConcurrentStreamReuseLargeResponse";
     private static final String HTTP2_FLOW_CONTROL_BENCHMARK = ".*Http2FlowControlJmhTest.*";
+    private static final String TRANSPORT_METRICS_SINGLE_THREAD_BENCHMARK =
+            ".*HttpTransportMetricsJmhTest.warmedHttp[23]StreamLifecycleSingleThread";
+    private static final String DEFAULT_EXCLUSIONS =
+            HTTP2_REUSE_BENCHMARK
+                    + "|" + HTTP2_FLOW_CONTROL_BENCHMARK
+                    + "|" + TRANSPORT_METRICS_SINGLE_THREAD_BENCHMARK;
     private static final int DEFAULT_THREADS = 8;
     private static final int HTTP2_REUSE_THREADS = 1;
     private static final int ERROR_MARGIN =
@@ -58,6 +64,7 @@ public class JunitJmhRunnerTest {
                 .exclude(HTTP2_REUSE_BENCHMARK)
                 .exclude(HTTP2_FLOW_CONTROL_BENCHMARK)
                 .exclude(".*Http2ConnectionWriterJmhTest.*")
+                .exclude(DEFAULT_EXCLUSIONS)
                 .threads(DEFAULT_THREADS)
                 .build();
 
@@ -70,10 +77,17 @@ public class JunitJmhRunnerTest {
                 .include(HTTP2_FLOW_CONTROL_BENCHMARK)
                 .build();
 
+        Options transportMetricsSingleThreadOptions =
+                optionsBuilder("./target/benchmark-result-transport-metrics-single-thread.json")
+                        .include(TRANSPORT_METRICS_SINGLE_THREAD_BENCHMARK)
+                        .threads(1)
+                        .build();
+
         Collection<RunResult> runResults = new ArrayList<>();
         runResults.addAll(new Runner(defaultOptions).run());
         runResults.addAll(new Runner(http2ReuseOptions).run());
         runResults.addAll(new Runner(http2FlowControlOptions).run());
+        runResults.addAll(new Runner(transportMetricsSingleThreadOptions).run());
 
         boolean resetBaseline = Boolean.parseBoolean(System.getProperty("webserver.jmh.resetBaseline", "false"));
 
