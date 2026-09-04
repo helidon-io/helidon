@@ -13,7 +13,7 @@ Helidon DbClient.
 
 For this 15 minute tutorial, you will need the following:
 
-_Prerequisite product versions for Helidon 27.0.0-M1-SNAPSHOT_:
+_Prerequisite product versions for Helidon 27.0.0-M1_:
 
 | Requirement                                     | Description                                                                       |
 |-------------------------------------------------|-----------------------------------------------------------------------------------|
@@ -159,7 +159,7 @@ Run the Maven archetype:
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
-    -DarchetypeVersion=27.0.0-M1-SNAPSHOT \
+    -DarchetypeVersion=27.0.0-M1 \
     -DgroupId=io.helidon.examples \
     -DartifactId=helidon-quickstart-se \
     -Dpackage=io.helidon.examples.quickstart.se
