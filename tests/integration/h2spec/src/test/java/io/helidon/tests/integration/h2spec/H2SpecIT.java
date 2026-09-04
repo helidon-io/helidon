@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package io.helidon.tests.integration.h2spec;
+
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Duration;

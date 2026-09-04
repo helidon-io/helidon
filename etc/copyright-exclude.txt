@@ -63,3 +63,6 @@ src/test/resources/web/resource.txt.gz
 src/test/resources/web/resource.txt.zz
 src/test/resources/static/classpath/index.html
 target/
+tests/integration/h3i/h3i-runner/Cargo.lock
+tests/integration/h3i/h3i-runner/Cargo.toml
+tests/integration/h3i/h3i-runner/src/main.rs

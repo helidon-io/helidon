@@ -1,0 +1,11 @@
+**
+!Dockerfile.server
+!Dockerfile.h3i
+!README.md
+!debian-snapshot.sources
+!verify_debian_snapshot.sh
+!h3i-runner/
+!h3i-runner/**
+!target/
+!target/libs/
+!target/libs/**

@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2026 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+FROM haskell:9.6.7-slim-bullseye@sha256:51e52e8d5e64cf865eb42c1df2a3e6c0c97080c7a23c087b565a4fcc8767fe10
+
+RUN mkdir -p /tmp/h3spec && \
+    curl -fsSL \
+        -o /tmp/h3spec.tar.gz \
+        https://github.com/kazu-yamamoto/h3spec/archive/a0fb35551e1877243b921b3f70f97f24215ef6e2.tar.gz && \
+    echo "0c46e58c763876ca1e396c419aa308662a8c27aa28ef39358d382c295a7be525  /tmp/h3spec.tar.gz" \
+        | sha256sum -c - && \
+    tar -xzf /tmp/h3spec.tar.gz --strip-components=1 -C /tmp/h3spec && \
+    rm /tmp/h3spec.tar.gz && \
+    cabal update && \
+    cd /tmp/h3spec && \
+    cabal install . \
+        --index-state=2025-04-22T00:00:00Z \
+        --installdir=/usr/local/bin \
+        --install-method=copy \
+        --overwrite-policy=always
+
+CMD ["tail", "-f", "/dev/null"]

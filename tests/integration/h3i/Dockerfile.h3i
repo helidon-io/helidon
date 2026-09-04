@@ -1,0 +1,47 @@
+#
+# Copyright (c) 2026 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+FROM rust:1.93.0-bookworm@sha256:d0a4aa3ca2e1088ac0c81690914a0d810f2eee188197034edf366ed010a2b382 AS build
+
+WORKDIR /workspace/h3i-runner
+
+COPY debian-snapshot.sources /etc/apt/sources.list.d/debian.sources
+COPY verify_debian_snapshot.sh /tmp/verify_debian_snapshot.sh
+
+RUN apt-get update \
+    && sh /tmp/verify_debian_snapshot.sh \
+    && apt-get install -y --no-install-recommends clang cmake make ninja-build perl pkg-config ca-certificates \
+    && rm -rf /var/lib/apt/lists/* /tmp/verify_debian_snapshot.sh
+
+COPY h3i-runner/Cargo.toml h3i-runner/Cargo.lock ./
+COPY h3i-runner/src ./src
+
+RUN cargo build --release --locked
+
+FROM debian:bookworm-slim@sha256:7b140f374b289a7c2befc338f42ebe6441b7ea838a042bbd5acbfca6ec875818
+
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY debian-snapshot.sources /etc/apt/sources.list.d/debian.sources
+COPY verify_debian_snapshot.sh /tmp/verify_debian_snapshot.sh
+
+RUN apt-get update \
+    && sh /tmp/verify_debian_snapshot.sh \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/* /tmp/verify_debian_snapshot.sh
+
+COPY --from=build /workspace/h3i-runner/target/release/h3i-runner /usr/local/bin/h3i-runner
+
+CMD ["tail", "-f", "/dev/null"]
