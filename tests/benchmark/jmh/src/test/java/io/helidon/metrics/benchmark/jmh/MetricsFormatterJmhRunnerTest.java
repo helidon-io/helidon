@@ -31,7 +31,8 @@ class MetricsFormatterJmhRunnerTest {
     @Test
     void runExactBenchmark() throws RunnerException {
         String benchmark = Pattern.quote(MetricsFormatterJmhBenchmark.class.getName());
-        String include = "^" + benchmark + "\\.(formatUnfiltered|formatTagSelected)$";
+        String include = "^" + benchmark
+                + "\\.format(Json|Prometheus)(Unfiltered|TagSelected(One|All))$";
         String result = System.getProperty("metrics.formatter.jmh.result", "target/metrics-formatter-jmh.json");
 
         Options options = new OptionsBuilder()
