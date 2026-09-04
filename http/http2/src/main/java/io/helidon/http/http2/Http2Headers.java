@@ -464,6 +464,10 @@ public class Http2Headers {
      * @param growingBuffer buffer to write to
      */
     public void write(DynamicTable table, Http2HuffmanEncoder huffman, BufferData growingBuffer) {
+        // A rejected header block is not sent to the peer, so validate the complete block before changing the
+        // connection-scoped HPACK table.
+        validateEncoding();
+
         // first write pseudoheaders
         if (pseudoHeaders.hasStatus()) {
             StaticHeader indexed = null;
@@ -931,12 +935,6 @@ public class Http2Headers {
                              String value,
                              boolean shouldIndex,
                              boolean neverIndex) {
-        String headerName = name.lowerCase();
-        if (name.index() < 0 && (headerName.isEmpty() || headerName.charAt(0) != ':')) {
-            HttpToken.validate(headerName);
-        }
-        Http2HuffmanEncoder.validateLatin1(value);
-
         IndexedHeaderRecord record = table.find(name, value);
         HeaderApproach approach;
 
@@ -974,6 +972,37 @@ public class Http2Headers {
         }
 
         approach.write(huffman, buffer, name, value);
+    }
+
+    private void validateEncoding() {
+        if (pseudoHeaders.hasStatus()) {
+            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.status().codeText());
+        }
+        if (pseudoHeaders.hasMethod()) {
+            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.method().text());
+        }
+        if (pseudoHeaders.hasScheme()) {
+            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.scheme());
+        }
+        if (pseudoHeaders.hasPath()) {
+            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.path());
+        }
+        if (pseudoHeaders.hasAuthority()) {
+            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.authority());
+        }
+
+        for (Header header : headers) {
+            HeaderName headerName = header.headerName();
+            String lowerCaseName = headerName.lowerCase();
+            if (headerName.index() < 0 || lowerCaseName.isEmpty() || lowerCaseName.charAt(0) == ':') {
+                HttpToken.validate(lowerCaseName);
+            }
+            if (header.valueCount() == 1) {
+                Http2HuffmanEncoder.validateLatin1(header.get());
+            } else {
+                header.allValues().forEach(Http2HuffmanEncoder::validateLatin1);
+            }
+        }
     }
 
     private void writeHeader(BufferData buffer,
@@ -1333,7 +1362,7 @@ public class Http2Headers {
             if (hasName) {
                 String name = headerName.lowerCase();
                 if (name.length() > 3) {
-                    huffman.encode(buffer, name);
+                    huffman.encodeValidated(buffer, name);
                 } else {
                     byte[] nameBytes = name.getBytes(StandardCharsets.US_ASCII);
                     buffer.writeHpackInt(nameBytes.length, 0, 7);
