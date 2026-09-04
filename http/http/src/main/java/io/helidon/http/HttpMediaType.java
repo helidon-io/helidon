@@ -160,11 +160,13 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
      *         parameter set to the supplied value.
      */
     default HttpMediaType withCharset(String charset) {
-        return builder()
+        Builder builder = builder()
                 .mediaType(mediaType())
-                .parameters(parameters())
-                .charset(charset)
-                .build();
+                .parameters(parameters());
+        if (charset != null && !charset.isEmpty()) {
+            builder.charset(charset);
+        }
+        return builder.build();
     }
 
     /**

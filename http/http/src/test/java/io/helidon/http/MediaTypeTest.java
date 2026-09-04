@@ -68,6 +68,17 @@ class MediaTypeTest {
     }
 
     @Test
+    void nullOrEmptyCharsetDoesNotUpdateParameter() {
+        HttpMediaType withCharset = HttpMediaType.create("text/plain; charset=utf-8");
+        HttpMediaType withoutCharset = HttpMediaType.create("text/plain");
+
+        assertThat(withCharset.withCharset((String) null).charset(), is(Optional.of("utf-8")));
+        assertThat(withCharset.withCharset("").charset(), is(Optional.of("utf-8")));
+        assertThat(withoutCharset.withCharset((String) null).charset(), is(Optional.empty()));
+        assertThat(withoutCharset.withCharset("").charset(), is(Optional.empty()));
+    }
+
+    @Test
     void parseParameters() {
         HttpMediaType mediaType = HttpMediaType.create("unknown-type/unknown-subtype; option1=value1; option2=value2");
 
