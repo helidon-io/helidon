@@ -249,7 +249,7 @@ class TestTimer {
         try {
             assertThat("Default timer toString", defaultOutput, containsString("PT0.15S"));
         } finally {
-            localMeterRegistry.remove(defaultUnitsTimer);
+            assertThat("Removed local timer", localMeterRegistry.remove(defaultUnitsTimer).isPresent(), is(true));
         }
     }
 

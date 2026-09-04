@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -44,11 +45,16 @@ import io.helidon.common.buffers.DataReader;
  */
 @Api.Internal
 public final class TlsNioSocket extends NioSocket {
+    private static final System.Logger LOGGER = System.getLogger(TlsNioSocket.class.getName());
+    private static final Runnable NO_OP = () -> { };
 
     private final Lock handshakeLock = new ReentrantLock();
     private final SSLEngine engine;
     private final ByteBuffer myAppData;
     private final ByteBuffer emptyHandshakeData = ByteBuffer.allocate(0);
+    private final Runnable initialHandshakeCompleted;
+    private final AtomicBoolean initialHandshakeComplete = new AtomicBoolean();
+    private final AtomicBoolean initialHandshakeCompletionNotified = new AtomicBoolean();
 
     private int unwrapRemaining;
     private ByteBuffer peerAppData;
@@ -60,7 +66,6 @@ public final class TlsNioSocket extends NioSocket {
     private volatile PeerInfo localPeer;
     private volatile PeerInfo remotePeer;
     private volatile byte[] lastSslSessionId;
-    private volatile boolean initialHandshakeComplete;
     private volatile boolean idle;
     private boolean peerAppDataReady;
 
@@ -68,11 +73,14 @@ public final class TlsNioSocket extends NioSocket {
                          SSLEngine sslEngine,
                          String channelId,
                          String serverChannelId,
-                         ByteBuffer replayNetData) {
+                         ByteBuffer replayNetData,
+                         Runnable initialHandshakeCompleted) {
         super(delegate, channelId, serverChannelId);
 
         this.engine = sslEngine;
         this.replayNetData = replayNetData;
+        this.initialHandshakeCompleted = Objects.requireNonNull(initialHandshakeCompleted,
+                                                                "initial handshake completion callback");
 
         SSLSession dummySession = engine.getSession();
         this.peerNetData = ByteBuffer.allocate(dummySession.getPacketBufferSize());
@@ -96,7 +104,40 @@ public final class TlsNioSocket extends NioSocket {
                                       String channelId,
                                       String serverChannelId) {
         sslEngine.setUseClientMode(false);
-        return new TlsNioSocket(delegate, sslEngine, channelId, serverChannelId, null);
+        return new TlsNioSocket(delegate,
+                                sslEngine,
+                                channelId,
+                                serverChannelId,
+                                null,
+                                NO_OP);
+    }
+
+    /**
+     * Create a server TLS NIO socket which reports completion of its initial handshake.
+     *
+     * <p>The callback runs at most once, after the initial handshake succeeds and outside the handshake lock.
+     * Callback failures are logged and ignored.
+     *
+     * @param delegate                  underlying socket
+     * @param sslEngine                 SSL engine
+     * @param channelId                 connection channel id
+     * @param serverChannelId           listener channel id
+     * @param initialHandshakeCompleted non-blocking initial handshake completion callback
+     * @return a new TLS socket
+     */
+    @Api.Internal
+    public static TlsNioSocket server(SocketChannel delegate,
+                                      SSLEngine sslEngine,
+                                      String channelId,
+                                      String serverChannelId,
+                                      Runnable initialHandshakeCompleted) {
+        sslEngine.setUseClientMode(false);
+        return new TlsNioSocket(delegate,
+                                sslEngine,
+                                channelId,
+                                serverChannelId,
+                                null,
+                                initialHandshakeCompleted);
     }
 
     /**
@@ -121,7 +162,39 @@ public final class TlsNioSocket extends NioSocket {
                                 sslEngine,
                                 channelId,
                                 serverChannelId,
-                                Objects.requireNonNull(replayNetData));
+                                Objects.requireNonNull(replayNetData),
+                                NO_OP);
+    }
+
+    /**
+     * Create a server TLS NIO socket with already-read TLS network data which reports completion of its initial
+     * handshake.
+     *
+     * <p>The callback runs at most once, after the initial handshake succeeds and outside the handshake lock.
+     * Callback failures are logged and ignored.
+     *
+     * @param delegate                  underlying socket
+     * @param sslEngine                 SSL engine
+     * @param channelId                 connection channel id
+     * @param serverChannelId           listener channel id
+     * @param replayNetData             already-read TLS network data
+     * @param initialHandshakeCompleted non-blocking initial handshake completion callback
+     * @return a new TLS socket
+     */
+    @Api.Internal
+    public static TlsNioSocket server(SocketChannel delegate,
+                                      SSLEngine sslEngine,
+                                      String channelId,
+                                      String serverChannelId,
+                                      ByteBuffer replayNetData,
+                                      Runnable initialHandshakeCompleted) {
+        sslEngine.setUseClientMode(false);
+        return new TlsNioSocket(delegate,
+                                sslEngine,
+                                channelId,
+                                serverChannelId,
+                                Objects.requireNonNull(replayNetData, "replay network data"),
+                                initialHandshakeCompleted);
     }
 
     /**
@@ -136,7 +209,12 @@ public final class TlsNioSocket extends NioSocket {
                                       SSLEngine sslEngine,
                                       String channelId) {
         sslEngine.setUseClientMode(true);
-        return new TlsNioSocket(delegate, sslEngine, channelId, "client", null);
+        return new TlsNioSocket(delegate,
+                                sslEngine,
+                                channelId,
+                                "client",
+                                null,
+                                NO_OP);
     }
 
     @Override
@@ -204,11 +282,12 @@ public final class TlsNioSocket extends NioSocket {
 
                 SSLEngineResult.HandshakeStatus handshakeStatus = result.getHandshakeStatus();
                 if (handshakeFinished(handshakeStatus)) {
-                    initialHandshakeComplete = true;
+                    markInitialHandshakeComplete();
                 }
                 if (!handshakeFinished(handshakeStatus)) {
                     doHandshake(handshakeStatus);
                 }
+                notifyInitialHandshakeCompletion();
             }
 
             return appBytes();
@@ -223,6 +302,16 @@ public final class TlsNioSocket extends NioSocket {
     @Override
     public void write(BufferData buffer) {
         idle = false;
+        if (buffer.consumed()) {
+            return;
+        }
+        try {
+            ensureHandshakeBeforeWrite();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } finally {
+            notifyInitialHandshakeCompletion();
+        }
         // Handshake/closure and normal writes reuse the same TLS staging buffers.
         handshakeLock.lock();
         try {
@@ -242,6 +331,8 @@ public final class TlsNioSocket extends NioSocket {
             ensureHandshakeBeforeWrite();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } finally {
+            notifyInitialHandshakeCompletion();
         }
     }
 
@@ -317,6 +408,29 @@ public final class TlsNioSocket extends NioSocket {
         } finally {
             handshakeLock.unlock();
         }
+    }
+
+    /**
+     * Check if TLS renegotiation happened,
+     * if so ssl session id would have changed.
+     *
+     * @return true if tls was renegotiated
+     */
+    boolean renegotiated() {
+        byte[] currentSessionId = engine.getSession().getId();
+
+        // Intentionally avoiding locking and MessageDigest.isEqual
+        if (Arrays.equals(currentSessionId, lastSslSessionId)) {
+            return false;
+        }
+
+        lastSslSessionId = currentSessionId;
+        return true;
+    }
+
+    private static boolean handshakeFinished(SSLEngineResult.HandshakeStatus status) {
+        return status == SSLEngineResult.HandshakeStatus.FINISHED
+                || status == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
     }
 
     private boolean staleIdleDataAvailable() {
@@ -486,7 +600,7 @@ public final class TlsNioSocket extends NioSocket {
             while (status != SSLEngineResult.HandshakeStatus.FINISHED
                     && status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
 
-                SSLEngineResult result = null;
+                SSLEngineResult result;
 
                 switch (status) {
                 case NEED_TASK:
@@ -509,9 +623,11 @@ public final class TlsNioSocket extends NioSocket {
 
                 status = result.getHandshakeStatus();
             }
-            initialHandshakeComplete = true;
             if (peerAppData.position() > 0) {
                 peerAppDataReady = true;
+            }
+            if (!closed) {
+                markInitialHandshakeComplete();
             }
         } finally {
             handshakeLock.unlock();
@@ -522,7 +638,6 @@ public final class TlsNioSocket extends NioSocket {
         if (buffer.consumed()) {
             return;
         }
-        ensureHandshakeBeforeWrite();
         while (!buffer.consumed()) {
             myAppData.clear();
             buffer.writeTo(myAppData, buffer.available());
@@ -545,13 +660,13 @@ public final class TlsNioSocket extends NioSocket {
     }
 
     private void ensureHandshakeBeforeWrite() throws IOException {
-        if (initialHandshakeComplete) {
+        if (initialHandshakeComplete.get()) {
             return;
         }
 
         handshakeLock.lock();
         try {
-            if (initialHandshakeComplete) {
+            if (initialHandshakeComplete.get()) {
                 return;
             }
             SSLEngineResult.HandshakeStatus status = engine.getHandshakeStatus();
@@ -565,9 +680,23 @@ public final class TlsNioSocket extends NioSocket {
         }
     }
 
-    private static boolean handshakeFinished(SSLEngineResult.HandshakeStatus status) {
-        return status == SSLEngineResult.HandshakeStatus.FINISHED
-                || status == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
+    private void markInitialHandshakeComplete() {
+        if (!initialHandshakeComplete.get()) {
+            initialHandshakeComplete.compareAndSet(false, true);
+        }
+    }
+
+    private void notifyInitialHandshakeCompletion() {
+        if (initialHandshakeCompletionNotified.get()
+                || !initialHandshakeComplete.get()
+                || !initialHandshakeCompletionNotified.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            initialHandshakeCompleted.run();
+        } catch (Throwable failure) {
+            LOGGER.log(System.Logger.Level.WARNING, "Initial TLS handshake completion callback failed", failure);
+        }
     }
 
     private SSLEngineResult wrapAndSend(ByteBuffer appData, boolean ignoreClose) throws SSLException {
@@ -613,23 +742,5 @@ public final class TlsNioSocket extends NioSocket {
         }
         newBuffer.put(buffer);
         return newBuffer;
-    }
-
-    /**
-     * Check if TLS renegotiation happened,
-     * if so ssl session id would have changed.
-     *
-     * @return true if tls was renegotiated
-     */
-    boolean renegotiated() {
-        byte[] currentSessionId = engine.getSession().getId();
-
-        // Intentionally avoiding locking and MessageDigest.isEqual
-        if (Arrays.equals(currentSessionId, lastSslSessionId)) {
-            return false;
-        }
-
-        lastSslSessionId = currentSessionId;
-        return true;
     }
 }

@@ -255,6 +255,17 @@ public interface HttpTransportObserver {
         }
 
         /**
+         * Returns an observation which serializes lifecycle invocations to the supplied observation and all child
+         * observations it returns. Different adapters do not serialize one another.
+         *
+         * @param observation connection observation to adapt
+         * @return sequential connection observation
+         */
+        static ConnectionObservation sequential(ConnectionObservation observation) {
+            return HttpTransportObservers.sequential(observation);
+        }
+
+        /**
          * Observes the start of the configured handshake.
          *
          * <p>The same observation is returned if this method is invoked more than once.

@@ -73,6 +73,14 @@ final class HttpTransportObservers {
         return new CompositeObserver(List.copyOf(unique));
     }
 
+    static ConnectionObservation sequential(ConnectionObservation observation) {
+        Objects.requireNonNull(observation, "observation");
+        if (observation == NOOP_CONNECTION || observation instanceof SequentialConnectionObservation) {
+            return observation;
+        }
+        return new SequentialConnectionObservation(observation);
+    }
+
     private static void observerFailed(String event, RuntimeException failure) {
         LOGGER.log(WARNING, "HTTP transport observer failed while processing " + event, failure);
     }
@@ -518,6 +526,91 @@ final class HttpTransportObservers {
                 } catch (Throwable failure) {
                     throw failure;
                 }
+            }
+        }
+    }
+
+    private static final class SequentialConnectionObservation implements ConnectionObservation {
+        private final ReentrantLock lifecycleLock = new ReentrantLock();
+        private final ConnectionObservation delegate;
+        private HandshakeObservation handshakeObservation;
+
+        private SequentialConnectionObservation(ConnectionObservation delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public HandshakeObservation handshakeStarted() {
+            lifecycleLock.lock();
+            try {
+                if (handshakeObservation == null) {
+                    handshakeObservation = new SequentialHandshakeObservation(
+                            lifecycleLock,
+                            Objects.requireNonNull(delegate.handshakeStarted(), "handshake observation"));
+                }
+                return handshakeObservation;
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        @Override
+        public void protocolSelected(String protocol) {
+            lifecycleLock.lock();
+            try {
+                delegate.protocolSelected(protocol);
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        @Override
+        public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+            lifecycleLock.lock();
+            try {
+                return new SequentialStreamObservation(
+                        lifecycleLock,
+                        Objects.requireNonNull(delegate.streamOpened(direction, initiator), "stream observation"));
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        @Override
+        public void close(ConnectionOutcome outcome) {
+            lifecycleLock.lock();
+            try {
+                delegate.close(outcome);
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+    }
+
+    private record SequentialHandshakeObservation(ReentrantLock lifecycleLock,
+                                                  HandshakeObservation delegate)
+            implements HandshakeObservation {
+        @Override
+        public void close(HandshakeOutcome outcome) {
+            lifecycleLock.lock();
+            try {
+                delegate.close(outcome);
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+    }
+
+    private record SequentialStreamObservation(ReentrantLock lifecycleLock,
+                                               StreamObservation delegate)
+            implements StreamObservation {
+        @Override
+        public void close(StreamOutcome outcome) {
+            lifecycleLock.lock();
+            try {
+                delegate.close(outcome);
+            } finally {
+                lifecycleLock.unlock();
             }
         }
     }
