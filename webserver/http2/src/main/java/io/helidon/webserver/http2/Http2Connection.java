@@ -116,6 +116,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final LocallyResetStreams locallyResetStreams;
     private final PendingDroppedHeaders locallyResetHeaders;
     private final ReentrantLock streamAdmissionLock = new ReentrantLock();
+    private final Http2StreamAdmissionGate streamAdmissionGate = new Http2StreamAdmissionGate();
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
     private final HttpRouting routing;
@@ -176,8 +177,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.connectionWriter = new Http2ConnectionWriter(ctx,
                                                           new ConnectionDataWriter(ctx.dataWriter()),
                                                           log.sendLog()
-                                                                  ? List.of(Http2LoggingFrameListener.create(log, "send"))
-                                                                  : List.of());
+                                                                  ? List.of(streamAdmissionGate,
+                                                                            Http2LoggingFrameListener.create(log, "send"))
+                                                                  : List.of(streamAdmissionGate));
         this.connectionChecks = new Http2ConnectionChecks(http2Config, this);
         this.subProviders = subProviders;
         this.requestDynamicTable = Http2Headers.DynamicTable.create(
@@ -330,6 +332,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     public void close(boolean interrupt) {
         // either way, finish
         this.canRun = false;
+        streamAdmissionGate.fail();
 
         if (interrupt) {
             // interrupt regardless of current state
@@ -1141,11 +1144,28 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void activateStream(int streamId) {
         streams.doMaintenance();
+        while (streams.size() + 1 > maxClientConcurrentStreams) {
+            Http2StreamAdmissionGate.AwaitResult result = streamAdmissionGate.awaitPublication();
+            streams.doMaintenance();
+            if (result == Http2StreamAdmissionGate.AwaitResult.FAILED) {
+                streams.remove(streamId);
+                streams.doMaintenance();
+                throw new CloseConnectionException("HTTP/2 connection failed during stream admission.");
+            }
+            if (result == Http2StreamAdmissionGate.AwaitResult.NO_PENDING) {
+                break;
+            }
+        }
         if (streams.size() + 1 > maxClientConcurrentStreams) {
             streams.remove(streamId);
             streams.doMaintenance();
             throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM,
                                      "Maximum concurrent streams limit " + maxClientConcurrentStreams + " exceeded");
+        }
+        if (streamAdmissionGate.failed()) {
+            streams.remove(streamId);
+            streams.doMaintenance();
+            throw new CloseConnectionException("HTTP/2 connection failed during stream admission.");
         }
         streams.activate(streamId);
     }
@@ -1282,6 +1302,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                               http2Config.maxHeaderListSize(),
                                               new Http2ServerStream(ctx,
                                                                     streams,
+                                                                    streamAdmissionGate,
                                                                     locallyResetStreams,
                                                                     routing,
                                                                     http2Config,

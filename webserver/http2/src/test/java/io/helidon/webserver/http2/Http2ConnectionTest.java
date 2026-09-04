@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -48,6 +49,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
@@ -58,9 +60,11 @@ import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanEncoder;
 import io.helidon.http.http2.Http2Ping;
+import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
+import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2Util;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.WindowSize;
@@ -89,6 +93,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -454,6 +459,73 @@ class Http2ConnectionTest {
     }
 
     @Test
+    void belowLimitStreamIsRejectedAfterWriterFailure() {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        Http2Headers requestHeaders = Http2Headers.create(WritableHeaders.create());
+        requestHeaders.method(Method.GET);
+        requestHeaders.path("/grpc");
+        requestHeaders.scheme("http");
+        requestHeaders.authority("localhost");
+        Http2Headers.DynamicTable dynamicTable = Http2Headers.DynamicTable.create(
+                Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        Http2HuffmanEncoder huffmanEncoder = Http2HuffmanEncoder.create();
+        for (int streamId : List.of(1, 3)) {
+            BufferData headersData = BufferData.growing(512);
+            requestHeaders.write(dynamicTable, huffmanEncoder, headersData);
+            input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                            Http2FrameTypes.HEADERS,
+                                                                            Http2Flag.HeaderFlags.create(
+                                                                                    Http2Flag.END_OF_HEADERS
+                                                                                            | Http2Flag.END_OF_STREAM),
+                                                                            streamId),
+                                                    headersData)));
+        }
+
+        AtomicBoolean failNextWrite = new AtomicBoolean();
+        DataWriter writer = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            if (failNextWrite.compareAndSet(true, false)) {
+                throw new IllegalStateException("test terminal write failure");
+            }
+            return null;
+        }).when(writer).writeNow(any(BufferData.class));
+        ExecutorService executor = mock(ExecutorService.class);
+        doAnswer(invocation -> {
+            invocation.<Runnable>getArgument(0).run();
+            return null;
+        }).when(executor).submit(any(Runnable.class));
+        ConnectionContext ctx = http2Context(writer, DataReader.create(input::poll));
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
+        Http2SubProtocolSelector selector = (_,
+                                             _,
+                                             _,
+                                             streamWriter,
+                                             streamId,
+                                             _,
+                                             _,
+                                             _,
+                                             currentStreamState,
+                                             _) -> new SubProtocolResult(true,
+                                                                              new FailingTerminalSubProtocolHandler(
+                                                                                      streamWriter,
+                                                                                      streamId,
+                                                                                      currentStreamState,
+                                                                                      failNextWrite));
+        Http2Connection connection = new Http2Connection(ctx,
+                                                         Http2Config.builder().maxConcurrentStreams(2).build(),
+                                                         List.of(selector));
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
+
+        verify(executor, times(1)).submit(any(Runnable.class));
+    }
+
+    @Test
     void windowUpdateForActiveStreamRefreshesIdleTime() throws InterruptedException {
         Queue<byte[]> input = new ConcurrentLinkedQueue<>();
         Http2Headers h2Headers = Http2Headers.create(WritableHeaders.create());
@@ -709,6 +781,54 @@ class Http2ConnectionTest {
 
     private static byte[] frameBytes(Http2FrameData frameData) {
         return BufferData.create(frameData.header().write(), frameData.data()).readBytes();
+    }
+
+    private static final class FailingTerminalSubProtocolHandler
+            implements Http2SubProtocolSelector.SubProtocolHandler {
+        private final Http2StreamWriter writer;
+        private final int streamId;
+        private final AtomicBoolean failNextWrite;
+        private volatile Http2StreamState state;
+
+        private FailingTerminalSubProtocolHandler(Http2StreamWriter writer,
+                                                  int streamId,
+                                                  Http2StreamState state,
+                                                  AtomicBoolean failNextWrite) {
+            this.writer = writer;
+            this.streamId = streamId;
+            this.state = state;
+            this.failNextWrite = failNextWrite;
+        }
+
+        @Override
+        public void init() {
+            failNextWrite.set(true);
+            Http2FrameData terminalData = new Http2FrameData(
+                    Http2FrameHeader.create(1,
+                                            Http2FrameTypes.DATA,
+                                            Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                            streamId),
+                    BufferData.create(new byte[] {1}));
+            writer.writeData(terminalData, FlowControl.Outbound.NOOP);
+        }
+
+        @Override
+        public Http2StreamState streamState() {
+            return state;
+        }
+
+        @Override
+        public void rstStream(Http2RstStream rstStream) {
+            state = Http2StreamState.CLOSED;
+        }
+
+        @Override
+        public void windowUpdate(Http2WindowUpdate update) {
+        }
+
+        @Override
+        public void data(Http2FrameHeader header, BufferData data) {
+        }
     }
 
     private static final class TestLogHandler extends Handler implements AutoCloseable {

@@ -16,12 +16,15 @@
 
 package io.helidon.webserver.benchmark.jmh;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.LockSupport;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
@@ -35,10 +38,13 @@ import io.helidon.http.http2.Http2ConnectionWriter;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameListener;
+import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -53,6 +59,7 @@ public class Http2ConnectionWriterJmhTest {
     private static final byte[] RESPONSE_BYTES = {1};
     private static final byte[] PARTIAL_RESPONSE_BYTES = {1, 2};
     private static final PeerInfo PEER_INFO = new BenchmarkPeerInfo();
+    private static final Runnable NO_OP = () -> { };
 
     @Benchmark
     @Threads(1)
@@ -102,15 +109,38 @@ public class Http2ConnectionWriterJmhTest {
         return connection.write(frame, frame.fragmentedHeaders, frame.fundedWindow);
     }
 
+    /**
+     * Terminal write gate benchmark mode.
+     */
+    public enum GateMode {
+        /** No frame listener. */
+        NONE,
+        /** Frame listener without locking. */
+        OBSERVE,
+        /** Frame listener with terminal publication tracking. */
+        GATE
+    }
+
     @State(Scope.Benchmark)
     public static class ConnectionState {
+        @Param("GATE")
+        public GateMode terminalWriteGate;
+
         private BenchmarkDataWriter dataWriter;
+        private Runnable terminalWriteComplete;
         private Http2ConnectionWriter writer;
 
         @Setup
         public void setup() {
             dataWriter = new BenchmarkDataWriter();
-            writer = new Http2ConnectionWriter(new BenchmarkSocketContext(), dataWriter, List.of());
+            if (terminalWriteGate == GateMode.NONE) {
+                terminalWriteComplete = NO_OP;
+                writer = new Http2ConnectionWriter(new BenchmarkSocketContext(), dataWriter, List.of());
+            } else {
+                BenchmarkTerminalWriteGate gate = new BenchmarkTerminalWriteGate(terminalWriteGate == GateMode.GATE);
+                terminalWriteComplete = gate;
+                writer = new Http2ConnectionWriter(new BenchmarkSocketContext(), dataWriter, List.of(gate));
+            }
         }
 
         private int write(FrameState frame, FlowControl.Outbound flowControl) {
@@ -134,7 +164,8 @@ public class Http2ConnectionWriterJmhTest {
                                            1,
                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
                                            data,
-                                           flowControl);
+                                           flowControl,
+                                           terminalWriteComplete);
             } finally {
                 frame.reset(data, flowControl);
             }
@@ -283,6 +314,50 @@ public class Http2ConnectionWriterJmhTest {
                 throw new IllegalStateException("No JMH blackhole registered for benchmark thread");
             }
             return blackhole;
+        }
+    }
+
+    private static final class BenchmarkTerminalWriteGate implements Http2FrameListener, Runnable {
+        private static final VarHandle STARTED;
+        private static final VarHandle COMPLETED;
+
+        static {
+            try {
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                STARTED = lookup.findVarHandle(BenchmarkTerminalWriteGate.class, "started", long.class);
+                COMPLETED = lookup.findVarHandle(BenchmarkTerminalWriteGate.class, "completed", long.class);
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
+        private final boolean trackWrites;
+        private long started;
+        private long completed;
+        private volatile Thread waiter;
+
+        private BenchmarkTerminalWriteGate(boolean trackWrites) {
+            this.trackWrites = trackWrites;
+        }
+
+        @Override
+        public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+            if (trackWrites
+                    && (header.type() == Http2FrameType.DATA || header.type() == Http2FrameType.HEADERS)
+                    && (header.flags() & Http2Flag.END_OF_STREAM) != 0) {
+                STARTED.setRelease(this, started + 1);
+            }
+        }
+
+        @Override
+        public void run() {
+            if (trackWrites) {
+                COMPLETED.getAndAddRelease(this, 1L);
+                Thread waitingThread = waiter;
+                if (waitingThread != null) {
+                    LockSupport.unpark(waitingThread);
+                }
+            }
         }
     }
 
