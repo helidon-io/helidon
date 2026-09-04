@@ -511,6 +511,10 @@
             <artifactId>helidon-logging-log4j</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.quic</groupId>
+            <artifactId>helidon-quic</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http</artifactId>
         </dependency>

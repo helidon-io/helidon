@@ -17,6 +17,9 @@
 package io.helidon.common.tls;
 
 import java.io.IOException;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodModel;
 import java.security.AlgorithmConstraints;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
@@ -32,11 +35,15 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import io.helidon.common.Api;
+
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
@@ -135,6 +142,29 @@ public class TlsTest {
         assertThat(tls.sslContext(), sameInstance(sslContext));
         assertThat(tls.prototype().manager(), instanceOf(ExplicitContextTlsManager.class));
         assertThat(tls.newEngine().getSSLParameters().getApplicationProtocols(), arrayContaining("h3"));
+    }
+
+    @Test
+    public void resolvesDefaultTrustManagerOnlyForBuiltInManager() {
+        Tls defaultTls = Tls.builder().build();
+        assertThat(defaultTls.trustManager().isEmpty(), is(true));
+        assertThat(defaultTls.resolvedTrustManager().isPresent(), is(true));
+
+        Tls explicitContextTls = Tls.builder()
+                .sslContext(createSslContext())
+                .build();
+        assertThat(explicitContextTls.resolvedTrustManager().isEmpty(), is(true));
+
+        Tls customManagerTls = Tls.builder()
+                .manager(new CustomTlsManager())
+                .build();
+        assertThat(customManagerTls.resolvedTrustManager().isEmpty(), is(true));
+    }
+
+    @Test
+    public void managerBridgeAccessorsAreInternal() throws IOException {
+        assertInternalMethod("keyManager");
+        assertInternalMethod("trustManager");
     }
 
     @Test
@@ -262,6 +292,34 @@ public class TlsTest {
         }
     }
 
+    private static void assertInternalMethod(String methodName) throws IOException {
+        String resourceName = "/" + Tls.class.getName().replace('.', '/') + ".class";
+        byte[] classBytes;
+        try (var inputStream = Tls.class.getResourceAsStream(resourceName)) {
+            assertThat("TLS class resource is available", inputStream, notNullValue());
+            classBytes = inputStream.readAllBytes();
+        }
+
+        MethodModel method = ClassFile.of()
+                .parse(classBytes)
+                .methods()
+                .stream()
+                .filter(it -> it.methodName().equalsString(methodName))
+                .filter(it -> it.methodTypeSymbol().parameterCount() == 0)
+                .findFirst()
+                .orElseThrow();
+        var annotationTypes = method.findAttribute(Attributes.runtimeInvisibleAnnotations())
+                .orElseThrow()
+                .annotations()
+                .stream()
+                .map(it -> it.className().stringValue())
+                .toList();
+
+        assertThat(methodName + " API classification",
+                   annotationTypes,
+                   hasItem(Api.Internal.class.descriptorString()));
+    }
+
     private static final class FailingTlsManager implements TlsManager {
         @Override
         public void init(TlsConfig tls) {
@@ -294,4 +352,21 @@ public class TlsTest {
         }
     }
 
+    private static final class CustomTlsManager extends ConfiguredTlsManager {
+    }
+
+    @Test
+    public void disabledTlsExposesNoKeyOrTrustMaterial() {
+        Tls tls = Tls.builder()
+                .enabled(false)
+                .build();
+
+        tls.reload(TlsMaterial.builder().trustAll(true).build());
+        tls.reload(Tls.create(it -> it.trustAll(true)));
+
+        assertThat(tls.keyManager().isEmpty(), is(true));
+        assertThat(tls.trustManager().isEmpty(), is(true));
+        assertThat(tls.resolvedTrustManager().isEmpty(), is(true));
+        assertThat(tls.generation(), is(0L));
+    }
 }
