@@ -1369,16 +1369,20 @@ class ChannelRegistry implements MessagingRuntime {
         }
 
         @Override
-        public synchronized ConnectorDeliveryReservation reserveDelivery() {
+        public ConnectorDeliveryReservation reserveDelivery() {
             admissionTimeoutBudget.reset();
-            return deliveryEngine.reserveConnectorDelivery(channel,
-                                                            maxDeliveryMessages(),
-                                                            this::processDelivery,
-                                                            this::processFailedDelivery);
+            ConnectorDeliveryReservation reservation = deliveryEngine.reserveConnectorDelivery(
+                    channel,
+                    maxDeliveryMessages(),
+                    this::processDelivery,
+                    this::processFailedDelivery);
+            // Clear a budget started by a concurrent non-blocking attempt before this reservation succeeded.
+            admissionTimeoutBudget.reset();
+            return reservation;
         }
 
         @Override
-        public synchronized Optional<ConnectorDeliveryReservation> tryReserveDelivery() {
+        public Optional<ConnectorDeliveryReservation> tryReserveDelivery() {
             return admissionTimeoutBudget.attempt(
                     () -> deliveryEngine.admissionTimeout(channel)
                             .map(Duration::toNanos)

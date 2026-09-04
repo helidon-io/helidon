@@ -18,6 +18,7 @@ package io.helidon.messaging;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongFunction;
 import java.util.function.LongSupplier;
 
@@ -26,7 +27,7 @@ final class AdmissionTimeoutBudget {
 
     private final String channel;
     private final LongSupplier nanoTime;
-    private long deadline = NO_DEADLINE;
+    private final AtomicLong deadline = new AtomicLong(NO_DEADLINE);
 
     AdmissionTimeoutBudget(String channel, LongSupplier nanoTime) {
         this.channel = channel;
@@ -37,27 +38,56 @@ final class AdmissionTimeoutBudget {
         long started = nanoTime.getAsLong();
         long timeout = timeoutSupplier.getAsLong();
         long remaining = timeout;
-        if (deadline != NO_DEADLINE) {
-            remaining = deadline - started;
+        long currentDeadline;
+        while (true) {
+            currentDeadline = deadline.get();
+            if (currentDeadline == NO_DEADLINE) {
+                remaining = timeout;
+                break;
+            }
+            long now = nanoTime.getAsLong();
+            if (deadline.get() != currentDeadline) {
+                continue;
+            }
+            remaining = currentDeadline - now;
             if (remaining <= 0) {
                 throw timedOut();
             }
+            break;
         }
 
         Optional<T> result = operation.apply(remaining);
         if (result.isPresent()) {
-            deadline = NO_DEADLINE;
-        } else if (deadline == NO_DEADLINE && timeout != Long.MAX_VALUE) {
-            deadline = saturatedAdd(started, timeout);
-            if (deadline - nanoTime.getAsLong() <= 0) {
-                throw timedOut();
-            }
+            reset();
+        } else if (currentDeadline == NO_DEADLINE) {
+            startOrRejectExpired(started, timeout);
         }
         return result;
     }
 
     void reset() {
-        deadline = NO_DEADLINE;
+        deadline.set(NO_DEADLINE);
+    }
+
+    private void startOrRejectExpired(long started, long timeout) {
+        long currentDeadline;
+        while ((currentDeadline = deadline.get()) == NO_DEADLINE) {
+            if (timeout == Long.MAX_VALUE) {
+                return;
+            }
+            long newDeadline = saturatedAdd(started, timeout);
+            if (deadline.compareAndSet(NO_DEADLINE, newDeadline)) {
+                currentDeadline = newDeadline;
+                break;
+            }
+        }
+        rejectIfExpired(currentDeadline, nanoTime.getAsLong());
+    }
+
+    private void rejectIfExpired(long currentDeadline, long now) {
+        if (currentDeadline - now <= 0 && deadline.get() == currentDeadline) {
+            throw timedOut();
+        }
     }
 
     private static long saturatedAdd(long first, long second) {

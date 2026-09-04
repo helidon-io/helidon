@@ -29,8 +29,9 @@ import io.helidon.messaging.spi.ConnectorDeliveryReservation;
  * mapping fails may instead throw {@link MessagingException} from {@link #entity()}; such an envelope is only valid in
  * the batch passed to {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)}. Portable headers
  * retain global order, duplicate exact case-sensitive names, and immutable typed values. Implementations must be
- * immutable snapshots. {@link #localMetadata()} follows the same in-process envelope but is never part of portable
- * headers or generic connector mapping. Connector-specific message subtypes may expose richer native metadata
+ * immutable snapshots. Accessors may be invoked repeatedly and concurrently; implementations must expose stable values
+ * without consuming one-shot state. {@link #localMetadata()} follows the same in-process envelope but is never part of
+ * portable headers or generic connector mapping. Connector-specific message subtypes may expose richer native metadata
  * separately.
  *
  * @param <T> payload type
@@ -63,6 +64,10 @@ public interface Message<T> {
 
     /**
      * Payload.
+     * <p>
+     * Repeated and concurrent invocations must be safe, and successful invocations must return the same stable payload
+     * value. A connector metadata envelope whose transport payload could not be mapped must instead consistently throw
+     * {@link MessagingException}.
      *
      * @return non-null payload
      * @throws MessagingException if this is a connector metadata envelope whose transport payload could not be mapped

@@ -238,6 +238,16 @@ final class DeliveryEngine implements AutoCloseable {
         beginAdmissionAttempt(channel);
         try {
             rejectConnectorReservationFromDispatch();
+            if (!accepting.get()) {
+                throw rejected(channel,
+                               MessagingRejectedException.Reason.SHUTDOWN,
+                               "Messaging runtime is draining");
+            }
+            if (closed.get()) {
+                throw rejected(channel,
+                               MessagingRejectedException.Reason.SHUTDOWN,
+                               "Messaging runtime is shutting down");
+            }
             if (remainingCapacityWaitNanos < 0) {
                 throw new IllegalArgumentException("remainingCapacityWaitNanos must be zero or greater");
             }

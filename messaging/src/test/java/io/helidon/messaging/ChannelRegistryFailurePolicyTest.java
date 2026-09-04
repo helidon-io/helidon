@@ -16,10 +16,12 @@
 
 package io.helidon.messaging;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -394,7 +396,7 @@ class ChannelRegistryFailurePolicyTest {
                         """.formatted(configuredTimeout)),
                 List.of(incoming));
         start(registry);
-        IncomingConnectorContext context = incoming.context("orders");
+        IncomingConnectorContext context = registry.incomingContext("orders");
 
         try (ConnectorDeliveryReservation held = context.reserveDelivery()) {
             FutureTask<MessagingRejectedException> timeoutProbe = new FutureTask<>(
@@ -414,6 +416,213 @@ class ChannelRegistryFailurePolicyTest {
         assertThat(available.isPresent(), is(true));
         try (ConnectorDeliveryReservation ignored = available.orElseThrow()) {
             // Release the successful non-blocking reservation.
+        }
+    }
+
+    @Test
+    void testTryReservationDoesNotWaitAndBlockingSuccessResetsConcurrentBudget() throws Exception {
+        Duration admissionTimeout = Duration.ofHours(1);
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", ignored -> { })),
+                yaml("""
+                        helidon:
+                          messaging:
+                            channel:
+                              orders:
+                                execution:
+                                  max-pending-messages: 1
+                                  max-in-flight-messages: 1
+                                  admission-timeout: %s
+                        """.formatted(admissionTimeout)),
+                List.of());
+        start(registry);
+        IncomingConnectorContext capacityOwner = registry.incomingContext("orders");
+        IncomingConnectorContext context = registry.incomingContext("orders");
+        AtomicReference<ConnectorDeliveryReservation> held =
+                new AtomicReference<>(capacityOwner.reserveDelivery());
+        AtomicReference<ConnectorDeliveryReservation> blockingResult = new AtomicReference<>();
+        FutureTask<Void> blockingTask = new FutureTask<>(() -> {
+            blockingResult.set(context.reserveDelivery());
+            return null;
+        });
+        Thread blockingThread = Thread.ofVirtual()
+                .name("messaging-blocking-connector-reservation")
+                .unstarted(blockingTask);
+        AtomicReference<Optional<ConnectorDeliveryReservation>> tryResult = new AtomicReference<>();
+        FutureTask<Void> tryTask = new FutureTask<>(() -> {
+            tryResult.set(context.tryReserveDelivery());
+            return null;
+        });
+        Thread tryThread = Thread.ofVirtual()
+                .name("messaging-non-blocking-connector-reservation")
+                .unstarted(tryTask);
+
+        try {
+            blockingThread.start();
+            awaitWaiting(blockingTask, blockingThread, "blocking connector reservation");
+            tryThread.start();
+
+            tryTask.get(5, TimeUnit.SECONDS);
+            assertThat(tryResult.get().isEmpty(), is(true));
+
+            held.getAndSet(null).close();
+            blockingTask.get(5, TimeUnit.SECONDS);
+            blockingResult.getAndSet(null).close();
+
+            AdmissionTimeoutBudget budget = privateField(context,
+                                                         "admissionTimeoutBudget",
+                                                         AdmissionTimeoutBudget.class);
+            AtomicReference<Long> observedRemaining = new AtomicReference<>();
+            Optional<String> resetProbe = budget.attempt(() -> 1L, remaining -> {
+                observedRemaining.set(remaining);
+                return Optional.of("reservation");
+            });
+            assertThat(resetProbe, is(Optional.of("reservation")));
+            assertThat(observedRemaining.get(), is(1L));
+        } finally {
+            try {
+                ConnectorDeliveryReservation reservation = held.getAndSet(null);
+                if (reservation != null) {
+                    reservation.close();
+                }
+            } finally {
+                blockingTask.cancel(true);
+                tryTask.cancel(true);
+                blockingThread.interrupt();
+                tryThread.interrupt();
+                try {
+                    join(blockingThread, "blocking reservation thread");
+                } finally {
+                    try {
+                        join(tryThread, "non-blocking reservation thread");
+                    } finally {
+                        try {
+                            ConnectorDeliveryReservation reservation = blockingResult.getAndSet(null);
+                            if (reservation != null) {
+                                reservation.close();
+                            }
+                        } finally {
+                            Optional<ConnectorDeliveryReservation> attempted = tryResult.get();
+                            if (attempted != null && attempted.isPresent()) {
+                                attempted.orElseThrow().close();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void testTryReserveDeliveryStartsBudgetWhenCapacityIsUnavailable() {
+        Duration admissionTimeout = Duration.ofMillis(10);
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", ignored -> { })),
+                yaml("""
+                        helidon:
+                          messaging:
+                            channel:
+                              orders:
+                                execution:
+                                  max-pending-messages: 1
+                                  max-in-flight-messages: 1
+                                  admission-timeout: %s
+                        """.formatted(admissionTimeout)),
+                List.of());
+        start(registry);
+        IncomingConnectorContext capacityOwner = registry.incomingContext("orders");
+        IncomingConnectorContext context = registry.incomingContext("orders");
+
+        try (ConnectorDeliveryReservation ignored = capacityOwner.reserveDelivery()) {
+            assertThat(context.tryReserveDelivery().isEmpty(), is(true));
+            awaitElapsed(System.nanoTime(), admissionTimeout);
+
+            MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class,
+                                                                 context::tryReserveDelivery);
+            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+        }
+
+        try (ConnectorDeliveryReservation ignored = context.reserveDelivery()) {
+            // A successful blocking reservation resets the expired non-blocking budget.
+        }
+    }
+
+    @Test
+    void testTryReserveDeliveryReportsOwnedShutdown() {
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", ignored -> { })),
+                yaml("""
+                        helidon:
+                          messaging:
+                            channel:
+                              orders:
+                                execution:
+                                  admission-timeout: PT0.000000001S
+                        """),
+                List.of());
+        start(registry);
+        IncomingConnectorContext context = registry.incomingContext("orders");
+        registry.close();
+
+        MessagingRejectedException shutdown = assertThrows(MessagingRejectedException.class,
+                                                             context::tryReserveDelivery);
+        assertThat(shutdown.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
+    }
+
+    @Test
+    void testExpiredTryReserveDeliveryBudgetPrecedesShutdown() {
+        Duration admissionTimeout = Duration.ofMillis(10);
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", ignored -> { })),
+                yaml("""
+                        helidon:
+                          messaging:
+                            channel:
+                              orders:
+                                execution:
+                                  admission-timeout: %s
+                        """.formatted(admissionTimeout)),
+                List.of());
+        start(registry);
+        IncomingConnectorContext capacityOwner = registry.incomingContext("orders");
+        IncomingConnectorContext context = registry.incomingContext("orders");
+
+        try (ConnectorDeliveryReservation ignored = capacityOwner.reserveDelivery()) {
+            assertThat(context.tryReserveDelivery().isEmpty(), is(true));
+            awaitElapsed(System.nanoTime(), admissionTimeout);
+        }
+        registry.close();
+
+        MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class,
+                                                             context::tryReserveDelivery);
+        assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+    }
+
+    @Test
+    void testTryReserveDeliveryReportsDispatchMisuseBeforeStartingBudget() {
+        AtomicReference<IncomingConnectorContext> contextReference = new AtomicReference<>();
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", ignored -> contextReference.get().tryReserveDelivery())),
+                yaml("""
+                        helidon:
+                          messaging:
+                            channel:
+                              orders:
+                                execution:
+                                  admission-timeout: PT0.000000001S
+                        """),
+                List.of());
+        start(registry);
+        IncomingConnectorContext context = registry.incomingContext("orders");
+        contextReference.set(context);
+
+        MessagingException dispatchMisuse = assertThrows(MessagingException.class,
+                                                           () -> registry.emit("orders", Message.create("test")));
+        assertThat(dispatchMisuse.getCause(), instanceOf(MessagingException.class));
+        assertThat(dispatchMisuse.getCause().getMessage(),
+                   containsString("cannot be reserved from messaging dispatch"));
+        try (ConnectorDeliveryReservation ignored = context.tryReserveDelivery().orElseThrow()) {
+            // Dispatch misuse must not start the one-nanosecond timeout budget.
         }
     }
 
@@ -2045,6 +2254,58 @@ class ChannelRegistryFailurePolicyTest {
                 throw error;
             }
             throw new AssertionError("Admission timeout probe failed", cause);
+        }
+    }
+
+    private static void awaitWaiting(FutureTask<?> task, Thread thread, String operation) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        Thread.State state;
+        do {
+            if (task.isDone()) {
+                fail(operation + " completed instead of waiting");
+            }
+            state = thread.getState();
+            if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
+                return;
+            }
+            Thread.onSpinWait();
+        } while (System.nanoTime() < deadline);
+        fail(operation + " did not enter a waiting state; last state was " + state);
+    }
+
+    private static void awaitElapsed(long started, Duration duration) {
+        long remaining;
+        while ((remaining = duration.toNanos() - (System.nanoTime() - started)) > 0) {
+            try {
+                TimeUnit.NANOSECONDS.sleep(remaining);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Interrupted while waiting for elapsed test time", e);
+            }
+        }
+    }
+
+    private static void join(Thread thread, String operation) {
+        try {
+            thread.join(TimeUnit.SECONDS.toMillis(5));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting for " + operation, e);
+        }
+        if (thread.isAlive()) {
+            throw new AssertionError("Timed out waiting for " + operation);
+        }
+    }
+
+    private static <T> T privateField(Object target, String name, Class<T> type) {
+        try {
+            Field field = target.getClass().getDeclaredField(name);
+            if (!field.trySetAccessible()) {
+                throw new AssertionError("Cannot access " + target.getClass().getName() + "." + name);
+            }
+            return type.cast(field.get(target));
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Cannot read " + target.getClass().getName() + "." + name, e);
         }
     }
 

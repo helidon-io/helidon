@@ -16,10 +16,16 @@
 
 package io.helidon.messaging;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
@@ -158,11 +164,201 @@ class MessageBatchTest {
     }
 
     @Test
-    void rejectsNullDuringPayloadMaterialization() {
+    void publishesFirstSuccessfulPayloadSnapshotForConcurrentCallers() throws Exception {
+        AtomicInteger entityCalls = new AtomicInteger();
+        CountDownLatch winnerEntered = new CountDownLatch(1);
+        CountDownLatch loserEntered = new CountDownLatch(1);
+        CountDownLatch releaseWinner = new CountDownLatch(1);
+        CountDownLatch releaseLoser = new CountDownLatch(1);
         Message<String> message = new Message<>() {
             @Override
             public String entity() {
-                return null;
+                entityCalls.incrementAndGet();
+                if (Thread.currentThread().getName().equals("messaging-payload-winner")) {
+                    winnerEntered.countDown();
+                    await(releaseWinner);
+                    return "value";
+                }
+                loserEntered.countDown();
+                await(releaseLoser);
+                return "value";
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+        MessageBatch<String> batch = MessageBatch.create(message);
+        FutureTask<List<String>> winner = new FutureTask<>(batch::payloads);
+        FutureTask<List<String>> loser = new FutureTask<>(batch::payloads);
+        Thread winnerThread = Thread.ofVirtual().name("messaging-payload-winner").unstarted(winner);
+        Thread loserThread = Thread.ofVirtual().name("messaging-payload-loser").unstarted(loser);
+
+        try {
+            winnerThread.start();
+            await(winnerEntered);
+            loserThread.start();
+            await(loserEntered);
+            releaseWinner.countDown();
+
+            List<String> winnerResult = winner.get(5, TimeUnit.SECONDS);
+            releaseLoser.countDown();
+            List<String> loserResult = loser.get(5, TimeUnit.SECONDS);
+
+            assertThat(winnerResult, is(List.of("value")));
+            assertThat(loserResult, sameInstance(winnerResult));
+            assertThat(batch.payloads(), sameInstance(winnerResult));
+            assertThat(entityCalls.get(), is(2));
+        } finally {
+            releaseWinner.countDown();
+            releaseLoser.countDown();
+            winner.cancel(true);
+            loser.cancel(true);
+            try {
+                join(winnerThread);
+            } finally {
+                join(loserThread);
+            }
+        }
+    }
+
+    @Test
+    void concurrentFailedCandidateDoesNotReplacePublishedSnapshot() throws Exception {
+        MessagingException unavailable = new MessagingException("entity unavailable");
+        AtomicInteger entityCalls = new AtomicInteger();
+        CountDownLatch entityEntered = new CountDownLatch(1);
+        CountDownLatch releaseFailure = new CountDownLatch(1);
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                if (entityCalls.incrementAndGet() == 1) {
+                    entityEntered.countDown();
+                    await(releaseFailure);
+                    throw unavailable;
+                }
+                return "value";
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+        MessageBatch<String> batch = MessageBatch.create(message);
+        FutureTask<List<String>> first = new FutureTask<>(batch::payloads);
+        FutureTask<List<String>> second = new FutureTask<>(batch::payloads);
+        Thread firstThread = Thread.ofVirtual().unstarted(first);
+        Thread secondThread = Thread.ofVirtual().unstarted(second);
+
+        try {
+            firstThread.start();
+            await(entityEntered);
+            secondThread.start();
+
+            List<String> successful = second.get(5, TimeUnit.SECONDS);
+            assertThat(successful, is(List.of("value")));
+            assertThat(batch.payloads(), sameInstance(successful));
+
+            releaseFailure.countDown();
+            ExecutionException failure = assertThrows(ExecutionException.class,
+                                                      () -> first.get(5, TimeUnit.SECONDS));
+            assertThat(failure.getCause(), sameInstance(unavailable));
+            assertThat(batch.payloads(), sameInstance(successful));
+            assertThat(entityCalls.get(), is(2));
+        } finally {
+            releaseFailure.countDown();
+            first.cancel(true);
+            second.cancel(true);
+            try {
+                join(firstThread);
+            } finally {
+                join(secondThread);
+            }
+        }
+    }
+
+    @Test
+    void reentrantMaterializationReturnsFirstPublishedResult() throws Exception {
+        AtomicInteger entityCalls = new AtomicInteger();
+        AtomicReference<MessageBatch<String>> batchReference = new AtomicReference<>();
+        AtomicReference<List<String>> nestedResult = new AtomicReference<>();
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                if (entityCalls.incrementAndGet() == 1) {
+                    nestedResult.set(batchReference.get().payloads());
+                }
+                return "value";
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+        MessageBatch<String> batch = MessageBatch.create(message);
+        batchReference.set(batch);
+        FutureTask<List<List<String>>> materialization = new FutureTask<>(() -> {
+            List<String> first = batch.payloads();
+            return List.of(first, batch.payloads());
+        });
+        Thread materializationThread = Thread.ofVirtual()
+                .name("messaging-reentrant-payload-materialization")
+                .unstarted(materialization);
+
+        try {
+            materializationThread.start();
+            List<List<String>> results = materialization.get(5, TimeUnit.SECONDS);
+
+            assertThat(nestedResult.get(), is(List.of("value")));
+            assertThat(results.getFirst(), sameInstance(nestedResult.get()));
+            assertThat(results.getLast(), sameInstance(nestedResult.get()));
+            assertThat(entityCalls.get(), is(2));
+        } finally {
+            materialization.cancel(true);
+            materializationThread.interrupt();
+            join(materializationThread);
+        }
+    }
+
+    @Test
+    void retainsFirstReentrantSuccessAfterOuterFailure() {
+        MessagingException unavailable = new MessagingException("outer entity unavailable");
+        AtomicInteger entityCalls = new AtomicInteger();
+        AtomicReference<MessageBatch<String>> batchReference = new AtomicReference<>();
+        AtomicReference<List<String>> nestedResult = new AtomicReference<>();
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                if (entityCalls.incrementAndGet() == 1) {
+                    nestedResult.set(batchReference.get().payloads());
+                    throw unavailable;
+                }
+                return "nested";
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+        MessageBatch<String> batch = MessageBatch.create(message);
+        batchReference.set(batch);
+
+        assertThat(assertThrows(MessagingException.class, batch::payloads), sameInstance(unavailable));
+        assertThat(batch.payloads(), sameInstance(nestedResult.get()));
+        assertThat(batch.payloads(), is(List.of("nested")));
+        assertThat(entityCalls.get(), is(2));
+    }
+
+    @Test
+    void retriesNullPayloadMaterialization() {
+        AtomicInteger entityCalls = new AtomicInteger();
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                return entityCalls.incrementAndGet() == 1 ? null : "value";
             }
 
             @Override
@@ -175,6 +371,82 @@ class MessageBatchTest {
         NullPointerException failure = assertThrows(NullPointerException.class, batch::payloads);
 
         assertThat(failure.getMessage(), is("Message entity"));
+        assertThat(batch.payloads(), is(List.of("value")));
+        assertThat(entityCalls.get(), is(2));
+    }
+
+    @Test
+    void retriesPayloadMaterializationAfterError() {
+        AssertionError unavailable = new AssertionError("entity unavailable");
+        AtomicInteger entityCalls = new AtomicInteger();
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                if (entityCalls.incrementAndGet() == 1) {
+                    throw unavailable;
+                }
+                return "value";
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+        MessageBatch<String> batch = MessageBatch.create(message);
+
+        assertThat(assertThrows(AssertionError.class, batch::payloads), sameInstance(unavailable));
+        assertThat(batch.payloads(), is(List.of("value")));
+        assertThat(entityCalls.get(), is(2));
+    }
+
+    @Test
+    void retriesPayloadMaterializationAfterCheckedThrowableFromAnotherThread() throws Exception {
+        IOException unavailable = new IOException("entity unavailable");
+        AtomicInteger entityCalls = new AtomicInteger();
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                if (entityCalls.incrementAndGet() == 1) {
+                    return sneakyThrow(unavailable);
+                }
+                return "value";
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+        MessageBatch<String> batch = MessageBatch.create(message);
+        FutureTask<List<String>> first = new FutureTask<>(batch::payloads);
+        FutureTask<List<String>> second = new FutureTask<>(batch::payloads);
+        Thread firstThread = Thread.ofVirtual().unstarted(first);
+        Thread secondThread = Thread.ofVirtual().unstarted(second);
+
+        try {
+            firstThread.start();
+            ExecutionException failure = assertThrows(ExecutionException.class,
+                                                      () -> first.get(5, TimeUnit.SECONDS));
+            assertThat(failure.getCause(), sameInstance(unavailable));
+            join(firstThread);
+
+            secondThread.start();
+            List<String> successful = second.get(5, TimeUnit.SECONDS);
+            assertThat(successful, is(List.of("value")));
+            assertThat(batch.payloads(), sameInstance(successful));
+            assertThat(entityCalls.get(), is(2));
+        } finally {
+            first.cancel(true);
+            second.cancel(true);
+            firstThread.interrupt();
+            secondThread.interrupt();
+            try {
+                join(firstThread);
+            } finally {
+                join(secondThread);
+            }
+        }
     }
 
     @Test
@@ -311,4 +583,28 @@ class MessageBatchTest {
         batch.forEach(result::add);
         return result;
     }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            if (!latch.await(5, TimeUnit.SECONDS)) {
+                throw new AssertionError("Timed out waiting for test latch");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting for test latch", e);
+        }
+    }
+
+    private static void join(Thread thread) throws InterruptedException {
+        thread.join(TimeUnit.SECONDS.toMillis(5));
+        if (thread.isAlive()) {
+            throw new AssertionError("Timed out waiting for test thread");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T, E extends Throwable> T sneakyThrow(Throwable failure) throws E {
+        throw (E) failure;
+    }
+
 }

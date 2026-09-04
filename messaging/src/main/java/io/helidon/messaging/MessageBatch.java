@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Api;
 
@@ -48,7 +49,7 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
     private final String id;
     private final List<Message<T>> messages;
     private final List<Integer> lineage;
-    private volatile List<T> payloads;
+    private final AtomicReference<List<T>> payloads = new AtomicReference<>();
 
     @SuppressWarnings("unchecked")
     private MessageBatch(Object deliveryToken,
@@ -160,28 +161,31 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
     }
 
     /**
-     * Ordered immutable payload snapshot, materialized on first access.
+     * Ordered immutable payload snapshot, materialized lazily.
+     * <p>
+     * Concurrent initial callers may each read the message entities. The first successfully published snapshot is retained,
+     * and every successful caller returns that same snapshot. A failed materialization is not retained.
      *
      * @return payloads
      * @throws MessagingException if any message cannot expose its payload
      * @throws NullPointerException if any message returns a null payload
      */
     public List<T> payloads() {
-        List<T> result = payloads;
+        List<T> result = payloads.get();
         if (result == null) {
-            synchronized (this) {
-                result = payloads;
-                if (result == null) {
-                    List<T> snapshot = new ArrayList<>(messages.size());
-                    for (Message<T> message : messages) {
-                        snapshot.add(Objects.requireNonNull(message.entity(), "Message entity"));
-                    }
-                    result = List.copyOf(snapshot);
-                    payloads = result;
-                }
-            }
+            List<T> candidate = materializePayloads();
+            List<T> winner = payloads.compareAndExchange(null, candidate);
+            result = winner == null ? candidate : winner;
         }
         return result;
+    }
+
+    private List<T> materializePayloads() {
+        List<T> snapshot = new ArrayList<>(messages.size());
+        for (Message<T> message : messages) {
+            snapshot.add(Objects.requireNonNull(message.entity(), "Message entity"));
+        }
+        return List.copyOf(snapshot);
     }
 
     /**

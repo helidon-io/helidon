@@ -221,6 +221,11 @@ while a batch receiver is called once for the whole delivery:
 MessageBatch<Order> batch = MessageBatch.create(List.of(firstMessage, secondMessage));
 ```
 
+`payloads()` initializes an immutable payload snapshot lazily. Calls that overlap before publication may each read every
+message entity; message accessors must therefore support repeated concurrent invocation and return stable values.
+The first successfully published snapshot is retained and returned to every successful caller. A failed candidate is not
+retained, so a later call can retry.
+
 A batch is a delivery and performance boundary, not necessarily a transport transaction. When batch delivery fails,
 `BatchDeliveryException` describes each item as `SUCCEEDED`, `FAILED`, `NOT_ATTEMPTED`, or `INDETERMINATE`.
 

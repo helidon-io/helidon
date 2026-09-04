@@ -335,6 +335,83 @@ class DeliveryEngineTest {
     }
 
     @Test
+    void tryConnectorReservationReportsShutdownBeforePendingSaturation() {
+        MessagingExecutionConfig config = configBuilder()
+                .maxPendingAdmissions(1)
+                .maxPendingMessages(1)
+                .build();
+        try (DeliveryEngine engine = engine(config, "orders");
+             ConnectorDeliveryReservation ignored = engine.reserveConnectorDelivery("orders", 1)) {
+            engine.beginDrain();
+
+            MessagingRejectedException rejection = assertThrows(
+                    MessagingRejectedException.class,
+                    () -> engine.tryReserveConnectorDelivery("orders", 1));
+
+            assertThat(rejection.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
+            assertThat(engine.ownsShutdownRejection(rejection), is(true));
+        }
+    }
+
+    @Test
+    void tryConnectorReservationReportsShutdownBeforeDispatcherContention() throws Exception {
+        try (DeliveryEngine engine = engine(configBuilder().build(), "orders")) {
+            engine.beginDrain();
+            CountDownLatch lockHeld = new CountDownLatch(1);
+            CountDownLatch releaseLock = new CountDownLatch(1);
+            AsyncTask lockHolder = async(() -> engine.runWithChannelAdmissionLock("orders", () -> {
+                lockHeld.countDown();
+                await(releaseLock);
+            }));
+            await(lockHeld);
+            try {
+                MessagingRejectedException rejection = assertThrows(
+                        MessagingRejectedException.class,
+                        () -> engine.tryReserveConnectorDelivery("orders", 1));
+
+                assertThat(rejection.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
+                assertThat(engine.ownsShutdownRejection(rejection), is(true));
+            } finally {
+                releaseLock.countDown();
+                await(lockHolder);
+            }
+        }
+    }
+
+    @Test
+    void tryConnectorReservationRejectsDispatchReentrancy() {
+        try (DeliveryEngine engine = engine(configBuilder().build(), "orders")) {
+            MessagingException rejection = assertThrows(
+                    MessagingException.class,
+                    () -> dispatch(engine,
+                                   "orders",
+                                   List.of(message(1)),
+                                   () -> engine.tryReserveConnectorDelivery("orders", 1)));
+
+            assertThat(rejection.getMessage(), containsString("cannot be reserved from messaging dispatch"));
+        }
+    }
+
+    @Test
+    void finalizedTryConnectorReservationPrecedesDispatchReentrancy() {
+        try (DeliveryEngine finalized = engine(configBuilder().build(), "orders");
+             DeliveryEngine dispatching = engine(configBuilder().build(), "source")) {
+            finalized.beginDrain();
+            assertThat(finalized.awaitDrained(WAIT), is(true));
+
+            MessagingRejectedException rejection = assertThrows(
+                    MessagingRejectedException.class,
+                    () -> dispatch(dispatching,
+                                   "source",
+                                   List.of(message(1)),
+                                   () -> finalized.tryReserveConnectorDelivery("orders", 1)));
+
+            assertThat(rejection.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
+            assertThat(finalized.ownsShutdownRejection(rejection), is(true));
+        }
+    }
+
+    @Test
     void drainWaitsForAttemptThatCapturedAncestryBeforeAdmission() throws Exception {
         CountDownLatch ancestryCaptured = new CountDownLatch(1);
         CountDownLatch releaseAdmission = new CountDownLatch(1);
