@@ -72,6 +72,13 @@ record here.
     <suppress files="openapi/openapi/src/main/java/io/helidon/openapi/OpenApiDocument\.java"
             checks="FileLength"/>
 
+    <!-- Initial QUIC implementation files are intentionally tracked as follow-up design work. -->
+    <suppress files="quic/quic/src/main/java/io/helidon/quic/QuicEndpoint\.java"
+            checks="FileLength"/>
+    <suppress files="quic/quic/src/main/java/io/helidon/quic/QuicConnectionImpl\.java"
+            checks="FileLength"/>
+    <suppress files="quic/quic/src/main/java/io/helidon/quic/PacketSpaceManager\.java"
+            checks="FileLength"/>
     <!--
     - Module exclusions
     -->

@@ -24,6 +24,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertPathBuilder;
@@ -62,6 +63,8 @@ public class ConfiguredTlsManager implements TlsManager {
     // secure random cannot be stored in native image, it must
     // be initialized at runtime
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
+    private static final LazyValue<X509TrustManager> DEFAULT_TRUST_MANAGER =
+            LazyValue.create(ConfiguredTlsManager::createDefaultTrustManager);
     private final String name;
     private final String type;
     private final ReentrantLock stateLock = new ReentrantLock();
@@ -72,6 +75,10 @@ public class ConfiguredTlsManager implements TlsManager {
 
     ConfiguredTlsManager() {
         this("@default", "tls-manager");
+    }
+
+    static X509TrustManager defaultTrustManager() {
+        return DEFAULT_TRUST_MANAGER.get();
     }
 
     /**
@@ -583,6 +590,18 @@ public class ConfiguredTlsManager implements TlsManager {
             }
         }
         return Optional.empty();
+    }
+
+    private static X509TrustManager createDefaultTrustManager() {
+        try {
+            TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            factory.init((KeyStore) null);
+            return x509TrustManager(factory.getTrustManagers())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Default TrustManagerFactory did not provide an X509TrustManager"));
+        } catch (GeneralSecurityException | ProviderException e) {
+            throw new IllegalStateException("Failed to create the default X509TrustManager", e);
+        }
     }
 
     private void initSslContextLocked(TlsConfig tlsConfig,
