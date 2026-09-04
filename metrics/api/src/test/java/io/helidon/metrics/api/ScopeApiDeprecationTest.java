@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("removal")
 class ScopeApiDeprecationTest {
@@ -91,6 +92,26 @@ class ScopeApiDeprecationTest {
         assertThat(meterRegistry.isMeterEnabled("test", Map.of()), is(false));
         assertThat(legacyMethodInvoked.get(), is(true));
         assertThat(receivedScope.get(), is(Optional.empty()));
+    }
+
+    @Test
+    void scopedRemovalValidatesDelegatedArgumentsAtBoundary() {
+        MeterRegistry meterRegistry = (MeterRegistry) Proxy.newProxyInstance(
+                MeterRegistry.class.getClassLoader(),
+                new Class<?>[] {MeterRegistry.class},
+                (proxy, method, arguments) -> {
+                    if (method.isDefault()) {
+                        return InvocationHandler.invokeDefault(proxy, method, arguments);
+                    }
+                    if (method.getName().equals("remove")) {
+                        return Optional.empty();
+                    }
+                    throw new AssertionError("Unexpected method invocation: " + method);
+                });
+
+        assertThrows(NullPointerException.class, () -> meterRegistry.remove((Meter.Id) null, "scope"));
+        assertThrows(NullPointerException.class, () -> meterRegistry.remove((String) null, List.of(), "scope"));
+        assertThrows(NullPointerException.class, () -> meterRegistry.remove("meter", null, "scope"));
     }
 
     @Test
