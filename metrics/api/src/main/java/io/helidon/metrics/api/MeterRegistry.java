@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.common.DeprecationSupport;
 import io.helidon.service.registry.Services;
 
 /**
@@ -122,6 +123,14 @@ public interface MeterRegistry extends Wrapper {
     default boolean isMeterEnabled(String name, Map<String, String> tags) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(tags);
+
+        DeprecationSupport.requireOverride(this,
+                                           MeterRegistry.class,
+                                           "isMeterEnabled",
+                                           String.class,
+                                           Map.class,
+                                           Optional.class);
+
         return isMeterEnabled(name, tags, Optional.empty());
     }
 
@@ -139,6 +148,8 @@ public interface MeterRegistry extends Wrapper {
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(tags);
         Objects.requireNonNull(scope);
         return isMeterEnabled(name, tags);
     }
