@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package io.helidon.http;
 
 import java.nio.charset.Charset;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
@@ -247,7 +249,7 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
          * @return updated builder instance
          */
         public Builder addParameter(String parameter, String value) {
-            parameters.put(parameter.toLowerCase(), value);
+            parameters.put(parameter.toLowerCase(Locale.ROOT), value);
             return this;
         }
 
@@ -259,7 +261,7 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
          */
         public Builder parameters(Map<String, String> parameters) {
             this.parameters.clear();
-            parameters.forEach((key, value) -> this.parameters.put(key.toLowerCase(), value));
+            parameters.forEach((key, value) -> this.parameters.put(key.toLowerCase(Locale.ROOT), value));
 
             return this;
         }
@@ -284,8 +286,27 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
         }
 
         private static HttpMediaType parse(String mediaTypeString, ParserMode parserMode) {
-            // text/plain; charset=UTF-8
+            Objects.requireNonNull(mediaTypeString);
+            Objects.requireNonNull(parserMode);
+            if (mediaTypeString.indexOf(';') == -1) {
+                MediaType mediaType = MediaTypes.create(mediaTypeString, parserMode);
+                if (parserMode == ParserMode.STRICT) {
+                    HttpToken.validate(mediaType.type());
+                    HttpToken.validate(mediaType.subtype());
+                }
+                return builder().mediaType(mediaType).build();
+            }
+            try {
+                return new StrictParser(mediaTypeString).parse();
+            } catch (IllegalArgumentException e) {
+                if (parserMode == ParserMode.STRICT) {
+                    throw e;
+                }
+            }
+            return parseRelaxed(mediaTypeString);
+        }
 
+        private static HttpMediaType parseRelaxed(String mediaTypeString) {
             Builder b = builder();
             int index = mediaTypeString.indexOf(';');
             if (index != -1) {
@@ -310,9 +331,151 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
                     }
                 }
             } else {
-                b.mediaType(MediaTypes.create(mediaTypeString, parserMode));
+                b.mediaType(MediaTypes.create(mediaTypeString, ParserMode.RELAXED));
             }
             return b.build();
+        }
+
+        private static final class StrictParser {
+            private final String value;
+            private int index;
+
+            private StrictParser(String value) {
+                this.value = value;
+            }
+
+            private static boolean isOptionalWhitespace(char ch) {
+                return ch == ' ' || ch == '\t';
+            }
+
+            private static boolean isQuotedText(char ch) {
+                return ch == '\t'
+                        || ch == ' '
+                        || ch == 0x21
+                        || ch >= 0x23 && ch <= 0x5b
+                        || ch >= 0x5d && ch <= 0x7e
+                        || ch >= 0x80 && ch <= 0xff;
+            }
+
+            private static boolean isQuotedPairCharacter(char ch) {
+                return ch == '\t'
+                        || ch == ' '
+                        || ch >= 0x21 && ch <= 0x7e
+                        || ch >= 0x80 && ch <= 0xff;
+            }
+
+            private static IllegalArgumentException invalid(String message) {
+                return new IllegalArgumentException("Invalid media type: " + message);
+            }
+
+            private HttpMediaType parse() {
+                if (value.indexOf('/') < 1) {
+                    throw new IllegalArgumentException("Cannot parse media type: " + value);
+                }
+                Builder builder = builder();
+                String type = parseUntil('/');
+                require('/');
+                String subtype = parseSubtype();
+                builder.mediaType(MediaTypes.create(type, subtype));
+
+                while (!atEnd()) {
+                    skipOptionalWhitespace();
+                    if (atEnd()) {
+                        throw invalid("Expected ';'");
+                    }
+                    require(';');
+                    skipOptionalWhitespace();
+                    if (atEnd() || current() == ';') {
+                        continue;
+                    }
+
+                    String parameterName = parseUntil('=');
+                    require('=');
+                    if (atEnd()) {
+                        throw invalid("Expected parameter value");
+                    }
+                    String parameterValue = current() == '"' ? parseQuotedString() : parseParameterToken();
+                    builder.addParameter(parameterName, parameterValue);
+                }
+                return builder.build();
+            }
+
+            private String parseSubtype() {
+                int start = index;
+                while (!atEnd() && current() != ';' && !isOptionalWhitespace(current())) {
+                    index++;
+                }
+                return validateToken(start);
+            }
+
+            private String parseParameterToken() {
+                int start = index;
+                while (!atEnd() && current() != ';' && !isOptionalWhitespace(current())) {
+                    index++;
+                }
+                return validateToken(start);
+            }
+
+            private String parseUntil(char delimiter) {
+                int start = index;
+                while (!atEnd() && current() != delimiter) {
+                    index++;
+                }
+                return validateToken(start);
+            }
+
+            private String validateToken(int start) {
+                String token = value.substring(start, index);
+                HttpToken.validate(token);
+                return token;
+            }
+
+            private String parseQuotedString() {
+                index++;
+                StringBuilder result = new StringBuilder();
+                while (!atEnd()) {
+                    char ch = current();
+                    index++;
+                    if (ch == '"') {
+                        return result.toString();
+                    }
+                    if (ch == '\\') {
+                        if (atEnd()) {
+                            throw invalid("Incomplete quoted-pair");
+                        }
+                        ch = current();
+                        index++;
+                        if (!isQuotedPairCharacter(ch)) {
+                            throw invalid("Invalid quoted-pair character");
+                        }
+                    } else if (!isQuotedText(ch)) {
+                        throw invalid("Invalid quoted-string character");
+                    }
+                    result.append(ch);
+                }
+                throw invalid("Unterminated quoted-string");
+            }
+
+            private void skipOptionalWhitespace() {
+                while (!atEnd() && isOptionalWhitespace(current())) {
+                    index++;
+                }
+            }
+
+            private void require(char expected) {
+                if (atEnd() || current() != expected) {
+                    throw invalid("Expected '" + expected + "'");
+                }
+                index++;
+            }
+
+            private boolean atEnd() {
+                return index == value.length();
+            }
+
+            private char current() {
+                return value.charAt(index);
+            }
         }
     }
 }
