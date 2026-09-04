@@ -214,6 +214,10 @@ A new message starts with empty local metadata unless its builder or implementat
 publish a value, the application must explicitly redact and bound it and then add it as a portable header or payload
 field.
 
+`MessageHeaders` and `MessageMetadata` are sealed read-only interfaces. Sealing prevents lambda implementations, which
+cannot provide the required value equality, and keeps immutable snapshots and metadata-safe `toString()` behavior
+under Helidon control. Their factories and builders are the only construction path.
+
 Every delivery is a non-empty, ordered `MessageBatch<T>`. Payload and message receivers are called once per item,
 while a batch receiver is called once for the whole delivery:
 

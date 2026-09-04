@@ -40,6 +40,17 @@ class MessageHeadersTest {
     }
 
     @Test
+    void hasValueEquality() {
+        MessageHeaders first = MessageHeaders.create(MessageHeader.create("trace", "value"));
+        MessageHeaders equal = MessageHeaders.create(MessageHeader.create("trace", "value"));
+        MessageHeaders different = MessageHeaders.create(MessageHeader.create("trace", "different"));
+
+        assertThat(first, is(equal));
+        assertThat(first.hashCode(), is(equal.hashCode()));
+        assertThat(first.equals(different), is(false));
+    }
+
+    @Test
     void preservesGlobalOrderDuplicatesAndExactNames() {
         HeaderValue.TextValue first = HeaderValue.text("first");
         HeaderValue.BooleanValue middle = HeaderValue.booleanValue(true);

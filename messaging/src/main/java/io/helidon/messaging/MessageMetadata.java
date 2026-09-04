@@ -16,7 +16,6 @@
 
 package io.helidon.messaging;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -32,24 +31,22 @@ import io.helidon.common.Api;
  * from {@link Message#headers() portable headers}; connectors and generic message mappers must never serialize it or
  * map it to a transport. Publishing a local value requires an explicit, application-controlled promotion to a
  * portable header, including any necessary redaction and size limit.
+ * <p>
+ * This interface is sealed because its single abstract accessor would otherwise make it a lambda target. Lambdas
+ * cannot implement the value-based {@link Object#equals(Object)} and {@link Object#hashCode()} required by this type.
+ * Keeping implementations under Helidon control also guarantees value-independent {@link Object#toString()} output
+ * and a stable, immutable, non-null value map containing no null names or values.
  */
 @Api.Preview
-public final class MessageMetadata {
-    private static final MessageMetadata EMPTY = new MessageMetadata(Map.of());
-
-    private final Map<String, HeaderValue> values;
-
-    private MessageMetadata(Map<String, HeaderValue> values) {
-        this.values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
-    }
+public sealed interface MessageMetadata permits MessageMetadataImpl {
 
     /**
      * Empty local metadata.
      *
      * @return empty metadata
      */
-    public static MessageMetadata empty() {
-        return EMPTY;
+    static MessageMetadata empty() {
+        return MessageMetadataImpl.empty();
     }
 
     /**
@@ -57,26 +54,24 @@ public final class MessageMetadata {
      *
      * @return builder
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
     /**
      * Immutable exact-name values.
      *
-     * @return metadata values
+     * @return stable, immutable, non-null metadata values
      */
-    public Map<String, HeaderValue> values() {
-        return values;
-    }
+    Map<String, HeaderValue> values();
 
     /**
      * Number of metadata values.
      *
      * @return value count
      */
-    public int size() {
-        return values.size();
+    default int size() {
+        return values().size();
     }
 
     /**
@@ -84,8 +79,8 @@ public final class MessageMetadata {
      *
      * @return whether empty
      */
-    public boolean isEmpty() {
-        return values.isEmpty();
+    default boolean isEmpty() {
+        return values().isEmpty();
     }
 
     /**
@@ -94,8 +89,9 @@ public final class MessageMetadata {
      * @param name exact metadata name
      * @return whether present
      */
-    public boolean contains(String name) {
-        return values.containsKey(Objects.requireNonNull(name));
+    default boolean contains(String name) {
+        String actualName = Objects.requireNonNull(name);
+        return values().containsKey(actualName);
     }
 
     /**
@@ -104,8 +100,9 @@ public final class MessageMetadata {
      * @param name exact metadata name
      * @return metadata value, or empty when absent
      */
-    public Optional<HeaderValue> value(String name) {
-        return Optional.ofNullable(values.get(Objects.requireNonNull(name)));
+    default Optional<HeaderValue> value(String name) {
+        String actualName = Objects.requireNonNull(name);
+        return Optional.ofNullable(values().get(actualName));
     }
 
     /**
@@ -118,7 +115,7 @@ public final class MessageMetadata {
      * @return text value, or empty only when absent
      * @throws IllegalStateException if the value is present but is not text
      */
-    public Optional<String> text(String name) {
+    default Optional<String> text(String name) {
         Optional<HeaderValue> value = value(name);
         if (value.isEmpty()) {
             return Optional.empty();
@@ -129,25 +126,10 @@ public final class MessageMetadata {
         throw new IllegalStateException("Local message metadata '" + name + "' is not a text value");
     }
 
-    @Override
-    public boolean equals(Object object) {
-        return this == object || object instanceof MessageMetadata that && values.equals(that.values);
-    }
-
-    @Override
-    public int hashCode() {
-        return values.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return "MessageMetadata[size=" + values.size() + "]";
-    }
-
     /**
      * Mutable local-metadata builder.
      */
-    public static final class Builder {
+    final class Builder {
         private final Map<String, HeaderValue> values = new LinkedHashMap<>();
 
         private Builder() {
@@ -188,7 +170,7 @@ public final class MessageMetadata {
          * @return updated builder
          */
         public Builder addAll(MessageMetadata metadata) {
-            values.putAll(Objects.requireNonNull(metadata).values);
+            values.putAll(Objects.requireNonNull(metadata).values());
             return this;
         }
 
@@ -219,7 +201,7 @@ public final class MessageMetadata {
          * @return metadata
          */
         public MessageMetadata build() {
-            return values.isEmpty() ? EMPTY : new MessageMetadata(values);
+            return MessageMetadataImpl.create(values);
         }
     }
 }

@@ -89,15 +89,22 @@ class MessagingPublicApiTest {
     }
 
     @Test
-    void localMetadataIsUsableOutsideItsPackage() {
+    void headerCollectionsAreUsableOutsideTheirPackage() {
+        MessageHeaders headers = MessageHeaders.builder()
+                .add("trace", "value")
+                .build();
         MessageMetadata metadata = MessageMetadata.builder()
                 .set("application.local", HeaderValue.text("value"))
                 .build();
-        Message<String> message = Message.builder("payload").localMetadata(metadata).build();
+        Message<String> message = Message.builder("payload")
+                .headers(headers)
+                .localMetadata(metadata)
+                .build();
 
+        assertThat(message.headers(), is(headers));
+        assertThat(message.headers().last("trace").orElseThrow(), is(HeaderValue.text("value")));
         assertThat(message.localMetadata(), is(metadata));
         assertThat(message.localMetadata().text("application.local").orElseThrow(), is("value"));
-        assertThat(message.headers().isEmpty(), is(true));
     }
 
     @Test

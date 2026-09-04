@@ -35,24 +35,22 @@ import io.helidon.common.Api;
  * to duplicate entries. {@link #valuesByName()} is a derived grouped view and cannot represent cross-name ordering.
  * Connectors preserve every supported property and reject unsupported outbound values unless an explicit translation
  * is configured; they must not silently stringify, reorder, or drop entries.
+ * <p>
+ * This interface is sealed because its single abstract accessor would otherwise make it a lambda target. Lambdas
+ * cannot implement the value-based {@link Object#equals(Object)} and {@link Object#hashCode()} required by this type.
+ * Keeping implementations under Helidon control also guarantees that every instance exposes a stable, immutable,
+ * non-null entry list containing no null entries.
  */
 @Api.Preview
-public final class MessageHeaders implements Iterable<MessageHeader> {
-    private static final MessageHeaders EMPTY = new MessageHeaders(List.of());
-
-    private final List<MessageHeader> entries;
-
-    private MessageHeaders(List<? extends MessageHeader> entries) {
-        this.entries = List.copyOf(entries);
-    }
+public sealed interface MessageHeaders extends Iterable<MessageHeader> permits MessageHeadersImpl {
 
     /**
      * Empty headers.
      *
      * @return empty headers
      */
-    public static MessageHeaders empty() {
-        return EMPTY;
+    static MessageHeaders empty() {
+        return MessageHeadersImpl.empty();
     }
 
     /**
@@ -61,9 +59,8 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      * @param entries ordered entries
      * @return headers
      */
-    public static MessageHeaders create(List<? extends MessageHeader> entries) {
-        List<? extends MessageHeader> actualEntries = Objects.requireNonNull(entries);
-        return actualEntries.isEmpty() ? EMPTY : new MessageHeaders(actualEntries);
+    static MessageHeaders create(List<? extends MessageHeader> entries) {
+        return MessageHeadersImpl.create(entries);
     }
 
     /**
@@ -72,7 +69,7 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      * @param entries ordered entries
      * @return headers
      */
-    public static MessageHeaders create(MessageHeader... entries) {
+    static MessageHeaders create(MessageHeader... entries) {
         return create(List.of(entries));
     }
 
@@ -81,26 +78,24 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      *
      * @return builder
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
     /**
      * Authoritative ordered immutable entries.
      *
-     * @return entries
+     * @return stable, immutable, non-null entries
      */
-    public List<MessageHeader> entries() {
-        return entries;
-    }
+    List<MessageHeader> entries();
 
     /**
      * Number of entries, including duplicate names.
      *
      * @return entry count
      */
-    public int size() {
-        return entries.size();
+    default int size() {
+        return entries().size();
     }
 
     /**
@@ -108,8 +103,8 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      *
      * @return whether empty
      */
-    public boolean isEmpty() {
-        return entries.isEmpty();
+    default boolean isEmpty() {
+        return entries().isEmpty();
     }
 
     /**
@@ -118,9 +113,9 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      * @param name exact header name
      * @return whether present
      */
-    public boolean contains(String name) {
+    default boolean contains(String name) {
         String actualName = Objects.requireNonNull(name);
-        return entries.stream().anyMatch(entry -> entry.name().equals(actualName));
+        return entries().stream().anyMatch(entry -> entry.name().equals(actualName));
     }
 
     /**
@@ -129,9 +124,9 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      * @param name exact header name
      * @return first value
      */
-    public Optional<HeaderValue> first(String name) {
+    default Optional<HeaderValue> first(String name) {
         String actualName = Objects.requireNonNull(name);
-        for (MessageHeader entry : entries) {
+        for (MessageHeader entry : entries()) {
             if (entry.name().equals(actualName)) {
                 return Optional.of(entry.value());
             }
@@ -145,8 +140,9 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      * @param name exact header name
      * @return last value
      */
-    public Optional<HeaderValue> last(String name) {
+    default Optional<HeaderValue> last(String name) {
         String actualName = Objects.requireNonNull(name);
+        List<MessageHeader> entries = entries();
         for (int i = entries.size() - 1; i >= 0; i--) {
             MessageHeader entry = entries.get(i);
             if (entry.name().equals(actualName)) {
@@ -162,10 +158,10 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      * @param name exact header name
      * @return immutable values
      */
-    public List<HeaderValue> all(String name) {
+    default List<HeaderValue> all(String name) {
         String actualName = Objects.requireNonNull(name);
         ArrayList<HeaderValue> values = new ArrayList<>();
-        for (MessageHeader entry : entries) {
+        for (MessageHeader entry : entries()) {
             if (entry.name().equals(actualName)) {
                 values.add(entry.value());
             }
@@ -181,9 +177,9 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
      *
      * @return immutable grouped values
      */
-    public Map<String, List<HeaderValue>> valuesByName() {
+    default Map<String, List<HeaderValue>> valuesByName() {
         LinkedHashMap<String, List<HeaderValue>> values = new LinkedHashMap<>();
-        for (MessageHeader entry : entries) {
+        for (MessageHeader entry : entries()) {
             values.computeIfAbsent(entry.name(), ignored -> new ArrayList<>()).add(entry.value());
         }
         values.replaceAll((name, nameValues) -> List.copyOf(nameValues));
@@ -191,29 +187,14 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
     }
 
     @Override
-    public Iterator<MessageHeader> iterator() {
-        return entries.iterator();
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        return this == object || object instanceof MessageHeaders that && entries.equals(that.entries);
-    }
-
-    @Override
-    public int hashCode() {
-        return entries.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return entries.toString();
+    default Iterator<MessageHeader> iterator() {
+        return entries().iterator();
     }
 
     /**
      * Mutable messaging-header builder.
      */
-    public static final class Builder {
+    final class Builder {
         private final List<MessageHeader> entries = new ArrayList<>();
 
         private Builder() {
@@ -259,7 +240,7 @@ public final class MessageHeaders implements Iterable<MessageHeader> {
          * @return updated builder
          */
         public Builder addAll(MessageHeaders headers) {
-            entries.addAll(Objects.requireNonNull(headers).entries);
+            entries.addAll(Objects.requireNonNull(headers).entries());
             return this;
         }
 
