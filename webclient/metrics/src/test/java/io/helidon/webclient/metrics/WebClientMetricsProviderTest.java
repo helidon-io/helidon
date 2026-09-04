@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,10 +45,11 @@ class WebClientMetricsProviderTest {
     @Test
     void emptyConfigurationDoesNotResolveMeterRegistry() {
         AtomicBoolean resolved = new AtomicBoolean();
+        MeterRegistry meterRegistry = mock(MeterRegistry.class);
         ServiceRegistry serviceRegistry = mock(ServiceRegistry.class);
         when(serviceRegistry.supply(MeterRegistry.class)).thenReturn(() -> {
             resolved.set(true);
-            return mock(MeterRegistry.class);
+            return meterRegistry;
         });
 
         WebClientService service = new WebClientMetricsProvider()
@@ -55,6 +57,8 @@ class WebClientMetricsProviderTest {
 
         assertThat(service, instanceOf(WebClientMetrics.class));
         assertThat(resolved.get(), is(false));
+        assertThat(((WebClientMetrics) service).transportObserverIdentity(), sameInstance(meterRegistry));
+        assertThat(resolved.get(), is(true));
     }
 
     @Test
@@ -71,6 +75,7 @@ class WebClientMetricsProviderTest {
                     .create(METRICS_CONFIG, "metrics", manager.registry());
 
             assertThat(service, instanceOf(WebClientMetrics.class));
+            assertThat(((WebClientMetrics) service).transportObserverIdentity(), sameInstance(meterRegistry));
             verify(meterRegistry, times(WebClientMetricType.values().length)).metricsFactory();
         } finally {
             manager.shutdown();

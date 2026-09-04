@@ -22,9 +22,10 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -37,11 +38,11 @@ public class WebClientMetrics implements WebClientService,
                                          WebClientTransportObserverProvider {
 
     private final List<WebClientMetric> metrics;
-    private final MeterRegistry registry;
+    private final LazyValue<MeterRegistry> registry;
 
     private WebClientMetrics(Builder builder) {
         metrics = builder.metrics;
-        registry = MetricsFactory.getInstance().globalRegistry();
+        registry = builder.registry;
     }
 
     /**
@@ -87,19 +88,24 @@ public class WebClientMetrics implements WebClientService,
      * @return client metrics instance
      */
     public static WebClientMetrics create(Config config) {
-        return create(config, WebClientMetric::builder);
+        return create(config, () -> Services.get(MeterRegistry.class));
     }
 
     static WebClientMetrics create(Config config, Supplier<MeterRegistry> meterRegistry) {
         Objects.requireNonNull(meterRegistry);
-        return create(config, type -> WebClientMetric.builder(type).meterRegistry(meterRegistry.get()));
+        LazyValue<MeterRegistry> registry = LazyValue.create(
+                () -> Objects.requireNonNull(meterRegistry.get(), "Meter registry supplier returned null"));
+        return create(config,
+                      type -> WebClientMetric.builder(type).meterRegistry(registry.get()),
+                      registry);
     }
 
     private static WebClientMetrics create(Config config,
-                                           Function<WebClientMetricType, WebClientMetric.Builder> metricBuilder) {
+                                           Function<WebClientMetricType, WebClientMetric.Builder> metricBuilder,
+                                           LazyValue<MeterRegistry> registry) {
         Objects.requireNonNull(config);
         Objects.requireNonNull(metricBuilder);
-        WebClientMetrics.Builder builder = new Builder();
+        WebClientMetrics.Builder builder = new Builder(registry);
         config.asNodeList().ifPresent(configs ->
                 configs.forEach(metricConfig ->
                         builder.register(processClientMetric(metricConfig, metricBuilder))));
@@ -134,19 +140,21 @@ public class WebClientMetrics implements WebClientService,
 
     @Override
     public Object transportObserverIdentity() {
-        return registry;
+        return registry.get();
     }
 
     @Override
     public Registration openTransportObserver() {
-        return WebClientTransportMetricsRegistration.create(registry);
+        return WebClientTransportMetricsRegistration.create(registry.get());
     }
 
     private static final class Builder implements io.helidon.common.Builder<Builder, WebClientMetrics> {
 
         private final List<WebClientMetric> metrics = new ArrayList<>();
+        private final LazyValue<MeterRegistry> registry;
 
-        private Builder() {
+        private Builder(LazyValue<MeterRegistry> registry) {
+            this.registry = registry;
         }
 
         private void register(WebClientMetric clientMetric) {
