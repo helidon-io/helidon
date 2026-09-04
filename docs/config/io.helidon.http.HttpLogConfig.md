@@ -72,8 +72,10 @@ Configuration of logging of the HTTP layer
 
 - <a href="io.helidon.webserver.http1.Http1Config.md#log"><code>server.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>log</code></a>
 - <a href="io.helidon.webserver.http2.Http2Config.md#log"><code>server.<wbr>protocols.<wbr>http_<wbr>2.log</code></a>
+- <a href="io.helidon.webserver.http3.Http3Config.md#log"><code>server.<wbr>protocols.<wbr>http_<wbr>3.log</code></a>
 - <a href="io.helidon.webserver.http1.Http1Config.md#log"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>log</code></a>
 - <a href="io.helidon.webserver.http2.Http2Config.md#log"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>2.log</code></a>
+- <a href="io.helidon.webserver.http3.Http3Config.md#log"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>3.log</code></a>
 
 ---
 
