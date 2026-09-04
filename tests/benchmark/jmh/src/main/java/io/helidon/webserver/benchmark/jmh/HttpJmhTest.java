@@ -46,6 +46,7 @@ import io.helidon.webserver.http2.Http2ConnectionSelector;
 import io.helidon.webserver.http2.Http2Route;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -107,6 +108,7 @@ public class HttpJmhTest {
                 .backlog(8192)
                 .routing(router -> router
                         .route(Http1Route.route(Method.GET, "/plaintext", new PlaintextHandler()))
+                        .route(Http2Route.route(Method.GET, "/http2-small", new PlaintextHandler()))
                         .route(Http2Route.route(Method.GET, "/http2-large", new LargeHttp2Handler())))
                 .build()
                 .start();
@@ -172,6 +174,18 @@ public class HttpJmhTest {
                 .build();
         HttpResponse<byte[]> response = http2Client.send(request, HttpResponse.BodyHandlers.ofByteArray());
         bh.consume(response);
+    }
+
+    @Benchmark
+    @Threads(HTTP2_REUSE_THREADS)
+    @OperationsPerInvocation(HTTP2_REUSE_REQUESTS)
+    public void http2MaxConcurrentStreamReuseSmallResponse(Blackhole bh) {
+        for (int i = 0; i < HTTP2_REUSE_REQUESTS; i++) {
+            try (Http2ClientResponse response = helidonHttp2Client.get("/http2-small").request()) {
+                bh.consume(response.status());
+                bh.consume(response.entity().as(byte[].class));
+            }
+        }
     }
 
     @Benchmark

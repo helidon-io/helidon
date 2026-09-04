@@ -33,6 +33,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.AfterAll;
 
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -67,18 +68,23 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
 
             Optional<Timer> timer = meterRegistry.timer(ATTEMPT_DURATION, List.of(grpcMethod, grpcTarget, okTag));
             assertThat(timer.isPresent(), is(true));
-            assertThat(timer.get().count(), is(20L));
+            assertThatWithRetry("gRPC attempt duration metric for " + grpcMethod, timer.get()::count, is(20L));
 
-            Optional<DistributionSummary> summary;
-            summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(grpcMethod, grpcTarget, okTag));
-            assertThat(summary.isPresent(), is(true));
-            assertThat(summary.get().count(), is(20L));
-            assertThat(summary.get().max(), greaterThan(0.0));
+            Optional<DistributionSummary> sentSummary = meterRegistry.summary(SENT_MESSAGE_SIZE,
+                                                                               List.of(grpcMethod, grpcTarget, okTag));
+            assertThat(sentSummary.isPresent(), is(true));
+            assertThatWithRetry("gRPC sent message size metric for " + grpcMethod,
+                                sentSummary.get()::count,
+                                is(20L));
+            assertThat(sentSummary.get().max(), greaterThan(0.0));
 
-            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(grpcMethod, grpcTarget, okTag));
-            assertThat(summary.isPresent(), is(true));
-            assertThat(summary.get().count(), is(20L));
-            assertThat(summary.get().max(), greaterThan(0.0));
+            Optional<DistributionSummary> receivedSummary = meterRegistry.summary(RCVD_MESSAGE_SIZE,
+                                                                                   List.of(grpcMethod, grpcTarget, okTag));
+            assertThat(receivedSummary.isPresent(), is(true));
+            assertThatWithRetry("gRPC received message size metric for " + grpcMethod,
+                                receivedSummary.get()::count,
+                                is(20L));
+            assertThat(receivedSummary.get().max(), greaterThan(0.0));
         }
     }
 }

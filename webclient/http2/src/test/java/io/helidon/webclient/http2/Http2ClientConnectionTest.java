@@ -77,6 +77,7 @@ import org.mockito.InOrder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -2109,7 +2110,7 @@ class Http2ClientConnectionTest {
     }
 
     @Test
-    void writeHeadersFailureReleasesReservedStream() throws Exception {
+    void writeHeadersFailureClosesConnection() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             CompletableFuture<Http2ClientConnection> connectionFuture = new CompletableFuture<>();
             Thread.ofPlatform().start(() -> {
@@ -2130,10 +2131,8 @@ class Http2ClientConnectionTest {
             assertThrows(UncheckedIOException.class, () -> failingStream.writeHeaders(requestHeaders(), false));
             test.allowWrites();
 
-            Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
-            assertNotNull(recoveredStream);
-            recoveredStream.close();
-            connection.close();
+            test.assertConnectionClosed();
+            assertThat(connection.tryStream(STREAM_CONFIG), is(nullValue()));
         }
     }
 
