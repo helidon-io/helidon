@@ -59,7 +59,8 @@ class SemaphoreMetrics {
             return;
         }
 
-        MeterRegistry registry = Services.get(MeterRegistry.class);
+        MeterRegistry registry = context.meterRegistry()
+                .orElseGet(() -> Services.get(MeterRegistry.class));
         init(registry, context);
     }
 

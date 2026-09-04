@@ -297,6 +297,39 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     }
 
     @Override
+    public <T> List<T> allActive(TypeName contract) {
+        return allActive(Lookup.create(contract));
+    }
+
+    @Override
+    public <T> List<T> allActive(Lookup lookup) {
+        List<ServiceManager<T>> managers = lookupManagers(lookup, false, false);
+
+        if (managers.isEmpty()) {
+            return List.of();
+        }
+
+        traceLookup(lookup, "all active");
+
+        var result = new ArrayList<T>();
+        for (ServiceManager<T> serviceManager : managers) {
+            List<ServiceInstance<T>> thisManager = serviceManager.activeInstances(lookup)
+                    .orElseGet(List::of);
+
+            traceLookupInstance(lookup, serviceManager, thisManager);
+
+            if (!thisManager.isEmpty()) {
+                accessed(serviceManager.descriptor());
+                for (ServiceInstance<T> serviceInstance : thisManager) {
+                    result.add(serviceInstance.get());
+                }
+            }
+        }
+
+        return List.copyOf(result);
+    }
+
+    @Override
     public <T> Supplier<Optional<T>> supplyFirst(TypeName contract) {
         return supplyFirst(Lookup.create(contract));
     }

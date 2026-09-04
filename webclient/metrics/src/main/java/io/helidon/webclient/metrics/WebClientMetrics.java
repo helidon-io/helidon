@@ -18,8 +18,12 @@ package io.helidon.webclient.metrics;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -78,20 +82,33 @@ public class WebClientMetrics implements WebClientService {
      * @return client metrics instance
      */
     public static WebClientMetrics create(Config config) {
+        return create(config, WebClientMetric::builder);
+    }
+
+    static WebClientMetrics create(Config config, Supplier<MeterRegistry> meterRegistry) {
+        Objects.requireNonNull(meterRegistry);
+        return create(config, type -> WebClientMetric.builder(type).meterRegistry(meterRegistry.get()));
+    }
+
+    private static WebClientMetrics create(Config config,
+                                           Function<WebClientMetricType, WebClientMetric.Builder> metricBuilder) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(metricBuilder);
         WebClientMetrics.Builder builder = new Builder();
         config.asNodeList().ifPresent(configs ->
                 configs.forEach(metricConfig ->
-                        builder.register(processClientMetric(metricConfig))));
+                        builder.register(processClientMetric(metricConfig, metricBuilder))));
         return builder.build();
     }
 
-    private static WebClientMetric processClientMetric(Config metricConfig) {
+    private static WebClientMetric processClientMetric(Config metricConfig,
+                                                       Function<WebClientMetricType, WebClientMetric.Builder> metricBuilder) {
         String type = metricConfig.get("type").asString().orElse("COUNTER");
         return switch (type) {
-            case "COUNTER" -> counter().config(metricConfig).build();
-            case "METER" -> meter().config(metricConfig).build();
-            case "TIMER" -> timer().config(metricConfig).build();
-            case "GAUGE_IN_PROGRESS" -> gaugeInProgress().config(metricConfig).build();
+            case "COUNTER" -> metricBuilder.apply(WebClientMetricType.COUNTER).config(metricConfig).build();
+            case "METER" -> metricBuilder.apply(WebClientMetricType.METER).config(metricConfig).build();
+            case "TIMER" -> metricBuilder.apply(WebClientMetricType.TIMER).config(metricConfig).build();
+            case "GAUGE_IN_PROGRESS" -> metricBuilder.apply(WebClientMetricType.GAUGE_IN_PROGRESS).config(metricConfig).build();
             default -> throw new IllegalStateException(String.format(
                     "Metrics type %s is not supported through service loader",
                     type));

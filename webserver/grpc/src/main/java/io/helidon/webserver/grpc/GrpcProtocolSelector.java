@@ -32,7 +32,6 @@ import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
@@ -94,8 +93,7 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                 if (grpcConfig.enableMetrics() && metrics.owner().get() == null) {
                     MetricsOwner owner = Contexts.runInContext(ctx.listenerContext().context(),
                                                                () -> {
-                                                                   MeterRegistry meterRegistry =
-                                                                           Services.get(MeterRegistry.class);
+                                                                   MeterRegistry meterRegistry = routing.meterRegistry();
                                                                    return new MetricsOwner(meterRegistry.metricsFactory(),
                                                                                            meterRegistry);
                                                                });

@@ -1,0 +1,2 @@
+# Java ServiceLoader contracts exposed through the Helidon service registry
+io.helidon.webserver.grpc.spi.GrpcServerServiceProvider

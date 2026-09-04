@@ -24,7 +24,7 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.logging.common;
     requires io.helidon.metrics.systemmeters;
     requires io.helidon.scheduling;
-    requires io.helidon.webclient.api;
+    requires io.helidon.webclient;
     requires io.helidon.faulttolerance;
     requires io.helidon.metrics.api;
     requires io.helidon.json.binding;
@@ -38,10 +38,12 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.security.annotations;
 
     // required for generated binding
+    requires io.helidon.health.checks;
+    requires io.helidon.metrics.providers.micrometer;
     requires io.helidon.webserver.context;
     requires io.helidon.webserver.observe;
+    requires io.helidon.webserver.observe.health;
     requires io.helidon.webserver.observe.metrics;
-    requires io.helidon.metrics.providers.micrometer;
 
     exports io.helidon.declarative.tests.http;
 }

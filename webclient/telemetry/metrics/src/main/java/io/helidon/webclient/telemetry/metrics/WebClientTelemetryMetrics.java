@@ -17,10 +17,13 @@
 package io.helidon.webclient.telemetry.metrics;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.http.Status;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
 import io.helidon.webclient.api.WebClientServiceRequest;
@@ -54,10 +57,14 @@ public class WebClientTelemetryMetrics implements WebClientService {
     static final String URL_SCHEME = "url.scheme";
     static final String URL_TEMPLATE = "url.template";
 
-    private final LazyValue<DoubleHistogram> outboundHttpRequestDuration =
-            LazyValue.create(WebClientTelemetryMetrics::createHistogram);
+    private final LazyValue<DoubleHistogram> outboundHttpRequestDuration;
 
     private WebClientTelemetryMetrics() {
+        this(WebClientTelemetryMetrics::createHistogram);
+    }
+
+    private WebClientTelemetryMetrics(Supplier<DoubleHistogram> histogramSupplier) {
+        outboundHttpRequestDuration = LazyValue.create(histogramSupplier);
     }
 
     /**
@@ -77,6 +84,20 @@ public class WebClientTelemetryMetrics implements WebClientService {
      */
     public static WebClientTelemetryMetrics create(Config config) {
         return create();
+    }
+
+    /**
+     * Creates a new instance of the telemetry metrics service using the provided configuration and service registry.
+     *
+     * @param config telemetry metrics configuration
+     * @param serviceRegistry service registry which owns this service
+     * @return telemetry metrics service initialized using the configuration and service registry
+     */
+    public static WebClientTelemetryMetrics create(Config config, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        ServiceRegistry owningRegistry = Objects.requireNonNull(serviceRegistry);
+        return new WebClientTelemetryMetrics(() -> createHistogram(owningRegistry.get(Config.class),
+                                                                   owningRegistry.get(OpenTelemetry.class)));
     }
 
     @Override
@@ -110,11 +131,14 @@ public class WebClientTelemetryMetrics implements WebClientService {
     }
 
     private static DoubleHistogram createHistogram() {
-        var config = Services.get(Config.class);
+        return createHistogram(Services.get(Config.class), Services.get(OpenTelemetry.class));
+    }
+
+    private static DoubleHistogram createHistogram(Config config, OpenTelemetry openTelemetry) {
         HelidonOpenTelemetry helidonOpenTelemetry = HelidonOpenTelemetry.builder()
                 .config(config.get(HelidonOpenTelemetry.CONFIG_KEY))
                 .build();
-        return Services.get(OpenTelemetry.class)
+        return openTelemetry
                 .getMeterProvider()
                 .get(helidonOpenTelemetry.prototype().service())
                 .histogramBuilder(REQUEST_DURATION)

@@ -16,12 +16,22 @@
 
 package io.helidon.builder.test;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.test.testsubjects.DetachedChildProvider;
+import io.helidon.builder.test.testsubjects.DetachedRegistrySupportChild;
+import io.helidon.builder.test.testsubjects.InheritedChildProvider;
+import io.helidon.builder.test.testsubjects.RegistryServiceChild;
+import io.helidon.builder.test.testsubjects.RegistrySupportChild;
+import io.helidon.builder.test.testsubjects.RegistrySupportDisabledGrandchild;
+import io.helidon.builder.test.testsubjects.RegistrySupportDisabledChild;
+import io.helidon.builder.test.testsubjects.RegistrySupportRepeatedGrandchild;
 import io.helidon.builder.test.testsubjects.SomeProvider;
 import io.helidon.builder.test.testsubjects.WithProviderRegistry;
 import io.helidon.common.Errors;
@@ -30,6 +40,8 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -38,6 +50,7 @@ import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.sameInstance;
@@ -50,6 +63,139 @@ class ProviderRegistryTest {
     @BeforeAll
     static void beforeAll() {
         config = Config.just(ConfigSources.classpath("provider-test.yaml"));
+    }
+
+    @Test
+    void testInheritedRegistrySupport() {
+        Config inheritedConfig = Config.just(ConfigSources.create(Map.of(
+                "parent-service.registry-provider.value", "parent",
+                "child-service.registry-provider.value", "child")));
+        ServiceRegistryManager manager = registryManager();
+        try {
+            RegistrySupportChild value = RegistrySupportChild.builder()
+                    .config(inheritedConfig)
+                    .setServiceRegistry(manager.registry())
+                    .build();
+
+            assertThat(value.getParentService().map(SomeProvider.SomeService::prop), optionalValue(is("parent")));
+            assertThat(value.childService().map(InheritedChildProvider.ChildService::prop), optionalValue(is("child")));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testInheritedRegistrySupportFromDetachedPrototype() {
+        Config inheritedConfig = Config.just(ConfigSources.create(Map.of(
+                "child-service.registry-provider.value", "child")));
+        ServiceRegistryManager manager = registryManager();
+        try {
+            DetachedRegistrySupportChild value = DetachedRegistrySupportChild.builder()
+                    .config(inheritedConfig)
+                    .setServiceRegistry(manager.registry())
+                    .build();
+
+            assertThat(value.getChildService().map(InheritedChildProvider.ChildService::prop), optionalValue(is("child")));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testInheritedRegistrySupportFromDetachedPrototypeMetadata() throws IOException {
+        String resource = "/META-INF/helidon/service.loader";
+        try (var input = ProviderRegistryTest.class.getResourceAsStream(resource)) {
+            assertThat(input, notNullValue());
+            assertThat(new String(input.readAllBytes(), StandardCharsets.UTF_8),
+                       containsString(DetachedChildProvider.class.getName()));
+        }
+    }
+
+    @Test
+    void testInheritedRegistrySupportMetadata() throws IOException {
+        String resource = "/META-INF/helidon/io.helidon.builder.test.builder/service.loader";
+        try (var input = ProviderRegistryTest.class.getResourceAsStream(resource)) {
+            assertThat(input, notNullValue());
+            assertThat(new String(input.readAllBytes(), StandardCharsets.UTF_8),
+                       containsString(InheritedChildProvider.class.getName()));
+        }
+    }
+
+    @Test
+    void testExplicitDisabledRegistrySupport() {
+        Config inheritedConfig = Config.just(ConfigSources.create(Map.of(
+                "parent-service.registry-provider.value", "parent")));
+        ServiceRegistryManager manager = registryManager();
+        try {
+            RegistrySupportDisabledChild value = RegistrySupportDisabledChild.builder()
+                    .config(inheritedConfig)
+                    .setServiceRegistry(manager.registry())
+                    .build();
+
+            assertThat(value.getParentService().map(SomeProvider.SomeService::prop), optionalValue(is("parent")));
+            assertThat(value.childService(), optionalEmpty());
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testRepeatedRegistrySupportUsesOriginalOwner() {
+        Config inheritedConfig = Config.just(ConfigSources.create(Map.of(
+                "parent-service.registry-provider.value", "parent",
+                "middle-service.registry-provider.value", "middle",
+                "leaf-service.registry-provider.value", "leaf")));
+        ServiceRegistryManager manager = registryManager();
+        try {
+            RegistrySupportRepeatedGrandchild value = RegistrySupportRepeatedGrandchild.builder()
+                    .config(inheritedConfig)
+                    .setServiceRegistry(manager.registry())
+                    .build();
+
+            assertThat(value.getParentService().map(SomeProvider.SomeService::prop), optionalValue(is("parent")));
+            assertThat(value.middleService().map(InheritedChildProvider.ChildService::prop),
+                       optionalValue(is("middle")));
+            assertThat(value.leafService().map(InheritedChildProvider.ChildService::prop), optionalValue(is("leaf")));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testDisabledRegistrySupportIsInheritedThroughPrototype() {
+        Config inheritedConfig = Config.just(ConfigSources.create(Map.of(
+                "parent-service.registry-provider.value", "parent")));
+        ServiceRegistryManager manager = registryManager();
+        try {
+            RegistrySupportDisabledGrandchild value = RegistrySupportDisabledGrandchild.builder()
+                    .config(inheritedConfig)
+                    .setServiceRegistry(manager.registry())
+                    .build();
+
+            assertThat(value.getParentService().map(SomeProvider.SomeService::prop), optionalValue(is("parent")));
+            assertThat(value.childService(), optionalEmpty());
+            assertThat(value.grandchildService(), optionalEmpty());
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testRegistryServiceInheritedFromRegularOptionInterface() {
+        Mappers mappers = Mappers.create();
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Mappers.class, mappers)
+                                                                                .build());
+        try {
+            RegistryServiceChild value = RegistryServiceChild.builder()
+                    .setServiceRegistry(manager.registry())
+                    .build();
+
+            assertThat(value.mappers(), optionalValue(sameInstance(mappers)));
+            assertThat(value.childMappers(), optionalValue(sameInstance(mappers)));
+        } finally {
+            manager.shutdown();
+        }
     }
 
     @Test
@@ -413,6 +559,61 @@ class ProviderRegistryTest {
                 .build();
         assertThat(copy.optionalListDiscover(), optionalValue(is(List.of(someService))));
         assertThat(copy.optionalSetDiscover(), optionalValue(is(Set.of(someService))));
+    }
+
+    private static ServiceRegistryManager registryManager() {
+        SomeProvider parentProvider = new SomeProvider() {
+            @Override
+            public String configKey() {
+                return "registry-provider";
+            }
+
+            @Override
+            public SomeService create(Config config, String name) {
+                return new ParentService(config.get("value").asString().orElse(name), name);
+            }
+        };
+        InheritedChildProvider childProvider = new InheritedChildProvider() {
+            @Override
+            public String configKey() {
+                return "registry-provider";
+            }
+
+            @Override
+            public InheritedChildProvider.ChildService create(Config config, String name) {
+                return new ChildServiceImpl(config.get("value").asString().orElse(name), name);
+            }
+        };
+        DetachedChildProvider detachedChildProvider = new DetachedChildProvider() {
+            @Override
+            public String configKey() {
+                return "registry-provider";
+            }
+
+            @Override
+            public InheritedChildProvider.ChildService create(Config config, String name) {
+                return new ChildServiceImpl(config.get("value").asString().orElse(name), name);
+            }
+        };
+        return ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                     .putContractInstance(SomeProvider.class, parentProvider)
+                                                     .putContractInstance(InheritedChildProvider.class, childProvider)
+                                                     .putContractInstance(DetachedChildProvider.class, detachedChildProvider)
+                                                     .build());
+    }
+
+    private record ParentService(String prop, String name) implements SomeProvider.SomeService {
+        @Override
+        public String type() {
+            return "registry-provider";
+        }
+    }
+
+    private record ChildServiceImpl(String prop, String name) implements InheritedChildProvider.ChildService {
+        @Override
+        public String type() {
+            return "registry-provider";
+        }
     }
 
     private static class DummyService implements SomeProvider.SomeService {

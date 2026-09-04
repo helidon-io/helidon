@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.data.jakarta.persistence;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.common.Functions;
 import io.helidon.data.DataException;
@@ -27,7 +28,6 @@ import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
 import io.helidon.data.OptimisticLockException;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.Services;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.spi.TxSupport;
 
@@ -47,13 +47,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
     private static final Logger LOGGER = System.getLogger(JpaRepositoryExecutorImpl.class.getName());
 
-    // Execute persistence session task outside active transaction scope
-    // Transaction handling depends on current PersistenceUnitTransactionType
-    private static final Map<PersistenceUnitTransactionType, DataRunner> EXECUTORS = Map.of(
-            PersistenceUnitTransactionType.JTA,
-            new JtaDataRunner(),
-            PersistenceUnitTransactionType.RESOURCE_LOCAL,
-            new ResourceLocalDataRunner());
     // Execute persistence session task in active transaction scope
     private static final Map<PersistenceUnitTransactionType, DataRunner> TRANSACTION = Map.of(
             PersistenceUnitTransactionType.JTA,
@@ -64,10 +57,19 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     // Instance shared by all repository instances
     private final EntityManagerFactory factory;
     private final PersistenceUnitTransactionType transactionType;
+    // Execute persistence session task outside active transaction scope
+    // Transaction handling depends on current PersistenceUnitTransactionType
+    private final Map<PersistenceUnitTransactionType, DataRunner> executors;
 
     @Service.Inject
-    JpaRepositoryExecutorImpl(EntityManagerFactory factory) {
+    JpaRepositoryExecutorImpl(EntityManagerFactory factory, Optional<TxSupport> txSupport) {
         this.factory = factory;
+        TxSupport selectedTxSupport = txSupport.orElse(null);
+        this.executors = Map.of(
+                PersistenceUnitTransactionType.JTA,
+                new JtaDataRunner(selectedTxSupport),
+                PersistenceUnitTransactionType.RESOURCE_LOCAL,
+                new ResourceLocalDataRunner(selectedTxSupport));
         if (factory.getProperties().containsKey(TRANSACTION_TYPE)) {
             this.transactionType = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
         } else {
@@ -102,7 +104,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, String.format("Running standalone task [%x]", this.hashCode()));
             }
-            return EXECUTORS.get(transactionType)
+            return executors.get(transactionType)
                     .call(this, task);
         }
     }
@@ -124,7 +126,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, String.format("Running standalone task [%x]", this.hashCode()));
             }
-            EXECUTORS.get(transactionType)
+            executors.get(transactionType)
                     .run(this, task);
         }
     }
@@ -218,9 +220,9 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
         private final TxSupport txSupport;
 
-        JtaDataRunner() {
+        JtaDataRunner(TxSupport txSupport) {
             super();
-            txSupport = initJtaTxSupport();
+            this.txSupport = txSupport;
         }
 
         @Override
@@ -246,10 +248,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 run(executor, em, task);
                 return null;
             });
-        }
-
-        private static TxSupport initJtaTxSupport() {
-            return Services.first(TxSupport.class).orElse(null);
         }
 
         // PERF: This check is being run with every task execution but doing it in constructor will crash
@@ -269,9 +267,9 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
         private final TxSupport txSupport;
 
-        ResourceLocalDataRunner() {
+        ResourceLocalDataRunner(TxSupport txSupport) {
             super();
-            txSupport = initJtaTxSupport();
+            this.txSupport = txSupport;
         }
 
         @Override
@@ -295,10 +293,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 run(executor, em, task);
                 return null;
             });
-        }
-
-        private static TxSupport initJtaTxSupport() {
-            return Services.first(TxSupport.class).orElse(null);
         }
 
         // PERF: This check is being run with every task execution but doing it in constructor will crash

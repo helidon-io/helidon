@@ -27,7 +27,7 @@ module io.helidon.declarative.tests.openapi {
     requires io.helidon.openapi.v32;
     requires io.helidon.service.registry;
     requires io.helidon.webserver;
-    requires io.helidon.webclient.api;
+    requires io.helidon.webclient;
 
     // required for generated binding
     requires io.helidon.webserver.context;

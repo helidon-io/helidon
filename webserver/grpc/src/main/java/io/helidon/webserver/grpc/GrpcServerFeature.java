@@ -21,7 +21,9 @@ import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
 
@@ -30,11 +32,20 @@ class GrpcServerFeature implements ServerFeature {
     private static final String TYPE = "grpc-route-registration";
     private static final System.Logger LOGGER = System.getLogger(GrpcServerFeature.class.getName());
 
+    private final Config config;
+    private final ServiceRegistry serviceRegistry;
+    private final Supplier<MeterRegistry> meterRegistry;
     private final Supplier<List<GrpcRouteRegistration>> routes;
     private final boolean enabled;
 
-    GrpcServerFeature(Config config, Supplier<List<GrpcRouteRegistration>> routes) {
+    GrpcServerFeature(Config config,
+                      ServiceRegistry serviceRegistry,
+                      Supplier<MeterRegistry> meterRegistry,
+                      Supplier<List<GrpcRouteRegistration>> routes) {
+        this.config = config;
         this.enabled = config.get("server.features." + TYPE + ".enabled").asBoolean().orElse(true);
+        this.serviceRegistry = serviceRegistry;
+        this.meterRegistry = meterRegistry;
         this.routes = routes;
     }
 
@@ -69,8 +80,11 @@ class GrpcServerFeature implements ServerFeature {
 
             RoutingBuilders routingBuilders = socketBuilders.routingBuilders();
             GrpcRouting.Builder builder = routingBuilders.routingBuilder(GrpcRouting.Builder.class,
-                                                                         GrpcRouting::builder);
-            builder.service(route.descriptor());
+                                                                         () -> GrpcRouting.builder()
+                                                                                 .config(config));
+            builder.meterRegistry(meterRegistry)
+                    .serviceRegistry(serviceRegistry)
+                    .service(route.descriptor());
         }
     }
 }

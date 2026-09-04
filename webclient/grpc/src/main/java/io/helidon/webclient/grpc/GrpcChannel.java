@@ -47,7 +47,9 @@ public class GrpcChannel extends Channel {
     GrpcChannel(GrpcClient grpcClient) {
         this.grpcClient = (GrpcClientImpl) grpcClient;
         if (this.grpcClient.clientConfig().enableMetrics()) {
-            this.meterRegistry = Services.get(MeterRegistry.class);
+            this.meterRegistry = this.grpcClient.clientConfig()
+                    .meterRegistry()
+                    .orElseGet(() -> Services.get(MeterRegistry.class));
             this.metricsFactory = meterRegistry.metricsFactory();
         } else {
             this.metricsFactory = null;

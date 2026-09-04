@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 import io.helidon.tracing.Span;
@@ -43,10 +44,36 @@ import static org.mockito.Mockito.when;
 
 @Testing.Test(perMethod = true)
 class GrpcTracingServiceTest {
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
-    void defaultTracerComesFromServiceRegistry() {
+    void staticRegistryProvidesTracerForDirectUse() {
         Tracer tracer = mock(Tracer.class);
+        Services.set(Tracer.class, tracer);
+
+        ServerInterceptor interceptor = GrpcTracingService.create(GrpcTracingConfig.create())
+                .interceptors()
+                .iterator()
+                .next();
+
+        verifyTracerUsed(interceptor, tracer);
+    }
+
+    @Test
+    void suppliedServiceRegistryProvidesTracer() {
+        Tracer tracer = mock(Tracer.class);
+        ServiceRegistry serviceRegistry = mock(ServiceRegistry.class);
+        when(serviceRegistry.get(Tracer.class)).thenReturn(tracer);
+
+        ServerInterceptor interceptor = GrpcTracingService.create(GrpcTracingConfig.create())
+                .interceptors(serviceRegistry)
+                .iterator()
+                .next();
+
+        verifyTracerUsed(interceptor, tracer);
+        verify(serviceRegistry).get(Tracer.class);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void verifyTracerUsed(ServerInterceptor interceptor, Tracer tracer) {
         Span.Builder spanBuilder = mock(Span.Builder.class);
         Span span = mock(Span.class);
         SpanContext spanContext = mock(SpanContext.class);
@@ -68,12 +95,7 @@ class GrpcTracingServiceTest {
         when(call.getMethodDescriptor()).thenReturn(method);
         when(call.getAttributes()).thenReturn(Attributes.EMPTY);
         when(next.startCall(same(call), any(Metadata.class))).thenReturn(listener);
-        Services.set(Tracer.class, tracer);
 
-        ServerInterceptor interceptor = GrpcTracingService.create(GrpcTracingConfig.create())
-                .interceptors()
-                .iterator()
-                .next();
         interceptor.interceptCall(call, new Metadata(), next);
 
         verify(tracer).spanBuilder("test.Service/Call");

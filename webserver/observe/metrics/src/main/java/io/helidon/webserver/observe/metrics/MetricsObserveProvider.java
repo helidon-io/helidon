@@ -16,14 +16,23 @@
 
 package io.helidon.webserver.observe.metrics;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for metrics observe provider.
+ * Metrics observe provider implementation, discoverable through
+ * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  */
+@Service.Singleton
 public class MetricsObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -43,5 +52,19 @@ public class MetricsObserveProvider implements ObserveProvider {
                 .config(config)
                 .name(name)
                 .build();
+    }
+
+    @Override
+    public Observer create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        return new MetricsObserver(MetricsObserverConfig.builder()
+                                           .config(config)
+                                           .name(name)
+                                           .buildPrototype(),
+                                   serviceRegistry.supply(MeterRegistry.class),
+                                   serviceRegistry.supplyAll(MeterRegistryFormatterProvider.class),
+                                   serviceRegistry.supplyAll(AutoHttpMetricsProvider.class));
     }
 }

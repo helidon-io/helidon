@@ -48,6 +48,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = HttpClientConfigSupport.HttpBuilderDecorator.class)
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
+@Prototype.RegistrySupport
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
      * Base uri used by the client in all requests.

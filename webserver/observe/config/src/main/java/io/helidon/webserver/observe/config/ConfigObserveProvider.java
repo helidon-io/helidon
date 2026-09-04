@@ -16,14 +16,20 @@
 
 package io.helidon.webserver.observe.config;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for config observe provider.
+ * Config observe provider implementation, discoverable through
+ * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  */
+@Service.Singleton
 public class ConfigObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -43,5 +49,17 @@ public class ConfigObserveProvider implements ObserveProvider {
                 .config(config)
                 .name(name)
                 .build();
+    }
+
+    @Override
+    public Observer create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        var observerConfig = ConfigObserver.builder()
+                .config(config)
+                .name(name)
+                .buildPrototype();
+        return ConfigObserver.create(observerConfig, serviceRegistry.supply(Config.class));
     }
 }

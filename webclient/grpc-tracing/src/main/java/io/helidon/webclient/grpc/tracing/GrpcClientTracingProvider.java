@@ -16,8 +16,12 @@
 
 package io.helidon.webclient.grpc.tracing;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.tracing.Tracer;
 import io.helidon.webclient.grpc.spi.GrpcClientService;
 import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
 
@@ -41,5 +45,13 @@ public class GrpcClientTracingProvider implements GrpcClientServiceProvider {
     @Override
     public GrpcClientService create(Config config, String name) {
         return GrpcClientTracing.create(config);
+    }
+
+    @Override
+    public GrpcClientService create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        return GrpcClientTracing.create(config, () -> serviceRegistry.get(Tracer.class));
     }
 }

@@ -26,14 +26,14 @@ import io.helidon.security.spi.OutboundSecurityProvider;
  */
 final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurityResponse> {
     private final Security security;
-    private final SecurityContextImpl context;
+    private final SecurityContext context;
     private final String providerName;
     private final ProviderRequest providerRequest;
     private final SecurityEnvironment outboundEnv;
     private final EndpointConfig outboundEpConfig;
 
     OutboundSecurityClientImpl(Security security,
-                               SecurityContextImpl context,
+                               SecurityContext context,
                                SecurityRequest request,
                                String providerName,
                                SecurityEnvironment outboundEnvironment,
@@ -60,16 +60,18 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
             OutboundSecurityResponse response = providerInstance.outboundSecurity(providerRequest, outboundEnv, outboundEpConfig);
             if (response.status().isSuccess()) {
                 //Audit success
-                context.audit(SecurityAuditEvent.success(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
-                                                         "Provider %s. Request %s. Subject %s")
+                security.audit(context.id(),
+                               SecurityAuditEvent.success(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
+                                                          "Provider %s. Request %s. Subject %s")
                                       .addParam(AuditEvent.AuditParam
                                                         .plain("provider", providerInstance.getClass().getName()))
                                       .addParam(AuditEvent.AuditParam.plain("request", this))
                                       .addParam(AuditEvent.AuditParam
                                                         .plain("subject", context.user().orElse(SecurityContext.ANONYMOUS))));
             } else {
-                context.audit(SecurityAuditEvent.failure(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
-                                                         "Provider %s, Description %s, Request %s. Subject %s")
+                security.audit(context.id(),
+                               SecurityAuditEvent.failure(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
+                                                          "Provider %s, Description %s, Request %s. Subject %s")
                                       .addParam(AuditEvent.AuditParam
                                                         .plain("provider", providerInstance.getClass().getName()))
                                       .addParam(AuditEvent.AuditParam.plain("request", this))
@@ -83,8 +85,9 @@ final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurit
 
             return response;
         } catch (Exception e) {
-            context.audit(SecurityAuditEvent.error(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
-                                                   "Provider %s, Description %s, Request %s. Subject %s")
+            security.audit(context.id(),
+                           SecurityAuditEvent.error(AuditEvent.OUTBOUND_TYPE_PREFIX + ".outbound",
+                                                    "Provider %s, Description %s, Request %s. Subject %s")
                                   .addParam(AuditEvent.AuditParam.plain("provider", providerInstance.getClass().getName()))
                                   .addParam(AuditEvent.AuditParam.plain("request", this))
                                   .addParam(AuditEvent.AuditParam.plain("message", e.getMessage()))

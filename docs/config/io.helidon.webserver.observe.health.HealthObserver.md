@@ -62,7 +62,7 @@ Configuration of Health observer
 <td>
 <code>true</code>
 </td>
-<td>Whether to use services discovered by <code>java.<wbr>util.<wbr>Service<wbr>Loader</code></td>
+<td>Whether to use discovered health-check services</td>
 </tr>
 <tr>
 <td>

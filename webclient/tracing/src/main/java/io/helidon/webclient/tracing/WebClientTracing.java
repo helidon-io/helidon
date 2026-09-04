@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
@@ -51,7 +52,11 @@ public class WebClientTracing implements WebClientService {
     private final Function<Context, Tracer> tracerFunction;
 
     private WebClientTracing() {
-        this.applicationTracer = LazyValue.create(() -> Services.get(Tracer.class));
+        this(() -> Services.get(Tracer.class));
+    }
+
+    private WebClientTracing(Supplier<Tracer> tracer) {
+        this.applicationTracer = LazyValue.create(tracer);
         tracerFunction = ctx -> ctx.get(Tracer.class)
                 .orElseGet(applicationTracer);
     }
@@ -77,6 +82,10 @@ public class WebClientTracing implements WebClientService {
      * @return client tracing service
      */
     public static WebClientService create(Tracer tracer) {
+        return new WebClientTracing(tracer);
+    }
+
+    static WebClientService create(Supplier<Tracer> tracer) {
         return new WebClientTracing(tracer);
     }
 

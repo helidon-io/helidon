@@ -25,6 +25,7 @@ import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.TRANSITIVE;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -52,5 +53,14 @@ class GrpcModuleInfoTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(serviceRegistry.modifiers(), hasItem(TRANSITIVE));
+    }
+
+    @Test
+    void grpcServiceProvidersAreBridgedIntoRegistry() throws IOException {
+        Path serviceLoader = Path.of("target/classes/META-INF/helidon/io.helidon.webserver.grpc/service.loader");
+        Path manifest = Path.of("target/classes/META-INF/helidon/manifest");
+
+        assertThat(Files.readString(serviceLoader), containsString(GrpcServerServiceProvider.class.getName()));
+        assertThat(Files.readString(manifest), containsString("META-INF/helidon/io.helidon.webserver.grpc/service.loader"));
     }
 }

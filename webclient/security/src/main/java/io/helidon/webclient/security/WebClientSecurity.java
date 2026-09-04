@@ -52,6 +52,7 @@ public class WebClientSecurity implements WebClientService {
     private static final String PROVIDER_NAME = "io.helidon.security.rest.client.security.providerName";
 
     private final Security security;
+    private final boolean defaultOutboundSecurity;
 
     private WebClientSecurity() {
         this(null);
@@ -59,6 +60,7 @@ public class WebClientSecurity implements WebClientService {
 
     private WebClientSecurity(Security security) {
         this.security = security;
+        this.defaultOutboundSecurity = security != null && !security.resolveOutboundProvider(null).isEmpty();
     }
 
     /**
@@ -96,6 +98,15 @@ public class WebClientSecurity implements WebClientService {
             return chain.proceed(request);
         }
 
+        String explicitProvider = request.properties().get(PROVIDER_NAME);
+        if (security != null
+                && (!security.enabled()
+                        || (explicitProvider == null
+                                ? !defaultOutboundSecurity
+                                : security.resolveOutboundProvider(explicitProvider).isEmpty()))) {
+            return chain.proceed(request);
+        }
+
         Context requestContext = request.context();
         // context either from request or create a new one
         Optional<SecurityContext> maybeContext = requestContext.get(SecurityContext.class);
@@ -130,8 +141,6 @@ public class WebClientSecurity implements WebClientService {
                     .start();
 
         }
-        String explicitProvider = request.properties().get(PROVIDER_NAME);
-
         OutboundSecurityClientBuilder clientBuilder;
 
         try {
@@ -166,6 +175,7 @@ public class WebClientSecurity implements WebClientService {
             }
 
             clientBuilder = context.outboundClientBuilder()
+                    .securityContext(maybeContext.orElse(context))
                     .outboundEnvironment(outboundEnv)
                     .outboundEndpointConfig(outboundEp)
                     .explicitProvider(explicitProvider);

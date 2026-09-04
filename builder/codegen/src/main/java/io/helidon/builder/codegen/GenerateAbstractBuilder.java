@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
+import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.ContentBuilder;
@@ -61,15 +62,17 @@ final class GenerateAbstractBuilder {
     private GenerateAbstractBuilder() {
     }
 
-    static void generate(List<BuilderCodegenExtension> extensions,
+    static void generate(RoundContext ctx,
+                         List<BuilderCodegenExtension> extensions,
                          ClassModel.Builder classModel,
                          PrototypeInfo prototypeInfo,
-                         List<TypeArgument> typeArguments,
-                         List<TypeName> typeArgumentNames,
+                         TypeArguments genericArguments,
                          List<OptionHandler> options,
                          List<BuilderCodegen.NewDefault> newDefaults) {
         Optional<TypeName> superType = prototypeInfo.superPrototype();
         TypeName prototype = prototypeInfo.prototypeType();
+        List<TypeArgument> typeArguments = genericArguments.arguments();
+        List<TypeName> typeArgumentNames = genericArguments.names();
 
         classModel.addInnerClass(builder -> {
             typeArguments.forEach(builder::addGenericArgument);
@@ -117,7 +120,7 @@ final class GenerateAbstractBuilder {
             fromBuilderMethod(builder, prototypeInfo, options, typeArgumentNames);
 
             // method preBuildPrototype() - handles providers, decorator
-            preBuildPrototypeMethod(extensions, builder, prototypeInfo, options);
+            preBuildPrototypeMethod(ctx, extensions, builder, prototypeInfo, options);
             validatePrototypeMethod(extensions, builder, prototypeInfo, options);
 
             //custom method adding
@@ -410,9 +413,6 @@ final class GenerateAbstractBuilder {
                 classBuilder.addField(builder -> builder.type(Types.CONFIG).name("config"));
             }
         }
-        if (isBuilder && prototypeInfo.registrySupport()) {
-            classBuilder.addField(builder -> builder.type(Types.SERVICE_REGISTRY).name("serviceRegistry"));
-        }
         for (OptionHandler optionHandler : options) {
             if (!isBuilder && optionHandler.option().builderOptionOnly()) {
                 continue;
@@ -466,7 +466,8 @@ final class GenerateAbstractBuilder {
         return type.equals(CONFIG);
     }
 
-    private static void preBuildPrototypeMethod(List<BuilderCodegenExtension> extensions,
+    private static void preBuildPrototypeMethod(RoundContext ctx,
+                                                List<BuilderCodegenExtension> extensions,
                                                 InnerClass.Builder classBuilder,
                                                 PrototypeInfo prototypeInfo,
                                                 List<OptionHandler> options) {
@@ -490,15 +491,21 @@ final class GenerateAbstractBuilder {
 
             if (configured && hasConfiguredRegistryServiceOrProvider(options)) {
                 // need to have a non-null config instance
-                preBuildBuilder.addContent("var config = config().orElseGet(")
+                String configAccessor = FactoryPrototypeInfo.inheritedConfigAccessor(ctx, prototypeInfo.blueprint())
+                        .orElseGet(() -> prototypeInfo.recordStyle() ? "config" : "getConfig");
+                preBuildBuilder.addContent("var config = ")
+                        .addContent(configAccessor)
+                        .addContent("().orElseGet(")
                         .addContent(CONFIG)
                         .addContentLine("::empty);");
             }
 
             if (prototypeInfo.registrySupport() || hasRegistryService) {
+                String registryAccessor = FactoryPrototypeInfo.inheritedServiceRegistryAccessor(ctx, prototypeInfo.blueprint())
+                        .orElseGet(() -> prototypeInfo.recordStyle() ? "serviceRegistry" : "getServiceRegistry");
                 preBuildBuilder.addContent("var registry = ")
-                        .addContent(Optional.class)
-                        .addContentLine(".ofNullable(this.serviceRegistry);");
+                        .addContent(registryAccessor)
+                        .addContentLine("();");
             }
 
             for (OptionHandler optionHandler : options) {
@@ -1589,5 +1596,8 @@ final class GenerateAbstractBuilder {
         }
 
         return result.toString();
+    }
+
+    record TypeArguments(List<TypeArgument> arguments, List<TypeName> names) {
     }
 }

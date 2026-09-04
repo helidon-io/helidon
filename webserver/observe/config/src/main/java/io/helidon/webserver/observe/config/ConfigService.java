@@ -29,7 +29,6 @@ import io.helidon.http.NotFoundException;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.json.JsonSupport;
 import io.helidon.json.JsonObject;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.SecureHandler;
@@ -46,18 +45,20 @@ class ConfigService implements HttpService {
     private final boolean permitAll;
     private final boolean unsafeValues;
     private final ConcurrentMap<String, Boolean> obfuscatedKeys = new ConcurrentHashMap<>();
-    private final LazyValue<Config> config = LazyValue.create(() -> Services.get(Config.class));
+    private final LazyValue<Config> config;
 
     ConfigService(List<Pattern> secretPatterns,
                   List<Pattern> safeKeyPatterns,
                   String profile,
                   boolean permitAll,
-                  boolean unsafeValues) {
+                  boolean unsafeValues,
+                  Supplier<Config> configSupplier) {
         this.secretPatterns = secretPatterns;
         this.safeKeyPatterns = safeKeyPatterns;
         this.profile = profile;
         this.permitAll = permitAll;
         this.unsafeValues = unsafeValues;
+        this.config = LazyValue.create(configSupplier);
     }
 
     @Override

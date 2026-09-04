@@ -16,11 +16,13 @@
 
 package io.helidon.webserver.grpc.security;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
 import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 
@@ -47,5 +49,13 @@ public class GrpcSecurityServiceProvider implements GrpcServerServiceProvider {
         Security securityInstance = security.orElseGet(() -> Security.create(config.root().get("security")));
 
         return GrpcSecurity.create(securityInstance, config);
+    }
+
+    @Override
+    public GrpcServerService create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        return GrpcSecurity.create(serviceRegistry.get(Security.class), config);
     }
 }

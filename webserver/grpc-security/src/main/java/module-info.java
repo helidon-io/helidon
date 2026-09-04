@@ -29,6 +29,7 @@ module io.helidon.webserver.grpc.security {
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.config;
     requires transitive io.helidon.security;
+    requires transitive io.helidon.service.registry;
     requires transitive io.helidon.webserver.grpc;
 
     exports io.helidon.webserver.grpc.security;

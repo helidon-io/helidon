@@ -387,7 +387,7 @@ class BuilderCodegen implements CodegenExtension {
         existingOptions = new ArrayList<>(existingOptions);
         existingOptions.addAll(existingDiscoverServicesOptions);
         configOption(prototypeInfo, newOptions, existingOptions);
-        serviceRegistryOption(prototypeInfo, newOptions);
+        serviceRegistryOption(roundContext, prototypeInfo, newOptions);
 
         /*
         We may have new options that override existing option's:
@@ -448,10 +448,13 @@ class BuilderCodegen implements CodegenExtension {
         generatePrototype(roundContext, extensions, prototypeInfo, optionHandlers, newDefaults);
     }
 
-    private void serviceRegistryOption(PrototypeInfo prototypeInfo, List<OptionInfo> newOptions) {
+    private void serviceRegistryOption(RoundContext ctx, PrototypeInfo prototypeInfo, List<OptionInfo> newOptions) {
         boolean registrySupport = prototypeInfo.registrySupport() || hasRegistryService(newOptions);
 
         if (!registrySupport) {
+            return;
+        }
+        if (FactoryPrototypeInfo.inheritedServiceRegistryAccessor(ctx, prototypeInfo.blueprint()).isPresent()) {
             return;
         }
 
@@ -718,11 +721,11 @@ class BuilderCodegen implements CodegenExtension {
                 .collect(Collectors.toUnmodifiableList());
 
         // abstract class BuilderBase...
-        GenerateAbstractBuilder.generate(extensions,
+        GenerateAbstractBuilder.generate(ctx,
+                                         extensions,
                                          classModel,
                                          prototypeInfo,
-                                         typeArguments,
-                                         typeGenericArguments,
+                                         new GenerateAbstractBuilder.TypeArguments(typeArguments, typeGenericArguments),
                                          options,
                                          newDefaults);
 

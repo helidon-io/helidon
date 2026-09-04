@@ -21,15 +21,22 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
+import io.helidon.tracing.Tracer;
 
 @Service.Singleton
 class SecurityFactory implements Supplier<Security> {
     private final LazyValue<Security> delegate;
 
-    SecurityFactory(Config config) {
-        this.delegate = LazyValue.create(() -> Security.builder()
-                .config(config.get("security"))
-                .build());
+    SecurityFactory(Config config, Supplier<Tracer> tracer) {
+        Config securityConfig = config.get("security");
+        this.delegate = LazyValue.create(() -> {
+            Security.Builder builder = Security.builder()
+                    .config(securityConfig);
+            if (securityConfig.get("tracing.enabled").asBoolean().orElse(true)) {
+                builder.tracer(tracer.get());
+            }
+            return builder.build();
+        });
     }
 
     @Override

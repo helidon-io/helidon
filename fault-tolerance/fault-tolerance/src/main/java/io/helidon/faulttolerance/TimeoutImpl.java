@@ -29,6 +29,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 @Service.PerInstance(TimeoutConfigBlueprint.class)
 class TimeoutImpl implements Timeout {
@@ -44,16 +45,28 @@ class TimeoutImpl implements Timeout {
     private Counter callsCounterMetric;
     private Timer executionDurationMetric;
 
-    @Service.Inject
     TimeoutImpl(TimeoutConfig config,
                 Supplier<MeterRegistry> meterRegistry) {
+        this(config, meterRegistry, MetricsUtils.defaultEnabled());
+    }
+
+    @Service.Inject
+    TimeoutImpl(TimeoutConfig config,
+                Supplier<MeterRegistry> meterRegistry,
+                ServiceRegistry serviceRegistry) {
+        this(config, meterRegistry, MetricsUtils.defaultEnabled(serviceRegistry));
+    }
+
+    private TimeoutImpl(TimeoutConfig config,
+                        Supplier<MeterRegistry> meterRegistry,
+                        boolean metricsDefaultEnabled) {
         this.timeoutMillis = config.timeout().toMillis();
         this.executor = config.executor().orElseGet(FaultTolerance.executor());
         this.currentThread = config.currentThread();
         this.name = config.name().orElseGet(() -> "timeout-" + System.identityHashCode(config));
         this.config = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        this.metricsEnabled = config.enableMetrics() || metricsDefaultEnabled;
         if (metricsEnabled) {
             var mr = meterRegistry.get();
             var mf = mr.metricsFactory();

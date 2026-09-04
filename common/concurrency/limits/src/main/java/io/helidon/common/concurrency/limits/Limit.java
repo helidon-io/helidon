@@ -18,8 +18,11 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.config.NamedService;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
 
@@ -67,7 +70,7 @@ public interface Limit extends LimitAlgorithm, NamedService {
          * @return a new limit context
          */
         static InitializationContext create(String originName) {
-            return createContext(originName, List.of());
+            return createContext(originName, List.of(), Optional.empty());
         }
 
         /**
@@ -78,7 +81,21 @@ public interface Limit extends LimitAlgorithm, NamedService {
          * @return a new limit context
          */
         static InitializationContext create(String originName, List<Tag> metricTags) {
-            return createContext(originName, metricTags);
+            return createContext(originName, metricTags, Optional.empty());
+        }
+
+        /**
+         * Create a limit context with metric tags and a meter registry supplier.
+         *
+         * @param originName origin name of the work protected by the limit
+         * @param metricTags metric tags to use when registering limit metrics
+         * @param meterRegistry meter registry supplier to use when metrics are enabled
+         * @return a new limit context
+         */
+        static InitializationContext create(String originName,
+                                            List<Tag> metricTags,
+                                            Supplier<MeterRegistry> meterRegistry) {
+            return createContext(originName, metricTags, Optional.of(Objects.requireNonNull(meterRegistry)));
         }
 
         /**
@@ -95,7 +112,18 @@ public interface Limit extends LimitAlgorithm, NamedService {
          */
         List<Tag> metricTags();
 
-        private static InitializationContext createContext(String originName, List<Tag> metricTags) {
+        /**
+         * Meter registry to use when registering limit metrics.
+         *
+         * @return meter registry to use, if explicitly supplied
+         */
+        default Optional<MeterRegistry> meterRegistry() {
+            return Optional.empty();
+        }
+
+        private static InitializationContext createContext(String originName,
+                                                           List<Tag> metricTags,
+                                                           Optional<Supplier<MeterRegistry>> meterRegistry) {
             Objects.requireNonNull(originName);
             List<Tag> copiedTags = List.copyOf(metricTags);
 
@@ -108,6 +136,11 @@ public interface Limit extends LimitAlgorithm, NamedService {
                 @Override
                 public List<Tag> metricTags() {
                     return copiedTags;
+                }
+
+                @Override
+                public Optional<MeterRegistry> meterRegistry() {
+                    return meterRegistry.map(Supplier::get);
                 }
             };
         }

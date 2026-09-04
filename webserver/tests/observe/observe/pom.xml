@@ -53,6 +53,10 @@
             <artifactId>helidon-webserver-observe-log</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-tracing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-encryption</artifactId>
             <scope>test</scope>
@@ -73,4 +77,34 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/ObserveRegistryBootstrapTest.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-registry-bootstrap</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/ObserveRegistryBootstrapTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

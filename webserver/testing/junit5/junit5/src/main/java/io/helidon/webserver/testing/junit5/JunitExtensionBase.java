@@ -20,13 +20,23 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import io.helidon.common.types.ResolvedType;
+import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.ServiceInfo;
+import io.helidon.service.registry.ServiceInstance;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.testing.junit5.TestJunitExtension;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.WebServerService__ServiceDescriptor;
+import io.helidon.webserver.spi.ConfiguredServerFeatureFactory;
 import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -34,6 +44,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static io.helidon.webserver.testing.junit5.Junit5Util.withStaticMethods;
 
 abstract class JunitExtensionBase extends TestJunitExtension implements AfterAllCallback {
+    private static final TypeName SERVER_FEATURE_PROVIDER = TypeName.create(ServerFeatureProvider.class);
+    private static final ResolvedType CONFIGURED_FEATURE_FACTORY = ResolvedType.create(ConfiguredServerFeatureFactory.class);
+
     private Class<?> testClass;
 
     JunitExtensionBase() {
@@ -114,7 +127,9 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
     }
 
     static void setupWebServerFromRegistry(WebServerConfig.Builder serverBuilder) {
-        Object o = GlobalServiceRegistry.registry()
+        var serviceRegistry = GlobalServiceRegistry.registry();
+        serverBuilder.serviceRegistry(serviceRegistry);
+        Object o = serviceRegistry
                 .get(WebServerService__ServiceDescriptor.INSTANCE)
                 .orElseThrow(() -> {
                     return new IllegalStateException("Could not discover WebServerService in service registry, both "
@@ -124,15 +139,15 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
         // the service is package local
         Class<?> clazz = o.getClass();
         try {
-            Method method = clazz.getDeclaredMethod("updateServerBuilder", WebServerConfig.BuilderBase.class);
+            Method method = clazz.getDeclaredMethod("updateServerBuilder",
+                                                    WebServerConfig.BuilderBase.class,
+                                                    List.class);
             method.setAccessible(true);
-            method.invoke(o, serverBuilder);
+            method.invoke(o, serverBuilder, registryServerFeatures(serviceRegistry));
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Failed to get service registry specific method on WebServerService", e);
         }
     }
-
-
 
     void testClass(Class<?> testClass) {
         this.testClass = testClass;
@@ -140,6 +155,43 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
 
     Class<?> testClass() {
         return testClass;
+    }
+
+    private static List<ServerFeature> registryServerFeatures(ServiceRegistry serviceRegistry) {
+        List<ServiceInfo> providerServices = serviceRegistry.lookupServices(Lookup.create(ServerFeatureProvider.class));
+        Lookup featureLookup = Lookup.create(ServerFeature.class);
+        List<ServiceInfo> featureServices = serviceRegistry.lookupServices(featureLookup);
+        Set<TypeName> providerBackedFactoryTypes = new HashSet<>();
+        for (ServiceInfo serviceInfo : featureServices) {
+            // Config-backed factory products must be recreated from the final test server configuration.
+            if (!serviceInfo.serviceType().equals(serviceInfo.providedType())
+                    && serviceInfo.factoryContracts().contains(CONFIGURED_FEATURE_FACTORY)
+                    && hasProviderFor(serviceInfo, providerServices)) {
+                providerBackedFactoryTypes.add(serviceInfo.serviceType());
+            }
+        }
+
+        List<ServerFeature> result = new ArrayList<>();
+        for (ServiceInfo featureService : featureServices) {
+            if (!providerBackedFactoryTypes.contains(featureService.serviceType())) {
+                Lookup serviceLookup = Lookup.builder(featureLookup)
+                        .serviceType(featureService.serviceType())
+                        .build();
+                List<ServiceInstance<ServerFeature>> featureInstances = serviceRegistry.lookupInstances(serviceLookup);
+                for (ServiceInstance<ServerFeature> featureInstance : featureInstances) {
+                    result.add(featureInstance.get());
+                }
+            }
+        }
+        return result;
+    }
+
+    private static boolean hasProviderFor(ServiceInfo factoryService, List<ServiceInfo> providerServices) {
+        ResolvedType providerContract = ResolvedType.create(TypeName.builder(SERVER_FEATURE_PROVIDER)
+                                                                    .addTypeArgument(factoryService.providedType())
+                                                                    .build());
+        return providerServices.stream()
+                .anyMatch(serviceInfo -> serviceInfo.contracts().contains(providerContract));
     }
 
     private void callAfterStop() {

@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webserver.observe.health {
 
     requires io.helidon.http.media.json;
+    requires io.helidon.service.registry;
     requires io.helidon.webserver;
     requires java.management;
 

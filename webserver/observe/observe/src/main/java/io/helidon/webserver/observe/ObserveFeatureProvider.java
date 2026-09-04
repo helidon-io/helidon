@@ -16,15 +16,26 @@
 
 package io.helidon.webserver.observe;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
 import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigBuilderSupport;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.webserver.observe.spi.ObserveProvider;
+import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for observe feature for {@link io.helidon.webserver.WebServer}.
+ * Provider implementation for the observe feature for {@link io.helidon.webserver.WebServer}, discoverable through
+ * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  */
 @Weight(ObserveFeature.WEIGHT)
+@Service.Singleton
 public class ObserveFeatureProvider implements ServerFeatureProvider<ObserveFeature> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -44,5 +55,83 @@ public class ObserveFeatureProvider implements ServerFeatureProvider<ObserveFeat
                 .config(config)
                 .name(name)
                 .build();
+    }
+
+    @Override
+    public ObserveFeature create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        boolean discoverServices = config.get("observers-discover-services")
+                .asBoolean()
+                .orElse(true);
+        List<Observer> observers = ConfigBuilderSupport.discoverServices(config,
+                                                                         "observers",
+                                                                         Optional.of(serviceRegistry),
+                                                                         ObserveProvider.class,
+                                                                         Observer.class,
+                                                                         discoverServices,
+                                                                         List.of());
+        return ObserveFeature.create(new RegistryObserveFeatureConfig(config, name, observers));
+    }
+
+    private static final class RegistryObserveFeatureConfig implements ObserveFeatureConfig {
+        private final boolean enabled;
+        private final double weight;
+        private final List<Observer> observers;
+        private final List<String> sockets;
+        private final Config config;
+        private final String endpoint;
+        private final String name;
+
+        private RegistryObserveFeatureConfig(Config config, String name, List<Observer> observers) {
+            this.config = config;
+            this.name = name;
+            this.observers = List.copyOf(observers);
+            this.enabled = config.get("enabled").asBoolean().orElse(true);
+            this.endpoint = config.get("endpoint").asString().orElse("/observe");
+            this.weight = config.get("weight").asDouble().orElse(ObserveFeature.WEIGHT);
+            this.sockets = config.get("sockets").asList(String.class).orElseGet(List::of);
+        }
+
+        @Override
+        public boolean enabled() {
+            return enabled;
+        }
+
+        @Override
+        public String endpoint() {
+            return endpoint;
+        }
+
+        @Override
+        public double weight() {
+            return weight;
+        }
+
+        @Override
+        public List<Observer> observers() {
+            return observers;
+        }
+
+        @Override
+        public Optional<Config> config() {
+            return Optional.of(config);
+        }
+
+        @Override
+        public List<String> sockets() {
+            return sockets;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public ObserveFeature build() {
+            return ObserveFeature.create(this);
+        }
     }
 }

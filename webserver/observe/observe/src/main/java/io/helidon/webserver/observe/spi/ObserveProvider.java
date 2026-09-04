@@ -19,7 +19,9 @@ package io.helidon.webserver.observe.spi;
 import io.helidon.config.ConfiguredProvider;
 
 /**
- * {@link java.util.ServiceLoader} provider interface for observability services.
+ * Provider interface for observability services. Registry-managed applications discover providers through the owning
+ * {@link io.helidon.service.registry.ServiceRegistry}; direct construction and backward compatibility use
+ * {@link java.util.ServiceLoader}.
  */
 public interface ObserveProvider extends ConfiguredProvider<Observer> {
     /**

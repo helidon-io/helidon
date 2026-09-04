@@ -36,6 +36,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 @Service.PerInstance(BulkheadConfigBlueprint.class)
 class BulkheadImpl implements Bulkhead {
@@ -56,9 +57,21 @@ class BulkheadImpl implements Bulkhead {
     private Counter callsCounterMetric;
     private Timer waitingDurationMetric;
 
-    @Service.Inject
     BulkheadImpl(BulkheadConfig config,
                  Supplier<MeterRegistry> meterRegistry) {
+        this(config, meterRegistry, MetricsUtils.defaultEnabled());
+    }
+
+    @Service.Inject
+    BulkheadImpl(BulkheadConfig config,
+                 Supplier<MeterRegistry> meterRegistry,
+                 ServiceRegistry serviceRegistry) {
+        this(config, meterRegistry, MetricsUtils.defaultEnabled(serviceRegistry));
+    }
+
+    private BulkheadImpl(BulkheadConfig config,
+                         Supplier<MeterRegistry> meterRegistry,
+                         boolean metricsDefaultEnabled) {
         this.inProgress = new Semaphore(config.limit(), true);
         this.name = config.name().orElseGet(() -> "bulkhead-" + System.identityHashCode(config));
         this.listeners = config.queueListeners();
@@ -68,7 +81,7 @@ class BulkheadImpl implements Bulkhead {
         this.inProgressLock = new ReentrantLock(true);
         this.config = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        this.metricsEnabled = config.enableMetrics() || metricsDefaultEnabled;
         if (metricsEnabled) {
             var mr = meterRegistry.get();
             var mf = mr.metricsFactory();

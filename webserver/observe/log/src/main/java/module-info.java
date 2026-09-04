@@ -32,6 +32,7 @@ module io.helidon.webserver.observe.log {
     requires static io.helidon.config.metadata;
 
     requires io.helidon.http.media.json;
+    requires io.helidon.service.registry;
     requires io.helidon.webserver;
     requires java.logging;
 

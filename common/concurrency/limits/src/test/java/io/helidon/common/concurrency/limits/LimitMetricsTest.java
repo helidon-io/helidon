@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
@@ -94,6 +95,22 @@ class LimitMetricsTest {
     }
 
     @Test
+    void suppliedMeterRegistryIsUsedForMetrics() {
+        CapturingSemaphoreMetrics metrics = new CapturingSemaphoreMetrics();
+        AtomicInteger supplierCalls = new AtomicInteger();
+
+        metrics.init(Limit.InitializationContext.create("managed",
+                                                        realMeterTags,
+                                                        () -> {
+                                                            supplierCalls.incrementAndGet();
+                                                            return meterRegistry;
+                                                        }));
+
+        assertThat(metrics.capturedMeterRegistry(), sameInstance(meterRegistry));
+        assertThat(supplierCalls.get(), is(1));
+    }
+
+    @Test
     void legacyInitAddsSocketNameTagForNamedOrigin() {
         CapturingSemaphoreMetrics metrics = new CapturingSemaphoreMetrics();
 
@@ -148,15 +165,22 @@ class LimitMetricsTest {
 
     @Test
     void disabledMetricsDoNotRegisterRealMeters() {
+        AtomicInteger supplierCalls = new AtomicInteger();
         Limit disabled = FixedLimit.builder()
                 .name("test_disabled")
                 .permits(1)
                 .enableMetrics(false)
                 .build();
 
-        disabled.init(Limit.InitializationContext.create("unit-test", realMeterTags));
+        disabled.init(Limit.InitializationContext.create("unit-test",
+                                                         realMeterTags,
+                                                         () -> {
+                                                             supplierCalls.incrementAndGet();
+                                                             return meterRegistry;
+                                                         }));
 
         assertThat(hasMeter(meterRegistry, Meter.Type.GAUGE, "test_disabled_concurrent_requests", realMeterTags), is(false));
+        assertThat(supplierCalls.get(), is(0));
     }
 
     private static boolean hasMeter(MeterRegistry meterRegistry,
@@ -186,6 +210,7 @@ class LimitMetricsTest {
 
     private static class CapturingSemaphoreMetrics extends SemaphoreMetrics {
         private Map<String, String> capturedTags;
+        private MeterRegistry capturedMeterRegistry;
 
         CapturingSemaphoreMetrics() {
             super(true, null, "test", new AtomicInteger(), new AtomicInteger());
@@ -193,12 +218,17 @@ class LimitMetricsTest {
 
         @Override
         void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {
+            capturedMeterRegistry = meterRegistry;
             capturedTags = tags.stream()
                     .collect(Collectors.toMap(Tag::key, Tag::value));
         }
 
         Map<String, String> capturedTags() {
             return capturedTags;
+        }
+
+        MeterRegistry capturedMeterRegistry() {
+            return capturedMeterRegistry;
         }
     }
 }

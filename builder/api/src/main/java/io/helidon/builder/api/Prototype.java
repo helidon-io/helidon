@@ -472,8 +472,10 @@ public final class Prototype {
      * metadata file will be generated for the service provider interfaces.
      * <p>
      * Simply add this annotation to your {@link io.helidon.builder.api.Prototype.Blueprint} type to enable service registry.
-     * Note that if this annotation is NOT present, service registry would not be used, and {@link java.util.ServiceLoader}
-     * is used instead.
+     * If this annotation is not present, registry support is inherited from the nearest parent blueprint or prototype.
+     * If no parent enables registry support, {@link java.util.ServiceLoader} is used instead. An explicit value of
+     * {@code false} disables registry discovery for provider options declared by the annotated blueprint, without removing
+     * registry support already owned by its parent builder.
      * <p>
      * When using this annotation, you cannot use {@code serviceRegistry} as a custom option in your blueprint, as it will
      * be added by the annotation processor, to allow customization of the registry instance.

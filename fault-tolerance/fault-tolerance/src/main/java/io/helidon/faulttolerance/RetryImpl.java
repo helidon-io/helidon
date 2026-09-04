@@ -30,6 +30,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 class RetryImpl implements Retry {
     private final ErrorChecker errorChecker;
@@ -43,16 +44,28 @@ class RetryImpl implements Retry {
     private Counter callsCounterMetric;
     private Counter retryCounterMetric;
 
-    @Service.Inject
     RetryImpl(RetryConfig retryConfig,
               Supplier<MeterRegistry> meterRegistry) {
+        this(retryConfig, meterRegistry, MetricsUtils.defaultEnabled());
+    }
+
+    @Service.Inject
+    RetryImpl(RetryConfig retryConfig,
+              Supplier<MeterRegistry> meterRegistry,
+              ServiceRegistry serviceRegistry) {
+        this(retryConfig, meterRegistry, MetricsUtils.defaultEnabled(serviceRegistry));
+    }
+
+    private RetryImpl(RetryConfig retryConfig,
+                      Supplier<MeterRegistry> meterRegistry,
+                      boolean metricsDefaultEnabled) {
         this.name = retryConfig.name().orElseGet(() -> "retry-" + System.identityHashCode(retryConfig));
         this.errorChecker = ErrorChecker.create(retryConfig.skipOn(), retryConfig.applyOn());
         this.maxTimeNanos = retryConfig.overallTimeout().toNanos();
         this.retryPolicy = retryConfig.retryPolicy().orElseThrow();
         this.retryConfig = retryConfig;
 
-        this.metricsEnabled = retryConfig.enableMetrics() || MetricsUtils.defaultEnabled();
+        this.metricsEnabled = retryConfig.enableMetrics() || metricsDefaultEnabled;
         if (metricsEnabled) {
             var mr = meterRegistry.get();
             var mf = mr.metricsFactory();

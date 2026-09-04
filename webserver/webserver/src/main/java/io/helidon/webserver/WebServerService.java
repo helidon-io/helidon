@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.config.Config;
@@ -29,6 +30,7 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceInstance;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
@@ -44,7 +46,7 @@ Combines configuration done by hand with services discovered using the registry.
 @Service.Singleton
 class WebServerService {
     private final Optional<Config> config;
-    private final List<ServerFeature> serverFeatures;
+    private final Supplier<List<ServiceInstance<ServerFeature>>> serverFeatures;
     private final List<HttpFeature> httpFeatures;
     private final List<ProtocolConfig> protocolConfigs;
     private final List<ContentEncoding> contentEncodings;
@@ -56,7 +58,7 @@ class WebServerService {
 
     @Service.Inject
     WebServerService(Optional<Config> config,
-                     List<ServerFeature> serverFeatures,
+                     Supplier<List<ServiceInstance<ServerFeature>>> serverFeatures,
                      List<HttpFeature> httpFeatures,
                      List<ProtocolConfig> protocolConfigs,
                      List<ContentEncoding> contentEncodings,
@@ -80,6 +82,14 @@ class WebServerService {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     void updateServerBuilder(WebServerConfig.BuilderBase<?, ?> builder) {
+        updateServerBuilder(builder, serverFeatures.get()
+                .stream()
+                .map(ServiceInstance::get)
+                .toList());
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void updateServerBuilder(WebServerConfig.BuilderBase<?, ?> builder, List<ServerFeature> selectedServerFeatures) {
         if (builder.config().isEmpty()) {
             config.map(it -> it.get("server")).ifPresent(builder::config);
         }
@@ -107,7 +117,7 @@ class WebServerService {
         if (builder.requestedUriDiscoveryContext().isEmpty()) {
             requestedUriDiscoveryContext.ifPresent(builder::requestedUriDiscoveryContext);
         }
-        serverFeatures.forEach(builder::addFeature);
+        selectedServerFeatures.forEach(builder::addFeature);
         HttpRouting.Builder defaultRoutingBuilder = builder.routing()
                 .orElseGet(HttpRouting::builder);
         builder.routing(defaultRoutingBuilder);

@@ -27,6 +27,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 @Service.PerInstance(CircuitBreakerConfigBlueprint.class)
 class CircuitBreakerImpl implements CircuitBreaker {
@@ -57,9 +58,21 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private Counter callsCounterMetric;
     private Counter openedCounterMetric;
 
-    @Service.Inject
     CircuitBreakerImpl(CircuitBreakerConfig config,
                        Supplier<MeterRegistry> meterRegistry) {
+        this(config, meterRegistry, MetricsUtils.defaultEnabled());
+    }
+
+    @Service.Inject
+    CircuitBreakerImpl(CircuitBreakerConfig config,
+                       Supplier<MeterRegistry> meterRegistry,
+                       ServiceRegistry serviceRegistry) {
+        this(config, meterRegistry, MetricsUtils.defaultEnabled(serviceRegistry));
+    }
+
+    private CircuitBreakerImpl(CircuitBreakerConfig config,
+                               Supplier<MeterRegistry> meterRegistry,
+                               boolean metricsDefaultEnabled) {
         this.delayMillis = config.delay().toMillis();
         this.successThreshold = config.successThreshold();
         this.results = new ResultWindow(config.volume(), config.errorRatio());
@@ -68,7 +81,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.name = config.name().orElseGet(() -> "circuit-breaker-" + System.identityHashCode(config));
         this.config = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        this.metricsEnabled = config.enableMetrics() || metricsDefaultEnabled;
         if (metricsEnabled) {
             var mr = meterRegistry.get();
             var mf = mr.metricsFactory();

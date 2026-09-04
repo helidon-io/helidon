@@ -41,6 +41,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -122,6 +124,42 @@ public class ProvidedUtilTest {
 
         assertThat("Matched services", matchedServices.getFirst().nickname(), is(equalTo("higher")));
         assertThat(matchedServices, hasSize(1));
+    }
+
+    @Test
+    void testServiceRegistryPassedToProviderCreation() {
+        WeightedServiceProviderImpl provider = new WeightedServiceProviderImpl("registry");
+        ServiceRegistry registry = registry(provider);
+
+        ProvidedUtil.discoverServices(config,
+                                      "services",
+                                      Optional.of(registry),
+                                      WeightedServiceProvider.class,
+                                      WeightedServiceImpl.class,
+                                      false,
+                                      List.of());
+
+        assertThat(provider.serviceRegistry(), sameInstance(registry));
+    }
+
+    @Test
+    void testServiceLoaderUsesLegacyProviderCreation() {
+        WeightedServiceProviderImpl provider = new WeightedServiceProviderImpl("loader");
+        HelidonServiceLoader<WeightedServiceProvider> serviceLoader =
+                HelidonServiceLoader.builder(ServiceLoader.load(WeightedServiceProvider.class))
+                        .useSystemServiceLoader(false)
+                        .addService(provider, 1.0)
+                        .build();
+
+        ProvidedUtil.discoverServices(config,
+                                      "services",
+                                      serviceLoader,
+                                      WeightedServiceProvider.class,
+                                      WeightedServiceImpl.class,
+                                      false,
+                                      List.of());
+
+        assertThat(provider.serviceRegistry(), nullValue());
     }
 
     @Test
@@ -462,6 +500,7 @@ public class ProvidedUtilTest {
 
         private final String nickname;
         private int createCount;
+        private ServiceRegistry serviceRegistry;
 
         WeightedServiceProviderImpl() {
             nickname = "unknown";
@@ -482,8 +521,18 @@ public class ProvidedUtilTest {
             return new WeightedServiceImpl(config, name, nickname);
         }
 
+        @Override
+        public WeightedServiceImpl create(Config config, String name, ServiceRegistry serviceRegistry) {
+            this.serviceRegistry = serviceRegistry;
+            return create(config, name);
+        }
+
         int createCount() {
             return createCount;
+        }
+
+        ServiceRegistry serviceRegistry() {
+            return serviceRegistry;
         }
 
     }

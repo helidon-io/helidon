@@ -30,6 +30,7 @@ import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 10) // less than default, so it can be easily overridden
@@ -41,9 +42,11 @@ class ConfigProvider implements Supplier<Config> {
                    Supplier<List<ConfigSource>> configSources,
                    Supplier<List<ConfigParser>> configParsers,
                    Supplier<List<ConfigFilter>> configFilters,
-                   Supplier<List<ConfigMapperProvider>> configMappers) {
+                   Supplier<List<ConfigMapperProvider>> configMappers,
+                   ServiceRegistry serviceRegistry) {
         Optional<MetaConfig> metaConfig = metaConfigSupplier.get();
-        Config.Builder builder = Config.builder();
+        Config.Builder builder = Config.builder()
+                .serviceRegistry(serviceRegistry);
 
         if (metaConfig.isPresent()) {
             builder.config(metaConfig.get().metaConfiguration());

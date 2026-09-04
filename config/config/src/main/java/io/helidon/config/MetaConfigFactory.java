@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Map;
 
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * A ServiceRegistry factory that creates the meta config only if it is defined.
@@ -31,10 +32,16 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 class MetaConfigFactory implements Service.ServicesFactory<MetaConfig> {
     private static final System.Logger LOGGER = System.getLogger(MetaConfigFactory.class.getName());
+    private final ServiceRegistry serviceRegistry;
+
+    @Service.Inject
+    MetaConfigFactory(ServiceRegistry serviceRegistry) {
+        this.serviceRegistry = serviceRegistry;
+    }
 
     @Override
     public List<Service.QualifiedInstance<MetaConfig>> services() {
-        var foundMetaConfig = MetaConfig.metaConfig();
+        var foundMetaConfig = MetaConfig.metaConfig(serviceRegistry);
         if (foundMetaConfig.isEmpty()) {
             return List.of();
         }

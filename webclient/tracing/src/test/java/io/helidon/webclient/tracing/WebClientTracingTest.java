@@ -41,6 +41,7 @@ import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -76,6 +77,27 @@ class WebClientTracingTest {
         } finally {
             firstManager.shutdown();
             secondManager.shutdown();
+        }
+    }
+
+    @Test
+    void registryWebClientUsesOwningRegistryTracer() {
+        RecordingTracer tracer = new RecordingTracer();
+        ServiceRegistryManager manager = registryManager(tracer);
+        try {
+            WebClient client = manager.registry().get(WebClient.class);
+            WebClientService tracingService = client.prototype()
+                    .services()
+                    .stream()
+                    .filter(service -> service.type().equals("tracing"))
+                    .findFirst()
+                    .orElseThrow();
+
+            tracingService.handle(WebClientTracingTest::response, request("http://localhost/registry"));
+
+            assertThat(tracer.spanNames(), contains("GET-http://localhost:80/registry"));
+        } finally {
+            manager.shutdown();
         }
     }
 

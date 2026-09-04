@@ -61,11 +61,13 @@ import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_PR
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE_CLIENT;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.METER_REGISTRY_SUPPLIER;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.PROTO_FILE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.PROTO_MESSAGE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.RPC_CLIENT_ENDPOINT;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.RPC_CLIENT_QUALIFIER_INSTANCE;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.SERVICE_INSTANCE;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.SERVICE_REGISTRY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static java.util.function.Predicate.not;
 
@@ -167,6 +169,12 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                               .addParameter(config -> config
                                                       .name("config")
                                                       .type(CONFIG))
+                                              .addParameter(serviceRegistry -> serviceRegistry
+                                                      .name("serviceRegistry")
+                                                      .type(SERVICE_REGISTRY))
+                                              .addParameter(meterRegistry -> meterRegistry
+                                                      .name("meterRegistry")
+                                                      .type(METER_REGISTRY_SUPPLIER))
                                               .addParameter(registryClient -> registryClient
                                                       .name(endpoint.clientName().isPresent()
                                                                     ? "registryClient"
@@ -502,10 +510,18 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                 .update(it -> DelcarativeConfigSupport.assignResolveExpression(it, "config", "uri", endpoint.uri()))
                 .addContent("var declarative__clientBuilder = ")
                 .addContent(GRPC_CLIENT)
-                .addContentLine(".builder();")
+                .addContentLine(".builder()")
+                .increaseContentPadding()
+                .addContentLine(".serviceRegistry(serviceRegistry);")
+                .decreaseContentPadding()
                 .addContentLine("if (declarative__clientConfig.exists()) {")
                 .increaseContentPadding()
                 .addContentLine("declarative__clientBuilder.config(declarative__clientConfig);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (declarative__clientBuilder.enableMetrics()) {")
+                .increaseContentPadding()
+                .addContentLine("declarative__clientBuilder.meterRegistry(meterRegistry.get());")
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("declarative__clientBuilder.baseUri(uri);")
