@@ -126,7 +126,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         }
 
         Http2Headers responseHeaders = readHeaders(outputStream.stream);
-        ClientResponseHeaders clientResponseHeaders = ClientResponseHeaders.create(responseHeaders.httpHeaders());
+        ClientResponseHeaders clientResponseHeaders = ClientResponseHeaders.create(
+                responseHeaders.httpHeaders(),
+                clientConfig().mediaTypeParserMode());
         captureProtocolResponse(responseHeaders.status(), clientResponseHeaders);
 
         if (clientRequest().followRedirects()
@@ -460,7 +462,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                     Http2Headers responseHeaders = readHeaders(stream);
                     Status responseStatus = responseHeaders.status();
                     ClientResponseHeaders clientResponseHeaders = ClientResponseHeaders.create(
-                            responseHeaders.httpHeaders());
+                            responseHeaders.httpHeaders(),
+                            clientConfig.mediaTypeParserMode());
                     callChain.captureProtocolResponse(responseStatus, clientResponseHeaders);
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
