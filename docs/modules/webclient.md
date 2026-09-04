@@ -13,16 +13,25 @@ retrieve corresponding responses in a programmatic way.
 Helidon WebClient provides the following features:
 
 - **Blocking approach** The WebClient uses the blocking approach to
-  synchronously process a request and its corresponding response. Both
-  `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the
-  user. Additionally, for `HTTP/2`, virtual thread is employed to manage the
-  connection.
+  synchronously process a request and its corresponding response. `HTTP/1.1`,
+  `HTTP/2`, and `HTTP/3` requests and responses run in the thread of the user.
+  Virtual threads manage multiplexed connections.
 
 - **Builder-like setup and execution** Creates every client and request as a
   builder pattern. This improves readability and code maintenance.
 
-- **Redirect chain** Follows the redirect chain and perform requests on the
-  correct endpoint by itself.
+- **Redirect chain** Follows the redirect chain and performs requests on the
+  correct endpoint by itself. After a redirect crosses an origin boundary,
+  WebClient keeps redirect-sensitive headers stripped for the rest of the
+  chain and replaces source-scoped cookies with cookies selected for each
+  actual target. By default, WebClient rejects cross-origin `307` and `308`
+  redirects with a request entity, because those status codes would resend the
+  entity to the new origin. Applications can explicitly enable such replay
+  using `follow-cross-origin-entity-redirects`. A one-shot streaming entity
+  cannot be replayed after transmission has begun. For an
+  `Expect: 100-continue` redirect received before transmission, HTTP/1.1 and
+  HTTP/2 can buffer up to `max-in-memory-entity` bytes and send that still-unsent
+  entity to the target.
 
 - **Tracing and security propagation** Automatically propagates the configured
   tracing and security settings of the Helidon WebServer to the WebClient and
@@ -51,6 +60,32 @@ If support for `HTTP/2` is a requirement, below dependency needs to be added:
 </dependency>
 ```
 
+To enable `HTTP/3` over QUIC, add this dependency:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-http3</artifactId>
+</dependency>
+```
+
+The HTTP/3 module is an incubating feature. HTTP/3 requires an `https` URI and
+enabled, QUIC-compatible TLS with TLS 1.3 support. A generic WebClient skips
+HTTP/3 and selects a configured TCP protocol when the selected route uses a
+proxy that cannot carry HTTP/3, a Unix domain socket, plaintext, a
+caller-supplied connection, or incompatible TLS. HTTP/3 `prior-knowledge` does
+not override this eligibility check; after HTTP/3 has been selected for a typed
+or explicitly HTTP/3 request, it makes connection failure terminal instead of
+falling back. HTTP/3 never bypasses a selected proxy. A proxy configuration
+whose `no-proxy` policy selects a direct route remains eligible for HTTP/3.
+
+Hostname-only `no-proxy` policies are evaluated without DNS, so a configured
+proxy can resolve destinations that are not resolvable from the client. When
+IP-address `no-proxy` rules are also configured, WebClient resolves a hostname
+to evaluate those rules and retains a matching result as an address-bound
+direct route. HTTP/3 does not apply Alt-Svc steering to an address-bound route.
+Literal-IP destinations continue to match IP-address entries directly.
+
 ## Usage
 
 ### Instantiating the WebClient
@@ -77,43 +112,183 @@ configuration is present. Within a present configuration, `enabled` defaults
 to `true`; setting it to `false` provides an explicit override without removing
 the configuration. An empty `protocols` list allows every available client
 protocol provider that supports Alt-Svc. Otherwise, the list is an exact,
-case-sensitive ALPN protocol filter. The HTTP/2 protocol ID is `h2`.
+case-sensitive ALPN protocol filter. The HTTP/2 and HTTP/3 protocol IDs are
+`h2` and `h3`, respectively.
 
 Initial client support accepts advertisements only from `https` origins and
 only for alternatives on the same host; the alternative port may differ. Using
 an alternative changes the connection endpoint, not the request scheme or
 authority. WebClient does not support `h2c` alternatives. It also does not
-upgrade a plain `http` origin to TLS-based HTTP/2 because the RFC 8164
+upgrade a plain `http` origin to TLS-based HTTP/2 or HTTP/3 because the RFC 8164
 `/.well-known/http-opportunistic` opt-in is not implemented.
 
-Alternative-service routing never bypasses the configured proxy policy. The
-current HTTP/2 provider uses alternatives only when proxying is disabled. When
-any proxy policy is configured, including a `no-proxy` exception that selected
-a direct route for the origin, WebClient ignores the advertisement and
+Alternative-service routing never bypasses a selected proxy. The current
+HTTP/2 provider uses alternatives only when proxying is disabled. When any
+proxy policy is configured, including a `no-proxy` exception that selected a
+direct route for the origin, the HTTP/2 provider ignores the advertisement and
 continues with the selected route. WebClient uses the system proxy policy by
 default; configure `proxy.type` as `none`, or use `Proxy.noProxy()`
-programmatically, to use an advertised alternative.
+programmatically, to let HTTP/2 use an advertised alternative.
+
+The HTTP/3 provider can use an advertised alternative when a `no-proxy` rule
+selects a direct route. If the selected route uses a proxy that cannot carry
+HTTP/3, WebClient continues with a configured protocol that the route supports.
 
 Requests with caller-supplied connections or Unix domain socket transport
 addresses do not learn or use alternative services. An `InetSocketAddress`
 supplied through client `base-address` or request `address` updates the request
 URI host and port, so Alt-Svc applies to that resulting origin.
 
-WebClient honors the configured TLS policy as-is when connecting to an
-alternative. This includes custom TLS managers, custom SSL contexts, disabled
-endpoint identification, and `trust-all`. An unsafe or permissive TLS
-configuration therefore makes Alt-Svc steering equally unsafe or permissive.
-Configure TLS trust and endpoint identification according to the security
-requirements of the application.
+WebClient honors the configured TLS policy when connecting to an alternative.
+HTTP/3 can use only TLS configurations that can be translated to QUIC; in
+particular, the trust configuration must expose an `X509TrustManager`. An
+opaque custom `SSLContext` can therefore make a generic WebClient skip HTTP/3
+and use a configured TCP protocol. Disabled endpoint identification and
+`trust-all` remain unsafe or permissive for Alt-Svc steering as well. Configure
+TLS trust and endpoint identification according to the security requirements
+of the application.
 
-The HTTP/2 provider accounts for `Age` and apparent age derived from `Date`,
-honors `ma`, `clear`, and `persist`, and falls back to the origin if an
-advertised endpoint cannot be established. Advertisement freshness controls
-creation of new connections; an already-opening or reusable connection can
-continue after the advertisement expires. Discovery state belongs to the
-HTTP/2 connection cache. Shared connection caches share that state; disabling
-connection-cache sharing isolates it. `persist` does not make discovery state
-durable across a process or beyond that cache lifecycle.
+Each supporting protocol provider accounts for `Age` and apparent age derived
+from `Date`, honors `ma`, `clear`, and `persist`, and keeps discovery state in
+its own connection cache. Advertisement freshness controls creation of new
+connections; an already-opening or reusable connection can continue after the
+advertisement expires. The HTTP/2 provider falls back to the origin, while the
+HTTP/3 provider can fall back to the next configured TCP protocol if an
+advertised endpoint cannot be established.
+
+Shared connection caches share discovery state; disabling connection-cache
+sharing isolates it. The HTTP/3 cache also shares learned advertisements,
+successful routes, and five-minute endpoint-failure suppression. `persist`
+does not make discovery state durable across a process or beyond the relevant
+cache lifecycle.
+
+### Using the Typed HTTP/3 Client
+
+`Http3Client` provides HTTP/3-specific requests and configuration. A client
+created directly using an `Http3Client` factory or builder is standalone: it
+creates and owns a backing `WebClient`. Always close the typed client to release
+its owned resources and backing client. The standalone shutdown examples below
+disable connection-cache sharing so shutdown also closes the client's private
+QUIC connections. With the default shared connection cache, connections and
+discovery state remain available to other clients and use the JVM-wide cache
+lifecycle.
+
+Create and close a standalone HTTP/3 client:
+
+```java
+Http3Client client = Http3Client.create(it -> it
+        .baseUri("https://example.com")
+        .shareConnectionCache(false));
+try {
+    String response = client.get("/resource")
+            .requestEntity(String.class);
+} finally {
+    client.closeResource(); // Closes the HTTP/3 resources and its backing WebClient.
+}
+```
+
+An HTTP/3 client obtained from an existing `WebClient` is a borrowed protocol
+view. Closing the view releases its HTTP/3-specific resources but does not close
+the parent. Closing the parent is not a substitute for closing the view; close
+the view first and then its parent. A no-config view is cached by its parent; if
+that view is closed, asking the same parent for the view again returns a new
+open view.
+
+Obtain and close a borrowed HTTP/3 client:
+
+```java
+WebClient parent = WebClient.builder()
+        .baseUri("https://example.com")
+        .shareConnectionCache(false)
+        .build();
+try {
+    Http3Client client = parent.client(Http3Client.PROTOCOL);
+    try {
+        String response = client.get("/resource")
+                .requestEntity(String.class);
+    } finally {
+        client.closeResource(); // Does not close parent.
+    }
+} finally {
+    parent.closeResource();
+}
+```
+
+HTTP/3 requires an `https` URI and TLS 1.3. Configure trust material as for
+other WebClient protocols, using a configuration that exposes an
+`X509TrustManager` to the QUIC transport. An opaque custom `SSLContext` might
+not be QUIC-compatible. If enabled TLS protocols are restricted explicitly,
+include `TLSv1.3`. The HTTP/3 client supplies its `h3` ALPN value automatically.
+
+Configure TLS for a standalone HTTP/3 client:
+
+```java
+Http3Client client = Http3Client.create(it -> it
+        .baseUri("https://example.com")
+        .shareConnectionCache(false)
+        .tls(tls -> tls
+                .trust(trust -> trust
+                        .keystore(keystore -> keystore
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(resource -> resource.resourcePath("client.p12"))))
+                .enabledProtocols(List.of("TLSv1.3"))));
+try {
+    String response = client.get("/secure-resource")
+            .requestEntity(String.class);
+} finally {
+    client.closeResource();
+}
+```
+
+HTTP/3 discovery starts with a configured TCP protocol and requires the common
+`alt-svc` configuration to allow the exact `h3` protocol ID. A same-host
+`Alt-Svc` response from an `https` origin can then teach the client an HTTP/3
+endpoint for later requests. If the HTTP/3 connection cannot be established,
+WebClient can fall back to the next configured TCP protocol. HTTP/3
+`prior-knowledge` is disabled by default. See [Alt-Svc
+Discovery](#alt-svc-discovery) for the supported authority, proxy, and TLS
+policies.
+
+Configure HTTP/3 discovery with HTTP/2 and HTTP/1.1 fallback:
+
+```java
+WebClient client = WebClient.builder()
+        .baseUri("https://example.com")
+        .addProtocolPreference(Http3Client.PROTOCOL_ID)
+        .addProtocolPreference(Http2Client.PROTOCOL_ID)
+        .addProtocolPreference(Http1Client.PROTOCOL_ID)
+        .altSvc(ClientAltSvcConfig.builder()
+                .addProtocol(Http3Client.PROTOCOL_ID)
+                .build())
+        .build();
+try {
+    String response = client.get("/resource")
+            .requestEntity(String.class);
+} finally {
+    client.closeResource();
+}
+```
+
+Use prior knowledge only when the target is known to support HTTP/3. This mode
+attempts HTTP/3 directly and fails the request instead of falling back to a TCP
+protocol.
+
+Configure direct HTTP/3 using prior knowledge:
+
+```java
+Http3Client client = Http3Client.create(it -> it
+        .baseUri("https://example.com")
+        .shareConnectionCache(false)
+        .protocolConfig(protocol -> protocol
+                .priorKnowledge(true)));
+try {
+    String response = client.get("/resource")
+            .requestEntity(String.class);
+} finally {
+    client.closeResource();
+}
+```
 
 ### Creating the Request
 
@@ -236,15 +411,32 @@ String entityString = response.entity();
 
 ### Protocol Used
 
-WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the
+WebClient supports `HTTP/1.1`, `HTTP/2`, and `HTTP/3` protocols. Below are the
 rules on which specific protocol will be used:
 
 - Using plain socket triggers WebClient to process a request using `HTTP/1.1`.
-- When using TLS, the client will use ALPN (protocol negotiation) to use
-  appropriate HTTP version (either 1.1, or 2). `HTTP/2` has a higher weight, so
-  it is chosen if supported by both sides.
+- When using TLS over TCP, the client uses ALPN to select `HTTP/1.1` or
+  `HTTP/2`. `HTTP/2` has a higher weight, so it is chosen if supported by both
+  sides.
+- When the common `alt-svc` configuration is present and enabled, supporting
+  protocol providers can learn same-host alternatives for `https` origins. The
+  optional, exact case-sensitive protocol filter selects which available
+  providers may use them. See [Alt-Svc Discovery](#alt-svc-discovery) for the
+  current authority, TLS, proxy, and lifecycle behavior.
+- The HTTP/3 provider accounts for the `Age` header and apparent age derived
+  from `Date`, honors `ma`, `clear`, and `persist`, and falls back to a
+  configured TCP protocol if an advertised endpoint cannot be established.
+  Advertisement freshness controls creation of new connections; an
+  already-opening or reusable connection can continue after the advertisement
+  expires.
+- HTTP/3 discovery belongs to the HTTP/3 connection cache. Shared connection
+  caches also share learned advertisements, successful routes, and five-minute
+  endpoint-failure suppression; disabling connection-cache sharing isolates
+  this state to one WebClient.
 - A specific protocol can be explicitly selected by calling
-  `HttpClientRequest#protocolId(String)`.
+  `HttpClientRequest#protocolId(String)`. Explicit HTTP/3 selection attempts
+  HTTP/3 directly, but can still fall back before processing the request.
+  Enable HTTP/3 `prior-knowledge` when fallback is not acceptable.
   ```java
   String result = client.get()
       .protocolId("http/1.1")
@@ -257,13 +449,15 @@ rules on which specific protocol will be used:
   configuration](#setting-protocol-configuration) on how to customize `HTTP/2`.
   In such a case, `prior-knowledge` will be used and fail if it is unable to
   switch to `HTTP/2`.
-- When the common `alt-svc` configuration is present, enabled, and allows the
-  exact `h2` protocol ID, an `https` origin can advertise a same-host TLS HTTP/2
-  alternative. A later generic WebClient request can use that alternative
-  while retaining the original request authority. WebClient adds `Alt-Used`
-  only to the request sent to the alternative. See [Alt-Svc
-  Discovery](#alt-svc-discovery) for current limitations and TLS, proxy, and
-  lifecycle behavior.
+- `HTTP/3` also supports `prior-knowledge`. Once the HTTP/3 provider is
+  selected, enabling it makes inability to establish HTTP/3 fail the request
+  instead of falling back to a TCP protocol. It does not make an otherwise
+  ineligible generic request select HTTP/3.
+- When the common `alt-svc` configuration allows the exact `h2` or `h3`
+  protocol ID, an `https` origin can advertise a same-host alternative for that
+  provider. A later generic WebClient request can use that alternative while
+  retaining the original request authority. WebClient adds `Alt-Used` only to
+  the request sent to the alternative.
 
 ### Adding Media Support
 
@@ -400,7 +594,7 @@ builder and does not define registry services.
 ## Protocol Configuration
 
 Protocol specific configuration can be set using the `protocol-configs`
-parameter. WebClient currently supports `HTTP/1.1.` and `HTTP/2`.
+parameter. WebClient supports `HTTP/1.1`, `HTTP/2`, and `HTTP/3`.
 
 ### HTTP1 Configuration options
 
@@ -412,6 +606,11 @@ See [Configuration options][io-helidon-webcl-2].
 
 See [HTTP/2 configuration options][io-helidon-webcl-3].
 
+### HTTP3 Configuration options
+
+<!--@include ../config/io.helidon.webclient.http3.Http3ClientProtocolConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
+See [HTTP/3 configuration options][io-helidon-webcl-http3].
+<!--/include-->
 
 ### Example of a WebClient Runtime Configuration
 
@@ -432,6 +631,7 @@ client:
   read-timeout-millis: 2000
   follow-redirects: true # <1>
   max-redirects: 5
+  follow-cross-origin-entity-redirects: false
   cookie-manager: # <2>
     automatic-store-enabled: true
     default-cookies:
@@ -460,13 +660,15 @@ client:
     tracing:
   alt-svc: # <5>
     enabled: true
-    protocols: ["h2"]
+    protocols: ["h2", "h3"]
   protocol-configs: # <6>
     http_1_1:
       max-headers-size: 20000
       validate-request-headers: true
     h2:
       prior-knowledge: true
+    h3:
+      prior-knowledge: false
   proxy: # <7>
     host: "hostName"
     port: 80
@@ -485,8 +687,8 @@ client:
 4. Client service configuration
 5. Opt-in alternative service configuration
 6. Protocol configuration
-7. Proxy configuration; any configured proxy policy disables current Alt-Svc
-   alternative use
+7. Proxy configuration; HTTP/2 alternatives require proxying to be disabled,
+   while HTTP/3 alternatives require the selected route to be direct
 8. TLS configuration
 <!--@mdc :: -->
 
@@ -754,7 +956,7 @@ configuration file.
 WebClient Service configuration in `application.yaml`:
 
 ```yaml [application.yaml]
-webclient:
+client:
   services:
     metrics:
       - type: METER
@@ -789,7 +991,7 @@ WebClient.builder()
 
 ## Setting Protocol configuration
 
-Individual protocols can be customized using the `protocol-config` parameter.
+Individual protocols can be customized using the `protocol-configs` parameter.
 
 ### Setting up protocol configuration in your code
 
@@ -810,16 +1012,18 @@ WebClient.builder()
 Protocol configuration can also be set in the `application.yaml` configuration
 file.
 
-Setting up HTTP/1.1 and HTTP/2 protocol using `application.yaml` file:
+Setting up HTTP/1.1, HTTP/2, and HTTP/3 protocols using `application.yaml`:
 
 ```yaml [application.yaml]
-webclient:
+client:
   protocol-configs:
     http_1_1:
       max-headers-size: 20000
       validate-request-headers: true
     h2:
       prior-knowledge: true
+    h3:
+      prior-knowledge: false
 ```
 
 Then, in your application code, load the configuration from that file.
@@ -973,6 +1177,7 @@ See the [manifest](../config/manifest.md) for all available types.
 - [Helidon WebClient API][helidon-webclien]
 - [Helidon WebClient HTTP/1.1 Support][helidon-webclien-2]
 - [Helidon WebClient HTTP/2 Support][helidon-webclien-3]
+- [Helidon WebClient HTTP/3 Support][helidon-webclien-http3]
 - [Helidon WebClient DNS Resolver First Support][helidon-webclien-4]
 - [Helidon WebClient DNS Resolver Round Robin Support][helidon-webclien-5]
 - [Helidon WebClient Discovery Support][helidon-webclien-6]
@@ -988,6 +1193,7 @@ See the [manifest](../config/manifest.md) for all available types.
 [helidon-webclien]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.api/module-summary.html
 [helidon-webclien-2]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.http1/module-summary.html
 [helidon-webclien-3]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.http2/module-summary.html
+[helidon-webclien-http3]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.http3/module-summary.html
 [helidon-webclien-4]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.dns.resolver.first/module-summary.html
 [helidon-webclien-5]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.dns.resolver.roundrobin/module-summary.html
 [helidon-webclien-6]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.discovery/module-summary.html
@@ -998,3 +1204,4 @@ See the [manifest](../config/manifest.md) for all available types.
 [io-helidon-webcl-2]: ../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options
 [io-helidon-webcl-3]: ../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options
 [io-helidon-webcl-4]: ../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options
+[io-helidon-webcl-http3]: ../config/io.helidon.webclient.http3.Http3ClientProtocolConfig.md#configuration-options

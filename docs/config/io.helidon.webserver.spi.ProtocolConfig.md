@@ -45,6 +45,15 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="http_3"></a>
+<a href="io.helidon.webserver.http3.Http3Config.md">
+<code>http_<wbr>3</code>
+</a>
+</td>
+<td>HTTP/3 listener protocol configuration</td>
+</tr>
+<tr>
+<td>
 <a id="websocket"></a>
 <a href="io.helidon.webserver.websocket.WsConfig.md">
 <code>websocket</code>

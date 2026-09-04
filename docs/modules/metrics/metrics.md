@@ -527,6 +527,58 @@ WebServer server = WebServer.builder()
         .start();
 ```
 
+### HTTP Transport Metrics
+
+Helidon's metrics integrations publish built-in HTTP transport meters in the
+vendor scope using the configured `MeterRegistry`. The WebServer metrics
+observer emits `role=server`; the WebClient metrics service emits
+`role=client`. These meters complement request metrics and tracing; they do not
+replace or change either feature.
+
+Built-in HTTP transport meters:
+
+| Meter                         | Type    | Tags                                                    | Meaning                                                        |
+|-------------------------------|---------|---------------------------------------------------------|----------------------------------------------------------------|
+| `http.connections.opened`     | Counter | `role`, `transport`, `handshake`                        | Physical HTTP connections allocated.                           |
+| `http.connections.established` | Counter | `role`, `transport`, `protocol`                        | Physical connections that selected their first usable HTTP protocol. |
+| `http.connections.active`     | Gauge   | `role`, `transport`, `protocol`                         | Currently active physical HTTP connections.                    |
+| `http.connections.closed`     | Counter | `role`, `transport`, `protocol`, `outcome`              | Terminated physical HTTP connections.                          |
+| `http.connections.duration`   | Timer   | `role`, `transport`, `protocol`, `outcome`              | Complete physical connection lifetime.                         |
+| `http.handshakes`             | Counter | `role`, `transport`, `handshake`, `outcome`             | Completed transport security handshakes.                       |
+| `http.handshakes.duration`    | Timer   | `role`, `transport`, `handshake`, `outcome`             | Transport security handshake duration.                         |
+| `http.streams.opened`         | Counter | `role`, `protocol`, `direction`, `initiator`            | Opened multiplexed HTTP request streams.                       |
+| `http.streams.active`         | Gauge   | `role`, `protocol`, `direction`, `initiator`            | Currently active multiplexed HTTP request streams.             |
+| `http.streams.closed`         | Counter | `role`, `protocol`, `direction`, `initiator`, `outcome` | Closed multiplexed HTTP request streams.                       |
+| `http.streams.duration`       | Timer   | `role`, `protocol`, `direction`, `initiator`, `outcome` | Multiplexed HTTP request stream lifetime.                       |
+
+Timer values use seconds as their base unit. All supported protocols publish
+connection meters. Secured connections publish handshake meters. Only HTTP/2
+and HTTP/3 publish stream meters for request streams; HTTP/3 control and QPACK
+unidirectional streams are excluded.
+
+Transport metric tags use bounded vocabularies. `role` is `client` or `server`;
+`transport` is `tcp`, `unix`, `quic`, or another stable transport identifier;
+`protocol` is `unknown`, `http/1.1`, `http/2`, `http/3`, or another stable
+protocol identifier; `handshake` is `none`, `tls`, or `quic-tls`; `direction`
+is `bidi` or `uni`; and `initiator` is `local` or `remote`. Handshake outcomes
+are `success`, `failure`, `cancelled`, or `timeout`. Connection outcomes are
+`normal`, `local-close`, `remote-close`, `timeout`, or `error`. Stream outcomes
+are `completed`, `rejected`, `reset`, `cancelled`, or `error`.
+
+Server-side transport meters follow the automatic HTTP metrics settings.
+Setting `auto-http-metrics.enabled` to `false` disables them, and
+`auto-http-metrics.sockets` limits them to the named listeners. They also
+require the metrics observer and the Metrics API itself to be enabled.
+Client-side transport observation is installed when the WebClient metrics
+service is configured; meter publication remains subject to the selected
+registry's metrics, vendor-scope, and per-meter filters.
+
+Helidon owns these vendor meter names and tag sets, including the backing values
+for active gauges. Applications must not pre-register gauges with the same
+meter IDs and tags. Connection and stream IDs, network addresses, paths, SNI
+names, error text, and protocol error codes are deliberately not used as tags,
+keeping tag cardinality bounded.
+
 ## API
 
 To work with Helidon Metrics in your code, follow these steps:

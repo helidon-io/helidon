@@ -18,6 +18,15 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="quic"></a>
+<a href="io.helidon.webserver.quic.QuicTransportConfig.md">
+<code>quic</code>
+</a>
+</td>
+<td>QUIC transport binding configuration</td>
+</tr>
+<tr>
+<td>
 <a id="tcp"></a>
 <a href="io.helidon.webserver.TcpTransportConfig.md">
 <code>tcp</code>

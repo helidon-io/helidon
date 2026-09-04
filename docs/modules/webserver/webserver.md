@@ -68,12 +68,110 @@ WebServer.builder()
 
 Listener transport binding configuration is incubating. `server.bindings` is
 one object keyed by binding type. The object key is the binding’s only identity;
-list form and nested `type` or `name` properties are invalid. The stable
-built-in keys are also available as `TransportBindingTypes.TCP` and
-`TransportBindingTypes.UDS`.
+list form and nested `type` or `name` properties are invalid. The built-in keys
+are also available as `TransportBindingTypes.TCP` and
+`TransportBindingTypes.UDS`; the QUIC module provides
+`QuicTransportBindingTypes.QUIC`.
 
 Configuring another binding does not remove the default TCP binding. TCP
 remains active unless `bindings.tcp.enabled` is explicitly set to `false`.
+
+Shared TCP and QUIC listener with protocol-specific configuration:
+
+```yaml [application.yaml]
+server:
+  host: "127.0.0.1"
+  port: 8443
+  tls:
+    private-key:
+      keystore:
+        resource:
+          resource-path: "server.p12"
+        passphrase: "changeit"
+  protocols:
+    http_1_1:
+      alt-svc:
+        protocol: "h3"
+    http_2:
+      max-frame-size: 16384
+    http_3:
+      max-field-section-size: 16384
+  bindings:
+    quic:
+      retry-enabled: true
+      handshake-timeout: PT10S
+      max-pending-handshakes: 256
+      idle-timeout: PT30S
+      max-udp-payload-size: 1350
+```
+
+In this example, HTTP/1.1 and HTTP/2 use the TCP binding and HTTP/3 uses the
+QUIC binding. Address, host, port, TLS, routing, request limits, and connection
+limits are configured once on the listener and inherited by both bindings.
+HTTP settings remain under `protocols`; `bindings.quic` contains only
+QUIC-specific transport and protocol settings. A listener configured with only
+HTTP/3 still has the default TCP overlay. A listener without an enabled QUIC
+protocol does not activate the QUIC binding.
+
+The `http_1_1.alt-svc` block opts HTTP/1.1 into advertising the HTTP/3 endpoint.
+HTTP/1.1 and HTTP/2 do not advertise HTTP/3 by default; configure `alt-svc`
+under at least one TCP protocol used by clients for ordinary HTTP/3 discovery.
+
+A minimal programmatic setup adds the incubating QUIC configuration to the
+listener without using an internal binding factory. It omits the custom host,
+field, Retry, and UDP-payload settings from the YAML example.
+`QuicTransportConfig.addTo` returns the same listener builder, and the listener
+supplies the endpoint, TLS, routing, and limits:
+
+```java
+WebServerConfig.Builder serverBuilder = WebServer.builder()
+        .port(8443)
+        .tls(tls)
+        .protocolsDiscoverServices(false)
+        .addProtocol(Http1Config.builder()
+                             .altSvc(AltSvc.builder().build())
+                             .build())
+        .addProtocol(Http2Config.create())
+        .addProtocol(Http3Config.create());
+
+QuicTransportConfig.create().addTo(serverBuilder);
+```
+
+The combined example also requires the `helidon-webserver-http2` dependency for
+`Http2Config` and the HTTP/3 dependency described below for `Http3Config` and
+the QUIC transport configuration.
+
+For a QUIC-only listener, explicitly disable TCP:
+
+```yaml [application.yaml]
+server:
+  port: 8443
+  tls:
+    private-key:
+      keystore:
+        resource:
+          resource-path: "server.p12"
+        passphrase: "changeit"
+  protocols:
+    http_3: { }
+  bindings:
+    tcp:
+      enabled: false
+    quic:
+      retry-enabled: true
+```
+
+When a listener enables multiple QUIC application protocols,
+`bindings.quic.alpn-preference` can define their server preference as a complete
+ordered list of registered ALPN identifiers. Each registered identifier must
+occur exactly once; unknown, duplicate, and missing identifiers are rejected
+during configuration or listener startup. Without this setting, QUIC uses a
+deterministic transport-derived fallback. Applications that require a specific
+preference must set the option.
+
+Listener TLS virtual-host SNI selection applies to TCP and QUIC bindings.
+HTTP/1.1 and HTTP/2 select the virtual-host TLS material during the TCP TLS
+handshake, while HTTP/3 selects it during the QUIC TLS handshake.
 
 TCP and UDS listener bindings:
 
@@ -112,8 +210,13 @@ WebServer.builder()
                             .build());
 ```
 
-Port-capable bindings inherit the listener host and port. Configure another
-listener when another host, port, or UDS path is required.
+Port-capable bindings inherit the listener host and port. When the listener
+port is `0`, the first started port-capable binding selects an ephemeral port
+and later bindings use that same port. Configured TCP starts before configured
+QUIC; YAML object declaration order does not control startup order.
+Programmatically added bindings preserve their explicit order, including
+QUIC-first configurations. Configure another listener when another host, port,
+or UDS path is required.
 
 `max-connections` is shared by all connection-oriented bindings. A binding that
 waits in `accept` reserves one permit; therefore, with a finite limit `L` and
@@ -121,6 +224,9 @@ waits in `accept` reserves one permit; therefore, with a finite limit `L` and
 worst-case immediately usable capacity `L - N + 1`. The shared limit does not
 provide per-binding quotas or strict fairness, and configuration fails when
 `L < N`.
+
+Packet-oriented bindings such as QUIC do not hold an idle permit and attempt
+admission without queueing before allocating connection state.
 
 Binding runtime, factory, provider, planning, context, TLS-selection, and
 protocol-handoff contracts are internal Helidon integration APIs, not a
@@ -231,8 +337,9 @@ server:
     fallback-authority: "REJECT"
 ```
 
-SNI virtual hosts require listener TLS and the NIO socket-channel transport,
-which is the default.
+SNI virtual hosts require listener TLS and `use-nio: true`, which is the
+default, including for QUIC-only listeners. TCP listeners use the NIO
+socket-channel transport, while HTTP/3 listeners use the QUIC transport.
 
 #### Reloading TLS Material
 
@@ -812,17 +919,22 @@ rules.get("/any-version", (req, res) ->
     .route(Http1Route.route(Method.GET, "/version-specific", (req, res) ->
         res.send("HTTP/1.1 route"))) // <2>
     .route(Http2Route.route(Method.GET, "/version-specific", (req, res) ->
-        res.send("HTTP/2 route"))); // <3>
+        res.send("HTTP/2 route"))) // <3>
+    .route(Http3Route.route(Method.GET, "/version-specific", (req, res) ->
+        res.send("HTTP/3 route"))); // <4>
 ```
 1. An HTTP route registered on `/any-version` path that prints the version of
    HTTP protocol
 2. An HTTP/1.1 route registered on `/version-specific` path
 3. An HTTP/2 route registered on `/version-specific` path
+4. An HTTP/3 route registered on `/version-specific` path
 <!--@mdc :: -->
 
-While `Http1Route` for Http/1 is always available with Helidon webserver, other
-routes like `Http2Route` for [HTTP/2](#http2-support) needs to be added as
-additional dependency.
+`Http1Route` is available with Helidon WebServer. `Http2Route` requires the
+`helidon-webserver-http2` dependency described in
+[HTTP/2 Support](#http2-support), and `Http3Route` requires the
+`helidon-webserver-http3` dependency described in
+[HTTP/3 Support](#http3-support).
 
 ## Requested URI Discovery
 
@@ -1400,6 +1512,96 @@ server:
         max-age: PT1H
         persist: true
 ```
+
+### HTTP/3 Support
+
+Helidon provides incubating HTTP/3 support over QUIC when the HTTP/3 module is on
+the classpath. HTTP/3 requires TLS 1.3 and is configured through `Http3Config`
+as a QUIC subprotocol on a listener.
+
+Enabling the HTTP/3 endpoint does not advertise it from the listener’s TCP
+protocols. Ordinary clients first connect using HTTP/1.1 or HTTP/2 and require
+an authenticated `Alt-Svc` response to discover HTTP/3. Advertisement is
+opt-in: configure `alt-svc` under `server.protocols.http_1_1` or
+`server.protocols.http_2`, or configure the corresponding `Http1Config` or
+`Http2Config` with `AltSvc`. Clients configured for HTTP/3 prior knowledge do
+not require discovery.
+
+HTTP/3 uses the listener-wide request and connection limits. In addition, each
+QUIC binding bounds incomplete handshakes with `max-pending-handshakes`, which
+defaults to `256`. This admission check is non-blocking and happens before the
+shared listener admission check, TLS, and connection-state allocation. Retry
+validation can occur before these admission budgets. When a supported Initial
+packet is eligible for connection admission and either budget is exhausted,
+the packet is dropped and clients retry according to QUIC transport behavior.
+
+HTTP/3 request admission is non-blocking and runs before an executor task is
+created or request fields are decoded. When the listener request budget is
+exhausted, Helidon cancels both directions of the request stream with
+`H3_REQUEST_REJECTED`; no application handler runs, and the client can retry
+the request.
+
+The listener `connection-options.read-timeout` is also the HTTP/3 request
+progress timeout. It applies after request admission while reading the initial
+field section, waiting for QPACK encoder progress, and reading request entity
+data. Each request-stream input chunk restarts its applicable wait. A blocked
+QPACK wait restarts only after a complete dynamic table insertion, so
+irrelevant or incomplete encoder-stream input cannot retain admission
+indefinitely. The default is `PT30S`; zero disables the timeout. Expiry cancels
+both directions of the request stream with `H3_REQUEST_CANCELLED` and releases
+the listener request permit when stream-task cleanup completes.
+
+An admitted server handshake has an absolute `handshake-timeout`, which
+defaults to `PT10S`. Packet receipt, retransmission, address validation, and
+partial TLS progress do not restart this deadline. The pending-handshake slot
+is released when the handshake succeeds or when connection cleanup finishes.
+This server protection is independent of both the listener-wide connection
+limit and the negotiated, activity-based QUIC `idle-timeout`. The configured
+duration must be positive and fit in signed 64-bit nanoseconds.
+
+HTTP/3 streaming responses coalesce small writes up to the listener
+`write-buffer-size`; the effective coalescing size is capped by
+`response-dispatch-window-size`. Calling `OutputStream.flush()` sends any
+coalesced data and waits until all preceding response data has been handed to
+the QUIC packet path, but does not wait for peer acknowledgement. The
+`response-dispatch-window-size` option defaults to `65536` and limits the
+response entity payload bytes that can be submitted per stream without waiting
+for that handoff. HTTP/3 frame overhead, headers, trailers, and QUIC
+retransmission state are not included in this limit.
+
+QUIC Retry is disabled by default. Set `server.bindings.quic.retry-enabled` to
+`true` to require address validation before connection allocation. A client’s
+first connection then incurs one additional round trip; after a successful
+handshake, Helidon sends a `NEW_TOKEN` that can validate a later connection
+from the same client IP without binding the client’s source port. The Helidon
+client consumes its cached token for one connection attempt; the stateless
+server does not maintain a replay cache. Address-token keys are local to the
+running listener. Restarting the listener invalidates outstanding tokens, and
+Retry-enabled multi-node deployments require connection-attempt affinity so a
+retried Initial returns to the node that issued its token.
+
+Each HTTP/3 endpoint opens three mandatory unidirectional critical streams: the
+control stream, QPACK encoder stream, and QPACK decoder stream. A local Helidon
+HTTP/3 configuration must therefore set `QuicConfig.maxUniStreams` to at least
+`3`; Helidon rejects a smaller value before opening the listener or client
+connection. This local fail-fast check is distinct from remote-peer
+negotiation: if the remote endpoint does not grant at least three
+unidirectional stream slots before the stream-open timeout, Helidon closes the
+connection with `H3_STREAM_CREATION_ERROR`.
+
+#### Maven Coordinates
+
+To enable HTTP/3 support add the following dependency to your project’s
+`pom.xml`.
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-http3</artifactId>
+</dependency>
+```
+
+QUIC 0-RTT early data is not supported.
 
 ### Static Content Support
 

@@ -6,7 +6,7 @@ Currently known clients in Helidon that we should consider:
 The "HTTP" protocol
 1. HTTP/1.1 client
 2. HTTP/2 client
-3. Eventually HTTP/3 client
+3. HTTP/3 client (typed, explicit, or `Alt-Svc`-driven on TLS)
 4. grpc client (uses HTTP/2 as the base protocol, useless without HTTP/2)
 
 Non-HTTP
@@ -43,4 +43,4 @@ Features that should be common:
 
 1. Proxy support (first do a `CONNECT`, then use the "inner" protocol over the tunneled stream)
 2. ClientService support (for HTTP based protocols - not for WebSocket)
-3. 
+3.

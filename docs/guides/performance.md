@@ -44,6 +44,9 @@ server:
   # Listener-wide connection admission capacity. Connection-oriented bindings
   # acquire a permit before accepting or admitting work and release it when the
   # connection ends or admission/setup fails.
+  # TCP-style bindings may reserve a permit while waiting in accept; QUIC
+  # attempts admission without waiting before allocating connection state. Size
+  # the budget for combined traffic and idle reservations.
   max-connections: NNNN         # 0 or -1 is unlimited.
   max-in-memory-entity: NNNNNN  # Entities smaller than this are buffered in memory vs streamed (bytes)
   max-payload-size: NNNNNNN     # Reject requests with payload sizes greater than this. -1 is unlimited (bytes)
