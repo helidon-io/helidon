@@ -47,11 +47,13 @@ public class Metrics {
         String value() default "";
 
         /**
-         * Scope of the metric, defaults to {@link io.helidon.metrics.api.Meter.Scope#APPLICATION}.
+         * No-op, will be removed.
          *
-         * @return metric scope
+         * @return ignored value
+         * @deprecated No-op, will be removed.
          */
-        String scope() default Meter.Scope.APPLICATION;
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        String scope() default "application";
 
         /**
          * Description of the metric.
@@ -99,11 +101,13 @@ public class Metrics {
         String value() default "";
 
         /**
-         * Scope of the metric, defaults to {@link io.helidon.metrics.api.Meter.Scope#APPLICATION}.
+         * No-op, will be removed.
          *
-         * @return metric scope
+         * @return ignored value
+         * @deprecated No-op, will be removed.
          */
-        String scope() default Meter.Scope.APPLICATION;
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        String scope() default "application";
 
         /**
          * Description of the metric.
@@ -151,11 +155,13 @@ public class Metrics {
         String value() default "";
 
         /**
-         * Scope of the metric, defaults to {@link io.helidon.metrics.api.Meter.Scope#APPLICATION}.
+         * No-op, will be removed.
          *
-         * @return metric scope
+         * @return ignored value
+         * @deprecated No-op, will be removed.
          */
-        String scope() default Meter.Scope.APPLICATION;
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        String scope() default "application";
 
         /**
          * Description of the metric.

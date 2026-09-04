@@ -355,9 +355,6 @@ public interface MetricsFactory {
         } else {
             throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
         }
-        builder.scope()
-                .or(() -> metricsConfig().scoping().defaultValue())
-                .ifPresent(noOpBuilder::scope);
         return noOpBuilder.build();
     }
 }

@@ -15,7 +15,16 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,6 +40,7 @@ import io.helidon.service.registry.Services;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.Collector;
 import io.prometheus.client.exporter.common.TextFormat;
 
 /**
@@ -55,29 +65,14 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     private static final Pattern NON_DIGIT_OR_UNDERSCORE_PREFIX_PATTERN = Pattern.compile("^[0-9_]+.*");
     private static final Pattern NON_IDENTIFIER_PATTERN = Pattern.compile("[^A-Za-z0-9_:]");
 
-    private final String scopeTagName;
-    private final Set<String> scopes;
     private final Set<String> meterNames;
+    private final Map<String, Set<String>> tagSelection;
     private final MediaType resultMediaType;
     private final MeterRegistry meterRegistry;
 
     private MicrometerPrometheusFormatter(Builder builder) {
-        scopeTagName = builder.scopeTagName;
-        meterNames = (builder.meterNameSelection instanceof Set<String> namesSet)
-                ? namesSet
-                : new HashSet<>() {
-                    {
-                        builder.meterNameSelection.forEach(this::add);
-                    }
-                };
-
-        scopes = (builder.scopeSelection instanceof Set<String> scopesSet)
-                ? scopesSet
-                : new HashSet<>() {
-                    {
-                        builder.scopeSelection.forEach(this::add);
-                    }
-                };
+        meterNames = copyToSet(builder.meterNameSelection);
+        tagSelection = builder.tagSelection;
         resultMediaType = builder.resultMediaType;
         meterRegistry = Objects.requireNonNullElseGet(builder.meterRegistry,
                                                       () -> Services.get(MeterRegistry.class));
@@ -130,9 +125,25 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         };
     }
 
+    static Optional<PrometheusMeterRegistry> prometheusMeterRegistry(MeterRegistry meterRegistry) {
+        io.micrometer.core.instrument.MeterRegistry mMeterRegistry;
+        try {
+            mMeterRegistry = meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+        } catch (ClassCastException ignored) {
+            return Optional.empty();
+        }
+        if (mMeterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
+            return compositeMeterRegistry.getRegistries().stream()
+                    .filter(PrometheusMeterRegistry.class::isInstance)
+                    .findFirst()
+                    .map(PrometheusMeterRegistry.class::cast);
+        }
+        return Optional.empty();
+    }
+
     /**
      * Returns the Prometheus output governed by the previously-specified media type, optionally filtered
-     * by the previously-specified scope and meter name selections.
+     * by the previously-specified tag and meter name selections.
      *
      * @return filtered Prometheus output
      */
@@ -142,25 +153,17 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         Optional<PrometheusMeterRegistry> prometheusMeterRegistry = prometheusMeterRegistry(meterRegistry);
         if (prometheusMeterRegistry.isPresent()) {
 
-            /*
-            Optimize for the no-selection case (neither scope nor name selections were requested).
-             */
-            Set<String> meterNamesOfInterest;
-
-            if (meterNames.isEmpty() && scopes.isEmpty()) {
-                meterNamesOfInterest = null; // The Prometheus registry's scrape method treats null as "match all names."
-            } else {
-                meterNamesOfInterest = meterNamesOfInterest(prometheusMeterRegistry.get(),
-                                     scopes,
-                                     meterNames);
-                if (meterNamesOfInterest.isEmpty()) {
-                    return Optional.empty();
-                }
+            Set<String> meterNamesOfInterest = meterNames.isEmpty()
+                    ? null // The Prometheus registry's scrape method treats null as "match all names."
+                    : meterNamesOfInterest(prometheusMeterRegistry.get(), meterNames);
+            if (meterNamesOfInterest != null && meterNamesOfInterest.isEmpty()) {
+                return Optional.empty();
             }
 
-            String prometheusOutput = prometheusMeterRegistry.get()
-                    .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
-                            meterNamesOfInterest);
+            String prometheusOutput = tagSelection.isEmpty()
+                    ? prometheusMeterRegistry.get()
+                            .scrape(MEDIA_TYPE_TO_FORMAT.get(resultMediaType), meterNamesOfInterest)
+                    : scrapeSelected(prometheusMeterRegistry.get(), meterNamesOfInterest);
 
             return prometheusOutput.isBlank() ? Optional.empty() : Optional.of(prometheusOutput);
         }
@@ -174,7 +177,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
 
     /**
      * Prepares a set containing the names of meters from the specified Prometheus meter registry which match
-     * the specified scope and meter name selections.
+     * the specified meter name selections.
      * <p>
      * For meters with multiple values, the Prometheus registry essentially creates and actually displays in its output
      * additional or "child" meters. A child meter's name is the parent's name plus a suffix consisting
@@ -192,23 +195,17 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
      * </p>
      *
      * @param prometheusMeterRegistry Prometheus meter registry to query
-     * @param scopes          scope names to select
      * @param names           meter names to select
      * @return set of matching meter names (with units and suffixes as needed) to match the names as stored in the meter registry
      */
     Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
-                                     Set<String> scopes,
                                      Set<String> names) {
 
         Set<String> result = new HashSet<>();
 
         for (Meter meter : prometheusMeterRegistry.getMeters()) {
             String meterName = meter.getId().getName();
-            if ((!names.isEmpty() && !names.contains(meterName))
-                || (!scopes.isEmpty()
-                            && scopeTagName != null
-                            && !scopeTagName.isBlank()
-                            && !scopes.contains(meter.getId().getTag(scopeTagName)))) {
+            if (!names.isEmpty() && !names.contains(meterName)) {
                 continue;
             }
             Set<String> allUnitsForMeterName = new HashSet<>();
@@ -236,20 +233,10 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         return result;
     }
 
-    static Optional<PrometheusMeterRegistry> prometheusMeterRegistry(MeterRegistry meterRegistry) {
-        io.micrometer.core.instrument.MeterRegistry mMeterRegistry;
-        try {
-            mMeterRegistry = meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
-        } catch (ClassCastException ignored) {
-            return Optional.empty();
-        }
-        if (mMeterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
-            return compositeMeterRegistry.getRegistries().stream()
-                    .filter(PrometheusMeterRegistry.class::isInstance)
-                    .findFirst()
-                    .map(PrometheusMeterRegistry.class::cast);
-        }
-        return Optional.empty();
+    private static Set<String> copyToSet(Iterable<String> values) {
+        Set<String> result = new HashSet<>();
+        values.forEach(value -> result.add(Objects.requireNonNull(value)));
+        return Set.copyOf(result);
     }
 
     private static String flushForMeterAndClear(StringBuilder helpAndType, StringBuilder metricData) {
@@ -267,14 +254,59 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         return unit == null ? "" : unit;
     }
 
+    private String scrapeSelected(PrometheusMeterRegistry prometheusMeterRegistry, Set<String> meterNamesOfInterest) {
+        Enumeration<Collector.MetricFamilySamples> metricFamilySamples = meterNamesOfInterest == null
+                ? prometheusMeterRegistry.getPrometheusRegistry().metricFamilySamples()
+                : prometheusMeterRegistry.getPrometheusRegistry().filteredMetricFamilySamples(meterNamesOfInterest);
+        List<Collector.MetricFamilySamples> matchingFamilies = new ArrayList<>();
+
+        while (metricFamilySamples.hasMoreElements()) {
+            Collector.MetricFamilySamples family = metricFamilySamples.nextElement();
+            List<Collector.MetricFamilySamples.Sample> matchingSamples = family.samples.stream()
+                    .filter(sample -> matchesTagSelection(prometheusMeterRegistry, sample))
+                    .toList();
+            if (!matchingSamples.isEmpty()) {
+                matchingFamilies.add(new Collector.MetricFamilySamples(family.name,
+                                                                        family.unit,
+                                                                        family.type,
+                                                                        family.help,
+                                                                        matchingSamples));
+            }
+        }
+        if (matchingFamilies.isEmpty()) {
+            return "";
+        }
+
+        StringWriter result = new StringWriter();
+        try {
+            TextFormat.writeFormat(MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
+                                   result,
+                                   Collections.enumeration(matchingFamilies));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Error preparing Prometheus metrics output", e);
+        }
+        return result.toString();
+    }
+
+    private boolean matchesTagSelection(PrometheusMeterRegistry prometheusMeterRegistry,
+                                        Collector.MetricFamilySamples.Sample sample) {
+        for (Map.Entry<String, Set<String>> selection : tagSelection.entrySet()) {
+            String tagName = prometheusMeterRegistry.config().namingConvention().tagKey(selection.getKey());
+            int labelIndex = sample.labelNames.indexOf(tagName);
+            if (labelIndex < 0 || !selection.getValue().contains(sample.labelValues.get(labelIndex))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Builder for creating a tailored Prometheus formatter.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, MicrometerPrometheusFormatter> {
 
         private Iterable<String> meterNameSelection = Set.of();
-        private String scopeTagName;
-        private Iterable<String> scopeSelection = Set.of();
+        private Map<String, Set<String>> tagSelection = Map.of();
         private MediaType resultMediaType = MediaTypes.TEXT_PLAIN;
         private MeterRegistry meterRegistry;
 
@@ -300,29 +332,49 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
          * @return updated builder
          */
         public Builder meterNameSelection(Iterable<String> meterNameSelection) {
-            this.meterNameSelection = meterNameSelection;
+            this.meterNameSelection = Objects.requireNonNull(meterNameSelection);
             return identity();
         }
 
         /**
-         * Sets the scope value with which to filter the output.
+         * Sets the tag names and allowed values with which to filter the output.
+         * A meter must match one allowed value for every configured tag name.
          *
-         * @param scopeSelection scope to select
+         * @param tagSelection tag names and their allowed values
          * @return updated builder
          */
-        public Builder scopeSelection(Iterable<String> scopeSelection) {
-            this.scopeSelection = scopeSelection;
+        public Builder tagSelection(Map<String, ? extends Collection<String>> tagSelection) {
+            Objects.requireNonNull(tagSelection);
+            Map<String, Set<String>> copy = new HashMap<>();
+            tagSelection.forEach((name, values) -> copy.put(Objects.requireNonNull(name),
+                                                            Set.copyOf(Objects.requireNonNull(values))));
+            this.tagSelection = Map.copyOf(copy);
             return identity();
         }
 
         /**
-         * Sets the scope tag name with which to filter the output.
+         * No-op, will be removed.
          *
-         * @param scopeTagName scope tag name
+         * @param ignoredScopeSelection ignored; must not be {@code null}
          * @return updated builder
+         * @deprecated No-op, will be removed.
          */
-        public Builder scopeTagName(String scopeTagName) {
-            this.scopeTagName = scopeTagName;
+        @Deprecated(since = "27.0.0", forRemoval = true)
+        public Builder scopeSelection(Iterable<String> ignoredScopeSelection) {
+            Objects.requireNonNull(ignoredScopeSelection);
+            return identity();
+        }
+
+        /**
+         * No-op, will be removed.
+         *
+         * @param ignoredScopeTagName ignored; must not be {@code null}
+         * @return updated builder
+         * @deprecated No-op, will be removed.
+         */
+        @Deprecated(since = "27.0.0", forRemoval = true)
+        public Builder scopeTagName(String ignoredScopeTagName) {
+            Objects.requireNonNull(ignoredScopeTagName);
             return identity();
         }
 

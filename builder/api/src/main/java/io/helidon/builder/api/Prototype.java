@@ -196,6 +196,14 @@ public final class Prototype {
          * @return whether this is a root node, ignored if {@link #value()} is an empty string
          */
         boolean root() default true;
+
+        /**
+         * Whether to include this type in generated configuration metadata.
+         * This setting does not affect configuration reading.
+         *
+         * @return whether to include this type in generated configuration metadata
+         */
+        boolean metadata() default true;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 package io.helidon.webserver.observe.metrics;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
@@ -39,28 +42,51 @@ public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatte
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                       MetricsConfig metricsConfig,
                                                       MeterRegistry meterRegistry,
+                                                      Map<String, Collection<String>> tagSelection,
+                                                      Iterable<String> nameSelection) {
+        Objects.requireNonNull(mediaType);
+        Objects.requireNonNull(metricsConfig);
+        Objects.requireNonNull(meterRegistry);
+        Objects.requireNonNull(tagSelection);
+        Objects.requireNonNull(nameSelection);
+        return mediaType.type().equals(MediaTypes.APPLICATION_JSON.type())
+                && mediaType.subtype().equals(MediaTypes.APPLICATION_JSON.subtype())
+                ? Optional.of(create(metricsConfig, meterRegistry, tagSelection, nameSelection))
+                : Optional.empty();
+    }
+
+    /**
+     * No-op, will be removed.
+     *
+     * @param mediaType media type of the desired output
+     * @param metricsConfig metrics configuration
+     * @param meterRegistry meter registry from which to gather data
+     * @param scopeTagName ignored; must not be {@code null}
+     * @param scopeSelection ignored; must not be {@code null}
+     * @param nameSelection meter names to format; empty means no name-based restriction
+     * @return compatible formatter; empty if none
+     * @deprecated No-op, will be removed.
+     */
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    @Override
+    public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
+                                                      MetricsConfig metricsConfig,
+                                                      MeterRegistry meterRegistry,
                                                       Optional<String> scopeTagName,
                                                       Iterable<String> scopeSelection,
                                                       Iterable<String> nameSelection) {
-        return mediaType.type().equals(MediaTypes.APPLICATION_JSON.type())
-                && mediaType.subtype().equals(MediaTypes.APPLICATION_JSON.subtype())
-                ? Optional.of(create(metricsConfig,
-                                     meterRegistry,
-                                     scopeTagName,
-                                     scopeSelection,
-                                     nameSelection))
-                : Optional.empty();
+        Objects.requireNonNull(scopeTagName);
+        Objects.requireNonNull(scopeSelection);
+        return formatter(mediaType, metricsConfig, meterRegistry, Map.of(), nameSelection);
     }
 
     private JsonFormatter create(MetricsConfig metricsConfig,
                                  MeterRegistry meterRegistry,
-                                 Optional<String> scopeTagName,
-                                 Iterable<String> scopeSelection,
+                                 Map<String, Collection<String>> tagSelection,
                                  Iterable<String> nameSelection) {
-        JsonFormatter.Builder builder = JsonFormatter.builder(metricsConfig, meterRegistry)
-                .scopeSelection(scopeSelection)
-                .meterNameSelection(nameSelection);
-        scopeTagName.ifPresent(builder::scopeTagName);
-        return builder.build();
+        return JsonFormatter.builder(metricsConfig, meterRegistry)
+                .tagSelection(tagSelection)
+                .meterNameSelection(nameSelection)
+                .build();
     }
 }

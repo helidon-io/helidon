@@ -47,22 +47,19 @@ class NoOpMeter implements Meter, NoOpWrapper {
     private final String unit;
     private final String description;
     private final Type type;
-    private final String scope;
 
     private NoOpMeter(NoOpMeter.Builder<?, ?> builder) {
         this(new NoOpMeter.Id(builder.name, builder.tags),
              builder.unit,
              builder.description,
-             builder.type,
-             builder.scope);
+             builder.type);
     }
 
-    private NoOpMeter(Id id, String baseUnit, String description, Type type, String scope) {
+    private NoOpMeter(Id id, String baseUnit, String description, Type type) {
         this.id = id;
         this.unit = Objects.requireNonNullElse(baseUnit, "");
         this.description = Objects.requireNonNullElse(description, "");
         this.type = type;
-        this.scope = scope;
     }
 
     static Map<String, String> tagsMap(Iterable<Tag> tags) {
@@ -89,11 +86,6 @@ class NoOpMeter implements Meter, NoOpWrapper {
     @Override
     public Type type() {
         return type;
-    }
-
-    @Override
-    public Optional<String> scope() {
-        return Optional.ofNullable(scope);
     }
 
     private static NoOpMeter.Id create(NoOpMeter.Builder<?, ?> builder) {
@@ -158,7 +150,6 @@ class NoOpMeter implements Meter, NoOpWrapper {
         private final Type type;
         private String description;
         private String unit;
-        private String scope;
 
         private Builder(String name, Type type) {
             this.name = name;
@@ -187,11 +178,6 @@ class NoOpMeter implements Meter, NoOpWrapper {
             return identity();
         }
 
-        public B scope(String scope) {
-            this.scope = scope;
-            return identity();
-        }
-
         public B identity() {
             return (B) this;
         }
@@ -210,10 +196,6 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         public Optional<String> description() {
             return Optional.ofNullable(description);
-        }
-
-        public Optional<String> scope() {
-            return Optional.ofNullable(scope);
         }
 
         @Override

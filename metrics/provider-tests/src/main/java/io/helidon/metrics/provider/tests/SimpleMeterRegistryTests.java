@@ -101,37 +101,43 @@ class SimpleMeterRegistryTests {
     }
 
     @Test
-    void testDisabledMeters() {
+    @SuppressWarnings("removal")
+    void testScopingFiltersAreIgnored() {
         Config config = Config.just(ConfigSources.create(Map.of("scoping.scopes.0.name", "application",
                                                                  "scoping.scopes.0.filter.exclude", ".*Ignore.*")));
         MeterRegistry selectiveRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create(config));
+        try {
+            Counter formerlyExcluded = selectiveRegistry.getOrCreate(metricsFactory.counterBuilder("pleaseIgnoreThis"));
+            Counter included = selectiveRegistry.getOrCreate(metricsFactory.counterBuilder("pleaseIncludeThis"));
+            assertThat("Scoping filter does not suppress registration", selectiveRegistry.meters(), hasSize(2));
+            assertThat("Formerly excluded counter retrieved",
+                       selectiveRegistry.counter("pleaseIgnoreThis", List.of()),
+                       OptionalMatcher.optionalPresent());
 
-        Counter shouldBeNoOpCounter = selectiveRegistry.getOrCreate(metricsFactory.counterBuilder("pleaseIgnoreThis"));
-        Counter shouldBeLive = selectiveRegistry.getOrCreate(metricsFactory.counterBuilder("pleaseIncludeThis"));
-        assertThat("Counters after ignored registration", selectiveRegistry.meters(), hasSize(1));
-        assertThat("Counter retrieved",
-                   selectiveRegistry.counter("pleaseIncludeThis", List.of()),
-                   OptionalMatcher.optionalPresent());
+            formerlyExcluded.increment();
+            included.increment();
 
-        shouldBeNoOpCounter.increment();
-        shouldBeLive.increment();
-
-        assertThat("Incremented disabled counter", shouldBeNoOpCounter.count(), is(0L));
-        assertThat("Incremented live counter", shouldBeLive.count(), is(1L));
+            assertThat("Incremented formerly excluded counter", formerlyExcluded.count(), is(1L));
+            assertThat("Incremented included counter", included.count(), is(1L));
+        } finally {
+            selectiveRegistry.close();
+        }
     }
 
     @Test
-    void testDisabledMeterUsesRegistryDefaultScope() {
+    @SuppressWarnings("removal")
+    void testConfiguredScopeDoesNotAffectMeter() {
         Config config = Config.just(ConfigSources.create(Map.of("scoping.default", "custom",
                                                                  "scoping.scopes.0.name", "custom",
                                                                  "scoping.scopes.0.filter.exclude", "disabled")));
         MeterRegistry customRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create(config));
         try {
-            Counter disabledCounter = customRegistry.getOrCreate(metricsFactory.counterBuilder("disabled"));
+            Counter counter = customRegistry.getOrCreate(metricsFactory.counterBuilder("disabled"));
+            counter.increment();
 
-            assertThat("Disabled meter uses the custom registry default scope",
-                       disabledCounter.scope(),
-                       OptionalMatcher.optionalValue(is("custom")));
+            assertThat("Configured default scope is ignored", counter.scope(), OptionalMatcher.optionalEmpty());
+            assertThat("Configured default scope does not add tags", counter.id().tags(), emptyIterable());
+            assertThat("Configured scope filter is ignored", counter.count(), is(1L));
         } finally {
             customRegistry.close();
         }

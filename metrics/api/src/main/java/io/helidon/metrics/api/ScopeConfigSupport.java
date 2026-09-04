@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,14 @@ class ScopeConfigSupport {
     }
 
     /**
-     * Sets the include expression using a {@link java.lang.String} compiled automatically
-     * into a {@link java.util.regex.Pattern}.
+     * No-op, will be removed.
      *
      * @param builderBase builder
-     * @param includeString include string
+     * @param includeString ignored value
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    @Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
     @Prototype.BuilderMethod
     static void include(ScopeConfig.BuilderBase<?, ?> builderBase, String includeString) {
         Objects.requireNonNull(includeString, "include expression");
@@ -39,12 +41,14 @@ class ScopeConfigSupport {
     }
 
     /**
-     * Sets the exclude expression using a {@link java.lang.String} compiled automatically
-     * into a {@link java.util.regex.Pattern}.
+     * No-op, will be removed.
      *
      * @param builderBase builder
-     * @param excludeString exclude string
+     * @param excludeString ignored value
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    @Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
     @Prototype.BuilderMethod
     static void exclude(ScopeConfig.BuilderBase<?, ?> builderBase, String excludeString) {
         Objects.requireNonNull(excludeString, "exclude expression");

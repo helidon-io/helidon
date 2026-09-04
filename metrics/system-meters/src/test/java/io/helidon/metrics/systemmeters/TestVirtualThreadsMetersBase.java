@@ -16,12 +16,9 @@
 package io.helidon.metrics.systemmeters;
 
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
@@ -37,31 +34,31 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class TestVirtualThreadsMetersBase {
 
     private final MeterRegistry meterRegistry;
-    private final Iterable<Tag> baseTags;
+    private final List<Tag> meterTags;
 
-    TestVirtualThreadsMetersBase(MeterRegistry meterRegistry, SystemTagsManager systemTagsManager) {
+    TestVirtualThreadsMetersBase(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
-        this.baseTags = systemTagsManager.withScopeTag(List.of(), Optional.of(Meter.Scope.BASE));
+        this.meterTags = List.of();
     }
 
     MeterRegistry meterRegistry() {
         return meterRegistry;
     }
 
-    Iterable<Tag> baseTags() {
-        return baseTags;
+    List<Tag> meterTags() {
+        return meterTags;
     }
 
     @Test
     void checkNonCountVthreadMetersArePresentAfterStartup() {
         assertThat("Submit failures gauge",
-                   meterRegistry().gauge(METER_NAME_PREFIX + SUBMIT_FAILURES, baseTags()),
+                   meterRegistry().gauge(METER_NAME_PREFIX + SUBMIT_FAILURES, meterTags()),
                    OptionalMatcher.optionalPresent());
         assertThat("Pinned gauge",
-                   meterRegistry().gauge(METER_NAME_PREFIX + PINNED, baseTags()),
+                   meterRegistry().gauge(METER_NAME_PREFIX + PINNED, meterTags()),
                    OptionalMatcher.optionalPresent());
         assertThat("Pinned distribution summary",
-                   meterRegistry().timer(METER_NAME_PREFIX + RECENT_PINNED, baseTags()),
+                   meterRegistry().timer(METER_NAME_PREFIX + RECENT_PINNED, meterTags()),
                    OptionalMatcher.optionalPresent());
     }
 }

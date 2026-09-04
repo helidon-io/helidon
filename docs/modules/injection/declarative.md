@@ -1057,8 +1057,7 @@ on all metrics on the method, and tags in the metric annotation will only be
 used by that metric.
 
 The example below shows additional tags. The counter on method `counted` will
-have the following tags: `service=Metered;method=counted` (and of course the
-scope tag that is always added).
+have the following tags: `service=Metered;method=counted`.
 
 Example of a counted method with type tags and counter tags
 
