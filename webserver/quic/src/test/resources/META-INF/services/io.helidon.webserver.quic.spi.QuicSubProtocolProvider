@@ -1,0 +1,3 @@
+io.helidon.webserver.quic.QuicSubProtocolConfigTest$FirstTestQuicSubProtocolProvider
+io.helidon.webserver.quic.QuicSubProtocolConfigTest$SecondTestQuicSubProtocolProvider
+io.helidon.webserver.quic.QuicTransportBindingTest$EchoTestQuicSubProtocolProvider

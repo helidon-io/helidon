@@ -46,6 +46,7 @@
         <module>grpc-tracing</module>
         <module>hsts</module>
         <module>http2</module>
+        <module>quic</module>
         <module>jsonrpc</module>
         <module>observe</module>
         <module>security</module>
