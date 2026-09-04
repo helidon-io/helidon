@@ -44,17 +44,22 @@ class TestMetricsConfigDeprecation {
     private final TestHandler testHandler = new TestHandler();
 
     @BeforeEach
-    void addTestHandler() {
+    void setUp() {
+        MetricsFactory.closeAll();
         LOGGER.addHandler(testHandler);
     }
 
     @AfterEach
-    void removeTestHandler() {
+    void tearDown() {
         LOGGER.removeHandler(testHandler);
+        MetricsFactory.closeAll();
     }
 
     @Test
-    void warnsAboutPrometheusHistogramFlavor() {
+    void warnsOnceAboutPrometheusHistogramFlavor() {
+        MetricsConfig.create(Config.empty());
+        assertThat("Deprecation warnings without the setting", testHandler.records(), empty());
+
         Config config = Config.just("""
                                             metrics:
                                               prometheus:
@@ -63,12 +68,15 @@ class TestMetricsConfigDeprecation {
                                     MediaTypes.APPLICATION_YAML)
                 .get("metrics");
 
+        MetricsFactoryManager.getMetricsFactory(config);
+        assertThat("Deprecation warnings during factory initialization", testHandler.records(), hasSize(1));
+
         MetricsConfig metricsConfig = MetricsConfig.create(config);
 
         assertThat("Raw Prometheus setting",
                    metricsConfig.lookupConfig("prometheus.histogramFlavor"),
                    is(Optional.of("VictoriaMetrics")));
-        assertThat("Deprecation warnings", testHandler.records(), hasSize(1));
+        assertThat("Deprecation warnings after a later config build", testHandler.records(), hasSize(1));
         LogRecord warning = testHandler.records().getFirst();
         assertThat("Warning level", warning.getLevel(), is(Level.WARNING));
         assertThat("Warning message",
@@ -77,13 +85,6 @@ class TestMetricsConfigDeprecation {
                          containsString("deprecated as of Helidon 4.5.5"),
                          containsString("future release of the Prometheus Java client will no longer honor it"),
                          containsString("future Helidon release will adopt that Prometheus client version")));
-    }
-
-    @Test
-    void doesNotWarnWithoutPrometheusHistogramFlavor() {
-        MetricsConfig.create(Config.empty());
-
-        assertThat("Deprecation warnings", testHandler.records(), empty());
     }
 
     private static class TestHandler extends Handler {
