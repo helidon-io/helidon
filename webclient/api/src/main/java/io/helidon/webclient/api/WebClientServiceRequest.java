@@ -90,9 +90,11 @@ public interface WebClientServiceRequest {
     CompletionStage<WebClientServiceRequest> whenSent();
 
     /**
-     * Completes when the full processing of this request is done (e.g. we have received a full response).
+     * Completes when processing of the request and response has finished.
+     * The exact completion point is protocol-specific and may follow a full entity read, explicit response close, or an
+     * entity-processing failure. Normal completion does not imply that the response entity was fully read successfully.
      *
-     * @return completion stage that finishes when we receive and fully read response from the server
+     * @return completion stage that finishes when request and response processing has completed
      */
     CompletionStage<WebClientServiceResponse> whenComplete();
 

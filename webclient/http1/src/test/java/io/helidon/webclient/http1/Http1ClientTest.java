@@ -40,18 +40,25 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
@@ -75,6 +82,10 @@ import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.ContentDecoder;
+import io.helidon.http.encoding.ContentEncoder;
+import io.helidon.http.encoding.ContentEncoding;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.http.http1.Http1LoggingConnectionListener;
 import io.helidon.http.media.EntityReader;
@@ -90,6 +101,7 @@ import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -1102,6 +1114,316 @@ class Http1ClientTest {
         assertThat(connection.releaseCount(), is(0));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"\rX", "\n0"})
+    void testInvalidChunkDataDelimiterClosesConnection(String delimiter) {
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "\r\n"
+                + "2\r\n"
+                + "OK"
+                + delimiter
+                + "0\r\n\r\n";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request();
+        var inputStream = response.entity().inputStream();
+
+        IllegalStateException firstFailure = assertThrows(IllegalStateException.class, inputStream::readAllBytes);
+        IllegalStateException secondFailure = assertThrows(IllegalStateException.class, inputStream::read);
+
+        assertThat(firstFailure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
+        assertThat(secondFailure.getMessage(), is(firstFailure.getMessage()));
+        assertThat(secondFailure, not(sameInstance(firstFailure)));
+
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void testEagerDecoderDelimiterFailureCompletesExceptionally() {
+        AtomicReference<CompletionStage<WebClientServiceResponse>> completion = new AtomicReference<>();
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("gzip", network -> {
+                                             try {
+                                                 return new GZIPInputStream(network);
+                                             } catch (IOException e) {
+                                                 throw new UncheckedIOException(e);
+                                             }
+                                         }))
+                                         .build())
+                .addService((chain, request) -> {
+                    completion.set(request.whenComplete());
+                    return chain.proceed(request);
+                })
+                .build();
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "Content-Encoding: gzip\r\n"
+                + "\r\n"
+                + "2\r\n"
+                + "OK\rX"
+                + "0\r\n\r\n";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        IllegalStateException requestFailure = assertThrows(IllegalStateException.class,
+                                                             () -> client.get("http://localhost:" + dummyPort + "/test")
+                                                                     .connection(connection)
+                                                                     .request());
+        CompletionException completionFailure = assertThrows(CompletionException.class,
+                                                              () -> completion.get().toCompletableFuture().join());
+
+        assertThat(requestFailure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
+        assertThat(completionFailure.getCause(), sameInstance(requestFailure));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "00", "0;ext=value"})
+    void testFullyReadDeflateChunkedResponseReleasesConnection(String finalChunk) {
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("deflate", InflaterInputStream::new))
+                                         .build())
+                .build();
+        byte[] encodedEntity = deflate("OK");
+        String rawResponse = chunkedDeflateResponse(encodedEntity, finalChunk + "\r\n\r\n");
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.entity().as(String.class), is("OK"));
+        }
+
+        assertThat(connection.closeCount(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+    }
+
+    @Test
+    void testFullyReadDeflateChunkedResponseWithFragmentedFinalChunkReleasesConnection() {
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("deflate", InflaterInputStream::new))
+                                         .build())
+                .build();
+        byte[] encodedEntity = deflate("OK");
+        String finalChunk = "0\r\n\r\n";
+        String rawResponse = chunkedDeflateResponse(encodedEntity, finalChunk);
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse,
+                                                                              rawResponse.length() - finalChunk.length());
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.entity().as(String.class), is("OK"));
+        }
+
+        assertThat(connection.closeCount(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+    }
+
+    @Test
+    void testFullyReadDeflateChunkedResponsePreservesTrailers() {
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("deflate", InflaterInputStream::new))
+                                         .build())
+                .build();
+        byte[] encodedEntity = deflate("OK");
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "Content-Encoding: deflate\r\n"
+                + "Trailer: X-Test\r\n"
+                + "\r\n"
+                + Integer.toHexString(encodedEntity.length) + "\r\n"
+                + new String(encodedEntity, StandardCharsets.ISO_8859_1)
+                + "\r\n"
+                + "0\r\n"
+                + "X-Test: value\r\n"
+                + "\r\n";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse) {
+            @Override
+            public DataReader reader() {
+                if (closeCount() > 0) {
+                    throw new IllegalStateException("Connection is closed");
+                }
+                return super.reader();
+            }
+        };
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.entity().as(String.class), is("OK"));
+            assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+        }
+
+        assertThat(connection.closeCount(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+    }
+
+    @Test
+    void testInvalidDeflateChunkedTrailersCloseConnection() {
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("deflate", InflaterInputStream::new))
+                                         .build())
+                .build();
+        byte[] encodedEntity = deflate("OK");
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "Content-Encoding: deflate\r\n"
+                + "Trailer: X-Test\r\n"
+                + "\r\n"
+                + Integer.toHexString(encodedEntity.length) + "\r\n"
+                + new String(encodedEntity, StandardCharsets.ISO_8859_1)
+                + "\r\n"
+                + "0\r\n"
+                + "invalid trailer\r\n"
+                + "\r\n";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+        Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request();
+
+        try {
+            assertThrows(RuntimeException.class, () -> response.entity().as(String.class));
+            assertThat(connection.closeCount(), is(1));
+            assertThat(connection.releaseCount(), is(0));
+        } finally {
+            response.close();
+        }
+    }
+
+    @Test
+    void testDeflateChunkedTrailersWithSurplusCloseConnection() {
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("deflate", InflaterInputStream::new))
+                                         .build())
+                .build();
+        byte[] encodedEntity = deflate("OK");
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "Content-Encoding: deflate\r\n"
+                + "Trailer: X-Test\r\n"
+                + "\r\n"
+                + Integer.toHexString(encodedEntity.length) + "\r\n"
+                + new String(encodedEntity, StandardCharsets.ISO_8859_1)
+                + "\r\n"
+                + "0\r\n"
+                + "X-Test: value\r\n"
+                + "\r\n"
+                + "surplus";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                         () -> response.entity().as(String.class));
+            assertThat(failure.getMessage(), is("Unexpected data after response trailers"));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void testIncompleteDeflateChunkedResponseFails() {
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("deflate", InflaterInputStream::new))
+                                         .build())
+                .build();
+        byte[] encodedEntity = deflate("OK");
+        String rawResponse = chunkedDeflateResponse(encodedEntity, "");
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse, null, true);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                         () -> response.entity().as(String.class));
+            assertThat(failure.getMessage(), is("HTTP response chunked transfer coding is incomplete"));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1\r\nX\r\n0\r\n\r\n", "invalid\r\n", "0\r\n\rX"})
+    void testInvalidDeflateChunkedCompletionFails(String remainingFraming) {
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("deflate", InflaterInputStream::new))
+                                         .build())
+                .build();
+        byte[] encodedEntity = deflate("OK");
+        String rawResponse = chunkedDeflateResponse(encodedEntity, remainingFraming);
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                         () -> response.entity().as(String.class));
+            assertThat(failure.getMessage(), is("HTTP response chunked transfer coding is incomplete"));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void testFullyReadDeflateChunkedResponseWithSurplusClosesConnection() {
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("deflate", InflaterInputStream::new))
+                                         .build())
+                .build();
+        byte[] encodedEntity = deflate("OK");
+        String rawResponse = chunkedDeflateResponse(encodedEntity, "0\r\n\r\nsurplus");
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.entity().as(String.class), is("OK"));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void testInvalidChunkDataDelimiterPreservesFailureOnEntityClose() {
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "\r\n"
+                + "2\r\n"
+                + "OK\rX"
+                + "0\r\n\r\n";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                         () -> response.entity().as(String.class));
+            assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
     @Test
     void testMalformedReasonPhraseBeforeContinueClosesConnection() {
         String rawContinueResponse = "HTTP/1.1 100 unsafe\u0000value\r\n\r\n";
@@ -1801,12 +2123,78 @@ class Http1ClientTest {
         );
     }
 
+    private static byte[] deflate(String value) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (var deflater = new DeflaterOutputStream(output)) {
+            deflater.write(value.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return output.toByteArray();
+    }
+
+    private static String chunkedDeflateResponse(byte[] encodedEntity, String finalChunk) {
+        return "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "Content-Encoding: deflate\r\n"
+                + "\r\n"
+                + Integer.toHexString(encodedEntity.length) + "\r\n"
+                + new String(encodedEntity, StandardCharsets.ISO_8859_1)
+                + "\r\n"
+                + finalChunk;
+    }
+
     private enum RelativeUrisValue {
         TRUE, FALSE, DEFAULT
     }
 
     private enum ProxyConfiguration {
         UNSET, NO_PROXY, HTTP, HTTP_SET_NO_PROXY_HOST, SYSTEM_UNSET, SYSTEM_SET_PROXY, SYSTEM_SET_PROXY_AND_NON_PROXY_HOST
+    }
+
+    private static final class TestContentEncoding implements ContentEncoding {
+        private final String name;
+        private final ContentDecoder decoder;
+
+        private TestContentEncoding(String name, ContentDecoder decoder) {
+            this.name = name;
+            this.decoder = decoder;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public String type() {
+            return name;
+        }
+
+        @Override
+        public Set<String> ids() {
+            return Set.of(name);
+        }
+
+        @Override
+        public boolean supportsEncoding() {
+            return false;
+        }
+
+        @Override
+        public boolean supportsDecoding() {
+            return true;
+        }
+
+        @Override
+        public ContentDecoder decoder() {
+            return decoder;
+        }
+
+        @Override
+        public ContentEncoder encoder() {
+            return ContentEncoder.NO_OP;
+        }
     }
 
     private static class FakeHttp1ClientConnection implements ClientConnection {
@@ -1825,6 +2213,7 @@ class Http1ClientTest {
         private ExecutorService webServerEmulator;
         private String prologue;
         private boolean proxyConnectionHeader;
+        private int rawResponseSplitAt = -1;
         private int releaseCount;
         private int closeCount;
 
@@ -1838,6 +2227,11 @@ class Http1ClientTest {
 
         FakeHttp1ClientConnection(String rawResponse) {
             this(rawResponse, null);
+        }
+
+        FakeHttp1ClientConnection(String rawResponse, int rawResponseSplitAt) {
+            this(rawResponse);
+            this.rawResponseSplitAt = rawResponseSplitAt;
         }
 
         FakeHttp1ClientConnection(String rawResponse, String rawContinueResponse) {
@@ -2127,7 +2521,14 @@ class Http1ClientTest {
             }
 
             if (rawResponse != null) {
-                serverWriter.write(BufferData.create(rawResponse.getBytes(StandardCharsets.US_ASCII)));
+                if (rawResponseSplitAt == -1) {
+                    serverWriter.write(BufferData.create(rawResponse.getBytes(StandardCharsets.ISO_8859_1)));
+                } else {
+                    serverWriter.write(BufferData.create(rawResponse.substring(0, rawResponseSplitAt)
+                                                                  .getBytes(StandardCharsets.ISO_8859_1)));
+                    serverWriter.write(BufferData.create(rawResponse.substring(rawResponseSplitAt)
+                                                                  .getBytes(StandardCharsets.ISO_8859_1)));
+                }
                 return;
             }
 

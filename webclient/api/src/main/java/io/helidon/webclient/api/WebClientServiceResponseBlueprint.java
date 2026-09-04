@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,14 +63,16 @@ interface WebClientServiceResponseBlueprint {
 
     /**
      * Client connection/stream that was used to handle this request.
-     * This resource will be closed/released once the entity is fully read, depending on keep alive configuration.
+     * The client implementation manages this resource and decides whether to release it for reuse or close it.
      *
      * @return connection resource
      */
     ReleasableResource connection();
 
     /**
-     * Completable future to be completed by the client response when the entity is fully read.
+     * Completable future used by the client implementation to report that response processing has completed.
+     * The exact completion point is protocol-specific and may follow a full entity read, explicit response close, or an
+     * entity-processing failure. Normal completion does not imply that the entity was fully read successfully.
      *
      * @return completable future to be finished by the client response
      */
