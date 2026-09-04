@@ -21,17 +21,19 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.common.Api;
@@ -43,12 +45,14 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -63,14 +67,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     /**
      * Helidon user agent request header.
      */
-    public static final Header USER_AGENT_HEADER = HeaderValues.create(HeaderNames.USER_AGENT,
-                                                                       "Helidon " + Version.VERSION);
+    public static final Header USER_AGENT_HEADER = HeaderValues.createCached(HeaderNames.USER_AGENT,
+                                                                             "Helidon " + Version.VERSION);
     /**
      * Proxy connection header.
      */
-    public static final Header PROXY_CONNECTION = HeaderValues.create("Proxy-Connection", "keep-alive");
-    private static final String CROSS_ORIGIN_REDIRECT_PROPERTY =
-            ClientRequestBase.class.getName() + ".redirect.cross-origin." + UUID.randomUUID();
+    public static final Header PROXY_CONNECTION = HeaderValues.createCached(HeaderNames.create("Proxy-Connection"),
+                                                                           "keep-alive");
+    private static final HeaderName AUTHORITY = HeaderNames.create(":authority");
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
     private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");
 
@@ -80,7 +84,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final String protocolId;
     private final Method method;
     private final ClientUri clientUri;
-    private final ClientUri redirectSourceUri;
     private final Map<String, String> properties;
     private final Set<HeaderName> redirectSensitiveHeaders;
     private final ClientRequestHeaders headers;
@@ -90,7 +93,9 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     private SocketAddress socketAddress;
     private UriTemplateQuery uriTemplate;
-    private boolean crossOriginRedirect;
+    private ClientUri finalizedEndpointUri;
+    private ClientRequestHeaders finalizedRequestHeaders;
+    private RedirectSecurityState redirectSecurityState;
     private boolean skipUriEncoding;
     private boolean followRedirects;
     private int maxRedirects;
@@ -99,9 +104,22 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private Tls tls;
     private SniConfig sni;
     private Proxy proxy;
+    private long tlsGeneration = -1;
     private ProxyRoute selectedProxyRoute;
+    private ClientRequestOrigin inheritedSelectedProxyRouteOrigin;
+    private ProxyRoute lastSelectedProxyRoute;
+    private ClientRequestOrigin inheritedLastSelectedProxyRouteOrigin;
+    private WebClientServiceRequest serviceRequestAfterServices;
+    private Consumer<WebClientServiceResponse> serviceResponseAfterServices;
+    private CompletableFuture<WebClientServiceRequest> whenSentAfterServices;
+    private Consumer<String> protocolAfterServices;
+    private Consumer<WebClientProtocolResponse> protocolResponseAfterServices;
+    private boolean dispatchPreparedAfterServices;
+    private boolean responseCookiesDeferred;
     private boolean keepAlive;
     private ClientConnection connection;
+    private ClientRequestOrigin inheritedConnectionOrigin;
+    private ClientRequestOrigin inheritedAddressOrigin;
     private Boolean sendExpectContinue;
 
     /**
@@ -164,39 +182,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                 Boolean sendExpectContinue,
                                 Map<String, String> properties,
                                 ClientUri redirectSourceUri) {
-        this(clientConfig,
-             cookieManager,
-             protocolId,
-             method,
-             clientUri,
-             sendExpectContinue,
-             properties,
-             redirectSourceUri,
-             false);
-    }
-
-    /**
-     * Create a new request.
-     *
-     * @param clientConfig client configuration
-     * @param cookieManager cookie manager
-     * @param protocolId protocol identifier
-     * @param method HTTP method
-     * @param clientUri request URI
-     * @param sendExpectContinue whether to send the {@code Expect: 100-Continue} header
-     * @param properties request properties
-     * @param redirectSourceUri original request URI for redirect handling
-     * @param crossOriginRedirect whether a previous redirect crossed an origin boundary
-     */
-    protected ClientRequestBase(HttpClientConfig clientConfig,
-                                WebClientCookieManager cookieManager,
-                                String protocolId,
-                                Method method,
-                                ClientUri clientUri,
-                                Boolean sendExpectContinue,
-                                Map<String, String> properties,
-                                ClientUri redirectSourceUri,
-                                boolean crossOriginRedirect) {
         this.clientConfig = clientConfig;
         this.cookieManager = cookieManager;
         this.protocolId = protocolId;
@@ -204,14 +189,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         this.clientUri = clientUri;
         this.sendExpectContinue = sendExpectContinue;
         this.properties = new HashMap<>(properties);
-        this.redirectSourceUri = redirectSourceUri == null ? null : ClientUri.create(redirectSourceUri);
-        // Once a redirect crosses origins, later same-origin hops must still be treated as crossing a trust boundary.
-        // The private property key preserves that state across internal paths that recreate a request from copied properties.
-        this.crossOriginRedirect = crossOriginRedirect
-                || Boolean.parseBoolean(this.properties.get(CROSS_ORIGIN_REDIRECT_PROPERTY));
-        if (this.crossOriginRedirect) {
-            this.properties.put(CROSS_ORIGIN_REDIRECT_PROPERTY, Boolean.TRUE.toString());
-        }
+        this.redirectSecurityState = RedirectSecurityState.legacy(redirectSourceUri, false);
         this.filterRedirectHeaders = clientConfig.filterRedirectHeaders();
         this.redirectSensitiveHeaders = clientConfig.redirectSensitiveHeaders();
 
@@ -230,7 +208,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         // this must be after we set clientUri, as it is used from the method
         clientConfig.baseAddress()
                 .filter(it -> !(it instanceof UnixDomainSocketAddress)
-                        || this.redirectSourceUri == null)
+                        || redirectSourceUri == null)
                 .ifPresent(this::address);
     }
 
@@ -255,6 +233,19 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T address(SocketAddress socketAddress) {
+        setAddress(socketAddress);
+        inheritedAddressOrigin = null;
+        return identity();
+    }
+
+    @Override
+    public void inheritedAddress(SocketAddress socketAddress, ClientRequestOrigin origin) {
+        setAddress(socketAddress);
+        inheritedAddressOrigin = Objects.requireNonNull(origin);
+    }
+
+    private void setAddress(SocketAddress socketAddress) {
+        Objects.requireNonNull(socketAddress);
         if (socketAddress instanceof InetSocketAddress inet) {
             this.clientUri.host(inet.getHostString())
                     .port(inet.getPort());
@@ -264,7 +255,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         } else {
             throw new IllegalArgumentException("Unsupported socket address type: " + socketAddress.getClass().getName());
         }
-        return identity();
     }
 
     @Override
@@ -347,15 +337,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T property(String propertyName, String propertyValue) {
-        // Some internal protocol-switch paths copy request properties through this method rather than a copy constructor.
-        // Keep the redirect marker synchronized so later hops continue to strip redirect-sensitive data.
-        if (CROSS_ORIGIN_REDIRECT_PROPERTY.equals(propertyName)) {
-            if (crossOriginRedirect || Boolean.parseBoolean(propertyValue)) {
-                this.crossOriginRedirect = true;
-                this.properties.put(CROSS_ORIGIN_REDIRECT_PROPERTY, "true");
-            }
-            return identity();
-        }
         this.properties.put(propertyName, propertyValue);
         return identity();
     }
@@ -380,7 +361,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T connection(ClientConnection connection) {
-        this.connection = connection;
+        this.connection = Objects.requireNonNull(connection);
+        this.inheritedConnectionOrigin = null;
         return identity();
     }
 
@@ -390,6 +372,12 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Api.Internal
     public final void clearConnection() {
         this.connection = null;
+    }
+
+    @Override
+    public void inheritedConnection(ClientConnection connection, ClientRequestOrigin origin) {
+        this.connection = Objects.requireNonNull(connection);
+        this.inheritedConnectionOrigin = Objects.requireNonNull(origin);
     }
 
     @Override
@@ -422,7 +410,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         try {
             return requestWithoutRouteCleanup();
         } finally {
-            clearSelectedProxyRoute();
+            selectedProxyRoute = null;
+            inheritedSelectedProxyRouteOrigin = null;
         }
     }
 
@@ -450,7 +439,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             }
             return validateAndSubmit(entity);
         } finally {
-            clearSelectedProxyRoute();
+            selectedProxyRoute = null;
+            inheritedSelectedProxyRouteOrigin = null;
         }
     }
 
@@ -463,7 +453,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             validateRequest();
             return doOutputStream(outputStreamConsumer);
         } finally {
-            clearSelectedProxyRoute();
+            selectedProxyRoute = null;
+            inheritedSelectedProxyRouteOrigin = null;
         }
     }
 
@@ -516,6 +507,30 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
+    @Api.Internal
+    public long tlsGeneration() {
+        return tlsGeneration < 0 ? tls.generation() : tlsGeneration;
+    }
+
+    @Override
+    @Api.Internal
+    public void tlsGeneration(long tlsGeneration) {
+        this.tlsGeneration = tlsGeneration;
+    }
+
+    @Override
+    @Api.Internal
+    public RedirectSecurityState redirectSecurityState() {
+        return redirectSecurityState;
+    }
+
+    @Override
+    @Api.Internal
+    public void redirectSecurityState(RedirectSecurityState state) {
+        this.redirectSecurityState = Objects.requireNonNull(state, "state");
+    }
+
+    @Override
     public Optional<SniConfig> sni() {
         return Optional.ofNullable(sni);
     }
@@ -532,20 +547,62 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
+    public Optional<ProxyRoute> lastSelectedProxyRoute() {
+        return Optional.ofNullable(lastSelectedProxyRoute);
+    }
+
+    @Override
+    public Optional<ClientRequestOrigin> inheritedLastSelectedProxyRouteOrigin() {
+        return lastSelectedProxyRoute == null
+                ? Optional.empty()
+                : Optional.ofNullable(inheritedLastSelectedProxyRouteOrigin);
+    }
+
+    @Override
     @Api.Internal
     public void selectedProxyRoute(ProxyRoute proxyRoute) {
         this.selectedProxyRoute = Objects.requireNonNull(proxyRoute);
+        this.inheritedSelectedProxyRouteOrigin = ClientRequestOrigin.create(resolvedUri(), headers);
+        this.lastSelectedProxyRoute = proxyRoute;
+        this.inheritedLastSelectedProxyRouteOrigin = inheritedSelectedProxyRouteOrigin;
+    }
+
+    @Override
+    @Api.Internal
+    public void inheritedSelectedProxyRoute(ProxyRoute proxyRoute, ClientRequestOrigin origin) {
+        this.selectedProxyRoute = Objects.requireNonNull(proxyRoute);
+        this.inheritedSelectedProxyRouteOrigin = Objects.requireNonNull(origin);
+        this.lastSelectedProxyRoute = proxyRoute;
+        this.inheritedLastSelectedProxyRouteOrigin = origin;
     }
 
     @Override
     @Api.Internal
     public void clearSelectedProxyRoute() {
         this.selectedProxyRoute = null;
+        this.inheritedSelectedProxyRouteOrigin = null;
+        this.lastSelectedProxyRoute = null;
+        this.inheritedLastSelectedProxyRouteOrigin = null;
     }
 
     @Override
     public Optional<ClientConnection> connection() {
         return Optional.ofNullable(connection);
+    }
+
+    @Override
+    public Optional<ClientRequestOrigin> inheritedConnectionOrigin() {
+        return connection == null ? Optional.empty() : Optional.ofNullable(inheritedConnectionOrigin);
+    }
+
+    @Override
+    public Optional<ClientRequestOrigin> inheritedAddressOrigin() {
+        return socketAddress == null ? Optional.empty() : Optional.ofNullable(inheritedAddressOrigin);
+    }
+
+    @Override
+    public Optional<ClientRequestOrigin> inheritedSelectedProxyRouteOrigin() {
+        return selectedProxyRoute == null ? Optional.empty() : Optional.ofNullable(inheritedSelectedProxyRouteOrigin);
     }
 
     @Override
@@ -622,7 +679,15 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                       CompletableFuture<WebClientServiceRequest> whenSent,
                                                       CompletableFuture<WebClientServiceResponse> whenComplete,
                                                       ClientUri usedUri) {
-        return invokeServices(null, httpCallChain, whenSent, whenComplete, usedUri, protocolId, null);
+        return invokeServices(null,
+                              httpCallChain,
+                              whenSent,
+                              whenComplete,
+                              usedUri,
+                              protocolId,
+                              null,
+                              request -> {
+                              });
     }
 
     /**
@@ -645,7 +710,35 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                               whenComplete,
                               usedUri,
                               null,
-                              Objects.requireNonNull(httpCallChain));
+                              Objects.requireNonNull(httpCallChain),
+                              request -> {
+                              });
+    }
+
+    /**
+     * Invoke configured client services with a typed wire-protocol chain and a terminal request preparation step.
+     *
+     * @param httpCallChain terminal wire-protocol chain
+     * @param whenSent request-sent completion
+     * @param whenComplete request/response completion
+     * @param usedUri resolved request URI
+     * @param requestPrepare request preparation performed immediately before terminal dispatch
+     * @return web client service response
+     */
+    @Api.Internal
+    protected WebClientServiceResponse invokeServices(WebClientService.WireProtocolChain httpCallChain,
+                                                      CompletableFuture<WebClientServiceRequest> whenSent,
+                                                      CompletableFuture<WebClientServiceResponse> whenComplete,
+                                                      ClientUri usedUri,
+                                                      Consumer<WebClientServiceRequest> requestPrepare) {
+        return invokeServices(null,
+                              httpCallChain,
+                              whenSent,
+                              whenComplete,
+                              usedUri,
+                              null,
+                              Objects.requireNonNull(httpCallChain),
+                              requestPrepare);
     }
 
     /**
@@ -664,43 +757,173 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                       CompletableFuture<WebClientServiceRequest> whenSent,
                                                       CompletableFuture<WebClientServiceResponse> whenComplete,
                                                       ClientUri usedUri) {
-        WebClient client = Objects.requireNonNull(webClient, "webClient");
-        WebClientService.TransportChain chain = Objects.requireNonNull(httpCallChain, "httpCallChain");
-        return invokeServices(client, chain, whenSent, whenComplete, usedUri, null, chain);
+        return invokeServices(webClient,
+                              httpCallChain,
+                              whenSent,
+                              whenComplete,
+                              usedUri,
+                              request -> {
+                              });
     }
 
+    /**
+     * Invoke configured client services and publish applicable transport response context before they unwind.
+     *
+     * @param webClient client that owns the transport protocols
+     * @param httpCallChain invocation of the HTTP request (the actual network call)
+     * @param whenSent completable future to be completed when the request is sent over the network
+     * @param whenComplete completable future to be completed when the request/response interaction finishes
+     * @param usedUri URI configured on the request, combined with the base URI of the client
+     * @param requestPrepare request preparation performed immediately before terminal dispatch
+     * @return web client service response
+     */
+    @Api.Internal
+    protected WebClientServiceResponse invokeServices(WebClient webClient,
+                                                      WebClientService.TransportChain httpCallChain,
+                                                      CompletableFuture<WebClientServiceRequest> whenSent,
+                                                      CompletableFuture<WebClientServiceResponse> whenComplete,
+                                                      ClientUri usedUri,
+                                                      Consumer<WebClientServiceRequest> requestPrepare) {
+        WebClient client = Objects.requireNonNull(webClient, "webClient");
+        WebClientService.TransportChain chain = Objects.requireNonNull(httpCallChain, "httpCallChain");
+        return invokeServices(client,
+                              chain,
+                              whenSent,
+                              whenComplete,
+                              usedUri,
+                              null,
+                              chain,
+                              requestPrepare);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber") // central service path keeps protocol and transport modes together
     private WebClientServiceResponse invokeServices(WebClient webClient,
                                                     WebClientService.Chain httpCallChain,
                                                     CompletableFuture<WebClientServiceRequest> whenSent,
                                                     CompletableFuture<WebClientServiceResponse> whenComplete,
                                                     ClientUri usedUri,
                                                     String protocolId,
-                                                    WebClientService.WireProtocolChain wireProtocolChain) {
-
-        // include any stored cookies in request
-        cookieManager.request(usedUri, headers, !redirectSensitiveHeadersShouldBeStripped(usedUri));
+                                                    WebClientService.WireProtocolChain wireProtocolChain,
+                                                    Consumer<WebClientServiceRequest> requestPrepare) {
+        Objects.requireNonNull(requestPrepare, "requestPrepare");
+        finalizedEndpointUri = null;
+        finalizedRequestHeaders = null;
+        ClientRequestHeaders invocationHeaders = snapshotHeaders(headers);
+        CookieDispatchState cookieState = null;
+        if (serviceRequestAfterServices == null || !dispatchPreparedAfterServices) {
+            // Include cookies for the current effective authority. A service may still rewrite the final target; terminal
+            // dispatch sanitizes and rebuilds cookies after all services have run.
+            ClientUri cookieUri = ClientRequestOrigin.create(usedUri, invocationHeaders).apply(usedUri);
+            List<String> explicitCookies = invocationHeaders.contains(HeaderNames.COOKIE)
+                    ? List.copyOf(invocationHeaders.get(HeaderNames.COOKIE).allValues())
+                    : List.of();
+            boolean crossesOrigin = redirectSecurityState.wouldCrossOrigin(usedUri, invocationHeaders);
+            if (redirectSecurityState.automaticCookiesAllowed()) {
+                appendManagedCookies(cookieUri,
+                                     invocationHeaders,
+                                     !filterRedirectHeaders || !crossesOrigin,
+                                     redirectSecurityState.suppressedCookieNames());
+            }
+            List<String> provisionalCookies = invocationHeaders.contains(HeaderNames.COOKIE)
+                    ? List.copyOf(invocationHeaders.get(HeaderNames.COOKIE).allValues())
+                    : List.of();
+            List<String> managerCookies = cookiePairs(provisionalCookies);
+            cookiePairs(explicitCookies).forEach(managerCookies::remove);
+            cookieState = new CookieDispatchState(ClientUri.create(cookieUri),
+                                                  cookieSnapshot(invocationHeaders),
+                                                  List.copyOf(managerCookies));
+        }
+        if (serviceRequestAfterServices != null) {
+            whenSent.whenComplete((request, failure) -> {
+                if (failure == null) {
+                    protocolAfterServices.accept(wireProtocolChain == null
+                                                         ? protocolId
+                                                         : wireProtocolChain.protocolId());
+                    whenSentAfterServices.complete(request);
+                } else {
+                    whenSentAfterServices.completeExceptionally(failure);
+                }
+            });
+            serviceRequestAfterServices.headers().clear();
+            invocationHeaders.forEach(serviceRequestAfterServices.headers()::set);
+            try {
+                if (dispatchPreparedAfterServices) {
+                    ClientRequestHeaders preparedHeaders = serviceRequestAfterServices.headers();
+                    normalizeAuthority(preparedHeaders);
+                    ClientRequestOrigin originBeforePreparation =
+                            ClientRequestOrigin.create(serviceRequestAfterServices.uri(), preparedHeaders);
+                    CookieSnapshot cookiesBeforePreparation = cookieSnapshot(preparedHeaders);
+                    requestPrepare.accept(serviceRequestAfterServices);
+                    normalizeAuthority(preparedHeaders);
+                    ClientRequestOrigin originAfterPreparation =
+                            ClientRequestOrigin.create(serviceRequestAfterServices.uri(), preparedHeaders);
+                    if (!originBeforePreparation.equals(originAfterPreparation)
+                            || !cookiesBeforePreparation.equals(cookieSnapshot(preparedHeaders))) {
+                        throw new IllegalStateException("A prepared request handoff changed effective origin or Cookie");
+                    }
+                } else {
+                    prepareForDispatch(serviceRequestAfterServices,
+                                       requestPrepare,
+                                       Objects.requireNonNull(cookieState));
+                }
+                ClientRequestHeaderSupport.validate(serviceRequestAfterServices.headers());
+                captureFinalizedRequest(serviceRequestAfterServices);
+                WebClientServiceResponse response = httpCallChain.proceed(serviceRequestAfterServices);
+                captureFinalizedRequest(response.serviceRequest());
+                publishProtocolResponse(webClient, wireProtocolChain, response);
+                serviceResponseAfterServices.accept(response);
+                return response;
+            } catch (RuntimeException | Error failure) {
+                try {
+                    captureFinalizedRequest(serviceRequestAfterServices);
+                } catch (RuntimeException snapshotFailure) {
+                    if (snapshotFailure != failure) {
+                        failure.addSuppressed(snapshotFailure);
+                    }
+                }
+                whenSent.completeExceptionally(failure);
+                throw failure;
+            }
+        }
+        CookieDispatchState dispatchCookieState = Objects.requireNonNull(cookieState);
 
         WebClientServiceRequest serviceRequest = new ServiceRequestImpl(usedUri,
                                                                         method,
                                                                         protocolId,
                                                                         wireProtocolChain,
-                                                                        headers,
+                                                                        invocationHeaders,
                                                                         Contexts.context().orElseGet(Context::create),
                                                                         requestId,
                                                                         whenComplete,
                                                                         whenSent,
-                                                                        serviceProperties());
+                                                                        properties);
 
+        AtomicReference<TerminalDispatchState> terminalDispatch =
+                new AtomicReference<>(TerminalDispatchState.NOT_INVOKED);
         WebClientService.Chain last = request -> {
-            ClientRequestHeaderSupport.validate(request.headers());
-            WebClientServiceResponse response = httpCallChain.proceed(request);
-            if (webClient != null && wireProtocolChain instanceof WebClientService.TransportChain transportChain) {
-                Optional<WebClientProtocolResponse> protocolResponse = transportChain.protocolResponse(response);
-                if (protocolResponse.isPresent()) {
-                    webClient.responseReceived(protocolResponse.get());
+            terminalDispatch.set(TerminalDispatchState.IN_PROGRESS);
+            try {
+                captureFinalizedRequest(request);
+                prepareForDispatch(request, requestPrepare, dispatchCookieState);
+                captureFinalizedRequest(request);
+                WebClientServiceResponse response = httpCallChain.proceed(request);
+                captureFinalizedRequest(response.serviceRequest());
+                publishProtocolResponse(webClient, wireProtocolChain, response);
+                terminalDispatch.set(TerminalDispatchState.RETURNED);
+                return response;
+            } catch (RuntimeException | Error failure) {
+                try {
+                    captureFinalizedRequest(request);
+                    redirectSecurityState(redirectSecurityState.finalized(request.uri(), request.headers()));
+                } catch (RuntimeException snapshotFailure) {
+                    if (snapshotFailure != failure) {
+                        failure.addSuppressed(snapshotFailure);
+                    }
                 }
+                terminalDispatch.set(TerminalDispatchState.FAILED);
+                whenSent.completeExceptionally(failure);
+                throw failure;
             }
-            return response;
         };
 
         List<WebClientService> services = clientConfig.services();
@@ -710,9 +933,336 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         }
 
         WebClientServiceResponse response = last.proceed(serviceRequest);
-        cookieManager.response(usedUri, response.headers());
+        WebClientServiceRequest responseRequest = response.serviceRequest();
+        if (terminalDispatch.get() == TerminalDispatchState.NOT_INVOKED) {
+            ManagedCookiePolicy cookiePolicy = new ManagedCookiePolicy(dispatchCookieState.managerCookies(),
+                                                                       redirectSecurityState.automaticCookiesAllowed(),
+                                                                       redirectSecurityState.suppressedCookieNames());
+            cookiePolicy.observe(dispatchCookieState.provisionalCookies(), cookieSnapshot(responseRequest.headers()));
+            redirectSecurityState(redirectSecurityState.cookiePolicy(cookiePolicy.automaticAllowed(),
+                                                                      cookiePolicy.suppressedNames()));
+            redirectSecurityState(redirectSecurityState.finalized(responseRequest.uri(), responseRequest.headers()));
+            captureFinalizedRequest(responseRequest);
+            whenSent.complete(responseRequest);
+        }
+        ClientUri responseEndpointUri = finalizedEndpointUri();
+        ClientUri responseCookieUri = ClientRequestOrigin.create(responseEndpointUri, finalizedRequestHeaders)
+                .apply(responseEndpointUri);
+        if (!responseCookiesDeferred) {
+            cookieManager.response(responseCookieUri, response.headers());
+        }
 
         return response;
+    }
+
+    private void publishProtocolResponse(WebClient webClient,
+                                         WebClientService.WireProtocolChain wireProtocolChain,
+                                         WebClientServiceResponse response) {
+        if (wireProtocolChain instanceof WebClientService.TransportChain transportChain) {
+            Optional<WebClientProtocolResponse> protocolResponse = transportChain.protocolResponse(response);
+            Consumer<WebClientProtocolResponse> responseConsumer = protocolResponseAfterServices;
+            if (responseConsumer != null) {
+                protocolResponse.ifPresent(responseConsumer);
+            } else if (webClient != null) {
+                protocolResponse.ifPresent(webClient::responseReceived);
+            }
+        }
+    }
+
+    private void captureFinalizedRequest(WebClientServiceRequest request) {
+        finalizedEndpointUri = ClientUri.create(request.uri());
+        finalizedRequestHeaders = snapshotHeaders(request.headers());
+    }
+
+    private void prepareForDispatch(WebClientServiceRequest request,
+                                    Consumer<WebClientServiceRequest> requestPrepare,
+                                    CookieDispatchState cookieState) {
+        ClientRequestHeaders requestHeaders = request.headers();
+        normalizeAuthority(requestHeaders);
+        ManagedCookiePolicy cookiePolicy = new ManagedCookiePolicy(cookieState.managerCookies(),
+                                                                   redirectSecurityState.automaticCookiesAllowed(),
+                                                                   redirectSecurityState.suppressedCookieNames());
+        CookieSnapshot serviceCookies = cookieSnapshot(requestHeaders);
+        cookiePolicy.observe(cookieState.provisionalCookies(), serviceCookies);
+        redirectSecurityState(redirectSecurityState.cookiePolicy(cookiePolicy.automaticAllowed(),
+                                                                  cookiePolicy.suppressedNames()));
+        try {
+            requestPrepare.accept(request);
+        } catch (RuntimeException | Error failure) {
+            try {
+                cookiePolicy.observe(serviceCookies, cookieSnapshot(requestHeaders));
+                redirectSecurityState(redirectSecurityState.cookiePolicy(cookiePolicy.automaticAllowed(),
+                                                                          cookiePolicy.suppressedNames()));
+            } catch (RuntimeException cookieFailure) {
+                if (cookieFailure != failure) {
+                    failure.addSuppressed(cookieFailure);
+                }
+            }
+            throw failure;
+        }
+        normalizeAuthority(requestHeaders);
+        cookiePolicy.observe(serviceCookies, cookieSnapshot(requestHeaders));
+        redirectSecurityState(redirectSecurityState.cookiePolicy(cookiePolicy.automaticAllowed(),
+                                                                  cookiePolicy.suppressedNames()));
+
+        RedirectSecurityState candidateState = redirectSecurityState.finalized(request.uri(), requestHeaders);
+        boolean stripHeaders = filterRedirectHeaders && candidateState.crossedOrigin();
+        if (stripHeaders) {
+            redirectSensitiveHeaders.forEach(requestHeaders::remove);
+        }
+
+        ClientRequestOrigin finalOrigin = ClientRequestOrigin.create(request.uri(), requestHeaders);
+        if (inheritedConnectionOrigin != null && !inheritedConnectionOrigin.equals(finalOrigin)) {
+            connection = null;
+            inheritedConnectionOrigin = null;
+        }
+        if (inheritedAddressOrigin != null && !inheritedAddressOrigin.equals(finalOrigin)) {
+            socketAddress = null;
+            inheritedAddressOrigin = null;
+        }
+        if (inheritedSelectedProxyRouteOrigin != null && !inheritedSelectedProxyRouteOrigin.equals(finalOrigin)) {
+            selectedProxyRoute = null;
+            inheritedSelectedProxyRouteOrigin = null;
+            lastSelectedProxyRoute = null;
+            inheritedLastSelectedProxyRouteOrigin = null;
+        }
+        ClientUri finalCookieUri = finalOrigin.apply(request.uri());
+        ClientUri provisionalCookieUri = cookieState.provisionalUri();
+        String provisionalCookiePath = provisionalCookieUri.path().rawPath();
+        if (provisionalCookiePath.isEmpty()) {
+            provisionalCookiePath = "/";
+        }
+        String finalCookiePath = finalCookieUri.path().rawPath();
+        if (finalCookiePath.isEmpty()) {
+            finalCookiePath = "/";
+        }
+        boolean retargetCookies = !ClientRequestOrigin.create(provisionalCookieUri).equals(finalOrigin)
+                || !provisionalCookiePath.equals(finalCookiePath);
+        if (stripHeaders) {
+            redirectSecurityState(candidateState.finalized(request.uri(), requestHeaders));
+            if (cookiePolicy.automaticAllowed()) {
+                appendManagedCookies(finalCookieUri,
+                                     requestHeaders,
+                                     false,
+                                     cookiePolicy.suppressedNames());
+            }
+        } else {
+            redirectSecurityState(candidateState);
+            if (retargetCookies) {
+                removeManagerCookies(requestHeaders, cookiePolicy.survivingManagerCookies());
+                if (cookiePolicy.automaticAllowed()) {
+                    appendManagedCookies(finalCookieUri,
+                                         requestHeaders,
+                                         true,
+                                         cookiePolicy.suppressedNames());
+                }
+            }
+        }
+        ClientRequestHeaderSupport.validate(requestHeaders);
+        if (redirectSecurityState.replayingEntity()
+                && !clientConfig.followCrossOriginEntityRedirects()
+                && redirectSecurityState.crossedOrigin()) {
+            throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
+        }
+    }
+
+    private void appendManagedCookies(ClientUri uri,
+                                      ClientRequestHeaders requestHeaders,
+                                      boolean includeDefaultCookies,
+                                      Set<String> suppressedNames) {
+        ClientRequestHeaders managedHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        cookieManager.request(uri, managedHeaders, includeDefaultCookies);
+        if (!managedHeaders.contains(HeaderNames.COOKIE)) {
+            return;
+        }
+        Header managedCookieHeader = managedHeaders.get(HeaderNames.COOKIE);
+        List<String> retainedValues = new ArrayList<>(managedCookieHeader.valueCount());
+        for (String value : managedCookieHeader.allValues()) {
+            List<String> retainedPairs = new ArrayList<>();
+            for (String pair : cookiePairs(List.of(value))) {
+                if (!suppressedNames.contains(cookieName(pair))) {
+                    retainedPairs.add(pair);
+                }
+            }
+            if (!retainedPairs.isEmpty()) {
+                retainedValues.add(String.join("; ", retainedPairs));
+            }
+        }
+        if (!retainedValues.isEmpty()) {
+            requestHeaders.add(HeaderNames.COOKIE, retainedValues.toArray(String[]::new));
+        }
+    }
+
+    private static void removeManagerCookies(ClientRequestHeaders requestHeaders, List<String> managerCookies) {
+        if (managerCookies.isEmpty() || !requestHeaders.contains(HeaderNames.COOKIE)) {
+            return;
+        }
+        Header currentCookieHeader = requestHeaders.get(HeaderNames.COOKIE);
+        List<String> remainingManagerCookies = new ArrayList<>(managerCookies);
+        List<String> retainedCookies = new ArrayList<>(currentCookieHeader.valueCount());
+        for (String currentCookie : currentCookieHeader.allValues()) {
+            List<String> retainedPairs = new ArrayList<>();
+            for (String pair : cookiePairs(List.of(currentCookie))) {
+                if (!remainingManagerCookies.remove(pair)) {
+                    retainedPairs.add(pair);
+                }
+            }
+            if (!retainedPairs.isEmpty()) {
+                retainedCookies.add(String.join("; ", retainedPairs));
+            }
+        }
+        requestHeaders.remove(HeaderNames.COOKIE);
+        if (!retainedCookies.isEmpty()) {
+            requestHeaders.set(HeaderValues.create(HeaderNames.COOKIE,
+                                                   currentCookieHeader.changing(),
+                                                   currentCookieHeader.sensitive(),
+                                                   retainedCookies.toArray(String[]::new)));
+        }
+    }
+
+    private static void normalizeAuthority(ClientRequestHeaders requestHeaders) {
+        if (!requestHeaders.contains(AUTHORITY)) {
+            return;
+        }
+        Header authority = requestHeaders.get(AUTHORITY);
+        if (authority.valueCount() != 1) {
+            throw new IllegalArgumentException("Request :authority must contain exactly one value");
+        }
+        requestHeaders.remove(AUTHORITY);
+        requestHeaders.set(HeaderValues.create(HeaderNames.HOST,
+                                               authority.changing(),
+                                               authority.sensitive(),
+                                               authority.get()));
+    }
+
+    private static ClientRequestHeaders snapshotHeaders(Headers source) {
+        ClientRequestHeaders snapshot = ClientRequestHeaders.create(WritableHeaders.create());
+        source.forEach(header -> snapshot.set(HeaderValues.create(header.headerName(),
+                                                                  header.changing(),
+                                                                  header.sensitive(),
+                                                                  header.allValues().toArray(String[]::new))));
+        return snapshot;
+    }
+
+    private static CookieSnapshot cookieSnapshot(Headers headers) {
+        return headers.contains(HeaderNames.COOKIE)
+                ? new CookieSnapshot(true, List.copyOf(headers.get(HeaderNames.COOKIE).allValues()))
+                : CookieSnapshot.ABSENT;
+    }
+
+    /**
+     * Store cookies from an intermediate response consumed inside a protocol call chain.
+     *
+     * @param endpointUri endpoint that produced the response
+     * @param responseHeaders response headers
+     */
+    @Api.Internal
+    public final void recordResponseCookies(ClientUri endpointUri, ClientResponseHeaders responseHeaders) {
+        cookieManager.response(endpointUri, responseHeaders);
+    }
+
+    /**
+     * Defer storage of the returned response cookies to an enclosing protocol request.
+     */
+    @Api.Internal
+    public final void deferResponseCookies() {
+        responseCookiesDeferred = true;
+    }
+
+    /**
+     * Whether storage of the returned response cookies is deferred to an enclosing protocol request.
+     *
+     * @return whether response cookie storage is deferred
+     */
+    @Api.Internal
+    public final boolean responseCookiesDeferred() {
+        return responseCookiesDeferred;
+    }
+
+    /**
+     * Reuse a service-finalized request when a protocol is selected through ALPN after services have already run.
+     *
+     * @param serviceRequest service-finalized request
+     */
+    @Api.Internal
+    @Override
+    public boolean serviceRequestAfterServices(WebClientServiceRequest serviceRequest,
+                                               Consumer<WebClientServiceResponse> responseConsumer,
+                                               CompletableFuture<WebClientServiceRequest> whenSent,
+                                               Consumer<String> protocolConsumer) {
+        return serviceRequestAfterServices(serviceRequest,
+                                           responseConsumer,
+                                           whenSent,
+                                           protocolConsumer,
+                                           false);
+    }
+
+    /**
+     * Reuse a service-finalized request and identify whether common terminal dispatch preparation has completed.
+     *
+     * @param serviceRequest service-finalized request
+     * @param responseConsumer transport response consumer
+     * @param whenSent request-sent completion
+     * @param protocolConsumer selected protocol consumer
+     * @param dispatchPrepared whether common terminal dispatch preparation has completed
+     * @return whether this request accepted the handoff
+     */
+    @Api.Internal
+    @Override
+    public boolean serviceRequestAfterServices(WebClientServiceRequest serviceRequest,
+                                               Consumer<WebClientServiceResponse> responseConsumer,
+                                               CompletableFuture<WebClientServiceRequest> whenSent,
+                                               Consumer<String> protocolConsumer,
+                                               boolean dispatchPrepared) {
+        return configureServiceRequestAfterServices(serviceRequest,
+                                                    responseConsumer,
+                                                    whenSent,
+                                                    protocolConsumer,
+                                                    dispatchPrepared,
+                                                    null);
+    }
+
+    /**
+     * Reuse a service-finalized request, identify whether common terminal dispatch preparation has completed, and
+     * forward exact transport response context to the enclosing protocol.
+     *
+     * @param serviceRequest service-finalized request
+     * @param responseConsumer transport response consumer
+     * @param whenSent request-sent completion
+     * @param protocolConsumer selected protocol consumer
+     * @param dispatchPrepared whether common terminal dispatch preparation has completed
+     * @param protocolResponseConsumer exact transport response context consumer
+     * @return whether this request accepted the handoff
+     */
+    @Api.Internal
+    @Override
+    public boolean serviceRequestAfterServices(WebClientServiceRequest serviceRequest,
+                                               Consumer<WebClientServiceResponse> responseConsumer,
+                                               CompletableFuture<WebClientServiceRequest> whenSent,
+                                               Consumer<String> protocolConsumer,
+                                               boolean dispatchPrepared,
+                                               Consumer<WebClientProtocolResponse> protocolResponseConsumer) {
+        return configureServiceRequestAfterServices(serviceRequest,
+                                                    responseConsumer,
+                                                    whenSent,
+                                                    protocolConsumer,
+                                                    dispatchPrepared,
+                                                    Objects.requireNonNull(protocolResponseConsumer));
+    }
+
+    private boolean configureServiceRequestAfterServices(WebClientServiceRequest serviceRequest,
+                                                         Consumer<WebClientServiceResponse> responseConsumer,
+                                                         CompletableFuture<WebClientServiceRequest> whenSent,
+                                                         Consumer<String> protocolConsumer,
+                                                         boolean dispatchPrepared,
+                                                         Consumer<WebClientProtocolResponse> protocolResponseConsumer) {
+        this.serviceRequestAfterServices = Objects.requireNonNull(serviceRequest);
+        this.serviceResponseAfterServices = Objects.requireNonNull(responseConsumer);
+        this.whenSentAfterServices = Objects.requireNonNull(whenSent);
+        this.protocolAfterServices = Objects.requireNonNull(protocolConsumer);
+        this.protocolResponseAfterServices = protocolResponseConsumer;
+        this.dispatchPreparedAfterServices = dispatchPrepared;
+        return true;
     }
 
     /**
@@ -724,41 +1274,122 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         return clientConfig;
     }
 
-    private Map<String, String> serviceProperties() {
-        if (!properties.containsKey(CROSS_ORIGIN_REDIRECT_PROPERTY)) {
-            return properties;
+    /**
+     * Immutable URI snapshot captured immediately before dispatch of the most recent invocation.
+     *
+     * @return finalized endpoint URI
+     */
+    protected final ClientUri finalizedEndpointUri() {
+        if (finalizedEndpointUri == null) {
+            throw new IllegalStateException("Request endpoint has not been finalized");
         }
-        Map<String, String> serviceProperties = new HashMap<>(properties);
-        serviceProperties.remove(CROSS_ORIGIN_REDIRECT_PROPERTY);
-        return serviceProperties;
+        return ClientUri.create(finalizedEndpointUri);
     }
 
     /**
-     * Remove headers that must not cross redirect trust boundaries.
+     * Immutable header snapshot captured by the terminal transport of the most recent invocation.
      *
-     * @param requestUri URI that will be used for the request
-     * @param requestHeaders headers to sanitize
+     * @return finalized request headers
      */
-    protected final void sanitizeRedirectSensitiveHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
-        if (redirectSensitiveHeadersShouldBeStripped(requestUri)) {
-            redirectSensitiveHeaders.forEach(requestHeaders::remove);
-            cookieManager.request(requestUri, requestHeaders, false);
+    protected final ClientRequestHeaders finalizedRequestHeaders() {
+        if (finalizedRequestHeaders == null) {
+            throw new IllegalStateException("Request headers have not been finalized");
         }
+        return snapshotHeaders(finalizedRequestHeaders);
     }
 
     /**
-     * Whether a redirect from this request to the provided URI would cross, or has already crossed, an origin boundary.
+     * Create redirect headers from the configured request plus mutations made by services after terminal dispatch.
+     * Headers already present at terminal dispatch are not copied, so source-attempt defaults, managed cookies, and
+     * entity-writer mutations can be recomputed or conditionally replayed for the target attempt.
      *
-     * @param requestUri redirect request URI
-     * @return whether redirect-sensitive headers should be stripped
+     * @param headersAfterServices request headers after the complete service chain returned
+     * @return redirect source headers
      */
-    protected final boolean crossesRedirectOriginBoundary(ClientUri requestUri) {
-        return crossOriginRedirect || !sameOrigin(resolvedUri(), requestUri);
+    protected final ClientRequestHeaders redirectSourceHeaders(Headers headersAfterServices) {
+        Objects.requireNonNull(headersAfterServices, "headersAfterServices");
+        ClientRequestHeaders redirectHeaders = snapshotHeaders(headers);
+        ClientRequestHeaders dispatchedHeaders = finalizedRequestHeaders();
+        ClientRequestHeaders postServiceHeaders = snapshotHeaders(headersAfterServices);
+
+        dispatchedHeaders.forEach(dispatchedHeader -> {
+            HeaderName name = dispatchedHeader.headerName();
+            if (name.equals(HeaderNames.COOKIE)) {
+                return;
+            }
+            if (!postServiceHeaders.contains(name)) {
+                redirectHeaders.remove(name);
+                if (name.equals(HeaderNames.HOST)) {
+                    redirectHeaders.remove(AUTHORITY);
+                }
+                return;
+            }
+            Header postServiceHeader = postServiceHeaders.get(name);
+            if (dispatchedHeader.changing() != postServiceHeader.changing()
+                    || dispatchedHeader.sensitive() != postServiceHeader.sensitive()
+                    || !dispatchedHeader.allValues().equals(postServiceHeader.allValues())) {
+                redirectHeaders.set(postServiceHeader);
+                if (name.equals(HeaderNames.HOST)) {
+                    redirectHeaders.remove(AUTHORITY);
+                }
+            }
+        });
+        postServiceHeaders.forEach(postServiceHeader -> {
+            HeaderName name = postServiceHeader.headerName();
+            if (!name.equals(HeaderNames.COOKIE) && !dispatchedHeaders.contains(name)) {
+                redirectHeaders.set(postServiceHeader);
+                if (name.equals(HeaderNames.HOST)) {
+                    redirectHeaders.remove(AUTHORITY);
+                }
+            }
+        });
+        return redirectHeaders;
     }
 
-    private boolean redirectSensitiveHeadersShouldBeStripped(ClientUri requestUri) {
-        return filterRedirectHeaders
-                && (crossOriginRedirect || (redirectSourceUri != null && !sameOrigin(redirectSourceUri, requestUri)));
+    /**
+     * Resolve an HTTP redirect URI reference against the endpoint that produced the response.
+     *
+     * @param sourceUri actual response endpoint URI
+     * @param location Location header field value
+     * @return resolved redirect URI
+     */
+    @Api.Internal
+    public final ClientUri resolveRedirectUri(ClientUri sourceUri, String location) {
+        URI reference = URI.create(location);
+        URI source = sourceUri.toUri();
+        URI resolved;
+        if (!reference.isAbsolute()
+                && reference.getRawAuthority() == null
+                && reference.getRawPath().isEmpty()) {
+            StringBuilder value = new StringBuilder(source.getScheme())
+                    .append("://")
+                    .append(source.getRawAuthority())
+                    .append(source.getRawPath());
+            String query = reference.getRawQuery();
+            if (query == null) {
+                query = source.getRawQuery();
+            }
+            if (query != null) {
+                value.append('?').append(query);
+            }
+            if (reference.getRawFragment() != null) {
+                value.append('#').append(reference.getRawFragment());
+            }
+            resolved = URI.create(value.toString());
+        } else {
+            resolved = source.resolve(reference);
+        }
+        if (reference.getRawFragment() == null && source.getRawFragment() != null) {
+            String value = resolved.toASCIIString();
+            int fragmentIndex = value.indexOf('#');
+            if (fragmentIndex >= 0) {
+                value = value.substring(0, fragmentIndex);
+            }
+            resolved = URI.create(value + '#' + source.getRawFragment());
+        }
+        ClientUri redirectUri = ClientUri.create(resolved);
+        validateScheme(redirectUri.scheme());
+        return redirectUri;
     }
 
     /**
@@ -803,10 +1434,105 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         return "client-" + protocolId + "-" + Long.toHexString(counter.getAndIncrement());
     }
 
-    private static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
-        return sourceUri.scheme().equalsIgnoreCase(targetUri.scheme())
-                && sourceUri.host().equalsIgnoreCase(targetUri.host())
-                && sourceUri.port() == targetUri.port();
+    /**
+     * Whether two request URIs have the same normalized origin.
+     *
+     * @param sourceUri source request URI
+     * @param targetUri target request URI
+     * @return whether the scheme, host, and effective port are equal
+     */
+    protected static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
+        return ClientRequestOrigin.create(sourceUri).equals(ClientRequestOrigin.create(targetUri));
+    }
+
+    private static List<String> cookiePairs(List<String> headerValues) {
+        List<String> result = new ArrayList<>();
+        for (String headerValue : headerValues) {
+            for (String pair : headerValue.split(";", -1)) {
+                pair = pair.trim();
+                if (!pair.isEmpty()) {
+                    result.add(pair);
+                }
+            }
+        }
+        return result;
+    }
+
+    private static String cookieName(String pair) {
+        int equals = pair.indexOf('=');
+        return equals < 0 ? pair : pair.substring(0, equals).trim();
+    }
+
+    private static int occurrences(List<String> pairs, String expected) {
+        int result = 0;
+        for (String pair : pairs) {
+            if (expected.equals(pair)) {
+                result++;
+            }
+        }
+        return result;
+    }
+
+    private record CookieDispatchState(ClientUri provisionalUri,
+                                       CookieSnapshot provisionalCookies,
+                                       List<String> managerCookies) {
+    }
+
+    private record CookieSnapshot(boolean present, List<String> values) {
+        private static final CookieSnapshot ABSENT = new CookieSnapshot(false, List.of());
+    }
+
+    private static final class ManagedCookiePolicy {
+        private final List<String> survivingManagerCookies;
+        private final Set<String> suppressedNames;
+        private boolean automaticAllowed;
+
+        private ManagedCookiePolicy(List<String> managerCookies,
+                                    boolean automaticAllowed,
+                                    Set<String> suppressedNames) {
+            this.survivingManagerCookies = new ArrayList<>(managerCookies);
+            this.automaticAllowed = automaticAllowed;
+            this.suppressedNames = new HashSet<>(suppressedNames);
+        }
+
+        private void observe(CookieSnapshot before, CookieSnapshot after) {
+            if (before.present() && !after.present()) {
+                automaticAllowed = false;
+            }
+            if (survivingManagerCookies.isEmpty()) {
+                return;
+            }
+            List<String> beforePairs = cookiePairs(before.values());
+            List<String> afterPairs = cookiePairs(after.values());
+            for (String managerCookie : new HashSet<>(survivingManagerCookies)) {
+                int removed = occurrences(beforePairs, managerCookie) - occurrences(afterPairs, managerCookie);
+                if (removed > 0) {
+                    suppressedNames.add(cookieName(managerCookie));
+                    while (removed-- > 0) {
+                        survivingManagerCookies.remove(managerCookie);
+                    }
+                }
+            }
+        }
+
+        private boolean automaticAllowed() {
+            return automaticAllowed;
+        }
+
+        private Set<String> suppressedNames() {
+            return suppressedNames;
+        }
+
+        private List<String> survivingManagerCookies() {
+            return survivingManagerCookies;
+        }
+    }
+
+    private enum TerminalDispatchState {
+        NOT_INVOKED,
+        IN_PROGRESS,
+        RETURNED,
+        FAILED
     }
 
     private R validateAndSubmit(Object entity) {
@@ -815,11 +1541,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     private void validateRequest() {
-        String scheme = uri().scheme();
+        validateScheme(uri().scheme());
+    }
+
+    private static void validateScheme(String scheme) {
         if (scheme == null || !SUPPORTED_SCHEMES.contains(scheme)) {
             throw new IllegalArgumentException(
                     String.format("Not supported scheme %s, client supported schemes are: %s",
-                                  uri().scheme(),
+                                  scheme,
                                   String.join(", ", SUPPORTED_SCHEMES)
                     )
             );

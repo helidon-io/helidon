@@ -34,6 +34,7 @@ import io.helidon.webclient.api.AltSvcHeader;
 import io.helidon.webclient.api.ClientAltSvcConfig;
 import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientRequest;
+import io.helidon.webclient.api.ClientRequestOrigin;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.FullClientRequest;
@@ -43,6 +44,7 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.api.WebClientProtocolResponse;
+import io.helidon.webclient.api.WebClientTransportObserverSupport;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.spi.HttpClientSpi;
 
@@ -63,14 +65,22 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final boolean altSvcEnabled;
     private final boolean responseNotificationsManagedByWebClient;
     private volatile boolean closed;
+    private final boolean ownsWebClient;
 
     Http2ClientImpl(WebClient webClient, Http2ClientConfig clientConfig) {
-        this(webClient, clientConfig, false);
+        this(webClient, clientConfig, false, false);
     }
 
     Http2ClientImpl(WebClient webClient,
                     Http2ClientConfig clientConfig,
                     boolean responseNotificationsManagedByWebClient) {
+        this(webClient, clientConfig, responseNotificationsManagedByWebClient, false);
+    }
+
+    Http2ClientImpl(WebClient webClient,
+                    Http2ClientConfig clientConfig,
+                    boolean responseNotificationsManagedByWebClient,
+                    boolean ownsWebClient) {
         this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
@@ -82,8 +92,11 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                         || config.protocols().contains(Http2Client.PROTOCOL_ID))
                 .orElse(false);
         this.responseNotificationsManagedByWebClient = responseNotificationsManagedByWebClient;
+        this.ownsWebClient = ownsWebClient;
         if (clientConfig.shareConnectionCache()) {
-            this.connectionCache = Http2ConnectionCache.shared();
+            this.connectionCache = webClient == null
+                    ? Http2ConnectionCache.shared()
+                    : Http2ConnectionCache.shared(webClient);
             this.clientCache = null;
         } else {
             this.connectionCache = Http2ConnectionCache.create();
@@ -197,6 +210,11 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     }
 
     @Override
+    public boolean supportsServiceHandoff() {
+        return true;
+    }
+
+    @Override
     public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
         var selectedProxyRoute = clientRequest.selectedProxyRoute();
         Http2ClientRequestImpl request = new Http2ClientRequestImpl(this,
@@ -206,19 +224,45 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                                                                     clientRequest.properties(),
                                                                     genericTcpProtocolIds());
 
-        clientRequest.connection().ifPresent(request::connection);
+        request.headers().clear();
+        request.headers(clientRequest.headers());
+        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri, request.headers());
+        clientRequest.connection().ifPresent(value -> {
+            var inheritedOrigin = clientRequest.inheritedConnectionOrigin();
+            if (inheritedOrigin.isEmpty()) {
+                request.connection(value);
+            } else if (inheritedOrigin.get().equals(targetOrigin)) {
+                request.inheritedConnection(value, inheritedOrigin.get());
+            }
+        });
         clientRequest.pathParams().forEach(request::pathParam);
-        clientRequest.address().ifPresent(request::address);
+        clientRequest.address().ifPresent(value -> {
+            var inheritedOrigin = clientRequest.inheritedAddressOrigin();
+            if (inheritedOrigin.isEmpty()) {
+                request.address(value);
+            } else if (inheritedOrigin.get().equals(targetOrigin)) {
+                request.inheritedAddress(value, inheritedOrigin.get());
+            }
+        });
+        clientRequest.sendExpectContinue().ifPresent(request::sendExpectContinue);
         clientRequest.sni().ifPresent(request::sni);
         request.readTimeout(clientRequest.readTimeout())
                 .readContinueTimeout(clientRequest.readContinueTimeout())
                 .followRedirects(clientRequest.followRedirects())
                 .maxRedirects(clientRequest.maxRedirects())
+                .keepAlive(clientRequest.keepAlive())
+                .skipUriEncoding(clientRequest.skipUriEncoding())
                 .proxy(clientRequest.proxy())
                 .tls(clientRequest.tls())
-                .headers(clientRequest.headers())
                 .fragment(clientUri.fragment());
-        selectedProxyRoute.ifPresent(request::selectedProxyRoute);
+        selectedProxyRoute.ifPresent(value -> {
+            var inheritedOrigin = clientRequest.inheritedSelectedProxyRouteOrigin();
+            if (inheritedOrigin.isEmpty()) {
+                request.selectedProxyRoute(value);
+            } else if (inheritedOrigin.get().equals(targetOrigin)) {
+                request.inheritedSelectedProxyRoute(value, inheritedOrigin.get());
+            }
+        });
         return request;
     }
 
@@ -241,8 +285,14 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                 fallbackResources.closeResource();
             }
         } finally {
-            if (clientCache != null) {
-                this.clientCache.closeResource();
+            try {
+                if (clientCache != null) {
+                    this.clientCache.closeResource();
+                }
+            } finally {
+                if (ownsWebClient) {
+                    webClient.closeResource();
+                }
             }
         }
     }
@@ -275,6 +325,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                     .clearServices()
                     .servicesDiscoverServices(false)
                     .addService(new Http1FallbackService())
+                    .addService(WebClientTransportObserverSupport.borrowingService(webClient))
                     .cookieManager(WebClientCookieManager.builder().build())
                     .protocolPreference(List.of(Http1Client.PROTOCOL_ID))
                     .shareConnectionCache(false)

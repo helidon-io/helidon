@@ -49,12 +49,14 @@ import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.api.WebClientTransportObserverSupport;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.http1.UpgradeResponse;
 import io.helidon.webclient.http2.Http2ConnectionAttemptResult.Result;
 
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.ERROR;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 
@@ -124,7 +126,8 @@ class Http2ClientConnectionHandler {
     }
 
     static boolean http1FallbackAllowed(Http2ClientRequestImpl request) {
-        return request.tcpProtocolIds().contains(Http1Client.PROTOCOL_ID);
+        return !request.outputStreamRedirect()
+                && request.tcpProtocolIds().contains(Http1Client.PROTOCOL_ID);
     }
 
     static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri,
@@ -508,6 +511,7 @@ class Http2ClientConnectionHandler {
         if (requestTarget.transportAddress().isEmpty()
                 && http1Request instanceof FullClientRequest<?> fullClientRequest) {
             fullClientRequest.selectedProxyRoute(requestTarget.proxyRoute());
+            fullClientRequest.redirectSecurityState(request.redirectSecurityState());
         }
         return http1Request;
     }
@@ -520,7 +524,7 @@ class Http2ClientConnectionHandler {
 
     private static void closeClientConnection(ClientConnection clientConnection) {
         try {
-            clientConnection.closeResource();
+            WebClientTransportObserverSupport.close(clientConnection, ERROR);
         } catch (RuntimeException e) {
             LOGGER.log(DEBUG, "Failed to close internally created HTTP/2 probe connection", e);
         }
@@ -1094,8 +1098,9 @@ class Http2ClientConnectionHandler {
                                            http2Client.clientConfig(),
                                            http2Client.sendListener(),
                                            http2Client.recvListener());
-        } catch (RuntimeException e) {
-            discardConnection(connection);
+        } catch (RuntimeException | Error e) {
+            removeConnection(connection);
+            connection.close(ERROR);
             throw e;
         }
     }

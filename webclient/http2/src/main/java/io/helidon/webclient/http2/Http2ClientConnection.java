@@ -17,6 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,6 +43,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
@@ -71,7 +74,13 @@ import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ResolvedClientTarget;
 import io.helidon.webclient.api.TcpClientConnection;
+import io.helidon.webclient.api.WebClientTransportObserverSupport;
 
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.ERROR;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.LOCAL_CLOSE;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.REMOTE_CLOSE;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.TIMEOUT;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_2;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
@@ -121,6 +130,7 @@ public class Http2ClientConnection {
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
     private final AtomicReference<RuntimeException> closeFailure = new AtomicReference<>();
     private final AtomicReference<Http2ErrorCode> goAwayErrorCode = new AtomicReference<>();
+    private final AtomicReference<ConnectionOutcome> closeOutcome = new AtomicReference<>();
     private volatile int lastStreamId;
     private volatile long expectedPingAck = NO_PING_ACK;
     private volatile long peerMaxConcurrentStreams = Http2Setting.MAX_CONCURRENT_STREAMS.defaultValue();
@@ -411,10 +421,17 @@ public class Http2ClientConnection {
             boolean pongReceived = pingPongSemaphore.tryAcquire(protocolConfig.pingTimeout().toMillis(), TimeUnit.MILLISECONDS);
             if (!pongReceived) {
                 pingPongSemaphore.drainPermits();
+                close(TIMEOUT);
             }
             return pongReceived;
-        } catch (UncheckedIOException | InterruptedException e) {
+        } catch (UncheckedIOException e) {
             ctx.log(LOGGER, DEBUG, "Ping failed!", e);
+            close(ERROR);
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            ctx.log(LOGGER, DEBUG, "Ping interrupted!", e);
+            close(LOCAL_CLOSE);
             return false;
         } finally {
             if (expectedPingAck == pingId) {
@@ -443,13 +460,17 @@ public class Http2ClientConnection {
      * Closes this connection.
      */
     public void close() {
-        close(new IllegalStateException("HTTP/2 connection is closed"));
+        close(new IllegalStateException("HTTP/2 connection is closed"), LOCAL_CLOSE);
+    }
+
+    void close(ConnectionOutcome outcome) {
+        close(new IllegalStateException("HTTP/2 connection is closed"), outcome);
     }
 
     void retire() {
         initialSettingsLatch.countDown();
         if (!clientPrefaceSent) {
-            closeConnection(new IllegalStateException("HTTP/2 connection is closed"));
+            closeConnection(new IllegalStateException("HTTP/2 connection is closed"), LOCAL_CLOSE);
             return;
         }
         reservedStreamsLock.lock();
@@ -468,7 +489,11 @@ public class Http2ClientConnection {
      */
     @Api.Internal
     public void closeNow() {
-        closeConnection(new IllegalStateException("HTTP/2 connection is closed"));
+        closeNow(LOCAL_CLOSE);
+    }
+
+    private void closeNow(ConnectionOutcome outcome) {
+        closeConnection(new IllegalStateException("HTTP/2 connection is closed"), outcome);
     }
 
     boolean handle(Http2FrameHeader frameHeader, BufferData data) {
@@ -524,7 +549,7 @@ public class Http2ClientConnection {
             success = true;
         } finally {
             if (!success) {
-                rawConnection.close();
+                rawConnection.close(ERROR);
             }
         }
         return connection;
@@ -569,7 +594,8 @@ public class Http2ClientConnection {
                 .writeInt64(pingId);
     }
 
-    private void close(RuntimeException failure) {
+    private void close(RuntimeException failure, ConnectionOutcome outcome) {
+        closeOutcome.compareAndSet(null, outcome);
         initialSettingsLatch.countDown();
         if (!clientPrefaceSent) {
             closeConnection(failure);
@@ -656,6 +682,11 @@ public class Http2ClientConnection {
         }
     }
 
+    private void closeConnection(RuntimeException failure, ConnectionOutcome outcome) {
+        closeOutcome.compareAndSet(null, outcome);
+        closeConnection(failure);
+    }
+
     private List<Http2ClientStream> beginClose(RuntimeException failure) {
         initialSettingsLatch.countDown();
         Lock lock = streamsLock.writeLock();
@@ -672,6 +703,7 @@ public class Http2ClientConnection {
     }
 
     private void closeTransport() {
+        ConnectionOutcome outcome = closeOutcome.updateAndGet(current -> current == null ? LOCAL_CLOSE : current);
         try {
             if (handleTask != null) {
                 handleTask.cancel(true);
@@ -679,7 +711,7 @@ public class Http2ClientConnection {
             ctx.log(LOGGER, TRACE, "Closing connection");
             goAwayWriteComplete.countDown();
             errorGoAwayWriteComplete.countDown();
-            connection.closeResource();
+            WebClientTransportObserverSupport.close(connection, outcome);
         } catch (Throwable e) {
             ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
         } finally {
@@ -705,7 +737,7 @@ public class Http2ClientConnection {
             goAwayWriteComplete.countDown();
             closeOrderingLock.lock();
             try {
-                closeConnection(new IllegalStateException("HTTP/2 connection is closed"));
+                closeConnection(new IllegalStateException("HTTP/2 connection is closed"), LOCAL_CLOSE);
             } finally {
                 closeOrderingLock.unlock();
             }
@@ -760,12 +792,14 @@ public class Http2ClientConnection {
             sendListener.frame(ctx, 0, windowUpdate);
             writer.write(frameData);
         }
+        WebClientTransportObserverSupport.protocolSelected(connection, PROTOCOL_HTTP_2);
     }
 
     private void start(Http2ClientProtocolConfig protocolConfig,
                        ExecutorService executor,
                        boolean sendSettings) {
         CountDownLatch cdl = new CountDownLatch(1);
+        AtomicReference<Throwable> prefaceFailure = new AtomicReference<>();
 
         handleTask = executor.submit(() -> {
             ctx.log(LOGGER, TRACE, "Starting HTTP/2 connection, thread: %s", Thread.currentThread().getName());
@@ -773,35 +807,50 @@ public class Http2ClientConnection {
                 sendPreface(protocolConfig, sendSettings);
                 clientPrefaceSent = true;
             } catch (Throwable e) {
+                prefaceFailure.set(e);
                 ctx.log(LOGGER, WARNING, "Failed to send preface.", e);
             } finally {
                 // we must wait until the preface is sent, before continuing with client operations
                 cdl.countDown();
             }
 
+            if (prefaceFailure.get() != null) {
+                close(ERROR);
+                return;
+            }
+
             // now switch to HTTP/2
             try {
                 while (!Thread.interrupted()) {
                     if (!handle()) {
-                        closeConnection(new IllegalStateException("HTTP/2 connection closed while reading a response"));
+                        closeConnection(new IllegalStateException("HTTP/2 connection closed while reading a response"),
+                                        REMOTE_CLOSE);
                         ctx.log(LOGGER, TRACE, "Connection closed");
                         return;
                     }
                 }
+                this.close(LOCAL_CLOSE);
                 ctx.log(LOGGER, TRACE, "Client listener interrupted");
             } catch (Throwable t) {
                 RuntimeException failure = t instanceof RuntimeException runtimeException
                         ? runtimeException
                         : new IllegalStateException("HTTP/2 connection failed", t);
-                if (failure instanceof DataReader.InsufficientDataAvailableException
-                        || failure instanceof UncheckedIOException) {
-                    closeConnection(failure);
+                if (failure instanceof UncheckedIOException unchecked
+                        && unchecked.getCause() instanceof SocketTimeoutException) {
+                    closeConnection(failure, TIMEOUT);
+                } else if (failure instanceof DataReader.InsufficientDataAvailableException) {
+                    closeConnection(failure, REMOTE_CLOSE);
+                } else if (failure instanceof UncheckedIOException) {
+                    closeConnection(failure, connection.isConnected() ? ERROR : REMOTE_CLOSE);
+                } else if (!connection.isConnected()) {
+                    closeConnection(failure, REMOTE_CLOSE);
                 } else {
-                    close(failure instanceof Http2Exception
-                                  ? failure
-                                  : new Http2Exception(Http2ErrorCode.INTERNAL,
-                                                       "HTTP/2 connection failed while processing a peer frame",
-                                                       failure));
+                    RuntimeException protocolFailure = failure instanceof Http2Exception
+                            ? failure
+                            : new Http2Exception(Http2ErrorCode.INTERNAL,
+                                                 "HTTP/2 connection failed while processing a peer frame",
+                                                 failure);
+                    close(protocolFailure, ERROR);
                 }
                 ctx.log(LOGGER, DEBUG, "Failed to handle HTTP/2 client connection", t);
             }
@@ -809,10 +858,23 @@ public class Http2ClientConnection {
 
         try {
             if (!cdl.await(20, TimeUnit.SECONDS)) {
+                close(TIMEOUT);
                 throw new IllegalStateException("Filed to send HTTP/2 preface within 20 seconds, this connection is broken");
             }
         } catch (InterruptedException e) {
+            close(LOCAL_CLOSE);
+            Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for preface to be sent", e);
+        }
+        Throwable failure = prefaceFailure.get();
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        if (failure != null) {
+            throw new IllegalStateException("Failed to send HTTP/2 preface", failure);
         }
     }
 
@@ -827,9 +889,11 @@ public class Http2ClientConnection {
         }
         try {
             if (!initialSettingsLatch.await(20, TimeUnit.SECONDS)) {
+                close(TIMEOUT);
                 throw new IllegalStateException("Failed to receive initial HTTP/2 settings within 20 seconds");
             }
         } catch (InterruptedException e) {
+            close(LOCAL_CLOSE);
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for initial HTTP/2 settings", e);
         }
@@ -1004,8 +1068,10 @@ public class Http2ClientConnection {
         Http2GoAway http2GoAway = Http2GoAway.create(data);
         recvListener.frameHeader(ctx, streamId, frameHeader);
         recvListener.frame(ctx, streamId, http2GoAway);
-        close(new Http2Exception(http2GoAway.errorCode(),
-                                 "Connection closed by remote peer, last stream: " + http2GoAway.lastStreamId()));
+        Http2Exception failure = new Http2Exception(http2GoAway.errorCode(),
+                                                    "Connection closed by remote peer, last stream: "
+                                                            + http2GoAway.lastStreamId());
+        close(failure, http2GoAway.errorCode() == Http2ErrorCode.NO_ERROR ? REMOTE_CLOSE : ERROR);
         ctx.log(LOGGER, TRACE, "Connection closed by remote peer, error code: %s, last stream: %d",
                 http2GoAway.errorCode(),
                 http2GoAway.lastStreamId());
@@ -1313,6 +1379,10 @@ public class Http2ClientConnection {
         }
     }
 
+    ConnectionObservation transportObservation() {
+        return WebClientTransportObserverSupport.observation(connection);
+    }
+
     private enum State {
         CLOSED(true),
         GO_AWAY(true),
@@ -1464,7 +1534,7 @@ public class Http2ClientConnection {
 
         @Override
         public void close() {
-            closeNow();
+            closeNow(ERROR);
         }
     }
 

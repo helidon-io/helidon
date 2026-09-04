@@ -18,6 +18,7 @@ package io.helidon.webclient.tests;
 import java.net.URI;
 
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -51,11 +52,12 @@ class WebclientServiceValuePropagationTest extends TestParent {
                 })
                 .build();
 
-        String response = webClient.get("/greet/valuesPropagated")
+        try (HttpClientResponse response = webClient.get("/greet/valuesPropagated")
                 .path("replace/me")
-                .requestEntity(String.class);
-
-        assertThat(response, is("Hi "));
+                .request()) {
+            assertThat(response.as(String.class), is("Hi"));
+            assertThat(response.lastEndpointUri().fragment().value(), is("Test"));
+        }
     }
 
     @Test

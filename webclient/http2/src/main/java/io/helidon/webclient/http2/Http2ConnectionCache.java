@@ -18,6 +18,7 @@ package io.helidon.webclient.http2;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +29,14 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
 import io.helidon.common.LruCache;
+import io.helidon.http.HttpTransportObserver;
 import io.helidon.webclient.api.AltSvcHeader;
 import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.api.WebClientTransportObserverSupport;
 import io.helidon.webclient.spi.ClientConnectionCache;
 
 /**
@@ -40,7 +44,9 @@ import io.helidon.webclient.spi.ClientConnectionCache;
  */
 public final class Http2ConnectionCache extends ClientConnectionCache {
     private static final int MAX_TARGETS = 1_000;
-    private static final Http2ConnectionCache SHARED = new Http2ConnectionCache(true);
+    private static final ReentrantLock SHARED_CACHES_LOCK = new ReentrantLock();
+    private static final Http2ConnectionCache UNOBSERVED_SHARED = new Http2ConnectionCache(true);
+    private static final Map<Object, Http2ConnectionCache> OBSERVED_SHARED = new IdentityHashMap<>();
     private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.create(1000);
     private final ConcurrentMap<ClientConnectionTarget, Http2ClientConnectionHandler> cache = new ConcurrentHashMap<>();
     private final ConcurrentMap<ClientConnectionTarget.LookupKey, List<Http2ClientConnectionHandler>> lookupCache =
@@ -63,7 +69,20 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
      * @return shared connection cache
      */
     public static Http2ConnectionCache shared() {
-        return SHARED;
+        return UNOBSERVED_SHARED;
+    }
+
+    static Http2ConnectionCache shared(WebClient webClient) {
+        if (WebClientTransportObserverSupport.observer(webClient) == HttpTransportObserver.noop()) {
+            return UNOBSERVED_SHARED;
+        }
+        Object identity = WebClientTransportObserverSupport.observerIdentity(webClient);
+        SHARED_CACHES_LOCK.lock();
+        try {
+            return OBSERVED_SHARED.computeIfAbsent(identity, _ -> new Http2ConnectionCache(true));
+        } finally {
+            SHARED_CACHES_LOCK.unlock();
+        }
     }
 
     /**

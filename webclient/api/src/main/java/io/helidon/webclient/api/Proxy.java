@@ -640,18 +640,19 @@ public class Proxy {
                                          boolean tls) {
 
         WebClientConfig clientConfig = webClient.prototype();
-        TcpClientConnection connection = TcpClientConnection.create(webClient,
-                                                                    ConnectionKey.create("http",
-                                                                                         proxyAddress.getHostName(),
-                                                                                         proxyAddress.getPort(),
-                                                                                         NO_TLS,
-                                                                                         clientConfig.dnsResolver(),
-                                                                                         clientConfig.dnsAddressLookup(),
-                                                                                         NO_PROXY),
-                                                                    List.of(),
-                                                                    it -> false,
-                                                                    it -> {
-                                                                    })
+        TcpClientConnection connection = new TcpClientConnection(webClient,
+                                                                 ConnectionKey.create("http",
+                                                                                      proxyAddress.getHostName(),
+                                                                                      proxyAddress.getPort(),
+                                                                                      NO_TLS,
+                                                                                      clientConfig.dnsResolver(),
+                                                                                      clientConfig.dnsAddressLookup(),
+                                                                                      NO_PROXY),
+                                                                 List.of(),
+                                                                 it -> false,
+                                                                 it -> {
+                                                                 },
+                                                                 false)
                 .connect();
         if (proxy.forceHttpConnect || tls || proxy.username.isPresent()) {
             HttpClientRequest request = webClient.method(Method.CONNECT)
@@ -713,7 +714,8 @@ public class Proxy {
                                                                     List.of(),
                                                                     it -> false,
                                                                     it -> {
-                                                                    })
+                                                                    },
+                                                                    false)
                 .connect();
         if (target.proxyRoute().kind() == ProxyRoute.Kind.HTTP_TUNNEL) {
             HttpClientRequest request = webClient.method(Method.CONNECT)

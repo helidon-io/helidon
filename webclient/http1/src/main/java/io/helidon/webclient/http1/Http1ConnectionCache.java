@@ -18,6 +18,7 @@ package io.helidon.webclient.http1;
 
 import java.net.UnixDomainSocketAddress;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpTransportObserver;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientConnectionTarget;
@@ -40,8 +42,10 @@ import io.helidon.webclient.api.SniConfig;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientTransportObserverSupport;
 import io.helidon.webclient.spi.ClientConnectionCache;
 
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.REMOTE_CLOSE;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 
@@ -53,7 +57,9 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private static final int MAX_TARGETS = 1_000;
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final String HTTPS = "https";
-    private static final Http1ConnectionCache SHARED = new Http1ConnectionCache(true);
+    private static final ReentrantLock SHARED_CACHES_LOCK = new ReentrantLock();
+    private static final Http1ConnectionCache UNOBSERVED_SHARED = new Http1ConnectionCache(true);
+    private static final Map<Object, Http1ConnectionCache> OBSERVED_SHARED = new IdentityHashMap<>();
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
 
     private final ConcurrentMap<ClientConnectionTarget, ConnectionPool> cache = new ConcurrentHashMap<>();
@@ -69,8 +75,20 @@ class Http1ConnectionCache extends ClientConnectionCache {
         super(shared);
     }
 
-    static Http1ConnectionCache shared() {
-        return SHARED;
+    static Http1ConnectionCache shared(WebClient webClient) {
+        if (webClient == null) {
+            return UNOBSERVED_SHARED;
+        }
+        if (WebClientTransportObserverSupport.observer(webClient) == HttpTransportObserver.noop()) {
+            return UNOBSERVED_SHARED;
+        }
+        Object identity = WebClientTransportObserverSupport.observerIdentity(webClient);
+        SHARED_CACHES_LOCK.lock();
+        try {
+            return OBSERVED_SHARED.computeIfAbsent(identity, _ -> new Http1ConnectionCache(true));
+        } finally {
+            SHARED_CACHES_LOCK.unlock();
+        }
     }
 
     static Http1ConnectionCache create() {
@@ -453,7 +471,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private static ClientConnection connectedConnection(ConnectionPool connectionPool) {
         ClientConnection connection;
         while ((connection = connectionPool.poll()) != null && !connection.isConnected()) {
-            connection.closeResource();
+            WebClientTransportObserverSupport.close(connection, REMOTE_CLOSE);
         }
         return connection;
     }

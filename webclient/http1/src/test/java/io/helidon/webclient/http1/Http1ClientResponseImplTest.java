@@ -17,8 +17,10 @@
 package io.helidon.webclient.http1;
 
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -26,6 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -37,6 +41,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
@@ -53,6 +58,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1ClientResponseImplTest {
 
@@ -216,6 +223,143 @@ class Http1ClientResponseImplTest {
         assertThat(connection.closeCount(), is(0));
     }
 
+    @Test
+    void truncatedEntityCompletesLifecycleExceptionally() throws Exception {
+        EOFException expected = new EOFException("simulated truncated HTTP/1 entity");
+        InputStream truncatedEntity = new InputStream() {
+            private boolean byteReturned;
+
+            @Override
+            public int read() throws IOException {
+                if (!byteReturned) {
+                    byteReturned = true;
+                    return 'd';
+                }
+                throw expected;
+            }
+
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                if (!byteReturned) {
+                    byteReturned = true;
+                    bytes[offset] = 'd';
+                    return 1;
+                }
+                throw expected;
+            }
+        };
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        TestConnection connection = new TestConnection();
+        Http1ClientResponseImpl response = response(contentLengthHeaders(),
+                                                    truncatedEntity,
+                                                    connection,
+                                                    lifecycle);
+
+        UncheckedIOException actual = assertThrows(UncheckedIOException.class,
+                                                   () -> response.entity().as(byte[].class));
+
+        assertThat(actual.getCause(), sameInstance(expected));
+        ExecutionException lifecycleFailure = assertThrows(
+                ExecutionException.class,
+                () -> lifecycle.get(5, TimeUnit.SECONDS));
+        assertThat(lifecycleFailure.getCause(), sameInstance(actual));
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void trailerFutureFailureCompletesLifecycleExceptionally() throws Exception {
+        IllegalStateException expected = new IllegalStateException("simulated HTTP/1 trailer failure");
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> transportTrailers = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> responseTrailers =
+                CompletableFuture.failedFuture(expected);
+        TestConnection connection = new TestConnection();
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.TRAILER, "checksum");
+        Http1ClientResponseImpl response = new Http1ClientResponseImpl(
+                HttpClientConfig.builder().build(),
+                Http1ClientProtocolConfig.create(),
+                Status.OK_200,
+                Method.GET,
+                ClientRequestHeaders.create(WritableHeaders.create()),
+                ClientResponseHeaders.create(headers),
+                connection,
+                inputStream("data"),
+                MediaContext.create(),
+                ClientUri.create(URI.create("http://localhost/test")),
+                lifecycle,
+                transportTrailers,
+                responseTrailers);
+        response.entity();
+
+        IllegalStateException actual = assertThrows(IllegalStateException.class, response::trailers);
+
+        assertThat(actual, sameInstance(expected));
+        ExecutionException lifecycleFailure = assertThrows(
+                ExecutionException.class,
+                () -> lifecycle.get(5, TimeUnit.SECONDS));
+        assertThat(lifecycleFailure.getCause(), sameInstance(expected));
+        assertThat(transportTrailers.isCompletedExceptionally(), is(true));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void redirectedResponseCompletesUnreadAdvertisedTrailersExceptionally() throws Exception {
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> trailers = new CompletableFuture<>();
+        TestConnection connection = new TestConnection();
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.TRAILER, "checksum");
+        Http1ClientResponseImpl response = new Http1ClientResponseImpl(
+                HttpClientConfig.builder().build(),
+                Http1ClientProtocolConfig.create(),
+                Status.TEMPORARY_REDIRECT_307,
+                Method.GET,
+                ClientRequestHeaders.create(WritableHeaders.create()),
+                ClientResponseHeaders.create(headers),
+                connection,
+                null,
+                MediaContext.create(),
+                ClientUri.create(URI.create("http://localhost/redirect")),
+                lifecycle,
+                trailers,
+                trailers);
+
+        response.completeWithoutClosingConnection();
+
+        ExecutionException trailerFailure = assertThrows(
+                ExecutionException.class,
+                () -> trailers.get(5, TimeUnit.SECONDS));
+        assertThat(trailerFailure.getCause().getMessage(), is("HTTP/1 response closed before trailers were read."));
+        lifecycle.get(5, TimeUnit.SECONDS);
+        assertThat(lifecycle.isCompletedExceptionally(), is(false));
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void truncatedTrailersCompleteLifecycleExceptionally() throws Exception {
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        TestConnection connection = new TestConnection();
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        headers.add(HeaderNames.TRAILER, "checksum");
+        Http1ClientResponseImpl response = response(ClientResponseHeaders.create(headers),
+                                                    new ByteArrayInputStream(new byte[0]),
+                                                    connection,
+                                                    lifecycle);
+
+        RuntimeException actual = assertThrows(RuntimeException.class,
+                                               () -> response.entity().as(byte[].class));
+
+        ExecutionException lifecycleFailure = assertThrows(
+                ExecutionException.class,
+                () -> lifecycle.get(5, TimeUnit.SECONDS));
+        assertThat(lifecycleFailure.getCause(), sameInstance(actual));
+        assertThat(connection.closeCount(), is(1));
+    }
+
     private static WebClientServiceResponse serviceResponse(Method method,
                                                             Status status,
                                                             ClientResponseHeaders headers) {
@@ -232,6 +376,13 @@ class Http1ClientResponseImplTest {
     private static Http1ClientResponseImpl response(ClientResponseHeaders headers,
                                                     InputStream inputStream,
                                                     TestConnection connection) {
+        return response(headers, inputStream, connection, new CompletableFuture<>());
+    }
+
+    private static Http1ClientResponseImpl response(ClientResponseHeaders headers,
+                                                    InputStream inputStream,
+                                                    TestConnection connection,
+                                                    CompletableFuture<Void> lifecycle) {
         return new Http1ClientResponseImpl(HttpClientConfig.builder().build(),
                                            Http1ClientProtocolConfig.create(),
                                            Status.OK_200,
@@ -242,7 +393,7 @@ class Http1ClientResponseImplTest {
                                            inputStream,
                                            MediaContext.create(),
                                            ClientUri.create(URI.create("http://localhost/test")),
-                                           new CompletableFuture<>());
+                                           lifecycle);
     }
 
     private static InputStream inputStream(String entity) {

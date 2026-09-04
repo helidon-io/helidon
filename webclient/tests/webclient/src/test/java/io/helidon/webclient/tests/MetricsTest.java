@@ -15,6 +15,9 @@
  */
 package io.helidon.webclient.tests;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+
 import io.helidon.http.Method;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
@@ -29,6 +32,7 @@ import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -205,6 +209,42 @@ public class MetricsTest extends TestParent {
         assertThat(counterAll.count(), is(2L));
         assertThat(counterGet.count(), is(1L));
         assertThat(counterPut.count(), is(1L));
+    }
+
+    @Test
+    void transportMetricsObserveHttp1Connection() {
+        long before = establishedClientConnections();
+        Http1Client webClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .baseUri("http://localhost:" + server.port() + "/greet")
+                .addService(WebClientMetrics.counter().nameFormat("transport.%1$s.%2$s").build())
+                .build();
+        try {
+            webClient.get().request().close();
+
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (establishedClientConnections() < before + 1 && System.nanoTime() < deadline) {
+                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new IllegalStateException("Interrupted while waiting for WebClient transport metrics");
+                }
+            }
+            assertThat(establishedClientConnections(), greaterThanOrEqualTo(before + 1));
+        } finally {
+            webClient.closeResource();
+        }
+    }
+
+    private long establishedClientConnections() {
+        return registry.meters().stream()
+                .filter(meter -> meter instanceof Counter)
+                .filter(meter -> meter.id().name().equals("http.connections.established"))
+                .filter(meter -> "client".equals(meter.id().tagsMap().get("role")))
+                .filter(meter -> "tcp".equals(meter.id().tagsMap().get("transport")))
+                .filter(meter -> "http/1.1".equals(meter.id().tagsMap().get("protocol")))
+                .mapToLong(meter -> ((Counter) meter).count())
+                .sum();
     }
 
 }

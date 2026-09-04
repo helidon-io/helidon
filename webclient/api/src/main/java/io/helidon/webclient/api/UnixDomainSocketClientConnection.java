@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -41,7 +42,21 @@ import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.TlsNioSocket;
 import io.helidon.common.task.DeadlineGuard;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.HandshakeObservation;
+import io.helidon.http.HttpTransportObserver.HandshakeOutcome;
 
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.ERROR;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.LOCAL_CLOSE;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.REMOTE_CLOSE;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.TIMEOUT;
+import static io.helidon.http.HttpTransportObserver.Handshake.NONE;
+import static io.helidon.http.HttpTransportObserver.Handshake.TLS;
+import static io.helidon.http.HttpTransportObserver.HandshakeOutcome.FAILURE;
+import static io.helidon.http.HttpTransportObserver.HandshakeOutcome.SUCCESS;
+import static io.helidon.http.HttpTransportObserver.Role.CLIENT;
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_UNIX;
 import static io.helidon.webclient.api.TcpClientConnection.debugTls;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -49,7 +64,8 @@ import static java.lang.System.Logger.Level.TRACE;
 /**
  * Client connection to a UNIX domain socket.
  */
-public class UnixDomainSocketClientConnection implements ClientConnection {
+public class UnixDomainSocketClientConnection implements ClientConnection,
+                                                         ObservedClientConnection {
     private static final System.Logger LOGGER = System.getLogger(UnixDomainSocketClientConnection.class.getName());
 
     private final WebClient webClient;
@@ -68,7 +84,8 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
     private HelidonSocket socket;
     private DataReader reader;
     private DataWriter writer;
-    private boolean closed;
+    private final AtomicBoolean closed = new AtomicBoolean();
+    private volatile ConnectionObservation transportObservation = ConnectionObservation.noop();
     private boolean allowExpectContinue = true;
 
     private UnixDomainSocketClientConnection(WebClient webClient,
@@ -231,7 +248,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
 
     @Override
     public DataReader reader() {
-        if (closed) {
+        if (closed.get()) {
             throw new IllegalStateException("Attempt to call reader() on a closed connection");
         }
 
@@ -244,7 +261,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
 
     @Override
     public DataWriter writer() {
-        if (closed) {
+        if (closed.get()) {
             throw new IllegalStateException("Attempt to call writer() on a closed connection");
         }
 
@@ -282,11 +299,11 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
 
     @Override
     public boolean isConnected() {
-        if (closed || channel == null || socket == null || !channel.isConnected() || !channel.isOpen()) {
+        if (closed.get() || channel == null || socket == null || !channel.isConnected() || !channel.isOpen()) {
             return false;
         }
         if (!socket.isConnected()) {
-            closeResource();
+            closeResource(REMOTE_CLOSE);
             return false;
         }
         return true;
@@ -294,7 +311,12 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
 
     @Override
     public void closeResource() {
-        if (closed) {
+        closeResource(LOCAL_CLOSE);
+    }
+
+    @Override
+    public void closeResource(ConnectionOutcome outcome) {
+        if (!closed.compareAndSet(false, true)) {
             return;
         }
         try {
@@ -304,13 +326,16 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
         } catch (IOException e) {
             LOGGER.log(TRACE, "Failed to close a client socket channel", e);
         }
-        this.closed = true;
-        closeConsumer.accept(this);
+        try {
+            closeConsumer.accept(this);
+        } finally {
+            transportObservation.close(outcome);
+        }
     }
 
     @Override
     public void releaseResource() {
-        if (closed) {
+        if (closed.get()) {
             return;
         }
         if (!releaseFunction.apply(this)) {
@@ -326,10 +351,13 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
     @Override
     public UnixDomainSocketClientConnection connect() {
         validateTlsGeneration();
+        HandshakeObservation handshakeObservation = HandshakeObservation.noop();
         try {
             this.channel = SocketChannel.open(StandardProtocolFamily.UNIX);
             this.channel.connect(this.address);
             this.channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(this.channel));
+            this.transportObservation = WebClientTransportObserverSupport.observer(webClient)
+                    .connectionOpened(CLIENT, TRANSPORT_UNIX, tls.enabled() ? TLS : NONE);
 
             if (LOGGER.isLoggable(DEBUG)) {
                 LOGGER.log(DEBUG, String.format("[client %s] UNIX socket client connected %s %s",
@@ -353,7 +381,9 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                 engine.setSSLParameters(sslParameters(engine.getSSLParameters()));
 
                 TlsNioSocket tlsSocket = TlsNioSocket.client(this.channel, engine, this.channelId);
+                handshakeObservation = transportObservation.handshakeStarted();
                 startTlsHandshake(tlsSocket);
+                handshakeObservation.close(SUCCESS);
                 if (LOGGER.isLoggable(TRACE)) {
                     debugTls(engine, channelId);
                 }
@@ -362,10 +392,23 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                 this.socket = NioSocket.client(this.channel, this.channelId);
             }
         } catch (IOException e) {
-            closeChannelOnFailure(e);
+            boolean timedOut = e instanceof SocketTimeoutException;
+            handshakeObservation.close(timedOut
+                                               ? HandshakeOutcome.TIMEOUT
+                                               : FAILURE);
+            try {
+                closeResource(timedOut ? TIMEOUT : ERROR);
+            } catch (RuntimeException | Error closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
             throw new UncheckedIOException(e);
-        } catch (RuntimeException e) {
-            closeChannelOnFailure(e);
+        } catch (RuntimeException | Error e) {
+            handshakeObservation.close(FAILURE);
+            try {
+                closeResource(ERROR);
+            } catch (RuntimeException | Error closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
             throw e;
         }
 
@@ -384,7 +427,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
         IllegalStateException failure =
                 new IllegalStateException("TLS configuration was reloaded during connection setup");
         try {
-            closeResource();
+            closeResource(ERROR);
         } catch (RuntimeException | Error closeFailure) {
             failure.addSuppressed(closeFailure);
         }
@@ -452,18 +495,6 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
         return parameters;
     }
 
-    private void closeChannelOnFailure(Throwable cause) {
-        this.closed = true;
-        if (this.channel == null) {
-            return;
-        }
-        try {
-            this.channel.close();
-        } catch (IOException e) {
-            cause.addSuppressed(e);
-        }
-    }
-
     private void closeChannelOnTimeout() {
         if (this.channel == null) {
             return;
@@ -473,6 +504,11 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
         } catch (IOException e) {
             LOGGER.log(TRACE, "Failed to close a timed out client socket channel", e);
         }
+    }
+
+    @Override
+    public ConnectionObservation transportObservation() {
+        return transportObservation;
     }
 
 }

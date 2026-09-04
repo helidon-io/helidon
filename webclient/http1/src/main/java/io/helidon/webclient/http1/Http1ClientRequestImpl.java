@@ -17,55 +17,64 @@
 package io.helidon.webclient.http1;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.UnixDomainSocketAddress;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
-import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequestBase;
+import io.helidon.webclient.api.ClientRequestOrigin;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.EntityWriterPreflight;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.ProxyRoute;
+import io.helidon.webclient.api.RedirectSecurityState;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse>
         implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
-    private static final Set<HeaderName> REPLAYABLE_HEADERS = Set.of(HeaderNames.ACCEPT,
-                                                                     HeaderNames.ACCEPT_CHARSET,
-                                                                     HeaderNames.ACCEPT_ENCODING,
-                                                                     HeaderNames.ACCEPT_LANGUAGE,
-                                                                     HeaderNames.CONTENT_ENCODING,
-                                                                     HeaderNames.CONTENT_LANGUAGE,
-                                                                     HeaderNames.CONTENT_LOCATION,
-                                                                     HeaderNames.CONTENT_TYPE);
+    private static final HeaderName AUTHORITY = HeaderNames.create(":authority");
 
     private final Http1ClientImpl http1Client;
     private final FullClientRequest<?> delegate;
 
     private boolean outputStreamRedirect;
-    private int outputStreamRedirects;
+    private CompletableFuture<WebClientServiceRequest> redirectedWhenSent;
+    private ClientRequestHeaders redirectHeadersAfterServices;
+    private RequestEntity requestEntity;
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(http1Client, null, method, clientUri, null, properties);
+        this(http1Client,
+             null,
+             method,
+             clientUri,
+             null,
+             properties,
+             null,
+             RedirectSecurityState.initial());
     }
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
@@ -74,7 +83,14 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                            ClientUri clientUri,
                            Boolean sendExpectContinue,
                            Map<String, String> properties) {
-        this(http1Client, delegate, method, clientUri, sendExpectContinue, properties, null, false);
+        this(http1Client,
+             delegate,
+             method,
+             clientUri,
+             sendExpectContinue,
+             properties,
+             null,
+             delegate == null ? RedirectSecurityState.initial() : delegate.redirectSecurityState());
     }
 
     private Http1ClientRequestImpl(Http1ClientImpl http1Client,
@@ -84,7 +100,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                    Boolean sendExpectContinue,
                                    Map<String, String> properties,
                                    ClientUri redirectSourceUri,
-                                   boolean crossOriginRedirect) {
+                                   RedirectSecurityState redirectSecurityState) {
         super(http1Client.clientConfig(),
               http1Client.webClient().cookieManager(),
               Http1Client.PROTOCOL_ID,
@@ -92,10 +108,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
               clientUri,
               sendExpectContinue,
               properties,
-              redirectSourceUri,
-              crossOriginRedirect);
+              redirectSourceUri);
         this.http1Client = http1Client;
         this.delegate = delegate;
+        super.redirectSecurityState(redirectSecurityState);
     }
 
     //Copy constructor for redirection purposes
@@ -103,33 +119,73 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties,
-                           boolean preserveEntity) {
+                           ClientUri redirectSourceUri,
+                           boolean preserveEntity,
+                           boolean replayingEntity) {
         this(request.http1Client,
              null,
              method,
              clientUri,
              null,
              properties,
-             request.resolvedUri(),
-             request.crossesRedirectOriginBoundary(clientUri));
+             redirectSourceUri,
+             request.redirectSecurityState().forRedirect(replayingEntity));
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
-        tls(request.tls());
-        proxy(request.proxy());
-        request.sni().ifPresent(this::sni);
-        if (sameOrigin(request.resolvedUri(), clientUri)) {
-            request.address().ifPresent(this::address);
-            request.selectedProxyRoute().ifPresent(this::selectedProxyRoute);
-        }
         readTimeout(request.readTimeout());
         readContinueTimeout(request.readContinueTimeout());
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
-        outputStreamRedirect(request.outputStreamRedirect());
-        outputStreamRedirects(request.outputStreamRedirects());
-        if (preserveEntity) {
-            REPLAYABLE_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
+        keepAlive(request.keepAlive());
+        proxy(request.proxy());
+        tls(request.tls());
+        tlsGeneration(request.tlsGeneration());
+        request.sni().ifPresent(this::sni);
+        headers().clear();
+        headers(request.redirectSourceHeaders());
+        if (request.requestEntity != null) {
+            requestEntity = request.requestEntity.redirect(headers(), preserveEntity);
         }
+        if (!preserveEntity) {
+            headers().remove(HeaderNames.CONTENT_TYPE);
+            headers().remove(HeaderNames.CONTENT_ENCODING);
+            headers().remove(HeaderNames.CONTENT_LANGUAGE);
+            headers().remove(HeaderNames.CONTENT_LOCATION);
+        }
+        headers().remove(HeaderNames.CONTENT_LENGTH);
+        headers().remove(HeaderNames.TRANSFER_ENCODING);
+        headers().remove(HeaderNames.EXPECT);
+        if (requestEntity != null) {
+            requestEntity.applyContentLength(headers());
+        }
+        boolean retainRouting = canRetainRouting(request.resolvedUri(),
+                                                 request.headers(),
+                                                 redirectSourceUri,
+                                                 clientUri,
+                                                 request.redirectSecurityState());
+        if (retainRouting) {
+            ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri, headers());
+            request.address().ifPresent(value -> {
+                var inheritedOrigin = request.inheritedAddressOrigin();
+                if (inheritedOrigin.isEmpty()) {
+                    address(value);
+                } else if (inheritedOrigin.get().equals(targetOrigin)) {
+                    inheritedAddress(value, inheritedOrigin.get());
+                }
+            });
+            request.selectedProxyRoute().ifPresent(value -> {
+                var inheritedOrigin = request.inheritedSelectedProxyRouteOrigin();
+                if (inheritedOrigin.isEmpty()) {
+                    selectedProxyRoute(value);
+                } else if (inheritedOrigin.get().equals(targetOrigin)) {
+                    inheritedSelectedProxyRoute(value, inheritedOrigin.get());
+                }
+            });
+        } else {
+            headers().remove(HeaderNames.HOST);
+            headers().remove(AUTHORITY);
+        }
+        this.redirectedWhenSent = request.redirectedWhenSent;
     }
 
     @Override
@@ -150,67 +206,166 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     @Override
     public Http1ClientResponse doSubmit(Object entity) {
-        byte[] entityBytes;
         if (entity == BufferData.EMPTY_BYTES) {
-            entityBytes = BufferData.EMPTY_BYTES;
-        } else if (entity instanceof byte[] buffer) {
-            entityBytes = buffer;
-        } else {
-            // must apply media writer, and if the writer has unknown length, or longer than we can buffer, stream it
-            GenericType<Object> genericType = GenericType.create(entity);
-            EntityWriter<Object> mediaWriter = clientConfig()
-                    .mediaContext()
-                    .writer(genericType, headers());
+            return invokePreparedEntity(BufferData.EMPTY_BYTES);
+        }
+        if (entity instanceof byte[] buffer) {
+            return invokePreparedEntity(buffer);
+        }
 
-            long configuredContentLength = headers().contentLength().orElse(-1);
-            if (mediaWriter.supportsInstanceWriter()) {
-                InstanceWriter instanceWriter = mediaWriter.instanceWriter(genericType, entity, headers());
-                if (instanceWriter.alwaysInMemory()) {
-                    entityBytes = instanceWriter.instanceBytes();
-                } else {
-                    long length = instanceWriter.contentLength().orElse(configuredContentLength);
-                    if (length == -1) {
-                        return doOutputStream(instanceWriter::write);
-                    } else if (length > clientConfig().maxInMemoryEntity()) {
-                        headers().contentLength(length);
-                        return doOutputStream(instanceWriter::write);
-                    } else {
-                        entityBytes = instanceWriter.instanceBytes();
-                    }
-                }
-            } else {
-                if (configuredContentLength == -1 || configuredContentLength > clientConfig().maxInMemoryEntity()) {
-                    return doOutputStream(it -> mediaWriter.write(genericType, entity, it, headers()));
-                } else {
-                    // safe to cast to int, as the maxInMemoryEntity configuration option is an int
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream((int) configuredContentLength);
-                    mediaWriter.write(genericType, entity, baos, headers());
-                    entityBytes = baos.toByteArray();
-                }
+        RequestEntity preparedEntity = RequestEntity.create(this, entity);
+        requestEntity = preparedEntity;
+        try {
+            if (preparedEntity.bytes != null) {
+                return invokePreparedEntity(preparedEntity.bytes);
+            }
+            return doOutputStream(preparedEntity::writeTo);
+        } finally {
+            preparedEntity.cancelIfUnattached();
+            if (requestEntity == preparedEntity) {
+                requestEntity = null;
             }
         }
-
-        if (method() == Method.QUERY && !headers().contains(HeaderNames.CONTENT_TYPE)) {
-            throw new IllegalArgumentException("Content-Type header is required for method '" + Method.QUERY + "'");
-        }
-
-        if (followRedirects()) {
-            return RedirectionProcessor.invokeWithFollowRedirects(this, entityBytes);
-        }
-        return invokeRequestWithEntity(entityBytes);
     }
 
     @Override
     public Http1ClientResponse doOutputStream(OutputStreamHandler streamHandler) {
+        return doOutputStream(streamHandler, new AtomicBoolean(), 0, false);
+    }
+
+    @Override
+    public Http1ClientResponse outputStream(OutputStreamHandler streamHandler, int followedRedirects) {
+        if (followedRedirects < 0) {
+            throw new IllegalArgumentException("Followed redirect count must not be negative: " + followedRedirects);
+        }
+        return doOutputStream(streamHandler, new AtomicBoolean(), followedRedirects, false);
+    }
+
+    private Http1ClientResponseImpl doOutputStream(OutputStreamHandler streamHandler,
+                                                   AtomicBoolean handlerClaimed,
+                                                   int followedRedirects,
+                                                   boolean replayable) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        Http1CallChainBase callChain = new Http1CallOutputStreamChain(http1Client,
-                                                                      this,
-                                                                      whenSent,
-                                                                      whenComplete,
-                                                                      streamHandler);
+        OutputStreamHandler claimedHandler = replayable
+                ? streamHandler
+                : outputStream -> {
+                    if (!handlerClaimed.compareAndSet(false, true)) {
+                        throw new IllegalStateException("HTTP/1 request entity is one-shot and has already been consumed");
+                    }
+                    streamHandler.handle(outputStream);
+                };
+        Http1CallOutputStreamChain callChain = new Http1CallOutputStreamChain(http1Client,
+                                                                               this,
+                                                                               whenSent,
+                                                                               whenComplete,
+                                                                               claimedHandler,
+                                                                               followedRedirects);
 
-        return invokeWithServices(callChain, whenSent, whenComplete);
+        Http1ClientResponseImpl response = invokeWithServices(callChain, whenSent, whenComplete);
+        if (!followRedirects() || !RedirectionProcessor.redirectionStatusCode(response.status())) {
+            return response;
+        }
+
+        Status redirectStatus = response.status();
+        ClientUri sourceUri = response.lastEndpointUri();
+        String location;
+        int totalFollowedRedirects = callChain.followedRedirects();
+        try (response) {
+            if (responseCookiesDeferred()) {
+                recordResponseCookies(responseCookieUri(redirectSecurityState(), response.lastEndpointUri()),
+                                      response.headers());
+            }
+            if (totalFollowedRedirects >= maxRedirects()) {
+                throw RedirectionProcessor.maxRedirectsReached(maxRedirects());
+            }
+            if (!response.headers().contains(HeaderNames.LOCATION)) {
+                throw new IllegalStateException("There is no " + HeaderNames.LOCATION
+                                                        + " header present in the response! "
+                                                        + "It is not clear where to redirect.");
+            }
+            location = response.headers().get(HeaderNames.LOCATION).get();
+        }
+
+        ClientUri redirectUri = resolveRedirectUri(sourceUri, location);
+        boolean keepsEntity = RedirectionProcessor.keepsMethodAndEntity(method(), redirectStatus);
+        boolean requestEntitySent = callChain.requestEntitySent();
+        if (keepsEntity && handlerClaimed.get() && requestEntitySent) {
+            throw new IllegalStateException("Cannot replay a one-shot request body after redirect status "
+                                                    + redirectStatus.code() + ".");
+        }
+        Http1ClientRequestImpl redirectRequest = new Http1ClientRequestImpl(this,
+                                                                            keepsEntity ? method() : Method.GET,
+                                                                            redirectUri,
+                                                                            properties(),
+                                                                            sourceUri,
+                                                                            keepsEntity,
+                                                                            keepsEntity
+                                                                                    && (!handlerClaimed.get()
+                                                                                            || requestEntitySent));
+        if (responseCookiesDeferred()) {
+            redirectRequest.deferResponseCookies();
+        }
+        if (callChain.rawServiceResponse() == null
+                && canRetainRouting(resolvedUri(), headers(), sourceUri, redirectUri, redirectSecurityState())) {
+            ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(redirectUri, redirectRequest.headers());
+            connection().ifPresent(value -> {
+                var inheritedOrigin = inheritedConnectionOrigin();
+                if (inheritedOrigin.isEmpty()) {
+                    redirectRequest.connection(value);
+                } else if (inheritedOrigin.get().equals(targetOrigin)) {
+                    redirectRequest.inheritedConnection(value, inheritedOrigin.get());
+                }
+            });
+        }
+        int nextRedirect = totalFollowedRedirects + 1;
+        Http1ClientResponseImpl redirectedResponse;
+        if (keepsEntity) {
+            if (replayable) {
+                redirectedResponse = redirectRequest.doOutputStream(streamHandler,
+                                                                     handlerClaimed,
+                                                                     nextRedirect,
+                                                                     true);
+            } else if (handlerClaimed.get()) {
+                redirectedResponse = followRedirects(redirectRequest,
+                                                     nextRedirect,
+                                                     BufferData.EMPTY_BYTES);
+            } else {
+                redirectedResponse = redirectRequest.doOutputStream(streamHandler,
+                                                                     handlerClaimed,
+                                                                     nextRedirect,
+                                                                     false);
+            }
+        } else {
+            redirectedResponse = followRedirects(redirectRequest,
+                                                 nextRedirect,
+                                                 BufferData.EMPTY_BYTES);
+        }
+        redirectSecurityState(redirectRequest.redirectSecurityState());
+        return redirectedResponse;
+    }
+
+    private static Http1ClientResponseImpl followRedirects(Http1ClientRequestImpl request,
+                                                           int followedRedirects,
+                                                           byte[] entity) {
+        return request.responseCookiesDeferred()
+                ? RedirectionProcessor.invokeWithFollowRedirectsDeferringResponseCookies(request,
+                                                                                         followedRedirects,
+                                                                                         entity)
+                : RedirectionProcessor.invokeWithFollowRedirects(request, followedRedirects, entity);
+    }
+
+    Http1ClientResponseImpl replayBufferedEntity(byte[] entity, int followedRedirects) {
+        return doOutputStream(output -> {
+            output.write(entity);
+            output.close();
+        }, new AtomicBoolean(), followedRedirects, true);
+    }
+
+    private static ClientUri responseCookieUri(RedirectSecurityState securityState, ClientUri endpointUri) {
+        return securityState.lastEffectiveOrigin()
+                .map(origin -> origin.apply(endpointUri))
+                .orElseGet(() -> ClientRequestOrigin.create(endpointUri).apply(endpointUri));
     }
 
     @Override
@@ -278,18 +433,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return http1Client;
     }
 
-    private static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
-        return sourceUri.scheme().equalsIgnoreCase(targetUri.scheme())
-                && sourceUri.host().equalsIgnoreCase(targetUri.host())
-                && sourceUri.port() == targetUri.port();
-    }
-
-    void sanitizeRedirectHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
-        super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
-    }
-
-    boolean canReplayEntityTo(ClientUri requestUri) {
-        return clientConfig().followCrossOriginEntityRedirects() || !crossesRedirectOriginBoundary(requestUri);
+    boolean ownsExplicitConnection() {
+        return delegate != null && delegate.connection().isEmpty() && connection().isPresent();
     }
 
     /**
@@ -321,48 +466,107 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
-    Http1ClientResponseImpl redirectProbe() {
-        return (Http1ClientResponseImpl) requestWithoutRouteCleanup();
+    private Http1ClientResponseImpl invokePreparedEntity(byte[] entity) {
+        if (followRedirects()) {
+            return RedirectionProcessor.invokeWithFollowRedirects(this, entity);
+        }
+        return invokeRequestWithEntity(entity);
     }
 
     private Http1ClientResponseImpl invokeWithServices(Http1CallChainBase callChain,
                                                        CompletableFuture<WebClientServiceRequest> whenSent,
                                                        CompletableFuture<WebClientServiceResponse> whenComplete) {
 
+        if (redirectedWhenSent != null) {
+            whenSent.whenComplete((sentRequest, failure) -> {
+                if (failure == null) {
+                    redirectedWhenSent.complete(sentRequest);
+                } else {
+                    redirectedWhenSent.completeExceptionally(failure);
+                }
+            });
+        }
+
         // will create a copy, so we could invoke this method multiple times
         ClientUri resolvedUri = resolvedUri();
 
-        WebClientServiceResponse serviceResponse = invokeServices(http1Client.webClient(),
-                                                                  callChain,
-                                                                  whenSent,
-                                                                  whenComplete,
-                                                                  resolvedUri);
+        WebClientServiceResponse serviceResponse;
+        try {
+            serviceResponse = invokeServices(http1Client.webClient(),
+                                             callChain,
+                                             whenSent,
+                                             whenComplete,
+                                             resolvedUri,
+                                             request -> {
+                                                 if (requestEntity != null) {
+                                                     requestEntity.prepareTerminal(request.headers(),
+                                                                                   request.context());
+                                                 }
+                                                 if (request.method() == Method.QUERY
+                                                         && !request.headers().contains(HeaderNames.CONTENT_TYPE)) {
+                                                     throw new IllegalArgumentException(
+                                                             "Content-Type header is required for method '"
+                                                                     + Method.QUERY + "'");
+                                                 }
+                                             });
+            if (followRedirects() && RedirectionProcessor.redirectionStatusCode(serviceResponse.status())) {
+                redirectHeadersAfterServices = super.redirectSourceHeaders(serviceResponse.serviceRequest().headers());
+            }
+        } catch (RuntimeException | Error failure) {
+            WebClientServiceResponse rawServiceResponse = callChain.rawServiceResponse();
+            if (rawServiceResponse != null) {
+                try {
+                    rawServiceResponse.connection().closeResource();
+                } catch (RuntimeException | Error cleanupFailure) {
+                    if (failure != cleanupFailure) {
+                        failure.addSuppressed(cleanupFailure);
+                    }
+                }
+            }
+            whenSent.completeExceptionally(failure);
+            whenComplete.completeExceptionally(failure);
+            throw failure;
+        }
 
         CompletableFuture<Void> complete = new CompletableFuture<>();
-        complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))
-                .exceptionally(throwable -> {
-                    serviceResponse.whenComplete().completeExceptionally(throwable);
-                    return null;
-                });
+        complete.whenComplete((ignored, failure) -> {
+            if (failure == null) {
+                serviceResponse.whenComplete().complete(serviceResponse);
+                whenComplete.complete(serviceResponse);
+            } else {
+                serviceResponse.whenComplete().completeExceptionally(failure);
+                whenComplete.completeExceptionally(failure);
+            }
+        });
 
+        ClientRequestHeaders responseRequestHeaders = finalizedRequestHeaders();
         if (delegate != null) {
             ClientRequestHeaders delegateHeaders = delegate.headers();
-            this.headers().forEach(delegateHeaders::set);
+            delegateHeaders.remove(HeaderNames.HOST);
+            responseRequestHeaders.first(HeaderNames.HOST)
+                    .ifPresent(value -> delegateHeaders.set(HeaderValues.create(HeaderNames.HOST, value)));
         }
-        ClientConnection responseConnection = serviceResponse.connection() instanceof ClientConnection clientConnection
-                ? clientConnection
-                : callChain.connection();
-        return new Http1ClientResponseImpl(clientConfig(),
-                                           http1Client().protocolConfig(),
-                                           serviceResponse.status(),
-                                           serviceResponse.serviceRequest().method(),
-                                           serviceResponse.serviceRequest().headers(),
-                                           serviceResponse.headers(),
-                                           responseConnection,
-                                           serviceResponse.inputStream().orElse(null),
-                                           mediaContext(),
-                                           resolvedUri,
-                                           complete);
+        Http1ClientResponseImpl response = new Http1ClientResponseImpl(clientConfig(),
+                                                                       http1Client().protocolConfig(),
+                                                                       serviceResponse.status(),
+                                                                       serviceResponse.serviceRequest().method(),
+                                                                       responseRequestHeaders,
+                                                                       serviceResponse.headers(),
+                                                                       callChain.rawServiceResponse() == null
+                                                                               ? null
+                                                                               : callChain.connection(),
+                                                                       serviceResponse.inputStream().orElse(null),
+                                                                       mediaContext(),
+                                                                       finalizedEndpointUri(),
+                                                                       complete,
+                                                                       callChain.responseTrailers(),
+                                                                       serviceResponse.trailers());
+        response.serviceResponse(serviceResponse, callChain.rawServiceResponse());
+        if (callChain instanceof Http1CallOutputStreamChain outputStreamChain
+                && outputStreamChain.closeConnectionOnResponseClose()) {
+            response.closeConnectionOnClose();
+        }
+        return response;
     }
 
     /**
@@ -381,20 +585,190 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return outputStreamRedirect;
     }
 
-    boolean ownsExplicitConnection() {
-        ClientConnection current = connection().orElse(null);
-        return delegate != null
-                && current != null
-                && delegate.connection().orElse(null) != current;
+    void redirectedWhenSent(CompletableFuture<WebClientServiceRequest> whenSent) {
+        this.redirectedWhenSent = whenSent;
     }
 
-    Http1ClientRequestImpl outputStreamRedirects(int outputStreamRedirects) {
-        this.outputStreamRedirects = outputStreamRedirects;
-        return this;
+    ClientRequestHeaders redirectSourceHeaders() {
+        return redirectHeadersAfterServices == null
+                ? EntityWriterPreflight.copyOf(headers())
+                : redirectHeadersAfterServices;
     }
 
-    int outputStreamRedirects() {
-        return outputStreamRedirects;
+    private static final class RequestEntity {
+        private final AtomicBoolean streamHandlerClaimed = new AtomicBoolean();
+        private final int preflightCapacity;
+        private final EntityWriterPreflight.HeaderChanges earlyChanges;
+        private Object entity;
+        private GenericType<Object> genericType;
+        private EntityWriter<Object> writer;
+        private OutputStreamHandler streamHandler;
+        private byte[] bytes;
+        private long contentLength = -1;
+        private EntityWriterPreflight preflight;
+        private EntityWriterPreflight.HeaderChanges terminalChanges;
+        private EntityWriterPreflight.Application currentApplication;
+
+        private RequestEntity(int preflightCapacity,
+                              EntityWriterPreflight.HeaderChanges earlyChanges,
+                              EntityWriterPreflight.Application currentApplication) {
+            this.preflightCapacity = preflightCapacity;
+            this.earlyChanges = earlyChanges;
+            this.currentApplication = currentApplication;
+        }
+
+        private static RequestEntity create(Http1ClientRequestImpl request, Object entity) {
+            EntityWriterPreflight.HeaderRecorder recordingHeaders = EntityWriterPreflight.record(request.headers());
+            GenericType<Object> genericType = GenericType.create(entity);
+            EntityWriter<Object> writer = request.clientConfig().mediaContext().writer(genericType, recordingHeaders);
+            long configuredContentLength = request.headers().contentLength().orElse(-1);
+            int maximum = Math.max(1, request.clientConfig().maxInMemoryEntity());
+            int desiredBuffer = request.clientConfig().writeBufferSize() <= 1
+                    ? 1024
+                    : request.clientConfig().writeBufferSize();
+            RequestEntity result;
+            if (writer.supportsInstanceWriter()) {
+                InstanceWriter instanceWriter = writer.instanceWriter(genericType, entity, recordingHeaders);
+                result = new RequestEntity(Math.max(1, Math.min(desiredBuffer, maximum)),
+                                           recordingHeaders.changes(),
+                                           recordingHeaders.application());
+                if (instanceWriter.alwaysInMemory()) {
+                    result.bytes = instanceWriter.instanceBytes();
+                } else {
+                    result.contentLength = instanceWriter.contentLength().orElse(configuredContentLength);
+                    if (result.contentLength < 0 || result.contentLength > request.clientConfig().maxInMemoryEntity()) {
+                        result.streamHandler = instanceWriter::write;
+                    } else {
+                        result.bytes = instanceWriter.instanceBytes();
+                    }
+                }
+            } else if (configuredContentLength >= 0
+                    && configuredContentLength <= request.clientConfig().maxInMemoryEntity()) {
+                ByteArrayOutputStream bufferedEntity = new ByteArrayOutputStream((int) configuredContentLength);
+                OutputStream outputStream = new OutputStream() {
+                    @Override
+                    public void write(int value) throws IOException {
+                        checkCapacity(1);
+                        bufferedEntity.write(value);
+                    }
+
+                    @Override
+                    public void write(byte[] bytes, int offset, int length) throws IOException {
+                        checkCapacity(length);
+                        bufferedEntity.write(bytes, offset, length);
+                    }
+
+                    private void checkCapacity(int additionalBytes) throws IOException {
+                        long updatedSize = (long) bufferedEntity.size() + additionalBytes;
+                        if (updatedSize > request.clientConfig().maxInMemoryEntity()) {
+                            throw new IOException("Request entity writer exceeded the configured in-memory limit of "
+                                                          + request.clientConfig().maxInMemoryEntity() + " bytes");
+                        }
+                    }
+                };
+                writer.write(genericType, entity, outputStream, recordingHeaders);
+                result = new RequestEntity(Math.max(1, Math.min(desiredBuffer, maximum)),
+                                           recordingHeaders.changes(),
+                                           recordingHeaders.application());
+                result.bytes = bufferedEntity.toByteArray();
+            } else {
+                result = new RequestEntity(Math.max(1, Math.min(desiredBuffer, maximum)),
+                                           recordingHeaders.changes(),
+                                           recordingHeaders.application());
+                result.contentLength = configuredContentLength;
+                result.entity = entity;
+                result.genericType = genericType;
+                result.writer = writer;
+            }
+            if (result.bytes != null) {
+                result.contentLength = result.bytes.length;
+            }
+            if (result.streamHandler != null && result.contentLength >= 0) {
+                request.headers().contentLength(result.contentLength);
+            }
+            return result;
+        }
+
+        private void prepareTerminal(ClientRequestHeaders headers, Context context) {
+            EntityWriterPreflight.Application terminalApplication;
+            if (writer != null) {
+                Object writerEntity = entity;
+                GenericType<Object> writerType = genericType;
+                EntityWriter<Object> entityWriter = writer;
+                preflight = EntityWriterPreflight.create(preflightCapacity,
+                                                         context,
+                                                         (outputStream, isolatedHeaders) -> entityWriter.write(
+                                                                 writerType,
+                                                                 writerEntity,
+                                                                 outputStream,
+                                                                 isolatedHeaders));
+                terminalApplication = preflight.prepare(headers);
+                terminalChanges = preflight.headerChanges();
+                entity = null;
+                genericType = null;
+                writer = null;
+            } else if (terminalChanges != null && !terminalChanges.isEmpty()) {
+                terminalApplication = terminalChanges.apply(headers);
+            } else {
+                return;
+            }
+            currentApplication = currentApplication == null
+                    ? terminalApplication
+                    : currentApplication.andThen(terminalApplication);
+        }
+
+        private RequestEntity redirect(ClientRequestHeaders headers, boolean preserveEntity) {
+            if (currentApplication != null) {
+                currentApplication.rollback(headers);
+                currentApplication = null;
+            }
+            if (!preserveEntity) {
+                cancelIfUnattached();
+                return null;
+            }
+            currentApplication = earlyChanges.apply(headers);
+            return this;
+        }
+
+        private void applyContentLength(ClientRequestHeaders headers) {
+            if (bytes == null && contentLength >= 0) {
+                headers.contentLength(contentLength);
+            }
+        }
+
+        private void writeTo(OutputStream outputStream) throws IOException {
+            if (preflight != null) {
+                preflight.writeTo(outputStream);
+                return;
+            }
+            if (!streamHandlerClaimed.compareAndSet(false, true)) {
+                throw new IllegalStateException("HTTP/1 request entity is one-shot and has already been consumed");
+            }
+            streamHandler.handle(outputStream);
+        }
+
+        private void cancelIfUnattached() {
+            if (preflight != null) {
+                preflight.cancelIfUnattached(new CancellationException(
+                        "HTTP/1 request completed before entity writer attachment"));
+            }
+        }
+    }
+
+    private static boolean canRetainRouting(ClientUri configuredSourceUri,
+                                            ClientRequestHeaders configuredHeaders,
+                                            ClientUri sourceUri,
+                                            ClientUri targetUri,
+                                            RedirectSecurityState securityState) {
+        ClientRequestOrigin sourceUriOrigin = ClientRequestOrigin.create(sourceUri);
+        ClientRequestOrigin configuredEffectiveOrigin = ClientRequestOrigin.create(configuredSourceUri,
+                                                                                    configuredHeaders);
+        return ClientRequestOrigin.create(configuredSourceUri).equals(sourceUriOrigin)
+                && securityState.lastUriOrigin().orElse(sourceUriOrigin).equals(sourceUriOrigin)
+                && securityState.lastEffectiveOrigin()
+                        .orElse(configuredEffectiveOrigin)
+                        .equals(configuredEffectiveOrigin)
+                && ClientRequestOrigin.create(targetUri).equals(sourceUriOrigin);
     }
 
 }

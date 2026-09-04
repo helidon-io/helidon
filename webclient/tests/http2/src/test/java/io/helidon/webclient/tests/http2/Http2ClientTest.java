@@ -54,6 +54,9 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.SniMode;
@@ -143,6 +146,10 @@ class Http2ClientTest {
         // explicitly on HTTP/2 only, to make sure we do upgrade
         router.route(Http2Route.route(Method.GET, "/", (req, res) -> res.header(TEST_HEADER)
                 .send(MESSAGE)))
+                .route(Http2Route.route(Method.GET, "/fragment", (req, res) ->
+                        res.send(req.prologue().fragment().hasValue()
+                                         ? req.prologue().fragment().rawValue()
+                                         : "no-fragment")))
                 .route(Http2Route.route(Method.POST, "/stream", (req, res) -> {
                     String entity = req.content().as(String.class);
                     res.send("stream:" + entity);
@@ -193,6 +200,40 @@ class Http2ClientTest {
         assertThat(request.headers().contentLength(), is(OptionalLong.of(0)));
 
         client.closeResource();
+    }
+
+    @Test
+    void testMalformedAuthorityRejected() {
+        Http2Client client = plainClient.get();
+        try {
+            Http2Exception exception = assertThrows(Http2Exception.class,
+                                                    () -> client.get("/")
+                                                            .header(HeaderNames.HOST, "route.example:808a")
+                                                            .request());
+
+            assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+            assertThat(exception.getCause() instanceof IllegalArgumentException, is(true));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testUnencodedFragmentIsNotSent() {
+        String fragment = "super fragment#&?/";
+        Http2Client client = plainClient.get();
+        try {
+            try (Http2ClientResponse response = client.get("/fragment")
+                    .skipUriEncoding(true)
+                    .fragment(fragment)
+                    .request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.entity().as(String.class), is("no-fragment"));
+                assertThat(response.lastEndpointUri().fragment().value(), is(fragment));
+            }
+        } finally {
+            client.closeResource();
+        }
     }
 
     @Test

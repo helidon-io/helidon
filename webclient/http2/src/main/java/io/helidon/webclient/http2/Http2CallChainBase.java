@@ -28,18 +28,22 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.uri.UriAuthority;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.ClientConnection;
@@ -49,12 +53,12 @@ import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.ProxyRoute;
-import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.api.ResolvedClientTarget;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
+import io.helidon.webclient.api.WebClientServiceResponseSupport;
 import io.helidon.webclient.spi.WebClientService;
 
 import static io.helidon.http.HeaderNames.CONTENT_ENCODING;
@@ -69,12 +73,14 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
     private Http2ClientStream stream;
     private HttpClientResponse response;
     private ClientRequestHeaders requestHeaders;
+    private ClientUri requestUri;
     private Status responseStatus;
     private ResolvedClientTarget responseTarget;
     private Http2AltSvcCache.Selection selectedAlternative;
     private WebClientProtocolResponse pendingProtocolResponse;
     private boolean explicitConnectionRequest;
     private ClientConnectionTarget.LookupKey connectionLookupKey;
+    private WebClientServiceResponse rawServiceResponse;
 
     Http2CallChainBase(Http2ClientImpl http2Client,
                        Http2ClientRequestImpl clientRequest,
@@ -144,7 +150,7 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
     }
 
     protected static Http2Headers prepareHeaders(Method method, ClientRequestHeaders headers, ClientUri uri) {
-        Http2Headers h2Headers = Http2Headers.create(headers);
+        Http2Headers h2Headers = Http2Headers.create(ClientRequestHeaders.create((Headers) headers));
         h2Headers.method(method);
         if (!Method.CONNECT.equals(method)) {
             h2Headers.path(requestTarget(uri));
@@ -163,14 +169,17 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         ClientUri uri = serviceRequest.uri();
+        requestUri = ClientUri.create(uri);
+        clientRequest.finalRequestUri(requestUri);
+        clientRequest.finalServiceRequest(serviceRequest);
         requestHeaders = serviceRequest.headers();
         explicitConnectionRequest = clientRequest.connection().isPresent() && !clientRequest.ownsExplicitConnection();
         http1FallbackHandler.explicitConnection(explicitConnectionRequest);
 
-        clientRequest.sanitizeRedirectHeaders(uri, requestHeaders);
         boolean originAuthorityOverride = requestHeaders.contains(Http2Headers.AUTHORITY_NAME)
                 || requestHeaders.contains(HeaderNames.HOST);
         alignHostHeader(uri, requestHeaders);
+        validateAuthority(requestHeaders);
         requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
@@ -250,7 +259,8 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
                     requestHeaders = transportHeaders;
                 }
                 try {
-                    return doProceed(serviceRequest, transportHeaders, result.stream());
+                    rawServiceResponse = doProceed(serviceRequest, transportHeaders, result.stream());
+                    return rawServiceResponse;
                 } finally {
                     if (selectedAlternative != null) {
                         transportHeaders.remove(HeaderNames.ALT_USED);
@@ -259,8 +269,9 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
             } else {
                 // upgrade failed
                 this.response = result.response();
-                return doProceed(serviceRequest, result.response());
+                rawServiceResponse = doProceed(serviceRequest, result.response());
             }
+            return rawServiceResponse;
         } catch (StreamTimeoutException e) {
             //This request was waiting for 100 Continue, but it was very likely not supported by the server.
             //Do not remove connection from the cache in that case.
@@ -275,17 +286,45 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
                 } else {
                     cache.removeAlternative(failedAlternative);
                 }
-                closeFailedStream(result);
+                closeFailedStream(result, e);
             }
             throw e;
-        } catch (RuntimeException e) {
-            closeFailedStream(result);
+        } catch (RuntimeException | Error e) {
+            closeFailedStream(result, e);
             throw e;
+        }
+    }
+
+    static void closeFailedStream(Http2ConnectionAttemptResult result, Throwable failure) {
+        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
+            Http2ClientStream failedStream = result.stream();
+            try {
+                failedStream.cancel();
+            } catch (RuntimeException | Error cleanupFailure) {
+                if (failure != cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            try {
+                failedStream.close();
+            } catch (RuntimeException | Error cleanupFailure) {
+                if (failure != cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
         }
     }
 
     ClientRequestHeaders requestHeaders() {
         return requestHeaders;
+    }
+
+    ClientUri requestUri() {
+        return requestUri;
+    }
+
+    void requestUri(ClientUri requestUri) {
+        this.requestUri = ClientUri.create(requestUri);
     }
 
     Status responseStatus() {
@@ -330,6 +369,18 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         }
     }
 
+    String actualProtocolId() {
+        return protocolId();
+    }
+
+    HttpClientResponse fallbackResponse() {
+        return response;
+    }
+
+    WebClientServiceResponse rawServiceResponse() {
+        return rawServiceResponse;
+    }
+
     CompletableFuture<WebClientServiceResponse> whenComplete() {
         return whenComplete;
     }
@@ -347,6 +398,14 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
                                                           Http2ClientStream stream);
 
     /**
+     * Prepare request state that must be finalized before protocol selection or fallback.
+     *
+     * @param headers service-final request headers
+     */
+    protected void prepareRequest(WebClientServiceRequest request) {
+    }
+
+    /**
      * HTTP/1 - failed to upgrade to HTTP/2.
      *
      * @param serviceRequest request
@@ -355,18 +414,16 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
      */
     protected WebClientServiceResponse doProceed(WebClientServiceRequest serviceRequest, HttpClientResponse response) {
         this.responseStatus = response.status();
-
-        WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
-        if (response.entity().hasEntity()) {
-            builder.inputStream(response.inputStream());
+        if (response instanceof Http2ClientResponseImpl http2Response) {
+            return http2Response.serviceResponse(serviceRequest, whenComplete);
         }
-        return builder
-                .serviceRequest(serviceRequest)
-                .whenComplete(whenComplete)
-                .status(response.status())
-                .headers(response.headers())
-                .connection(new Http2CallEntityChain.Http1ResponseResource(response))
-                .build();
+        return WebClientServiceResponseSupport.create(serviceRequest, whenComplete, response);
+    }
+
+    protected WebClientServiceResponse useResponse(WebClientServiceRequest serviceRequest,
+                                                   HttpClientResponse response) {
+        this.response = response;
+        return doProceed(serviceRequest, response);
     }
 
     protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest, Http2ClientStream stream) {
@@ -452,6 +509,10 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         this.stream = stream;
     }
 
+    Http2ClientStream stream() {
+        return stream;
+    }
+
     void closeResponse() {
         if (response != null) {
             response.close();
@@ -466,7 +527,7 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
     }
 
     private static void resetAndClose(Http2ClientStream stream, Http2Exception e) {
-        stream.close();
+        stream.close(StreamOutcome.ERROR);
         stream.reset(e.code());
     }
 
@@ -578,16 +639,12 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
                                   http1FallbackHandler);
     }
 
-    private void closeFailedStream(Http2ConnectionAttemptResult result) {
-        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
-            Http2ClientStream failedStream = result.stream();
-            try {
-                failedStream.cancel();
-            } catch (RuntimeException ignored) {
-                // Preserve the original request failure; close still releases the reserved stream slot.
-            } finally {
-                failedStream.close();
-            }
+    private static void validateAuthority(ClientRequestHeaders requestHeaders) {
+        String authority = requestHeaders.first(HeaderNames.HOST).orElseThrow();
+        try {
+            UriAuthority.create(authority);
+        } catch (IllegalArgumentException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
         }
     }
 
@@ -659,16 +716,4 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         }
     }
 
-    protected static class Http1ResponseResource implements ReleasableResource {
-        private final HttpClientResponse response;
-
-        Http1ResponseResource(HttpClientResponse response) {
-            this.response = response;
-        }
-
-        @Override
-        public void closeResource() {
-            response.close();
-        }
-    }
 }

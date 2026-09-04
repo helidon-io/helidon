@@ -367,7 +367,7 @@ class Http2WireProtocolTest {
             assertThat(response.as(String.class), is("redirected"));
             assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
             assertThat(observations.protocolsAfterProceed(),
-                       contains(Http1Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID));
+                       contains(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID));
             assertThat(observations.protocolsWhenSent(),
                        contains(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID));
         } finally {

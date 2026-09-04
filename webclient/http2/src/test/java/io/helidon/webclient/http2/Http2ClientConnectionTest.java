@@ -38,9 +38,11 @@ import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
@@ -107,9 +109,9 @@ import static org.mockito.Mockito.when;
 
 class Http2ClientConnectionTest {
     private static final Duration TEST_WAIT_TIMEOUT = Duration.ofSeconds(10);
-    private static final io.helidon.http.HeaderName SHARED_HEADER = HeaderNames.create("x-shared");
-    private static final io.helidon.http.HeaderName LARGE_HEADER = HeaderNames.create("x-large");
-    private static final io.helidon.http.HeaderName GRPC_STATUS_HEADER = HeaderNames.create("grpc-status");
+    private static final HeaderName SHARED_HEADER = HeaderNames.create("x-shared");
+    private static final HeaderName LARGE_HEADER = HeaderNames.create("x-large");
+    private static final HeaderName GRPC_STATUS_HEADER = HeaderNames.create("grpc-status");
     private static final Http2StreamConfig STREAM_CONFIG = new Http2StreamConfig() {
         @Override
         public boolean priorKnowledge() {
@@ -3248,7 +3250,7 @@ class Http2ClientConnectionTest {
         private final AtomicReference<BlockedWrite> blockedWrite = new AtomicReference<>();
         private final AtomicReference<BlockedWrite> activeBlockedWrite = new AtomicReference<>();
         private final DataWriter dataWriter = mock(DataWriter.class);
-        private final io.helidon.common.socket.HelidonSocket socket = mock(io.helidon.common.socket.HelidonSocket.class);
+        private final HelidonSocket socket = mock(HelidonSocket.class);
         private final Http2ClientConfig clientConfig;
         private final Http2ClientImpl client;
         private final ClientConnection clientConnection;
@@ -3333,6 +3335,7 @@ class Http2ClientConnectionTest {
             when(clientConnection.reader()).thenReturn(DataReader.create(this::nextInboundFrame));
             when(clientConnection.writer()).thenReturn(dataWriter);
             when(clientConnection.helidonSocket()).thenReturn(socket);
+            when(clientConnection.isConnected()).thenAnswer(_ -> !transportClosed.get());
             doAnswer(_ -> {
                 transportClosed.set(true);
                 failBlockedWrite();

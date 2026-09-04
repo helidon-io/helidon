@@ -54,7 +54,7 @@ public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType
      * @return a new HTTP/2 client
      */
     static Http2Client create(Http2ClientConfig clientConfig) {
-        return new Http2ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig);
+        return new Http2ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig, false, true);
     }
 
     /**

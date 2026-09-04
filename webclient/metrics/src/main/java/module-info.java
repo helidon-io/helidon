@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webclient.metrics {
 
     requires io.helidon.common.features.api;
+    requires io.helidon.http.metrics;
     requires io.helidon.metrics.api;
     requires io.helidon.service.registry;
     requires io.helidon.webclient;

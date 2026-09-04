@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,6 +26,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -32,13 +34,20 @@ import io.helidon.common.LruCache;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpTransportObserver;
 import io.helidon.http.Method;
 import io.helidon.service.registry.Service;
 import io.helidon.webclient.spi.ClientProtocolProvider;
+import io.helidon.webclient.spi.ClientProtocolProviderCacheLifecycle;
 import io.helidon.webclient.spi.HttpClientSpi;
 import io.helidon.webclient.spi.HttpClientSpiProvider;
 import io.helidon.webclient.spi.Protocol;
 import io.helidon.webclient.spi.ProtocolConfig;
+import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webclient.spi.WebClientTransportObserverProvider;
+import io.helidon.webclient.spi.WebClientTransportObserverProvider.Registration;
+
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Base class for HTTP implementations of {@link WebClient}.
@@ -46,7 +55,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
 @SuppressWarnings("rawtypes")
 @Service.PerInstance(WebClientConfigBlueprint.class)
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
-class LoomClient implements WebClient {
+class LoomClient implements WebClient, WebClientTransportObserverContext {
     static final LazyValue<ExecutorService> EXECUTOR =
             LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                             .name("helidon-client-", 0)
@@ -73,6 +82,10 @@ class LoomClient implements WebClient {
     private final List<String> tcpProtocolIds;
     private final WebClientCookieManager cookieManager;
     private final LruCache<EndpointKey, HttpClientSpi> clientSpiLruCache = LruCache.create();
+    private final HttpTransportObserver transportObserver;
+    private final Object transportObserverIdentity;
+    private final List<Registration> transportObserverRegistrations;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
      * Construct this instance from a subclass of builder.
@@ -106,22 +119,88 @@ class LoomClient implements WebClient {
                                                     + " or configured through protocolPreference (such as http1)");
         }
 
+        Map<Object, Boolean> observerIdentities = new IdentityHashMap<>();
+        List<Object> activeObserverIdentities = new ArrayList<>();
+        List<HttpTransportObserver> transportObservers = new ArrayList<>();
+        List<Registration> observerRegistrations = new ArrayList<>();
+        boolean borrowedObserver = config.services()
+                .stream()
+                .anyMatch(BorrowedWebClientTransportObserverProvider.class::isInstance);
+        for (WebClientService service : config.services()) {
+            if (!(service instanceof WebClientTransportObserverProvider provider)) {
+                continue;
+            }
+            if (borrowedObserver && !(provider instanceof BorrowedWebClientTransportObserverProvider)) {
+                continue;
+            }
+            Registration registration = null;
+            try {
+                Object identity = Objects.requireNonNull(provider.transportObserverIdentity(),
+                                                         "WebClient transport observer identity");
+                if (observerIdentities.containsKey(identity)) {
+                    continue;
+                }
+                registration = Objects.requireNonNull(provider.openTransportObserver(),
+                                                      "WebClient transport observer registration");
+                HttpTransportObserver observer = Objects.requireNonNull(registration.observer(),
+                                                                         "WebClient transport observer");
+                observerIdentities.put(identity, Boolean.TRUE);
+                activeObserverIdentities.add(identity);
+                observerRegistrations.add(registration);
+                transportObservers.add(observer);
+            } catch (Throwable failure) {
+                if (registration != null) {
+                    try {
+                        registration.close();
+                    } catch (Throwable closeFailure) {
+                        failure.addSuppressed(closeFailure);
+                    }
+                }
+                LOGGER.log(WARNING, "Failed to initialize WebClient HTTP transport observation", failure);
+            }
+        }
+        this.transportObserver = HttpTransportObserver.compose(transportObservers);
+        this.transportObserverIdentity = switch (activeObserverIdentities.size()) {
+            case 0 -> HttpTransportObserver.noop();
+            case 1 -> activeObserverIdentities.getFirst();
+            default -> new Object();
+        };
+        this.transportObserverRegistrations = List.copyOf(observerRegistrations);
+
         Map<String, ProtocolSpi> clients = new HashMap<>();
         List<ProtocolSpi> protocols = new ArrayList<>();
         List<ProtocolSpi> tcpProtocols = new ArrayList<>();
-        for (HttpClientSpiProvider provider : providers) {
-            Object protocolConfig = protocolConfigs.config(provider.protocolId(),
-                                                           provider.configType(),
-                                                           () -> (ProtocolConfig) provider.defaultConfig());
+        try {
+            for (HttpClientSpiProvider provider : providers) {
+                Object protocolConfig = protocolConfigs.config(provider.protocolId(),
+                                                               provider.configType(),
+                                                               () -> (ProtocolConfig) provider.defaultConfig());
 
-            HttpClientSpi clientSpi = (HttpClientSpi) provider.protocol(this, protocolConfig);
-            String protocolId = provider.protocolId();
-            ProtocolSpi spi = new ProtocolSpi(protocolId, clientSpi);
-            clients.putIfAbsent(protocolId, spi);
-            protocols.add(spi);
-            if (clientSpi.isTcp()) {
-                tcpProtocols.add(spi);
+                HttpClientSpi clientSpi = (HttpClientSpi) provider.protocol(this, protocolConfig);
+                String protocolId = provider.protocolId();
+                ProtocolSpi spi = new ProtocolSpi(protocolId, clientSpi);
+                clients.putIfAbsent(protocolId, spi);
+                protocols.add(spi);
+                if (clientSpi.isTcp()) {
+                    tcpProtocols.add(spi);
+                }
             }
+        } catch (RuntimeException | Error failure) {
+            for (ProtocolSpi protocol : protocols) {
+                try {
+                    protocol.spi().releaseResource();
+                } catch (Throwable closeFailure) {
+                    failure.addSuppressed(closeFailure);
+                }
+            }
+            for (Registration registration : transportObserverRegistrations) {
+                try {
+                    registration.close();
+                } catch (Throwable closeFailure) {
+                    failure.addSuppressed(closeFailure);
+                }
+            }
+            throw failure;
         }
 
         this.clientSpiByProtocol = clients;
@@ -160,9 +239,56 @@ class LoomClient implements WebClient {
     @Override
     @Service.PreDestroy
     public void closeResource() {
-        for (ProtocolSpi o : List.copyOf(clientSpiByProtocol.values())) {
-            o.spi().releaseResource();
+        if (!closed.compareAndSet(false, true)) {
+            return;
         }
+        Throwable failure = null;
+        for (ProtocolSpi o : List.copyOf(clientSpiByProtocol.values())) {
+            try {
+                o.spi().releaseResource();
+            } catch (Throwable closeFailure) {
+                if (failure == null) {
+                    failure = closeFailure;
+                } else {
+                    failure.addSuppressed(closeFailure);
+                }
+            }
+        }
+        for (Registration registration : transportObserverRegistrations) {
+            try {
+                registration.close();
+                registration.completion().whenComplete((_, completionFailure) -> {
+                    if (completionFailure != null) {
+                        LOGGER.log(WARNING, "Failed to release WebClient HTTP transport observation", completionFailure);
+                    }
+                });
+            } catch (Throwable closeFailure) {
+                if (failure == null) {
+                    failure = closeFailure;
+                } else {
+                    failure.addSuppressed(closeFailure);
+                }
+            }
+        }
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        if (failure != null) {
+            throw new IllegalStateException("Failed to close WebClient resources", failure);
+        }
+    }
+
+    @Override
+    public HttpTransportObserver transportObserver() {
+        return transportObserver;
+    }
+
+    @Override
+    public Object transportObserverIdentity() {
+        return transportObserverIdentity;
     }
 
     @Override
@@ -197,13 +323,31 @@ class LoomClient implements WebClient {
     @Override
     public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol) {
         ClientProtocolProvider<T, C> provider = protocol.provider();
-        return (T) clientsByProtocol.computeIfAbsent(provider.protocolId(),
-                                                     protocolId -> {
-                                                         C config = protocolConfigs.config(provider.protocolId(),
-                                                                                           provider.configType(),
-                                                                                           provider::defaultConfig);
-                                                         return protocol.provider().protocol(this, config);
-                                                     });
+        String protocolId = provider.protocolId();
+        if (!(provider instanceof ClientProtocolProviderCacheLifecycle<?, ?> rawLifecycle)) {
+            return (T) clientsByProtocol.computeIfAbsent(protocolId,
+                                                         ignored -> createProtocolClient(provider, protocolId));
+        }
+
+        ClientProtocolProviderCacheLifecycle<T, C> lifecycle =
+                (ClientProtocolProviderCacheLifecycle<T, C>) rawLifecycle;
+        Object current = clientsByProtocol.get(protocolId);
+        if (current != null && !lifecycle.cacheReplacementReady((T) current)) {
+            return (T) current;
+        }
+        return (T) clientsByProtocol.compute(protocolId,
+                                             (ignored, cached) -> cached != null
+                                                     && !lifecycle.cacheReplacementReady((T) cached)
+                                                     ? cached
+                                                     : createProtocolClient(provider, protocolId));
+    }
+
+    private <T, C extends ProtocolConfig> T createProtocolClient(ClientProtocolProvider<T, C> provider,
+                                                                 String protocolId) {
+        C config = protocolConfigs.config(protocolId,
+                                          provider.configType(),
+                                          provider::defaultConfig);
+        return provider.protocol(this, config);
     }
 
     @Override

@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.net.InetSocketAddress;
 import java.net.StandardProtocolFamily;
 import java.net.URI;
 import java.net.UnixDomainSocketAddress;
@@ -43,10 +44,15 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -58,6 +64,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketContext;
@@ -72,6 +80,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.HttpLogConfig;
+import io.helidon.http.HttpTransportObserver;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
@@ -81,15 +90,21 @@ import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
+import io.helidon.http.media.MediaSupport;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequestBase;
+import io.helidon.webclient.api.ClientRequestOrigin;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.api.WebClientServiceResponse;
+import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webclient.spi.WebClientTransportObserverProvider;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -104,6 +119,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -130,6 +146,687 @@ class Http1ClientTest {
     private static final String TARGET_HOST = "www.oracle.com";
     private static final String TARGET_URI_PATH = "/test";
     private static final String CLIENT_SEND_LOGGER_NAME = Http1LoggingConnectionListener.class.getName() + ".cl-send";
+
+    @Test
+    void transportObserverProvidersDeduplicateByIdentity() {
+        ObserverState observerState = new ObserverState();
+        Http1Client client = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(new ObserverService("first", observerState))
+                .addService(new ObserverService("second", observerState))
+                .build();
+
+        assertThat(observerState.opened.get(), is(1));
+        client.closeResource();
+        client.closeResource();
+        assertThat(observerState.closed.get(), is(1));
+        assertThat(observerState.completionRequested.get(), is(1));
+    }
+
+    @Test
+    void typedClientShortCircuitUsesFinalizedEndpointAndClosesReturnedResource() {
+        URI endpoint = URI.create("http://short-circuit.example:8080/resource");
+        AtomicInteger resourceCloses = new AtomicInteger();
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService((_, request) -> WebClientServiceResponse.builder()
+                        .serviceRequest(request)
+                        .whenComplete(new CompletableFuture<>())
+                        .connection(resourceCloses::incrementAndGet)
+                        .status(Status.OK_200)
+                        .headers(ClientResponseHeaders.create(WritableHeaders.create()))
+                        .build())
+                .build();
+
+        try {
+            Http1ClientResponse response = localClient.get(endpoint.toString()).request();
+            assertThat(response.lastEndpointUri().toUri(), is(endpoint));
+            assertThat(response.status(), is(Status.OK_200));
+            response.close();
+            response.close();
+            assertThat(resourceCloses.get(), is(1));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void typedClientClosesDecoratedAndRawResponseResourcesOnce() {
+        AtomicInteger decoratedResourceCloses = new AtomicInteger();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService((chain, request) -> WebClientServiceResponse.builder(chain.proceed(request))
+                        .connection(decoratedResourceCloses::incrementAndGet)
+                        .build())
+                .build();
+
+        try {
+            Http1ClientResponse response = localClient.get("http://localhost/resource")
+                    .connection(connection)
+                    .request();
+            response.close();
+            response.close();
+            assertThat(decoratedResourceCloses.get(), is(1));
+            assertThat(connection.releaseCount(), is(1));
+            assertThat(connection.closeCount(), is(0));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void recoveredTransportFailureDoesNotReuseFailedConnection() {
+        AtomicInteger returnedResourceCloses = new AtomicInteger();
+        FakeHttp1ClientConnection failedConnection = new FakeHttp1ClientConnection(() -> {
+            throw new IllegalStateException("simulated transport write failure");
+        });
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService((chain, request) -> {
+                    try {
+                        return chain.proceed(request);
+                    } catch (IllegalStateException expected) {
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(new CompletableFuture<>())
+                                .connection(returnedResourceCloses::incrementAndGet)
+                                .status(Status.SERVICE_UNAVAILABLE_503)
+                                .headers(ClientResponseHeaders.create(WritableHeaders.create()))
+                                .build();
+                    }
+                })
+                .build();
+
+        try {
+            Http1ClientResponse response = localClient.get("http://localhost/recovered")
+                    .connection(failedConnection)
+                    .request();
+            assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
+            response.close();
+            response.close();
+            assertThat(returnedResourceCloses.get(), is(1));
+            assertThat(failedConnection.releaseCount(), is(0));
+            assertThat(failedConnection.closeCount(), is(0));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void servicePostProcessingFailureClosesRawResponseAndSuppressesCleanupFailure() {
+        IllegalStateException serviceFailure = new IllegalStateException("simulated service post-processing failure");
+        IllegalStateException cleanupFailure = new IllegalStateException("simulated raw response cleanup failure");
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        connection.closeFailure = cleanupFailure;
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService((chain, request) -> {
+                    chain.proceed(request);
+                    throw serviceFailure;
+                })
+                .build();
+
+        try {
+            IllegalStateException actual = assertThrows(
+                    IllegalStateException.class,
+                    () -> localClient.get("http://localhost/post-processing")
+                            .connection(connection)
+                            .request());
+            assertThat(actual, is(serviceFailure));
+            assertThat(actual.getSuppressed().length, is(1));
+            assertThat(actual.getSuppressed()[0], is(cleanupFailure));
+            assertThat(connection.releaseCount(), is(0));
+            assertThat(connection.closeCount(), is(1));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void syntheticSeeOtherSkipsUnclaimedOutputStreamHandler() {
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        AtomicInteger redirectResourceCloses = new AtomicInteger();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService((chain, request) -> {
+                    if (request.uri().toUri().getPath().equals("/synthetic-303")) {
+                        WritableHeaders<?> headers = WritableHeaders.create();
+                        headers.add(HeaderNames.LOCATION, "/synthetic-target");
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(new CompletableFuture<>())
+                                .connection(redirectResourceCloses::incrementAndGet)
+                                .status(Status.SEE_OTHER_303)
+                                .headers(ClientResponseHeaders.create(headers))
+                                .build();
+                    }
+                    return chain.proceed(request);
+                })
+                .build();
+
+        try (Http1ClientResponse response = localClient.post("http://localhost/synthetic-303")
+                .connection(connection)
+                .followRedirects(true)
+                .outputStream(output -> {
+                    handlerInvocations.incrementAndGet();
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(handlerInvocations.get(), is(0));
+            assertThat(redirectResourceCloses.get(), is(1));
+            assertThat(connection.getPrologue(), startsWith("GET /synthetic-target "));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void syntheticTemporaryRedirectClaimsOutputStreamHandlerAtTargetOnce() {
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        AtomicInteger redirectResourceCloses = new AtomicInteger();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService((chain, request) -> {
+                    if (request.uri().toUri().getPath().equals("/synthetic-307")) {
+                        WritableHeaders<?> headers = WritableHeaders.create();
+                        headers.add(HeaderNames.LOCATION, "/synthetic-target");
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(new CompletableFuture<>())
+                                .connection(redirectResourceCloses::incrementAndGet)
+                                .status(Status.TEMPORARY_REDIRECT_307)
+                                .headers(ClientResponseHeaders.create(headers))
+                                .build();
+                    }
+                    return chain.proceed(request);
+                })
+                .build();
+
+        try (Http1ClientResponse response = localClient.post("http://localhost/synthetic-307")
+                .connection(connection)
+                .followRedirects(true)
+                .outputStream(output -> {
+                    handlerInvocations.incrementAndGet();
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(response.as(String.class), is("payload"));
+            assertThat(handlerInvocations.get(), is(1));
+            assertThat(redirectResourceCloses.get(), is(1));
+            assertThat(connection.getPrologue(), startsWith("POST /synthetic-target "));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void nonInstanceWriterCommitsHeadersBeforeFirstTransportWrite() {
+        HeaderName writerHeader = HeaderNames.create("X-Writer-Metadata");
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .mediaContext(writerMediaContext((output, headers) -> {
+                    headers.set(HeaderNames.HOST, "writer.example");
+                    headers.add(HeaderNames.COOKIE, "writer-cookie=secret");
+                    headers.set(HeaderNames.CONTENT_TYPE, "application/writer-test");
+                    headers.set(writerHeader, "committed");
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                }))
+                .build();
+
+        try (Http1ClientResponse response = localClient.post("http://localhost/writer-headers")
+                .connection(connection)
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+            Headers sentHeaders = connection.requestHeaders();
+            assertThat(sentHeaders.get(HeaderNames.HOST).get(), is("writer.example"));
+            assertThat(sentHeaders.get(HeaderNames.COOKIE).get(), containsString("writer-cookie=secret"));
+            assertThat(sentHeaders.get(HeaderNames.CONTENT_TYPE).get(), is("application/writer-test"));
+            assertThat(sentHeaders.get(writerHeader).get(), is("committed"));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void syntheticTemporaryRedirectRunsWriterOnceInRequestContext() {
+        WriterContextMarker marker = new WriterContextMarker();
+        Context context = Context.create();
+        context.register(marker);
+        AtomicReference<WriterContextMarker> observedContext = new AtomicReference<>();
+        AtomicInteger writes = new AtomicInteger();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .mediaContext(writerMediaContext((output, headers) -> {
+                    writes.incrementAndGet();
+                    observedContext.set(Contexts.context()
+                                                .flatMap(current -> current.get(WriterContextMarker.class))
+                                                .orElse(null));
+                    headers.set(HeaderNames.CONTENT_TYPE, "application/writer-test");
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                }))
+                .addService((chain, request) -> {
+                    if (request.uri().toUri().getPath().equals("/synthetic-writer-source")) {
+                        WritableHeaders<?> headers = WritableHeaders.create();
+                        headers.add(HeaderNames.LOCATION, "/synthetic-writer-target");
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(new CompletableFuture<>())
+                                .connection(() -> {
+                                })
+                                .status(Status.TEMPORARY_REDIRECT_307)
+                                .headers(ClientResponseHeaders.create(headers))
+                                .build();
+                    }
+                    return chain.proceed(request);
+                })
+                .build();
+
+        try {
+            Contexts.runInContext(context, () -> {
+                try (Http1ClientResponse response = localClient.post("http://localhost/synthetic-writer-source")
+                        .connection(connection)
+                        .followRedirects(true)
+                        .submit(new WriterEntity("payload"))) {
+                    assertThat(response.status(), is(Status.OK_200));
+                }
+            });
+            assertThat(writes.get(), is(1));
+            assertThat(observedContext.get(), is(marker));
+            assertThat(connection.getPrologue(), startsWith("POST /synthetic-writer-target "));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void claimedWriterCannotReplayFinalTemporaryRedirect() {
+        AtomicInteger writes = new AtomicInteger();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(
+                Status.TEMPORARY_REDIRECT_307,
+                true,
+                true,
+                List.of(HeaderValues.create(HeaderNames.LOCATION, "/writer-replay-target")),
+                null);
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .mediaContext(writerMediaContext((output, headers) -> {
+                    writes.incrementAndGet();
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                }))
+                .build();
+
+        try {
+            IllegalStateException failure = assertThrows(
+                    IllegalStateException.class,
+                    () -> localClient.post("http://localhost/writer-replay-source")
+                            .connection(connection)
+                            .followRedirects(true)
+                            .submit(new WriterEntity("payload")));
+            assertThat(failure.getMessage(), containsString("Cannot replay a one-shot request body"));
+            assertThat(writes.get(), is(1));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void seeOtherDropsWriterOnlyHeaderButPreservesPostProceedReplacement() {
+        HeaderName replacedHeader = HeaderNames.create("X-Writer-Replaced");
+        HeaderName writerOnlyHeader = HeaderNames.create("X-Writer-Only");
+        AtomicReference<String> targetReplacement = new AtomicReference<>();
+        AtomicReference<String> targetWriterOnly = new AtomicReference<>();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(
+                Status.SEE_OTHER_303,
+                true,
+                true,
+                List.of(HeaderValues.create(HeaderNames.LOCATION, "/writer-see-other-target")),
+                null);
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .mediaContext(writerMediaContext((output, headers) -> {
+                    headers.set(replacedHeader, "writer-value");
+                    headers.set(writerOnlyHeader, "writer-only");
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                }))
+                .addService((chain, request) -> {
+                    if (request.uri().toUri().getPath().equals("/writer-see-other-target")) {
+                        targetReplacement.set(request.headers().first(replacedHeader).orElse(null));
+                        targetWriterOnly.set(request.headers().first(writerOnlyHeader).orElse(null));
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(new CompletableFuture<>())
+                                .connection(() -> {
+                                })
+                                .status(Status.OK_200)
+                                .headers(ClientResponseHeaders.create(WritableHeaders.create()))
+                                .build();
+                    }
+                    WebClientServiceResponse response = chain.proceed(request);
+                    request.headers().set(replacedHeader, "service-replacement");
+                    return response;
+                })
+                .build();
+
+        try (Http1ClientResponse response = localClient.post("http://localhost/writer-see-other-source")
+                .connection(connection)
+                .followRedirects(true)
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(targetReplacement.get(), is("service-replacement"));
+            assertThat(targetWriterOnly.get(), is(nullValue()));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void earlyFinalResponseCancelsBlockedWriterProducer() throws Exception {
+        CountDownLatch producerExited = new CountDownLatch(1);
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(
+                null,
+                "HTTP/1.1 417 Expectation Failed\r\nContent-Length: 0\r\n\r\n");
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .writeBufferSize(4)
+                .mediaContext(writerMediaContext((output, headers) -> {
+                    try {
+                        output.write(new byte[64]);
+                        output.close();
+                    } finally {
+                        producerExited.countDown();
+                    }
+                }))
+                .build();
+
+        try (Http1ClientResponse response = localClient.post("http://localhost/writer-cancel")
+                .connection(connection)
+                .sendExpectContinue(true)
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.EXPECTATION_FAILED_417));
+            assertThat(producerExited.await(5, TimeUnit.SECONDS), is(true));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void crossOriginSyntheticRedirectDoesNotReuseExplicitConnection() throws Exception {
+        FakeHttp1ClientConnection sourceConnection = new FakeHttp1ClientConnection();
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        try (RawHttp1CaptureServer server = RawHttp1CaptureServer.startTcp()) {
+            int targetPort = server.port();
+            Http1Client localClient = Http1Client.builder()
+                    .servicesDiscoverServices(false)
+                    .addService((chain, request) -> {
+                        if (request.uri().toUri().getPath().equals("/cross-origin-source")) {
+                            WritableHeaders<?> headers = WritableHeaders.create();
+                            headers.add(HeaderNames.LOCATION,
+                                        "http://127.0.0.1:" + targetPort + "/cross-origin-target");
+                            return WebClientServiceResponse.builder()
+                                    .serviceRequest(request)
+                                    .whenComplete(new CompletableFuture<>())
+                                    .connection(() -> {
+                                    })
+                                    .status(Status.SEE_OTHER_303)
+                                    .headers(ClientResponseHeaders.create(headers))
+                                    .build();
+                        }
+                        return chain.proceed(request);
+                    })
+                    .build();
+
+            try (Http1ClientResponse response = localClient.post("http://source.invalid/cross-origin-source")
+                    .connection(sourceConnection)
+                    .followRedirects(true)
+                    .outputStream(output -> {
+                        handlerInvocations.incrementAndGet();
+                        output.close();
+                    })) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(server.awaitRequest().prologue(), startsWith("GET /cross-origin-target "));
+                assertThat(handlerInvocations.get(), is(0));
+                assertThat(sourceConnection.releaseCount(), is(0));
+                assertThat(sourceConnection.closeCount(), is(0));
+            } finally {
+                localClient.closeResource();
+            }
+        }
+    }
+
+    @Test
+    void hostOnlySyntheticRedirectDoesNotReuseExplicitConnection() throws Exception {
+        FakeHttp1ClientConnection sourceConnection = new FakeHttp1ClientConnection();
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        try (RawHttp1CaptureServer server = RawHttp1CaptureServer.startTcp()) {
+            int targetPort = server.port();
+            Http1Client localClient = Http1Client.builder()
+                    .servicesDiscoverServices(false)
+                    .addService((chain, request) -> {
+                        if (request.uri().toUri().getPath().equals("/host-only-source")) {
+                            request.headers().set(HeaderNames.HOST, "alternate.example:" + targetPort);
+                            WritableHeaders<?> headers = WritableHeaders.create();
+                            headers.add(HeaderNames.LOCATION, "/host-only-target");
+                            return WebClientServiceResponse.builder()
+                                    .serviceRequest(request)
+                                    .whenComplete(new CompletableFuture<>())
+                                    .connection(() -> {
+                                    })
+                                    .status(Status.SEE_OTHER_303)
+                                    .headers(ClientResponseHeaders.create(headers))
+                                    .build();
+                        }
+                        return chain.proceed(request);
+                    })
+                    .build();
+
+            try (Http1ClientResponse response = localClient.post("http://127.0.0.1:" + targetPort
+                                                                         + "/host-only-source")
+                    .connection(sourceConnection)
+                    .followRedirects(true)
+                    .outputStream(output -> {
+                        handlerInvocations.incrementAndGet();
+                        output.close();
+                    })) {
+                assertThat(response.status(), is(Status.OK_200));
+                CapturedHttp1Request request = server.awaitRequest();
+                assertThat(request.prologue(), startsWith("GET /host-only-target "));
+                assertThat(request.headerLines().toString(), not(containsString("alternate.example")));
+                assertThat(handlerInvocations.get(), is(0));
+                assertThat(sourceConnection.releaseCount(), is(0));
+                assertThat(sourceConnection.closeCount(), is(0));
+            } finally {
+                localClient.closeResource();
+            }
+        }
+    }
+
+    @Test
+    void serviceRetargetDropsInheritedConnectionBeforeDispatch() throws Exception {
+        FakeHttp1ClientConnection staleConnection = new FakeHttp1ClientConnection();
+        try (RawHttp1CaptureServer server = RawHttp1CaptureServer.startTcp()) {
+            int targetPort = server.port();
+            Http1Client localClient = Http1Client.builder()
+                    .servicesDiscoverServices(false)
+                    .shareConnectionCache(false)
+                    .proxy(Proxy.noProxy())
+                    .addService((chain, request) -> {
+                        request.uri().host("127.0.0.1").port(targetPort);
+                        return chain.proceed(request);
+                    })
+                    .build();
+            Http1ClientRequestImpl request = (Http1ClientRequestImpl) localClient
+                    .get("http://source.example/inherited-connection");
+            ClientRequestOrigin sourceOrigin = ClientRequestOrigin.create(request.resolvedUri(), request.headers());
+            request.inheritedConnection(staleConnection, sourceOrigin);
+
+            try (Http1ClientResponse response = request.request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(server.awaitRequest().prologue(), startsWith("GET /inherited-connection "));
+                assertThat(staleConnection.getPrologue(), is(nullValue()));
+                assertThat(staleConnection.releaseCount(), is(0));
+                assertThat(staleConnection.closeCount(), is(0));
+            } finally {
+                localClient.closeResource();
+            }
+        }
+    }
+
+    @Test
+    void serviceRetargetRecomputesProxyAfterDroppingInheritedUnixAddress(@TempDir Path tempDir) throws Exception {
+        FakeHttp1ClientConnection explicitConnection = new FakeHttp1ClientConnection();
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .relativeUris(false)
+                .proxy(Proxy.builder()
+                               .type(Proxy.ProxyType.HTTP)
+                               .host("proxy.example")
+                               .port(8080)
+                               .build())
+                .addService((chain, request) -> {
+                    request.uri().host("target.example").port(80);
+                    return chain.proceed(request);
+                })
+                .build();
+        try {
+            Http1ClientRequestImpl request = (Http1ClientRequestImpl) localClient
+                    .get("http://source.example/proxy-retarget");
+            ClientRequestOrigin sourceOrigin = ClientRequestOrigin.create(request.resolvedUri(), request.headers());
+            request.connection(explicitConnection);
+            request.inheritedAddress(UnixDomainSocketAddress.of(tempDir.resolve("stale.sock")), sourceOrigin);
+
+            try (Http1ClientResponse response = request.request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(explicitConnection.getPrologue(),
+                           startsWith("GET http://target.example:80/proxy-retarget "));
+            }
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void syntheticThenEarlyExpectRedirectHonorsMaxOne() {
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        Http1Client localClient = syntheticBeforeExpectClient();
+        FakeHttp1ClientConnection connection = syntheticBeforeExpectConnection();
+
+        try {
+            IllegalStateException failure = assertThrows(IllegalStateException.class, () -> localClient
+                    .post("http://localhost/synthetic-before-expect")
+                    .connection(connection)
+                    .followRedirects(true)
+                    .maxRedirects(1)
+                    .outputStream(output -> {
+                        handlerInvocations.incrementAndGet();
+                        output.write("payload".getBytes(StandardCharsets.UTF_8));
+                        output.close();
+                    }));
+            assertThat(failure.getMessage(), containsString("Maximum number of request redirections (1) reached"));
+            assertThat(handlerInvocations.get(), is(1));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void syntheticThenEarlyExpectRedirectHonorsMaxTwo() {
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        Http1Client localClient = syntheticBeforeExpectClient();
+        FakeHttp1ClientConnection connection = syntheticBeforeExpectConnection();
+
+        try (Http1ClientResponse response = localClient.post("http://localhost/synthetic-before-expect")
+                .connection(connection)
+                .followRedirects(true)
+                .maxRedirects(2)
+                .outputStream(output -> {
+                    handlerInvocations.incrementAndGet();
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(response.as(String.class), is("payload"));
+            assertThat(handlerInvocations.get(), is(1));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void whenSentWaitsForMaterializedEntityWrite() throws Exception {
+        CountDownLatch writeEntered = new CountDownLatch(1);
+        CountDownLatch releaseWrite = new CountDownLatch(1);
+        WhenSentService service = new WhenSentService();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(() -> {
+            writeEntered.countDown();
+            try {
+                if (!releaseWrite.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Timed out waiting to write the request entity.");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting to write the request entity.", e);
+            }
+        });
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(service)
+                .build();
+
+        try {
+            CompletableFuture<String> responseBody = CompletableFuture.supplyAsync(() -> {
+                try (Http1ClientResponse response = localClient.post("http://localhost/entity")
+                        .connection(connection)
+                        .submit("payload")) {
+                    return response.as(String.class);
+                }
+            });
+
+            assertThat(writeEntered.await(5, TimeUnit.SECONDS), is(true));
+            assertThat("whenSent must remain incomplete while the complete request write is blocked",
+                       service.sent.isDone(),
+                       is(false));
+
+            releaseWrite.countDown();
+            assertThat(responseBody.get(5, TimeUnit.SECONDS), is("payload"));
+            assertThat(service.sent.get(5, TimeUnit.SECONDS).protocolId(), is(Http1Client.PROTOCOL_ID));
+        } finally {
+            releaseWrite.countDown();
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void whenSentFailsWhenMaterializedEntityWriteFails() throws Exception {
+        WhenSentService service = new WhenSentService();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(() -> {
+            throw new IllegalStateException("simulated request write failure");
+        });
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(service)
+                .build();
+
+        try {
+            assertThrows(RuntimeException.class,
+                         () -> localClient.post("http://localhost/entity")
+                                 .connection(connection)
+                                 .submit("payload"));
+            assertThrows(ExecutionException.class, () -> service.sent.get(5, TimeUnit.SECONDS));
+            assertThat(service.sent.isCompletedExceptionally(), is(true));
+        } finally {
+            localClient.closeResource();
+        }
+    }
 
     @Test
     @SuppressWarnings("deprecation")
@@ -1599,6 +2296,48 @@ class Http1ClientTest {
         assertThat(responseEntity, is(entity));
     }
 
+    private static Http1Client syntheticBeforeExpectClient() {
+        return Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .addService((chain, request) -> {
+                    String path = request.uri().toUri().getPath();
+                    if (path.equals("/synthetic-before-expect")) {
+                        WritableHeaders<?> headers = WritableHeaders.create();
+                        headers.add(HeaderNames.LOCATION, "/early-expect");
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(new CompletableFuture<>())
+                                .connection(() -> { })
+                                .status(Status.TEMPORARY_REDIRECT_307)
+                                .headers(ClientResponseHeaders.create(headers))
+                                .build();
+                    }
+                    if (path.equals("/synthetic-final")) {
+                        WritableHeaders<?> headers = WritableHeaders.create();
+                        headers.add(HeaderNames.CONTENT_LENGTH, Integer.toString("payload".length()));
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(new CompletableFuture<>())
+                                .connection(() -> { })
+                                .status(Status.OK_200)
+                                .headers(ClientResponseHeaders.create(headers))
+                                .inputStream(new ByteArrayInputStream("payload".getBytes(StandardCharsets.UTF_8)))
+                                .build();
+                    }
+                    return chain.proceed(request);
+                })
+                .build();
+    }
+
+    private static FakeHttp1ClientConnection syntheticBeforeExpectConnection() {
+        return new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+                "HTTP/1.1 307 Temporary Redirect\r\n"
+                        + "Location: /synthetic-final\r\n"
+                        + "Content-Length: 0\r\n\r\n");
+    }
+
     private static Http1ClientRequest getHttp1ClientRequest(Method method, String uriPath) {
         return client.method(method).uri("http://localhost:" + dummyPort + uriPath);
     }
@@ -1825,8 +2564,10 @@ class Http1ClientTest {
         private ExecutorService webServerEmulator;
         private String prologue;
         private boolean proxyConnectionHeader;
+        private volatile WritableHeaders<?> requestHeaders;
         private int releaseCount;
         private int closeCount;
+        private RuntimeException closeFailure;
 
         FakeHttp1ClientConnection() {
             this(true);
@@ -1858,7 +2599,11 @@ class Http1ClientTest {
         }
 
         FakeHttp1ClientConnection(boolean includeKeepAliveHeader, String rawResponse, String rawContinueResponse) {
-            this(Status.OK_200, includeKeepAliveHeader, true, List.of(), null, rawResponse, rawContinueResponse, false);
+            this(Status.OK_200, includeKeepAliveHeader, true, List.of(), null, rawResponse, rawContinueResponse, null);
+        }
+
+        FakeHttp1ClientConnection(Runnable clientWriteHook) {
+            this(Status.OK_200, true, true, List.of(), null, null, null, clientWriteHook);
         }
 
         FakeHttp1ClientConnection(Status responseStatus, boolean includeContentLength) {
@@ -1874,7 +2619,14 @@ class Http1ClientTest {
                                   boolean includeContentLength,
                                   List<Header> additionalResponseHeaders,
                                   byte[] responseEntity) {
-            this(responseStatus, includeKeepAliveHeader, includeContentLength, additionalResponseHeaders, responseEntity, null, null);
+            this(responseStatus,
+                 includeKeepAliveHeader,
+                 includeContentLength,
+                 additionalResponseHeaders,
+                 responseEntity,
+                 null,
+                 null,
+                 null);
         }
 
         private FakeHttp1ClientConnection(Status responseStatus,
@@ -1883,7 +2635,8 @@ class Http1ClientTest {
                                           List<Header> additionalResponseHeaders,
                                           byte[] responseEntity,
                                           String rawResponse,
-                                          String rawContinueResponse) {
+                                          String rawContinueResponse,
+                                          Runnable clientWriteHook) {
             this(responseStatus,
                  includeKeepAliveHeader,
                  includeContentLength,
@@ -1891,7 +2644,8 @@ class Http1ClientTest {
                  responseEntity,
                  rawResponse,
                  rawContinueResponse,
-                 false);
+                 false,
+                 clientWriteHook);
         }
 
         private FakeHttp1ClientConnection(Status responseStatus,
@@ -1902,13 +2656,33 @@ class Http1ClientTest {
                                           String rawResponse,
                                           String rawContinueResponse,
                                           boolean timeoutAfterFirstResponseRead) {
+            this(responseStatus,
+                 includeKeepAliveHeader,
+                 includeContentLength,
+                 additionalResponseHeaders,
+                 responseEntity,
+                 rawResponse,
+                 rawContinueResponse,
+                 timeoutAfterFirstResponseRead,
+                 null);
+        }
+
+        private FakeHttp1ClientConnection(Status responseStatus,
+                                          boolean includeKeepAliveHeader,
+                                          boolean includeContentLength,
+                                          List<Header> additionalResponseHeaders,
+                                          byte[] responseEntity,
+                                          String rawResponse,
+                                          String rawContinueResponse,
+                                          boolean timeoutAfterFirstResponseRead,
+                                          Runnable clientWriteHook) {
             ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
             ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
 
             this.clientReader = reader(serverToClient, timeoutAfterFirstResponseRead);
-            this.clientWriter = writer(clientToServer);
+            this.clientWriter = writer(clientToServer, clientWriteHook);
             this.serverReader = reader(clientToServer, false);
-            this.serverWriter = writer(serverToClient);
+            this.serverWriter = writer(serverToClient, null);
             this.includeKeepAliveHeader = includeKeepAliveHeader;
             this.rawResponse = rawResponse;
             this.rawContinueResponse = rawContinueResponse;
@@ -1944,6 +2718,9 @@ class Http1ClientTest {
             if (webServerEmulator != null) {
                 webServerEmulator.shutdownNow();
             }
+            if (closeFailure != null) {
+                throw closeFailure;
+            }
         }
 
         @Override
@@ -1969,7 +2746,11 @@ class Http1ClientTest {
             return closeCount;
         }
 
-        private DataWriter writer(ArrayBlockingQueue<byte[]> queue) {
+        Headers requestHeaders() {
+            return requestHeaders;
+        }
+
+        private DataWriter writer(ArrayBlockingQueue<byte[]> queue, Runnable writeHook) {
             return new DataWriter() {
                 @Override
                 public void write(BufferData... buffers) {
@@ -1990,6 +2771,9 @@ class Http1ClientTest {
 
                 @Override
                 public void writeNow(BufferData buffer) {
+                    if (writeHook != null) {
+                        writeHook.run();
+                    }
                     if (serverException != null) {
                         throw new IllegalStateException("Server exception", serverException);
                     }
@@ -2069,6 +2853,7 @@ class Http1ClientTest {
             } catch (IllegalArgumentException e) {
                 requestFailed = true;
             }
+            requestHeaders = reqHeaders;
 
             int entitySize = 0;
             if (!requestFailed) {
@@ -2177,6 +2962,16 @@ class Http1ClientTest {
         static RawHttp1CaptureServer start(UnixDomainSocketAddress address) throws IOException {
             ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
             server.bind(address);
+            return start(server);
+        }
+
+        static RawHttp1CaptureServer startTcp() throws IOException {
+            ServerSocketChannel server = ServerSocketChannel.open();
+            server.bind(new InetSocketAddress("127.0.0.1", 0));
+            return start(server);
+        }
+
+        private static RawHttp1CaptureServer start(ServerSocketChannel server) {
             CompletableFuture<CapturedHttp1Request> request = CompletableFuture.supplyAsync(() -> {
                 try (SocketChannel socket = server.accept()) {
                     CapturedHttp1Request captured = readRequest(socket);
@@ -2193,6 +2988,10 @@ class Http1ClientTest {
                 }
             });
             return new RawHttp1CaptureServer(server, request);
+        }
+
+        int port() throws IOException {
+            return ((InetSocketAddress) channel.getLocalAddress()).getPort();
         }
 
         CapturedHttp1Request awaitRequest() throws Exception {
@@ -2431,6 +3230,122 @@ class Http1ClientTest {
         public byte[] get() {
             return new byte[0];
         }
+    }
+
+    private static final class WhenSentService implements WebClientService {
+        private final CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
+
+        @Override
+        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
+            request.whenSent().whenComplete((serviceRequest, throwable) -> {
+                if (throwable == null) {
+                    sent.complete(serviceRequest);
+                } else {
+                    sent.completeExceptionally(throwable);
+                }
+            });
+            return chain.proceed(request);
+        }
+    }
+
+    private static final class ObserverState {
+        private final Object identity = new Object();
+        private final AtomicInteger opened = new AtomicInteger();
+        private final AtomicInteger closed = new AtomicInteger();
+        private final AtomicInteger completionRequested = new AtomicInteger();
+    }
+
+    private record ObserverService(String type, ObserverState state)
+            implements WebClientService, WebClientTransportObserverProvider {
+        @Override
+        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
+            return chain.proceed(request);
+        }
+
+        @Override
+        public Object transportObserverIdentity() {
+            return state.identity;
+        }
+
+        @Override
+        public Registration openTransportObserver() {
+            state.opened.incrementAndGet();
+            return new Registration() {
+                @Override
+                public HttpTransportObserver observer() {
+                    return HttpTransportObserver.noop();
+                }
+
+                @Override
+                public void close() {
+                    state.closed.incrementAndGet();
+                }
+
+                @Override
+                public CompletionStage<Void> completion() {
+                    state.completionRequested.incrementAndGet();
+                    return CompletableFuture.completedFuture(null);
+                }
+            };
+        }
+    }
+
+    private static MediaContext writerMediaContext(TestEntityWriter testWriter) {
+        EntityWriter<WriterEntity> writer = new EntityWriter<>() {
+            @Override
+            public void write(GenericType<WriterEntity> type,
+                              WriterEntity object,
+                              OutputStream outputStream,
+                              Headers requestHeaders,
+                              WritableHeaders<?> responseHeaders) {
+                throw new AssertionError("Server writer must not be used");
+            }
+
+            @Override
+            public void write(GenericType<WriterEntity> type,
+                              WriterEntity object,
+                              OutputStream outputStream,
+                              WritableHeaders<?> requestHeaders) {
+                try {
+                    testWriter.write(outputStream, requestHeaders);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        };
+        MediaSupport support = new MediaSupport() {
+            @Override
+            public String name() {
+                return "http1-writer-preflight-test";
+            }
+
+            @Override
+            public String type() {
+                return "http1-writer-preflight-test";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
+                return new WriterResponse<>(SupportLevel.SUPPORTED, () -> (EntityWriter<T>) writer);
+            }
+        };
+        return MediaContext.builder()
+                .registerDefaults(false)
+                .mediaSupportsDiscoverServices(false)
+                .addMediaSupport(support)
+                .build();
+    }
+
+    @FunctionalInterface
+    private interface TestEntityWriter {
+        void write(OutputStream outputStream, WritableHeaders<?> requestHeaders) throws IOException;
+    }
+
+    private record WriterEntity(String value) {
+    }
+
+    private static final class WriterContextMarker {
     }
 
     private static class CustomizedMediaContext implements MediaContext {

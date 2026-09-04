@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.webclient.api.ClientRequest;
 
@@ -33,6 +34,28 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
 
     @Override
     Http1ClientResponse outputStream(OutputStreamHandler outputStreamConsumer);
+
+    /**
+     * Submit an output-stream request after an enclosing protocol has already followed redirects.
+     *
+     * @param outputStreamConsumer output stream handler
+     * @param followedRedirects absolute number of redirects already followed
+     * @return client response
+     */
+    @Api.Internal
+    default Http1ClientResponse outputStream(OutputStreamHandler outputStreamConsumer, int followedRedirects) {
+        if (followedRedirects != 0) {
+            throw new UnsupportedOperationException("Initial redirect count is not supported by this HTTP/1 request");
+        }
+        return outputStream(outputStreamConsumer);
+    }
+
+    /**
+     * Defer storage of returned response cookies to an enclosing protocol request.
+     */
+    @Api.Internal
+    default void deferResponseCookies() {
+    }
 
     /**
      * Upgrade the current request to a different protocol.

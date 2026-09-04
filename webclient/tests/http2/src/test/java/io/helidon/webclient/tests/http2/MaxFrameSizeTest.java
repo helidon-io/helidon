@@ -151,6 +151,7 @@ class MaxFrameSizeTest {
                 .baseUri("http://localhost:" + serverPort)
                 .build();
 
+        SETTINGS_ACKED = new CompletableFuture<>();
         // Check default MAX_FRAME_SIZE=16384 is set
         try (Http2ClientResponse res = client
                 .method(Method.GET)
@@ -162,6 +163,8 @@ class MaxFrameSizeTest {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.as(String.class), is("[16384, 616]"));
         }
+        // Consume the initial connection settings ACK before waiting on the mid-connection update.
+        SETTINGS_ACKED.get(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
 
         // Trigger server to change MAX_FRAME_SIZE=18_000
         SETTINGS_ACKED = new CompletableFuture<>();
@@ -192,7 +195,7 @@ class MaxFrameSizeTest {
     }
 
     @Test
-    void maxFrameChangeMidStream() throws InterruptedException {
+    void maxFrameChangeMidStream() throws InterruptedException, ExecutionException, TimeoutException {
         Http2Client
                 client = Http2Client.builder()
                 .shareConnectionCache(false)
@@ -200,6 +203,7 @@ class MaxFrameSizeTest {
                 .baseUri("http://localhost:" + serverPort)
                 .build();
 
+        SETTINGS_ACKED = new CompletableFuture<>();
         //Check default MAX_FRAME_SIZE=16384 is set
         try (Http2ClientResponse res = client
                 .method(Method.GET)
@@ -211,6 +215,8 @@ class MaxFrameSizeTest {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.as(String.class), is("[16384, 3616]"));
         }
+        // Consume the initial connection settings ACK before waiting on the mid-stream update.
+        SETTINGS_ACKED.get(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
 
         SEND_HEADERS = new CompletableFuture<>();
         SETTINGS_ACKED = new CompletableFuture<>();

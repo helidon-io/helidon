@@ -17,11 +17,14 @@
 package io.helidon.webclient.http2;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -30,16 +33,34 @@ import io.helidon.webclient.http1.Http1ClientResponse;
 final class Http1FallbackHandler {
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final Function<Http1ClientRequest, Http1ClientResponse> responseFunction;
-    private final boolean upgradeFailureResponseAllowed;
+    private final BooleanSupplier upgradeFailureResponseAllowed;
+    private final BooleanSupplier deferResponseCookies;
+    private final Consumer<WebClientProtocolResponse> protocolResponseConsumer;
     private volatile String actualProtocolId = Http2Client.PROTOCOL_ID;
     private volatile boolean explicitConnection;
 
     Http1FallbackHandler(CompletableFuture<WebClientServiceRequest> whenSent,
                          Function<Http1ClientRequest, Http1ClientResponse> responseFunction,
-                         boolean upgradeFailureResponseAllowed) {
+                         BooleanSupplier upgradeFailureResponseAllowed,
+                         BooleanSupplier deferResponseCookies) {
+        this(whenSent,
+             responseFunction,
+             upgradeFailureResponseAllowed,
+             deferResponseCookies,
+             _ -> {
+             });
+    }
+
+    Http1FallbackHandler(CompletableFuture<WebClientServiceRequest> whenSent,
+                         Function<Http1ClientRequest, Http1ClientResponse> responseFunction,
+                         BooleanSupplier upgradeFailureResponseAllowed,
+                         BooleanSupplier deferResponseCookies,
+                         Consumer<WebClientProtocolResponse> protocolResponseConsumer) {
         this.whenSent = whenSent;
         this.responseFunction = responseFunction;
         this.upgradeFailureResponseAllowed = upgradeFailureResponseAllowed;
+        this.deferResponseCookies = deferResponseCookies;
+        this.protocolResponseConsumer = protocolResponseConsumer;
     }
 
     Http1ClientResponse apply(Http1ClientRequest request, WebClientServiceRequest serviceRequest) {
@@ -51,6 +72,9 @@ final class Http1FallbackHandler {
                  Supplier<T> responseSupplier) {
         Context context = Http1FallbackService.context(serviceRequest, this);
         copyFinalHeaders(request, serviceRequest);
+        if (deferResponseCookies.getAsBoolean()) {
+            request.deferResponseCookies();
+        }
         try {
             return Contexts.runInContext(context, responseSupplier::get);
         } catch (RuntimeException | Error e) {
@@ -69,7 +93,7 @@ final class Http1FallbackHandler {
     }
 
     boolean upgradeFailureResponseAllowed() {
-        return upgradeFailureResponseAllowed;
+        return upgradeFailureResponseAllowed.getAsBoolean();
     }
 
     static void copyFinalHeaders(Http1ClientRequest request, WebClientServiceRequest serviceRequest) {
@@ -83,6 +107,10 @@ final class Http1FallbackHandler {
 
     boolean explicitConnection() {
         return explicitConnection;
+    }
+
+    void handoffProtocolResponse(WebClientProtocolResponse response) {
+        protocolResponseConsumer.accept(response);
     }
 
     String actualProtocolId() {

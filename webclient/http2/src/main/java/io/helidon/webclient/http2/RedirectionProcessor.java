@@ -16,14 +16,12 @@
 
 package io.helidon.webclient.http2;
 
-import java.net.URI;
-
-import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.webclient.api.ClientRequestOrigin;
 import io.helidon.webclient.api.ClientUri;
 
 class RedirectionProcessor {
@@ -46,22 +44,6 @@ class RedirectionProcessor {
                         || statusCode == Status.FOUND_302.code()));
     }
 
-    static void validateEntityRedirect(Http2ClientRequestImpl request,
-                                       Status status,
-                                       ClientUri redirectUri,
-                                       boolean hasEntity) {
-        if (keepsMethodAndEntity(request.method(), status)
-                && hasEntity
-                && !request.canReplayEntityTo(redirectUri)) {
-            throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
-        }
-    }
-
-    static IllegalStateException maxRedirectsReached(int maxRedirects) {
-        return new IllegalStateException("Maximum number of request redirections ("
-                                                 + maxRedirects + ") reached.");
-    }
-
     static void checkRedirectHeaders(Http2Headers headerValues) {
         if (!headerValues.httpHeaders().contains(HeaderNames.LOCATION)) {
             throw new IllegalStateException("There is no " + HeaderNames.LOCATION + " header present in the"
@@ -79,63 +61,104 @@ class RedirectionProcessor {
     }
 
     static Http2ClientResponseImpl invokeWithFollowRedirects(Http2ClientRequestImpl request, int initial, Object entity) {
+        return invokeWithFollowRedirects(request, initial, entity, false);
+    }
+
+    static Http2ClientResponseImpl invokeWithFollowRedirectsDeferringResponseCookies(Http2ClientRequestImpl request,
+                                                                                     int initial,
+                                                                                     Object entity) {
+        return invokeWithFollowRedirects(request, initial, entity, true);
+    }
+
+    private static Http2ClientResponseImpl invokeWithFollowRedirects(Http2ClientRequestImpl request,
+                                                                     int initial,
+                                                                     Object entity,
+                                                                     boolean deferResponseCookies) {
+        return invokeWithFollowRedirects(request,
+                                         initial,
+                                         Http2CallEntityChain.RequestEntity.create(entity),
+                                         deferResponseCookies);
+    }
+
+    static Http2ClientResponseImpl invokeWithFollowRedirects(Http2ClientRequestImpl request,
+                                                             int initial,
+                                                             Http2CallEntityChain.RequestEntity requestEntity) {
+        return invokeWithFollowRedirects(request, initial, requestEntity, false);
+    }
+
+    static Http2ClientResponseImpl invokeWithFollowRedirects(Http2ClientRequestImpl request,
+                                                             int initial,
+                                                             Http2CallEntityChain.RequestEntity requestEntity,
+                                                             boolean deferResponseCookies) {
         //Request object which should be used for invoking the next request. This will change in case of any redirection.
         Http2ClientRequestImpl clientRequest = request;
-        //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
-        Object entityToBeSent = entity;
         int followedRedirects = initial;
-        while (true) {
-            Http2ClientResponseImpl clientResponse = clientRequest.invokeEntity(entityToBeSent);
-            if (!redirectionStatusCode(clientResponse.status())) {
-                return clientResponse;
-            }
-            try (clientResponse) {
-                if (followedRedirects >= request.maxRedirects()) {
-                    throw maxRedirectsReached(request.maxRedirects());
+        try {
+            while (true) {
+                if (deferResponseCookies) {
+                    clientRequest.deferResponseCookies();
+                }
+                Http2ClientResponseImpl clientResponse = clientRequest.invokeEntity(requestEntity);
+                if (!redirectionStatusCode(clientResponse.status())) {
+                    return clientResponse;
+                }
+                Status redirectStatus = clientResponse.status();
+                ClientUri sourceUri = clientResponse.lastEndpointUri();
+                String redirectedUri;
+                try (clientResponse) {
+                    if (deferResponseCookies) {
+                        ClientUri endpointUri = clientResponse.lastEndpointUri();
+                        ClientUri cookieUri = clientResponse.redirectSecurityState()
+                                .lastEffectiveOrigin()
+                                .map(origin -> origin.apply(endpointUri))
+                                .orElseGet(() -> ClientRequestOrigin.create(endpointUri).apply(endpointUri));
+                        clientRequest.recordResponseCookies(cookieUri,
+                                                            clientResponse.headers());
+                    }
+                    if (followedRedirects >= request.maxRedirects()) {
+                        throw new IllegalStateException("Maximum number of request redirections ("
+                                                                + request.maxRedirects() + ") reached.");
+                    }
+                    if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
+                        throw new IllegalStateException("There is no " + HeaderNames.LOCATION
+                                                                + " header present in the response! "
+                                                                + "It is not clear where to redirect.");
+                    }
+                    redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).get();
                 }
                 followedRedirects++;
-                if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
-                    throw new IllegalStateException("There is no " + HeaderNames.LOCATION
-                                                            + " header present in the response! "
-                                                            + "It is not clear where to redirect.");
+                ClientUri redirectUri = clientRequest.resolveRedirectUri(sourceUri, redirectedUri);
+                // Method and entity must be retained for 307 and 308, and for QUERY with 301 and 302.
+                if (keepsMethodAndEntity(clientRequest.method(), redirectStatus)) {
+                    if (!requestEntity.canStartAttempt()) {
+                        throw new IllegalStateException(
+                                "HTTP/2 cannot replay a one-shot request entity after redirect status "
+                                        + redirectStatus.code() + ".");
+                    }
+                    clientRequest = new Http2ClientRequestImpl(clientRequest,
+                                                               clientRequest.method(),
+                                                               redirectUri,
+                                                               clientRequest.properties(),
+                                                               sourceUri,
+                                                               requestEntity.hasEntity());
+                    requestEntity.applyPreparedHeaders(clientRequest.headers());
+                    clientRequest.sanitizeRedirectHeaders();
+                } else {
+                    //It is possible to change to GET and send no entity with all other redirect codes
+                    clientRequest = new Http2ClientRequestImpl(clientRequest,
+                                                               Method.GET,
+                                                               redirectUri,
+                                                               clientRequest.properties(),
+                                                               sourceUri,
+                                                               false);
+                    requestEntity.restoreHeadersBeforePreparation(clientRequest.headers());
+                    requestEntity.discard();
+                    clientRequest.discardEntityHeaders();
+                    clientRequest.sanitizeRedirectHeaders();
                 }
             }
-            String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).get();
-            URI newUri = URI.create(redirectedUri);
-            ClientUri redirectUri = ClientUri.create(newUri);
-
-            if (newUri.getHost() == null) {
-                //To keep the information about the latest host, we need to use uri from the last performed request
-                //Example:
-                //request -> my-test.com -> response redirect -> my-example.com
-                //new request -> my-example.com -> response redirect -> /login
-                //with using the last request uri host etc, we prevent my-test.com/login from happening
-                ClientUri resolvedUri = clientRequest.resolvedUri();
-                redirectUri.scheme(resolvedUri.scheme());
-                redirectUri.host(resolvedUri.host());
-                redirectUri.port(resolvedUri.port());
-            }
-            // Method and entity must be retained for 307 and 308, and for QUERY with 301 and 302.
-            validateEntityRedirect(clientRequest, clientResponse.status(), redirectUri, clientResponse.hasRequestEntity());
-            if (keepsMethodAndEntity(clientRequest.method(), clientResponse.status())) {
-                Object requestEntity = clientResponse.requestEntity();
-                if (requestEntity != null) {
-                    entityToBeSent = requestEntity;
-                }
-                clientRequest = new Http2ClientRequestImpl(clientRequest,
-                                                           clientRequest.method(),
-                                                           redirectUri,
-                                                           request.properties(),
-                                                           true);
-            } else {
-                //It is possible to change to GET and send no entity with all other redirect codes
-                entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                clientRequest = new Http2ClientRequestImpl(clientRequest,
-                                                           Method.GET,
-                                                           redirectUri,
-                                                           request.properties(),
-                                                           false);
-            }
+        } finally {
+            requestEntity.cancelIfUnattached();
         }
     }
 

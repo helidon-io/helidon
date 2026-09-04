@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,6 +40,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -64,7 +66,13 @@ import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
+import io.helidon.webclient.api.WebClientTransportObserverSupport;
 import io.helidon.webclient.spi.WebClientService;
+
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.ERROR;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.REMOTE_CLOSE;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.TIMEOUT;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_1_1;
 
 abstract class Http1CallChainBase implements WebClientService.TransportChain {
     private static final Supplier<IllegalArgumentException> INVALID_SIZE_EXCEPTION_SUPPLIER =
@@ -73,11 +81,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     private final BufferData writeBuffer = BufferData.growing(128);
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
-    private final ClientConnection connection;
     private final Http1ClientRequestImpl originalRequest;
-    private final Proxy proxy;
     private final boolean keepAlive;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
+    private final CompletableFuture<ClientResponseTrailers> responseTrailers = new CompletableFuture<>();
     private final Duration timeout;
     private final Http1ClientImpl http1Client;
     private final Http1ConnectionListener sendListener;
@@ -85,9 +92,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     private final boolean explicitConnectionRequest;
     private final boolean altSvcEnabled;
 
+    private ClientConnection connection;
     private ClientConnection effectiveConnection;
     private boolean forwardProxy;
     private WebClientProtocolResponse pendingProtocolResponse;
+    private Proxy proxy;
+    private WebClientServiceResponse rawServiceResponse;
 
     Http1CallChainBase(Http1ClientImpl http1Client,
                        Http1ClientRequestImpl clientRequest,
@@ -96,8 +106,6 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         this.protocolConfig = http1Client.protocolConfig();
         this.originalRequest = clientRequest;
         this.timeout = clientRequest.readTimeout();
-        this.connection = clientRequest.connection().orElse(null);
-        this.proxy = clientRequest.effectiveProxy();
         this.keepAlive = clientRequest.keepAlive();
         this.http1Client = clientRequest.http1Client();
         this.whenComplete = whenComplete;
@@ -117,9 +125,50 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                                                           Status responseStatus,
                                                           ClientResponseHeaders responseHeaders,
                                                           CompletableFuture<WebClientServiceResponse> whenComplete) {
+        return createServiceResponse(http1Client,
+                                     serviceRequest,
+                                     connection,
+                                     reader,
+                                     responseStatus,
+                                     responseHeaders,
+                                     whenComplete,
+                                     null);
+    }
+
+    final WebClientServiceResponse createServiceResponseWithTrailers(
+            Http1ClientImpl http1Client,
+            WebClientServiceRequest serviceRequest,
+            ClientConnection connection,
+            DataReader reader,
+            Status responseStatus,
+            ClientResponseHeaders responseHeaders,
+            CompletableFuture<WebClientServiceResponse> whenComplete) {
+        return createServiceResponse(http1Client,
+                                     serviceRequest,
+                                     connection,
+                                     reader,
+                                     responseStatus,
+                                     responseHeaders,
+                                     whenComplete,
+                                     responseTrailers);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber") // shared response construction also carries the raw trailer lifecycle
+    private static WebClientServiceResponse createServiceResponse(
+            Http1ClientImpl http1Client,
+            WebClientServiceRequest serviceRequest,
+            ClientConnection connection,
+            DataReader reader,
+            Status responseStatus,
+            ClientResponseHeaders responseHeaders,
+            CompletableFuture<WebClientServiceResponse> whenComplete,
+            CompletableFuture<ClientResponseTrailers> responseTrailers) {
         HttpClientConfig clientConfig = http1Client.clientConfig();
         Http1ConnectionListener recvListener = http1Client.recvListener();
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
+        if (responseTrailers != null) {
+            builder.trailers(responseTrailers);
+        }
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
         boolean successfulConnect = isSuccessfulConnect(serviceRequest.method(), responseStatus);
 
@@ -180,11 +229,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
+        connection = originalRequest.connection().orElse(null);
+        proxy = originalRequest.effectiveProxy();
         ClientUri uri = serviceRequest.uri();
         ClientRequestHeaders headers = serviceRequest.headers();
 
         writeBuffer.clear();
-        originalRequest.sanitizeRedirectHeaders(uri, headers);
         boolean originAuthorityOverride = headers.contains(HeaderNames.HOST);
         headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
@@ -249,10 +299,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         }
 
         // either use the explicit connection, or obtain one (keep alive or one-off)
-        effectiveConnection = suppliedConnection == null
-                ? obtainConnection(connectionTarget, connectionLookupKey, headers, udsAddress)
-                : suppliedConnection;
         try {
+            effectiveConnection = suppliedConnection == null
+                    ? obtainConnection(connectionTarget, connectionLookupKey, headers, udsAddress)
+                    : suppliedConnection;
             if (connectionLookupKey != null) {
                 TcpClientConnection tcpConnection = (TcpClientConnection) effectiveConnection;
                 ProxyRoute acquiredRoute = tcpConnection.resolvedTarget()
@@ -260,6 +310,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                         .proxyRoute();
                 originalRequest.selectedProxyRoute(acquiredRoute);
             }
+            WebClientTransportObserverSupport.protocolSelected(effectiveConnection, PROTOCOL_HTTP_1_1);
             effectiveConnection.readTimeout(this.timeout);
 
             DataWriter writer = effectiveConnection.writer();
@@ -267,16 +318,17 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
             prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
 
-            return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
-        } catch (RuntimeException | Error e) {
-            if (!explicitConnectionRequest) {
+            rawServiceResponse = doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
+            return rawServiceResponse;
+        } catch (RuntimeException | Error failure) {
+            if ((suppliedConnection == null || originalRequest.ownsExplicitConnection()) && effectiveConnection != null) {
                 try {
-                    effectiveConnection.closeResource();
-                } catch (Throwable closeFailure) {
-                    e.addSuppressed(closeFailure);
+                    closeOnFailure(effectiveConnection, failure);
+                } catch (RuntimeException | Error closeFailure) {
+                    failure.addSuppressed(closeFailure);
                 }
             }
-            throw e;
+            throw failure;
         }
     }
 
@@ -367,12 +419,24 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         return effectiveConnection;
     }
 
+    void responseConnection(ClientConnection connection) {
+        this.effectiveConnection = connection;
+    }
+
+    WebClientServiceResponse rawServiceResponse() {
+        return rawServiceResponse;
+    }
+
     Http1ClientRequestImpl originalRequest() {
         return originalRequest;
     }
 
     CompletableFuture<WebClientServiceResponse> whenComplete() {
         return whenComplete;
+    }
+
+    CompletableFuture<ClientResponseTrailers> responseTrailers() {
+        return responseTrailers;
     }
 
     WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
@@ -383,13 +447,13 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                 : readResponseHead(connection, reader);
 
         captureProtocolResponse(connection, responseHead.status(), responseHead.headers());
-        return createServiceResponse(http1Client,
-                                     serviceRequest,
-                                     connection,
-                                     reader,
-                                     responseHead.status(),
-                                     responseHead.headers(),
-                                     whenComplete);
+        return createServiceResponseWithTrailers(http1Client,
+                                                 serviceRequest,
+                                                 connection,
+                                                 reader,
+                                                 responseHead.status(),
+                                                 responseHead.headers(),
+                                                 whenComplete);
     }
 
     void captureProtocolResponse(ClientConnection connection,
@@ -447,11 +511,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         try {
             responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
         } catch (RuntimeException e) {
-            if (closeOnReadFailure || !(e instanceof UncheckedIOException)) {
-                // A connection cannot be reused after a malformed status or a normal response read failure.
+            if (!(e instanceof UncheckedIOException)
+                    || (closeOnReadFailure && (this.connection == null || originalRequest.ownsExplicitConnection()))) {
+                // Malformed status lines cannot be reused; ordinary read failures close only owned connections.
                 try {
-                    connection.closeResource();
-                } catch (Exception ex) {
+                    closeOnFailure(connection, e);
+                } catch (RuntimeException | Error ex) {
                     e.addSuppressed(ex);
                 }
             }
@@ -465,6 +530,18 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         ClientResponseHeaders responseHeaders = readHeaders(reader);
         recvListener.headers(connection.helidonSocket(), responseHeaders);
         return responseHeaders;
+    }
+
+    private static void closeOnFailure(ClientConnection connection, Throwable failure) {
+        if (failure instanceof UncheckedIOException unchecked
+                && unchecked.getCause() instanceof SocketTimeoutException) {
+            WebClientTransportObserverSupport.close(connection, TIMEOUT);
+        } else if (failure instanceof DataReader.InsufficientDataAvailableException
+                || !connection.isConnected()) {
+            WebClientTransportObserverSupport.close(connection, REMOTE_CLOSE);
+        } else {
+            WebClientTransportObserverSupport.close(connection, ERROR);
+        }
     }
 
     static boolean isPreContinueInterimResponse(Status responseStatus) {

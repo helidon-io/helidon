@@ -93,11 +93,13 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
      * when creating the client, or default config if none configured.
      * The resulting protocol will use this client as a base, so it will share all configuration that is
      * relevant for the protocol.
+     * Protocol clients are cached by protocol ID. A protocol provider with an opt-in cache lifecycle can declare that
+     * a terminal client has completed cleanup, in which case this method creates and caches a replacement.
      *
      * @param protocol protocol instance, usually defined as a constant on the protocol interface
      * @param <T>      type of the protocol client
      * @param <C>      type of the protocol config
-     * @return a new protocol client instance
+     * @return a cached or newly created protocol client instance
      */
     <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.io.InputStream;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.spi.Source;
@@ -66,6 +67,25 @@ public interface HttpClientResponse extends AutoCloseable, ClientResponseBase {
      */
     default <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
         throw new UnsupportedOperationException("No source available for " + sourceType);
+    }
+
+    /**
+     * Maximum response entity size that may be buffered in memory.
+     * The default implementation returns {@link Long#MAX_VALUE}.
+     *
+     * @return maximum buffered entity size
+     */
+    @Api.Internal
+    default long maxBufferedEntitySize() {
+        return Long.MAX_VALUE;
+    }
+
+    /**
+     * Notify the transport response that its service-decorated entity was fully consumed.
+     * The default implementation does nothing.
+     */
+    @Api.Internal
+    default void serviceEntityConsumed() {
     }
 
     /**

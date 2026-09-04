@@ -29,8 +29,10 @@ import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webclient.spi.WebClientTransportObserverProvider;
 
-abstract class WebClientMetric implements WebClientService {
+abstract class WebClientMetric implements WebClientService,
+                                           WebClientTransportObserverProvider {
 
     private static final int ERROR_STATUS_CODE = 400;
 
@@ -69,6 +71,16 @@ abstract class WebClientMetric implements WebClientService {
 
     MetricsFactory metricsFactory() {
         return metricsFactory;
+    }
+
+    @Override
+    public Object transportObserverIdentity() {
+        return registry;
+    }
+
+    @Override
+    public Registration openTransportObserver() {
+        return WebClientTransportMetricsRegistration.create(registry);
     }
 
     Set<String> methods() {

@@ -24,19 +24,24 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webclient.spi.WebClientTransportObserverProvider;
 
 /**
  * Container object for all metrics created by the config.
  */
-public class WebClientMetrics implements WebClientService {
+public class WebClientMetrics implements WebClientService,
+                                         WebClientTransportObserverProvider {
 
     private final List<WebClientMetric> metrics;
+    private final MeterRegistry registry;
 
     private WebClientMetrics(Builder builder) {
         metrics = builder.metrics;
+        registry = MetricsFactory.getInstance().globalRegistry();
     }
 
     /**
@@ -125,6 +130,16 @@ public class WebClientMetrics implements WebClientService {
             last = clientRequest -> service.handle(next, clientRequest);
         }
         return last.proceed(request);
+    }
+
+    @Override
+    public Object transportObserverIdentity() {
+        return registry;
+    }
+
+    @Override
+    public Registration openTransportObserver() {
+        return WebClientTransportMetricsRegistration.create(registry);
     }
 
     private static final class Builder implements io.helidon.common.Builder<Builder, WebClientMetrics> {

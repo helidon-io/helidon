@@ -322,7 +322,10 @@ class Http2AltSvcTest {
                 reservationAttempted.set(true);
                 return Duration.ofSeconds(1);
             });
-            Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(), _ -> null, true);
+            Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(),
+                                                                            _ -> null,
+                                                                            () -> true,
+                                                                            request::responseCookiesDeferred);
             try {
                 Http2ConnectionAttemptResult established = handler.newAlternativeStream(http2Client,
                                                                                          selection,
@@ -402,11 +405,11 @@ class Http2AltSvcTest {
     }
 
     @Test
-    void http1OutputStreamRedirectPublishesFinalClearLast() {
+    void http1OutputStreamSeeOtherPublishesFinalClearLast() {
         WebClient client = client(clientTls(), true, false);
 
         try {
-            assertOrigin(outputStream(client, "/h1-output-redirect"));
+            assertOrigin(outputStream(client, "/h1-output-see-other"));
             assertOrigin(request(client, "/reuse"));
         } finally {
             client.closeResource();
@@ -781,6 +784,10 @@ class Http2AltSvcTest {
                 "learn-shared-policy", "tls-reload" -> response.header(HeaderNames.ALT_SVC,
                                                                          advertisement(alternativePort, 3600));
         case "learn-zero-stream" -> response.header(HeaderNames.ALT_SVC, advertisement(zeroStreamPort, 3600));
+        case "h1-output-see-other" -> response
+                .status(Status.SEE_OTHER_303)
+                .header(HeaderNames.LOCATION, "/h1-output-final")
+                .header(HeaderNames.ALT_SVC, advertisement(alternativePort, 3600));
         case "h1-output-redirect" -> response
                 .status(Status.TEMPORARY_REDIRECT_307)
                 .header(HeaderNames.LOCATION, "/h1-output-final")
@@ -867,7 +874,9 @@ class Http2AltSvcTest {
     }
 
     private static Observation outputStream(WebClient client, String path) {
-        try (HttpClientResponse response = client.get(path).outputStream(OutputStream::close)) {
+        try (HttpClientResponse response = client.get(path)
+                .protocolId(Http1Client.PROTOCOL_ID)
+                .outputStream(OutputStream::close)) {
             return observation(response);
         }
     }

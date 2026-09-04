@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -27,6 +28,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -44,7 +46,20 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.HandshakeObservation;
+import io.helidon.http.HttpTransportObserver.HandshakeOutcome;
 
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.ERROR;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.LOCAL_CLOSE;
+import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.TIMEOUT;
+import static io.helidon.http.HttpTransportObserver.Handshake.NONE;
+import static io.helidon.http.HttpTransportObserver.Handshake.TLS;
+import static io.helidon.http.HttpTransportObserver.HandshakeOutcome.FAILURE;
+import static io.helidon.http.HttpTransportObserver.HandshakeOutcome.SUCCESS;
+import static io.helidon.http.HttpTransportObserver.Role.CLIENT;
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 
@@ -52,7 +67,8 @@ import static java.lang.System.Logger.Level.TRACE;
  * A TCP connection that can be used by any protocol that is based on TCP.
  * The connection supports proxying and is not attempting to cache anything.
  */
-public class TcpClientConnection implements ClientConnection {
+public class TcpClientConnection implements ClientConnection,
+                                            ObservedClientConnection {
     private static final System.Logger LOGGER = System.getLogger(TcpClientConnection.class.getName());
 
     private final WebClient webClient;
@@ -61,28 +77,32 @@ public class TcpClientConnection implements ClientConnection {
     private final List<String> tcpProtocolIds;
     private final Function<TcpClientConnection, Boolean> releaseFunction;
     private final Consumer<TcpClientConnection> closeConsumer;
+    private final boolean observeTransport;
 
     private String channelId;
     private Socket socket;
     private HelidonSocket helidonSocket;
     private DataReader reader;
     private DataWriter writer;
-    private boolean closed;
+    private final AtomicBoolean closed = new AtomicBoolean();
+    private volatile ConnectionObservation transportObservation = ConnectionObservation.noop();
     private boolean allowExpectContinue = true;
     private ResolvedClientTarget resolvedTarget;
 
-    private TcpClientConnection(WebClient webClient,
-                                ConnectionKey connectionKey,
-                                List<String> tcpProtocolIds,
-                                Function<TcpClientConnection, Boolean> releaseFunction,
-                                Consumer<TcpClientConnection> closeConsumer) {
+    TcpClientConnection(WebClient webClient,
+                        ConnectionKey connectionKey,
+                        List<String> tcpProtocolIds,
+                        Function<TcpClientConnection, Boolean> releaseFunction,
+                        Consumer<TcpClientConnection> closeConsumer,
+                        boolean observeTransport) {
         this(webClient,
              connectionKey,
              null,
              null,
              tcpProtocolIds,
              releaseFunction,
-             closeConsumer);
+             closeConsumer,
+             observeTransport);
     }
 
     private TcpClientConnection(WebClient webClient,
@@ -91,7 +111,8 @@ public class TcpClientConnection implements ClientConnection {
                                 ResolvedClientTarget resolvedTarget,
                                 List<String> tcpProtocolIds,
                                 Function<TcpClientConnection, Boolean> releaseFunction,
-                                Consumer<TcpClientConnection> closeConsumer) {
+                                Consumer<TcpClientConnection> closeConsumer,
+                                boolean observeTransport) {
         this.webClient = webClient;
         this.connectionKey = connectionKey;
         this.connectionTarget = connectionTarget;
@@ -99,6 +120,7 @@ public class TcpClientConnection implements ClientConnection {
         this.tcpProtocolIds = tcpProtocolIds;
         this.releaseFunction = releaseFunction;
         this.closeConsumer = closeConsumer;
+        this.observeTransport = observeTransport;
     }
 
     /**
@@ -117,7 +139,7 @@ public class TcpClientConnection implements ClientConnection {
                                              List<String> tcpProtocolIds,
                                              Function<TcpClientConnection, Boolean> releaseFunction,
                                              Consumer<TcpClientConnection> closeConsumer) {
-        return new TcpClientConnection(webClient, connectionKey, tcpProtocolIds, releaseFunction, closeConsumer);
+        return new TcpClientConnection(webClient, connectionKey, tcpProtocolIds, releaseFunction, closeConsumer, true);
     }
 
     /**
@@ -143,7 +165,8 @@ public class TcpClientConnection implements ClientConnection {
                                        null,
                                        tcpProtocolIds,
                                        releaseFunction,
-                                       closeConsumer);
+                                       closeConsumer,
+                                       true);
     }
 
     /**
@@ -162,6 +185,15 @@ public class TcpClientConnection implements ClientConnection {
                                              List<String> tcpProtocolIds,
                                              Function<TcpClientConnection, Boolean> releaseFunction,
                                              Consumer<TcpClientConnection> closeConsumer) {
+        return create(webClient, resolvedTarget, tcpProtocolIds, releaseFunction, closeConsumer, true);
+    }
+
+    static TcpClientConnection create(WebClient webClient,
+                                      ResolvedClientTarget resolvedTarget,
+                                      List<String> tcpProtocolIds,
+                                      Function<TcpClientConnection, Boolean> releaseFunction,
+                                      Consumer<TcpClientConnection> closeConsumer,
+                                      boolean observeTransport) {
         ResolvedClientTarget target = Objects.requireNonNull(resolvedTarget, "resolvedTarget");
         return new TcpClientConnection(webClient,
                                        target.logicalTarget().connectionKey(),
@@ -169,7 +201,8 @@ public class TcpClientConnection implements ClientConnection {
                                        target,
                                        tcpProtocolIds,
                                        releaseFunction,
-                                       closeConsumer);
+                                       closeConsumer,
+                                       observeTransport);
     }
 
     /**
@@ -200,6 +233,10 @@ public class TcpClientConnection implements ClientConnection {
                            webClient.prototype().socketOptions());
 
         this.channelId = createChannelId(socket);
+        if (observeTransport) {
+            this.transportObservation = WebClientTransportObserverSupport.observer(webClient)
+                    .connectionOpened(CLIENT, TRANSPORT_TCP, tls.enabled() ? TLS : NONE);
+        }
 
         if (LOGGER.isLoggable(DEBUG)) {
             LOGGER.log(DEBUG, String.format("[client %s] client connected %s:%d %s",
@@ -213,36 +250,64 @@ public class TcpClientConnection implements ClientConnection {
             webClient.prototype().connectionListener()
                 .socketConnected(new ConnectedSocketInfoImpl(this.channelId, this.socket));
         } catch (IOException e) {
+            try {
+                closeResource(ERROR);
+            } catch (RuntimeException | Error closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
             throw new UncheckedIOException("Failed to execute connection initializer", e);
+        } catch (RuntimeException | Error e) {
+            try {
+                closeResource(ERROR);
+            } catch (RuntimeException | Error closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw e;
         }
 
 
         if (tls.enabled()) {
+            HandshakeObservation handshakeObservation = HandshakeObservation.noop();
             List<SNIServerName> serverNamesOverride = connectionKey.serverNamesOverride();
-            SSLSocket sslSocket = serverNamesOverride == null
-                    ? tls.createSocket(tcpProtocolIds,
-                                       socket,
-                                       connectionKey.tlsPeerHost(),
-                                       connectionKey.tlsPeerPort())
-                    : tls.createSocket(tcpProtocolIds,
-                                       socket,
-                                       connectionKey.tlsPeerHost(),
-                                       connectionKey.tlsPeerPort(),
-                                       serverNamesOverride);
             try {
+                SSLSocket sslSocket = serverNamesOverride == null
+                        ? tls.createSocket(tcpProtocolIds,
+                                           socket,
+                                           connectionKey.tlsPeerHost(),
+                                           connectionKey.tlsPeerPort())
+                        : tls.createSocket(tcpProtocolIds,
+                                           socket,
+                                           connectionKey.tlsPeerHost(),
+                                           connectionKey.tlsPeerPort(),
+                                           serverNamesOverride);
+                this.socket = sslSocket;
+                handshakeObservation = transportObservation.handshakeStarted();
                 sslSocket.startHandshake();
+                handshakeObservation.close(SUCCESS);
+                if (LOGGER.isLoggable(TRACE)) {
+                    debugTls(sslSocket, channelId);
+                }
+                this.helidonSocket = TlsSocket.client(sslSocket, channelId);
             } catch (IOException e) {
+                boolean timedOut = e instanceof SocketTimeoutException;
+                handshakeObservation.close(timedOut
+                                                   ? HandshakeOutcome.TIMEOUT
+                                                   : FAILURE);
                 try {
-                    sslSocket.close();
-                } catch (IOException ex) {
-                    e.addSuppressed(ex);
+                    closeResource(timedOut ? TIMEOUT : ERROR);
+                } catch (RuntimeException | Error closeFailure) {
+                    e.addSuppressed(closeFailure);
                 }
                 throw new UncheckedIOException("Failed to execute SSL handshake", e);
+            } catch (RuntimeException | Error e) {
+                handshakeObservation.close(FAILURE);
+                try {
+                    closeResource(ERROR);
+                } catch (RuntimeException | Error closeFailure) {
+                    e.addSuppressed(closeFailure);
+                }
+                throw e;
             }
-            if (LOGGER.isLoggable(TRACE)) {
-                debugTls(sslSocket, channelId);
-            }
-            this.helidonSocket = TlsSocket.client(sslSocket, channelId);
         } else {
             this.helidonSocket = PlainSocket.client(socket, channelId);
         }
@@ -267,7 +332,7 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public DataReader reader() {
-        if (closed) {
+        if (closed.get()) {
             throw new IllegalStateException("Attempt to call reader() on a closed connection");
         }
 
@@ -280,7 +345,7 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public DataWriter writer() {
-        if (closed) {
+        if (closed.get()) {
             throw new IllegalStateException("Attempt to call writer() on a closed connection");
         }
 
@@ -293,7 +358,7 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public void releaseResource() {
-        if (closed) {
+        if (closed.get()) {
             return;
         }
         if (!releaseFunction.apply(this)) {
@@ -303,16 +368,26 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public void closeResource() {
-        if (closed) {
+        closeResource(LOCAL_CLOSE);
+    }
+
+    @Override
+    public void closeResource(ConnectionOutcome outcome) {
+        if (!closed.compareAndSet(false, true)) {
             return;
         }
         try {
-            this.socket.close();
+            if (this.socket != null) {
+                this.socket.close();
+            }
         } catch (IOException e) {
             LOGGER.log(TRACE, "Failed to close a client socket", e);
         }
-        this.closed = true;
-        closeConsumer.accept(this);
+        try {
+            closeConsumer.accept(this);
+        } finally {
+            transportObservation.close(outcome);
+        }
     }
 
     @Override
@@ -325,7 +400,7 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public void readTimeout(Duration readTimeout) {
-        if (closed) {
+        if (closed.get()) {
             throw new IllegalStateException("Attempt to call readTimeout(Duration) on a closed connection");
         }
 
@@ -347,7 +422,11 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean isConnected() {
-        return !closed && socket != null && socket.isConnected() && helidonSocket().isConnected();
+        return !closed.get()
+                && socket != null
+                && socket.isConnected()
+                && helidonSocket != null
+                && helidonSocket.isConnected();
     }
 
     @Override
@@ -372,6 +451,11 @@ public class TcpClientConnection implements ClientConnection {
 
     Socket socket() {
         return socket;
+    }
+
+    @Override
+    public ConnectionObservation transportObservation() {
+        return transportObservation;
     }
 
     private String createChannelId(Socket socket) {
