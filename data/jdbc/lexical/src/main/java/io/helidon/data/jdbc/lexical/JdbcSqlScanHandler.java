@@ -15,6 +15,8 @@
  */
 package io.helidon.data.jdbc.lexical;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 
 /**
@@ -41,8 +43,10 @@ public interface JdbcSqlScanHandler {
      * @param kind kind of protected region
      * @param start first source offset
      * @param end source offset after the region
+     * @throws NullPointerException if the region kind is {@code null}
      */
     default void protectedRegion(RegionKind kind, int start, int end) {
+        Objects.requireNonNull(kind, "The protected region kind must not be null.");
     }
 
     /**

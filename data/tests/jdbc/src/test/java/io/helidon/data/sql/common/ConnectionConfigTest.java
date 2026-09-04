@@ -36,6 +36,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ConnectionConfigTest {
 
     /**
+     * Verifies that the connection configuration decorator validates its SPI target.
+     */
+    @Test
+    void validatesDecoratorTarget() {
+        NullPointerException failure = assertThrows(
+                NullPointerException.class,
+                () -> new ConnectionConfigSupport.Decorator().decorate(null));
+
+        assertThat(failure.getMessage(), is("The connection configuration builder must not be null."));
+    }
+
+    /**
      * Verifies the generated required-property validator retains ownership of a missing URL,
      * including when another configured connection value is invalid.
      */

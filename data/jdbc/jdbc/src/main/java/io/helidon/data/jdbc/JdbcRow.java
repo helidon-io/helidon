@@ -119,8 +119,9 @@ final class JdbcRow implements JdbcClient.Row {
     private <T> T read(int index, Class<T> requestedType) {
         Class<?> targetType = JdbcScalarAccess.normalized(requestedType);
         if (!JdbcScalarAccess.supported(targetType)) {
-            throw new IllegalArgumentException("JDBC does not support the scalar type '"
-                                                       + requestedType.getTypeName() + "'.");
+            throw new IllegalArgumentException(
+                    "Helidon Data JDBC provider does not support type '"
+                            + requestedType.getTypeName() + "' as a portable scalar.");
         }
         try {
             Object value = JdbcScalarAccess.read(resultSet, index, targetType);

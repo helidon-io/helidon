@@ -291,13 +291,6 @@ public abstract class AbstractGeneratedRepositoryContract {
         return scalarKey;
     }
 
-    private ServiceRegistryManager startApplication() {
-        beforeStartApplication();
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        manager.registry().get(DatabaseFixture.class).reset();
-        return manager;
-    }
-
     private static void exerciseGeneratedOperations(ContactRepository repository, Tx.Type type) {
         Tx.transaction(type, () -> {
             repository.findAll();
@@ -305,6 +298,13 @@ public abstract class AbstractGeneratedRepositoryContract {
             repository.insert("propagation-" + type);
             return null;
         });
+    }
+
+    private ServiceRegistryManager startApplication() {
+        beforeStartApplication();
+        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        manager.registry().get(DatabaseFixture.class).reset();
+        return manager;
     }
 
 }

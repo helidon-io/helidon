@@ -172,6 +172,12 @@ final class JdbcConnectionSourceSupport {
             return transactionIdentity;
         }
 
+        private static Properties copy(Properties source) {
+            Properties copy = new Properties();
+            copy.putAll(source);
+            return copy;
+        }
+
         private Connection connect(Properties properties) throws SQLException {
             Connection connection = JdbcExceptionTranslator.invoke("opening a direct JDBC connection",
                                                                    () -> driver.connect(url, properties));
@@ -179,12 +185,6 @@ final class JdbcConnectionSourceSupport {
                 throw new SQLException("The JDBC driver does not accept the configured URL.");
             }
             return connection;
-        }
-
-        private static Properties copy(Properties source) {
-            Properties copy = new Properties();
-            copy.putAll(source);
-            return copy;
         }
     }
 

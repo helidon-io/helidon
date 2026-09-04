@@ -17,6 +17,7 @@
 package io.helidon.codegen;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -106,9 +107,11 @@ public interface CodegenContext {
      *
      * @param typeInfoLookup lookup that includes types generated during the round
      * @return type hierarchy resolver
+     * @throws NullPointerException if the type information lookup is {@code null}
      */
     @Api.Internal
     default TypeHierarchyResolver typeHierarchyResolver(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
+        Objects.requireNonNull(typeInfoLookup, "The type information lookup must not be null.");
         return TypeHierarchyResolver.create(typeInfoLookup);
     }
 

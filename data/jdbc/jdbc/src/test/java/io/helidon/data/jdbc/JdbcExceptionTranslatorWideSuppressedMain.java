@@ -42,7 +42,7 @@ public final class JdbcExceptionTranslatorWideSuppressedMain {
             SQLException shared = new ThinSQLException("private suppressed", "42001", 2);
             populateSuppressed(root, shared);
 
-            DataException failure = JdbcExceptionTranslator.translate("query", root);
+            DataException failure = JdbcExceptionTranslator.translateFailure("query", root);
             Throwable sanitized = failure.getCause();
             List<Throwable> graph = JdbcExceptionTranslatorGraphTest.graph(sanitized);
             long truncationMarkers = JdbcExceptionTranslatorGraphTest.truncationMarkers(graph);

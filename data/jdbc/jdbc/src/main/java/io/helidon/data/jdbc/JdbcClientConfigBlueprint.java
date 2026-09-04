@@ -42,8 +42,8 @@ interface JdbcClientConfigBlueprint extends SqlConfig, Prototype.Factory<JdbcCli
     String name();
 
     /**
-     * Maximum number of SQL marker counts retained by this client.
-     * A value of zero disables retention while preserving marker validation.
+     * The maximum number of SQL marker counts retained by this client must be between zero and 4096 inclusive,
+     * where zero disables retention while marker validation continues.
      * This value is owned by Helidon Data JDBC and is not passed to JDBC.
      *
      * @return parameter count cache capacity
@@ -53,10 +53,10 @@ interface JdbcClientConfigBlueprint extends SqlConfig, Prototype.Factory<JdbcCli
     int parameterCountCacheCapacity();
 
     /**
-     * Maximum SQL string length admitted to the parameter count cache in
-     * UTF-16 code units. Longer SQL remains supported and is scanned without
-     * being retained. This value is owned by Helidon Data JDBC and is not
-     * passed to JDBC.
+     * The maximum SQL string length admitted to the parameter count cache must be a positive number of UTF-16 code
+     * units and its product with the cache capacity must not exceed 16,777,216 code units, but SQL longer than this
+     * value remains executable and is scanned without being retained.
+     * This value is owned by Helidon Data JDBC and is not passed to JDBC.
      *
      * @return maximum cacheable SQL length
      */

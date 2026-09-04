@@ -63,15 +63,6 @@ Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data
 </tr>
 <tr>
 <td>
-<code>minimum-<wbr>idle</code>
-</td>
-<td>
-<code>Integer</code>
-</td>
-<td>The property controls the minimum number of idle connections that HikariCP tries to maintain in the pool, including both idle and in-use connections</td>
-</tr>
-<tr>
-<td>
 <code>connection-<wbr>test-<wbr>query</code>
 </td>
 <td>
@@ -81,48 +72,12 @@ Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data
 </tr>
 <tr>
 <td>
-<code>maximum-<wbr>pool-<wbr>size</code>
-</td>
-<td>
-<code>Integer</code>
-</td>
-<td>The property controls the maximum size that the pool is allowed to reach, including both idle and in-use connections</td>
-</tr>
-<tr>
-<td>
-<code>leak-<wbr>detection-<wbr>threshold</code>
-</td>
-<td>
-<code>Long</code>
-</td>
-<td>This property controls the amount of time that a connection can be out of the pool before a message is logged indicating a possible connection leak</td>
-</tr>
-<tr>
-<td>
-<code>connection-<wbr>init-<wbr>sql</code>
+<code>password</code>
 </td>
 <td>
 <code>String</code>
 </td>
-<td>Set the SQL string that will be executed on all new connections when they are created, before they are added to the pool</td>
-</tr>
-<tr>
-<td>
-<code>connection-<wbr>timeout</code>
-</td>
-<td>
-<code>Long</code>
-</td>
-<td>Set the maximum number of milliseconds that a client will wait for a connection from the pool</td>
-</tr>
-<tr>
-<td>
-<code>allow-<wbr>pool-<wbr>suspension</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>Set whether pool suspension is allowed</td>
+<td>Password for the database connection</td>
 </tr>
 <tr>
 <td>
@@ -141,15 +96,6 @@ Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data
 <code>Long</code>
 </td>
 <td>This property controls the maximum lifetime of a connection in the pool</td>
-</tr>
-<tr>
-<td>
-<code>validation-<wbr>timeout</code>
-</td>
-<td>
-<code>Long</code>
-</td>
-<td>Sets the maximum number of milliseconds that the pool will wait for a connection to be validated as alive</td>
 </tr>
 <tr>
 <td>
@@ -189,6 +135,87 @@ Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data
 </tr>
 <tr>
 <td>
+<code>minimum-<wbr>idle</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>The property controls the minimum number of idle connections that HikariCP tries to maintain in the pool, including both idle and in-use connections</td>
+</tr>
+<tr>
+<td>
+<code>jdbc-<wbr>driver-<wbr>class-<wbr>name</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>JDBC driver class for database connection</td>
+</tr>
+<tr>
+<td>
+<code>maximum-<wbr>pool-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>The property controls the maximum size that the pool is allowed to reach, including both idle and in-use connections</td>
+</tr>
+<tr>
+<td>
+<code>leak-<wbr>detection-<wbr>threshold</code>
+</td>
+<td>
+<code>Long</code>
+</td>
+<td>This property controls the amount of time that a connection can be out of the pool before a message is logged indicating a possible connection leak</td>
+</tr>
+<tr>
+<td>
+<code>url</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Database connection url</td>
+</tr>
+<tr>
+<td>
+<code>connection-<wbr>init-<wbr>sql</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Set the SQL string that will be executed on all new connections when they are created, before they are added to the pool</td>
+</tr>
+<tr>
+<td>
+<code>connection-<wbr>timeout</code>
+</td>
+<td>
+<code>Long</code>
+</td>
+<td>Set the maximum number of milliseconds that a client will wait for a connection from the pool</td>
+</tr>
+<tr>
+<td>
+<code>allow-<wbr>pool-<wbr>suspension</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>Set whether pool suspension is allowed</td>
+</tr>
+<tr>
+<td>
+<code>validation-<wbr>timeout</code>
+</td>
+<td>
+<code>Long</code>
+</td>
+<td>Sets the maximum number of milliseconds that the pool will wait for a connection to be validated as alive</td>
+</tr>
+<tr>
+<td>
 <a id="transaction-isolation"></a>
 <a href="io.helidon.data.sql.datasource.TransactionIsolation.md">
 <code>transaction-<wbr>isolation</code>
@@ -216,6 +243,15 @@ Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data
 <code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>Add properties (name/value pair) that will be used to configure the DataSource/Driver</td>
+</tr>
+<tr>
+<td>
+<code>username</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Username for the database connection</td>
 </tr>
 </tbody>
 </table>

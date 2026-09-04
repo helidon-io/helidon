@@ -131,7 +131,10 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         Statement bind(int index, Object value);
 
         /**
-         * Executes an update and returns its large update count.
+         * Executes an update and returns its update count as a {@code long} value.
+         * <p>
+         * Helidon's JDBC provider uses the large update count when the driver supports it. Otherwise, it returns the
+         * legacy integer update count as a {@code long} value.
          *
          * @return update count
          * @throws io.helidon.data.DataException if JDBC execution fails
@@ -319,6 +322,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param <T> scalar type
          * @return optional value
          * @throws io.helidon.data.DataException if the column cannot be read
+         * @throws NullPointerException if the type is {@code null}
          * @throws IllegalArgumentException if the index or type is invalid
          * @throws IllegalStateException if the row is no longer active or the
          *                                  caller is not the callback thread
@@ -348,6 +352,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param <T> scalar type
          * @return non-null value
          * @throws io.helidon.data.DataException if the column contains SQL {@code NULL} or cannot be read
+         * @throws NullPointerException if the type is {@code null}
          * @throws IllegalArgumentException if the index or type is invalid
          * @throws IllegalStateException if the row is no longer active or the
          *                                  caller is not the callback thread

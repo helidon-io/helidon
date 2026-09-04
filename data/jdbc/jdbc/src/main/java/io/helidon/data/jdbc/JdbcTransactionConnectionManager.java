@@ -124,6 +124,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void start(String type) {
+        Objects.requireNonNull(type, "The transaction type must not be null.");
         State state = local.get();
         if (state == null) {
             state = new State();
@@ -144,6 +145,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void begin(String txIdentity) {
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         State state = requireState("begin a transaction");
         requireNoActiveTransaction(state, "begin a transaction");
         if (state.jdbcTransactions.containsKey(txIdentity) || state.foreignTransactions.containsKey(txIdentity)) {
@@ -164,16 +166,19 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void commit(String txIdentity) {
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         complete(txIdentity, true);
     }
 
     @Override
     public void rollback(String txIdentity) {
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         complete(txIdentity, false);
     }
 
     @Override
     public void suspend(String txIdentity) {
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         State state = requireState("suspend a transaction");
         if (txIdentity.equals(state.activeJdbc)) {
             Association association = requireAssociation(state, txIdentity);
@@ -206,6 +211,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void resume(String txIdentity) {
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
         State state = requireState("resume a transaction");
         requireNoActiveTransaction(state, "resume a transaction");
         Association association = state.jdbcTransactions.get(txIdentity);
@@ -229,62 +235,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         } else {
             failKnownContext(state);
             throw new IllegalStateException("The transaction cannot be resumed because its identity is not recognized.");
-        }
-    }
-
-    /**
-     * Completes either a JDBC association or a recorded foreign transaction.
-     *
-     * @param txIdentity transaction identity
-     * @param commit whether a JDBC association should commit
-     */
-    private void complete(String txIdentity, boolean commit) {
-        State state = requireState("complete a transaction");
-        Association association = state.jdbcTransactions.get(txIdentity);
-        if (association == null) {
-            String foreignType = state.foreignTransactions.get(txIdentity);
-            if (foreignType == null) {
-                throw new IllegalStateException("The transaction cannot be completed because its identity is not recognized.");
-            }
-            completeForeign(state, txIdentity);
-            return;
-        }
-
-        boolean failedContext = association.state == AssociationState.FAILED;
-        if (!failedContext && !txIdentity.equals(state.activeJdbc)) {
-            failJdbcAssociation(state, txIdentity, association);
-            failedContext = true;
-        }
-        // A failed context can only roll back, even when the lifecycle requests commit.
-        boolean effectiveCommit = commit && !failedContext;
-        association.beginCompletion();
-        RuntimeException runtimeFailure = null;
-        Error errorFailure = null;
-        try {
-            completeConnection(association, effectiveCommit);
-            if (failedContext && commit) {
-                runtimeFailure = new TxException("The failed local JDBC transaction was rolled back instead of committed.");
-            }
-        } catch (RuntimeException failure) {
-            runtimeFailure = failure;
-        } catch (Error failure) {
-            errorFailure = failure;
-        } finally {
-            // Clear thread state before propagating a completion failure.
-            state.jdbcTransactions.remove(txIdentity);
-            if (txIdentity.equals(state.activeJdbc)) {
-                state.activeJdbc = null;
-            }
-            if (txIdentity.equals(state.failedJdbc)) {
-                state.failedJdbc = null;
-            }
-            removeIfEmpty(state);
-        }
-        if (errorFailure != null) {
-            throw errorFailure;
-        }
-        if (runtimeFailure != null) {
-            throw runtimeFailure;
         }
     }
 
@@ -515,6 +465,62 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                                                     + actual + "'.");
         }
         state.foreignStates.put(txIdentity, next);
+    }
+
+    /**
+     * Completes either a JDBC association or a recorded foreign transaction.
+     *
+     * @param txIdentity transaction identity
+     * @param commit whether a JDBC association should commit
+     */
+    private void complete(String txIdentity, boolean commit) {
+        State state = requireState("complete a transaction");
+        Association association = state.jdbcTransactions.get(txIdentity);
+        if (association == null) {
+            String foreignType = state.foreignTransactions.get(txIdentity);
+            if (foreignType == null) {
+                throw new IllegalStateException("The transaction cannot be completed because its identity is not recognized.");
+            }
+            completeForeign(state, txIdentity);
+            return;
+        }
+
+        boolean failedContext = association.state == AssociationState.FAILED;
+        if (!failedContext && !txIdentity.equals(state.activeJdbc)) {
+            failJdbcAssociation(state, txIdentity, association);
+            failedContext = true;
+        }
+        // A failed context can only roll back, even when the lifecycle requests commit.
+        boolean effectiveCommit = commit && !failedContext;
+        association.beginCompletion();
+        RuntimeException runtimeFailure = null;
+        Error errorFailure = null;
+        try {
+            completeConnection(association, effectiveCommit);
+            if (failedContext && commit) {
+                runtimeFailure = new TxException("The failed local JDBC transaction was rolled back instead of committed.");
+            }
+        } catch (RuntimeException failure) {
+            runtimeFailure = failure;
+        } catch (Error failure) {
+            errorFailure = failure;
+        } finally {
+            // Clear thread state before propagating a completion failure.
+            state.jdbcTransactions.remove(txIdentity);
+            if (txIdentity.equals(state.activeJdbc)) {
+                state.activeJdbc = null;
+            }
+            if (txIdentity.equals(state.failedJdbc)) {
+                state.failedJdbc = null;
+            }
+            removeIfEmpty(state);
+        }
+        if (errorFailure != null) {
+            throw errorFailure;
+        }
+        if (runtimeFailure != null) {
+            throw runtimeFailure;
+        }
     }
 
     /**

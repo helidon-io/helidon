@@ -60,8 +60,9 @@ final class JdbcStatement implements JdbcClient.Statement {
     public JdbcClient.Statement bind(int index, Object value) {
         Objects.requireNonNull(value, "The bind value must not be null.");
         if (!JdbcScalarAccess.supported(value.getClass())) {
-            throw new IllegalArgumentException("JDBC does not support bind values of type '"
-                                                       + value.getClass().getTypeName() + "'.");
+            throw new IllegalArgumentException(
+                    "Helidon Data JDBC provider does not support type '"
+                            + value.getClass().getTypeName() + "' as a portable scalar.");
         }
         return bind(index, new JdbcOperation.Bind(value, null));
     }
@@ -69,7 +70,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     /**
      * Executes the statement as an update.
      *
-     * @return large update count
+     * @return update count as a {@code long} value
      */
     @Override
     public long execute() {
@@ -104,8 +105,9 @@ final class JdbcStatement implements JdbcClient.Statement {
         Objects.requireNonNull(scalarType, "The scalar type must not be null.");
         ensureMutable();
         if (!JdbcScalarAccess.supported(scalarType)) {
-            throw new IllegalArgumentException("JDBC does not support scalar values of type '"
-                                                       + scalarType.getTypeName() + "'.");
+            throw new IllegalArgumentException(
+                    "Helidon Data JDBC provider does not support type '"
+                            + scalarType.getTypeName() + "' as a portable scalar.");
         }
         return new JdbcRows<>(this,
                               row -> row.get(1, scalarType),

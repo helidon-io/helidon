@@ -70,7 +70,7 @@ final class JdbcRunner {
      * Executes an ordinary update.
      *
      * @param operation immutable operation
-     * @return large update count
+     * @return update count as a {@code long} value
      */
     long execute(JdbcOperation operation) {
         return run(operation, UNBOUNDED, updateHandler::execute);
@@ -139,54 +139,6 @@ final class JdbcRunner {
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.list(scope, mapper));
         case UPDATE -> throw incompatibleTerminal(operation, "list");
         };
-    }
-
-    /**
-     * Runs one terminal inside the provider-owned resource boundary.
-     *
-     * @param operation immutable operation
-     * @param options execution options selected by the terminal
-     * @param action result-specific handler action
-     * @param <T> terminal result type
-     * @return terminal result
-     */
-    private <T> T run(JdbcOperation operation,
-                      ExecutionOptions options,
-                      HandlerAction<T> action) {
-        // Explicit cleanup preserves every failure in resource ownership order.
-        JdbcConnectionLease lease = null;
-        PreparedStatement statement = null;
-        ExecutionScope scope = null;
-        T result = null;
-        Throwable failure = null;
-        try {
-            // The lease provider converts checked JDBC failures before they cross its contract boundary.
-            try {
-                lease = leaseProvider.acquire(dataSource);
-            } catch (DataException leaseFailure) {
-                if (leaseFailure.getCause() instanceof SQLException sqlException) {
-                    // Restore the SQL category inside the runner so the public
-                    // diagnostic retains the terminal context.
-                    throw sqlException;
-                }
-                throw leaseFailure;
-            }
-            Connection connection = lease.connection();
-            statement = prepare(connection, operation);
-            applyOptions(statement, options);
-            bind(statement, operation.binds());
-            scope = new ExecutionScope(operation, statement);
-            result = action.execute(scope);
-        } catch (Throwable caught) {
-            failure = caught;
-        }
-
-        ResultSet resultSet = scope == null ? null : scope.resultSet();
-        failure = closeAll(operation, resultSet, statement, lease, failure);
-        if (failure != null) {
-            rethrow(operation, failure);
-        }
-        return result;
     }
 
     /**
@@ -440,6 +392,54 @@ final class JdbcRunner {
     }
 
     /**
+     * Runs one terminal inside the provider-owned resource boundary.
+     *
+     * @param operation immutable operation
+     * @param options execution options selected by the terminal
+     * @param action result-specific handler action
+     * @param <T> terminal result type
+     * @return terminal result
+     */
+    private <T> T run(JdbcOperation operation,
+                      ExecutionOptions options,
+                      HandlerAction<T> action) {
+        // Explicit cleanup preserves every failure in resource ownership order.
+        JdbcConnectionLease lease = null;
+        PreparedStatement statement = null;
+        ExecutionScope scope = null;
+        T result = null;
+        Throwable failure = null;
+        try {
+            // The lease provider converts checked JDBC failures before they cross its contract boundary.
+            try {
+                lease = leaseProvider.acquire(dataSource);
+            } catch (DataException leaseFailure) {
+                if (leaseFailure.getCause() instanceof SQLException sqlException) {
+                    // Restore the SQL category inside the runner so the public
+                    // diagnostic retains the terminal context.
+                    throw sqlException;
+                }
+                throw leaseFailure;
+            }
+            Connection connection = lease.connection();
+            statement = prepare(connection, operation);
+            applyOptions(statement, options);
+            bind(statement, operation.binds());
+            scope = new ExecutionScope(operation, statement);
+            result = action.execute(scope);
+        } catch (Throwable caught) {
+            failure = caught;
+        }
+
+        ResultSet resultSet = scope == null ? null : scope.resultSet();
+        failure = closeAll(operation, resultSet, statement, lease, failure);
+        if (failure != null) {
+            rethrow(operation, failure);
+        }
+        return result;
+    }
+
+    /**
      * Runner-owned view of one prepared operation.
      */
     static final class ExecutionScope {
@@ -449,6 +449,9 @@ final class JdbcRunner {
 
         // Registered here so the runner closes it on every exit path.
         private ResultSet resultSet;
+
+        // The capability belongs to this statement because pooled wrappers may differ by statement instance.
+        private boolean largeUpdateCountsUnsupported;
 
         /**
          * Creates an execution scope.
@@ -515,13 +518,13 @@ final class JdbcRunner {
         }
 
         /**
-         * Reads the current update count without narrowing it to the legacy integer range.
+         * Reads the current update count, preferring the large update count accessor.
          *
-         * @return exact update count
+         * @return update count
          * @throws SQLException when JDBC access fails
          */
         long largeUpdateCount() throws SQLException {
-            return readLargeUpdateCount("reading a JDBC large update count");
+            return readUpdateCount("reading a JDBC large update count");
         }
 
         /**
@@ -531,7 +534,7 @@ final class JdbcRunner {
          * @throws SQLException when JDBC access fails
          */
         boolean updateCountPresent() throws SQLException {
-            return readLargeUpdateCount("checking for a JDBC large update count") != -1L;
+            return readUpdateCount("checking for a JDBC large update count") != -1L;
         }
 
         /**
@@ -565,18 +568,27 @@ final class JdbcRunner {
         }
 
         /**
-         * Reads the current large update count and fails closed when the driver cannot represent it.
+         * Reads the current update count and remembers when this statement requires the legacy accessor.
          *
          * @param operation safe diagnostic description
-         * @return exact update count
+         * @return update count
          * @throws SQLException when JDBC access fails
          */
-        private long readLargeUpdateCount(String operation) throws SQLException {
+        private long readUpdateCount(String operation) throws SQLException {
+            if (largeUpdateCountsUnsupported) {
+                return JdbcExceptionTranslator.invoke("reading a JDBC update count", statement::getUpdateCount);
+            }
             try {
                 return statement.getLargeUpdateCount();
             } catch (SQLFeatureNotSupportedException | UnsupportedOperationException _) {
-                throw new DataException("The JDBC driver does not support the large update count required for this "
-                                                + "operation.");
+                largeUpdateCountsUnsupported = true;
+                // A driver without large update count support cannot accurately represent an update affecting more
+                // than Integer.MAX_VALUE rows. The fallback can return only what getUpdateCount reports. This can lose
+                // exactness for an enormous update, but failing now is worse because execute may already have committed
+                // the write. A DataException here would not mean that the write was rejected and could cause a caller
+                // to retry it. Drivers capable of reporting such counts should implement the large update count
+                // accessor.
+                return JdbcExceptionTranslator.invoke("reading a JDBC update count", statement::getUpdateCount);
             } catch (RuntimeException runtimeException) {
                 throw (RuntimeException) JdbcExceptionTranslator.sanitize(operation, runtimeException);
             }

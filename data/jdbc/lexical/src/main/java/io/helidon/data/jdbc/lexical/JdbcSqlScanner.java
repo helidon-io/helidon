@@ -15,6 +15,8 @@
  */
 package io.helidon.data.jdbc.lexical;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler.RegionKind;
 
@@ -44,9 +46,12 @@ public final class JdbcSqlScanner {
      *
      * @param source SQL source
      * @param handler receiver for regions and markers
+     * @throws NullPointerException if {@code source} or {@code handler} is {@code null}
      * @throws IllegalArgumentException when a protected region is malformed
      */
     public static void scan(String source, JdbcSqlScanHandler handler) {
+        Objects.requireNonNull(source, "The SQL source must not be null.");
+        Objects.requireNonNull(handler, "The JDBC SQL scan handler must not be null.");
         new JdbcSqlScanner(source, handler).scan();
     }
 

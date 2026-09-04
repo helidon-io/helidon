@@ -17,7 +17,11 @@ package io.helidon.data.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Statement;
 
 import javax.sql.DataSource;
 
@@ -29,18 +33,22 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcLargeUpdateFallbackTest {
 
-    private static final String SQL = "UPDATE TEST_VALUE SET VALUE = 1";
+    private static final String UPDATE_SQL = "UPDATE TEST_VALUE SET VALUE = 1";
+    private static final String QUERY_SQL = "SELECT VALUE FROM TEST_VALUE";
+    private static final String INSERT_SQL = "INSERT INTO TEST_VALUE DEFAULT VALUES";
 
     private DataSource dataSource;
     private Connection connection;
@@ -63,12 +71,12 @@ class JdbcLargeUpdateFallbackTest {
      */
     @Test
     void returnsExactLargeUpdateCount() throws Exception {
-        when(connection.prepareStatement(SQL)).thenReturn(statement);
+        when(connection.prepareStatement(UPDATE_SQL)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(3_000_000_000L, -1L);
         when(statement.getMoreResults()).thenReturn(false);
 
-        assertThat(client.create(SQL).execute(), is(3_000_000_000L));
+        assertThat(client.create(UPDATE_SQL).execute(), is(3_000_000_000L));
 
         verify(statement).execute();
         verify(statement, never()).executeLargeUpdate();
@@ -76,53 +84,126 @@ class JdbcLargeUpdateFallbackTest {
     }
 
     /**
-     * Verifies that an unsupported large-count accessor fails closed even
-     * while checking for a subsequent result channel.
+     * Verifies that losing large update count support during result completion
+     * does not replace an exact primary count with a failure.
      */
     @Test
-    void failsClosedForUnsupportedSubsequentLargeUpdateCount() throws Exception {
-        String sensitiveDriverDetail = "private subsequent count detail";
-        when(connection.prepareStatement(SQL)).thenReturn(statement);
+    void fallsBackForUnsupportedSubsequentLargeUpdateCount() throws Exception {
+        when(connection.prepareStatement(UPDATE_SQL)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getMoreResults()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(3_000_000_000L)
-                .thenThrow(new UnsupportedOperationException(sensitiveDriverDetail));
+                .thenThrow(new UnsupportedOperationException("not implemented"));
+        when(statement.getUpdateCount()).thenReturn(-1);
 
-        DataException failure = assertThrows(DataException.class, () -> client.create(SQL).execute());
+        assertThat(client.create(UPDATE_SQL).execute(), is(3_000_000_000L));
 
-        assertThat(failure.getMessage(),
-                   is("The JDBC driver does not support the large update count required for this operation."));
+        verify(statement, times(2)).getLargeUpdateCount();
+        verify(statement).getUpdateCount();
+    }
+
+    /**
+     * Verifies that the Java default unsupported signal selects the legacy
+     * update count without reporting a completed update as failed.
+     */
+    @Test
+    void fallsBackForJavaDefaultUnsupportedOperation() throws Exception {
+        assertUnsupportedLargeUpdateFallsBack(new UnsupportedOperationException("not implemented"));
+    }
+
+    /**
+     * Verifies that the checked unsupported feature signal selects the legacy
+     * update count without reporting a completed update as failed.
+     */
+    @Test
+    void fallsBackForCheckedUnsupportedFeature() throws Exception {
+        assertUnsupportedLargeUpdateFallsBack(new SQLFeatureNotSupportedException("not supported"));
+    }
+
+    /**
+     * Verifies that query completion uses the legacy count only to establish
+     * that no result channel follows the materialized rows.
+     */
+    @Test
+    void completesQueryWhenLargeUpdateCountsAreUnsupported() throws Exception {
+        ResultSet resultSet = mock(ResultSet.class);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(QUERY_SQL)).thenReturn(statement);
+        when(statement.execute()).thenReturn(true);
+        when(statement.getResultSet()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnCount()).thenReturn(1);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString(1)).thenReturn("value");
+        when(statement.getMoreResults()).thenReturn(false);
+        when(statement.getLargeUpdateCount()).thenThrow(new UnsupportedOperationException("not implemented"));
+        when(statement.getUpdateCount()).thenReturn(-1);
+
+        assertThat(client.create(QUERY_SQL).map(String.class).one(), is("value"));
+
+        verify(statement).getLargeUpdateCount();
+        verify(statement).getUpdateCount();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    /**
+     * Verifies that an unsupported large update count does not prevent a
+     * completed insert from returning its generated key.
+     */
+    @Test
+    void readsGeneratedKeyWhenLargeUpdateCountsAreUnsupported() throws Exception {
+        ResultSet resultSet = mock(ResultSet.class);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)).thenReturn(statement);
+        when(statement.execute()).thenReturn(false);
+        when(statement.getLargeUpdateCount()).thenThrow(new UnsupportedOperationException("not implemented"));
+        when(statement.getUpdateCount()).thenReturn(1, -1);
+        when(statement.getGeneratedKeys()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnCount()).thenReturn(1);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong(1)).thenReturn(41L);
+        when(statement.getMoreResults()).thenReturn(false);
+
+        long key = client.create(INSERT_SQL)
+                .generatedKeys()
+                .map(row -> row.get(1, Long.class))
+                .one();
+
+        assertThat(key, is(41L));
+        verify(statement).getLargeUpdateCount();
+        verify(statement, times(2)).getUpdateCount();
+        verify(statement).getGeneratedKeys();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    /**
+     * Verifies that a checked failure from the legacy accessor remains a
+     * sanitized operation failure and that every owned resource is released.
+     */
+    @Test
+    void translatesFallbackUpdateCountFailure() throws Exception {
+        String sensitiveDriverDetail = "private legacy update count detail";
+        SQLException driverFailure = new SQLException(sensitiveDriverDetail, "HY000", 91);
+        when(connection.prepareStatement(UPDATE_SQL)).thenReturn(statement);
+        when(statement.execute()).thenReturn(false);
+        when(statement.getLargeUpdateCount()).thenThrow(new UnsupportedOperationException("not implemented"));
+        when(statement.getUpdateCount()).thenThrow(driverFailure);
+
+        DataException failure = assertThrows(DataException.class, () -> client.create(UPDATE_SQL).execute());
+
         assertThat(failure.getMessage(), not(containsString(sensitiveDriverDetail)));
-        assertThat(failure.getCause(), nullValue());
-        verify(statement, never()).getUpdateCount();
+        assertThat(failure.getCause(), notNullValue());
+        assertThat(failure.getCause(), not(sameInstance(driverFailure)));
+        verify(statement).close();
+        verify(connection).close();
     }
 
     /**
-     * Verifies that Java's default unsupported-operation signal fails closed
-     * and does not expose driver-provided diagnostic text.
-     */
-    @Test
-    void failsClosedForJavaDefaultUnsupportedOperation() throws Exception {
-        String sensitiveDriverDetail = "private Java default detail";
-
-        assertUnsupportedLargeUpdate(new UnsupportedOperationException(sensitiveDriverDetail),
-                                     sensitiveDriverDetail);
-    }
-
-    /**
-     * Verifies that a driver's checked unsupported-feature signal fails
-     * closed and does not expose driver-provided diagnostic text.
-     */
-    @Test
-    void failsClosedForCheckedUnsupportedFeature() throws Exception {
-        String sensitiveDriverDetail = "private checked unsupported detail";
-
-        assertUnsupportedLargeUpdate(new SQLFeatureNotSupportedException(sensitiveDriverDetail),
-                                     sensitiveDriverDetail);
-    }
-
-    /**
-     * Verifies that an unexpected runtime failure from large-count retrieval
+     * Verifies that an unexpected runtime failure from large update count retrieval
      * is sanitized and is not mistaken for an unsupported capability.
      */
     @Test
@@ -130,12 +211,12 @@ class JdbcLargeUpdateFallbackTest {
         IllegalStateException driverFailure = new IllegalStateException("private driver failure",
                                                                          new IllegalArgumentException("private cause"));
         driverFailure.addSuppressed(new IllegalArgumentException("private suppressed detail"));
-        when(connection.prepareStatement(SQL)).thenReturn(statement);
+        when(connection.prepareStatement(UPDATE_SQL)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenThrow(driverFailure);
 
         IllegalStateException failure = assertThrows(IllegalStateException.class,
-                                                     () -> client.create(SQL).execute());
+                                                     () -> client.create(UPDATE_SQL).execute());
 
         assertThat(failure, not(sameInstance(driverFailure)));
         assertThat(failure.getMessage(),
@@ -148,23 +229,19 @@ class JdbcLargeUpdateFallbackTest {
         verify(connection).close();
     }
 
-    private void assertUnsupportedLargeUpdate(Throwable unsupported,
-                                              String sensitiveDriverDetail) throws Exception {
-        when(connection.prepareStatement(SQL)).thenReturn(statement);
+    private void assertUnsupportedLargeUpdateFallsBack(Throwable unsupported) throws Exception {
+        when(connection.prepareStatement(UPDATE_SQL)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenThrow(unsupported);
+        when(statement.getUpdateCount()).thenReturn(7, -1);
+        when(statement.getMoreResults()).thenReturn(false);
 
-        DataException failure = assertThrows(DataException.class,
-                                             () -> client.create(SQL).execute());
+        assertThat(client.create(UPDATE_SQL).execute(), is(7L));
 
-        assertThat(failure.getMessage(),
-                   is("The JDBC driver does not support the large update count required for this operation."));
-        assertThat(failure.getMessage(), not(containsString(sensitiveDriverDetail)));
-        assertThat(failure.getCause(), nullValue());
-        assertThat(failure.getSuppressed().length, is(0));
         verify(statement).execute();
         verify(statement, never()).executeLargeUpdate();
-        verify(statement, never()).getUpdateCount();
+        verify(statement).getLargeUpdateCount();
+        verify(statement, times(2)).getUpdateCount();
         verify(statement).close();
         verify(connection).close();
     }

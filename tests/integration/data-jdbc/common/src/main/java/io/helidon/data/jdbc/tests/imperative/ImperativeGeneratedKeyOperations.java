@@ -96,11 +96,6 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
                 .one();
     }
 
-    private JdbcClient.Statement statement(String name) {
-        return client.create(TestSql.INSERT_WITHOUT_EMAIL)
-                .bind(1, name);
-    }
-
     private static String keyColumn() {
         return System.getProperty(GENERATED_KEY_COLUMN_PROPERTY, "id");
     }
@@ -122,5 +117,10 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
             generatedKeys.addColumn(column);
         }
         return generatedKeys;
+    }
+
+    private JdbcClient.Statement statement(String name) {
+        return client.create(TestSql.INSERT_WITHOUT_EMAIL)
+                .bind(1, name);
     }
 }

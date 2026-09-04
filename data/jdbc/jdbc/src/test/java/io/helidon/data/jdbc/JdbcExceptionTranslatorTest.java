@@ -36,6 +36,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcExceptionTranslatorTest {
 
+    /**
+     * Verifies that translated failures expose safe JDBC metadata without
+     * retaining SQL, credentials, or driver text.
+     */
     @Test
     void omitsSqlIdentityAndExposesOnlySafeDriverMetadata() {
         List<String> statements = List.of("SELECT 'private-name'",
@@ -53,7 +57,7 @@ class JdbcExceptionTranslatorTest {
             cause.addSuppressed(new SQLException("suppressed private-token", "08003", 92));
             cause.setNextException(new SQLException("next private-token", "08004", 93));
 
-            DataException failure = JdbcExceptionTranslator.translate("QUERY", cause);
+            DataException failure = JdbcExceptionTranslator.translateFailure("query", cause);
             String messages = messages(failure);
 
             assertThat(failure.getMessage(), containsString("a syntax error or access-rule violation"));
@@ -101,6 +105,10 @@ class JdbcExceptionTranslatorTest {
         assertThat(firstMessage, not(containsString("fingerprint")));
     }
 
+    /**
+     * Verifies that every supported portable SQLSTATE maps to its application
+     * visible class description and safe numeric metadata.
+     */
     @Test
     void describesEveryNonRdaSqlStateFromThePortableCatalog() {
         Map<String, List<String>> statesByDescription = Map.ofEntries(
@@ -137,7 +145,9 @@ class JdbcExceptionTranslatorTest {
 
         for (Map.Entry<String, List<String>> entry : statesByDescription.entrySet()) {
             for (String sqlState : entry.getValue()) {
-                String diagnostic = JdbcExceptionTranslator.sqlDiagnostic(new SQLException("private", sqlState, 91));
+                String diagnostic = JdbcExceptionTranslator.translateFailure(
+                        "query",
+                        new SQLException("private", sqlState, 91)).getMessage();
 
                 assertThat(sqlState,
                            diagnostic,
@@ -149,6 +159,10 @@ class JdbcExceptionTranslatorTest {
         }
     }
 
+    /**
+     * Verifies that every specific portable SQLSTATE condition appears in the
+     * complete application visible failure message.
+     */
     @Test
     void describesEverySpecificNonRdaConditionFromThePortableCatalog() {
         Map<String, String> descriptionsByState = Map.ofEntries(
@@ -211,7 +225,9 @@ class JdbcExceptionTranslatorTest {
                 Map.entry("42S82", "Translation not found"));
 
         for (Map.Entry<String, String> entry : descriptionsByState.entrySet()) {
-            String diagnostic = JdbcExceptionTranslator.sqlDiagnostic(new SQLException("private", entry.getKey(), 91));
+            String diagnostic = JdbcExceptionTranslator.translateFailure(
+                    "query",
+                    new SQLException("private", entry.getKey(), 91)).getMessage();
 
             assertThat(entry.getKey(),
                        diagnostic,
@@ -219,21 +235,33 @@ class JdbcExceptionTranslatorTest {
         }
     }
 
+    /**
+     * Verifies that a specific SQLSTATE condition appears with its portable
+     * class description and driver metadata in the complete failure message.
+     */
     @Test
     void combinesThePortableClassAndAsteriskedConditionFor42s01() {
-        String diagnostic = JdbcExceptionTranslator.sqlDiagnostic(new SQLException("private", "42S01", 42101));
+        String diagnostic = JdbcExceptionTranslator.translateFailure(
+                "query",
+                new SQLException("private", "42S01", 42101)).getMessage();
 
         assertThat(diagnostic,
-                   is(" The database reported a syntax error or access-rule violation. "
+                   is("The JDBC query failed. The database reported a syntax error or access-rule violation. "
                               + "The SQLSTATE condition is 'Base table or viewed table already exists' "
                               + "(SQLSTATE '42S01' and vendor code 42101). "
                               + "Consult the JDBC driver documentation for details about this SQLSTATE and vendor code."));
     }
 
+    /**
+     * Verifies that valid states outside the portable catalog remain explicit
+     * without receiving a guessed classification.
+     */
     @Test
     void leavesRdaAndOtherUnknownSqlStateClassesUnclassified() {
         for (String sqlState : List.of("HZ000", "HZ4A0", "HY000")) {
-            String diagnostic = JdbcExceptionTranslator.sqlDiagnostic(new SQLException("private", sqlState, 91));
+            String diagnostic = JdbcExceptionTranslator.translateFailure(
+                    "query",
+                    new SQLException("private", sqlState, 91)).getMessage();
 
             assertThat(diagnostic, containsString("an error outside the recognized portable SQLSTATE catalog"));
             assertThat(diagnostic, containsString("SQLSTATE '" + sqlState + "'"));
@@ -261,6 +289,10 @@ class JdbcExceptionTranslatorTest {
         assertThat(messages(sanitized), not(containsString("secret")));
     }
 
+    /**
+     * Verifies that translated cause chains remain within the shared graph
+     * budget and do not retain driver text.
+     */
     @Test
     void boundsSqlExceptionCauseChains() {
         SQLException first = new SQLException("secret cause 0", "42000", 0);
@@ -271,7 +303,7 @@ class JdbcExceptionTranslatorTest {
             current = next;
         }
 
-        DataException failure = JdbcExceptionTranslator.translate("query", first);
+        DataException failure = JdbcExceptionTranslator.translateFailure("query", first);
         List<Throwable> graph = exceptionGraph(failure.getCause());
 
         assertThat(graph.size(), is(16));
@@ -279,6 +311,10 @@ class JdbcExceptionTranslatorTest {
         assertThat(graphMessages(graph), not(containsString("secret")));
     }
 
+    /**
+     * Verifies that translated next exception chains remain within the shared
+     * graph budget and do not retain driver text.
+     */
     @Test
     void boundsNextExceptionChains() {
         SQLException first = new SQLException("secret next 0", "42000", 0);
@@ -289,7 +325,7 @@ class JdbcExceptionTranslatorTest {
             current = next;
         }
 
-        DataException failure = JdbcExceptionTranslator.translate("query", first);
+        DataException failure = JdbcExceptionTranslator.translateFailure("query", first);
         List<Throwable> graph = exceptionGraph(failure.getCause());
 
         assertThat(graph.size(), is(16));
@@ -297,6 +333,10 @@ class JdbcExceptionTranslatorTest {
         assertThat(graphMessages(graph), not(containsString("secret")));
     }
 
+    /**
+     * Verifies that translated graphs preserve benign shared relationships
+     * without duplicating provider owned nodes.
+     */
     @Test
     void preservesSharedCauseAndNextExceptionRelationships() {
         SQLException first = new SQLException("secret root", "42000", 1);
@@ -304,7 +344,7 @@ class JdbcExceptionTranslatorTest {
         first.initCause(shared);
         first.setNextException(shared);
 
-        DataException failure = JdbcExceptionTranslator.translate("query", first);
+        DataException failure = JdbcExceptionTranslator.translateFailure("query", first);
         SQLException sanitized = (SQLException) failure.getCause();
         SQLException sanitizedShared = (SQLException) sanitized.getCause();
         List<Throwable> graph = exceptionGraph(sanitized);
@@ -317,6 +357,10 @@ class JdbcExceptionTranslatorTest {
         assertThat(graphMessages(graph), not(containsString("secret")));
     }
 
+    /**
+     * Verifies that driver owned suppressed relationships remain opaque and
+     * cannot expand the translated graph.
+     */
     @Test
     void boundsWideSuppressedExceptionGraphs() {
         SQLException first = new SQLException("secret root", "42000", 1);
@@ -324,7 +368,7 @@ class JdbcExceptionTranslatorTest {
             first.addSuppressed(new SQLException("secret suppressed " + index, "42001", index));
         }
 
-        DataException failure = JdbcExceptionTranslator.translate("query", first);
+        DataException failure = JdbcExceptionTranslator.translateFailure("query", first);
         List<Throwable> graph = exceptionGraph(failure.getCause());
 
         assertThat(graph.size(), is(1));
@@ -332,6 +376,10 @@ class JdbcExceptionTranslatorTest {
         assertThat(graphMessages(graph), not(containsString("secret")));
     }
 
+    /**
+     * Verifies that translation removes cycle forming relationships while
+     * retaining the useful forward relationship.
+     */
     @Test
     void removesCyclesFromSanitizedExceptionGraphs() {
         SQLException first = new SQLException("secret first", "42000", 1);
@@ -339,7 +387,7 @@ class JdbcExceptionTranslatorTest {
         first.initCause(second);
         second.setNextException(first);
 
-        DataException failure = JdbcExceptionTranslator.translate("query", first);
+        DataException failure = JdbcExceptionTranslator.translateFailure("query", first);
         SQLException sanitized = (SQLException) failure.getCause();
         SQLException sanitizedSecond = (SQLException) sanitized.getCause();
         List<Throwable> graph = exceptionGraph(sanitized);
@@ -350,12 +398,16 @@ class JdbcExceptionTranslatorTest {
         assertThat(graphMessages(graph), not(containsString("secret")));
     }
 
+    /**
+     * Verifies that malformed SQLSTATE content is omitted from the complete
+     * application visible failure graph.
+     */
     @Test
     void rejectsMalformedSqlStateContent() {
         String secretState = "jdbc:test://user:password@host/db?token=private-token";
         SQLException cause = new SQLException("private driver message", secretState, 91);
 
-        DataException failure = JdbcExceptionTranslator.translate("query", cause);
+        DataException failure = JdbcExceptionTranslator.translateFailure("query", cause);
         SQLException sanitized = (SQLException) failure.getCause();
 
         assertThat(failure.getMessage(), containsString("an error without a valid SQLSTATE"));
@@ -365,6 +417,10 @@ class JdbcExceptionTranslatorTest {
         assertThat(graphMessages(exceptionGraph(sanitized)), not(containsString("private")));
     }
 
+    /**
+     * Verifies that failures from hostile SQL exception accessors remain
+     * inside the sanitization boundary.
+     */
     @Test
     void containsBrokenSqlExceptionAccessorsInsideTheSanitizationBoundary() {
         SQLException hostile = new SQLException("private root message") {
@@ -389,7 +445,7 @@ class JdbcExceptionTranslatorTest {
             }
         };
 
-        DataException failure = JdbcExceptionTranslator.translate("query", hostile);
+        DataException failure = JdbcExceptionTranslator.translateFailure("query", hostile);
         SQLException sanitized = (SQLException) failure.getCause();
         List<Throwable> graph = exceptionGraph(sanitized);
 

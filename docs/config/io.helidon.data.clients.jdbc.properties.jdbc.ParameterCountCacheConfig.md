@@ -27,7 +27,7 @@ Configuration for data.clients.jdbc.properties.jdbc.parameter-count-cache
 <td>
 <code>256</code>
 </td>
-<td>Maximum number of SQL marker counts retained by this client</td>
+<td>The maximum number of SQL marker counts retained by this client must be between zero and 4096 inclusive, where zero disables retention while marker validation continues</td>
 </tr>
 <tr>
 <td>
@@ -39,7 +39,7 @@ Configuration for data.clients.jdbc.properties.jdbc.parameter-count-cache
 <td>
 <code>4096</code>
 </td>
-<td>Maximum SQL string length admitted to the parameter count cache in UTF-16 code units</td>
+<td>The maximum SQL string length admitted to the parameter count cache must be a positive number of UTF-16 code units and its product with the cache capacity must not exceed 16,777,216 code units, but SQL longer than this value remains executable and is scanned without being retained</td>
 </tr>
 </tbody>
 </table>

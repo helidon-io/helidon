@@ -15,6 +15,8 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import java.util.Objects;
+
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
@@ -36,6 +38,7 @@ final class JdbcRepositoryGenerator extends BasePersistenceGenerator {
 
     @Override
     public QueryBuilder queryBuilder(RepositoryInfo repositoryInfo) {
+        Objects.requireNonNull(repositoryInfo, "The repository information must not be null.");
         throw new UnsupportedOperationException("JDBC repositories do not use entity query generation.");
     }
 

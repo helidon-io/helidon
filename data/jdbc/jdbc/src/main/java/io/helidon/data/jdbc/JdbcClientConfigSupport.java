@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -110,6 +111,7 @@ final class JdbcClientConfigSupport {
 
         @Override
         public void decorate(JdbcClientConfig.BuilderBase<?, ?> builder) {
+            Objects.requireNonNull(builder, "The JDBC client configuration builder must not be null.");
             validate(builder.name(), builder.connection(), builder.dataSource());
             cachePolicy(builder.parameterCountCacheCapacity(), builder.parameterCountCacheMaxSqlLength());
         }
