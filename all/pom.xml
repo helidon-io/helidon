@@ -592,6 +592,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-quic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-websocket</artifactId>
         </dependency>
         <dependency>

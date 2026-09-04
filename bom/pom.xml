@@ -802,6 +802,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-quic</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
