@@ -16,20 +16,14 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.function.Function;
-
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
-import io.helidon.config.EnumMapperProvider;
 
 import io.opentelemetry.sdk.metrics.Aggregation;
 import io.opentelemetry.sdk.metrics.export.AggregationTemporalitySelector;
 import io.opentelemetry.sdk.metrics.export.DefaultAggregationSelector;
 
 class MetricExporterConfigSupport {
-
-    private static final Function<Config, MetricTemporalityPreferenceType> TEMPORALITY_PREFERENCE_MAPPER =
-            new EnumMapperProvider().mapper(MetricTemporalityPreferenceType.class).orElseThrow();
 
     private MetricExporterConfigSupport() {
     }
@@ -40,8 +34,7 @@ class MetricExporterConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod
-        static AggregationTemporalitySelector createTemporalityPreference(Config config) {
-            var preference = TEMPORALITY_PREFERENCE_MAPPER.apply(config);
+        static AggregationTemporalitySelector createTemporalityPreference(MetricTemporalityPreferenceType preference) {
             return preference.selector();
         }
 
