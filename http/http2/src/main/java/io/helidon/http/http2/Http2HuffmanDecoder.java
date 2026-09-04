@@ -16,6 +16,7 @@
 
 package io.helidon.http.http2;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.BufferData;
@@ -50,13 +51,17 @@ public class Http2HuffmanDecoder {
      * @return decoded string
      */
     public String decodeString(BufferData data, int length) {
+        return decodeString(data, length, StandardCharsets.US_ASCII);
+    }
+
+    String decodeString(BufferData data, int length, Charset charset) {
         if (length == 0) {
             return EMPTY_STRING;
         }
         byte[] destination = new byte[Math.toIntExact((long) length * 8 / 5)];
         try {
             int decodedLength = HuffmanCodec.decode(data, length, destination);
-            return new String(destination, 0, decodedLength, StandardCharsets.US_ASCII);
+            return new String(destination, 0, decodedLength, charset);
         } catch (IllegalArgumentException e) {
             throw new Http2Exception(Http2ErrorCode.COMPRESSION, "Cannot decode Huffman encoded string", e);
         }

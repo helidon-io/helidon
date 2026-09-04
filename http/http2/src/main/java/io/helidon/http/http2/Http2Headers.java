@@ -16,6 +16,7 @@
 
 package io.helidon.http.http2;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpToken;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
@@ -718,10 +720,13 @@ public class Http2Headers {
                 // read from bytes
                 String name;
                 try {
-                    name = readString(huffman, data);
+                    name = readString(huffman, data, StandardCharsets.US_ASCII);
                 } catch (IllegalArgumentException e) {
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                              "Received a header with non ASCII character(s)");
+                }
+                if (name.isEmpty()) {
+                    throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received an empty header name");
                 }
                 if (!(name.toLowerCase(Locale.ROOT).equals(name))) {
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL,
@@ -733,6 +738,11 @@ public class Http2Headers {
                                              "Received invalid pseudo-header field "
                                                      + "(or explicit value instead of indexed): "
                                                      + LogFormatter.escape(name));
+                }
+                try {
+                    HttpToken.validate(name);
+                } catch (IllegalArgumentException e) {
+                    throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received an invalid header name", e);
                 }
                 headerName = HeaderNames.create(name);
             } else {
@@ -751,7 +761,7 @@ public class Http2Headers {
 
             if (approach.hasValue) {
                 // read from bytes
-                value = readString(huffman, data);
+                value = readString(huffman, data, StandardCharsets.ISO_8859_1);
             } else {
                 value = record.value();
                 if (value == null) {
@@ -795,7 +805,7 @@ public class Http2Headers {
         }
     }
 
-    private static String readString(Http2HuffmanDecoder huffman, BufferData data) {
+    private static String readString(Http2HuffmanDecoder huffman, BufferData data, Charset charset) {
         if (data.available() < 1) {
             throw new Http2Exception(Http2ErrorCode.COMPRESSION, "No data available to read header");
         }
@@ -845,9 +855,9 @@ public class Http2Headers {
         }
 
         if (isHuffman) {
-            return huffman.decodeString(data, length);
+            return huffman.decodeString(data, length, charset);
         } else {
-            return data.readString(length);
+            return data.readString(length, charset);
         }
     }
 
@@ -921,6 +931,12 @@ public class Http2Headers {
                              String value,
                              boolean shouldIndex,
                              boolean neverIndex) {
+        String headerName = name.lowerCase();
+        if (name.index() < 0 && (headerName.isEmpty() || headerName.charAt(0) != ':')) {
+            HttpToken.validate(headerName);
+        }
+        Http2HuffmanEncoder.validateLatin1(value);
+
         IndexedHeaderRecord record = table.find(name, value);
         HeaderApproach approach;
 
@@ -1327,9 +1343,9 @@ public class Http2Headers {
             }
             if (hasValue) {
                 if (value.length() > 3) {
-                    huffman.encode(buffer, value);
+                    huffman.encodeValidated(buffer, value);
                 } else {
-                    byte[] valueBytes = value.getBytes(StandardCharsets.US_ASCII);
+                    byte[] valueBytes = Http2HuffmanEncoder.encodeLatin1(value);
                     buffer.writeHpackInt(valueBytes.length, 0, 7);
                     buffer.write(valueBytes);
                 }
@@ -1422,7 +1438,7 @@ public class Http2Headers {
 
         int add(HeaderName headerName, String headerValue) {
             String name = headerName.lowerCase();
-            int size = name.length() + headerValue.getBytes(StandardCharsets.US_ASCII).length + 32;
+            int size = name.length() + headerValue.length() + 32;
 
             if (currentTableSize + size <= maxTableSize) {
                 // fast path
