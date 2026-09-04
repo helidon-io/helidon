@@ -147,17 +147,6 @@ interface MetricsConfigBlueprint {
     Optional<String> appTagName();
 
     /**
-     * Histogram flavor to use for Prometheus output.
-     *
-     * @return configured Prometheus histogram flavor
-     * @deprecated This Micrometer setting will be removed in a future release of Helidon with no replacement.
-     */
-    @Deprecated(since = "4.5.5", forRemoval = true)
-    @Option.Configured("prometheus.histogramFlavor")
-    @Option.Access("")
-    Optional<String> prometheusHistogramFlavor();
-
-    /**
      * Settings related to scoping management.
      *
      * @return scoping settings

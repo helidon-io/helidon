@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,9 @@ class MetricsConfigSupport {
     //   - non-capturing match of an unescaped =
     //   - capture the rest.
     static final Pattern TAG_ASSIGNMENT_PATTERN = Pattern.compile("(.*?)(?<!\\\\)=(.*)");
+
+    private static final String PROMETHEUS_HISTOGRAM_FLAVOR_CONFIG_KEY = "prometheus.histogramFlavor";
+    private static final System.Logger LOGGER = System.getLogger(MetricsConfigSupport.class.getName());
 
     private MetricsConfigSupport() {
     }
@@ -131,6 +135,12 @@ class MetricsConfigSupport {
         public void decorate(MetricsConfig.BuilderBase<?, ?> builder) {
             if (builder.config().isEmpty()) {
                 builder.config(Services.get(Config.class).get(MetricsConfigBlueprint.METRICS_CONFIG_KEY));
+            }
+            if (builder.config().orElseThrow().get(PROMETHEUS_HISTOGRAM_FLAVOR_CONFIG_KEY).exists()) {
+                LOGGER.log(Level.WARNING,
+                           "Configuration property metrics.prometheus.histogramFlavor is deprecated as of Helidon 4.5.5 "
+                                   + "because a future release of the Prometheus Java client will no longer honor it. "
+                                   + "A future Helidon release will adopt that Prometheus client version.");
             }
             if (builder.keyPerformanceIndicatorMetricsConfig().isEmpty()) {
                 builder.keyPerformanceIndicatorMetricsConfig(KeyPerformanceIndicatorMetricsConfig.create());

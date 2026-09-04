@@ -260,17 +260,6 @@ Configuration settings for metrics
 </td>
 <td>Whether the <code>gc.<wbr>time</code> meter should be registered as a gauge (vs</td>
 </tr>
-<tr>
-<td>
-<code>prometheus.<wbr>histogram<wbr>Flavor</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Histogram flavor to use for Prometheus output</td>
-</tr>
 </tbody>
 </table>
 

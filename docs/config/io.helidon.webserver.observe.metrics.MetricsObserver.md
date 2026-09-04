@@ -120,19 +120,6 @@ Metrics Observer configuration
 </tr>
 <tr>
 <td>
-<a id="prometheus"></a>
-<a href="io.helidon.server.features.observe.observers.metrics.PrometheusConfig.md">
-<code>prometheus</code>
-</a>
-</td>
-<td>
-</td>
-<td>
-</td>
-<td>Configuration for prometheus</td>
-</tr>
-<tr>
-<td>
 <a id="publishers"></a>
 <a href="io.helidon.metrics.api.MetricsPublisher.md">
 <code>publishers</code>
