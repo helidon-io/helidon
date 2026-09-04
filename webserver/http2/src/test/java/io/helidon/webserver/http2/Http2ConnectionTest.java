@@ -51,6 +51,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
@@ -523,6 +524,124 @@ class Http2ConnectionTest {
                      () -> connection.handle(mock(Limit.class)));
 
         verify(executor, times(1)).submit(any(Runnable.class));
+    }
+
+    @Test
+    void madeYouResetClosureReleasesAdmissionWaiter() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        Http2Headers requestHeaders = Http2Headers.create(WritableHeaders.create());
+        requestHeaders.method(Method.GET);
+        requestHeaders.path("/grpc");
+        requestHeaders.scheme("http");
+        requestHeaders.authority("localhost");
+        Http2Headers.DynamicTable dynamicTable = Http2Headers.DynamicTable.create(
+                Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        Http2HuffmanEncoder huffmanEncoder = Http2HuffmanEncoder.create();
+        for (int streamId : List.of(1, 3)) {
+            BufferData headersData = BufferData.growing(512);
+            requestHeaders.write(dynamicTable, huffmanEncoder, headersData);
+            input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                            Http2FrameTypes.HEADERS,
+                                                                            Http2Flag.HeaderFlags.create(
+                                                                                    Http2Flag.END_OF_HEADERS
+                                                                                            | Http2Flag.END_OF_STREAM),
+                                                                            streamId),
+                                                    headersData)));
+        }
+
+        CountDownLatch resetWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseResetWrite = new CountDownLatch(1);
+        CountDownLatch goAwayWritten = new CountDownLatch(1);
+        DataWriter writer = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            Http2FrameHeader header = Http2FrameHeader.create(data.copy());
+            if (header.type() == Http2FrameType.RST_STREAM) {
+                resetWriteStarted.countDown();
+                if (!releaseResetWrite.await(2, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Timed out waiting to release RST_STREAM write");
+                }
+            } else if (header.type() == Http2FrameType.GO_AWAY) {
+                goAwayWritten.countDown();
+            }
+            return null;
+        }).when(writer).writeNow(any(BufferData.class));
+        AtomicBoolean firstInput = new AtomicBoolean(true);
+        DataReader reader = DataReader.create(() -> {
+            byte[] frame = input.poll();
+            if (!firstInput.compareAndSet(true, false) && frame != null) {
+                try {
+                    if (!resetWriteStarted.await(2, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting for RST_STREAM write");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted waiting for RST_STREAM write", e);
+                }
+            }
+            return frame;
+        });
+        ExecutorService executor = mock(ExecutorService.class);
+        AtomicReference<Thread> streamThread = new AtomicReference<>();
+        doAnswer(invocation -> {
+            Thread thread = Thread.ofVirtual().start(invocation.<Runnable>getArgument(0));
+            streamThread.set(thread);
+            return null;
+        }).when(executor).submit(any(Runnable.class));
+        ConnectionContext ctx = http2Context(writer, reader);
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
+        Http2SubProtocolSelector.SubProtocolHandler handler =
+                mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.HALF_CLOSED_REMOTE);
+        doThrow(new Http2Exception(Http2ErrorCode.CANCEL, "test stream failure")).when(handler).init();
+        Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> new SubProtocolResult(true, handler);
+        Http2Connection connection = new Http2Connection(ctx,
+                                                         Http2Config.builder()
+                                                                 .maxConcurrentStreams(1)
+                                                                 .maxRapidResets(0)
+                                                                 .build(),
+                                                         List.of(selector));
+        AtomicReference<Throwable> connectionFailure = new AtomicReference<>();
+        Thread connectionThread = Thread.ofVirtual().start(() -> {
+            try {
+                connection.handle(mock(Limit.class));
+            } catch (Throwable t) {
+                connectionFailure.set(t);
+            }
+        });
+
+        try {
+            assertThat("RST_STREAM write must start",
+                       resetWriteStarted.await(2, TimeUnit.SECONDS),
+                       is(true));
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+            while (connectionThread.getState() != Thread.State.WAITING && System.nanoTime() < deadline) {
+                Thread.onSpinWait();
+            }
+            assertThat("replacement stream admission must be waiting for reset publication",
+                       connectionThread.getState(),
+                       is(Thread.State.WAITING));
+            releaseResetWrite.countDown();
+            assertThat("made-you-reset threshold must write GOAWAY",
+                       goAwayWritten.await(2, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("connection dispatch must terminate after GOAWAY",
+                       connectionThread.join(Duration.ofSeconds(2)),
+                       is(true));
+        } finally {
+            releaseResetWrite.countDown();
+            connection.close(true);
+            connectionThread.join(TimeUnit.SECONDS.toMillis(2));
+            Thread worker = streamThread.get();
+            if (worker != null) {
+                worker.join(TimeUnit.SECONDS.toMillis(2));
+            }
+        }
+        assertThat(connectionFailure.get(), instanceOf(CloseConnectionException.class));
     }
 
     @Test
