@@ -140,7 +140,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             Http1ClientRequestImpl request = new Http1ClientRequestImpl(cos.lastRequest,
                                                                         sendEntity ? cos.lastRequest.method() : Method.GET,
                                                                         redirectUri,
-                                                                        cos.lastRequest.properties());
+                                                                        cos.lastRequest.properties(),
+                                                                        sendEntity);
             if (sendEntity) {
                 request.outputStreamRedirects(numberOfRedirects);
             }
@@ -542,7 +543,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 Http1ClientRequestImpl clientRequest = new Http1ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
-                                                                                  lastRequest.properties());
+                                                                                  lastRequest.properties(),
+                                                                                  sendEntity);
                 clientRequest.followRedirects(false);
                 Http1ClientResponseImpl response;
                 if (sendEntity && !sendEmptyEntity) {

@@ -122,14 +122,16 @@ class RedirectionProcessor {
                 clientRequest = new Http2ClientRequestImpl(clientRequest,
                                                            clientRequest.method(),
                                                            redirectUri,
-                                                           request.properties());
+                                                           request.properties(),
+                                                           true);
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes
                 entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
                 clientRequest = new Http2ClientRequestImpl(clientRequest,
                                                            Method.GET,
                                                            redirectUri,
-                                                           request.properties());
+                                                           request.properties(),
+                                                           false);
             }
         }
     }

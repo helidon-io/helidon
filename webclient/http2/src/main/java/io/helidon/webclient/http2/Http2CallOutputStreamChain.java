@@ -161,7 +161,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             Http2ClientRequestImpl request = new Http2ClientRequestImpl(outputStream.lastRequest,
                                                                         redirectedMethod,
                                                                         redirectUri,
-                                                                        outputStream.lastRequest.properties());
+                                                                        outputStream.lastRequest.properties(),
+                                                                        sendEntity);
             request.outputStreamRedirect(false);
             request.readTimeout(outputStream.originalRequest.readTimeout());
             int numberOfRedirects = outputStream.numberOfRedirects() + 1;
@@ -231,7 +232,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         Http2ClientRequestImpl redirectedRequest = new Http2ClientRequestImpl(clientRequest(),
                                                                               method,
                                                                               redirectUri,
-                                                                              clientRequest().properties());
+                                                                              clientRequest().properties(),
+                                                                              sendEntity);
         redirectedRequest.readTimeout(clientRequest().readTimeout());
         redirectedRequest.maxRedirects(clientRequest().maxRedirects() - 1);
         if (sendEntity) {
@@ -526,7 +528,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 Http2ClientRequestImpl clientRequest = new Http2ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
-                                                                                  lastRequest.properties());
+                                                                                  lastRequest.properties(),
+                                                                                  sendEntity);
                 clientRequest.followRedirects(false);
                 clientRequest.readTimeout(originalRequest.readTimeout());
                 try {

@@ -92,7 +92,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     Http1ClientRequestImpl(Http1ClientRequestImpl request,
                            Method method,
                            ClientUri clientUri,
-                           Map<String, String> properties) {
+                           Map<String, String> properties,
+                           boolean preserveEntity) {
         this(request.http1Client,
              null,
              method,
@@ -116,7 +117,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         outputStreamRedirect(request.outputStreamRedirect());
         outputStreamRedirects(request.outputStreamRedirects());
-        if (method.equals(request.method())) {
+        if (preserveEntity) {
             headers(request.headers());
             headers().remove(HeaderNames.HOST);
             headers().remove(HeaderNames.COOKIE);

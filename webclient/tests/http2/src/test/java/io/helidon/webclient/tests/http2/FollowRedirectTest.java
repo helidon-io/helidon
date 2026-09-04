@@ -124,6 +124,18 @@ class FollowRedirectTest {
             String contentType = req.headers().contentType().orElseThrow().mediaType().text();
             String marker = req.headers().get(REDIRECT_HEADER).get();
             res.send(contentType + ":" + marker + ":" + req.content().as(String.class));
+        }).route(Method.GET, "/redirectDropEntity", (req, res) -> {
+            res.status(Status.FOUND_302)
+                    .header(HeaderNames.LOCATION, "/afterDropEntity")
+                    .send();
+        }).route(Method.GET, "/afterDropEntity", (req, res) -> {
+            if (req.content().hasEntity()
+                    || req.headers().contains(HeaderNames.CONTENT_TYPE)
+                    || req.headers().contains(REDIRECT_HEADER)) {
+                res.status(Status.BAD_REQUEST_400).send("Entity metadata was preserved");
+                return;
+            }
+            res.send("GET without entity metadata");
         }).route(Method.PUT, "/plain", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
                 byte[] buffer = new byte[128];
@@ -272,6 +284,18 @@ class FollowRedirectTest {
 
         assertThat(REDIRECT_SOURCE_COOKIE.get(), containsString(PATH_COOKIE));
         assertThat(REDIRECT_TARGET_COOKIE.get(), is(nullValue()));
+    }
+
+    @Test
+    void sameMethodRedirectDropsEntityHeaders() {
+        try (Http2ClientResponse response = webClient.get()
+                .path("/redirectDropEntity")
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(REDIRECT_HEADER, "drop")
+                .submit("entity")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("GET without entity metadata"));
+        }
     }
 
     @Test

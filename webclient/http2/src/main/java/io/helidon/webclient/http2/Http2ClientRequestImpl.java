@@ -90,7 +90,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     Http2ClientRequestImpl(Http2ClientRequestImpl request,
                            Method method,
                            ClientUri clientUri,
-                           Map<String, String> properties) {
+                           Map<String, String> properties,
+                           boolean preserveEntity) {
         this(request.http2Client,
              request.delegate,
              method,
@@ -118,7 +119,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.readContinueTimeout(request.readContinueTimeout());
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         this.outputStreamRedirect(request.outputStreamRedirect);
-        if (method.equals(request.method())) {
+        if (preserveEntity) {
             headers(request.headers());
             headers().remove(HeaderNames.HOST);
             headers().remove(HeaderNames.COOKIE);
