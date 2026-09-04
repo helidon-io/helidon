@@ -47,6 +47,7 @@
         <module>hsts</module>
         <module>http2</module>
         <module>quic</module>
+        <module>http3</module>
         <module>jsonrpc</module>
         <module>observe</module>
         <module>security</module>
