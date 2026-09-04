@@ -37,6 +37,7 @@
         <module>junit5</module>
         <module>websocket</module>
         <module>http2</module>
+        <module>http3</module>
         <module>grpc</module>
         <module>jsonrpc</module>
     </modules>
