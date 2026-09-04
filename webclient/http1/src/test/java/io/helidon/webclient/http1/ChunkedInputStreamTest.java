@@ -17,13 +17,17 @@
 package io.helidon.webclient.http1;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.http1.Http1ConnectionListener;
+import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
@@ -106,13 +110,99 @@ class ChunkedInputStreamTest {
         assertThat(input.read(new byte[0], 0, 0), is(0));
     }
 
+    @Test
+    void rejectsFirstDelimiterByteWithoutWaitingForSecondByte() {
+        AtomicInteger pulls = new AtomicInteger();
+        DataReader reader = DataReader.create(() -> {
+            if (pulls.getAndIncrement() == 0) {
+                return bytes("1\r\naX");
+            }
+            throw new AssertionError("Malformed CR must fail before waiting for LF");
+        });
+        var connection = new TestConnection(reader);
+        var complete = new CompletableFuture<WebClientServiceResponse>();
+        var input = input(connection, complete);
+        assertThat(input.read(), is((int) 'a'));
+        IllegalStateException failure = assertThrows(IllegalStateException.class, input::read);
+        assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
+        assertThat(connection.closes, is(1));
+        assertThat(complete.isCompletedExceptionally(), is(true));
+    }
+
+    @Test
+    void closingConsumedSliceBeforeWireChunkEndsDiscardsConnection() throws Exception {
+        AtomicInteger pulls = new AtomicInteger();
+        DataReader reader = DataReader.create(() -> {
+            if (pulls.getAndIncrement() == 0) {
+                return bytes("7fffffff\r\nprefix");
+            }
+            throw new AssertionError("Closing an incomplete wire chunk must not read further bytes");
+        });
+        var connection = new TestConnection(reader);
+        var complete = new CompletableFuture<WebClientServiceResponse>();
+        var input = input(connection, complete);
+        byte[] prefix = new byte[6];
+        assertThat(input.read(prefix), is(prefix.length));
+        input.close();
+        assertThat(connection.closes, is(1));
+        assertThat(complete.isDone(), is(true));
+    }
+
     private static Http1CallChainBase.ChunkedInputStream input(DataReader reader,
                                                              CompletableFuture<WebClientServiceResponse> complete) {
-        return new Http1CallChainBase.ChunkedInputStream(null, reader, complete, new AtomicReference<>(),
+        return input(new TestConnection(reader), complete);
+    }
+
+    private static Http1CallChainBase.ChunkedInputStream input(TestConnection connection,
+                                                             CompletableFuture<WebClientServiceResponse> complete) {
+        return new Http1CallChainBase.ChunkedInputStream(connection, connection.reader(), complete, new AtomicReference<>(), false,
                                                        new Http1ConnectionListener() { }, null);
     }
 
     private static byte[] bytes(String value) {
         return value.getBytes(StandardCharsets.US_ASCII);
+    }
+
+    private static class TestConnection implements ClientConnection {
+        private final DataReader reader;
+        private int closes;
+
+        private TestConnection(DataReader reader) {
+            this.reader = reader;
+        }
+
+        @Override
+        public DataReader reader() {
+            return reader;
+        }
+
+        @Override
+        public DataWriter writer() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String channelId() {
+            return "test";
+        }
+
+        @Override
+        public HelidonSocket helidonSocket() {
+            return null;
+        }
+
+        @Override
+        public void readTimeout(Duration readTimeout) {
+        }
+
+        @Override
+        public void releaseResource() {
+            throw new AssertionError("Chunk reader must not release the connection");
+        }
+
+        @Override
+        public void closeResource() {
+            closes++;
+        }
     }
 }

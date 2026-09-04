@@ -26,6 +26,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -42,6 +47,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
@@ -52,7 +58,9 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1ClientResponseImplTest {
 
@@ -217,6 +225,87 @@ class Http1ClientResponseImplTest {
         assertThat(connection.closeCount(), is(0));
     }
 
+    @Test
+    void closesChunkedResponseDuringEntityCleanup() throws Exception {
+        CountDownLatch closeStarted = new CountDownLatch(1);
+        CountDownLatch continueClose = new CountDownLatch(1);
+        InputStream inputStream = new InputStream() {
+            @Override
+            public int read() {
+                return -1;
+            }
+
+            @Override
+            public void close() throws IOException {
+                closeStarted.countDown();
+                try {
+                    if (!continueClose.await(5, TimeUnit.SECONDS)) {
+                        throw new IOException("Timed out waiting to continue entity cleanup");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Entity cleanup interrupted", e);
+                }
+            }
+        };
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        TestConnection connection = new TestConnection();
+        Http1ClientResponseImpl response = response(ClientResponseHeaders.create(headers), inputStream, connection);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        try {
+            Future<Integer> entityRead = executor.submit(() -> response.entity().inputStream().read());
+            assertThat(closeStarted.await(5, TimeUnit.SECONDS), is(true));
+
+            response.close();
+
+            assertThat(connection.releaseCount(), is(0));
+            assertThat(connection.closeCount(), is(1));
+            continueClose.countDown();
+            assertThat(entityRead.get(5, TimeUnit.SECONDS), is(-1));
+        } finally {
+            continueClose.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void closesConnectionWhenChunkedStreamClosesBeforeFinalChunk() throws IOException {
+        TestConnection connection = new TestConnection(dataReader("2\r\nOK\r\n"));
+        InputStream inputStream = new Http1CallChainBase.ChunkedInputStream(connection,
+                                                                           connection.reader(),
+                                                                           new CompletableFuture<>(),
+                                                                           new AtomicReference<>(),
+                                                                           false,
+                                                                           new Http1ConnectionListener() {
+                                                                           }, null);
+
+        inputStream.close();
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void completesResponseWhenPrematureChunkedCloseFails() {
+        IllegalStateException closeFailure = new IllegalStateException("Connection close failed");
+        TestConnection connection = new TestConnection(dataReader("2\r\nOK\r\n"), closeFailure);
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        InputStream inputStream = new Http1CallChainBase.ChunkedInputStream(connection,
+                                                                           connection.reader(),
+                                                                           whenComplete,
+                                                                           new AtomicReference<>(),
+                                                                           false,
+                                                                           new Http1ConnectionListener() {
+                                                                           }, null);
+
+        IllegalStateException actualFailure = assertThrows(IllegalStateException.class, inputStream::close);
+
+        assertThat(actualFailure, sameInstance(closeFailure));
+        assertThat(whenComplete.isDone(), is(true));
+    }
+
     private static WebClientServiceResponse serviceResponse(Method method,
                                                             Status status,
                                                             ClientResponseHeaders headers) {
@@ -332,13 +421,19 @@ class Http1ClientResponseImplTest {
         private final AtomicInteger releaseCount = new AtomicInteger();
         private final AtomicInteger closeCount = new AtomicInteger();
         private final DataReader reader;
+        private final RuntimeException closeFailure;
 
         private TestConnection() {
-            this(DataReader.create(() -> null));
+            this(DataReader.create(() -> null), null);
         }
 
         private TestConnection(DataReader reader) {
+            this(reader, null);
+        }
+
+        private TestConnection(DataReader reader, RuntimeException closeFailure) {
             this.reader = reader;
+            this.closeFailure = closeFailure;
         }
 
         @Override
@@ -373,6 +468,9 @@ class Http1ClientResponseImplTest {
         @Override
         public void closeResource() {
             closeCount.incrementAndGet();
+            if (closeFailure != null) {
+                throw closeFailure;
+            }
         }
 
         private int releaseCount() {

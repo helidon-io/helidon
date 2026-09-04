@@ -19,7 +19,6 @@ package io.helidon.webclient.http1;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.OptionalLong;
@@ -31,7 +30,6 @@ import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.ParserMode;
@@ -307,7 +305,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 Http1ClientConfigSupport.maxHeadersSize(protocolConfig),
                 protocolConfig.validateResponseHeaders()
         );
-        if (!entityAllowed && reader.available() > 0) {
+        // RFC 9112, section 6.3: buffered data after a final response must not be processed as another response.
+        if (reader.available() > 0) {
             throw new IllegalStateException("Unexpected data after response trailers");
         }
         entityFullyRead = true;
@@ -347,32 +346,12 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 return false;
             }
             DataReader reader = connection.reader();
-            int available = reader.available();
-            if (available == 0) {
-                return false;
-            }
-            BufferData bufferData = reader.getBuffer(available);
-            int endOfChunkSize = bufferData.indexOf(Bytes.CR_BYTE);
-            if (endOfChunkSize == -1 || endOfChunkSize >= 256 || endOfChunkSize + 4 != available) {
-                return false;
-            }
-            if (bufferData.get(endOfChunkSize + 1) != Bytes.LF_BYTE
-                    || bufferData.get(endOfChunkSize + 2) != Bytes.CR_BYTE
-                    || bufferData.get(endOfChunkSize + 3) != Bytes.LF_BYTE) {
-                return false;
-            }
-            try {
-                if (Http1CallChainBase.parseChunkSizeLine(bufferData.readString(endOfChunkSize,
-                                                                                StandardCharsets.US_ASCII)) == 0) {
-                    reader.skip(endOfChunkSize + 4);
-                    entityFullyRead = true;
-                    if (transportObservation != null) {
-                        transportObservation.complete();
-                    }
-                    return true;
+            if (Http1CallChainBase.consumeBufferedFinalChunk(reader)) {
+                entityFullyRead = true;
+                if (transportObservation != null) {
+                    transportObservation.complete();
                 }
-            } catch (RuntimeException e) {
-                LOGGER.log(Level.DEBUG, "Exception while consuming chunked framing", e);
+                return true;
             }
             return false;
         }
@@ -409,11 +388,29 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private void entityFullyRead() {
         try {
-            this.entityFullyRead = true;
             inputStream.close();
+            if (hasTrailers) {
+                trailers.get();
+            }
+            this.entityFullyRead = true;
             this.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            RuntimeException failure = new RuntimeException(e);
+            closeAfterEntityFailure(failure);
+            throw failure;
+        } catch (RuntimeException | Error e) {
+            closeAfterEntityFailure(e);
+            throw e;
+        }
+    }
+
+    private void closeAfterEntityFailure(Throwable failure) {
+        try {
+            connection.closeResource();
+        } catch (RuntimeException | Error closeFailure) {
+            if (closeFailure != failure) {
+                failure.addSuppressed(closeFailure);
+            }
         }
     }
 
