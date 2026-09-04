@@ -193,10 +193,12 @@ class LimitMetricsTest {
         AtomicReference<MetricsFactory> metricsFactoryRef = new AtomicReference<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, String origin) {
-                if (origin.equals(SemaphoreMetrics.class.getName()) || origin.equals(AimdMetrics.class.getName())) {
-                    builder.addTag(metricsFactoryRef.get().tagCreate("metric-origin", origin));
-                }
+            public void customize(Meter.Builder<?, ?> builder) {
+                builder.origin()
+                        .filter(origin -> origin.equals(SemaphoreMetrics.class.getName())
+                                || origin.equals(AimdMetrics.class.getName()))
+                        .ifPresent(origin -> builder.addTag(
+                                metricsFactoryRef.get().tagCreate("metric-origin", origin)));
             }
         };
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()

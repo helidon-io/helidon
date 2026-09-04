@@ -110,14 +110,6 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
-    public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, String origin) {
-        Objects.requireNonNull(builder);
-        Objects.requireNonNull(origin);
-        meterBuilderCustomizers.forEach(customizer -> customizer.customize(builder, origin));
-        return getOrCreateCustomized(builder);
-    }
-
-    @Override
     public MeterRegistry onMeterAdded(Consumer<Meter> listener) {
         onAddListeners.add(listener);
         return this;

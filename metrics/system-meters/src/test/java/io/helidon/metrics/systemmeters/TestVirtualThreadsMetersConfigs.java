@@ -204,7 +204,7 @@ class TestVirtualThreadsMetersConfigs {
         };
         try {
             var meterBuilders = provider.meterBuilders(metricsFactory, meterRegistry);
-            meterBuilders.forEach(builder -> customizer.customize(builder, provider.getClass()));
+            meterBuilders.forEach(builder -> customizer.customize(builder.origin(provider.getClass().getName())));
             Timer.Builder recentPinnedBuilder = meterBuilders.stream()
                     .filter(builder -> builder.name().equals(METER_NAME_PREFIX + RECENT_PINNED))
                     .map(Timer.Builder.class::cast)

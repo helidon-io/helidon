@@ -301,15 +301,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
-            HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder, String origin) {
-        Objects.requireNonNull(builder);
-        Objects.requireNonNull(origin);
-        metricsFactory.customize(builder, origin);
-        return getOrCreateCustomized(builder);
-    }
-
-    @Override
     public <M extends io.helidon.metrics.api.Meter> Optional<M> meter(Class<M> mClass,
                                                                       String name,
                                                                       Iterable<Tag> tags) {

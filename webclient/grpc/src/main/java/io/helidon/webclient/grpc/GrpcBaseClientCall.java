@@ -487,28 +487,30 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             Tag grpcMethod = metricsFactory.tagCreate("grpc.method", methodName);
             Tag grpcTarget = metricsFactory.tagCreate("grpc.target", baseUri);
 
-            Counter.Builder callStartedBuilder = metricsFactory.counterBuilder("grpc.client.attempt.started")
-                    .tags(List.of(grpcMethod, grpcTarget));
-            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder, GrpcClient.class.getName());
+            Counter callStarted = meterRegistry.getOrCreate(
+                    metricsFactory.counterBuilder("grpc.client.attempt.started")
+                            .tags(List.of(grpcMethod, grpcTarget))
+                            .origin(GrpcClient.class.getName()));
 
-            Timer.Builder callDurationOkBuilder = metricsFactory.timerBuilder("grpc.client.attempt.duration")
-                    .baseUnit(Timer.BaseUnits.MILLISECONDS)
-                    .tags(List.of(grpcMethod, grpcTarget, okTag));
-            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder, GrpcClient.class.getName());
+            Timer callDuration = meterRegistry.getOrCreate(
+                    metricsFactory.timerBuilder("grpc.client.attempt.duration")
+                            .baseUnit(Timer.BaseUnits.MILLISECONDS)
+                            .tags(List.of(grpcMethod, grpcTarget, okTag))
+                            .origin(GrpcClient.class.getName()));
 
-            DistributionSummary.Builder sendMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
-                            "grpc.client.attempt.sent_total_compressed_message_size",
-                            metricsFactory.distributionStatisticsConfigBuilder())
-                    .tags(List.of(grpcMethod, grpcTarget, okTag));
-            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder,
-                                                                             GrpcClient.class.getName());
+            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(
+                    metricsFactory.distributionSummaryBuilder(
+                                    "grpc.client.attempt.sent_total_compressed_message_size",
+                                    metricsFactory.distributionStatisticsConfigBuilder())
+                            .tags(List.of(grpcMethod, grpcTarget, okTag))
+                            .origin(GrpcClient.class.getName()));
 
-            DistributionSummary.Builder recvMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
-                            "grpc.client.attempt.rcvd_total_compressed_message_size",
-                            metricsFactory.distributionStatisticsConfigBuilder())
-                    .tags(List.of(grpcMethod, grpcTarget, okTag));
-            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder,
-                                                                             GrpcClient.class.getName());
+            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(
+                    metricsFactory.distributionSummaryBuilder(
+                                    "grpc.client.attempt.rcvd_total_compressed_message_size",
+                                    metricsFactory.distributionStatisticsConfigBuilder())
+                            .tags(List.of(grpcMethod, grpcTarget, okTag))
+                            .origin(GrpcClient.class.getName()));
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });

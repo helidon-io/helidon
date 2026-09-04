@@ -42,9 +42,9 @@ class MetricsOriginTest {
         Map<String, String> origins = new HashMap<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, String origin) {
+            public void customize(Meter.Builder<?, ?> builder) {
                 if (METER_NAMES.contains(builder.name())) {
-                    origins.put(builder.name(), origin);
+                    builder.origin().ifPresent(origin -> origins.put(builder.name(), origin));
                 }
             }
         };

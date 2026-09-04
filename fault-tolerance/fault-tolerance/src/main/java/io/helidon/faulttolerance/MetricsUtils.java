@@ -20,7 +20,6 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -68,24 +67,21 @@ class MetricsUtils {
                                                 String name,
                                                 Supplier<T> supplier,
                                                 Tag... tags) {
-        Gauge.Builder<T> builder = metricsFactory.gaugeBuilder(name, supplier);
-        List<Tag> tagList = List.of(tags);
-        builder.tags(tagList);
-        meterRegistry.getOrCreate(builder, FaultTolerance.class.getName());
+        meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(name, supplier)
+                                          .tags(List.of(tags))
+                                          .origin(FaultTolerance.class.getName()));
     }
 
     static Counter counterBuilder(MetricsFactory metricsFactory, MeterRegistry meterRegistry, String name, Tag... tags) {
-        Counter.Builder builder = metricsFactory.counterBuilder(name);
-        List<Tag> tagList = List.of(tags);
-        builder.tags(tagList);
-        return meterRegistry.getOrCreate(builder, FaultTolerance.class.getName());
+        return meterRegistry.getOrCreate(metricsFactory.counterBuilder(name)
+                                                 .tags(List.of(tags))
+                                                 .origin(FaultTolerance.class.getName()));
     }
 
     static Timer timerBuilder(MetricsFactory metricsFactory, MeterRegistry meterRegistry, String name, Tag... tags) {
-        Timer.Builder builder = metricsFactory.timerBuilder(name);
-        List<Tag> tagList = List.of(tags);
-        builder.tags(tagList);
-        return meterRegistry.getOrCreate(builder, FaultTolerance.class.getName());
+        return meterRegistry.getOrCreate(metricsFactory.timerBuilder(name)
+                                                 .tags(List.of(tags))
+                                                 .origin(FaultTolerance.class.getName()));
     }
 
 }

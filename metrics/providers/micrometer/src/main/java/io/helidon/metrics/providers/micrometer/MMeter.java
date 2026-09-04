@@ -148,6 +148,7 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
         private String description;
         private String baseUnit;
+        private String origin;
 
         protected Builder(String name, B delegate) {
             this.name = name;
@@ -157,6 +158,7 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
         HB from(Meter.Builder<?, ?> neutralBuilder) {
             neutralBuilder.description().ifPresent(this::description);
             neutralBuilder.baseUnit().ifPresent(this::baseUnit);
+            neutralBuilder.origin().ifPresent(this::origin);
             neutralBuilder.tags().forEach((key, value) -> this.addTag(MTag.of(key, value)));
             return identity();
         }
@@ -188,6 +190,11 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
             return identity();
         }
 
+        public HB origin(String origin) {
+            this.origin = Objects.requireNonNull(origin);
+            return identity();
+        }
+
         public HB identity() {
             return (HB) this;
         }
@@ -206,6 +213,10 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
         public Optional<String> baseUnit() {
             return Optional.ofNullable(baseUnit);
+        }
+
+        public Optional<String> origin() {
+            return Optional.ofNullable(origin);
         }
 
         public Map<String, String> tags() {

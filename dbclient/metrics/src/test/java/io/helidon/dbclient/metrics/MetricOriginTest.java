@@ -39,9 +39,9 @@ class MetricOriginTest {
         List<String> origins = new ArrayList<>();
         MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
             @Override
-            public void customize(Meter.Builder<?, ?> builder, String origin) {
+            public void customize(Meter.Builder<?, ?> builder) {
                 if (TEST_METER_NAMES.contains(builder.name())) {
-                    origins.add(origin);
+                    builder.origin().ifPresent(origins::add);
                 }
             }
         };
