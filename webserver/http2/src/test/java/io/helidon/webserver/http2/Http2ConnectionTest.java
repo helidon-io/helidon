@@ -551,7 +551,8 @@ class Http2ConnectionTest {
 
         CountDownLatch resetWriteStarted = new CountDownLatch(1);
         CountDownLatch releaseResetWrite = new CountDownLatch(1);
-        CountDownLatch goAwayWritten = new CountDownLatch(1);
+        CountDownLatch goAwayWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseGoAwayWrite = new CountDownLatch(1);
         DataWriter writer = mock(DataWriter.class);
         doAnswer(invocation -> {
             BufferData data = invocation.getArgument(0);
@@ -562,7 +563,10 @@ class Http2ConnectionTest {
                     throw new IllegalStateException("Timed out waiting to release RST_STREAM write");
                 }
             } else if (header.type() == Http2FrameType.GO_AWAY) {
-                goAwayWritten.countDown();
+                goAwayWriteStarted.countDown();
+                if (!releaseGoAwayWrite.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Timed out waiting to release GOAWAY write");
+                }
             }
             return null;
         }).when(writer).writeNow(any(BufferData.class));
@@ -626,14 +630,19 @@ class Http2ConnectionTest {
                        connectionThread.getState(),
                        is(Thread.State.WAITING));
             releaseResetWrite.countDown();
-            assertThat("made-you-reset threshold must write GOAWAY",
-                       goAwayWritten.await(2, TimeUnit.SECONDS),
+            assertThat("made-you-reset threshold must start writing GOAWAY",
+                       goAwayWriteStarted.await(2, TimeUnit.SECONDS),
                        is(true));
+            assertThat("connection dispatch must remain active until GOAWAY write completes",
+                       connectionThread.join(Duration.ofSeconds(1)),
+                       is(false));
+            releaseGoAwayWrite.countDown();
             assertThat("connection dispatch must terminate after GOAWAY",
                        connectionThread.join(Duration.ofSeconds(2)),
                        is(true));
         } finally {
             releaseResetWrite.countDown();
+            releaseGoAwayWrite.countDown();
             connection.close(true);
             connectionThread.join(TimeUnit.SECONDS.toMillis(2));
             Thread worker = streamThread.get();

@@ -406,7 +406,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             }
             closing = true;
             canRun = false;
-            streamAdmissionGate.fail();
             connectionThread = myThread;
             goAwayLastStreamId = lastStreamId;
         } finally {
@@ -415,6 +414,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         try {
             writeGoAway(goAwayLastStreamId, errorCode, details);
         } finally {
+            streamAdmissionGate.fail();
             if (connectionThread != null && connectionThread != Thread.currentThread()) {
                 connectionThread.interrupt();
             }
