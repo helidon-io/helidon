@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.codegen.CodegenContext;
@@ -27,6 +28,7 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenLogger;
 import io.helidon.codegen.JavadocReader;
 import io.helidon.codegen.JavadocWriter;
+import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.EnumValue;
@@ -80,6 +82,12 @@ class SchemaGenerator {
         return builder.build();
     }
 
+    private boolean metadataEnabled(Annotated annotated, TypeName annotationType) {
+        return annotated.findAnnotation(annotationType)
+                .flatMap(it -> it.booleanValue("metadata"))
+                .orElse(true);
+    }
+
     private List<TypeName> inheritedTypes(PrototypeInfo prototypeInfo) {
         var inherits = new LinkedHashSet<TypeName>();
         for (var superType : prototypeInfo.superTypes()) {
@@ -87,15 +95,30 @@ class SchemaGenerator {
                 continue;
             }
             var superTypeInfo = ctx.typeInfo(superType.genericTypeName());
-            if (superTypeInfo.map(it -> it.hasAnnotation(Types.CONFIGURED)
-                    || resolver.typeHierarchy(it)
-                            .stream()
-                            .anyMatch(ancestor -> ancestor.hasAnnotation(Types.PROTOTYPE_CONFIGURED)))
+            if (superTypeInfo.map(this::inheritedMetadataEnabled)
                     .orElse(true)) {
                 inherits.add(superTypeInfo.map(TypeInfo::typeName).orElse(superType));
             }
         }
         return new ArrayList<>(inherits);
+    }
+
+    private boolean inheritedMetadataEnabled(TypeInfo typeInfo) {
+        return ownConfiguredMetadataEnabled(typeInfo)
+                .orElseGet(() -> typeInfo.hasAnnotation(Types.CONFIGURED)
+                        || resolver.typeHierarchy(typeInfo)
+                                .stream()
+                                .anyMatch(ancestor -> ancestor.hasAnnotation(Types.PROTOTYPE_CONFIGURED)
+                                        && metadataEnabled(ancestor, Types.PROTOTYPE_CONFIGURED)));
+    }
+
+    private Optional<Boolean> ownConfiguredMetadataEnabled(TypeInfo typeInfo) {
+        var blueprintType = TypeName.builder(typeInfo.typeName().genericTypeName())
+                .className(typeInfo.typeName().className() + "Blueprint")
+                .build();
+        return ctx.typeInfo(blueprintType)
+                .flatMap(it -> it.findAnnotation(Types.PROTOTYPE_CONFIGURED))
+                .map(it -> it.booleanValue("metadata").orElse(true));
     }
 
     private List<TypeName> providedTypes(PrototypeInfo prototypeInfo) {
@@ -150,7 +173,10 @@ class SchemaGenerator {
         var options = new ArrayList<Annotation>();
         for (var handler : handlers) {
             var optionInfo = handler.option();
-            if (optionInfo.configured().isPresent()) {
+            if (optionInfo.configured().isPresent()
+                    && optionInfo.interfaceMethod()
+                            .map(it -> metadataEnabled(it, Types.OPTION_CONFIGURED))
+                            .orElse(true)) {
                 options.add(option(prototypeInfo, optionInfo));
             }
         }

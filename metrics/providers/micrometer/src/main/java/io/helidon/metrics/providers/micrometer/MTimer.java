@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
     private final Optional<TimeUnit> baseTimeUnit;
 
     private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Builder builder) {
-        super(id, delegate, builder);
+        super(id, delegate);
         baseTimeUnit = builder.baseUnit()
                 .map(v -> v.toUpperCase(Locale.ROOT))
                 .map(TimeUnit::valueOf);
@@ -49,11 +49,6 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
     private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate) {
         super(id, delegate);
-        baseTimeUnit = Optional.empty();
-    }
-
-    private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Optional<String> scope) {
-        super(id, delegate, scope);
         baseTimeUnit = Optional.empty();
     }
 
@@ -69,10 +64,6 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         Builder builder = builder(tBuilder.name());
 
         return builder.from(tBuilder);
-    }
-
-    static MTimer create(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Optional<String> scope) {
-        return new MTimer(id, delegate, scope);
     }
 
     static Sample start() {

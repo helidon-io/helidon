@@ -58,7 +58,7 @@ final class MetricCounter extends MetricService<Counter> {
 
     @Override
     protected Counter metric(MeterRegistry registry, MeterMetadata meta) {
-        return registry.getOrCreate(meta.apply(metricsFactory().counterBuilder(meta.name())));
+        return registry.getOrCreate(meta.apply(metricsFactory().counterBuilder(meta.name())), DbClientMetrics.class);
     }
 
     @Override

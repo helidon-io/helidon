@@ -67,17 +67,17 @@ class MetricsRegistryFactoryCodegenTest {
 
                         @Service.Singleton
                         class MetricsService {
-                            @Metrics.Counted
+                            @Metrics.Counted(scope = "ignored")
                             String counted() {
                                 return "counted";
                             }
 
-                            @Metrics.Timed
+                            @Metrics.Timed(scope = "ignored")
                             String timed() {
                                 return "timed";
                             }
 
-                            @Metrics.Gauge(unit = Meter.BaseUnits.BYTES)
+                            @Metrics.Gauge(unit = Meter.BaseUnits.BYTES, scope = "ignored")
                             long gauge() {
                                 return 42L;
                             }
@@ -98,9 +98,12 @@ class MetricsRegistryFactoryCodegenTest {
 
         assertThat(counted, containsString("var metricsFactory = meterRegistry.metricsFactory();"));
         assertThat(counted, not(containsString("MetricsFactory metricsFactory")));
+        assertThat(counted, not(containsString(".scope(")));
         assertThat(timed, containsString("var metricsFactory = meterRegistry.metricsFactory();"));
         assertThat(timed, not(containsString("MetricsFactory metricsFactory")));
+        assertThat(timed, not(containsString(".scope(")));
         assertThat(gauge, containsString("var metricsFactory = meters.metricsFactory();"));
         assertThat(gauge, not(containsString("metricsFactorySupplier")));
+        assertThat(gauge, not(containsString(".scope(")));
     }
 }

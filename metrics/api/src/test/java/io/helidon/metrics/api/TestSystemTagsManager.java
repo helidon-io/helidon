@@ -15,11 +15,16 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
@@ -184,7 +189,8 @@ class TestSystemTagsManager {
     }
 
     @Test
-    void customSystemTagsManagerUsesProvidedConfigForReservedNames() {
+    @SuppressWarnings("removal")
+    void customSystemTagsManagerDoesNotReserveScopeTagName() {
         MetricsConfig metricsConfig = MetricsConfig.builder()
                 .appTagName("customApp")
                 .scoping(ScopingConfig.builder()
@@ -192,9 +198,65 @@ class TestSystemTagsManager {
                 .build();
         SystemTagsManager manager = SystemTagsManager.create(metricsConfig, new NoOpMetricsFactory());
 
-        assertThat("Reserved names come from the provided metrics config",
+        assertThat("Only the app tag name is reserved",
                    Set.copyOf(manager.reservedTagNamesUsed(Set.of("customApp", "customScope", "other"))),
-                   is(Set.of("customApp", "customScope")));
+                   is(Set.of("customApp")));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void scopeOperationsAreNoOps() {
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .tags(List.of(new NoOpTag("system", "value")))
+                .scoping(ScopingConfig.builder()
+                                 .defaultValue("legacy-default")
+                                 .tagName("legacy-scope"))
+                .build();
+        SystemTagsManager manager = SystemTagsManager.create(metricsConfig, new NoOpMetricsFactory());
+        Iterable<Tag> tags = List.of(new NoOpTag("system", "value"),
+                                     new NoOpTag("legacy-scope", "legacy-value"),
+                                     new NoOpTag("other", "value"));
+        Iterable<Map.Entry<String, String>> tagEntries = Map.of("other", "value").entrySet();
+        AtomicBoolean assigned = new AtomicBoolean();
+
+        assertThat(manager.scopeTag(Optional.of("explicit")), OptionalMatcher.optionalEmpty());
+        assertThat(manager.withScopeTag(tags, Optional.of("explicit")), sameInstance(tags));
+        assertThat(manager.withScopeTag(tagEntries, "explicit"), sameInstance(tagEntries));
+        assertThat(manager.effectiveScope(Optional.of("explicit")), OptionalMatcher.optionalEmpty());
+        assertThat(manager.effectiveScope(Optional.of("explicit"), tags), OptionalMatcher.optionalEmpty());
+        assertThat(manager.scopeTagName(), OptionalMatcher.optionalEmpty());
+
+        manager.assignScope("explicit", _ -> assigned.getAndSet(true));
+        assertThat(assigned.get(), is(false));
+
+        Set<String> remainingTagNames = new HashSet<>();
+        manager.withoutSystemOrScopeTags(tags).forEach(tag -> remainingTagNames.add(tag.key()));
+        assertThat(remainingTagNames, is(Set.of("legacy-scope", "other")));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void withoutSystemOrScopeTagsRejectsNullInputAndOutput() {
+        SystemTagsManager manager = SystemTagsManager.create(MetricsConfig.create());
+        assertThrows(NullPointerException.class, () -> manager.withoutSystemOrScopeTags(null));
+
+        SystemTagsManager invalidManager = new SystemTagsManager() {
+            @Override
+            public Iterable<Tag> withoutSystemTags(Iterable<Tag> tags) {
+                return null;
+            }
+
+            @Override
+            public Iterable<Tag> displayTags() {
+                return List.of();
+            }
+
+            @Override
+            public Collection<String> reservedTagNamesUsed(Collection<String> tagNames) {
+                return List.of();
+            }
+        };
+        assertThrows(NullPointerException.class, () -> invalidManager.withoutSystemOrScopeTags(List.of()));
     }
 
     @Test

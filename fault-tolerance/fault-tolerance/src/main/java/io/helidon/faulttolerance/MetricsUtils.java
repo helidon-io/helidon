@@ -29,7 +29,6 @@ import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 
 import static io.helidon.faulttolerance.FaultTolerance.FT_METRICS_DEFAULT_ENABLED;
-import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
 @SuppressWarnings("unchecked")
 class MetricsUtils {
@@ -69,24 +68,24 @@ class MetricsUtils {
                                                 String name,
                                                 Supplier<T> supplier,
                                                 Tag... tags) {
-        Gauge.Builder<T> builder = metricsFactory.gaugeBuilder(name, supplier).scope(VENDOR);
+        Gauge.Builder<T> builder = metricsFactory.gaugeBuilder(name, supplier);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        meterRegistry.getOrCreate(builder);
+        meterRegistry.getOrCreate(builder, FaultTolerance.class);
     }
 
     static Counter counterBuilder(MetricsFactory metricsFactory, MeterRegistry meterRegistry, String name, Tag... tags) {
-        Counter.Builder builder = metricsFactory.counterBuilder(name).scope(VENDOR);
+        Counter.Builder builder = metricsFactory.counterBuilder(name);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        return meterRegistry.getOrCreate(builder);
+        return meterRegistry.getOrCreate(builder, FaultTolerance.class);
     }
 
     static Timer timerBuilder(MetricsFactory metricsFactory, MeterRegistry meterRegistry, String name, Tag... tags) {
-        Timer.Builder builder = metricsFactory.timerBuilder(name).scope(VENDOR);
+        Timer.Builder builder = metricsFactory.timerBuilder(name);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        return meterRegistry.getOrCreate(builder);
+        return meterRegistry.getOrCreate(builder, FaultTolerance.class);
     }
 
 }

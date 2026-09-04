@@ -37,46 +37,31 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
     private final M delegate;
     private final Meter.Id id;
 
-    private String scope;
     private boolean isDeleted = false;
 
-    protected MMeter(Meter.Id id, M delegate, Builder<?, ?, ?, ?> builder) {
-        this(id, delegate, builder.scope);
-    }
-
-    protected MMeter(Meter.Id id, M delegate, Optional<String> scope) {
-        this(id, delegate, scope.orElse(null));
-    }
-
     protected MMeter(Meter.Id id, M delegate) {
-        this(id, delegate, (String) null);
-    }
-
-    private MMeter(Meter.Id id, M delegate, String scope) {
         this.delegate = delegate;
         this.id = id;
-        this.scope = scope;
     }
 
     @SuppressWarnings("unchecked")
     static <M extends io.micrometer.core.instrument.Meter,
             HM extends MMeter<M>> HM create(Meter.Id id,
-                                            io.micrometer.core.instrument.Meter meter,
-                                            Optional<String> scope) {
+                                            io.micrometer.core.instrument.Meter meter) {
         if (meter instanceof io.micrometer.core.instrument.Counter counter) {
-            return (HM) MCounter.create(id, counter, scope);
+            return (HM) MCounter.create(id, counter);
         }
         if (meter instanceof io.micrometer.core.instrument.DistributionSummary summary) {
-            return (HM) MDistributionSummary.create(id, summary, scope);
+            return (HM) MDistributionSummary.create(id, summary);
         }
         if (meter instanceof io.micrometer.core.instrument.Gauge gauge) {
-            return (HM) MGauge.create(id, gauge, scope);
+            return (HM) MGauge.create(id, gauge);
         }
         if (meter instanceof io.micrometer.core.instrument.FunctionCounter fCounter) {
-            return (HM) MFunctionalCounter.create(id, fCounter, scope);
+            return (HM) MFunctionalCounter.create(id, fCounter);
         }
         if (meter instanceof Timer timer) {
-            return (HM) MTimer.create(id, timer, scope);
+            return (HM) MTimer.create(id, timer);
         }
         return null;
     }
@@ -101,11 +86,6 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
         return Meter.Type.valueOf(delegate.getId()
                                           .getType()
                                           .name());
-    }
-
-    @Override
-    public Optional<String> scope() {
-        return Optional.ofNullable(scope);
     }
 
     @Override
@@ -134,10 +114,6 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
         return delegate;
     }
 
-    protected void scope(String scope) {
-        this.scope = scope;
-    }
-
     protected boolean isDeleted() {
         return isDeleted;
     }
@@ -148,8 +124,7 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
     protected StringJoiner stringJoiner() {
         return new StringJoiner(", ", getClass().getSimpleName() + "[", "]")
-                .add("id=" + id)
-                .add("scope='" + (scope == null ? "" : scope) + "'");
+                .add("id=" + id);
     }
 
     /**
@@ -171,7 +146,6 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
         private final Map<String, String> tags = new TreeMap<>();
 
-        private String scope;
         private String description;
         private String baseUnit;
 
@@ -183,7 +157,6 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
         HB from(Meter.Builder<?, ?> neutralBuilder) {
             neutralBuilder.description().ifPresent(this::description);
             neutralBuilder.baseUnit().ifPresent(this::baseUnit);
-            neutralBuilder.scope().ifPresent(this::scope);
             neutralBuilder.tags().forEach((key, value) -> this.addTag(MTag.of(key, value)));
             return identity();
         }
@@ -215,8 +188,9 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
             return identity();
         }
 
-        public HB scope(String scope) {
-            this.scope = scope;
+        @Deprecated(since = "27.0.0", forRemoval = true)
+        public HB scope(String ignored) {
+            Objects.requireNonNull(ignored);
             return identity();
         }
 
@@ -232,8 +206,9 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
             return new TreeMap<>(tags);
         }
 
+        @Deprecated(since = "27.0.0", forRemoval = true)
         public Optional<String> scope() {
-            return Optional.ofNullable(scope);
+            return Optional.empty();
         }
 
         public Optional<String> description() {

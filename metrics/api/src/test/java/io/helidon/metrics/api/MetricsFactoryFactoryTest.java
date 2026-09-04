@@ -15,12 +15,15 @@
  */
 package io.helidon.metrics.api;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.service.registry.ServiceRegistry;
@@ -32,6 +35,7 @@ import io.helidon.testing.junit5.Testing;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
@@ -118,6 +122,95 @@ class MetricsFactoryFactoryTest {
     }
 
     @Test
+    void noOpRegistryRejectsNullMeterEnablementArguments() {
+        MeterRegistry meterRegistry = new NoOpMetricsFactory().globalRegistry();
+
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled(null, Map.of()));
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", null));
+    }
+
+    @Test
+    void noOpRegistryAppliesMeterBuilderCustomizersOnceUsingRegistrationOrigin() {
+        AtomicInteger basicCustomizationCount = new AtomicInteger();
+        AtomicInteger originCustomizationCount = new AtomicInteger();
+        MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
+            @Override
+            public void customize(Meter.Builder<?, ?> builder) {
+                basicCustomizationCount.incrementAndGet();
+                builder.addTag(new NoOpTag("customized", "basic"));
+            }
+
+            @Override
+            public void customize(Meter.Builder<?, ?> builder, Class<?> origin) {
+                originCustomizationCount.incrementAndGet();
+                builder.addTag(new NoOpTag("origin", origin.getSimpleName()));
+            }
+        };
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .discoverServices(false)
+                                                                                .discoverServicesFromServiceLoader(false)
+                                                                                .putContractInstance(MeterBuilderCustomizer.class,
+                                                                                                     customizer)
+                                                                                .build());
+        try {
+            MetricsFactory metricsFactory = new MetricsFactoryFactory(Config.empty(), manager.registry()).get();
+            MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+
+            Counter basicCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("customized-counter"));
+            Counter firstOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("same-counter"),
+                                                                   FirstOrigin.class);
+            Counter secondOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("same-counter"),
+                                                                    SecondOrigin.class);
+
+            assertThat("Basic customization count", basicCustomizationCount.get(), is(1));
+            assertThat("Origin customization count", originCustomizationCount.get(), is(2));
+            assertThat(basicCounter.id().tagsMap(), hasEntry("customized", "basic"));
+            assertThat(firstOriginCounter.id().tagsMap(), hasEntry("origin", FirstOrigin.class.getSimpleName()));
+            assertThat(secondOriginCounter.id().tagsMap(), hasEntry("origin", SecondOrigin.class.getSimpleName()));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void noOpRegistryRejectsNullRegistrationOrigin() {
+        MetricsFactory metricsFactory = new NoOpMetricsFactory();
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+
+        assertThrows(NullPointerException.class,
+                     () -> meterRegistry.getOrCreate(metricsFactory.counterBuilder("test"), null));
+    }
+
+    @Test
+    void originAwareRegistrationFallsBackForLegacyRegistry() {
+        AtomicInteger legacyInvocationCount = new AtomicInteger();
+        MetricsFactory noOpMetricsFactory = new NoOpMetricsFactory();
+        MeterRegistry noOpMeterRegistry = noOpMetricsFactory.createMeterRegistry(MetricsConfig.create());
+        Counter expected = noOpMeterRegistry.getOrCreate(noOpMetricsFactory.counterBuilder("expected"));
+        MeterRegistry legacyRegistry = (MeterRegistry) Proxy.newProxyInstance(
+                MeterRegistry.class.getClassLoader(),
+                new Class<?>[] {MeterRegistry.class},
+                (proxy, method, args) -> {
+                    if (method.isDefault()) {
+                        return InvocationHandler.invokeDefault(proxy, method, args);
+                    }
+                    if (method.getName().equals("getOrCreate") && method.getParameterCount() == 1) {
+                        legacyInvocationCount.incrementAndGet();
+                        return expected;
+                    }
+                    throw new UnsupportedOperationException(method.toString());
+                });
+
+        Counter result = legacyRegistry.getOrCreate(noOpMetricsFactory.counterBuilder("test"), FirstOrigin.class);
+
+        assertThat(result, sameInstance(expected));
+        assertThat(legacyInvocationCount.get(), is(1));
+        assertThrows(NullPointerException.class,
+                     () -> legacyRegistry.getOrCreate(noOpMetricsFactory.counterBuilder("test"), null));
+        assertThat("Null origin does not invoke legacy registration", legacyInvocationCount.get(), is(1));
+    }
+
+    @Test
     void preDestroyClosesCreatedFactories() {
         AtomicInteger nextFactory = new AtomicInteger();
         CloseTrackingMetricsFactory firstFactory = new CloseTrackingMetricsFactory();
@@ -175,5 +268,11 @@ class MetricsFactoryFactoryTest {
         private int closeCount() {
             return closeCount;
         }
+    }
+
+    private static class FirstOrigin {
+    }
+
+    private static class SecondOrigin {
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.metrics.api.FunctionalCounter;
@@ -28,13 +27,8 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
         implements io.helidon.metrics.api.FunctionalCounter {
 
     private MFunctionalCounter(Meter.Id id,
-                               io.micrometer.core.instrument.FunctionCounter delegate,
-                               MFunctionalCounter.Builder<?> builder) {
-        super(id, delegate, builder);
-    }
-
-    private MFunctionalCounter(Meter.Id id, io.micrometer.core.instrument.FunctionCounter delegate, Optional<String> scope) {
-        super(id, delegate, scope);
+                               io.micrometer.core.instrument.FunctionCounter delegate) {
+        super(id, delegate);
     }
 
     /**
@@ -59,9 +53,8 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
     }
 
     static MFunctionalCounter create(Meter.Id id,
-                                     io.micrometer.core.instrument.FunctionCounter functionCounter,
-                                     Optional<String> scope) {
-        return new MFunctionalCounter(id, functionCounter, scope);
+                                     io.micrometer.core.instrument.FunctionCounter functionCounter) {
+        return new MFunctionalCounter(id, functionCounter);
     }
 
     @Override
@@ -126,7 +119,7 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
 
         @Override
         public MFunctionalCounter build(Meter.Id id, io.micrometer.core.instrument.FunctionCounter functionCounter) {
-            return new MFunctionalCounter(id, functionCounter, this);
+            return new MFunctionalCounter(id, functionCounter);
         }
 
         @Override

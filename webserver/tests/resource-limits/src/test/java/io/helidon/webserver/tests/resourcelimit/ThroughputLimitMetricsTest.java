@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.tests.resourcelimit;
 
-import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.concurrency.limits.FixedLimit;
@@ -103,7 +102,7 @@ class ThroughputLimitMetricsTest {
     }
 
     private static Optional<Timer> timer(MeterRegistry meterRegistry) {
-        for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
+        for (Meter meter : meterRegistry.meters()) {
             if (meter instanceof Timer timer
                     && meter.id().name().equals("fixed_rtt")) {
                 return Optional.of(timer);

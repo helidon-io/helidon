@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -70,12 +69,8 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
      * This way the typing works out (with the expected unchecked cast).
      */
 
-    private <N extends Number> MGauge(Meter.Id id, io.micrometer.core.instrument.Gauge delegate, Builder<?, N> builder) {
-        super(id, delegate, builder);
-    }
-
-    private MGauge(Meter.Id id, io.micrometer.core.instrument.Gauge delegate, Optional<String> scope) {
-        super(id, delegate, scope);
+    private MGauge(Meter.Id id, io.micrometer.core.instrument.Gauge delegate) {
+        super(id, delegate);
     }
 
     /**
@@ -113,11 +108,10 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
      * via a wrapper.
      *
      * @param gauge the Micrometer gauge
-     * @param scope scope to apply
      * @return new wrapper around the gauge
      */
-    static MGauge<Double> create(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Optional<String> scope) {
-        return new MGauge<>(id, gauge, scope) {
+    static MGauge<Double> create(Meter.Id id, io.micrometer.core.instrument.Gauge gauge) {
+        return new MGauge<>(id, gauge) {
             @Override
             public Double value() {
                 return gauge.value();
@@ -150,7 +144,7 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
         private final Supplier<N> supplier;
 
         private SupplierBased(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Builder<N> builder) {
-            super(id, gauge, builder);
+            super(id, gauge);
             this.supplier = builder.supplier;
         }
 
@@ -243,7 +237,7 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
         private final ToDoubleFunction<T> fn;
 
         private FunctionBased(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Builder<T> builder) {
-            super(id, gauge, builder);
+            super(id, gauge);
             stateObject = builder.stateObject;
             fn = builder.fn;
         }

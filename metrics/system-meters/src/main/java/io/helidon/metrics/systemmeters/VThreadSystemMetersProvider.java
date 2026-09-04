@@ -19,11 +19,9 @@ import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -36,7 +34,6 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.spi.HelidonShutdownHandler;
@@ -67,12 +64,11 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     static final String RECENT_PINNED = "recentPinned";
     static final String STARTS = "starts";
 
-    private static final String METER_SCOPE = Meter.Scope.BASE;
-
     private static final System.Logger LOGGER = System.getLogger(VThreadSystemMetersProvider.class.getName());
     private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final Condition shutdownHandlerUpdated = lifecycleLock.newCondition();
     private Timer recentPinnedVirtualThreads;
+    private Timer.Builder recentPinnedVirtualThreadsBuilder;
     private long virtualThreadSubmitFails;
     private long pinnedVirtualThreads;
     private long virtualThreads;
@@ -81,7 +77,6 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     private RecordingStream recordingStream;
     private MeterRegistry meterRegistry;
     private MetricsConfig metricsConfig;
-    private SystemTagsManager systemTagsManager;
     private boolean shutdownHandlerRegistrationRequired;
     private boolean shutdownHandlerRegistrationApplied;
     private boolean shutdownHandlerUpdateInProgress;
@@ -123,7 +118,8 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
             closed = false;
             this.meterRegistry = meterRegistry;
             metricsConfig = metricsFactory.metricsConfig();
-            systemTagsManager = SystemTagsManager.create(metricsConfig, metricsFactory);
+            recentPinnedVirtualThreads = null;
+            recentPinnedVirtualThreadsBuilder = null;
             if (!metricsConfig.virtualThreadsEnabled()) {
                 return List.of();
             }
@@ -136,23 +132,20 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                 resumableRegistered = true;
             }
             pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
+            Timer.Builder recentPinnedBuilder = metricsFactory.timerBuilder(METER_NAME_PREFIX + RECENT_PINNED)
+                    .description("Pinned virtual thread durations");
+            recentPinnedVirtualThreadsBuilder = recentPinnedBuilder;
 
             meterBuilders = new ArrayList<>(List.of(
                     metricsFactory.gaugeBuilder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
-                            .description("Virtual thread submit failures")
-                            .scope(METER_SCOPE),
+                            .description("Virtual thread submit failures"),
                     metricsFactory.gaugeBuilder(METER_NAME_PREFIX + PINNED, () -> pinnedVirtualThreads)
-                            .description("Number of pinned virtual threads")
-                            .scope(METER_SCOPE),
-                    metricsFactory.timerBuilder(METER_NAME_PREFIX + RECENT_PINNED)
-                            .description("Pinned virtual thread durations")
-                            .scope(METER_SCOPE),
+                            .description("Number of pinned virtual threads"),
+                    recentPinnedBuilder,
                     metricsFactory.gaugeBuilder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
-                            .description("Active virtual threads")
-                            .scope(METER_SCOPE),
+                            .description("Active virtual threads"),
                     metricsFactory.gaugeBuilder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
                             .description("Number of virtual thread starts")
-                            .scope(METER_SCOPE)
                     ));
 
         } finally {
@@ -189,9 +182,9 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                 }
                 shutdownHandlerRegistrationRequired = false;
                 recentPinnedVirtualThreads = null;
+                recentPinnedVirtualThreadsBuilder = null;
                 this.meterRegistry = null;
                 metricsConfig = null;
-                systemTagsManager = null;
                 resumableRegistered = false;
                 updateShutdownHandler = shutdownHandlerRegistrationRequired
                         != shutdownHandlerRegistrationApplied;
@@ -241,9 +234,9 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                 shutdownHandlerRegistrationRequired = false;
             }
             recentPinnedVirtualThreads = null;
+            recentPinnedVirtualThreadsBuilder = null;
             meterRegistry = null;
             metricsConfig = null;
-            systemTagsManager = null;
             resumableRegistered = false;
             updateShutdownHandler = shutdownHandlerUpdateInProgress
                     || shutdownHandlerRegistrationRequired != shutdownHandlerRegistrationApplied;
@@ -486,12 +479,16 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     // visible for testing
     Timer findPinned() {
         MeterRegistry meterRegistry = this.meterRegistry;
-        if (meterRegistry == null) {
+        Timer.Builder recentPinnedBuilder = recentPinnedVirtualThreadsBuilder;
+        if (meterRegistry == null || recentPinnedBuilder == null) {
             throw new IllegalStateException("Meter registry not available");
         }
-        var result = meterRegistry
-                .timer(METER_NAME_PREFIX + RECENT_PINNED,
-                       systemTagsManager.withScopeTag(Collections.emptyList(), Optional.of(METER_SCOPE)));
+        var tags = recentPinnedBuilder.tags()
+                .entrySet()
+                .stream()
+                .map(entry -> meterRegistry.metricsFactory().tagCreate(entry.getKey(), entry.getValue()))
+                .toList();
+        var result = meterRegistry.timer(recentPinnedBuilder.name(), tags);
         if (result.isEmpty()) {
             throw new IllegalStateException(METER_NAME_PREFIX + RECENT_PINNED + " meter expected but not registered");
         }

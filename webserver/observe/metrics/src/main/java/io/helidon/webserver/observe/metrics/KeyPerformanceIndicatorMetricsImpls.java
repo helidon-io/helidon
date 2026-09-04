@@ -54,8 +54,6 @@ class KeyPerformanceIndicatorMetricsImpls {
      * Name for metric recording number requests currently being processed.
      */
     static final String LOAD_NAME = "load";
-    static final String KPI_METERS_SCOPE = Meter.Scope.VENDOR;
-
     private static final Map<KpiMetricsKey, Basic> KPI_METRICS = new ConcurrentHashMap<>();
 
     // Maps camelCase names to snake_case, but only for those names that are actually different in the two cases.
@@ -117,8 +115,8 @@ class KeyPerformanceIndicatorMetricsImpls {
             totalCount = add(kpiMeterRegistry.getOrCreate(
                     metricsFactory.counterBuilder(meterNamePrefix + meterName(REQUESTS_COUNT_NAME))
                             .description(
-                                    "Each request (regardless of HTTP method) will increase this counter")
-                            .scope(KPI_METERS_SCOPE)));
+                                    "Each request (regardless of HTTP method) will increase this counter"),
+                    KeyPerformanceIndicatorMetricsImpls.class));
         }
 
         @Override
@@ -192,25 +190,24 @@ class KeyPerformanceIndicatorMetricsImpls {
                     metricsFactory.gaugeBuilder(meterNamePrefix + meterName(INFLIGHT_REQUESTS_NAME),
                                   inflightRequestsCount,
                                   AtomicInteger::get)
-                            .scope(KPI_METERS_SCOPE)
-                            .description("Measures the number of requests currently being processed")));
+                            .description("Measures the number of requests currently being processed"),
+                    KeyPerformanceIndicatorMetricsImpls.class));
 
             longRunningRequests = add(kpiMeterRegistry.getOrCreate(
                     metricsFactory.counterBuilder(meterNamePrefix + meterName(LONG_RUNNING_REQUESTS_NAME))
-                            .description("Measures the total number of long-running requests and rates at which they occur")
-                            .scope(KPI_METERS_SCOPE)
-            ));
+                            .description("Measures the total number of long-running requests and rates at which they occur"),
+                    KeyPerformanceIndicatorMetricsImpls.class));
 
             load = add(kpiMeterRegistry.getOrCreate(metricsFactory.counterBuilder(meterNamePrefix + meterName(LOAD_NAME))
-                                                            .description(LOAD_DESCRIPTION)
-                                                            .scope(KPI_METERS_SCOPE)));
+                                                            .description(LOAD_DESCRIPTION),
+                                                    KeyPerformanceIndicatorMetricsImpls.class));
 
             deferredRequests = new DeferredRequests();
             add(kpiMeterRegistry.getOrCreate(metricsFactory.gaugeBuilder(meterNamePrefix + meterName(DEFERRED_NAME),
                                                            deferredRequests,
                                                            DeferredRequests::value)
-                                                     .description("Measures deferred requests")
-                                                     .scope(KPI_METERS_SCOPE)));
+                                                     .description("Measures deferred requests"),
+                                             KeyPerformanceIndicatorMetricsImpls.class));
         }
 
         @Override

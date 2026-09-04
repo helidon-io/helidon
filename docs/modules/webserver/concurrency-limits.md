@@ -189,8 +189,7 @@ caller-provided metric tags when a limit is initialized. WebServer preserves
 its existing metric tagging behavior: a metric tag
 `socketName=<name-of-origin>` is used to group metrics that correspond to a
 non-default WebServer listener or binding origin; for simplicity this metric
-tag is *omitted* for the default origin. All metrics provided by the Concurrency
-Limit module are in **vendor** scope.
+tag is *omitted* for the default origin.
 
 Existing WebServer dashboards that use the `socketName` tag continue to work.
 New code that uses the common `Limit` API outside WebServer can initialize

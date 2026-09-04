@@ -55,10 +55,6 @@ class MetricsExtension implements RegistryCodegenExtension {
         this.ctx = ctx;
     }
 
-    static String scope(Annotation annotation) {
-        return annotation.stringValue("scope").orElse("application");
-    }
-
     static List<Tag> tags(RegistryRoundContext roundContext,
                           TypeName enclosingType,
                           TypedElementInfo element,
@@ -268,7 +264,6 @@ class MetricsExtension implements RegistryCodegenExtension {
 
         // read annotation values
         Annotation annotation = element.annotation(ANNOTATION_GAUGE);
-        String scope = scope(annotation);
         String description = description(annotation, ANNOTATION_GAUGE, enclosingType, element);
         String unit = annotation.stringValue("unit").orElse("none");
 
@@ -283,7 +278,6 @@ class MetricsExtension implements RegistryCodegenExtension {
                                 gaugeName,
                                 description,
                                 unit,
-                                scope,
                                 tags));
     }
 
@@ -293,7 +287,6 @@ class MetricsExtension implements RegistryCodegenExtension {
             String name,
             String description,
             String unit,
-            String scope,
             List<Tag> tags) {
     }
 

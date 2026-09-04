@@ -166,8 +166,7 @@ class DeclarativeGraphQlTest {
                 .request()) {
             assertThat(response.status(), is(Status.OK_200));
             return response.as(JsonObject.class)
-                    .objectValue("application")
-                    .flatMap(it -> it.numberValue(name))
+                    .numberValue(name)
                     .map(BigDecimal::intValue)
                     .orElse(0);
         }

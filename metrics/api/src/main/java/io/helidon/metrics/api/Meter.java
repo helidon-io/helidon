@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -55,11 +56,15 @@ public interface Meter extends Wrapper {
     Type type();
 
     /**
-     * Returns the scope associated with the meter.
+     * No-op, will be removed.
      *
-     * @return scope
+     * @return empty
+     * @deprecated No-op, will be removed.
      */
-    Optional<String> scope();
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Optional<String> scope() {
+        return Optional.empty();
+    }
 
     /**
      * Type of meter.
@@ -161,12 +166,17 @@ public interface Meter extends Wrapper {
         B baseUnit(String baseUnit);
 
         /**
-         * Sets the scope to be associated with this meter.
+         * No-op, will be removed.
          *
-         * @param scope scope
+         * @param scope ignored; must not be {@code null}
          * @return updated builder
+         * @deprecated No-op, will be removed.
          */
-        B scope(String scope);
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        default B scope(String scope) {
+            Objects.requireNonNull(scope);
+            return identity();
+        }
 
         /**
          * Returns the name the builder will use.
@@ -197,11 +207,15 @@ public interface Meter extends Wrapper {
         Optional<String> baseUnit();
 
         /**
-         * Returns the scope set in the builder, if any.
+         * No-op, will be removed.
          *
-         * @return the assigned scope if set; empty otherwise
+         * @return empty
+         * @deprecated No-op, will be removed.
          */
-        Optional<String> scope();
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        default Optional<String> scope() {
+            return Optional.empty();
+        }
 
 
     }
@@ -249,33 +263,51 @@ public interface Meter extends Wrapper {
     }
 
     /**
-     * Constants for the pre-defined scopes.
+     * No-op, will be removed.
+     *
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     class Scope {
 
         /**
-         * Application scope.
+         * No-op, will be removed.
+         *
+         * @deprecated No-op, will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String APPLICATION = "application";
 
         /**
-         * Base scope.
+         * No-op, will be removed.
+         *
+         * @deprecated No-op, will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String BASE = "base";
 
         /**
-         * Vendor scope.
+         * No-op, will be removed.
+         *
+         * @deprecated No-op, will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String VENDOR = "vendor";
 
         /**
-         * All the predefined scopes.
+         * No-op, will be removed.
+         *
+         * @deprecated No-op, will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final Set<String> BUILT_IN_SCOPES = Set.of(BASE, VENDOR, APPLICATION);
 
         /**
-         * Default scope if none is specified for a given meter.
+         * No-op, will be removed.
+         *
+         * @deprecated No-op, will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String DEFAULT = APPLICATION;
 
         private Scope() {

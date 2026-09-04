@@ -34,6 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Tests {@code BuilderCodegen}.
@@ -131,6 +132,99 @@ class SchemaGeneratorTest {
     }
 
     @Test
+    void testTypeMetadataSuppressionPreservesConfigReader() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured(metadata = false)
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * A configured value.
+                             *
+                             * @return configured value
+                             */
+                            @Option.Configured
+                            String value();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var generatedSource = result.sourceOutput().resolve("com/acme/AcmeConfig.java");
+        assertThat(Files.exists(generatedSource), is(true));
+
+        var actual = Files.readString(generatedSource);
+        assertThat(actual, not(containsString("@Configured(")));
+        assertThat(actual, containsString("static AcmeConfig create(Config config)"));
+        assertThat(actual, containsString("BUILDER config(Config config)"));
+        assertThat(actual, containsString("config.get(\"value\")"));
+    }
+
+    @Test
+    void testOptionMetadataSuppressionPreservesConfigReader() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * A visible configured value.
+                             *
+                             * @return visible configured value
+                             */
+                            @Option.Configured
+                            String visible();
+
+                            /**
+                             * A hidden configured value.
+                             *
+                             * @return hidden configured value
+                             */
+                            @Option.Configured(metadata = false)
+                            String hidden();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var generatedSource = result.sourceOutput().resolve("com/acme/AcmeConfig.java");
+        assertThat(Files.exists(generatedSource), is(true));
+
+        var actual = Files.readString(generatedSource);
+        assertThat(actual, containsString("key = \"visible\""));
+        assertThat(actual, not(containsString("key = \"hidden\"")));
+        assertThat(actual, containsString("static AcmeConfig create(Config config)"));
+        assertThat(actual, containsString("BUILDER config(Config config)"));
+        assertThat(actual, containsString("config.get(\"hidden\")"));
+    }
+
+    @Test
     void testConfiguredInheritance() throws IOException {
         var baseResult = TestCompiler.builder()
                 .currentRelease()
@@ -190,6 +284,129 @@ class SchemaGeneratorTest {
                 //...
                 }
                 """));
+    }
+
+    @Test
+    void testSuppressedConfiguredInheritancePreservesConfigReader() throws IOException {
+        var baseResult = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("BaseConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * Base config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface BaseConfigBlueprint {
+
+                            /**
+                             * Base value.
+                             *
+                             * @return base value
+                             */
+                            @Option.Configured
+                            String base();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(baseResult.success(), is(true));
+        var baseSource = baseResult.sourceOutput().resolve("com/acme/BaseConfig.java");
+        assertThat(Files.exists(baseSource), is(true));
+        var baseActual = Files.readString(baseSource);
+        assertThat(baseActual, containsString("static BaseConfig create(Config config)"));
+        assertThat(baseActual, containsString("BUILDER config(Config config)"));
+        assertThat(baseActual, containsString("config.get(\"base\")"));
+
+        var hiddenResult = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addClasspathEntry(baseResult.classOutput())
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("HiddenConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * Hidden config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured(metadata = false)
+                        interface HiddenConfigBlueprint extends BaseConfig {
+
+                            /**
+                             * Hidden value.
+                             *
+                             * @return hidden value
+                             */
+                            @Option.Configured
+                            String hidden();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(hiddenResult.success(), is(true));
+        var hiddenSource = hiddenResult.sourceOutput().resolve("com/acme/HiddenConfig.java");
+        assertThat(Files.exists(hiddenSource), is(true));
+        var hiddenActual = Files.readString(hiddenSource);
+        assertThat(hiddenActual, not(containsString("@Configured(")));
+        assertThat(hiddenActual, containsString("static HiddenConfig create(Config config)"));
+        assertThat(hiddenActual, containsString("BUILDER config(Config config)"));
+        assertThat(hiddenActual, containsString("super.config(config);"));
+        assertThat(hiddenActual, containsString("config.get(\"hidden\")"));
+
+        var visibleResult = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addClasspathEntry(baseResult.classOutput())
+                .addClasspathEntry(hiddenResult.classOutput())
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("VisibleConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * Visible config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface VisibleConfigBlueprint extends HiddenConfig {
+
+                            /**
+                             * Visible value.
+                             *
+                             * @return visible value
+                             */
+                            @Option.Configured
+                            String visible();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(visibleResult.success(), is(true));
+        var visibleSource = visibleResult.sourceOutput().resolve("com/acme/VisibleConfig.java");
+        assertThat(Files.exists(visibleSource), is(true));
+
+        var actual = Files.readString(visibleSource);
+        assertThat(actual, containsString("@Configured("));
+        assertThat(actual, not(containsString("inherits = HiddenConfig.class")));
+        assertThat(actual, containsString("static VisibleConfig create(Config config)"));
+        assertThat(actual, containsString("BUILDER config(Config config)"));
+        assertThat(actual, containsString("super.config(config);"));
+        assertThat(actual, containsString("config.get(\"visible\")"));
     }
 
     @Test

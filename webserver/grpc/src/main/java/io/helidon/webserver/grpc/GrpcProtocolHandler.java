@@ -81,7 +81,6 @@ import static io.helidon.http.http2.Http2Flag.END_OF_STREAM;
 import static io.helidon.http.http2.Http2Flag.HeaderFlags;
 import static io.helidon.http.http2.Http2StreamState.CLOSED;
 import static io.helidon.http.http2.Http2StreamState.HALF_CLOSED_LOCAL;
-import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.ERROR;
 
 class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProtocolHandler {
@@ -789,29 +788,25 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             Tag grpcMethod = metricsFactory.tagCreate("grpc.method", name);
 
             Counter.Builder callStartedBuilder = metricsFactory.counterBuilder("grpc.server.call.started")
-                    .scope(VENDOR)
                     .tags(List.of(grpcMethod));
-            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
+            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder, GrpcRouting.class);
 
             Timer.Builder callDurationOkBuilder = metricsFactory.timerBuilder("grpc.server.call.duration")
-                    .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS)
                     .tags(List.of(grpcMethod, okTag));
-            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
+            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder, GrpcRouting.class);
 
             DistributionSummary.Builder sendMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
                             "grpc.server.call.sent_total_compressed_message_size",
                             metricsFactory.distributionStatisticsConfigBuilder())
-                    .scope(VENDOR)
                     .tags(List.of(grpcMethod, okTag));
-            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
+            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder, GrpcRouting.class);
 
             DistributionSummary.Builder recvMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
                             "grpc.server.call.rcvd_total_compressed_message_size",
                             metricsFactory.distributionStatisticsConfigBuilder())
-                    .scope(VENDOR)
                     .tags(List.of(grpcMethod, okTag));
-            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
+            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder, GrpcRouting.class);
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });

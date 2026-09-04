@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,39 +21,54 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-@Prototype.Configured
+/**
+ * No-op, will be removed.
+ *
+ * @deprecated No-op, will be removed.
+ */
+@Deprecated(forRemoval = true, since = "27.0.0")
+@Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
+@Prototype.Configured(metadata = false)
 @Prototype.Blueprint
 interface ScopingConfigBlueprint {
 
     /**
-     * Default tag name for recording a meter's scope as a tag.
+     * No-op, will be removed.
+     *
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     String SCOPE_TAG_NAME_DEFAULT = "scope";
 
     /**
-     * Default scope value to associate with meters that are registered without an explicit setting; no setting means meters
-     * are assigned scope {@value io.helidon.metrics.api.Meter.Scope#DEFAULT}.
+     * No-op, will be removed.
      *
-     * @return default scope value
+     * @return ignored value
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured("default")
-    @Option.Default(Meter.Scope.DEFAULT)
+    @Option.Default("application")
     Optional<String> defaultValue();
 
     /**
-     * Tag name for storing meter scope values in the underlying implementation meter registry.
+     * No-op, will be removed.
      *
-     * @return tag name for storing scope values
+     * @return ignored value
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
     @Option.Default(SCOPE_TAG_NAME_DEFAULT)
     Optional<String> tagName();
 
     /**
-     * Settings for individual scopes.
+     * No-op, will be removed.
      *
-     * @return scope settings
+     * @return ignored settings
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
     @Option.Singular
     Map<String, ScopeConfig> scopes();

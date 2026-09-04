@@ -29,8 +29,6 @@ import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Services;
 
-import static io.helidon.metrics.api.Meter.Scope.VENDOR;
-
 class SemaphoreMetrics {
     private final boolean enableMetrics;
     private final Semaphore semaphore;
@@ -96,32 +94,30 @@ class SemaphoreMetrics {
     void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {
         if (semaphore != null) {
             Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
-                    name + "_queue_length", semaphore::getQueueLength).scope(VENDOR);
+                    name + "_queue_length", semaphore::getQueueLength);
             queueLengthBuilder.tags(tags);
-            meterRegistry.getOrCreate(queueLengthBuilder);
+            meterRegistry.getOrCreate(queueLengthBuilder, SemaphoreMetrics.class);
         }
 
         Gauge.Builder<Integer> concurrentRequestsBuilder = metricsFactory.gaugeBuilder(
-                name + "_concurrent_requests", concurrentRequests::get).scope(VENDOR);
+                name + "_concurrent_requests", concurrentRequests::get);
         concurrentRequestsBuilder.tags(tags);
-        meterRegistry.getOrCreate(concurrentRequestsBuilder);
+        meterRegistry.getOrCreate(concurrentRequestsBuilder, SemaphoreMetrics.class);
 
         Gauge.Builder<Integer> rejectedRequestsBuilder = metricsFactory.gaugeBuilder(
-                name + "_rejected_requests", rejectedRequests::get).scope(VENDOR);
+                name + "_rejected_requests", rejectedRequests::get);
         rejectedRequestsBuilder.tags(tags);
-        meterRegistry.getOrCreate(rejectedRequestsBuilder);
+        meterRegistry.getOrCreate(rejectedRequestsBuilder, SemaphoreMetrics.class);
 
         Timer.Builder rttTimerBuilder = metricsFactory.timerBuilder(name + "_rtt")
-                .scope(VENDOR)
                 .baseUnit(Timer.BaseUnits.MILLISECONDS);
         rttTimerBuilder.tags(tags);
-        rttTimer = meterRegistry.getOrCreate(rttTimerBuilder);
+        rttTimer = meterRegistry.getOrCreate(rttTimerBuilder, SemaphoreMetrics.class);
 
         Timer.Builder waitTimerBuilder = metricsFactory.timerBuilder(name + "_queue_wait_time")
-                .scope(VENDOR)
                 .baseUnit(Timer.BaseUnits.MILLISECONDS);
         waitTimerBuilder.tags(tags);
-        queueWaitTimer = meterRegistry.getOrCreate(waitTimerBuilder);
+        queueWaitTimer = meterRegistry.getOrCreate(waitTimerBuilder, SemaphoreMetrics.class);
     }
 
     /**

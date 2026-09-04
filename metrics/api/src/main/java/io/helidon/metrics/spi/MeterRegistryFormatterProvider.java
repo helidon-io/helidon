@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
  */
 package io.helidon.metrics.spi;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
@@ -35,15 +39,51 @@ public interface MeterRegistryFormatterProvider {
 
     /**
      * Returns, if possible, a {@link io.helidon.metrics.api.MeterRegistryFormatter} capable of preparing output according to
-     * the specified {@link io.helidon.common.media.type.MediaType}.
+     * the specified {@link io.helidon.common.media.type.MediaType} and selections.
+     *
      * @param mediaType media type of the desired output
      * @param metricsConfig {@link io.helidon.metrics.api.MetricsConfig} to influence the formatting
      * @param meterRegistry {@link io.helidon.metrics.api.MeterRegistry} from which to gather data
-     * @param scopeTagName tag name used to record scope
-     * @param scopeSelection scope names to format; empty means no scope-based restriction
+     * @param tagSelections tag names and accepted values to format; empty means no tag-based restriction
      * @param nameSelection meter names to format; empty means no name-based restriction
      * @return compatible formatter; empty if none
+     * @since 27.0.0
      */
+    @SuppressWarnings("removal")
+    default Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
+                                                       MetricsConfig metricsConfig,
+                                                       MeterRegistry meterRegistry,
+                                                       Map<String, Collection<String>> tagSelections,
+                                                       Iterable<String> nameSelection) {
+        Objects.requireNonNull(mediaType);
+        Objects.requireNonNull(metricsConfig);
+        Objects.requireNonNull(meterRegistry);
+        Objects.requireNonNull(tagSelections);
+        Objects.requireNonNull(nameSelection);
+        if (!tagSelections.isEmpty()) {
+            return Optional.empty();
+        }
+        return formatter(mediaType,
+                         metricsConfig,
+                         meterRegistry,
+                         Optional.empty(),
+                         List.of(),
+                         nameSelection);
+    }
+
+    /**
+     * No-op, will be removed.
+     *
+     * @param mediaType media type of the desired output
+     * @param metricsConfig {@link io.helidon.metrics.api.MetricsConfig} to influence the formatting
+     * @param meterRegistry {@link io.helidon.metrics.api.MeterRegistry} from which to gather data
+     * @param scopeTagName ignored; must not be {@code null}
+     * @param scopeSelection ignored; must not be {@code null}
+     * @param nameSelection meter names to format; empty means no name-based restriction
+     * @return compatible formatter; empty if none
+     * @deprecated No-op, will be removed.
+     */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                MetricsConfig metricsConfig,
                                                MeterRegistry meterRegistry,

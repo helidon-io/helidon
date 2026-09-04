@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -27,17 +28,6 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
 
 /**
  * Configuration settings for metrics.
- *
- * <h2>Scope handling configuration</h2>
- * Helidon allows developers to associate a scope with each meter. The {@value SCOPE_CONFIG_KEY} subsection of the
- * {@value METRICS_CONFIG_KEY} configuration controls
- * <ul>
- *     <li>the default scope value to use if a meter is registered without an explicit scope setting, and</li>
- *     <li>whether and how Helidon records each meter's scope as a tag in the underlying implementation meter registry.
- *     <p>
- *         Specifically, users can specify whether scope tags are used at all and, if so, what tag name to use.
- *     </li>
- * </ul>
  */
 @Prototype.Configured(MetricsConfigBlueprint.METRICS_CONFIG_KEY)
 @Prototype.Blueprint(decorator = MetricsConfigSupport.BuilderDecorator.class)
@@ -50,8 +40,11 @@ interface MetricsConfigBlueprint {
     String METRICS_CONFIG_KEY = "metrics";
 
     /**
-     * Config key for scope-related settings.
+     * No-op, will be removed.
+     *
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     String SCOPE_CONFIG_KEY = "scoping";
 
     /**
@@ -129,11 +122,13 @@ interface MetricsConfigBlueprint {
     Optional<String> appTagName();
 
     /**
-     * Settings related to scoping management.
+     * No-op, will be removed.
      *
-     * @return scoping settings
+     * @return ignored settings
+     * @deprecated No-op, will be removed.
      */
-    @Option.Configured
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    @Option.Configured(metadata = false)
     ScopingConfig scoping();
 
     /**
@@ -222,29 +217,40 @@ interface MetricsConfigBlueprint {
     List<MetricsPublisher> publishers();
 
     /**
-     * Reports whether the specified scope is enabled, according to any scope configuration that
-     * is part of this metrics configuration.
+     * No-op, will be removed.
      *
-     * @param scope scope name
-     * @return true if the scope as a whole is enabled; false otherwise
+     * @param scope ignored; must not be {@code null}
+     * @return true
+     * @deprecated No-op, will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     default boolean isScopeEnabled(String scope) {
-        var scopeConfig = scoping().scopes().get(scope);
-        return scopeConfig == null || scopeConfig.enabled();
+        Objects.requireNonNull(scope);
+        return true;
     }
 
     /**
-     * Determines whether the meter with the specified name and within the indicated scope is enabled.
+     * Determines whether the meter with the specified name is enabled.
      *
-     * @param name  meter name
-     * @param scope scope name
+     * @param name meter name
      * @return whether the meter is enabled
      */
+    default boolean isMeterEnabled(String name) {
+        Objects.requireNonNull(name);
+        return enabled();
+    }
+
+    /**
+     * No-op, will be removed.
+     *
+     * @param name  meter name
+     * @param scope ignored; must not be {@code null}
+     * @return whether the meter is enabled
+     * @deprecated No-op, will be removed.
+     */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     default boolean isMeterEnabled(String name, String scope) {
-        return enabled()
-                && isScopeEnabled(scope)
-                && (
-                scoping().scopes().get(scope) == null
-                        || scoping().scopes().get(scope).isMeterEnabled(name));
+        Objects.requireNonNull(scope);
+        return isMeterEnabled(name);
     }
 }

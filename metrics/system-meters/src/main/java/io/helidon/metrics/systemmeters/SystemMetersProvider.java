@@ -45,7 +45,6 @@ public class SystemMetersProvider implements MetersProvider, AutoCloseable {
 
     private static final String BYTES = "bytes";
     private static final String SECONDS = "seconds";
-    private static final String SCOPE = Meter.Scope.BASE;
 
     // Maps camelCase names to snake_case, but only for those names that are actually different in the two cases.
     private static final Map<String, String> CAMEL_TO_SNAKE_CASE_METER_NAMES = initMeterNames();
@@ -285,7 +284,6 @@ public class SystemMetersProvider implements MetersProvider, AutoCloseable {
                                                      Function<T, R> fn,
                                                      Tag... tags) {
             result.add(metricsFactory.gaugeBuilder(metadata.name, object, obj -> fn.apply(obj).doubleValue())
-                               .scope(SCOPE)
                                .description(metadata.description)
                                .baseUnit(metadata.baseUnit)
                                .tags(Arrays.asList(tags)));
@@ -297,7 +295,6 @@ public class SystemMetersProvider implements MetersProvider, AutoCloseable {
                                                Function<T, Long> fn,
                                                Tag... tags) {
         result.add(metricsFactory.functionalCounterBuilder(metadata.name, object, fn)
-                           .scope(SCOPE)
                            .description(metadata.description)
                            .baseUnit(metadata.baseUnit)
                            .tags(Arrays.asList(tags)));

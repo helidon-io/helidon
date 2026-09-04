@@ -80,7 +80,6 @@ class TimedHandler {
 
         String name = MetricsExtension.name(annotation, type, element);
         List<MetricsExtension.Tag> tags = MetricsExtension.tags(ctx, type, element, annotation);
-        String scope = MetricsExtension.scope(annotation);
         String description = MetricsExtension.description(annotation, ANNOTATION_TIMED, type, element);
         String unit = annotation.stringValue("unit").orElse("none");
 
@@ -99,9 +98,6 @@ class TimedHandler {
                 .increaseContentPadding()
                 .addContent(".description(")
                 .addContentLiteral(description)
-                .addContentLine(")")
-                .addContent(".scope(")
-                .addContentLiteral(scope)
                 .addContentLine(")")
                 .addContent(".baseUnit(")
                 .addContentLiteral(unit)
