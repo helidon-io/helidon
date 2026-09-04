@@ -43,6 +43,14 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
     String service();
 
     /**
+     * Resource settings shared by all configured signals.
+     *
+     * @return resource settings
+     */
+    @Option.Configured
+    Optional<OpenTelemetryResourceConfig> resource();
+
+    /**
      * Whether the OpenTelemetry support is enabled.
      *
      * @return true if enabled; false otherwise

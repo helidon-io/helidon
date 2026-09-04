@@ -91,6 +91,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Reader<wbr>Config](io.helidon.telemetry.otelconfig.MetricReaderConfig.md)
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Open<wbr>Telemetry<wbr>Logging<wbr>Config](io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md)
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Open<wbr>Telemetry<wbr>Metrics<wbr>Config](io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md)
+- [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Open<wbr>Telemetry<wbr>Resource<wbr>Config](io.helidon.telemetry.otelconfig.OpenTelemetryResourceConfig.md)
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Open<wbr>Telemetry<wbr>Tracing<wbr>Config](io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md)
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Otlp<wbr>Exporter<wbr>Config](io.helidon.telemetry.otelconfig.OtlpExporterConfig.md)
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Otlp<wbr>Http<wbr>Exporter<wbr>Config](io.helidon.telemetry.otelconfig.OtlpHttpExporterConfig.md)

@@ -255,13 +255,93 @@ Notes:
   unchanged and uses the existing global as the application `OpenTelemetry`
   instance.
 
+## Resource Attributes
+
+An OpenTelemetry resource describes the entity producing telemetry. Helidon
+always sets `service.name` from the required top-level `telemetry.service`
+setting. You can also configure these stable semantic-convention resource
+attributes under `telemetry.resource`:
+
+- `service-namespace` sets `service.namespace`.
+- `service-instance-id` sets `service.instance.id`.
+- `deployment-environment-name` sets `deployment.environment.name`.
+- `container-id` sets `container.id`.
+- `container-image-name` sets `container.image.name`.
+- `container-image-tags` sets `container.image.tags`.
+- `container-image-repo-digests` sets `container.image.repo_digests`.
+
+Helidon does not invent values for these optional settings. In particular, it
+does not generate a service instance ID or detect container metadata. If a
+setting is absent, Helidon does not explicitly add or override that attribute.
+
+### Configuration options
+
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryResourceConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
+See [Configuration options][io-helidon-telem-resource].
+<!--/include-->
+
+The resource `attributes` section accepts scalar values grouped under
+`strings`, `longs`, `doubles`, and `booleans`.
+
+```yaml
+telemetry:
+  service: checkout
+  resource:
+    service-namespace: retail
+    service-instance-id: checkout-7f3a
+    deployment-environment-name: production
+    container-id: container-123
+    container-image-name: registry.example.com/retail/checkout
+    container-image-tags: [latest, "2.1"]
+    container-image-repo-digests:
+      - "checkout@sha256:first"
+      - "checkout@sha256:second"
+    attributes:
+      strings:
+        service.version: "2.1"
+      longs:
+        application.shard: 3
+```
+
+The resource attributes apply to every signal provider Helidon constructs.
+When the same key is set more than once, the precedence from lowest to highest
+is the OpenTelemetry default resource, common `telemetry.resource.attributes`,
+the signal-specific `telemetry.signals.<signal>.attributes`, and the
+first-class resource settings listed above. The required `telemetry.service`
+setting always determines `service.name`.
+
+Applications can configure the same settings programmatically.
+
+```java
+OpenTelemetryResourceConfig resourceConfig = OpenTelemetryResourceConfig.builder()
+        .serviceNamespace("retail")
+        .serviceInstanceId("checkout-7f3a")
+        .deploymentEnvironmentName("production")
+        .containerId("container-123")
+        .containerImageName("registry.example.com/retail/checkout")
+        .containerImageTags(List.of("latest", "2.1"))
+        .containerImageRepoDigests(List.of("checkout@sha256:first",
+                                           "checkout@sha256:second"))
+        .attributes(Attributes.builder().put("service.version", "2.1"))
+        .build();
+
+OpenTelemetryConfig.Builder telemetryConfigBuilder = OpenTelemetryConfig.builder()
+        .service("checkout")
+        .resource(resourceConfig);
+```
+
+If application code supplies an `OpenTelemetry` instance explicitly to the
+Helidon builder, that instance takes precedence over settings which Helidon
+would otherwise use to construct the SDK. The application is then responsible
+for assigning its resource.
+
 ## Signal Attributes
 
-Attributes are key/value pairs that OpenTelemetry attaches to each transmission
-of a signal.
+The existing attributes under each signal are resource attributes which apply
+only to that signal's provider.
 
-OpenTelemetry supports attributes of type `String`, `long`, `double`, and
-`boolean`.
+Helidon configuration supports scalar OpenTelemetry attributes of type
+`String`, `long`, `double`, and `boolean`.
 
 The Helidon configuration structure groups attributes by type so Helidon can
 indicate precisely to OpenTelemetry what type you intend for each attribute.
@@ -282,19 +362,20 @@ The following example shows attribute settings for the tracing signal.
 ```yaml
 telemetry:
   service: my-helidon-service
-  tracing:
-    attributes:
-      strings:
-        attr1: 12
-        attr5: "any old thing"
-        attr7: something
-      longs:
-        attr2: 12
-      doubles:
-        attr3: 24.5
-        attr6: 12
-      booleans:
-        attr4: true
+  signals:
+    tracing:
+      attributes:
+        strings:
+          attr1: 12
+          attr5: "any old thing"
+          attr7: something
+        longs:
+          attr2: 12
+        doubles:
+          attr3: 24.5
+          attr6: 12
+        booleans:
+          attr4: true
 ```
 
 ## Processors & Readers
@@ -928,7 +1009,7 @@ telemetry:
 - [Intro to OpenTelemetry Java][intro-to-opentel]
 
 [preview-feature]: https://helidon.io/docs/v27/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Features.Preview.html
-[opentelemetry-se]: https://github.com/open-telemetry/semantic-conventions/blob/v1.37.0/docs/http/http-spans.md#http-server
+[opentelemetry-se]: https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/http/http-spans.md#http-server
 [publishing-helid]: ../metrics/metrics.md#publishing-metrics
 [signals]: https://opentelemetry.io/docs/concepts/signals/
 [helidon-opentele]: https://helidon.io/docs/v27/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html
@@ -949,6 +1030,7 @@ telemetry:
 [oracle-apm]: https://docs.oracle.com/en-us/iaas/application-performance-monitoring/doc/configure-open-source-tracing-systems.html
 [io-helidon-telem]: ../../config/io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#configuration-options
 [io-helidon-telem-2]: ../../config/io.helidon.telemetry.otelconfig.TypedAttributes.md#configuration-options
+[io-helidon-telem-resource]: ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryResourceConfig.md#configuration-options
 [io-helidon-telem-3]: ../../config/io.helidon.telemetry.otelconfig.BatchProcessorConfig.md#configuration-options
 [io-helidon-telem-4]: ../../config/io.helidon.telemetry.otelconfig.OtlpExporterConfig.md#configuration-options
 [io-helidon-telem-5]: ../../config/io.helidon.telemetry.otelconfig.RetryPolicyConfig.md#configuration-options
