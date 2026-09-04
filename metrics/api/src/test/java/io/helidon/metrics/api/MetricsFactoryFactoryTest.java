@@ -136,6 +136,8 @@ class MetricsFactoryFactoryTest {
         MeterRegistry meterRegistry = new NoOpMetricsFactory().globalRegistry();
 
         assertThat(meterRegistry.isMeterEnabled("test", Map.of(), Optional.of("ignored")), is(true));
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled(null, Map.of(), Optional.empty()));
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", null, Optional.empty()));
         assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", Map.of(), null));
     }
 
