@@ -515,7 +515,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         case WRITE_SERVER_SETTINGS -> writeServerSettings();
         case WINDOW_UPDATE -> readWindowUpdateFrame();
         case SETTINGS -> doSettings();
-        case ACK_SETTINGS -> ackSettings();
+        case ACK_SETTINGS -> ackSettings(limit);
         case DATA -> dataFrame();
         case HEADERS -> doHeaders(limit);
         case PRIORITY -> doPriority();
@@ -717,7 +717,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
-    private void ackSettings() {
+    private void ackSettings(Limit limit) {
         Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(Http2Flag.ACK);
         Http2FrameHeader header = Http2FrameHeader.create(0, Http2FrameTypes.SETTINGS, flags, 0);
         writeConnectionFrame(new Http2FrameData(header, BufferData.empty()));
@@ -730,6 +730,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Http2ServerStream stream = stream(1).stream();
             activateStream(1);
             stream.prologue(upgradePrologue);
+            stream.requestLimit(limit);
             stream.headers(upgradeHeaders, !hasEntity);
             upgradeHeaders = null;
             ctx.executor()
