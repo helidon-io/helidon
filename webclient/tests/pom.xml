@@ -36,6 +36,8 @@
     <modules>
         <module>http1</module>
         <module>http2</module>
+        <module>http3</module>
+        <module>http3-module-path</module>
         <module>webclient</module>
         <module>grpc</module>
     </modules>
