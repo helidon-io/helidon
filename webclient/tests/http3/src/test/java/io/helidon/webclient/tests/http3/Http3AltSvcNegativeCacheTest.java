@@ -25,8 +25,11 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderName;
@@ -58,7 +61,7 @@ class Http3AltSvcNegativeCacheTest {
     private static final HeaderName ALT_USED = HeaderNames.create("Alt-Used");
 
     @Test
-    void shouldSuppressImmediateRetryAfterFailedAltSvcUpgradeAndRetryAfterFreshAltSvc() throws Exception {
+    void shouldPreserveNegativeCacheAfterSameTargetAltSvcRefresh() throws Exception {
         int port = freePort();
 
         try (FixedPortEnvironment environment = FixedPortEnvironment.http1Only(port, Set.of(1, 4));
@@ -77,14 +80,14 @@ class Http3AltSvcNegativeCacheTest {
                     assertThat(firstResponse.headers().contains(HeaderNames.ALT_SVC), is(true));
                     assertThat(firstResponse.entity().as(String.class), is(HELLO));
                 }
-                assertThat(udpSink.receivedCount(), is(0));
+                assertThat(udpSink.receivedCountAfterIdle(), is(0));
 
                 try (HttpClientResponse secondResponse = client.get("/hello").request()) {
                     assertThat(secondResponse.status(), is(Status.OK_200));
                     assertThat(secondResponse.protocolId(), is(Http1Client.PROTOCOL_ID));
                     assertThat(secondResponse.entity().as(String.class), is(HELLO));
                 }
-                int afterFailedUpgrade = udpSink.receivedCount();
+                int afterFailedUpgrade = udpSink.receivedCountAfterIdle();
                 assertThat(afterFailedUpgrade, greaterThan(0));
                 assertThat(environment.altUsedReceived.get(), is(false));
 
@@ -94,7 +97,7 @@ class Http3AltSvcNegativeCacheTest {
                     assertThat(thirdResponse.headers().contains(HeaderNames.ALT_SVC), is(false));
                     assertThat(thirdResponse.entity().as(String.class), is(HELLO));
                 }
-                assertThat(udpSink.receivedCount(), is(afterFailedUpgrade));
+                assertThat(udpSink.receivedCountAfterIdle(), is(afterFailedUpgrade));
 
                 try (HttpClientResponse fourthResponse = client.get("/hello").request()) {
                     assertThat(fourthResponse.status(), is(Status.OK_200));
@@ -102,14 +105,14 @@ class Http3AltSvcNegativeCacheTest {
                     assertThat(fourthResponse.headers().contains(HeaderNames.ALT_SVC), is(true));
                     assertThat(fourthResponse.entity().as(String.class), is(HELLO));
                 }
-                assertThat(udpSink.receivedCount(), is(afterFailedUpgrade));
+                assertThat(udpSink.receivedCountAfterIdle(), is(afterFailedUpgrade));
 
                 try (HttpClientResponse fifthResponse = client.get("/hello").request()) {
                     assertThat(fifthResponse.status(), is(Status.OK_200));
                     assertThat(fifthResponse.protocolId(), is(Http1Client.PROTOCOL_ID));
                     assertThat(fifthResponse.entity().as(String.class), is(HELLO));
                 }
-                assertThat(udpSink.receivedCount(), greaterThan(afterFailedUpgrade));
+                assertThat(udpSink.receivedCountAfterIdle(), is(afterFailedUpgrade));
             } finally {
                 client.closeResource();
             }
@@ -145,7 +148,7 @@ class Http3AltSvcNegativeCacheTest {
                     assertThat(secondResponse.protocolId(), is(Http1Client.PROTOCOL_ID));
                     assertThat(secondResponse.entity().as(String.class), is(HELLO));
                 }
-                assertThat(udpSink.receivedCount(), greaterThan(0));
+                assertThat(udpSink.receivedCountAfterIdle(), greaterThan(0));
             } finally {
                 client.closeResource();
             }
@@ -299,6 +302,7 @@ class Http3AltSvcNegativeCacheTest {
         private final DatagramSocket socket;
         private final AtomicInteger receivedCount = new AtomicInteger();
         private final AtomicBoolean closed = new AtomicBoolean();
+        private final AtomicReference<CountDownLatch> idleWaiter = new AtomicReference<>();
         private final Thread receiverThread;
 
         private UdpSink(int port) throws Exception {
@@ -309,8 +313,22 @@ class Http3AltSvcNegativeCacheTest {
                     .start(this::receiveLoop);
         }
 
-        private int receivedCount() {
-            return receivedCount.get();
+        private int receivedCountAfterIdle() {
+            CountDownLatch idle = new CountDownLatch(1);
+            if (!idleWaiter.compareAndSet(null, idle)) {
+                throw new IllegalStateException("UDP idle wait already in progress.");
+            }
+            try {
+                if (!idle.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Timed out waiting for UDP sink to become idle.");
+                }
+                return receivedCount.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting for UDP sink to become idle.", e);
+            } finally {
+                idleWaiter.compareAndSet(idle, null);
+            }
         }
 
         @Override
@@ -334,7 +352,10 @@ class Http3AltSvcNegativeCacheTest {
                     socket.receive(packet);
                     receivedCount.incrementAndGet();
                 } catch (SocketTimeoutException ignored) {
-                    // Poll for shutdown and continue counting new datagrams.
+                    CountDownLatch idle = idleWaiter.getAndSet(null);
+                    if (idle != null) {
+                        idle.countDown();
+                    }
                 } catch (SocketException ignored) {
                     if (!closed.get()) {
                         throw new IllegalStateException("UDP sink closed unexpectedly.", ignored);
