@@ -257,6 +257,7 @@ public interface MeterRegistry extends Wrapper {
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<Meter> remove(Meter.Id id, String scope) {
+        Objects.requireNonNull(id);
         Objects.requireNonNull(scope);
         return remove(id);
     }
@@ -281,6 +282,8 @@ public interface MeterRegistry extends Wrapper {
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<Meter> remove(String name, Iterable<Tag> tags, String scope) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(tags);
         Objects.requireNonNull(scope);
         return remove(name, tags);
     }
