@@ -38,6 +38,8 @@
         <module>gh2631</module>
         <module>grpc</module>
         <module>http2</module>
+        <module>http3</module>
+        <module>http3-module-path</module>
         <module>imperative</module>
         <module>mtls</module>
         <module>observe</module>
