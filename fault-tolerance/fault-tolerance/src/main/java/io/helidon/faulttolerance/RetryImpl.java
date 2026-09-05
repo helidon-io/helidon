@@ -180,12 +180,17 @@ class RetryImpl implements Retry {
                 Throwable throwable = unwrap(t);
                 state.failure(throwable);
                 Throwable interrupted = throwable instanceof Error ? null : interrupted(t);
-                if (interrupted != null) {
-                    Thread.currentThread().interrupt();
+                if (interrupted != null && Thread.currentThread().isInterrupted()) {
                     return terminateAfterInvocation(legacy,
                                                     RetryOutcome.Termination.INTERRUPTED,
                                                     state,
                                                     interrupted);
+                }
+                if (throwable instanceof InterruptedException) {
+                    return terminateAfterInvocation(legacy,
+                                                    RetryOutcome.Termination.NOT_RETRYABLE,
+                                                    state,
+                                                    throwable);
                 }
                 if (errorChecker.shouldSkip(throwable)) {
                     return terminateAfterInvocation(legacy,
@@ -229,8 +234,7 @@ class RetryImpl implements Retry {
                 continueRetries = waitStrategy.await(Duration.ofMillis(delayMillis));
             } catch (RuntimeException t) {
                 Throwable interrupted = interrupted(t);
-                if (interrupted != null || Thread.currentThread().isInterrupted()) {
-                    Thread.currentThread().interrupt();
+                if (Thread.currentThread().isInterrupted()) {
                     return terminateWait(legacy,
                                          RetryOutcome.Termination.INTERRUPTED,
                                          state,

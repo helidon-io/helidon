@@ -20,6 +20,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -211,6 +213,33 @@ class RetryContextTest {
     }
 
     @Test
+    void testTransportedWaitInterruptionDoesNotInterruptInvokingThread() {
+        RuntimeException waitFailure = new RuntimeException(new InterruptedException("worker interrupted"));
+        Retry retry = Retry.builder()
+                .retryPolicy((firstCallMillis, lastDelay, call) -> Optional.of(1L))
+                .overallTimeout(Duration.ofSeconds(10))
+                .build();
+
+        try {
+            assertThat(Thread.currentThread().isInterrupted(), is(false));
+            RetryException exception = assertThrows(RetryException.class,
+                                                    () -> retry.invoke(context -> {
+                                                        throw new TestFailure("invocation");
+                                                    }, delay -> {
+                                                        throw waitFailure;
+                                                    }));
+
+            assertThat(exception.outcome().termination(), is(RetryOutcome.Termination.WAIT_FAILED));
+            assertThat(exception.getCause(), sameInstance(waitFailure));
+            assertThat("An interruption reported by another thread must not interrupt the caller",
+                       Thread.currentThread().isInterrupted(),
+                       is(false));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
     void testCustomWaitFailureWithRestoredInterruptFlag() {
         TerminalFailure waitFailure = new TerminalFailure();
         Retry retry = Retry.builder()
@@ -283,25 +312,51 @@ class RetryContextTest {
     }
 
     @Test
-    void testWrappedInterruptedInvocationRestoresInterruptFlag() {
-        InterruptedException interrupted = new InterruptedException("interrupted invocation");
-        RuntimeException failure = new RuntimeException(interrupted);
+    void testCallerInterruptionRestoresInterruptFlag() {
+        CompletableFuture<Integer> pending = new CompletableFuture<>();
+        var syncSupplier = SupplierHelper.toSyncSupplier(() -> pending, 1, TimeUnit.SECONDS);
+        Retry retry = Retry.builder()
+                .retryPolicy(Retry.DelayingRetryPolicy.noDelay(3))
+                .overallTimeout(Duration.ofSeconds(10))
+                .build();
+
+        Thread.currentThread().interrupt();
+        try {
+            RetryException exception = assertThrows(RetryException.class,
+                                                    () -> retry.invoke(context -> syncSupplier.get()));
+
+            assertThat(exception.outcome().termination(), is(RetryOutcome.Termination.INTERRUPTED));
+            assertThat(exception.outcome().attempts(), is(1));
+            assertThat(exception.getCause(), instanceOf(InterruptedException.class));
+            assertThat(exception.outcome().lastThrowable(), optionalValue(sameInstance(exception.getCause())));
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void testWorkerInterruptionDoesNotInterruptInvokingThread() {
+        InterruptedException interrupted = new InterruptedException("worker interrupted");
+        CompletableFuture<Integer> failedWorker = CompletableFuture.failedFuture(interrupted);
+        var syncSupplier = SupplierHelper.toSyncSupplier(() -> failedWorker, 1, TimeUnit.SECONDS);
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.DelayingRetryPolicy.noDelay(3))
                 .overallTimeout(Duration.ofSeconds(10))
                 .build();
 
         try {
+            assertThat(Thread.currentThread().isInterrupted(), is(false));
             RetryException exception = assertThrows(RetryException.class,
-                                                    () -> retry.invoke(context -> {
-                                                        throw failure;
-                                                    }));
+                                                    () -> retry.invoke(context -> syncSupplier.get()));
 
-            assertThat(exception.outcome().termination(), is(RetryOutcome.Termination.INTERRUPTED));
+            assertThat(exception.outcome().termination(), is(RetryOutcome.Termination.NOT_RETRYABLE));
             assertThat(exception.outcome().attempts(), is(1));
-            assertThat(exception.outcome().lastThrowable(), optionalValue(sameInstance(failure)));
+            assertThat(exception.outcome().lastThrowable(), optionalValue(sameInstance(interrupted)));
             assertThat(exception.getCause(), sameInstance(interrupted));
-            assertThat(Thread.currentThread().isInterrupted(), is(true));
+            assertThat("An interruption reported by another thread must not interrupt the caller",
+                       Thread.currentThread().isInterrupted(),
+                       is(false));
         } finally {
             Thread.interrupted();
         }
