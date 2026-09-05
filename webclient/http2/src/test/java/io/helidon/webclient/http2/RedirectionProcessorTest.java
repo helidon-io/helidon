@@ -16,14 +16,25 @@
 
 package io.helidon.webclient.http2;
 
+import java.net.URI;
+import java.util.Map;
+
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientUri;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class RedirectionProcessorTest {
+    private static final Header TEST_CONTENT_ENCODING = HeaderValues.createCached(HeaderNames.CONTENT_ENCODING,
+                                                                                   "test-encoding");
 
     @Test
     void methodAndEntityPreservationUsesStatusCode() {
@@ -37,5 +48,20 @@ class RedirectionProcessorTest {
     @Test
     void notModifiedIsNotARedirect() {
         assertThat(RedirectionProcessor.redirectionStatusCode(Status.NOT_MODIFIED_304), is(false));
+    }
+
+    @Test
+    void entityPreservingRedirectPreservesContentEncoding() {
+        Http2ClientRequestImpl request = (Http2ClientRequestImpl) Http2Client.create()
+                .put("http://localhost/source")
+                .header(TEST_CONTENT_ENCODING);
+
+        Http2ClientRequestImpl redirect = new Http2ClientRequestImpl(request,
+                                                                     Method.PUT,
+                                                                     ClientUri.create(URI.create("http://localhost/target")),
+                                                                     Map.of(),
+                                                                     true);
+
+        assertThat(redirect.headers(), hasHeader(TEST_CONTENT_ENCODING));
     }
 }
