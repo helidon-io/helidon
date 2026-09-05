@@ -15,6 +15,7 @@
  */
 package io.helidon.data.codegen.common;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.StreamSupport;
 
@@ -66,12 +67,13 @@ public abstract class BaseRepositoryGenerator implements RepositoryGenerator {
     public RepositoryInfo createRepositoryInfo(TypeInfo interfaceInfo, CodegenContext codegenContext) {
         RepositoryInfo.Builder builder = repositoryInfoBuilder(codegenContext);
         builder.interfaceInfo(interfaceInfo);
+        Set<TypeName> repositoryInterfaces = interfaces();
         StreamSupport.stream(new TypeInfoSpliterator(interfaceInfo), false)
                 .forEach(info -> {
+                    TypeName rawType = info.typeName().genericTypeName();
                     if (!interfaceInfo.typeName().equals(info.typeName())
-                            // This filter should be implemented better, but it's sufficient for current version
-                            && info.typeName().typeArguments().size() == 2) {
-                        builder.addInterface(info.typeName(), RepositoryInterfaceInfo.create(info));
+                            && repositoryInterfaces.contains(rawType)) {
+                        builder.addInterface(rawType, RepositoryInterfaceInfo.create(info));
                     }
                 });
         return builder.build();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 interface SqlConfigBlueprint {
     /**
-     * Configuration of a connection to a database.
-     * Alternative is to use {@link SqlConfig.Builder#dataSource()}.
+     * Configuration of a direct connection to a database, with exactly one of
+     * {@code connection} and {@code data-source} required.
      *
      * @return connection configuration
      */
@@ -41,7 +41,8 @@ interface SqlConfigBlueprint {
     Optional<ConnectionConfig> connection();
 
     /**
-     * Name of the {@link javax.sql.DataSource}.
+     * Name of the {@link javax.sql.DataSource}, with exactly one of
+     * {@code connection} and {@code data-source} required.
      *
      * @return the name to use for {@link javax.sql.DataSource} lookup
      */

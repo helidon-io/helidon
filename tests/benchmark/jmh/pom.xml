@@ -81,6 +81,10 @@
             <artifactId>helidon-common-task</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.data.jdbc</groupId>
+            <artifactId>helidon-data-jdbc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-api</artifactId>
         </dependency>

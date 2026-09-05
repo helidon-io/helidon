@@ -124,6 +124,15 @@ public abstract class ClassBase extends AnnotatedComponent {
     }
 
     /**
+     * Generic arguments declared by this type, including their bounds.
+     *
+     * @return declared generic arguments
+     */
+    public List<TypeArgument> genericArguments() {
+        return List.copyOf(genericParameters);
+    }
+
+    /**
      * Kind of this type.
      *
      * @return kind

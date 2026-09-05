@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,16 @@
 package io.helidon.codegen;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.spi.AnnotationMapper;
 import io.helidon.codegen.spi.ElementMapper;
 import io.helidon.codegen.spi.TypeMapper;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -98,6 +101,19 @@ public interface CodegenContext {
      * @return discovered type information, or empty if the type cannot be discovered
      */
     Optional<TypeInfo> typeInfo(TypeName typeName, Predicate<TypedElementInfo> elementPredicate);
+
+    /**
+     * Creates the Java type hierarchy resolver for a processing round.
+     *
+     * @param typeInfoLookup lookup that includes types generated during the round
+     * @return type hierarchy resolver
+     * @throws NullPointerException if the type information lookup is {@code null}
+     */
+    @Api.Internal
+    default TypeHierarchyResolver typeHierarchyResolver(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
+        Objects.requireNonNull(typeInfoLookup, "The type information lookup must not be null.");
+        return TypeHierarchyResolver.create(typeInfoLookup);
+    }
 
     /**
      * List of available element mappers in this environment.

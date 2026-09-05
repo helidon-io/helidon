@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,16 +49,14 @@ public abstract class BasePersistenceGenerator
         Objects.requireNonNull(codegenContext, "Codegen context value is null");
         Objects.requireNonNull(repositoryGenerator, "Data repository generator value is null");
 
-        TypeName repositoryClassName = repositoryClassName(interfaceInfo.typeName());
-        RepositoryInfo repositoryInfo = repositoryGenerator.createRepositoryInfo(interfaceInfo, codegenContext);
-
-        // only generate if matches required provider, or if the provider annotation is not present
-        boolean should = interfaceInfo.findAnnotation(DataCommonCodegenTypes.PROVIDER)
+        boolean shouldGenerate = interfaceInfo.findAnnotation(DataCommonCodegenTypes.PROVIDER)
                 .flatMap(Annotation::value)
-                .orElse(provider())
-                .equals(provider());
+                .map(provider()::equals)
+                .orElse(true);
 
-        if (should) {
+        if (shouldGenerate) {
+            TypeName repositoryClassName = repositoryClassName(interfaceInfo.typeName());
+            RepositoryInfo repositoryInfo = repositoryGenerator.createRepositoryInfo(interfaceInfo, codegenContext);
             ClassModel.Builder classModel = ClassModel.builder();
 
             generateRepositoryClass(codegenContext,
@@ -67,6 +65,16 @@ public abstract class BasePersistenceGenerator
                                     repositoryInfo,
                                     repositoryClassName,
                                     classModel);
+
+            // Recognize the transaction family by its semantic marker instead of coupling Data codegen to every Tx type.
+            // Keep directly declared, source-retained transaction annotations in the generated source so service codegen
+            // can include them in the interception metadata of the implementation. This deliberately copies every matching
+            // declaration without resolving transaction precedence. Other repository type annotations, including other
+            // interception annotations, are not copied by this step.
+            interfaceInfo.annotations()
+                    .stream()
+                    .filter(annotation -> annotation.hasMetaAnnotation(DataCommonCodegenTypes.TRANSACTION_TYPE))
+                    .forEach(classModel::addAnnotation);
 
             roundContext.addGeneratedType(repositoryClassName,
                                           classModel,

@@ -21,8 +21,10 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -39,6 +41,7 @@ import io.helidon.codegen.CodegenScope;
 import io.helidon.codegen.ModuleInfo;
 import io.helidon.codegen.ModuleInfoSourceParser;
 import io.helidon.codegen.Option;
+import io.helidon.codegen.TypeHierarchyResolver;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -98,6 +101,12 @@ class AptContextImpl extends CodegenContextBase implements AptContext {
     public Optional<TypeInfo> typeInfo(TypeName typeName, Predicate<TypedElementInfo> elementPredicate) {
         // cannot be cached
         return AptTypeInfoFactory.create(this, typeName, elementPredicate);
+    }
+
+    @Override
+    public TypeHierarchyResolver typeHierarchyResolver(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
+        Objects.requireNonNull(typeInfoLookup, "The type information lookup must not be null.");
+        return new AptTypeHierarchyResolver(env, typeInfoLookup);
     }
 
     @Override

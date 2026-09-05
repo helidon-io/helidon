@@ -126,6 +126,15 @@ UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>
 </tr>
 <tr>
 <td>
+<code>password</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Password for the database connection</td>
+</tr>
+<tr>
+<td>
 <code>timeout-<wbr>check-<wbr>interval</code>
 </td>
 <td>
@@ -297,6 +306,15 @@ UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>
 </tr>
 <tr>
 <td>
+<code>jdbc-<wbr>driver-<wbr>class-<wbr>name</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>JDBC driver class for database connection</td>
+</tr>
+<tr>
+<td>
 <code>port-<wbr>number</code>
 </td>
 <td>
@@ -312,6 +330,15 @@ UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>
 <code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>Sets the connection properties on the connection factory</td>
+</tr>
+<tr>
+<td>
+<code>url</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Database connection url</td>
 </tr>
 <tr>
 <td>
@@ -402,6 +429,15 @@ UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>
 <code>Boolean</code>
 </td>
 <td>Set this flag to <code>true</code> to make UCP use the borrowing thread to create new connections</td>
+</tr>
+<tr>
+<td>
+<code>username</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Username for the database connection</td>
 </tr>
 </tbody>
 </table>
