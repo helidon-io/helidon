@@ -58,6 +58,15 @@
 </tr>
 <tr>
 <td>
+<a id="messaging"></a>
+<a href="io.helidon.MessagingConfig.md">
+<code>messaging</code>
+</a>
+</td>
+<td>Configuration for messaging</td>
+</tr>
+<tr>
+<td>
 <a id="metrics"></a>
 <a href="io.helidon.MetricsConfig.md">
 <code>metrics</code>

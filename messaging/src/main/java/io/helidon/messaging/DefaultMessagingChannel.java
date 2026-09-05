@@ -1,0 +1,499 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.messaging;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
+import io.helidon.common.GenericType;
+import io.helidon.messaging.spi.Connector;
+import io.helidon.messaging.spi.OutgoingConnector;
+
+/**
+ * Internal in-memory messaging channel runtime.
+ *
+ * @param <T> payload type
+ */
+final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T> {
+    private final GenericType<T> payloadType;
+    private final List<Consumer<MessageBatch<?>>> validators;
+    private final List<Consumer<MessageBatch<?>>> outputs;
+    private final DeliveryEngine deliveryEngine;
+    private final String channelName;
+    private final DefaultMessagingGraph graph;
+
+    private DefaultMessagingChannel(GenericType<T> payloadType,
+                                    List<Consumer<MessageBatch<?>>> validators,
+                                    List<Consumer<MessageBatch<?>>> outputs,
+                                    DeliveryEngine deliveryEngine,
+                                    String channelName,
+                                    DefaultMessagingGraph graph) {
+        this.payloadType = payloadType;
+        this.validators = List.copyOf(validators);
+        this.outputs = new CopyOnWriteArrayList<>(outputs);
+        this.deliveryEngine = deliveryEngine;
+        this.channelName = channelName;
+        this.graph = graph;
+    }
+
+    @Override
+    public String name() {
+        return channelName;
+    }
+
+    @Override
+    public GenericType<T> payloadType() {
+        return payloadType;
+    }
+
+    @Override
+    public void emit(MessageBatch<? extends T> batch) {
+        emitBatchObject(batch);
+    }
+
+    void addOutput(Consumer<Message<?>> output) {
+        outputs.add(batch -> dispatchMessages(batch, output));
+    }
+
+    void addBatchOutput(Consumer<MessageBatch<T>> output) {
+        outputs.add(batch -> output.accept(castBatch(batch)));
+    }
+
+    void addOutgoingConnector(OutgoingConnector output) {
+        outputs.add(messages -> send(output, messages));
+    }
+
+    DefaultMessagingGraph graph() {
+        return graph;
+    }
+
+    void emitPayloadObject(Object entity) {
+        emitBatchObject(MessageBatch.create(Message.create(entity)));
+    }
+
+    void emitMessageObject(Message<?> message) {
+        emitBatchObject(MessageBatch.create(Objects.requireNonNull(message)));
+    }
+
+    void emitBatchObject(MessageBatch<?> messages) {
+        Objects.requireNonNull(messages);
+        graph.ensureRunning();
+        MessageBatch<?> batch = toBatch(messages);
+        deliveryEngine.dispatch(channelName, batch, () -> dispatchBatch(batch));
+    }
+
+    void emitRoutedBatchObject(MessageBatch<?> messages) {
+        try {
+            emitBatchObject(messages);
+        } catch (RuntimeException failure) {
+            if (DeliveryEngine.isPreDispatchRejection(failure)) {
+                throw BatchDeliveryExceptionSupport.notAttempted("Messaging nested delivery admission", messages, failure);
+            }
+            throw failure;
+        }
+    }
+
+    private void dispatchBatch(MessageBatch<?> batch) {
+        validators.forEach(validator -> validator.accept(batch));
+        for (int i = 0; i < outputs.size(); i++) {
+            try {
+                outputs.get(i).accept(batch);
+            } catch (RuntimeException e) {
+                throw normalizeFailure(batch, i, e);
+            }
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Message<T> toMessage(Object value) {
+        Message<?> message = (Message<?>) value;
+        Object entity;
+        try {
+            entity = Objects.requireNonNull(message.entity(), "Message entity");
+        } catch (MessagingException failure) {
+            if (message instanceof DeadLetterMessage<?>) {
+                return (Message<T>) message;
+            }
+            throw failure;
+        }
+        if (payloadType.rawType().isInstance(entity)) {
+            return (Message<T>) message;
+        }
+        throw new IllegalArgumentException("Channel expected payload type "
+                                                   + payloadType.getTypeName()
+                                                   + " but received " + entity.getClass().getName());
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private MessageBatch<T> castBatch(MessageBatch<?> batch) {
+        return (MessageBatch) batch;
+    }
+
+    static final class Builder<T> {
+        private final List<Consumer<MessageBatch<?>>> validators = new ArrayList<>();
+        private final List<Consumer<MessageBatch<?>>> outputs = new ArrayList<>();
+        private final List<OutgoingConnector> connectorOutputs = new ArrayList<>();
+        private GenericType<T> payloadType;
+        private MessagingExecutionConfig executionConfig;
+        private DefaultMessagingGraph messagingGraph;
+        private String channelName;
+
+        Builder<T> payloadType(Class<T> payloadType) {
+            return payloadType(GenericType.create(payloadType));
+        }
+
+        Builder<T> payloadType(GenericType<T> payloadType) {
+            this.payloadType = Objects.requireNonNull(payloadType);
+            return this;
+        }
+
+        Builder<T> addOutput(Consumer<Message<T>> output) {
+            outputs.add(messages -> dispatchMessages(messages, message -> output.accept(cast(message))));
+            return this;
+        }
+
+        Builder<T> addBatchValidator(Consumer<MessageBatch<T>> validator) {
+            validators.add(messages -> validator.accept(castBatch(messages)));
+            return this;
+        }
+
+        Builder<T> addBatchOutput(Consumer<MessageBatch<T>> output) {
+            outputs.add(messages -> output.accept(castBatch(messages)));
+            return this;
+        }
+
+        Builder<T> addOutgoingConnector(OutgoingConnector output) {
+            OutgoingConnector connector = Objects.requireNonNull(output);
+            connectorOutputs.add(connector);
+            outputs.add(messages -> DefaultMessagingChannel.send(connector, messages));
+            return this;
+        }
+
+        DefaultMessagingChannel<T> build() {
+            GenericType<T> actualPayloadType = Objects.requireNonNull(payloadType, "payloadType");
+            String actualChannelName = Objects.requireNonNull(channelName, "channelName");
+            DefaultMessagingGraph actualGraph = Objects.requireNonNull(messagingGraph, "messagingGraph");
+            MessagingExecutionConfig actualExecutionConfig = Objects.requireNonNull(executionConfig, "executionConfig");
+            DefaultMessagingChannel<T> channel = new DefaultMessagingChannel<>(actualPayloadType,
+                                                                               validators,
+                                                                               outputs,
+                                                                               actualGraph.deliveryEngine(),
+                                                                               actualChannelName,
+                                                                               actualGraph);
+            actualGraph.addChannelContribution(actualChannelName,
+                                               channel,
+                                               actualExecutionConfig,
+                                               java.util.Map.of(),
+                                               connectorOutputs,
+                                               List.of());
+            return channel;
+        }
+
+        Builder<T> messagingGraph(DefaultMessagingGraph messagingGraph,
+                                  String channelName,
+                                  MessagingExecutionConfig executionConfig) {
+            this.messagingGraph = Objects.requireNonNull(messagingGraph);
+            this.channelName = Objects.requireNonNull(channelName);
+            this.executionConfig = Objects.requireNonNull(executionConfig);
+            return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        private Message<T> cast(Message<?> message) {
+            return (Message<T>) message;
+        }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        private MessageBatch<T> castBatch(MessageBatch<?> messages) {
+            return (MessageBatch) messages;
+        }
+
+    }
+
+    static Runnable streamSource(Stream<?> stream, Consumer<Object> consumer) {
+        return new StreamSource(stream, consumer);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private MessageBatch<?> toBatch(MessageBatch<?> messages) {
+        if (messages.size() <= 0 || messages.messages().size() != messages.size()) {
+            throw new IllegalArgumentException("Message batch must contain a consistent non-empty message snapshot");
+        }
+        for (Message<?> message : messages.messages()) {
+            toMessage(Objects.requireNonNull(message));
+        }
+        return (MessageBatch) messages;
+    }
+
+    private static void send(OutgoingConnector output, MessageBatch<?> messages) {
+        output.sendBatch(messages);
+    }
+
+    private static void dispatchMessages(MessageBatch<?> batch, Consumer<Message<?>> output) {
+        for (int i = 0; i < batch.size(); i++) {
+            try {
+                output.accept(batch.get(i));
+            } catch (RuntimeException e) {
+                throw BatchDeliveryExceptionSupport.sequential("Messaging per-message output", batch, i, e);
+            }
+        }
+    }
+
+    private RuntimeException normalizeFailure(MessageBatch<?> batch, int outputIndex, RuntimeException failure) {
+        BatchDeliveryException batchFailure;
+        if (failure instanceof BatchDeliveryException actualFailure
+                && batch.sameDelivery(actualFailure.batch())) {
+            batchFailure = actualFailure;
+        } else {
+            return BatchDeliveryExceptionSupport.indeterminate("Messaging batch output", batch, failure);
+        }
+        if (batchFailure.batch() != batch) {
+            batchFailure = new BatchDeliveryException(batchFailure.getMessage(),
+                                                      batchFailure,
+                                                      batch,
+                                                      batchFailure.outcomes());
+        }
+        boolean earlierOutputCompleted = outputIndex > 0;
+        boolean laterOutputSkipped = outputIndex + 1 < outputs.size();
+        if (!earlierOutputCompleted && !laterOutputSkipped) {
+            return batchFailure;
+        }
+        List<BatchItemOutcome> outcomes = new ArrayList<>(batch.size());
+        for (BatchItemOutcome outcome : batchFailure.outcomes()) {
+            boolean partiallyDelivered = outcome.status() == BatchItemStatus.SUCCEEDED && laterOutputSkipped
+                    || outcome.status() != BatchItemStatus.SUCCEEDED
+                            && outcome.status() != BatchItemStatus.INDETERMINATE
+                            && earlierOutputCompleted;
+            outcomes.add(partiallyDelivered
+                                 ? BatchItemOutcome.indeterminate(outcome.index(), failure)
+                                 : outcome);
+        }
+        return new BatchDeliveryException(batchFailure.getMessage(), batchFailure, batch, outcomes);
+    }
+
+    private static final class StreamSource implements Runnable, Connector, DefaultMessagingGraph.DrainableSource {
+        private final Stream<?> stream;
+        private final Consumer<Object> consumer;
+        private final ReentrantLock lifecycleLock = new ReentrantLock();
+        private final AtomicBoolean runStarted = new AtomicBoolean();
+        private final AtomicBoolean closed = new AtomicBoolean();
+        private final AtomicBoolean drainRequested = new AtomicBoolean();
+        private final AtomicBoolean forceCloseRequested = new AtomicBoolean();
+        private final AtomicBoolean streamClosed = new AtomicBoolean();
+        private final AtomicReference<Thread> owner = new AtomicReference<>();
+        private boolean delivering;
+
+        private StreamSource(Stream<?> stream, Consumer<Object> consumer) {
+            this.stream = stream;
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void run() {
+            if (!runStarted.compareAndSet(false, true)) {
+                throw new IllegalStateException("Messaging stream source can only be run once");
+            }
+            Thread current = Thread.currentThread();
+            if (!claimOwner(current)) {
+                return;
+            }
+            Throwable processingFailure = null;
+            try {
+                Iterator<?> iterator;
+                try {
+                    iterator = stream.sequential().iterator();
+                } catch (Exception e) {
+                    if (!cooperativeInterruption(e)) {
+                        StreamSource.<RuntimeException>rethrow(e);
+                    }
+                    return;
+                }
+                while (!closed.get()) {
+                    boolean hasNext;
+                    try {
+                        hasNext = iterator.hasNext();
+                    } catch (Exception e) {
+                        if (!cooperativeInterruption(e)) {
+                            StreamSource.<RuntimeException>rethrow(e);
+                        }
+                        break;
+                    }
+                    if (!hasNext || closed.get()) {
+                        break;
+                    }
+                    Object next;
+                    try {
+                        next = iterator.next();
+                    } catch (Exception e) {
+                        if (!cooperativeInterruption(e)) {
+                            StreamSource.<RuntimeException>rethrow(e);
+                        }
+                        break;
+                    }
+                    if (!beginDelivery()) {
+                        break;
+                    }
+                    try {
+                        consumer.accept(next);
+                    } finally {
+                        endDelivery();
+                    }
+                }
+            } catch (Throwable e) {
+                processingFailure = e;
+                StreamSource.<RuntimeException>rethrow(e);
+            } finally {
+                closed.set(true);
+                releaseOwner(current);
+                // Graceful drain may have interrupted this thread; lifecycle cleanup closes the stream
+                // on a clean thread.
+                if (!drainRequested.get() && !forceCloseRequested.get()) {
+                    closeStream(processingFailure);
+                }
+            }
+        }
+
+        @Override
+        public void drain() {
+            drainRequested.set(true);
+            stop(false);
+        }
+
+        @Override
+        public void forceClose() {
+            forceCloseRequested.set(true);
+            stop(true);
+        }
+
+        @Override
+        public void close() {
+            stop(true);
+            closeStream();
+        }
+
+        private boolean claimOwner(Thread current) {
+            lifecycleLock.lock();
+            try {
+                if (closed.get()) {
+                    return false;
+                }
+                owner.set(current);
+                return true;
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        private boolean beginDelivery() {
+            lifecycleLock.lock();
+            try {
+                if (closed.get()) {
+                    return false;
+                }
+                delivering = true;
+                return true;
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        private void endDelivery() {
+            lifecycleLock.lock();
+            try {
+                delivering = false;
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        private void releaseOwner(Thread current) {
+            lifecycleLock.lock();
+            try {
+                delivering = false;
+                owner.compareAndSet(current, null);
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        private void stop(boolean interruptDelivery) {
+            Thread current;
+            lifecycleLock.lock();
+            try {
+                closed.set(true);
+                current = interruptDelivery || !delivering ? owner.get() : null;
+            } finally {
+                lifecycleLock.unlock();
+            }
+            if (current != null && current != Thread.currentThread()) {
+                current.interrupt();
+            }
+        }
+
+        private boolean cooperativeInterruption(Exception failure) {
+            if (!drainRequested.get() || forceCloseRequested.get()) {
+                return false;
+            }
+            // The interrupt flag can outlive the blocking operation and does not make an unrelated failure cooperative.
+            Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+            Throwable cause = failure;
+            while (cause != null && visited.add(cause)) {
+                if (cause instanceof InterruptedException) {
+                    return true;
+                }
+                cause = cause.getCause();
+            }
+            return false;
+        }
+
+        private void closeStream() {
+            if (streamClosed.compareAndSet(false, true)) {
+                stream.close();
+            }
+        }
+
+        private void closeStream(Throwable processingFailure) {
+            try {
+                closeStream();
+            } catch (Throwable closeFailure) {
+                if (processingFailure == null) {
+                    StreamSource.<RuntimeException>rethrow(closeFailure);
+                    return;
+                }
+                if (processingFailure != closeFailure) {
+                    processingFailure.addSuppressed(closeFailure);
+                }
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T extends Throwable> void rethrow(Throwable failure) throws T {
+            throw (T) failure;
+        }
+    }
+}

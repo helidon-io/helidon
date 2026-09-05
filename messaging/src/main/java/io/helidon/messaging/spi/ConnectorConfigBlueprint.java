@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.messaging.spi;
+
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
+
+/**
+ * Effective connector configuration assembled for one channel direction.
+ */
+@Api.Preview
+@Prototype.Blueprint
+@Prototype.Configured
+@Prototype.CustomMethods(ConnectorConfigSupport.class)
+interface ConnectorConfigBlueprint {
+    /**
+     * Runtime-supplied connector direction relative to the messaging graph.
+     *
+     * @return direction
+     */
+    @Option.Configured
+    ConnectorDirection direction();
+
+    /**
+     * Runtime-supplied logical channel name.
+     *
+     * @return channel name
+     */
+    @Option.Configured
+    String channelName();
+
+    /**
+     * Selected connector provider type.
+     *
+     * @return connector name
+     */
+    @Option.Configured
+    String connector();
+
+}

@@ -45,6 +45,8 @@ module io.helidon.declarative.codegen {
     exports io.helidon.declarative.codegen.faulttolerance;
     // scheduling
     exports io.helidon.declarative.codegen.scheduling;
+    // messaging
+    exports io.helidon.declarative.codegen.messaging;
     // validation
     exports io.helidon.declarative.codegen.validation;
     // tracing
@@ -69,7 +71,11 @@ module io.helidon.declarative.codegen {
                     io.helidon.declarative.codegen.grpc.server.GrpcServerExtensionProvider,
                     io.helidon.declarative.codegen.websocket.server.WebSocketServerExtensionProvider,
                     io.helidon.declarative.codegen.websocket.client.WebSocketClientExtensionProvider,
-                    io.helidon.declarative.codegen.cors.CorsExtensionProvider;
+                    io.helidon.declarative.codegen.cors.CorsExtensionProvider,
+                    io.helidon.declarative.codegen.messaging.MessagingExtensionProvider;
+
+    provides io.helidon.service.codegen.spi.InjectCodegenObserverProvider
+            with io.helidon.declarative.codegen.messaging.MessagingEmitterObserverProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider,
