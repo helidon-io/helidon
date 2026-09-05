@@ -54,7 +54,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     Optional<String> name();
 
     /**
-     * Number of calls (first try + retries).
+     * Number of calls, including the initial call and retries, which must be at least {@code 1}.
      *
      * @return number of desired calls, must be 1 (means no retries) or higher.
      */
@@ -63,8 +63,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     int calls();
 
     /**
-     * Base delay between try and retry.
-     * Defaults to {@code 200 ms}.
+     * Non-negative base delay between the initial call and retries, which defaults to {@code 200 ms}.
      *
      * @return delay between retries (combines with retry policy)
      */
@@ -73,11 +72,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     Duration delay();
 
     /**
-     * Delay retry policy factor. If unspecified (value of {@code -1}), a factor of {@code 2} is used unless jitter is
-     * configured, in which case the delay remains constant.
-     * <p>
-     * When both this option and {@link #jitter()} are configured, the delay factor is applied first and jitter is
-     * applied to the resulting delay.
+     * Delay multiplier that must be {@code -1} or finite and non-negative; {@code -1} selects {@code 2} unless either
+     * jitter option is configured, and an explicit multiplier is applied before jitter.
      *
      * @return delay factor for delaying retry policy
      */
@@ -86,9 +82,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     double delayFactor();
 
     /**
-     * Random jitter applied to the delay. If unspecified (value of {@code PT-1S}), jitter is not applied.
-     * When both this option and {@link #delayFactor()} are configured, the delay factor is applied first and jitter is
-     * applied to the resulting delay. The final delay is capped by {@link #maxDelay()}, when configured.
+     * Absolute random jitter that must be {@code PT-1S} (disabled) or non-negative; it cannot be combined with
+     * {@code jitter-factor}, is applied after {@code delay-factor}, and is capped by {@code max-delay} when present.
      *
      * @return jitter
      */
@@ -97,12 +92,10 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     Duration jitter();
 
     /**
-     * Random jitter relative to the calculated delay. The factor must be from {@code 0} (inclusive) to {@code 1}
-     * (exclusive). For example, a value of {@code 0.2} applies a random jitter of up to twenty percent in either
-     * direction.
-     * <p>
-     * This option cannot be combined with an explicitly configured {@link #jitter() absolute jitter}. A value of
-     * {@code -1} means relative jitter is not configured.
+     * Relative random jitter that must be {@code -1} (disabled) or from {@code 0} (inclusive) to {@code 1} (exclusive);
+     * it cannot be combined with {@code jitter}, is applied after {@code delay-factor}, and is capped by
+     * {@code max-delay} when present.
+     * A value of {@code 0.2} applies a random jitter of up to twenty percent in either direction.
      *
      * @return relative jitter factor
      */
@@ -113,9 +106,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     }
 
     /**
-     * Maximum delay between invocation attempts, including jitter.
-     * <p>
-     * When not configured, the delay is not capped.
+     * Optional non-negative maximum delay applied after jitter; when absent, the delay is not capped.
      *
      * @return maximum delay, if configured
      */
@@ -125,7 +116,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     }
 
     /**
-     * Overall timeout of all retries combined.
+     * Positive overall timeout used to bound the complete retry sequence.
      *
      * @return overall timeout
      */

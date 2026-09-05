@@ -109,12 +109,16 @@ try {
 }
 ```
 
-Exponential delay can use either an absolute `jitter` duration or a relative
-`jitter-factor`; the two jitter options are mutually exclusive. `max-delay`
-caps the final delay after jitter. A contextual invocation can also supply a
-`Retry.WaitStrategy` to maintain an external resource while waiting or cancel
-another attempt by returning `false`. A strategy returning `true` must complete
-the requested wait and must restore the thread interrupt status if interrupted.
+`calls` must be at least one, `delay` must be non-negative, and
+`overall-timeout` must be positive. Exponential delay can use either a
+non-negative absolute `jitter` duration (`PT-1S` disables it) or a relative
+`jitter-factor` from zero inclusive to one exclusive (`-1` disables it); the
+two jitter options are mutually exclusive. The optional non-negative
+`max-delay` caps the final delay after jitter. A contextual invocation can also
+supply a `Retry.WaitStrategy` to maintain an external resource while waiting
+or cancel another attempt by returning `false`. A strategy returning `true`
+must complete the requested wait and must restore the thread interrupt status
+if interrupted.
 
 ### Timeouts
 
