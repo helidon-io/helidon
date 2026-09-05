@@ -53,7 +53,7 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
             if (loaded) {
                 return value;
             }
-            throw ResilientValue.unavailable(description + " is already being loaded");
+            throw new ResilientValue.UnavailableException(description + " is already being loaded");
         }
 
         try {
@@ -64,11 +64,11 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
             try {
                 loadedValue = circuitBreaker.invoke(this::loadWithRetry);
             } catch (CircuitBreakerOpenException e) {
-                throw ResilientValue.unavailable(description + " is temporarily unavailable", e);
+                throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
             } catch (UnavailableException e) {
                 failed.set(true);
                 LOGGER.log(Level.WARNING, "{0} is unavailable; retries are exhausted: {1}", description, e.getMessage());
-                throw ResilientValue.unavailable(description + " is temporarily unavailable", e);
+                throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
             }
             value = Objects.requireNonNull(loadedValue, "The loader for " + description + " returned null");
             loaded = true;
@@ -116,7 +116,7 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         try {
             return retry.invoke(loader);
         } catch (RetryTimeoutException e) {
-            throw ResilientValue.unavailable(description + " did not become available before the retry timeout", e);
+            throw new ResilientValue.UnavailableException(description + " did not become available before the retry timeout", e);
         }
     }
 }

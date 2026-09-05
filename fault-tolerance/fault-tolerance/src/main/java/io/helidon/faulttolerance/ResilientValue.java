@@ -48,27 +48,6 @@ public interface ResilientValue<T> extends Supplier<T> {
     }
 
     /**
-     * Create an exception indicating that the source may become available later.
-     *
-     * @param message safe description of the failure
-     * @return a new unavailable exception
-     */
-    static UnavailableException unavailable(String message) {
-        return new UnavailableException(message);
-    }
-
-    /**
-     * Create an exception indicating that the source may become available later.
-     *
-     * @param message safe description of the failure
-     * @param cause cause of the failure
-     * @return a new unavailable exception
-     */
-    static UnavailableException unavailable(String message, Throwable cause) {
-        return new UnavailableException(message, cause);
-    }
-
-    /**
      * Whether the value has already been loaded successfully.
      *
      * @return {@code true} if the value is loaded
@@ -79,14 +58,25 @@ public interface ResilientValue<T> extends Supplier<T> {
      * Exception indicating that a source may become available later.
      */
     @Api.Internal
-    final class UnavailableException extends RuntimeException {
+    class UnavailableException extends RuntimeException {
         private static final long serialVersionUID = 1L;
 
-        private UnavailableException(String message) {
+        /**
+         * Create a new unavailable exception.
+         *
+         * @param message safe description of the failure
+         */
+        public UnavailableException(String message) {
             super(Objects.requireNonNull(message));
         }
 
-        private UnavailableException(String message, Throwable cause) {
+        /**
+         * Create a new unavailable exception.
+         *
+         * @param message safe description of the failure
+         * @param cause cause of the failure
+         */
+        public UnavailableException(String message, Throwable cause) {
             super(Objects.requireNonNull(message), Objects.requireNonNull(cause));
         }
     }

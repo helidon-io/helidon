@@ -193,14 +193,14 @@ public class Tenant {
             } catch (ResilientValue.UnavailableException e) {
                 throw e;
             } catch (ResourceException e) {
-                throw ResilientValue.unavailable(description + " could not be read", e);
+                throw new ResilientValue.UnavailableException(description + " could not be read", e);
             } catch (JsonException e) {
                 String detail = hasCause(e, IOException.class)
                         ? " could not be read"
                         : " does not contain valid JSON";
-                throw ResilientValue.unavailable(description + detail, e);
+                throw new ResilientValue.UnavailableException(description + detail, e);
             } catch (JwtException e) {
-                throw ResilientValue.unavailable(description + " does not contain usable verification keys", e);
+                throw new ResilientValue.UnavailableException(description + " does not contain usable verification keys", e);
             }
         }
 
@@ -210,7 +210,7 @@ public class Tenant {
         if (collector.hasFatal()) {
             if (oidcMetadata.reloadable()) {
                 collector.clear();
-                throw ResilientValue.unavailable("OIDC metadata does not contain a usable JWK endpoint");
+                throw new ResilientValue.UnavailableException("OIDC metadata does not contain a usable JWK endpoint");
             }
             collector.clear();
             return JwkKeys.builder().build();
@@ -236,7 +236,7 @@ public class Tenant {
         } catch (ResilientValue.UnavailableException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw ResilientValue.unavailable("OIDC signing JWK is unavailable", e);
+            throw new ResilientValue.UnavailableException("OIDC signing JWK is unavailable", e);
         }
     }
 
@@ -245,7 +245,7 @@ public class Tenant {
             return keys;
         }
         if (mayBecomeAvailable) {
-            throw ResilientValue.unavailable("OIDC signing JWK contains no usable keys");
+            throw new ResilientValue.UnavailableException("OIDC signing JWK contains no usable keys");
         }
         throw new IllegalArgumentException("Configured OIDC signing JWK must contain at least one usable key");
     }
@@ -260,14 +260,14 @@ public class Tenant {
         try (var stream = ResilientResource.create(description, resourceConfig, ioTimeout).stream()) {
             return JsonParser.create(stream).readJsonObject();
         } catch (ResourceException e) {
-            throw ResilientValue.unavailable(description + " could not be read", e);
+            throw new ResilientValue.UnavailableException(description + " could not be read", e);
         } catch (JsonException e) {
             String detail = hasCause(e, IOException.class)
                     ? " could not be read"
                     : " does not contain valid JSON";
-            throw ResilientValue.unavailable(description + detail, e);
+            throw new ResilientValue.UnavailableException(description + detail, e);
         } catch (IOException e) {
-            throw ResilientValue.unavailable(description + " could not be closed", e);
+            throw new ResilientValue.UnavailableException(description + " could not be closed", e);
         }
     }
 

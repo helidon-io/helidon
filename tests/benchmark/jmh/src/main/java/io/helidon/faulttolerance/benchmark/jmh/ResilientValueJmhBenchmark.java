@@ -73,7 +73,7 @@ public class ResilientValueJmhBenchmark {
                 .buildPrototype();
         openValue = ResilientValue.create("jmh-open", () -> {
             unavailableLoads.incrementAndGet();
-            throw ResilientValue.unavailable("Expected benchmark failure");
+            throw new ResilientValue.UnavailableException("Expected benchmark failure");
         }, retryConfig, circuitBreakerConfig);
 
         try {

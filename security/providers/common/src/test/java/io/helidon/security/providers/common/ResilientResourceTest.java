@@ -71,7 +71,7 @@ class ResilientResourceTest {
                                 return ResilientResource.create("stalled URI resource", resourceConfig, ioTimeout)
                                         .bytes();
                             } catch (ResourceException e) {
-                                throw ResilientValue.unavailable("stalled URI resource could not be read", e);
+                                throw new ResilientValue.UnavailableException("stalled URI resource could not be read", e);
                             }
                         },
                         RetryConfig.builder()

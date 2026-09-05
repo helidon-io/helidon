@@ -1116,14 +1116,14 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                                                                                     ioTimeout))
                                                  .build());
             } catch (ResourceException e) {
-                throw ResilientValue.unavailable(description + " could not be read", e);
+                throw new ResilientValue.UnavailableException(description + " could not be read", e);
             } catch (JsonException e) {
                 String detail = hasCause(e, IOException.class)
                         ? " could not be read"
                         : " does not contain valid JSON";
-                throw ResilientValue.unavailable(description + detail, e);
+                throw new ResilientValue.UnavailableException(description + detail, e);
             } catch (JwtException e) {
-                throw ResilientValue.unavailable(description + " does not contain usable verification keys", e);
+                throw new ResilientValue.UnavailableException(description + " does not contain usable verification keys", e);
             }
         }
 

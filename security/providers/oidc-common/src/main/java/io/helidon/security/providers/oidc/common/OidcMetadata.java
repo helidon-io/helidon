@@ -74,7 +74,7 @@ final class OidcMetadata {
                 }
             } catch (JsonException | IllegalArgumentException e) {
                 if (reloadable) {
-                    throw ResilientValue.unavailable("OIDC metadata contains an invalid endpoint", e);
+                    throw new ResilientValue.UnavailableException("OIDC metadata contains an invalid endpoint", e);
                 }
                 throw e;
             }
@@ -104,7 +104,7 @@ final class OidcMetadata {
                     .flatMap(it -> it.stringValue(key));
         } catch (JsonException e) {
             if (reloadable) {
-                throw ResilientValue.unavailable("OIDC metadata contains an invalid " + key + " field", e);
+                throw new ResilientValue.UnavailableException("OIDC metadata contains an invalid " + key + " field", e);
             }
             throw e;
         }
@@ -184,7 +184,7 @@ final class OidcMetadata {
 
                 LOGGER.log(Level.TRACE, () -> "OIDC Metadata loaded from well known URI: " + wellKnown);
             } catch (Exception e) {
-                throw ResilientValue.unavailable("OIDC metadata is unavailable", e);
+                throw new ResilientValue.UnavailableException("OIDC metadata is unavailable", e);
             }
         }
 

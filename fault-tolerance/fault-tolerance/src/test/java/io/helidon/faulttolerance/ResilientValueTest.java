@@ -50,7 +50,7 @@ class ResilientValueTest {
         ResilientValue<String> value = ResilientValue.create("test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() < 3) {
-                                                                     throw ResilientValue.unavailable("not ready");
+                                                                     throw new ResilientValue.UnavailableException("not ready");
                                                                  }
                                                                  return "loaded";
                                                              },
@@ -71,7 +71,7 @@ class ResilientValueTest {
         ResilientValue<String> value = ResilientValue.create("test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() <= 3) {
-                                                                     throw ResilientValue.unavailable("not ready");
+                                                                     throw new ResilientValue.UnavailableException("not ready");
                                                                  }
                                                                  return "loaded";
                                                              },
@@ -102,7 +102,7 @@ class ResilientValueTest {
         ResilientValue<String> value = ResilientValue.create("test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
-                                                                 throw ResilientValue.unavailable("not ready");
+                                                                 throw new ResilientValue.UnavailableException("not ready");
                                                              },
                                                              retry,
                                                              circuitBreakerConfig(executor));
@@ -274,7 +274,7 @@ class ResilientValueTest {
         ResilientValue<String> value = ResilientValue.create("configured test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
-                                                                 throw ResilientValue.unavailable("safe failure");
+                                                                 throw new ResilientValue.UnavailableException("safe failure");
                                                              },
                                                              testRetry,
                                                              testBreaker);
@@ -344,7 +344,7 @@ class ResilientValueTest {
         ResilientValue<String> value = ResilientValue.create("logged test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() == 1) {
-                                                                     throw ResilientValue.unavailable("safe failure detail",
+                                                                     throw new ResilientValue.UnavailableException("safe failure detail",
                                                                                                       new IllegalStateException(
                                                                                                               "raw cause"));
                                                                  }
