@@ -30,8 +30,10 @@ public class SupplierHelper {
     }
 
     /**
-     * Maps a supplier returning a {@code CompletionStage<T>} to a supplier returning {@code T} by waiting on the stage,
-     * restoring the calling thread's interrupt status before propagating an interruption as {@link SupplierException}.
+     * Maps a supplier returning a {@code CompletionStage<T>} to a supplier returning {@code T} by waiting on the stage;
+     * interruption of the calling thread during that wait restores its interrupt status before propagation as
+     * {@link SupplierException}, while an {@link InterruptedException} reported by the stage does not modify the calling
+     * thread's interrupt status.
      *
      * @param supplier the async supplier
      * @param timeout time to wait
