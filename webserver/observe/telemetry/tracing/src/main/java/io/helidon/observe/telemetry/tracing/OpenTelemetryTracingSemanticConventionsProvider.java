@@ -46,7 +46,7 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
     /**
      * Supplies span information conforming to the OpenTelemetry semantic conventions for requests.
      * <p>
-     * See <a href="https://github.com/open-telemetry/semantic-conventions/blob/v1.37.0/docs/http/http-spans.md">the
+     * See <a href="https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/http/http-spans.md">the
      * OpenTelemetry tracing semantic conventions.</a>
      */
     static class SemanticConventions implements TracingSemanticConventions {

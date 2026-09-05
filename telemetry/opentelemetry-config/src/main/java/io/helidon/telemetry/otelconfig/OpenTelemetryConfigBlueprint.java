@@ -31,6 +31,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 @Prototype.Blueprint(decorator = OpenTelemetryConfigSupport.BuildDecorator.class)
 @Prototype.Configured("telemetry")
 @Prototype.CustomMethods(OpenTelemetryConfigSupport.CustomMethods.class)
+@Prototype.IncludeDefaultMethods("resource")
 interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTelemetry> {
 
     /**
@@ -41,6 +42,16 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
     @Option.Configured
     @Option.Required
     String service();
+
+    /**
+     * Resource settings shared by all configured signals.
+     *
+     * @return resource settings
+     */
+    @Option.Configured
+    default Optional<OpenTelemetryResourceConfig> resource() {
+        return Optional.empty();
+    }
 
     /**
      * Whether the OpenTelemetry support is enabled.

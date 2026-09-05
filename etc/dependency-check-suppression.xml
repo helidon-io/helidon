@@ -222,21 +222,21 @@
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: opentelemetry-semconv-1.37.0.jar
+    file name: opentelemetry-semconv-1.43.0.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
     <cve>CVE-2026-29181</cve>
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: opentelemetry-semconv-1.37.0.jar
+    file name: opentelemetry-semconv-1.43.0.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
     <cve>CVE-2026-39883</cve>
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: opentelemetry-semconv-1.37.0.jar
+    file name: opentelemetry-semconv-1.43.0.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
     <cve>CVE-2026-39882</cve>
@@ -280,7 +280,7 @@
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: opentelemetry-semconv-1.37.0.jar
+    file name: opentelemetry-semconv-1.43.0.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
     <cve>CVE-2026-54285</cve>
@@ -298,14 +298,14 @@
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: opentelemetry-semconv-1.37.0.jar
+    file name: opentelemetry-semconv-1.43.0.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
     <cve>CVE-2026-24051</cve>
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: opentelemetry-semconv-1.37.0.jar
+    file name: opentelemetry-semconv-1.43.0.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
     <cve>CVE-2026-41178</cve>
