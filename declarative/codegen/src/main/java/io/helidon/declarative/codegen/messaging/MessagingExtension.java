@@ -878,7 +878,7 @@ class MessagingExtension implements RegistryCodegenExtension {
         }
         if (headerParameterKind(argument.typeName()) == null) {
             throw new CodegenException("@Messaging.HeaderParam parameters must be String, Optional<String>, "
-                                               + "HeaderValue, Optional<HeaderValue>, or List<HeaderValue>; "
+                                               + "MessageHeaderValue, Optional<MessageHeaderValue>, or List<MessageHeaderValue>; "
                                                + "automatic header conversion is not supported",
                                        argument.originatingElementValue());
         }
@@ -1261,13 +1261,13 @@ class MessagingExtension implements RegistryCodegenExtension {
         if (hasSingleTypeArgument(typeName, TypeNames.OPTIONAL, TypeNames.STRING)) {
             return HeaderParameterKind.OPTIONAL_TEXT;
         }
-        if (typeName.equals(MessagingTypes.HEADER_VALUE)) {
+        if (typeName.equals(MessagingTypes.MESSAGE_HEADER_VALUE)) {
             return HeaderParameterKind.REQUIRED_VALUE;
         }
-        if (hasSingleTypeArgument(typeName, TypeNames.OPTIONAL, MessagingTypes.HEADER_VALUE)) {
+        if (hasSingleTypeArgument(typeName, TypeNames.OPTIONAL, MessagingTypes.MESSAGE_HEADER_VALUE)) {
             return HeaderParameterKind.OPTIONAL_VALUE;
         }
-        if (hasSingleTypeArgument(typeName, TypeNames.LIST, MessagingTypes.HEADER_VALUE)) {
+        if (hasSingleTypeArgument(typeName, TypeNames.LIST, MessagingTypes.MESSAGE_HEADER_VALUE)) {
             return HeaderParameterKind.ALL_VALUES;
         }
         return null;

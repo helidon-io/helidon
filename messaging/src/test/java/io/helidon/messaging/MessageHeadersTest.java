@@ -29,11 +29,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class MessageHeadersTest {
     @Test
     void messageHeaderRetainsValueSemantics() {
-        MessageHeader first = MessageHeader.create("trace", HeaderValue.integer(42));
-        MessageHeader equal = MessageHeader.create("trace", HeaderValue.integer(42));
+        MessageHeader first = MessageHeader.create("trace", MessageHeaderValue.integer(42));
+        MessageHeader equal = MessageHeader.create("trace", MessageHeaderValue.integer(42));
 
         assertThat(first.name(), is("trace"));
-        assertThat(first.value(), is(HeaderValue.integer(42)));
+        assertThat(first.value(), is(MessageHeaderValue.integer(42)));
         assertThat(first, is(equal));
         assertThat(first.hashCode(), is(equal.hashCode()));
         assertThat(first.toString(), is("MessageHeader[name=trace, value=IntegerValue[value=42]]"));
@@ -52,9 +52,9 @@ class MessageHeadersTest {
 
     @Test
     void preservesGlobalOrderDuplicatesAndExactNames() {
-        HeaderValue.TextValue first = HeaderValue.text("first");
-        HeaderValue.BooleanValue middle = HeaderValue.booleanValue(true);
-        HeaderValue.BinaryValue last = HeaderValue.binary(new byte[] {1, 2});
+        MessageHeaderValue.TextValue first = MessageHeaderValue.text("first");
+        MessageHeaderValue.BooleanValue middle = MessageHeaderValue.booleanValue(true);
+        MessageHeaderValue.BinaryValue last = MessageHeaderValue.binary(new byte[] {1, 2});
         MessageHeaders headers = MessageHeaders.create(
                 MessageHeader.create("a", first),
                 MessageHeader.create("b", middle),
@@ -76,7 +76,7 @@ class MessageHeadersTest {
         assertThat(headers.first("a").orElseThrow(), is(first));
         assertThat(headers.last("a").orElseThrow(), is(last));
         assertThat(headers.all("a"), is(List.of(first, last)));
-        assertThat(headers.all("A"), is(List.of(HeaderValue.text("case-sensitive"))));
+        assertThat(headers.all("A"), is(List.of(MessageHeaderValue.text("case-sensitive"))));
         assertThat(headers.first("missing").isEmpty(), is(true));
         assertThat(headers.last("missing").isEmpty(), is(true));
     }
@@ -94,15 +94,15 @@ class MessageHeadersTest {
         assertThrows(UnsupportedOperationException.class,
                      () -> headers.entries().add(MessageHeader.create("x", "value")));
         assertThrows(UnsupportedOperationException.class,
-                     () -> headers.all("a").add(HeaderValue.text("value")));
+                     () -> headers.all("a").add(MessageHeaderValue.text("value")));
 
-        Map<String, List<HeaderValue>> grouped = headers.valuesByName();
+        Map<String, List<MessageHeaderValue>> grouped = headers.valuesByName();
         assertThat(new ArrayList<>(grouped.keySet()), is(List.of("a", "b")));
-        assertThat(grouped.get("a"), is(List.of(HeaderValue.text("first"), HeaderValue.text("last"))));
+        assertThat(grouped.get("a"), is(List.of(MessageHeaderValue.text("first"), MessageHeaderValue.text("last"))));
         assertThrows(UnsupportedOperationException.class,
-                     () -> grouped.put("x", List.of(HeaderValue.text("value"))));
+                     () -> grouped.put("x", List.of(MessageHeaderValue.text("value"))));
         assertThrows(UnsupportedOperationException.class,
-                     () -> grouped.get("a").add(HeaderValue.text("value")));
+                     () -> grouped.get("a").add(MessageHeaderValue.text("value")));
     }
 
     @Test
@@ -125,15 +125,15 @@ class MessageHeadersTest {
                 .add("a", "first")
                 .add("b", "middle")
                 .add("a", "last")
-                .set("a", HeaderValue.integer(42));
+                .set("a", MessageHeaderValue.integer(42));
 
         assertThat(builder.build().entries(),
                    is(List.of(MessageHeader.create("b", "middle"),
-                              MessageHeader.create("a", HeaderValue.integer(42)))));
+                              MessageHeader.create("a", MessageHeaderValue.integer(42)))));
 
         builder.remove("b");
         assertThat(builder.build().entries(),
-                   is(List.of(MessageHeader.create("a", HeaderValue.integer(42)))));
+                   is(List.of(MessageHeader.create("a", MessageHeaderValue.integer(42)))));
         assertThat(builder.clear().build(), is(MessageHeaders.empty()));
     }
 
@@ -144,7 +144,7 @@ class MessageHeadersTest {
         assertThrows(NullPointerException.class, () -> builder.set("a", (String) null));
         assertThat(builder.build().entries(), is(List.of(MessageHeader.create("a", "original"))));
 
-        assertThrows(NullPointerException.class, () -> builder.set("a", (HeaderValue) null));
+        assertThrows(NullPointerException.class, () -> builder.set("a", (MessageHeaderValue) null));
         assertThat(builder.build().entries(), is(List.of(MessageHeader.create("a", "original"))));
     }
 
@@ -152,7 +152,7 @@ class MessageHeadersTest {
     void validatesArguments() {
         assertThrows(NullPointerException.class, () -> MessageHeader.create(null, "value"));
         assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (String) null));
-        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (HeaderValue) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (MessageHeaderValue) null));
         assertThrows(NullPointerException.class, () -> MessageHeaders.create((List<MessageHeader>) null));
         assertThrows(NullPointerException.class,
                      () -> MessageHeaders.create(MessageHeader.create("a", "b"), null));

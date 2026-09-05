@@ -63,7 +63,7 @@ public sealed interface MessageMetadata permits MessageMetadataImpl {
      *
      * @return stable, immutable, non-null metadata values
      */
-    Map<String, HeaderValue> values();
+    Map<String, MessageHeaderValue> values();
 
     /**
      * Number of metadata values.
@@ -100,7 +100,7 @@ public sealed interface MessageMetadata permits MessageMetadataImpl {
      * @param name exact metadata name
      * @return metadata value, or empty when absent
      */
-    default Optional<HeaderValue> value(String name) {
+    default Optional<MessageHeaderValue> value(String name) {
         String actualName = Objects.requireNonNull(name);
         return Optional.ofNullable(values().get(actualName));
     }
@@ -108,7 +108,7 @@ public sealed interface MessageMetadata permits MessageMetadataImpl {
     /**
      * Text value with an exact metadata name.
      * <p>
-     * This method throws when the value exists but is not a {@link HeaderValue.TextValue}; it never stringifies typed
+     * This method throws when the value exists but is not a {@link MessageHeaderValue.TextValue}; it never stringifies typed
      * values.
      *
      * @param name exact metadata name
@@ -116,11 +116,11 @@ public sealed interface MessageMetadata permits MessageMetadataImpl {
      * @throws IllegalStateException if the value is present but is not text
      */
     default Optional<String> text(String name) {
-        Optional<HeaderValue> value = value(name);
+        Optional<MessageHeaderValue> value = value(name);
         if (value.isEmpty()) {
             return Optional.empty();
         }
-        if (value.get() instanceof HeaderValue.TextValue textValue) {
+        if (value.get() instanceof MessageHeaderValue.TextValue textValue) {
             return Optional.of(textValue.value());
         }
         throw new IllegalStateException("Local message metadata '" + name + "' is not a text value");
@@ -130,7 +130,7 @@ public sealed interface MessageMetadata permits MessageMetadataImpl {
      * Mutable local-metadata builder.
      */
     final class Builder {
-        private final Map<String, HeaderValue> values = new LinkedHashMap<>();
+        private final Map<String, MessageHeaderValue> values = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -142,9 +142,9 @@ public sealed interface MessageMetadata permits MessageMetadataImpl {
          * @param value metadata value
          * @return updated builder
          */
-        public Builder set(String name, HeaderValue value) {
+        public Builder set(String name, MessageHeaderValue value) {
             String actualName = Objects.requireNonNull(name);
-            HeaderValue actualValue = Objects.requireNonNull(value);
+            MessageHeaderValue actualValue = Objects.requireNonNull(value);
             values.put(actualName, actualValue);
             return this;
         }
@@ -158,7 +158,7 @@ public sealed interface MessageMetadata permits MessageMetadataImpl {
          */
         public Builder set(String name, String value) {
             String actualName = Objects.requireNonNull(name);
-            HeaderValue actualValue = HeaderValue.text(value);
+            MessageHeaderValue actualValue = MessageHeaderValue.text(value);
             values.put(actualName, actualValue);
             return this;
         }

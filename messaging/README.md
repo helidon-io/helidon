@@ -136,13 +136,13 @@ exact and case-sensitive:
 
 | Parameter type | Selected value | When absent |
 | --- | --- | --- |
-| `String` | Last value, which must be `HeaderValue.TextValue` | Delivery fails |
+| `String` | Last value, which must be `MessageHeaderValue.TextValue` | Delivery fails |
 | `Optional<String>` | Last value, which must be text when present | `Optional.empty()` |
-| `HeaderValue` | Last value of any kind | Delivery fails |
-| `Optional<HeaderValue>` | Last value of any kind | `Optional.empty()` |
-| `List<HeaderValue>` | Immutable list of all matching values in message-entry order | Empty list |
+| `MessageHeaderValue` | Last value of any kind | Delivery fails |
+| `Optional<MessageHeaderValue>` | Last value of any kind | `Optional.empty()` |
+| `List<MessageHeaderValue>` | Immutable list of all matching values in message-entry order | Empty list |
 
-An explicit `HeaderValue.NullValue` is present data, including as `Optional.of(HeaderValue.nullValue())`. Header values
+An explicit `MessageHeaderValue.NullValue` is present data, including as `Optional.of(MessageHeaderValue.nullValue())`. Header values
 are never converted automatically. A handler can declare at most one header parameter for each exact name:
 
 ```java
@@ -150,9 +150,9 @@ are never converted automatically. A handler can declare at most one header para
 void receive(@Messaging.Entity Order order,
              @Messaging.HeaderParam("tenant") String tenant,
              @Messaging.HeaderParam("trace-id") Optional<String> traceId,
-             @Messaging.HeaderParam("attempt") HeaderValue attempt,
-             @Messaging.HeaderParam("routing") Optional<HeaderValue> routing,
-             @Messaging.HeaderParam("tag") List<HeaderValue> tags) {
+             @Messaging.HeaderParam("attempt") MessageHeaderValue attempt,
+             @Messaging.HeaderParam("routing") Optional<MessageHeaderValue> routing,
+             @Messaging.HeaderParam("tag") List<MessageHeaderValue> tags) {
     // Process one order and its selected headers.
 }
 ```
@@ -188,7 +188,7 @@ Message<Order> message = Message.builder(order)
         .header("tenant", tenant)
         .addHeader("tag", "first")
         .addHeader("tag", "second")
-        .header("attempt", HeaderValue.integer(3))
+        .header("attempt", MessageHeaderValue.integer(3))
         .build();
 ```
 
@@ -196,17 +196,17 @@ Use `Message.create(order)` when no headers are needed. `header` replaces all va
 case-sensitive name, while `addHeader` appends a duplicate-preserving entry. `MessageHeaders.entries()` is the
 authoritative globally ordered representation. Explicit `first`, `last`, and `all` lookups avoid imposing one
 transport's duplicate semantics on another; `valuesByName()` is only a derived grouped view and loses cross-name
-ordering. The closed `HeaderValue` model supports null, text, immutable binary, boolean, integer, decimal,
+ordering. The closed `MessageHeaderValue` model supports null, text, immutable binary, boolean, integer, decimal,
 32/64-bit floating point, timestamp, UUID, and opaque connector-encoded values. `Message.header(name)` remains a
 last-valued text convenience and never stringifies a typed value.
 
 `localMetadata()` is a separate, immutable, exact-name map for values that follow the message envelope only inside the
-current process. It uses the same closed `HeaderValue` value model, but it is single-valued and is never exposed through
+current process. It uses the same closed `MessageHeaderValue` value model, but it is single-valued and is never exposed through
 `@Messaging.HeaderParam` or generically mapped by an outgoing connector:
 
 ```java
 Message<Order> local = Message.builder(order)
-        .localMetadata("application.processing.started", HeaderValue.timestamp(Instant.now()))
+        .localMetadata("application.processing.started", MessageHeaderValue.timestamp(Instant.now()))
         .build();
 ```
 
@@ -1057,7 +1057,7 @@ concurrently with an active send.
   retained after mapping fails, preserve native metadata in an immutable connector-specific envelope whose `entity()`
   throws `MessagingException`, and pass it only to `startFailed`.
 - Use a connector-specific immutable `Message<T>` subtype when applications need native keys, offsets, destinations,
-  protocol-defined properties, or other metadata. `HeaderValue.NativeValue` is an opaque encoded escape hatch for a
+  protocol-defined properties, or other metadata. `MessageHeaderValue.NativeValue` is an opaque encoded escape hatch for a
   non-portable application header, not a replacement for connector metadata. Document which locally emitted messages
   are accepted by handlers requiring the subtype.
 - Outgoing mapping must accept ordinary core `Message` instances; treat a connector-specific subtype as an optional

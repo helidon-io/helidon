@@ -33,7 +33,7 @@ import io.helidon.messaging.Emitter;
 import io.helidon.messaging.EmitterRegistration;
 import io.helidon.messaging.FailureDisposition;
 import io.helidon.messaging.FailurePolicy;
-import io.helidon.messaging.HeaderValue;
+import io.helidon.messaging.MessageHeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.Messaging;
@@ -80,7 +80,7 @@ class DeclarativeCodegenMessagingTypesTest {
         checkField(toCheck, checked, fields, "FAILURE_DISPOSITION", FailureDisposition.class);
         checkField(toCheck, checked, fields, "FAILURE_POLICY", FailurePolicy.class);
         checkField(toCheck, checked, fields, "HEADER_PARAM", Messaging.HeaderParam.class);
-        checkField(toCheck, checked, fields, "HEADER_VALUE", HeaderValue.class);
+        checkField(toCheck, checked, fields, "MESSAGE_HEADER_VALUE", MessageHeaderValue.class);
         checkField(toCheck, checked, fields, "MESSAGE", Message.class);
         checkField(toCheck, checked, fields, "MESSAGE_BATCH", MessageBatch.class);
         checkField(toCheck,

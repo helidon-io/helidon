@@ -35,17 +35,17 @@ import io.helidon.common.Api;
  * header or expose the value through a connector-specific message subtype.
  */
 @Api.Preview
-public sealed interface HeaderValue permits HeaderValue.NullValue,
-                                            HeaderValue.TextValue,
-                                            HeaderValue.BinaryValue,
-                                            HeaderValue.BooleanValue,
-                                            HeaderValue.IntegerValue,
-                                            HeaderValue.DecimalValue,
-                                            HeaderValue.Float32Value,
-                                            HeaderValue.Float64Value,
-                                            HeaderValue.TimestampValue,
-                                            HeaderValue.UuidValue,
-                                            HeaderValue.NativeValue {
+public sealed interface MessageHeaderValue permits MessageHeaderValue.NullValue,
+                                            MessageHeaderValue.TextValue,
+                                            MessageHeaderValue.BinaryValue,
+                                            MessageHeaderValue.BooleanValue,
+                                            MessageHeaderValue.IntegerValue,
+                                            MessageHeaderValue.DecimalValue,
+                                            MessageHeaderValue.Float32Value,
+                                            MessageHeaderValue.Float64Value,
+                                            MessageHeaderValue.TimestampValue,
+                                            MessageHeaderValue.UuidValue,
+                                            MessageHeaderValue.NativeValue {
     /**
      * Create an explicit null value.
      *
@@ -173,7 +173,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * Explicit null messaging value.
      */
-    final class NullValue implements HeaderValue {
+    final class NullValue implements MessageHeaderValue {
         private static final NullValue INSTANCE = new NullValue();
 
         private NullValue() {
@@ -188,7 +188,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * Text messaging value.
      */
-    final class TextValue implements HeaderValue {
+    final class TextValue implements MessageHeaderValue {
         private final String value;
 
         private TextValue(String value) {
@@ -223,7 +223,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * Boolean messaging value.
      */
-    final class BooleanValue implements HeaderValue {
+    final class BooleanValue implements MessageHeaderValue {
         private final boolean value;
 
         private BooleanValue(boolean value) {
@@ -261,7 +261,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
      * The portable representation intentionally does not retain a transport's signedness or encoded integer width.
      * A connector requiring exact wire-type identity can use {@link NativeValue}.
      */
-    final class IntegerValue implements HeaderValue {
+    final class IntegerValue implements MessageHeaderValue {
         private final BigInteger value;
 
         private IntegerValue(BigInteger value) {
@@ -296,7 +296,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * Arbitrary-precision decimal messaging value.
      */
-    final class DecimalValue implements HeaderValue {
+    final class DecimalValue implements MessageHeaderValue {
         private final BigDecimal value;
 
         private DecimalValue(BigDecimal value) {
@@ -331,7 +331,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * 32-bit IEEE 754 floating-point messaging value.
      */
-    final class Float32Value implements HeaderValue {
+    final class Float32Value implements MessageHeaderValue {
         private final float value;
 
         private Float32Value(float value) {
@@ -366,7 +366,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * 64-bit IEEE 754 floating-point messaging value.
      */
-    final class Float64Value implements HeaderValue {
+    final class Float64Value implements MessageHeaderValue {
         private final double value;
 
         private Float64Value(double value) {
@@ -401,7 +401,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * Timestamp messaging value.
      */
-    final class TimestampValue implements HeaderValue {
+    final class TimestampValue implements MessageHeaderValue {
         private final Instant value;
 
         private TimestampValue(Instant value) {
@@ -436,7 +436,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * UUID messaging value.
      */
-    final class UuidValue implements HeaderValue {
+    final class UuidValue implements MessageHeaderValue {
         private final UUID value;
 
         private UuidValue(UUID value) {
@@ -471,7 +471,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * Immutable binary messaging value.
      */
-    final class BinaryValue implements HeaderValue {
+    final class BinaryValue implements MessageHeaderValue {
         private final byte[] value;
 
         private BinaryValue(byte[] value) {
@@ -515,7 +515,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * Immutable transport-specific encoded messaging value.
      */
-    final class NativeValue implements HeaderValue {
+    final class NativeValue implements MessageHeaderValue {
         private final String typeId;
         private final byte[] value;
 

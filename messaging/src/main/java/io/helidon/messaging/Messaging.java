@@ -116,15 +116,15 @@ public final class Messaging {
      * <p>
      * Header names are exact and case-sensitive. Supported parameter types are:
      * <ul>
-     *     <li>{@code String}: required last value, which must be a {@link HeaderValue.TextValue}</li>
+     *     <li>{@code String}: required last value, which must be a {@link MessageHeaderValue.TextValue}</li>
      *     <li>{@code Optional<String>}: optional last value, which must be a {@code TextValue} when present</li>
-     *     <li>{@link HeaderValue}: required last value of any kind</li>
-     *     <li>{@code Optional<HeaderValue>}: optional last value of any kind</li>
-     *     <li>{@code List<HeaderValue>}: immutable list of all matching values in message-entry order, empty when
+     *     <li>{@link MessageHeaderValue}: required last value of any kind</li>
+     *     <li>{@code Optional<MessageHeaderValue>}: optional last value of any kind</li>
+     *     <li>{@code List<MessageHeaderValue>}: immutable list of all matching values in message-entry order, empty when
      *     absent</li>
      * </ul>
      * A missing required value or a non-text value selected for a text parameter fails delivery. An explicit
-     * {@link HeaderValue.NullValue} is a present header value, including in {@code Optional<HeaderValue>}. No automatic
+     * {@link MessageHeaderValue.NullValue} is a present header value, including in {@code Optional<MessageHeaderValue>}. No automatic
      * header-value conversion is performed. Local metadata is not visible through this annotation. A handler may
      * declare at most one header parameter for each exact name.
      */

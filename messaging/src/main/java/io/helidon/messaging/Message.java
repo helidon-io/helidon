@@ -104,7 +104,7 @@ public interface Message<T> {
      * @param name header name
      * @return header value, or empty when the exact name is absent
      */
-    default Optional<HeaderValue> headerValue(String name) {
+    default Optional<MessageHeaderValue> headerValue(String name) {
         Objects.requireNonNull(name, "name");
         return headers().last(name);
     }
@@ -113,7 +113,7 @@ public interface Message<T> {
      * Last portable text header value with an exact name.
      * <p>
      * This convenience method preserves the original text-header API. It throws when the last value exists but is not
-     * a {@link HeaderValue.TextValue}; it never stringifies typed values or skips past a later non-text value.
+     * a {@link MessageHeaderValue.TextValue}; it never stringifies typed values or skips past a later non-text value.
      *
      * @param name header name
      * @return header value, or empty only when the exact name is absent
@@ -121,11 +121,11 @@ public interface Message<T> {
      */
     default Optional<String> header(String name) {
         Objects.requireNonNull(name, "name");
-        Optional<HeaderValue> value = headerValue(name);
+        Optional<MessageHeaderValue> value = headerValue(name);
         if (value.isEmpty()) {
             return Optional.empty();
         }
-        if (value.get() instanceof HeaderValue.TextValue textValue) {
+        if (value.get() instanceof MessageHeaderValue.TextValue textValue) {
             return Optional.of(textValue.value());
         }
         throw new IllegalStateException("Messaging header '" + name + "' is not a text value");
@@ -166,7 +166,7 @@ public interface Message<T> {
          * @param value header value
          * @return updated builder
          */
-        public Builder<T> header(String name, HeaderValue value) {
+        public Builder<T> header(String name, MessageHeaderValue value) {
             Objects.requireNonNull(name, "name");
             Objects.requireNonNull(value, "value");
             headers.set(name, value);
@@ -194,7 +194,7 @@ public interface Message<T> {
          * @param value header value
          * @return updated builder
          */
-        public Builder<T> addHeader(String name, HeaderValue value) {
+        public Builder<T> addHeader(String name, MessageHeaderValue value) {
             Objects.requireNonNull(name, "name");
             Objects.requireNonNull(value, "value");
             headers.add(name, value);
@@ -246,7 +246,7 @@ public interface Message<T> {
          * @param value metadata value
          * @return updated builder
          */
-        public Builder<T> localMetadata(String name, HeaderValue value) {
+        public Builder<T> localMetadata(String name, MessageHeaderValue value) {
             Objects.requireNonNull(name, "name");
             Objects.requireNonNull(value, "value");
             localMetadata.set(name, value);

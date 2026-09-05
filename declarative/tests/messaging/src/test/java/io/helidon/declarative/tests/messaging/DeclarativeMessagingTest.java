@@ -39,7 +39,7 @@ import io.helidon.messaging.BatchDeliveryException;
 import io.helidon.messaging.BatchItemStatus;
 import io.helidon.messaging.DeadLetterMessage;
 import io.helidon.messaging.EmitterRegistration;
-import io.helidon.messaging.HeaderValue;
+import io.helidon.messaging.MessageHeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeader;
@@ -692,7 +692,7 @@ class DeclarativeMessagingTest {
                              () -> runtime.emit(ChannelMessagingTypes.REQUIRED_HEADER_CHANNEL,
                                                 Message.builder("typed header")
                                                         .addHeader("required", "text")
-                                                        .addHeader("required", HeaderValue.integer(42))
+                                                        .addHeader("required", MessageHeaderValue.integer(42))
                                                         .build()));
 
         assertSingleIndeterminateOutcome(wrongType);
@@ -732,8 +732,8 @@ class DeclarativeMessagingTest {
                 assertThrows(BatchDeliveryException.class,
                              () -> runtime.emit(ChannelMessagingTypes.TYPED_HEADER_CHANNEL,
                                                 Message.builder("missing required")
-                                                        .header("optional", HeaderValue.text("present"))
-                                                        .addHeader("repeated", HeaderValue.integer(1))
+                                                        .header("optional", MessageHeaderValue.text("present"))
+                                                        .addHeader("repeated", MessageHeaderValue.integer(1))
                                                         .build()));
 
         assertSingleIndeterminateOutcome(missingRequired);
@@ -741,48 +741,48 @@ class DeclarativeMessagingTest {
                    containsString("Missing required messaging header required"));
         assertThat(consumer.deliveries(), empty());
 
-        List<HeaderValue> repeated = List.of(
-                HeaderValue.nullValue(),
-                HeaderValue.text("text"),
-                HeaderValue.binary(new byte[] {1, 2}),
-                HeaderValue.booleanValue(true),
-                HeaderValue.integer(42),
-                HeaderValue.decimal(new BigDecimal("12.30")),
-                HeaderValue.floatingPoint(1.5F),
-                HeaderValue.floatingPoint(2.5D),
-                HeaderValue.timestamp(Instant.parse("2026-08-26T10:15:30Z")),
-                HeaderValue.uuid(UUID.fromString("01234567-89ab-cdef-0123-456789abcdef")),
-                HeaderValue.nativeValue("test:encoded", new byte[] {3, 4}));
+        List<MessageHeaderValue> repeated = List.of(
+                MessageHeaderValue.nullValue(),
+                MessageHeaderValue.text("text"),
+                MessageHeaderValue.binary(new byte[] {1, 2}),
+                MessageHeaderValue.booleanValue(true),
+                MessageHeaderValue.integer(42),
+                MessageHeaderValue.decimal(new BigDecimal("12.30")),
+                MessageHeaderValue.floatingPoint(1.5F),
+                MessageHeaderValue.floatingPoint(2.5D),
+                MessageHeaderValue.timestamp(Instant.parse("2026-08-26T10:15:30Z")),
+                MessageHeaderValue.uuid(UUID.fromString("01234567-89ab-cdef-0123-456789abcdef")),
+                MessageHeaderValue.nativeValue("test:encoded", new byte[] {3, 4}));
 
         Message.Builder<String> message = Message.builder("typed values")
-                .addHeader("required", HeaderValue.text("shadowed"))
-                .addHeader("optional", HeaderValue.booleanValue(false))
-                .addHeader("required", HeaderValue.integer(99))
-                .addHeader("optional", HeaderValue.nullValue());
+                .addHeader("required", MessageHeaderValue.text("shadowed"))
+                .addHeader("optional", MessageHeaderValue.booleanValue(false))
+                .addHeader("required", MessageHeaderValue.integer(99))
+                .addHeader("optional", MessageHeaderValue.nullValue());
         for (int i = 0; i < repeated.size(); i++) {
             message.addHeader("repeated", repeated.get(i));
             if (i == 4) {
-                message.addHeader("interleaved", HeaderValue.text("ignored"));
+                message.addHeader("interleaved", MessageHeaderValue.text("ignored"));
             }
         }
         runtime.emit(ChannelMessagingTypes.TYPED_HEADER_CHANNEL, message.build());
 
         runtime.emit(ChannelMessagingTypes.TYPED_HEADER_CHANNEL,
                      Message.builder("explicit null")
-                             .header("required", HeaderValue.nullValue())
+                             .header("required", MessageHeaderValue.nullValue())
                              .build());
 
         assertThat(consumer.deliveries(),
                    is(List.of(new TypedHeaderDelivery("typed values",
-                                                      HeaderValue.integer(99),
-                                                      Optional.of(HeaderValue.nullValue()),
+                                                      MessageHeaderValue.integer(99),
+                                                      Optional.of(MessageHeaderValue.nullValue()),
                                                       repeated),
                               new TypedHeaderDelivery("explicit null",
-                                                      HeaderValue.nullValue(),
+                                                      MessageHeaderValue.nullValue(),
                                                       Optional.empty(),
                                                       List.of()))));
         assertThrows(UnsupportedOperationException.class,
-                     () -> consumer.deliveries().getFirst().repeated().add(HeaderValue.text("mutable")));
+                     () -> consumer.deliveries().getFirst().repeated().add(MessageHeaderValue.text("mutable")));
     }
 
     @Test

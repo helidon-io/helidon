@@ -231,7 +231,7 @@ class FailurePolicyTest {
         Message<String> original = Message.builder("orders")
                 .addHeader("trace-id", "trace-1")
                 .addHeader(DeadLetterMessage.SOURCE_CHANNEL_HEADER, "spoofed-first")
-                .addHeader("binary", HeaderValue.binary(new byte[] {1, 2}))
+                .addHeader("binary", MessageHeaderValue.binary(new byte[] {1, 2}))
                 .addHeader("trace-id", "trace-2")
                 .addHeader(DeadLetterMessage.SOURCE_CHANNEL_HEADER, "spoofed-last")
                 .addHeader(DeadLetterMessage.ATTEMPTS_HEADER, "99")
@@ -260,7 +260,7 @@ class FailurePolicyTest {
                    is("spoofed-message"));
         assertThat(deadLetter.headers().entries(),
                    is(List.of(MessageHeader.create("trace-id", "trace-1"),
-                              MessageHeader.create("binary", HeaderValue.binary(new byte[] {1, 2})),
+                              MessageHeader.create("binary", MessageHeaderValue.binary(new byte[] {1, 2})),
                               MessageHeader.create("trace-id", "trace-2"),
                               MessageHeader.create(DeadLetterMessage.SOURCE_CHANNEL_HEADER, "orders-in"),
                               MessageHeader.create(DeadLetterMessage.ATTEMPTS_HEADER, "3"))));
@@ -302,7 +302,7 @@ class FailurePolicyTest {
 
         MessageMetadata wrongKindMetadata = MessageMetadata.builder()
                 .set(DeadLetterMessage.FAILURE_TYPE_METADATA, "failure.Type")
-                .set(DeadLetterMessage.FAILURE_MESSAGE_METADATA, HeaderValue.binary(new byte[] {1}))
+                .set(DeadLetterMessage.FAILURE_MESSAGE_METADATA, MessageHeaderValue.binary(new byte[] {1}))
                 .build();
         DeadLetterMessage<String> wrongKind = new MetadataDeadLetterMessage(wrongKindMetadata);
         assertThat(wrongKind.failureType(), is("failure.Type"));

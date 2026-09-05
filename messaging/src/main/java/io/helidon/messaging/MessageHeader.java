@@ -29,9 +29,9 @@ import io.helidon.common.Api;
 @Api.Preview
 public final class MessageHeader {
     private final String name;
-    private final HeaderValue value;
+    private final MessageHeaderValue value;
 
-    private MessageHeader(String name, HeaderValue value) {
+    private MessageHeader(String name, MessageHeaderValue value) {
         this.name = Objects.requireNonNull(name);
         this.value = Objects.requireNonNull(value);
     }
@@ -43,7 +43,7 @@ public final class MessageHeader {
      * @param value header value
      * @return header entry
      */
-    public static MessageHeader create(String name, HeaderValue value) {
+    public static MessageHeader create(String name, MessageHeaderValue value) {
         return new MessageHeader(name, value);
     }
 
@@ -55,7 +55,7 @@ public final class MessageHeader {
      * @return header entry
      */
     public static MessageHeader create(String name, String value) {
-        return new MessageHeader(name, HeaderValue.text(value));
+        return new MessageHeader(name, MessageHeaderValue.text(value));
     }
 
     /**
@@ -72,7 +72,7 @@ public final class MessageHeader {
      *
      * @return header value
      */
-    public HeaderValue value() {
+    public MessageHeaderValue value() {
         return value;
     }
 

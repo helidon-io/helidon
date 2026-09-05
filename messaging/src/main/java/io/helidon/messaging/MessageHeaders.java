@@ -124,7 +124,7 @@ public sealed interface MessageHeaders extends Iterable<MessageHeader> permits M
      * @param name exact header name
      * @return first value
      */
-    default Optional<HeaderValue> first(String name) {
+    default Optional<MessageHeaderValue> first(String name) {
         String actualName = Objects.requireNonNull(name);
         for (MessageHeader entry : entries()) {
             if (entry.name().equals(actualName)) {
@@ -140,7 +140,7 @@ public sealed interface MessageHeaders extends Iterable<MessageHeader> permits M
      * @param name exact header name
      * @return last value
      */
-    default Optional<HeaderValue> last(String name) {
+    default Optional<MessageHeaderValue> last(String name) {
         String actualName = Objects.requireNonNull(name);
         List<MessageHeader> entries = entries();
         for (int i = entries.size() - 1; i >= 0; i--) {
@@ -158,9 +158,9 @@ public sealed interface MessageHeaders extends Iterable<MessageHeader> permits M
      * @param name exact header name
      * @return immutable values
      */
-    default List<HeaderValue> all(String name) {
+    default List<MessageHeaderValue> all(String name) {
         String actualName = Objects.requireNonNull(name);
-        ArrayList<HeaderValue> values = new ArrayList<>();
+        ArrayList<MessageHeaderValue> values = new ArrayList<>();
         for (MessageHeader entry : entries()) {
             if (entry.name().equals(actualName)) {
                 values.add(entry.value());
@@ -177,8 +177,8 @@ public sealed interface MessageHeaders extends Iterable<MessageHeader> permits M
      *
      * @return immutable grouped values
      */
-    default Map<String, List<HeaderValue>> valuesByName() {
-        LinkedHashMap<String, List<HeaderValue>> values = new LinkedHashMap<>();
+    default Map<String, List<MessageHeaderValue>> valuesByName() {
+        LinkedHashMap<String, List<MessageHeaderValue>> values = new LinkedHashMap<>();
         for (MessageHeader entry : entries()) {
             values.computeIfAbsent(entry.name(), ignored -> new ArrayList<>()).add(entry.value());
         }
@@ -218,7 +218,7 @@ public sealed interface MessageHeaders extends Iterable<MessageHeader> permits M
          * @param value value
          * @return updated builder
          */
-        public Builder add(String name, HeaderValue value) {
+        public Builder add(String name, MessageHeaderValue value) {
             return add(MessageHeader.create(name, value));
         }
 
@@ -251,7 +251,7 @@ public sealed interface MessageHeaders extends Iterable<MessageHeader> permits M
          * @param value value
          * @return updated builder
          */
-        public Builder set(String name, HeaderValue value) {
+        public Builder set(String name, MessageHeaderValue value) {
             MessageHeader entry = MessageHeader.create(name, value);
             remove(entry.name());
             return add(entry);

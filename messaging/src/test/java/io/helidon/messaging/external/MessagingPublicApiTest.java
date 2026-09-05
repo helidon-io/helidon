@@ -29,7 +29,7 @@ import io.helidon.messaging.BatchItemOutcome;
 import io.helidon.messaging.DeadLetterConfig;
 import io.helidon.messaging.FailureDisposition;
 import io.helidon.messaging.FailurePolicy;
-import io.helidon.messaging.HeaderValue;
+import io.helidon.messaging.MessageHeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeader;
@@ -58,20 +58,20 @@ class MessagingPublicApiTest {
 
     @Test
     void headerModelsAreClosedFinalFactoryOnlyTypes() {
-        List<Class<?>> valueTypes = List.of(HeaderValue.NullValue.class,
-                                            HeaderValue.TextValue.class,
-                                            HeaderValue.BinaryValue.class,
-                                            HeaderValue.BooleanValue.class,
-                                            HeaderValue.IntegerValue.class,
-                                            HeaderValue.DecimalValue.class,
-                                            HeaderValue.Float32Value.class,
-                                            HeaderValue.Float64Value.class,
-                                            HeaderValue.TimestampValue.class,
-                                            HeaderValue.UuidValue.class,
-                                            HeaderValue.NativeValue.class);
-        Set<Class<?>> permittedTypes = Set.copyOf(Arrays.asList(HeaderValue.class.getPermittedSubclasses()));
+        List<Class<?>> valueTypes = List.of(MessageHeaderValue.NullValue.class,
+                                            MessageHeaderValue.TextValue.class,
+                                            MessageHeaderValue.BinaryValue.class,
+                                            MessageHeaderValue.BooleanValue.class,
+                                            MessageHeaderValue.IntegerValue.class,
+                                            MessageHeaderValue.DecimalValue.class,
+                                            MessageHeaderValue.Float32Value.class,
+                                            MessageHeaderValue.Float64Value.class,
+                                            MessageHeaderValue.TimestampValue.class,
+                                            MessageHeaderValue.UuidValue.class,
+                                            MessageHeaderValue.NativeValue.class);
+        Set<Class<?>> permittedTypes = Set.copyOf(Arrays.asList(MessageHeaderValue.class.getPermittedSubclasses()));
 
-        assertThat(HeaderValue.class.isSealed(), is(true));
+        assertThat(MessageHeaderValue.class.isSealed(), is(true));
         assertThat(permittedTypes, is(Set.copyOf(valueTypes)));
         for (Class<?> type : valueTypes) {
             assertThat(type.getName(), Modifier.isFinal(type.getModifiers()), is(true));
@@ -83,9 +83,9 @@ class MessagingPublicApiTest {
         assertThat(MessageHeader.class.isRecord(), is(false));
         assertThat(MessageHeader.class.getConstructors().length, is(0));
 
-        MessageHeader header = MessageHeader.create("trace", HeaderValue.text("value"));
+        MessageHeader header = MessageHeader.create("trace", MessageHeaderValue.text("value"));
         assertThat(header.name(), is("trace"));
-        assertThat(header.value(), is(HeaderValue.text("value")));
+        assertThat(header.value(), is(MessageHeaderValue.text("value")));
     }
 
     @Test
@@ -94,7 +94,7 @@ class MessagingPublicApiTest {
                 .add("trace", "value")
                 .build();
         MessageMetadata metadata = MessageMetadata.builder()
-                .set("application.local", HeaderValue.text("value"))
+                .set("application.local", MessageHeaderValue.text("value"))
                 .build();
         Message<String> message = Message.builder("payload")
                 .headers(headers)
@@ -102,7 +102,7 @@ class MessagingPublicApiTest {
                 .build();
 
         assertThat(message.headers(), is(headers));
-        assertThat(message.headers().last("trace").orElseThrow(), is(HeaderValue.text("value")));
+        assertThat(message.headers().last("trace").orElseThrow(), is(MessageHeaderValue.text("value")));
         assertThat(message.localMetadata(), is(metadata));
         assertThat(message.localMetadata().text("application.local").orElseThrow(), is("value"));
     }
@@ -132,7 +132,7 @@ class MessagingPublicApiTest {
             }
 
             @Override
-            public Optional<HeaderValue> headerValue(String name) {
+            public Optional<MessageHeaderValue> headerValue(String name) {
                 throw new AssertionError("Null text lookup must be rejected before reading a header value");
             }
         };
@@ -148,21 +148,21 @@ class MessagingPublicApiTest {
 
         Message.Builder<String> builder = Message.builder("payload")
                 .header("trace", "original")
-                .addHeader("retained", HeaderValue.integer(42))
+                .addHeader("retained", MessageHeaderValue.integer(42))
                 .localMetadata("diagnostic", "original")
-                .localMetadata("retained", HeaderValue.booleanValue(true));
+                .localMetadata("retained", MessageHeaderValue.booleanValue(true));
         Message<String> expected = builder.build();
 
         assertThrows(NullPointerException.class, () -> builder.header(null, "replacement"));
         assertThrows(NullPointerException.class, () -> builder.header("trace", (String) null));
         assertThrows(NullPointerException.class,
-                     () -> builder.header(null, HeaderValue.text("replacement")));
-        assertThrows(NullPointerException.class, () -> builder.header("trace", (HeaderValue) null));
+                     () -> builder.header(null, MessageHeaderValue.text("replacement")));
+        assertThrows(NullPointerException.class, () -> builder.header("trace", (MessageHeaderValue) null));
         assertThrows(NullPointerException.class, () -> builder.addHeader(null, "appended"));
         assertThrows(NullPointerException.class, () -> builder.addHeader("new", (String) null));
         assertThrows(NullPointerException.class,
-                     () -> builder.addHeader(null, HeaderValue.text("appended")));
-        assertThrows(NullPointerException.class, () -> builder.addHeader("new", (HeaderValue) null));
+                     () -> builder.addHeader(null, MessageHeaderValue.text("appended")));
+        assertThrows(NullPointerException.class, () -> builder.addHeader("new", (MessageHeaderValue) null));
         assertThrows(NullPointerException.class, () -> builder.addHeader((MessageHeader) null));
         assertThrows(NullPointerException.class, () -> builder.headers(null));
         assertMessageBuilderState(builder, expected);
@@ -170,9 +170,9 @@ class MessagingPublicApiTest {
         assertThrows(NullPointerException.class, () -> builder.localMetadata(null, "replacement"));
         assertThrows(NullPointerException.class, () -> builder.localMetadata("diagnostic", (String) null));
         assertThrows(NullPointerException.class,
-                     () -> builder.localMetadata(null, HeaderValue.text("replacement")));
+                     () -> builder.localMetadata(null, MessageHeaderValue.text("replacement")));
         assertThrows(NullPointerException.class,
-                     () -> builder.localMetadata("diagnostic", (HeaderValue) null));
+                     () -> builder.localMetadata("diagnostic", (MessageHeaderValue) null));
         assertThrows(NullPointerException.class, () -> builder.localMetadata((MessageMetadata) null));
         assertMessageBuilderState(builder, expected);
     }

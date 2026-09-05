@@ -45,7 +45,7 @@ final class MessagingTypes {
     static final TypeName FAILURE_POLICY = TypeName.create("io.helidon.messaging.FailurePolicy");
     static final TypeName HEADER_PARAM =
             TypeName.create("io.helidon.messaging.Messaging.HeaderParam");
-    static final TypeName HEADER_VALUE = TypeName.create("io.helidon.messaging.HeaderValue");
+    static final TypeName MESSAGE_HEADER_VALUE = TypeName.create("io.helidon.messaging.MessageHeaderValue");
     static final TypeName MESSAGE = TypeName.create("io.helidon.messaging.Message");
     static final TypeName MESSAGE_BATCH = TypeName.create("io.helidon.messaging.MessageBatch");
     static final TypeName MESSAGING_ENTRY_POINT_BATCH_HANDLER =

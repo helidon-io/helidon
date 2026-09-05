@@ -694,13 +694,13 @@ class ChannelRegistryFailurePolicyTest {
         assertThat(deadLetter.headers().contains(NON_PORTABLE_FAILURE_MESSAGE_HEADER), is(false));
         assertThat(deadLetter.headers().entries().stream()
                            .map(MessageHeader::value)
-                           .filter(HeaderValue.TextValue.class::isInstance)
-                           .map(HeaderValue.TextValue.class::cast)
+                           .filter(MessageHeaderValue.TextValue.class::isInstance)
+                           .map(MessageHeaderValue.TextValue.class::cast)
                            .allMatch(value -> value.value().length() <= maxPortableHeaderLength), is(true));
         assertThat(deadLetter.headers().entries().stream()
                            .map(MessageHeader::value)
-                           .filter(HeaderValue.TextValue.class::isInstance)
-                           .map(HeaderValue.TextValue.class::cast)
+                           .filter(MessageHeaderValue.TextValue.class::isInstance)
+                           .map(MessageHeaderValue.TextValue.class::cast)
                            .noneMatch(value -> value.value().contains("top-secret")), is(true));
     }
 
@@ -2730,7 +2730,7 @@ class ChannelRegistryFailurePolicyTest {
                     }
                     for (Message<?> message : batch) {
                         for (MessageHeader header : message.headers()) {
-                            if (header.value() instanceof HeaderValue.TextValue textValue
+                            if (header.value() instanceof MessageHeaderValue.TextValue textValue
                                     && textValue.value().length() > maxTextHeaderLength) {
                                 throw new MessagingException("Test connector header exceeds transport limit");
                             }

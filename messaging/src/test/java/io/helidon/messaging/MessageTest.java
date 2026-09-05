@@ -42,22 +42,22 @@ class MessageTest {
                               MessageHeader.create("trace", "last"))));
         assertThat(message.header("trace").orElseThrow(), is("last"));
         assertThat(message.header("Trace").orElseThrow(), is("case-sensitive"));
-        assertThat(message.headerValue("trace").orElseThrow(), is(HeaderValue.text("last")));
+        assertThat(message.headerValue("trace").orElseThrow(), is(MessageHeaderValue.text("last")));
     }
 
     @Test
     void appendsOrderedDuplicateTypedHeaders() {
         Message<String> message = Message.builder("payload")
                 .addHeader("a", "first")
-                .addHeader("b", HeaderValue.booleanValue(true))
-                .addHeader(MessageHeader.create("a", HeaderValue.binary(new byte[] {1, 2})))
+                .addHeader("b", MessageHeaderValue.booleanValue(true))
+                .addHeader(MessageHeader.create("a", MessageHeaderValue.binary(new byte[] {1, 2})))
                 .build();
 
         assertThat(message.headers().entries(),
                    is(List.of(MessageHeader.create("a", "first"),
-                              MessageHeader.create("b", HeaderValue.booleanValue(true)),
-                              MessageHeader.create("a", HeaderValue.binary(new byte[] {1, 2})))));
-        assertThat(message.headerValue("a").orElseThrow(), is(HeaderValue.binary(new byte[] {1, 2})));
+                              MessageHeader.create("b", MessageHeaderValue.booleanValue(true)),
+                              MessageHeader.create("a", MessageHeaderValue.binary(new byte[] {1, 2})))));
+        assertThat(message.headerValue("a").orElseThrow(), is(MessageHeaderValue.binary(new byte[] {1, 2})));
         assertThrows(IllegalStateException.class, () -> message.header("a"));
     }
 
@@ -92,7 +92,7 @@ class MessageTest {
         MessageMetadata replacement = MessageMetadata.builder().set("replacement", "local").build();
         Message.Builder<String> builder = Message.builder("payload")
                 .localMetadata("diagnostic", "first")
-                .localMetadata("typed", HeaderValue.integer(42));
+                .localMetadata("typed", MessageHeaderValue.integer(42));
 
         Message<String> snapshot = builder.build();
         builder.localMetadata("diagnostic", "after-build").localMetadata(replacement);
@@ -101,8 +101,8 @@ class MessageTest {
 
         assertThat(plain.localMetadata(), sameInstance(MessageMetadata.empty()));
         assertThat(snapshot.localMetadata().values(),
-                   is(Map.of("diagnostic", HeaderValue.text("first"),
-                             "typed", HeaderValue.integer(42))));
+                   is(Map.of("diagnostic", MessageHeaderValue.text("first"),
+                             "typed", MessageHeaderValue.integer(42))));
         assertThat(message.localMetadata(), is(replacement));
         assertThat(message.headers(), sameInstance(MessageHeaders.empty()));
 

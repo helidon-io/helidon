@@ -24,13 +24,13 @@ import java.util.Objects;
 final class MessageMetadataImpl implements MessageMetadata {
     private static final MessageMetadata EMPTY = new MessageMetadataImpl(Map.of());
 
-    private final Map<String, HeaderValue> values;
+    private final Map<String, MessageHeaderValue> values;
 
-    private MessageMetadataImpl(Map<String, HeaderValue> values) {
-        LinkedHashMap<String, HeaderValue> actualValues = new LinkedHashMap<>();
-        for (Map.Entry<String, HeaderValue> entry : values.entrySet()) {
+    private MessageMetadataImpl(Map<String, MessageHeaderValue> values) {
+        LinkedHashMap<String, MessageHeaderValue> actualValues = new LinkedHashMap<>();
+        for (Map.Entry<String, MessageHeaderValue> entry : values.entrySet()) {
             String name = Objects.requireNonNull(entry.getKey());
-            HeaderValue value = Objects.requireNonNull(entry.getValue());
+            MessageHeaderValue value = Objects.requireNonNull(entry.getValue());
             actualValues.put(name, value);
         }
         this.values = Collections.unmodifiableMap(actualValues);
@@ -40,13 +40,13 @@ final class MessageMetadataImpl implements MessageMetadata {
         return EMPTY;
     }
 
-    static MessageMetadata create(Map<String, HeaderValue> values) {
-        Map<String, HeaderValue> actualValues = Objects.requireNonNull(values);
+    static MessageMetadata create(Map<String, MessageHeaderValue> values) {
+        Map<String, MessageHeaderValue> actualValues = Objects.requireNonNull(values);
         return actualValues.isEmpty() ? EMPTY : new MessageMetadataImpl(actualValues);
     }
 
     @Override
-    public Map<String, HeaderValue> values() {
+    public Map<String, MessageHeaderValue> values() {
         return values;
     }
 

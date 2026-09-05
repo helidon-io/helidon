@@ -32,7 +32,7 @@ import io.helidon.config.Config;
 import io.helidon.messaging.DeadLetterMessage;
 import io.helidon.messaging.Emitter;
 import io.helidon.messaging.FailureDisposition;
-import io.helidon.messaging.HeaderValue;
+import io.helidon.messaging.MessageHeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeaders;
@@ -308,9 +308,9 @@ class ChannelMessagingTypes {
 
         @Messaging.ReceiveFrom(TYPED_HEADER_CHANNEL)
         void consume(@Messaging.Entity String payload,
-                     @Messaging.HeaderParam("required") HeaderValue required,
-                     @Messaging.HeaderParam("optional") Optional<HeaderValue> optional,
-                     @Messaging.HeaderParam("repeated") List<HeaderValue> repeated) {
+                     @Messaging.HeaderParam("required") MessageHeaderValue required,
+                     @Messaging.HeaderParam("optional") Optional<MessageHeaderValue> optional,
+                     @Messaging.HeaderParam("repeated") List<MessageHeaderValue> repeated) {
             deliveries.add(new TypedHeaderDelivery(payload, required, optional, repeated));
         }
 
@@ -705,9 +705,9 @@ class ChannelMessagingTypes {
     }
 
     record TypedHeaderDelivery(String payload,
-                               HeaderValue required,
-                               Optional<HeaderValue> optional,
-                               List<HeaderValue> repeated) {
+                               MessageHeaderValue required,
+                               Optional<MessageHeaderValue> optional,
+                               List<MessageHeaderValue> repeated) {
     }
 
     interface CustomMessage<K, V> extends Message<V> {
