@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -62,6 +63,7 @@ class AsyncImpl implements Async {
 
     @Override
     public <T> CompletableFuture<T> invoke(Supplier<T> supplier) {
+        AtomicBoolean terminalClaimed = new AtomicBoolean();
         AtomicReference<Future<?>> ourFuture = new AtomicReference<>();
         CompletableFuture<T> result = new CompletableFuture<>() {
             @Override
@@ -73,7 +75,9 @@ class AsyncImpl implements Async {
                     LOGGER.log(System.Logger.Level.WARNING, "Failed to cancel future, it is not yet available.");
                     return false;
                 } else {
-                    return toCancel.cancel(mayInterruptIfRunning);
+                    terminalClaimed.set(true);
+                    toCancel.cancel(mayInterruptIfRunning);
+                    return super.cancel(mayInterruptIfRunning);
                 }
             }
         };
@@ -85,10 +89,14 @@ class AsyncImpl implements Async {
             }
             try {
                 T t = supplier.get();
-                result.complete(t);
+                if (terminalClaimed.compareAndSet(false, true)) {
+                    result.complete(t);
+                }
             } catch (Throwable t) {
-                Throwable throwable = SupplierHelper.unwrapThrowable(t);
-                result.completeExceptionally(throwable);
+                if (terminalClaimed.compareAndSet(false, true)) {
+                    Throwable throwable = SupplierHelper.unwrapThrowable(t);
+                    result.completeExceptionally(throwable);
+                }
             }
         });
         ourFuture.set(future);
