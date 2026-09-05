@@ -120,6 +120,12 @@ or cancel another attempt by returning `false`. A strategy returning `true`
 must complete the requested wait and must restore the thread interrupt status
 if interrupted.
 
+In Helidon 27, configuring both `delay-factor` and absolute `jitter` applies
+the delay factor first and then applies jitter. Earlier releases ignored
+`jitter` when both options were configured. The defaults are unchanged: three
+total calls, a 200 ms base delay with a factor of two, no jitter, no maximum
+delay, and a one-second overall timeout.
+
 ### Timeouts
 
 A request to a service that is inaccessible or simply unavailable should be
