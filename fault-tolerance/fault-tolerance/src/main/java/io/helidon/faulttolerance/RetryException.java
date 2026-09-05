@@ -30,13 +30,24 @@ public final class RetryException extends FaultToleranceException {
     private final RetryOutcome outcome;
 
     /**
+     * Create a retry exception without a cause.
+     *
+     * @param message error message
+     * @param outcome retry outcome
+     */
+    public RetryException(String message, RetryOutcome outcome) {
+        super(message);
+        this.outcome = Objects.requireNonNull(outcome);
+    }
+
+    /**
      * Create a retry exception.
      *
      * @param message error message
      * @param outcome retry outcome
      * @param cause exception that caused the retry invocation to terminate
      */
-    RetryException(String message, RetryOutcome outcome, Throwable cause) {
+    public RetryException(String message, RetryOutcome outcome, Throwable cause) {
         super(message, cause);
         this.outcome = Objects.requireNonNull(outcome);
     }
