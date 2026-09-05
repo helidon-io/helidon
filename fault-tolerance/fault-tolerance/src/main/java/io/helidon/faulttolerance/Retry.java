@@ -95,8 +95,12 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
      * @param <T> type of result
      * @return result obtained from the function
      * @throws RetryException if the invocation does not complete successfully
+     * @throws java.lang.UnsupportedOperationException if you use a custom retry implementation, and it does not
+     *          implement this method
      */
-    <T> T invoke(Function<RetryContext, ? extends T> function);
+    default <T> T invoke(Function<RetryContext, ? extends T> function) {
+        throw new UnsupportedOperationException("This retry does not implement invoked(Function): " + getClass().getName());
+    }
 
     /**
      * Invoke a function with context for each attempt, using a caller-provided strategy to wait between attempts.
@@ -109,8 +113,13 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
      * @param <T> type of result
      * @return result obtained from the function
      * @throws RetryException if the invocation does not complete successfully
+     * @throws java.lang.UnsupportedOperationException if you use a custom retry implementation, and it does not
+     *          implement this method
      */
-    <T> T invoke(Function<RetryContext, ? extends T> function, WaitStrategy waitStrategy);
+    default <T> T invoke(Function<RetryContext, ? extends T> function, WaitStrategy waitStrategy) {
+        throw new UnsupportedOperationException("This retry does not implement invoked(Function, WaitStrategy): "
+                                                        + getClass().getName());
+    }
 
     /**
      * Strategy used to wait before another invocation attempt.

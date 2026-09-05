@@ -17,7 +17,6 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -27,36 +26,20 @@ import java.util.Optional;
  * throwable. Each subsequent attempt provides the delay preceding that attempt and the throwable from the previous
  * attempt. The context is created immediately before invoking the function for an attempt.
  */
-public final class RetryContext {
-    private final int attempt;
-    private final Duration elapsedTime;
-    private final Duration previousDelay;
-    private final Throwable previousThrowable;
-
-    RetryContext(int attempt, Duration elapsedTime, Duration previousDelay, Throwable previousThrowable) {
-        this.attempt = attempt;
-        this.elapsedTime = Objects.requireNonNull(elapsedTime);
-        this.previousDelay = Objects.requireNonNull(previousDelay);
-        this.previousThrowable = previousThrowable;
-    }
-
+public interface RetryContext {
     /**
      * Number of the current invocation attempt.
      *
      * @return 1-based invocation attempt number
      */
-    public int attempt() {
-        return attempt;
-    }
+    int attempt();
 
     /**
      * Time elapsed since the retry invocation started when this attempt began.
      *
      * @return elapsed time
      */
-    public Duration elapsedTime() {
-        return elapsedTime;
-    }
+    Duration elapsedTime();
 
     /**
      * Requested delay preceding this attempt.
@@ -65,16 +48,12 @@ public final class RetryContext {
      *
      * @return requested delay preceding this attempt
      */
-    public Duration previousDelay() {
-        return previousDelay;
-    }
+    Duration previousDelay();
 
     /**
      * Throwable from the preceding attempt.
      *
      * @return preceding throwable, or empty for the initial attempt
      */
-    public Optional<Throwable> previousThrowable() {
-        return Optional.ofNullable(previousThrowable);
-    }
+    Optional<Throwable> previousThrowable();
 }

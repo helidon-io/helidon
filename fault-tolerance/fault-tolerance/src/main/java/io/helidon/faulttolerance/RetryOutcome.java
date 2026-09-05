@@ -17,57 +17,32 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Outcome of an unsuccessful contextual {@link Retry} invocation.
  */
-public final class RetryOutcome {
-    private final Termination termination;
-    private final int attempts;
-    private final Duration elapsedTime;
-    private final Duration lastDelay;
-    private final Throwable lastThrowable;
-
-    RetryOutcome(Termination termination,
-                 int attempts,
-                 Duration elapsedTime,
-                 Duration lastDelay,
-                 Throwable lastThrowable) {
-        this.termination = Objects.requireNonNull(termination);
-        this.attempts = attempts;
-        this.elapsedTime = Objects.requireNonNull(elapsedTime);
-        this.lastDelay = Objects.requireNonNull(lastDelay);
-        this.lastThrowable = lastThrowable;
-    }
-
+public interface RetryOutcome {
     /**
      * Reason the retry invocation terminated.
      *
      * @return termination reason
      */
-    public Termination termination() {
-        return termination;
-    }
+    Termination termination();
 
     /**
      * Number of completed invocation attempts.
      *
      * @return number of completed attempts
      */
-    public int attempts() {
-        return attempts;
-    }
+    int attempts();
 
     /**
      * Time elapsed since the retry invocation started.
      *
      * @return elapsed time
      */
-    public Duration elapsedTime() {
-        return elapsedTime;
-    }
+    Duration elapsedTime();
 
     /**
      * Delay preceding the last completed invocation attempt.
@@ -76,23 +51,19 @@ public final class RetryOutcome {
      *
      * @return delay preceding the last completed attempt
      */
-    public Duration lastDelay() {
-        return lastDelay;
-    }
+    Duration lastDelay();
 
     /**
      * Throwable from the last completed invocation attempt.
      *
      * @return last invocation throwable
      */
-    public Optional<Throwable> lastThrowable() {
-        return Optional.ofNullable(lastThrowable);
-    }
+    Optional<Throwable> lastThrowable();
 
     /**
      * Reason a contextual retry invocation terminated.
      */
-    public enum Termination {
+    enum Termination {
         /**
          * The retry policy did not permit another retry.
          */

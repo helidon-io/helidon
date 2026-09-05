@@ -35,15 +35,7 @@ import io.helidon.service.registry.ServiceRegistry;
 
 class RetryImpl implements Retry {
     private static final int MAX_RETAINED_FAILURES = 16;
-    private static final WaitStrategy DEFAULT_WAIT_STRATEGY = delay -> {
-        try {
-            Thread.sleep(delay);
-            return true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new WaitInterruptedException(e);
-        }
-    };
+    private static final WaitStrategy DEFAULT_WAIT_STRATEGY = new DefaultWaitStrategy();
 
     private final ErrorChecker errorChecker;
     private final long maxTimeNanos;
@@ -356,7 +348,7 @@ class RetryImpl implements Retry {
         private int attempt = 1;
         private long previousDelayMillis;
         private Throwable lastFailure;
-        private RetryContext context = new RetryContext(1, Duration.ZERO, Duration.ZERO, null);
+        private RetryContext context = new RetryContextImpl(1, Duration.ZERO, Duration.ZERO, null);
 
         private RetryContext context() {
             return context;
@@ -367,11 +359,11 @@ class RetryImpl implements Retry {
         }
 
         private RetryOutcome outcome(RetryOutcome.Termination termination, long now) {
-            return new RetryOutcome(termination,
-                                    attempt,
-                                    Duration.ofNanos(elapsedNanos(startedNanos, now)),
-                                    Duration.ofMillis(previousDelayMillis),
-                                    lastFailure);
+            return new RetryOutcomeImpl(termination,
+                                        attempt,
+                                        Duration.ofNanos(elapsedNanos(startedNanos, now)),
+                                        Duration.ofMillis(previousDelayMillis),
+                                        lastFailure);
         }
 
         private void failure(Throwable failure) {
@@ -387,10 +379,10 @@ class RetryImpl implements Retry {
             if (attempt < Integer.MAX_VALUE) {
                 attempt++;
             }
-            context = new RetryContext(attempt,
-                                       Duration.ofNanos(elapsedNanos(startedNanos, now)),
-                                       Duration.ofMillis(previousDelayMillis),
-                                       lastFailure);
+            context = new RetryContextImpl(attempt,
+                                           Duration.ofNanos(elapsedNanos(startedNanos, now)),
+                                           Duration.ofMillis(previousDelayMillis),
+                                           lastFailure);
         }
 
         private <T> T throwLegacy() {
@@ -412,6 +404,19 @@ class RetryImpl implements Retry {
 
         private WaitInterruptedException(InterruptedException cause) {
             super(cause);
+        }
+    }
+
+    private static final class DefaultWaitStrategy implements WaitStrategy {
+        @Override
+        public boolean await(Duration delay) {
+            try {
+                Thread.sleep(delay);
+                return true;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new WaitInterruptedException(e);
+            }
         }
     }
 }
