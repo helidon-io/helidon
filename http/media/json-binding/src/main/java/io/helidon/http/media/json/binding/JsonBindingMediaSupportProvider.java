@@ -28,12 +28,12 @@ import io.helidon.http.media.spi.MediaSupportProvider;
  * This provider creates instances of {@link JsonBindingSupport} for handling
  * JSON serialization and deserialization in HTTP requests and responses.
  */
+@Api.Internal
 public class JsonBindingMediaSupportProvider implements MediaSupportProvider, Weighted {
 
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Api.Internal
     public JsonBindingMediaSupportProvider() {
     }
 

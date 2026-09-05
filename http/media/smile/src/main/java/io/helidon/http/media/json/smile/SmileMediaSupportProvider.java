@@ -25,11 +25,11 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 /**
  * Media support provider for Smile media support.
  */
+@Api.Internal
 public class SmileMediaSupportProvider implements MediaSupportProvider, Weighted {
     /**
      * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
      */
-    @Api.Internal
     public SmileMediaSupportProvider() {
     }
 

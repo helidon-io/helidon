@@ -19,6 +19,7 @@ package io.helidon.http.media.json.binding;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.http.Headers;
@@ -39,6 +40,7 @@ import io.helidon.json.binding.JsonBinding;
  * character encoding detection, and integrates with the Helidon media support
  * framework.
  */
+@Api.Preview
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JsonBindingSupport
         extends MediaSupportBase<JsonBindingSupportConfig>
