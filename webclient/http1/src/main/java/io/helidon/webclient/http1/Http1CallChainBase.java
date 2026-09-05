@@ -252,21 +252,32 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         effectiveConnection = suppliedConnection == null
                 ? obtainConnection(connectionTarget, connectionLookupKey, headers, udsAddress)
                 : suppliedConnection;
-        if (connectionLookupKey != null) {
-            TcpClientConnection tcpConnection = (TcpClientConnection) effectiveConnection;
-            ProxyRoute acquiredRoute = tcpConnection.resolvedTarget()
-                    .orElseThrow()
-                    .proxyRoute();
-            originalRequest.selectedProxyRoute(acquiredRoute);
+        try {
+            if (connectionLookupKey != null) {
+                TcpClientConnection tcpConnection = (TcpClientConnection) effectiveConnection;
+                ProxyRoute acquiredRoute = tcpConnection.resolvedTarget()
+                        .orElseThrow()
+                        .proxyRoute();
+                originalRequest.selectedProxyRoute(acquiredRoute);
+            }
+            effectiveConnection.readTimeout(this.timeout);
+
+            DataWriter writer = effectiveConnection.writer();
+            DataReader reader = effectiveConnection.reader();
+
+            prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
+
+            return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
+        } catch (RuntimeException | Error e) {
+            if (!explicitConnectionRequest) {
+                try {
+                    effectiveConnection.closeResource();
+                } catch (Throwable closeFailure) {
+                    e.addSuppressed(closeFailure);
+                }
+            }
+            throw e;
         }
-        effectiveConnection.readTimeout(this.timeout);
-
-        DataWriter writer = effectiveConnection.writer();
-        DataReader reader = effectiveConnection.reader();
-
-        prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
-
-        return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
     }
 
     @Override
