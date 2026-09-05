@@ -121,9 +121,12 @@ class FollowRedirectTest {
             REDIRECT_TARGET_COOKIE.set(req.headers().contains(HeaderNames.COOKIE)
                                                ? req.headers().get(HeaderNames.COOKIE).values()
                                                : null);
+            if (req.headers().contains(REDIRECT_HEADER)) {
+                res.status(Status.BAD_REQUEST_400).send("Custom header was preserved");
+                return;
+            }
             String contentType = req.headers().contentType().orElseThrow().mediaType().text();
-            String marker = req.headers().get(REDIRECT_HEADER).get();
-            res.send(contentType + ":" + marker + ":" + req.content().as(String.class));
+            res.send(contentType + ":" + req.content().as(String.class));
         }).route(Method.GET, "/redirectDropEntity", (req, res) -> {
             res.status(Status.FOUND_302)
                     .header(HeaderNames.LOCATION, "/afterDropEntity")
@@ -276,10 +279,10 @@ class FollowRedirectTest {
         try (Http2ClientResponse response = webClient.put()
                 .path("/source/bounce")
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
-                .header(REDIRECT_HEADER, "kept")
+                .header(REDIRECT_HEADER, "drop")
                 .submit("entity")) {
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is("text/plain:kept:entity"));
+            assertThat(response.as(String.class), is("text/plain:entity"));
         }
 
         assertThat(REDIRECT_SOURCE_COOKIE.get(), containsString(PATH_COOKIE));

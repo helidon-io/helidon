@@ -178,10 +178,10 @@ class CookieRedirectLeakTest {
 
         try (Http1ClientResponse response = pathCookieClient.put("/source/bounce")
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
-                .header(REDIRECT_HEADER, "kept")
+                .header(REDIRECT_HEADER, "drop")
                 .submit("entity")) {
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is("text/plain:kept:entity"));
+            assertThat(response.as(String.class), is("text/plain:entity"));
         }
 
         assertThat(REDIRECT_SOURCE_COOKIE.get(), containsString(PATH_COOKIE));
@@ -234,9 +234,12 @@ class CookieRedirectLeakTest {
 
     private static void collectRedirectedEntity(ServerRequest req, ServerResponse res) {
         REDIRECT_TARGET_COOKIE.set(extractCookie(req));
+        if (req.headers().contains(REDIRECT_HEADER)) {
+            res.status(Status.BAD_REQUEST_400).send("Custom header was preserved");
+            return;
+        }
         String contentType = req.headers().contentType().orElseThrow().mediaType().text();
-        String marker = req.headers().get(REDIRECT_HEADER).get();
-        res.send(contentType + ":" + marker + ":" + req.content().as(String.class));
+        res.send(contentType + ":" + req.content().as(String.class));
     }
 
     private static String extractCookie(ServerRequest req) {
