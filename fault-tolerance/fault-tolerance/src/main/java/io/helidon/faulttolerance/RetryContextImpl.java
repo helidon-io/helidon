@@ -17,7 +17,6 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 
 record RetryContextImpl(int attempt,
