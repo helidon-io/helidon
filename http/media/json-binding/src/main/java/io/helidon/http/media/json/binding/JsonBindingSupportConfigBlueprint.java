@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.media.MediaSupportConfig;
@@ -33,6 +34,7 @@ import io.helidon.json.binding.JsonBinding;
  * which provides JSON serialization and deserialization capabilities for HTTP requests
  * and responses.
  */
+@Api.Preview
 @Prototype.Configured(value = JsonBindingSupport.ID, root = false)
 @Prototype.Provides(MediaSupportProvider.class)
 @Prototype.Blueprint(decorator = JsonBindingConfigSupport.Decorator.class)

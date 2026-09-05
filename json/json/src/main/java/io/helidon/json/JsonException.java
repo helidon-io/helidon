@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import io.helidon.common.Api;
+
 /**
  * Exception thrown during JSON processing operations.
  * <p>
@@ -23,6 +25,7 @@ package io.helidon.json;
  * serialization, or other JSON-related operations.
  * </p>
  */
+@Api.Preview
 public class JsonException extends RuntimeException {
 
     /**

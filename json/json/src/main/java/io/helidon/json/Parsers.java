@@ -22,9 +22,12 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import io.helidon.common.Api;
+
 /**
  * Utility methods shared by JSON parser implementations.
  */
+@Api.Internal
 public final class Parsers {
 
     //Lookup table for converting hexadecimal characters to their numeric values
