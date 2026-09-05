@@ -84,6 +84,48 @@ control is possible by creating a retry policy and using methods such as
 Throwable>... classes)` to control the exceptions that must be retried and those
 that must be ignored.
 
+An overload accepting `Function<RetryContext, T>` provides the current attempt
+number, elapsed time, preceding delay, and preceding failure to each invocation.
+If the invocation does not succeed, `RetryException` exposes a `RetryOutcome`
+with the termination reason and final attempt metadata. The original
+`Supplier` overload continues to propagate the terminal application exception
+or `RetryTimeoutException`.
+
+```java
+Retry retry = Retry.builder()
+        .calls(100)
+        .delay(Duration.ofMillis(100))
+        .delayFactor(2)
+        .jitterFactor(0.2)
+        .maxDelay(Duration.ofSeconds(5))
+        .overallTimeout(Duration.ofMinutes(5))
+        .build();
+
+try {
+    T result = retry.invoke(context -> retryOnFailure(context.attempt()));
+} catch (RetryException e) {
+    RetryOutcome outcome = e.outcome();
+    // Inspect outcome.termination(), outcome.attempts(), and outcome.lastThrowable().
+}
+```
+
+`calls` must be at least one, `delay` must be non-negative, and
+`overall-timeout` must be positive. Exponential delay can use either a
+non-negative absolute `jitter` duration (`PT-1S` disables it) or a relative
+`jitter-factor` from zero inclusive to one exclusive (`-1` disables it); the
+two jitter options are mutually exclusive. The optional non-negative
+`max-delay` caps the final delay after jitter. A contextual invocation can also
+supply a `Retry.WaitStrategy` to maintain an external resource while waiting
+or cancel another attempt by returning `false`. A strategy returning `true`
+must complete the requested wait and must restore the thread interrupt status
+if interrupted.
+
+In Helidon 27, configuring both `delay-factor` and absolute `jitter` applies
+the delay factor first and then applies jitter. Earlier releases ignored
+`jitter` when both options were configured. The defaults are unchanged: three
+total calls, a 200 ms base delay with a factor of two, no jitter, no maximum
+delay, and a one-second overall timeout.
+
 ### Timeouts
 
 A request to a service that is inaccessible or simply unavailable should be

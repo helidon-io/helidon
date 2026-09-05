@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,9 @@ class JitterRetryPolicyTest {
                 .build();
 
         long firstCall = System.nanoTime();
-        Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 0);
+        Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 1);
         assertThat(aLong, optionalValue(is(100L)));
-        aLong = policy.nextDelayMillis(firstCall, aLong.get(), 1);
+        aLong = policy.nextDelayMillis(firstCall, aLong.get(), 2);
         assertThat(aLong, optionalValue(is(100L)));
     }
 
@@ -78,10 +78,10 @@ class JitterRetryPolicyTest {
         boolean hadNegative = false;
         boolean hadPositive = false;
         for (int i = 0; i < 10000; i++) {
-            Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 0);
+            Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 1);
             assertThat(aLong, optionalPresent());
             long value = aLong.get();
-            assertThat(value, is(both(greaterThan(49L)).and(lessThan(151L))));
+            assertThat(value, is(both(greaterThan(49L)).and(lessThan(150L))));
             if (value < 100) {
                 hadNegative = true;
             } else if (value > 100) {
@@ -106,7 +106,7 @@ class JitterRetryPolicyTest {
         boolean hadPositive = false;
         boolean hadZero = false;
         for (int i = 0; i < 10000; i++) {
-            Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 0);
+            Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 1);
             assertThat(aLong, optionalPresent());
             long value = aLong.get();
             assertThat(value, is(both(greaterThan(-1L)).and(lessThan(50L))));
@@ -131,13 +131,42 @@ class JitterRetryPolicyTest {
 
         long firstCall = System.nanoTime();
 
-        Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 0);
+        Optional<Long> aLong = policy.nextDelayMillis(firstCall, 0, 1);
         assertThat(aLong, optionalValue(is(0L)));
-        aLong = policy.nextDelayMillis(firstCall, 0, 1);
-        assertThat(aLong, optionalValue(is(0L)));
-        aLong = policy.nextDelayMillis(firstCall, 0, 2); // should just apply factor on last delay
+        aLong = policy.nextDelayMillis(firstCall, 0, 2);
         assertThat(aLong, optionalValue(is(0L)));
         aLong = policy.nextDelayMillis(firstCall, 100, 3); // limit of calls
         assertThat(aLong, is(optionalEmpty()));
+    }
+
+    @Test
+    void testMaximumDelay() {
+        Retry.JitterRetryPolicy policy = Retry.JitterRetryPolicy.builder()
+                .jitter(Duration.ZERO)
+                .delay(Duration.ofMillis(100))
+                .maxDelay(Duration.ofMillis(75))
+                .calls(3)
+                .build();
+
+        assertThat(policy.nextDelayMillis(System.currentTimeMillis(), 0, 1), optionalValue(is(75L)));
+    }
+
+    @Test
+    void testEquivalentPoliciesAreEqual() {
+        Retry.JitterRetryPolicy first = Retry.JitterRetryPolicy.builder()
+                .calls(5)
+                .delay(Duration.ofMillis(100))
+                .jitter(Duration.ofMillis(25))
+                .maxDelay(Duration.ofSeconds(2))
+                .build();
+        Retry.JitterRetryPolicy second = Retry.JitterRetryPolicy.builder()
+                .calls(5)
+                .delay(Duration.ofMillis(100))
+                .jitter(Duration.ofMillis(25))
+                .maxDelay(Duration.ofSeconds(2))
+                .build();
+
+        assertThat(first, is(second));
+        assertThat(first.hashCode(), is(second.hashCode()));
     }
 }

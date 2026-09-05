@@ -16,10 +16,12 @@
 
 package io.helidon.faulttolerance;
 
+import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
@@ -79,9 +81,137 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
      * Number of times a method called has been retried. This is a monotonically
      * increasing counter over the lifetime of the handler.
      *
-     * @return number ot times a method is retried.
+     * @return number of times a method is retried
      */
     long retryCounter();
+
+    /**
+     * Invoke a function with context for each attempt.
+     * <p>
+     * Unlike {@link #invoke(Supplier)}, an invocation that does not complete successfully always throws a
+     * {@link RetryException}. The exception contains the retry outcome, including a termination reason.
+     *
+     * @param function function invoked for each attempt
+     * @param <T> type of result
+     * @return result obtained from the function
+     * @throws RetryException if the invocation does not complete successfully
+     * @throws java.lang.UnsupportedOperationException if you use a custom retry implementation, and it does not
+     *          implement this method
+     */
+    default <T> T invoke(Function<RetryContext, ? extends T> function) {
+        throw new UnsupportedOperationException("This retry does not implement invoked(Function): " + getClass().getName());
+    }
+
+    /**
+     * Invoke a function with context for each attempt, using a caller-provided strategy to wait between attempts.
+     * <p>
+     * The wait strategy can perform work needed to keep a resource alive while waiting, or terminate retries by
+     * returning {@code false}.
+     *
+     * @param function function invoked for each attempt
+     * @param waitStrategy strategy that waits between attempts
+     * @param <T> type of result
+     * @return result obtained from the function
+     * @throws RetryException if the invocation does not complete successfully
+     * @throws java.lang.UnsupportedOperationException if you use a custom retry implementation, and it does not
+     *          implement this method
+     */
+    default <T> T invoke(Function<RetryContext, ? extends T> function, WaitStrategy waitStrategy) {
+        throw new UnsupportedOperationException("This retry does not implement invoked(Function, WaitStrategy): "
+                                                        + getClass().getName());
+    }
+
+    private static long durationToMillis(Duration duration) {
+        Objects.requireNonNull(duration);
+        try {
+            return Math.max(0, duration.toMillis());
+        } catch (ArithmeticException e) {
+            return duration.isNegative() ? 0 : Long.MAX_VALUE;
+        }
+    }
+
+    private static void validatePolicy(int calls,
+                                       Duration delay,
+                                       Duration jitter,
+                                       double jitterFactor,
+                                       Duration maxDelay) {
+        Objects.requireNonNull(delay);
+        Objects.requireNonNull(jitter);
+        Objects.requireNonNull(maxDelay);
+        if (calls < 1) {
+            throw new IllegalArgumentException("Calls must be at least 1");
+        }
+        if (delay.isNegative()) {
+            throw new IllegalArgumentException("Delay must not be negative");
+        }
+        if (jitter.isNegative()) {
+            throw new IllegalArgumentException("Jitter must not be negative");
+        }
+        if (!Double.isFinite(jitterFactor) || jitterFactor < 0 || jitterFactor >= 1) {
+            throw new IllegalArgumentException("Jitter factor must be greater than or equal to 0 and lower than 1");
+        }
+        if (!jitter.isZero() && jitterFactor != 0) {
+            throw new IllegalArgumentException("Jitter and jitter factor cannot both be greater than zero");
+        }
+        if (maxDelay.isNegative()) {
+            throw new IllegalArgumentException("Maximum delay must not be negative");
+        }
+    }
+
+    private static long multiply(long value, double factor) {
+        double result = value * factor;
+        if (Double.isNaN(result) || result <= 0) {
+            return 0;
+        }
+        if (result >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return (long) result;
+    }
+
+    private static long withJitter(SecureRandom random,
+                                   long delay,
+                                   long jitter,
+                                   double jitterFactor,
+                                   long maxDelay) {
+        long result = delay;
+        if (jitterFactor > 0) {
+            jitter = multiply(delay, jitterFactor);
+        }
+        if (jitter > 0) {
+            long randomJitter;
+            if (jitter <= Long.MAX_VALUE / 2) {
+                randomJitter = random.nextLong(-jitter, jitter);
+            } else {
+                long magnitude = random.nextLong(jitter);
+                randomJitter = random.nextBoolean() ? magnitude : -magnitude;
+            }
+            if (randomJitter > 0 && result > Long.MAX_VALUE - randomJitter) {
+                result = Long.MAX_VALUE;
+            } else {
+                result = Math.max(0, result + randomJitter);
+            }
+        }
+        return Math.min(result, maxDelay);
+    }
+
+    /**
+     * Strategy used to wait before another invocation attempt.
+     */
+    @FunctionalInterface
+    interface WaitStrategy {
+        /**
+         * Wait before the next attempt.
+         * <p>
+         * An implementation that is interrupted must restore the thread interrupt status before returning or throwing.
+         * The retry invocation then terminates with {@link RetryOutcome.Termination#INTERRUPTED}.
+         *
+         * @param delay proposed delay before the next attempt
+         * @return {@code true} when the requested wait completed and another attempt should be made, {@code false} to
+         *         terminate retries
+         */
+        boolean await(Duration delay);
+    }
 
     /**
      * Retry policy to handle delays between retries.
@@ -94,7 +224,7 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
          *
          * @param firstCallMillis milliseconds recorded before the first call using {@link System#currentTimeMillis()}
          * @param lastDelay       last delay that was used (0 for the first failed call)
-         * @param call            call index (0 for the first failed call)
+         * @param call            number of completed calls (1 for the first failed invocation)
          * @return how long to wait before trying again, or empty to notify this is the end of retries
          */
         Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call);
@@ -117,16 +247,30 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
      *     <li>Second retry - 200 millis (previous delay * factor)</li>
      *     <li>Third retry - 400 millis (previous delay * factor)</li>
      * </ul>
+     * An optional absolute or relative jitter is applied after multiplying the delay. The final non-negative delay,
+     * including jitter, is capped by the configured maximum delay.
      */
     class DelayingRetryPolicy implements RetryPolicy {
+        private static final SecureRandom RANDOM = new SecureRandom();
+
         private final int calls;
         private final long delayMillis;
         private final double delayFactor;
+        private final long jitterMillis;
+        private final double jitterFactor;
+        private final long maxDelayMillis;
 
         private DelayingRetryPolicy(Builder builder) {
+            validatePolicy(builder.calls, builder.delay, builder.jitter, builder.jitterFactor, builder.maxDelay);
+            if (!Double.isFinite(builder.delayFactor) || builder.delayFactor < 0) {
+                throw new IllegalArgumentException("Delay factor must be a finite, non-negative number");
+            }
             this.calls = builder.calls;
-            this.delayMillis = builder.delay.toMillis();
+            this.delayMillis = durationToMillis(builder.delay);
             this.delayFactor = builder.delayFactor;
+            this.jitterMillis = durationToMillis(builder.jitter);
+            this.jitterFactor = builder.jitterFactor;
+            this.maxDelayMillis = durationToMillis(builder.maxDelay);
         }
 
         /**
@@ -158,11 +302,30 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
                 return Optional.empty();
             }
 
-            if (call == 0 || lastDelay == 0) {
-                return Optional.of(delayMillis);
-            }
+            long delay = multiply(delayMillis, Math.pow(delayFactor, Math.max(0, call - 1)));
 
-            return Optional.of((long) (lastDelay * delayFactor));
+            return Optional.of(withJitter(RANDOM, delay, jitterMillis, jitterFactor, maxDelayMillis));
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) {
+                return true;
+            }
+            if (!(object instanceof DelayingRetryPolicy other)) {
+                return false;
+            }
+            return calls == other.calls
+                    && delayMillis == other.delayMillis
+                    && Double.compare(delayFactor, other.delayFactor) == 0
+                    && jitterMillis == other.jitterMillis
+                    && Double.compare(jitterFactor, other.jitterFactor) == 0
+                    && maxDelayMillis == other.maxDelayMillis;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(calls, delayMillis, delayFactor, jitterMillis, jitterFactor, maxDelayMillis);
         }
 
         /**
@@ -172,6 +335,9 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
             private int calls = 3;
             private double delayFactor = 2;
             private Duration delay = Duration.ofMillis(200);
+            private Duration jitter = Duration.ZERO;
+            private double jitterFactor;
+            private Duration maxDelay = Duration.ofMillis(Long.MAX_VALUE);
 
             private Builder() {
             }
@@ -213,6 +379,43 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
                 this.delayFactor = delayFactor;
                 return this;
             }
+
+            /**
+             * Random part of the delay.
+             * A number between {@code [-jitter,+jitter]} is applied after the delay factor is calculated.
+             *
+             * @param jitter jitter duration
+             * @return updated builder instance
+             */
+            public Builder jitter(Duration jitter) {
+                this.jitter = Objects.requireNonNull(jitter);
+                return this;
+            }
+
+            /**
+             * Random jitter relative to the calculated delay, from {@code 0} (inclusive) to {@code 1} (exclusive).
+             * For example, a value of {@code 0.2} applies a random jitter of up to twenty percent in either direction.
+             * Relative and absolute jitter cannot both be greater than zero.
+             *
+             * @param jitterFactor relative jitter factor
+             * @return updated builder instance
+             */
+            public Builder jitterFactor(double jitterFactor) {
+                this.jitterFactor = jitterFactor;
+                return this;
+            }
+
+            /**
+             * Maximum delay between invocation attempts, including jitter. Jitter is applied first and the final
+             * non-negative delay is then capped by this value.
+             *
+             * @param maxDelay maximum delay
+             * @return updated builder instance
+             */
+            public Builder maxDelay(Duration maxDelay) {
+                this.maxDelay = Objects.requireNonNull(maxDelay);
+                return this;
+            }
         }
     }
 
@@ -229,28 +432,26 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
      *
      * <ul>
      *     <li>Initial call - always immediate (not handled by retry policy)</li>
-     *     <li>First retry: 50 - 150 millis (delay +- Random.nextInt(jitter)</li>
-     *     <li>Second retry: 50 - 150 millis</li>
-     *     <li>Third retry: 50 - 150 millis</li>
+     *     <li>First retry: 50 (inclusive) - 150 (exclusive) millis</li>
+     *     <li>Second retry: 50 (inclusive) - 150 (exclusive) millis</li>
+     *     <li>Third retry: 50 (inclusive) - 150 (exclusive) millis</li>
      * </ul>
+     * The final non-negative delay, including jitter, is capped by the configured maximum delay.
      */
     class JitterRetryPolicy implements RetryPolicy {
+        private static final SecureRandom RANDOM = new SecureRandom();
+
         private final int calls;
         private final long delayMillis;
-        private final Supplier<Integer> randomJitter;
+        private final long jitterMillis;
+        private final long maxDelayMillis;
 
         private JitterRetryPolicy(Builder builder) {
+            validatePolicy(builder.calls, builder.delay, builder.jitter, 0, builder.maxDelay);
             this.calls = builder.calls;
-            this.delayMillis = builder.delay.toMillis();
-            long jitter = builder.jitter.toMillis();
-            int jitterMillis = (jitter > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) jitter;
-            if (jitterMillis == 0) {
-                randomJitter = () -> 0;
-            } else {
-                Random random = new Random();
-                // need a number [-jitterMillis,+jitterMillis]
-                randomJitter = () -> random.nextInt(jitterMillis * 2) - jitterMillis;
-            }
+            this.delayMillis = durationToMillis(builder.delay);
+            this.jitterMillis = durationToMillis(builder.jitter);
+            this.maxDelayMillis = durationToMillis(builder.maxDelay);
         }
 
         /**
@@ -263,17 +464,31 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
         }
 
         @Override
-        public Optional<Long> nextDelayMillis(long firstCallNanos, long lastDelay, int call) {
+        public Optional<Long> nextDelayMillis(long firstCallMillis, long lastDelay, int call) {
             if (call >= calls) {
                 return Optional.empty();
             }
 
-            long delay = delayMillis;
-            int jitterRandom = randomJitter.get();
-            delay = delay + jitterRandom;
-            delay = Math.max(0, delay);
+            return Optional.of(withJitter(RANDOM, delayMillis, jitterMillis, 0, maxDelayMillis));
+        }
 
-            return Optional.of(delay);
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) {
+                return true;
+            }
+            if (!(object instanceof JitterRetryPolicy other)) {
+                return false;
+            }
+            return calls == other.calls
+                    && delayMillis == other.delayMillis
+                    && jitterMillis == other.jitterMillis
+                    && maxDelayMillis == other.maxDelayMillis;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(calls, delayMillis, jitterMillis, maxDelayMillis);
         }
 
         /**
@@ -283,6 +498,7 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
             private int calls = 3;
             private Duration delay = Duration.ofMillis(200);
             private Duration jitter = Duration.ofMillis(50);
+            private Duration maxDelay = Duration.ofMillis(Long.MAX_VALUE);
 
             private Builder() {
             }
@@ -323,9 +539,22 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
              * @return updated builder instance
              */
             public Builder jitter(Duration jitter) {
-                this.jitter = jitter;
+                this.jitter = Objects.requireNonNull(jitter);
+                return this;
+            }
+
+            /**
+             * Maximum delay between invocation attempts, including jitter. Jitter is applied first and the final
+             * non-negative delay is then capped by this value.
+             *
+             * @param maxDelay maximum delay
+             * @return updated builder instance
+             */
+            public Builder maxDelay(Duration maxDelay) {
+                this.maxDelay = Objects.requireNonNull(maxDelay);
                 return this;
             }
         }
     }
+
 }

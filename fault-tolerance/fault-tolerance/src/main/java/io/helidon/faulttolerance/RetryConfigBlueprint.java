@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,9 @@ import io.helidon.builder.api.Prototype;
 /**
  * {@link Retry} configuration bean.
  */
-@Prototype.Blueprint(decorator = RetryConfigBlueprint.BuilderDecorator.class)
+@Prototype.Blueprint(decorator = FtBuilderSupport.RetryBuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.retries")
+@Prototype.IncludeDefaultMethods({"jitterFactor", "maxDelay"})
 interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     /**
      * Default calls to make.
@@ -53,7 +54,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     Optional<String> name();
 
     /**
-     * Number of calls (first try + retries).
+     * Number of calls, including the initial call and retries, which must be at least {@code 1}.
      *
      * @return number of desired calls, must be 1 (means no retries) or higher.
      */
@@ -62,8 +63,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     int calls();
 
     /**
-     * Base delay between try and retry.
-     * Defaults to {@code 200 ms}.
+     * Non-negative base delay between the initial call and retries, which defaults to {@code 200 ms}.
      *
      * @return delay between retries (combines with retry policy)
      */
@@ -72,10 +72,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     Duration delay();
 
     /**
-     * Delay retry policy factor. If unspecified (value of {@code -1}), Jitter retry policy would be used, unless
-     * jitter is also unspecified.
-     * <p>
-     * Default when {@link Retry.DelayingRetryPolicy} is used is {@code 2}.
+     * Delay multiplier that must be {@code -1} or finite and non-negative; {@code -1} selects {@code 2} unless either
+     * jitter option is configured, and an explicit multiplier is applied before jitter.
      *
      * @return delay factor for delaying retry policy
      */
@@ -84,9 +82,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     double delayFactor();
 
     /**
-     * Jitter for {@link Retry.JitterRetryPolicy}. If unspecified (value of {@code -1}),
-     * delaying retry policy is used. If both this value, and {@link #delayFactor()} are specified, delaying retry policy
-     * would be used.
+     * Absolute random jitter that must be {@code PT-1S} (disabled) or non-negative; it cannot be combined with
+     * {@code jitter-factor}, is applied after {@code delay-factor}, and is capped by {@code max-delay} when present.
      *
      * @return jitter
      */
@@ -95,7 +92,31 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     Duration jitter();
 
     /**
-     * Overall timeout of all retries combined.
+     * Relative random jitter that must be {@code -1} (disabled) or from {@code 0} (inclusive) to {@code 1} (exclusive);
+     * it cannot be combined with {@code jitter}, is applied after {@code delay-factor}, and is capped by
+     * {@code max-delay} when present.
+     * A value of {@code 0.2} applies a random jitter of up to twenty percent in either direction.
+     *
+     * @return relative jitter factor
+     */
+    @Option.Configured
+    @Option.DefaultDouble(-1.0)
+    default double jitterFactor() {
+        return -1.0;
+    }
+
+    /**
+     * Optional non-negative maximum delay applied after jitter; when absent, the delay is not capped.
+     *
+     * @return maximum delay, if configured
+     */
+    @Option.Configured
+    default Optional<Duration> maxDelay() {
+        return Optional.empty();
+    }
+
+    /**
+     * Positive overall timeout used to bound the complete retry sequence.
      *
      * @return overall timeout
      */
@@ -140,47 +161,4 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean enableMetrics();
-
-    class BuilderDecorator implements Prototype.BuilderDecorator<RetryConfig.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(RetryConfig.BuilderBase<?, ?> target) {
-            if (target.name().isEmpty()) {
-                target.config()
-                        .ifPresent(cfg -> target.name(cfg.name()));
-            }
-            if (target.retryPolicy().isEmpty()) {
-                target.retryPolicy(retryPolicy(target));
-            }
-        }
-
-        /**
-         * Retry policy created from this configuration.
-         *
-         * @return retry policy to use
-         */
-        private Retry.RetryPolicy retryPolicy(RetryConfig.BuilderBase<?, ?> target) {
-            if (target.jitter().toSeconds() == -1) {
-                Retry.DelayingRetryPolicy.Builder delayBuilder = Retry.DelayingRetryPolicy.builder()
-                        .calls(target.calls())
-                        .delay(target.delay());
-
-                if (target.delayFactor() != -1) {
-                    delayBuilder.delayFactor(target.delayFactor());
-                }
-                return delayBuilder.build();
-            }
-            if (target.delayFactor() != -1) {
-                return Retry.DelayingRetryPolicy.builder()
-                        .calls(target.calls())
-                        .delayFactor(target.delayFactor())
-                        .delay(target.delay())
-                        .build();
-            }
-            return Retry.JitterRetryPolicy.builder()
-                    .calls(target.calls())
-                    .delay(target.delay())
-                    .jitter(target.jitter())
-                    .build();
-        }
-    }
 }
