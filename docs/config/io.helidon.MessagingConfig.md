@@ -1,8 +1,8 @@
-# io.<wbr>helidon.<wbr>helidon.<wbr>Messaging<wbr>Config
+# io.<wbr>helidon.<wbr>Messaging<wbr>Config
 
 ## Description
 
-Configuration for helidon.messaging
+Configuration for messaging
 
 ## Configuration options
 
@@ -31,7 +31,7 @@ Configuration for helidon.messaging
 
 ## Usages
 
-- <a href="io.helidon.HelidonConfig.md#messaging"><code>helidon.<wbr>messaging</code></a>
+- <a href="config_reference.md#messaging"><code>messaging</code></a>
 
 ---
 

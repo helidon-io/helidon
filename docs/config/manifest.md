@@ -245,7 +245,7 @@ See the [root type](config_reference.md).
 
 - [io.<wbr>helidon.<wbr>Data<wbr>Config](io.helidon.DataConfig.md)
 - [io.<wbr>helidon.<wbr>Fault<wbr>Tolerance<wbr>Config](io.helidon.FaultToleranceConfig.md)
-- [io.<wbr>helidon.<wbr>Helidon<wbr>Config](io.helidon.HelidonConfig.md)
+- [io.<wbr>helidon.<wbr>Messaging<wbr>Config](io.helidon.MessagingConfig.md)
 - [io.<wbr>helidon.<wbr>Metrics<wbr>Config](io.helidon.MetricsConfig.md)
 - [io.<wbr>helidon.<wbr>clients.<wbr>tls.<wbr>private<wbr>Key.<wbr>keystore.<wbr>Cert<wbr>Chain<wbr>Config](io.helidon.clients.tls.privateKey.keystore.CertChainConfig.md)
 - [io.<wbr>helidon.<wbr>clients.<wbr>tls.<wbr>private<wbr>Key.<wbr>keystore.<wbr>Cert<wbr>Config](io.helidon.clients.tls.privateKey.keystore.CertConfig.md)
@@ -262,7 +262,6 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>clients.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>KeyConfig](io.helidon.clients.tls.trust.pem.KeyConfig.md)
 - [io.<wbr>helidon.<wbr>clients.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>Public<wbr>KeyConfig](io.helidon.clients.tls.trust.pem.PublicKeyConfig.md)
 - [io.<wbr>helidon.<wbr>data.<wbr>Sources<wbr>Config](io.helidon.data.SourcesConfig.md)
-- [io.<wbr>helidon.<wbr>helidon.<wbr>Messaging<wbr>Config](io.helidon.helidon.MessagingConfig.md)
 - [io.<wbr>helidon.<wbr>metrics.<wbr>Rest<wbr>Request<wbr>Config](io.helidon.metrics.RestRequestConfig.md)
 - [io.<wbr>helidon.<wbr>metrics.<wbr>Timers<wbr>Config](io.helidon.metrics.TimersConfig.md)
 - [io.<wbr>helidon.<wbr>metrics.<wbr>Virtual<wbr>Threads<wbr>Config](io.helidon.metrics.VirtualThreadsConfig.md)

@@ -269,11 +269,10 @@ class DeclarativeRegistrationTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(outputless),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      incoming:
-                                                        audit:
-                                                          connector: test-in
+                                                  messaging:
+                                                    incoming:
+                                                      audit:
+                                                        connector: test-in
                                                   """),
                                           List.of(incomingProvider)));
         assertThat(outputFailure.getMessage(), containsString("processor target channel audit has no outputs"));

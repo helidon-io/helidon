@@ -275,30 +275,29 @@ connector completed. The target channel must have at least one receiver or confi
 
 ### Configure connectors
 
-Add external sources under `helidon.messaging.incoming` and external sinks under `helidon.messaging.outgoing`.
-Connector-wide defaults under `helidon.messaging.connector.<type>` are overlaid by the corresponding channel values.
+Add external sources under `messaging.incoming` and external sinks under `messaging.outgoing`.
+Connector-wide defaults under `messaging.connector.<type>` are overlaid by the corresponding channel values.
 
 First-party connectors from the Helidon Extensions repository use the `helidon-` prefix so they remain distinguishable
 from third-party providers. For example, an application using the JMS connector can configure:
 
 ```yaml
-helidon:
-  messaging:
-    connector:
-      helidon-jms:
-        connection-factory: primary-jms
+messaging:
+  connector:
+    helidon-jms:
+      connection-factory: primary-jms
 
-    incoming:
-      orders:
-        connector: helidon-jms
-        destination: orders
-        destination-type: QUEUE
+  incoming:
+    orders:
+      connector: helidon-jms
+      destination: orders
+      destination-type: QUEUE
 
-    outgoing:
-      validated-orders:
-        connector: helidon-jms
-        destination: validated-orders
-        destination-type: QUEUE
+  outgoing:
+    validated-orders:
+      connector: helidon-jms
+      destination: validated-orders
+      destination-type: QUEUE
 ```
 
 Connector options other than `connector` are connector-specific. The `failure` subtree of an incoming channel is
@@ -350,17 +349,16 @@ policy, their effective policies must agree.
 Configuration overrides annotation members independently:
 
 ```yaml
-helidon:
-  messaging:
-    incoming:
-      orders:
-        connector: helidon-jms
-        destination: orders
-        destination-type: QUEUE
-        failure:
-          retry:
-            max-attempts: 1
-          on-exhausted: DROP
+messaging:
+  incoming:
+    orders:
+      connector: helidon-jms
+      destination: orders
+      destination-type: QUEUE
+      failure:
+        retry:
+          max-attempts: 1
+        on-exhausted: DROP
 ```
 
 This merges the nested retry settings, retaining the annotation's retry delay while changing the total attempts to one,
@@ -381,24 +379,23 @@ directly.
 ### Configure execution limits
 
 Messaging uses bounded admission rather than a Reactive Streams protocol. Global limits are configured under
-`helidon.messaging.execution`; channel-specific values under `helidon.messaging.channel.<channel>.execution` override
+`messaging.execution`; channel-specific values under `messaging.channel.<channel>.execution` override
 them:
 
 ```yaml
-helidon:
-  messaging:
-    execution:
-      queue-capacity: 0
-      max-pending-admissions: 64
-      max-pending-messages: 1024
-      max-in-flight-messages: 1024
-      admission-timeout: PT5S
-      shutdown-timeout: PT10S
+messaging:
+  execution:
+    queue-capacity: 0
+    max-pending-admissions: 64
+    max-pending-messages: 1024
+    max-in-flight-messages: 1024
+    admission-timeout: PT5S
+    shutdown-timeout: PT10S
 
-    channel:
-      orders:
-        execution:
-          queue-capacity: 32
+  channel:
+    orders:
+      execution:
+        queue-capacity: 32
 ```
 
 Admitted deliveries execute sequentially in FIFO order within each channel, so messaging methods handling that channel
@@ -623,7 +620,7 @@ out of diagnostics and `toString()` output.
 
 For each binding, the runtime constructs the effective `Config` in this order:
 
-1. Start with defaults under `helidon.messaging.connector.<connector-type>`.
+1. Start with defaults under `messaging.connector.<connector-type>`.
 2. Overlay the selected `incoming` or `outgoing` channel configuration.
 3. Remove the portable `failure` subtree.
 4. Add `channel-name`, `connector`, and `direction` (`INCOMING` or `OUTGOING`).
@@ -1081,21 +1078,20 @@ Do not add an independent application-delivery retry loop on top of the runtime 
 Connector defaults and channel overrides can be combined as follows:
 
 ```yaml
-helidon:
-  messaging:
-    connector:
-      example-acme:
-        endpoint: https://broker.example
+messaging:
+  connector:
+    example-acme:
+      endpoint: https://broker.example
 
-    incoming:
-      orders:
-        connector: example-acme
-        destination: orders-in
+  incoming:
+    orders:
+      connector: example-acme
+      destination: orders-in
 
-    outgoing:
-      validated-orders:
-        connector: example-acme
-        destination: orders-out
+  outgoing:
+    validated-orders:
+      connector: example-acme
+      destination: orders-out
 ```
 
 Add a generated receiver or named emitter for each configured channel, start the Service Registry application, and

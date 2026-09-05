@@ -95,7 +95,7 @@ Messaging admission and shutdown configuration
 
 ## Usages
 
-- <a href="io.helidon.helidon.MessagingConfig.md#execution"><code>helidon.<wbr>messaging.<wbr>execution</code></a>
+- <a href="io.helidon.MessagingConfig.md#execution"><code>messaging.<wbr>execution</code></a>
 
 ---
 

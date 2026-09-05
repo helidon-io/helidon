@@ -17,10 +17,11 @@
 package io.helidon.messaging;
 
 final class MessagingConfigSupport {
-    static final String CONNECTOR_PREFIX = "helidon.messaging.connector.";
-    static final String EXECUTION = "helidon.messaging.execution";
-    static final String INCOMING_PREFIX = "helidon.messaging.incoming.";
-    static final String OUTGOING_PREFIX = "helidon.messaging.outgoing.";
+    static final String CHANNEL_PREFIX = "messaging.channel.";
+    static final String CONNECTOR_PREFIX = "messaging.connector.";
+    static final String EXECUTION = "messaging.execution";
+    static final String INCOMING_PREFIX = "messaging.incoming.";
+    static final String OUTGOING_PREFIX = "messaging.outgoing.";
 
     private MessagingConfigSupport() {
     }

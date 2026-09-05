@@ -531,7 +531,7 @@ class DeclarativeMessagingTest {
 
     @Test
     void testIncomingConnectorSourcePreservesHandlerFailure() throws InterruptedException {
-        String channelConfig = "helidon.messaging.incoming." + ChannelMessagingTypes.FAILING_CHANNEL;
+        String channelConfig = "messaging.incoming." + ChannelMessagingTypes.FAILING_CHANNEL;
         useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR,
                          channelConfig + ".failure.retry.max-attempts", "1"));
         registry.get(MessagingRuntime.class);
@@ -546,7 +546,7 @@ class DeclarativeMessagingTest {
 
     @Test
     void testGeneratedOnFailureRetriesThenDeadLetters() throws InterruptedException {
-        String channelConfig = "helidon.messaging.incoming." + ChannelMessagingTypes.ANNOTATED_FAILURE_CHANNEL;
+        String channelConfig = "messaging.incoming." + ChannelMessagingTypes.ANNOTATED_FAILURE_CHANNEL;
         useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR));
         registry.get(MessagingRuntime.class);
         var observer = registry.get(TestConnectorObserver.class);
@@ -567,7 +567,7 @@ class DeclarativeMessagingTest {
 
     @Test
     void testFailureConfigOverridesGeneratedOnFailureWithDrop() throws InterruptedException {
-        String channelConfig = "helidon.messaging.incoming." + ChannelMessagingTypes.ANNOTATED_FAILURE_CHANNEL;
+        String channelConfig = "messaging.incoming." + ChannelMessagingTypes.ANNOTATED_FAILURE_CHANNEL;
         useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR,
                          channelConfig + ".failure.retry.max-attempts", "1",
                          channelConfig + ".failure.on-exhausted", "DROP"));
@@ -840,7 +840,7 @@ class DeclarativeMessagingTest {
 
     @Test
     void testIncomingConnectorEmitsIntoNamedChannel() throws InterruptedException {
-        useConfig(Map.of("helidon.messaging.incoming." + ChannelMessagingTypes.CHANNEL_ONE + ".connector",
+        useConfig(Map.of("messaging.incoming." + ChannelMessagingTypes.CHANNEL_ONE + ".connector",
                          ChannelMessagingTypes.TEST_CONNECTOR));
         registry.get(MessagingRuntime.class);
         var observer = registry.get(TestConnectorObserver.class);
@@ -865,7 +865,7 @@ class DeclarativeMessagingTest {
     @Test
     void testMessagingStopsBeforeConsumerServiceIsDestroyed() {
         ShutdownConsumer.events().clear();
-        useConfig(Map.of("helidon.messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector",
+        useConfig(Map.of("messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector",
                          ChannelMessagingTypes.SHUTDOWN_CONNECTOR));
         registry.get(MessagingRuntime.class);
         registry.get(ShutdownConsumer.class);
@@ -879,7 +879,7 @@ class DeclarativeMessagingTest {
     void testShutdownDrainsAdmittedSingletonConsumer() throws Exception {
         ShutdownSingletonConsumer.reset();
         ShutdownSingletonProbe.reset();
-        useConfig(Map.of("helidon.messaging.execution.shutdown-timeout", "PT1S"));
+        useConfig(Map.of("messaging.execution.shutdown-timeout", "PT1S"));
         MessagingRuntime runtime = registry.get(MessagingRuntime.class);
         registry.get(ShutdownSingletonProbe.class);
         CompletableFuture<Void> emission = async(() -> runtime.emitBatch(
@@ -905,11 +905,11 @@ class DeclarativeMessagingTest {
     void testMessagingStartsEagerlyAtItsRunLevel() {
         ShutdownConsumer.events().clear();
 
-        startWithConfig(Map.of("helidon.messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector",
+        startWithConfig(Map.of("messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector",
                                ChannelMessagingTypes.SHUTDOWN_CONNECTOR));
 
         assertThat(registry.get(Config.class)
-                           .get("helidon.messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector")
+                           .get("messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector")
                            .asString()
                            .orElse(""),
                    is(ChannelMessagingTypes.SHUTDOWN_CONNECTOR));

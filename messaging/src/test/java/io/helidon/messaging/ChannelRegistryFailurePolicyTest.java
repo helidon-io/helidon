@@ -96,21 +96,20 @@ class ChannelRegistryFailurePolicyTest {
     @Test
     void testGlobalAndChannelExecutionConfigurationMerge() {
         Config config = yaml("""
-                helidon:
-                  messaging:
-                    execution:
-                      queue-capacity: 3
-                      max-pending-admissions: 4
-                      max-pending-messages: 5
-                      max-in-flight-messages: 7
-                      admission-timeout: PT0.009S
-                      shutdown-timeout: PT0.01S
-                    channel:
-                      orders:
-                        execution:
-                          queue-capacity: 12
-                          max-pending-messages: 14
-                          admission-timeout: PT0.018S
+                messaging:
+                  execution:
+                    queue-capacity: 3
+                    max-pending-admissions: 4
+                    max-pending-messages: 5
+                    max-in-flight-messages: 7
+                    admission-timeout: PT0.009S
+                    shutdown-timeout: PT0.01S
+                  channel:
+                    orders:
+                      execution:
+                        queue-capacity: 12
+                        max-pending-messages: 14
+                        admission-timeout: PT0.018S
                 """);
 
         MessagingExecutionConfig global = ChannelRegistry.executionConfig(config, null);
@@ -133,16 +132,15 @@ class ChannelRegistryFailurePolicyTest {
     @Test
     void testLiteralDottedChannelExecutionConfigurationMerge() {
         Config config = yaml("""
-                helidon:
-                  messaging:
-                    execution:
-                      queue-capacity: 3
-                      max-pending-messages: 5
-                    channel:
-                      orders~1v1:
-                        execution:
-                          queue-capacity: 12
-                          max-pending-messages: 14
+                messaging:
+                  execution:
+                    queue-capacity: 3
+                    max-pending-messages: 5
+                  channel:
+                    orders~1v1:
+                      execution:
+                        queue-capacity: 12
+                        max-pending-messages: 14
                 """);
 
         MessagingExecutionConfig orders = ChannelRegistry.executionConfig(config, "orders.v1");
@@ -158,12 +156,11 @@ class ChannelRegistryFailurePolicyTest {
                 () -> registry(
                         List.of(registration("orders", ignored -> { })),
                         yaml("""
-                                helidon:
-                                  messaging:
-                                    channel:
-                                      orders:
-                                        execution:
-                                          shutdown-timeout: PT1S
+                                messaging:
+                                  channel:
+                                    orders:
+                                      execution:
+                                        shutdown-timeout: PT1S
                                 """),
                         List.of()));
 
@@ -177,15 +174,14 @@ class ChannelRegistryFailurePolicyTest {
         ChannelRegistry registry = registry(
                 List.of(),
                 yaml("""
-                        helidon:
-                          messaging:
-                            incoming:
-                              orders~1v1:
-                                connector: test-in
-                                destination: orders-v1
-                            outgoing:
-                              orders~1v1:
-                                connector: test-out
+                        messaging:
+                          incoming:
+                            orders~1v1:
+                              connector: test-in
+                              destination: orders-v1
+                          outgoing:
+                            orders~1v1:
+                              connector: test-out
                         """),
                 List.of(incoming, outgoing));
         try {
@@ -208,31 +204,30 @@ class ChannelRegistryFailurePolicyTest {
                         registration("overridden", ignored -> { }),
                         registration("empty", ignored -> { })),
                 yaml("""
-                        helidon:
-                          messaging:
-                            connector:
-                              acme~1v1:
-                                endpoint: https://default.example.test
-                                items: [a, b, c]
-                                authentication:
-                                  username: connector-user
-                                  password: connector-password
-                                failure: [ignored]
-                            incoming:
-                              inherited:
-                                connector: acme.v1
-                              overridden:
-                                connector: acme.v1
-                                endpoint: https://channel.example.test
-                                items: [x]
-                                authentication:
-                                  username: channel-user
-                                failure:
-                                  retry:
-                                    max-attempts: 1
-                              empty:
-                                connector: acme.v1
-                                items: []
+                        messaging:
+                          connector:
+                            acme~1v1:
+                              endpoint: https://default.example.test
+                              items: [a, b, c]
+                              authentication:
+                                username: connector-user
+                                password: connector-password
+                              failure: [ignored]
+                          incoming:
+                            inherited:
+                              connector: acme.v1
+                            overridden:
+                              connector: acme.v1
+                              endpoint: https://channel.example.test
+                              items: [x]
+                              authentication:
+                                username: channel-user
+                              failure:
+                                retry:
+                                  max-attempts: 1
+                            empty:
+                              connector: acme.v1
+                              items: []
                         """),
                 List.of(incoming));
         try {
@@ -289,14 +284,12 @@ class ChannelRegistryFailurePolicyTest {
                         .build())
                 .build();
         ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
-                .addObject("helidon", ConfigNode.ObjectNode.builder()
-                        .addObject("messaging", ConfigNode.ObjectNode.builder()
-                                .addObject("connector", ConfigNode.ObjectNode.builder()
-                                        .addObject("test-in", defaultConnector)
-                                        .build())
-                                .addObject("incoming", ConfigNode.ObjectNode.builder()
-                                        .addObject("orders", channel)
-                                        .build())
+                .addObject("messaging", ConfigNode.ObjectNode.builder()
+                        .addObject("connector", ConfigNode.ObjectNode.builder()
+                                .addObject("test-in", defaultConnector)
+                                .build())
+                        .addObject("incoming", ConfigNode.ObjectNode.builder()
+                                .addObject("orders", channel)
                                 .build())
                         .build())
                 .build();
@@ -328,20 +321,19 @@ class ChannelRegistryFailurePolicyTest {
                 List.of(passThroughProcessor("source", "target", processorAttempts),
                         registration("target", message -> received.add((String) message.entity()))),
                 yaml("""
-                        helidon:
-                          messaging:
-                            channel:
-                              source:
-                                execution:
-                                  max-pending-messages: 2
-                                  max-in-flight-messages: 2
-                              target:
-                                execution:
-                                  max-pending-messages: 8
-                                  max-in-flight-messages: 1
-                            incoming:
-                              source:
-                                connector: test-in
+                        messaging:
+                          channel:
+                            source:
+                              execution:
+                                max-pending-messages: 2
+                                max-in-flight-messages: 2
+                            target:
+                              execution:
+                                max-pending-messages: 8
+                                max-in-flight-messages: 1
+                          incoming:
+                            source:
+                              connector: test-in
                         """),
                 List.of(incoming));
         start(registry);
@@ -382,17 +374,16 @@ class ChannelRegistryFailurePolicyTest {
         ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> { })),
                 yaml("""
-                        helidon:
-                          messaging:
-                            channel:
-                              orders:
-                                execution:
-                                  max-pending-messages: 1
-                                  max-in-flight-messages: 1
-                                  admission-timeout: %s
-                            incoming:
-                              orders:
-                                connector: test-in
+                        messaging:
+                          channel:
+                            orders:
+                              execution:
+                                max-pending-messages: 1
+                                max-in-flight-messages: 1
+                                admission-timeout: %s
+                          incoming:
+                            orders:
+                              connector: test-in
                         """.formatted(configuredTimeout)),
                 List.of(incoming));
         start(registry);
@@ -425,14 +416,13 @@ class ChannelRegistryFailurePolicyTest {
         ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> { })),
                 yaml("""
-                        helidon:
-                          messaging:
-                            channel:
-                              orders:
-                                execution:
-                                  max-pending-messages: 1
-                                  max-in-flight-messages: 1
-                                  admission-timeout: %s
+                        messaging:
+                          channel:
+                            orders:
+                              execution:
+                                max-pending-messages: 1
+                                max-in-flight-messages: 1
+                                admission-timeout: %s
                         """.formatted(admissionTimeout)),
                 List.of());
         start(registry);
@@ -519,14 +509,13 @@ class ChannelRegistryFailurePolicyTest {
         ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> { })),
                 yaml("""
-                        helidon:
-                          messaging:
-                            channel:
-                              orders:
-                                execution:
-                                  max-pending-messages: 1
-                                  max-in-flight-messages: 1
-                                  admission-timeout: %s
+                        messaging:
+                          channel:
+                            orders:
+                              execution:
+                                max-pending-messages: 1
+                                max-in-flight-messages: 1
+                                admission-timeout: %s
                         """.formatted(admissionTimeout)),
                 List.of());
         start(registry);
@@ -552,12 +541,11 @@ class ChannelRegistryFailurePolicyTest {
         ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> { })),
                 yaml("""
-                        helidon:
-                          messaging:
-                            channel:
-                              orders:
-                                execution:
-                                  admission-timeout: PT0.000000001S
+                        messaging:
+                          channel:
+                            orders:
+                              execution:
+                                admission-timeout: PT0.000000001S
                         """),
                 List.of());
         start(registry);
@@ -575,12 +563,11 @@ class ChannelRegistryFailurePolicyTest {
         ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> { })),
                 yaml("""
-                        helidon:
-                          messaging:
-                            channel:
-                              orders:
-                                execution:
-                                  admission-timeout: %s
+                        messaging:
+                          channel:
+                            orders:
+                              execution:
+                                admission-timeout: %s
                         """.formatted(admissionTimeout)),
                 List.of());
         start(registry);
@@ -604,12 +591,11 @@ class ChannelRegistryFailurePolicyTest {
         ChannelRegistry registry = registry(
                 List.of(registration("orders", ignored -> contextReference.get().tryReserveDelivery())),
                 yaml("""
-                        helidon:
-                          messaging:
-                            channel:
-                              orders:
-                                execution:
-                                  admission-timeout: PT0.000000001S
+                        messaging:
+                          channel:
+                            orders:
+                              execution:
+                                admission-timeout: PT0.000000001S
                         """),
                 List.of());
         start(registry);
@@ -638,27 +624,26 @@ class ChannelRegistryFailurePolicyTest {
                                 throw new IllegalStateException(failureMessage);
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        channel:
-                                          orders:
-                                            execution:
-                                              queue-capacity: 0
-                                              max-pending-messages: 1
-                                              max-in-flight-messages: 1
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                delay: PT0.001S
-                                                max-attempts: 2
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
-                                        outgoing:
-                                          orders-dlq:
-                                            connector: test-out
+                                    messaging:
+                                      channel:
+                                        orders:
+                                          execution:
+                                            queue-capacity: 0
+                                            max-pending-messages: 1
+                                            max-in-flight-messages: 1
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              max-attempts: 2
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
                                     """),
                             List.of(incoming, outgoing));
         start(registry);
@@ -713,20 +698,19 @@ class ChannelRegistryFailurePolicyTest {
                                 handled.add((String) message.entity());
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        channel:
-                                          orders:
-                                            execution:
-                                              queue-capacity: 0
-                                              max-pending-messages: 2
-                                              max-in-flight-messages: 1
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                delay: PT1H
+                                    messaging:
+                                      channel:
+                                        orders:
+                                          execution:
+                                            queue-capacity: 0
+                                            max-pending-messages: 2
+                                            max-in-flight-messages: 1
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT1H
                                     """),
                             List.of(incoming));
         start(registry);
@@ -809,17 +793,16 @@ class ChannelRegistryFailurePolicyTest {
                         }),
                         deadLetterConsumer),
                 yaml("""
-                        helidon:
-                          messaging:
-                            incoming:
-                              orders:
-                                connector: test-in
-                                failure:
-                                  retry:
-                                    max-attempts: 1
-                                  on-exhausted: DEAD_LETTER
-                                  dead-letter:
-                                    channel: orders-dlq
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                              failure:
+                                retry:
+                                  max-attempts: 1
+                                on-exhausted: DEAD_LETTER
+                                dead-letter:
+                                  channel: orders-dlq
                         """),
                 List.of(incoming));
         start(registry);
@@ -848,30 +831,29 @@ class ChannelRegistryFailurePolicyTest {
                                 handlerCalls.incrementAndGet();
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        channel:
-                                          orders:
-                                            execution:
-                                              max-pending-messages: 2
-                                              max-in-flight-messages: 2
-                                          orders-dlq:
-                                            execution:
-                                              max-pending-messages: 8
-                                              max-in-flight-messages: 1
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                delay: PT0.001S
-                                                max-attempts: 3
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
-                                        outgoing:
-                                          orders-dlq:
-                                            connector: test-out
+                                    messaging:
+                                      channel:
+                                        orders:
+                                          execution:
+                                            max-pending-messages: 2
+                                            max-in-flight-messages: 2
+                                        orders-dlq:
+                                          execution:
+                                            max-pending-messages: 8
+                                            max-in-flight-messages: 1
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              max-attempts: 3
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
                                     """),
                             List.of(incoming, outgoing));
         start(registry);
@@ -903,15 +885,14 @@ class ChannelRegistryFailurePolicyTest {
                                 handled.add((String) message.entity());
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DROP
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DROP
                                     """),
                             List.of(incoming));
         start(registry);
@@ -936,20 +917,19 @@ class ChannelRegistryFailurePolicyTest {
                                 failureSettledBeforeDeferred.compareAndSet(false, outgoing.messages().size() == 1);
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
-                                        outgoing:
-                                          orders-dlq:
-                                            connector: test-out
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
                                     """),
                             List.of(incoming, outgoing));
         start(registry);
@@ -978,14 +958,13 @@ class ChannelRegistryFailurePolicyTest {
                                 handled.add((String) message.entity());
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1016,21 +995,20 @@ class ChannelRegistryFailurePolicyTest {
                                 handlerCalls.incrementAndGet();
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                delay: PT0.001S
-                                                max-attempts: 2
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
-                                        outgoing:
-                                          orders-dlq:
-                                            connector: test-out
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              max-attempts: 2
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
                                     """),
                             List.of(incoming, outgoing));
         start(registry);
@@ -1063,20 +1041,19 @@ class ChannelRegistryFailurePolicyTest {
                                 throw new IllegalStateException("handler failed");
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
-                                        outgoing:
-                                          orders-dlq:
-                                            connector: test-out
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
                                     """),
                             List.of(incoming, outgoing));
         start(registry);
@@ -1108,20 +1085,19 @@ class ChannelRegistryFailurePolicyTest {
                                 }
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
-                                        outgoing:
-                                          orders-dlq:
-                                            connector: test-out
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
                                     """),
                             List.of(incoming, outgoing));
         start(registry);
@@ -1160,16 +1136,15 @@ class ChannelRegistryFailurePolicyTest {
         });
         ChannelRegistry registry = registry(List.of(source),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                delay: PT0.001S
-                                                max-attempts: 2
-                                              on-exhausted: DROP
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              max-attempts: 2
+                                            on-exhausted: DROP
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1210,15 +1185,14 @@ class ChannelRegistryFailurePolicyTest {
         });
         ChannelRegistry registry = registry(List.of(source),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                delay: PT0.001S
-                                                max-attempts: 3
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              max-attempts: 3
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1254,15 +1228,14 @@ class ChannelRegistryFailurePolicyTest {
                                 }
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DROP
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DROP
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1286,15 +1259,14 @@ class ChannelRegistryFailurePolicyTest {
         });
         ChannelRegistry registry = registry(List.of(source),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DROP
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DROP
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1318,14 +1290,13 @@ class ChannelRegistryFailurePolicyTest {
                                 }
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1358,14 +1329,13 @@ class ChannelRegistryFailurePolicyTest {
                                 }
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1398,16 +1368,15 @@ class ChannelRegistryFailurePolicyTest {
         assertThrows(RuntimeException.class,
                      () -> registry(List.of(),
                                                yaml("""
-                                                       helidon:
-                                                         messaging:
-                                                           incoming:
-                                                             orders:
-                                                               connector: test-in
-                                                               failure:
-                                                                 on-exhausted: DROP
-                                                           outgoing:
-                                                             audit:
-                                                               connector: test-out
+                                                       messaging:
+                                                         incoming:
+                                                           orders:
+                                                             connector: test-in
+                                                             failure:
+                                                               on-exhausted: DROP
+                                                         outgoing:
+                                                           audit:
+                                                             connector: test-out
                                                        """),
                                                List.of(incoming, outgoing)));
 
@@ -1434,11 +1403,10 @@ class ChannelRegistryFailurePolicyTest {
                         List.of(registration("first-handler", "orders", firstPolicy, ignored -> { }),
                                 registration("second-handler", "orders", secondPolicy, ignored -> { })),
                         yaml("""
-                                helidon:
-                                  messaging:
-                                    incoming:
-                                      orders:
-                                        connector: test-in
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
                                 """),
                         List.of(incoming)));
 
@@ -1467,11 +1435,10 @@ class ChannelRegistryFailurePolicyTest {
                         registration("second-handler", "orders", secondPolicy, ignored -> { }),
                         registration("orders-dlq", ignored -> { })),
                 yaml("""
-                        helidon:
-                          messaging:
-                            incoming:
-                              orders:
-                                connector: test-in
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
                         """),
                 List.of(incoming));
         try {
@@ -1505,15 +1472,14 @@ class ChannelRegistryFailurePolicyTest {
                 List.of(registration("first-handler", "orders", firstPolicy, ignored -> { }),
                         registration("second-handler", "orders", secondPolicy, ignored -> { })),
                 yaml("""
-                        helidon:
-                          messaging:
-                            incoming:
-                              orders:
-                                connector: test-in
-                                failure:
-                                  retry:
-                                    max-attempts: 1
-                                  on-exhausted: DROP
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                              failure:
+                                retry:
+                                  max-attempts: 1
+                                on-exhausted: DROP
                         """),
                 List.of(incoming));
         try {
@@ -1547,14 +1513,13 @@ class ChannelRegistryFailurePolicyTest {
                         List.of(registration("first-handler", "orders", firstPolicy, ignored -> { }),
                                 registration("second-handler", "orders", secondPolicy, ignored -> { })),
                         yaml("""
-                                helidon:
-                                  messaging:
-                                    incoming:
-                                      orders:
-                                        connector: test-in
-                                        failure:
-                                          retry:
-                                            max-attempts: 1
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          max-attempts: 1
                                 """),
                         List.of(incoming)));
 
@@ -1574,20 +1539,19 @@ class ChannelRegistryFailurePolicyTest {
                                 throw processingFailure;
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
-                                        outgoing:
-                                          orders-dlq:
-                                            connector: test-out
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
                                     """),
                             List.of(incoming, outgoing));
         start(registry);
@@ -1623,17 +1587,16 @@ class ChannelRegistryFailurePolicyTest {
                 });
         ChannelRegistry registry = registry(List.of(source, deadLetterConsumer),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1671,11 +1634,10 @@ class ChannelRegistryFailurePolicyTest {
                                 }
                             })),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1716,17 +1678,16 @@ class ChannelRegistryFailurePolicyTest {
         });
         ChannelRegistry registry = registry(List.of(source, deadLetter),
                             yaml("""
-                                    helidon:
-                                      messaging:
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                            failure:
-                                              retry:
-                                                max-attempts: 1
-                                              on-exhausted: DEAD_LETTER
-                                              dead-letter:
-                                                channel: orders-dlq
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              max-attempts: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
                                     """),
                             List.of(incoming));
         start(registry);
@@ -1755,22 +1716,21 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      incoming:
-                                                        first:
-                                                          connector: test-in
-                                                        second:
-                                                          connector: test-in
-                                                          failure:
-                                                            retry:
-                                                              max-attempts: 1
-                                                            on-exhausted: DEAD_LETTER
-                                                            dead-letter:
-                                                              channel: missing
-                                                      outgoing:
-                                                        audit:
-                                                          connector: test-out
+                                                  messaging:
+                                                    incoming:
+                                                      first:
+                                                        connector: test-in
+                                                      second:
+                                                        connector: test-in
+                                                        failure:
+                                                          retry:
+                                                            max-attempts: 1
+                                                          on-exhausted: DEAD_LETTER
+                                                          dead-letter:
+                                                            channel: missing
+                                                    outgoing:
+                                                      audit:
+                                                        connector: test-out
                                                   """),
                                           List.of(incoming, outgoing)));
 
@@ -1787,19 +1747,18 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      incoming:
-                                                        orders:
-                                                          connector: test-in
-                                                          failure:
-                                                            retry:
-                                                              max-attempts: 1
-                                                            on-exhausted: DEAD_LETTER
-                                                            dead-letter:
-                                                              channel: empty
-                                                        empty:
-                                                          connector: test-in
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: test-in
+                                                        failure:
+                                                          retry:
+                                                            max-attempts: 1
+                                                          on-exhausted: DEAD_LETTER
+                                                          dead-letter:
+                                                            channel: empty
+                                                      empty:
+                                                        connector: test-in
                                                   """),
                                           List.of(outputless)));
         assertThat(outputlessFailure.getMessage(), containsString("has no outputs"));
@@ -1811,17 +1770,16 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(registration("orders", ignored -> { })),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      incoming:
-                                                        orders:
-                                                          connector: test-in
-                                                          failure:
-                                                            retry:
-                                                              max-attempts: 1
-                                                            on-exhausted: DEAD_LETTER
-                                                            dead-letter:
-                                                              channel: orders
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: test-in
+                                                        failure:
+                                                          retry:
+                                                            max-attempts: 1
+                                                          on-exhausted: DEAD_LETTER
+                                                          dead-letter:
+                                                            channel: orders
                                                   """),
                                           List.of(self)));
         assertThat(selfFailure.getMessage(), containsString("must not reference itself"));
@@ -1840,33 +1798,32 @@ class ChannelRegistryFailurePolicyTest {
                                 registration("b", ignored -> { }),
                                 registration("c", ignored -> { })),
                         yaml("""
-                                helidon:
-                                  messaging:
-                                    incoming:
-                                      a:
-                                        connector: test-in
-                                        failure:
-                                          retry:
-                                            max-attempts: 1
-                                          on-exhausted: DEAD_LETTER
-                                          dead-letter:
-                                            channel: b
-                                      b:
-                                        connector: test-in
-                                        failure:
-                                          retry:
-                                            max-attempts: 1
-                                          on-exhausted: DEAD_LETTER
-                                          dead-letter:
-                                            channel: c
-                                      c:
-                                        connector: test-in
-                                        failure:
-                                          retry:
-                                            max-attempts: 1
-                                          on-exhausted: DEAD_LETTER
-                                          dead-letter:
-                                            channel: a
+                                messaging:
+                                  incoming:
+                                    a:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          max-attempts: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: b
+                                    b:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          max-attempts: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: c
+                                    c:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          max-attempts: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: a
                                 """),
                         List.of(incoming)));
 
@@ -1885,14 +1842,13 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      incoming:
-                                                        orders:
-                                                          connector: missing-in
-                                                      outgoing:
-                                                        audit:
-                                                          connector: test-out
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: missing-in
+                                                    outgoing:
+                                                      audit:
+                                                        connector: test-out
                                                   """),
                                           List.of(outgoing)));
         assertThat(incomingFailure.getMessage(), containsString("No connector provider of type missing-in"));
@@ -1902,11 +1858,10 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      outgoing:
-                                                        orders:
-                                                          connector: missing-out
+                                                  messaging:
+                                                    outgoing:
+                                                      orders:
+                                                        connector: missing-out
                                                   """),
                                           List.of()));
         assertThat(outgoingFailure.getMessage(), containsString("No connector provider of type missing-out"));
@@ -1920,11 +1875,10 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(registration("orders", ignored -> { })),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      incoming:
-                                                        orders:
-                                                          destination: orders
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        destination: orders
                                                   """),
                                           List.of(incoming)));
 
@@ -1941,11 +1895,10 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(registration("orders", ignored -> { })),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      outgoing:
-                                                        orders:
-                                                          destination: orders
+                                                  messaging:
+                                                    outgoing:
+                                                      orders:
+                                                        destination: orders
                                                   """),
                                           List.of(outgoing)));
 
@@ -1962,11 +1915,10 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(registration("orders", ignored -> { })),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      incoming:
-                                                        orders:
-                                                          connector: test-out
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: test-out
                                                   """),
                                           List.of(outgoing)));
 
@@ -2016,14 +1968,13 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(),
                                           yaml("""
-                                                  helidon:
-                                                    messaging:
-                                                      incoming:
-                                                        orders:
-                                                          connector: test-in
-                                                      outgoing:
-                                                        audit:
-                                                          connector: test-out
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: test-in
+                                                    outgoing:
+                                                      audit:
+                                                        connector: test-out
                                                   """),
                                           List.of(incoming, outgoing)));
 
@@ -2105,20 +2056,19 @@ class ChannelRegistryFailurePolicyTest {
                 () -> registry(
                         List.of(source, incompatibleTarget),
                         yaml("""
-                                helidon:
-                                  messaging:
-                                    incoming:
-                                      orders:
-                                        connector: test-in
-                                        failure:
-                                          retry:
-                                            max-attempts: 1
-                                          on-exhausted: DEAD_LETTER
-                                          dead-letter:
-                                            channel: orders-dlq
-                                    outgoing:
-                                      audit:
-                                        connector: test-out
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          max-attempts: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: orders-dlq
+                                  outgoing:
+                                    audit:
+                                      connector: test-out
                                 """),
                         List.of(incoming, outgoing)));
 
@@ -2144,20 +2094,19 @@ class ChannelRegistryFailurePolicyTest {
                 () -> registry(
                         List.of(source, incompatibleTarget),
                         yaml("""
-                                helidon:
-                                  messaging:
-                                    incoming:
-                                      orders:
-                                        connector: test-in
-                                        failure:
-                                          retry:
-                                            max-attempts: 1
-                                          on-exhausted: DEAD_LETTER
-                                          dead-letter:
-                                            channel: orders-dlq
-                                    outgoing:
-                                      audit:
-                                        connector: test-out
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          max-attempts: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: orders-dlq
+                                  outgoing:
+                                    audit:
+                                      connector: test-out
                                 """),
                         List.of(incoming, outgoing)));
 

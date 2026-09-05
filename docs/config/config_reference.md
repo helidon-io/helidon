@@ -58,12 +58,12 @@
 </tr>
 <tr>
 <td>
-<a id="helidon"></a>
-<a href="io.helidon.HelidonConfig.md">
-<code>helidon</code>
+<a id="messaging"></a>
+<a href="io.helidon.MessagingConfig.md">
+<code>messaging</code>
 </a>
 </td>
-<td>Configuration for helidon</td>
+<td>Configuration for messaging</td>
 </tr>
 <tr>
 <td>
