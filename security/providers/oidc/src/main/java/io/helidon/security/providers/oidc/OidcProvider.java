@@ -28,14 +28,17 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.LruCache;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.faulttolerance.ResilientValue;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
@@ -91,7 +94,9 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final boolean useJwtGroups;
     private final String jwtGroupsPath;
     private final String jwtGroupsSeparator;
-    private final LruCache<String, TenantAuthenticationHandler> tenantAuthHandlers = LruCache.create();
+    private final LruCache<String, Supplier<TenantAuthenticationHandler>> tenantAuthHandlers = LruCache.create();
+    private final ReentrantLock tenantAuthHandlersLock = new ReentrantLock();
+    private long tenantAuthHandlersVersion;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -105,7 +110,9 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         tenantConfigFinders = List.copyOf(builder.tenantConfigFinders);
         tenantIdFinders = List.copyOf(builder.tenantIdFinders);
 
-        tenantConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenantAuthHandlers::remove));
+        oidcConfig.validateForAuthentication();
+        tenantConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder
+                .onChange(this::removeTenantAuthenticationHandler));
     }
 
     /**
@@ -154,35 +161,90 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     private AuthenticationResponse authenticateWithTenant(String tenantId, ProviderRequest providerRequest) {
-        return cachedTenantAuthenticationHandler(tenantId)
-                .map(handler -> handler.authenticate(tenantId, providerRequest))
-                .orElseGet(this::unknownTenantResponse);
-    }
-
-    private Optional<TenantAuthenticationHandler> cachedTenantAuthenticationHandler(String tenantId) {
-        Optional<TenantAuthenticationHandler> cachedHandler = tenantAuthHandlers.get(tenantId);
-        if (cachedHandler.isPresent()) {
-            return cachedHandler;
+        try {
+            return cachedTenantAuthenticationHandler(tenantId)
+                    .map(Supplier::get)
+                    .map(handler -> handler.authenticate(tenantId, providerRequest))
+                    .orElseGet(this::unknownTenantResponse);
+        } catch (ResilientValue.UnavailableException e) {
+            return unavailableTenantResponse();
         }
-        return TenantConfigResolver.resolve(tenantConfigFinders, oidcConfig, tenantId)
-                .flatMap(this::cachedTenantAuthenticationHandler);
     }
 
-    private Optional<TenantAuthenticationHandler> cachedTenantAuthenticationHandler(
-            TenantConfigResolver.ResolvedTenantConfig resolvedTenant) {
-        return tenantAuthHandlers.computeValue(
-                resolvedTenant.cacheKey(),
-                () -> Optional.of(tenantAuthenticationHandler(resolvedTenant.tenantConfig())));
+    private Optional<Supplier<TenantAuthenticationHandler>> cachedTenantAuthenticationHandler(String tenantId) {
+        while (true) {
+            long version;
+            tenantAuthHandlersLock.lock();
+            try {
+                Optional<Supplier<TenantAuthenticationHandler>> cachedHandler = tenantAuthHandlers.get(tenantId);
+                if (cachedHandler.isPresent()) {
+                    return cachedHandler;
+                }
+                version = tenantAuthHandlersVersion;
+            } finally {
+                tenantAuthHandlersLock.unlock();
+            }
+
+            Optional<TenantConfigResolver.ResolvedTenantConfig> resolved =
+                    TenantConfigResolver.resolve(tenantConfigFinders, oidcConfig, tenantId);
+            Supplier<TenantAuthenticationHandler> handler;
+            TenantConfig tenantConfig;
+            tenantAuthHandlersLock.lock();
+            try {
+                if (version != tenantAuthHandlersVersion) {
+                    continue;
+                }
+                if (resolved.isEmpty()) {
+                    return Optional.empty();
+                }
+                TenantConfigResolver.ResolvedTenantConfig resolvedTenant = resolved.orElseThrow();
+                tenantConfig = resolvedTenant.tenantConfig();
+                handler = tenantAuthHandlers.get(resolvedTenant.cacheKey())
+                        .orElseGet(() -> {
+                            Supplier<TenantAuthenticationHandler> newHandler =
+                                    tenantAuthenticationHandler(tenantConfig);
+                            tenantAuthHandlers.put(resolvedTenant.cacheKey(), newHandler);
+                            return newHandler;
+                        });
+            } finally {
+                tenantAuthHandlersLock.unlock();
+            }
+
+            if (!tenantConfig.tenantLoadingLazy()) {
+                handler.get();
+            }
+            return Optional.of(handler);
+        }
     }
 
-    private TenantAuthenticationHandler tenantAuthenticationHandler(TenantConfig tenantConfig) {
-        Tenant tenant = Tenant.create(oidcConfig, tenantConfig);
-        return new TenantAuthenticationHandler(oidcConfig,
-                                               tenant,
-                                               useJwtGroups,
-                                               jwtGroupsPath,
-                                               jwtGroupsSeparator,
-                                               optional);
+    private Supplier<TenantAuthenticationHandler> tenantAuthenticationHandler(TenantConfig tenantConfig) {
+        oidcConfig.validateTenantForAuthentication(tenantConfig);
+        Supplier<TenantAuthenticationHandler> loader = () -> {
+            Tenant tenant = Tenant.create(oidcConfig, tenantConfig);
+            return new TenantAuthenticationHandler(oidcConfig,
+                                                   tenant,
+                                                   useJwtGroups,
+                                                   jwtGroupsPath,
+                                                   jwtGroupsSeparator,
+                                                   optional);
+        };
+        if (!tenantConfig.tenantLoadingLazy()) {
+            return LazyValue.create(loader);
+        }
+        return ResilientValue.create("OIDC tenant authentication",
+                                     loader,
+                                     tenantConfig.jwkRetryConfig(),
+                                     tenantConfig.jwkCircuitBreakerConfig());
+    }
+
+    private void removeTenantAuthenticationHandler(String tenantId) {
+        tenantAuthHandlersLock.lock();
+        try {
+            tenantAuthHandlersVersion++;
+            tenantAuthHandlers.remove(tenantId);
+        } finally {
+            tenantAuthHandlersLock.unlock();
+        }
     }
 
     private AuthenticationResponse unknownTenantResponse() {
@@ -196,6 +258,20 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 .status(SecurityResponse.SecurityStatus.FAILURE)
                 .statusCode(Status.UNAUTHORIZED_401.code())
                 .description("Tenant configuration is not available")
+                .build();
+    }
+
+    private AuthenticationResponse unavailableTenantResponse() {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description("Tenant configuration is temporarily unavailable")
+                    .build();
+        }
+        return AuthenticationResponse.builder()
+                .status(SecurityResponse.SecurityStatus.FAILURE)
+                .statusCode(Status.UNAUTHORIZED_401.code())
+                .description("Tenant configuration is temporarily unavailable")
                 .build();
     }
 

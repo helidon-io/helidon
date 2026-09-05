@@ -75,9 +75,8 @@ class IdcsSupport {
 
                 return JwkKeys.create(jwkJson);
             } else {
-                String errorEntity = response.as(String.class);
                 throw new SecurityException("Failed to read JWK from IDCS. Status: " + response.status()
-                                                    + ", entity: " + errorEntity);
+                                                    + ". Response content is omitted.");
             }
         } catch (SecurityException e) {
             throw e;

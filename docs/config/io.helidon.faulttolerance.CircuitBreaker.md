@@ -85,6 +85,14 @@ Configuration of a circuit breaker
 ## Usages
 
 - <a href="io.helidon.FaultToleranceConfig.md#circuit-breakers"><code>fault-<wbr>tolerance.<wbr>circuit-<wbr>breakers</code></a>
+- <a href="io.helidon.security.providers.idcsRoleMapper.oidcConfig.JwkLoaderConfig.md#circuit-breaker"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code></a>
+- <a href="io.helidon.security.providers.idcsRoleMapper.oidcConfig.tenants.JwkLoaderConfig.md#circuit-breaker"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code></a>
+- <a href="io.helidon.security.providers.jwt.JwkLoaderConfig.md#circuit-breaker"><code>security.<wbr>providers.<wbr>jwt.<wbr>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code></a>
+- <a href="io.helidon.security.providers.oidc.tenants.JwkLoaderConfig.md#circuit-breaker"><code>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code></a>
+- <a href="io.helidon.server.features.security.security.providers.idcsRoleMapper.oidcConfig.JwkLoaderConfig.md#circuit-breaker"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code></a>
+- <a href="io.helidon.server.features.security.security.providers.idcsRoleMapper.oidcConfig.tenants.JwkLoaderConfig.md#circuit-breaker"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code></a>
+- <a href="io.helidon.server.features.security.security.providers.jwt.JwkLoaderConfig.md#circuit-breaker"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code></a>
+- <a href="io.helidon.server.features.security.security.providers.oidc.tenants.JwkLoaderConfig.md#circuit-breaker"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code></a>
 
 ---
 

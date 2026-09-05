@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.faulttolerance;
+
+import java.util.Objects;
+import java.util.function.Supplier;
+
+import io.helidon.common.Api;
+
+/**
+ * A value loaded on first use using a retry protected by a circuit breaker.
+ * A successfully loaded value is cached permanently. Failed loads may be tried again according to the configured
+ * circuit breaker.
+ *
+ * @param <T> type of the loaded value
+ */
+@Api.Internal
+public interface ResilientValue<T> extends Supplier<T> {
+    /**
+     * Create a resilient value using the provided fault tolerance configuration.
+     *
+     * @param description safe description of the value, used in messages and logs
+     * @param loader supplier that loads the value
+     * @param retryConfig retry configuration
+     * @param circuitBreakerConfig circuit breaker configuration
+     * @param <T> type of the loaded value
+     * @return a new resilient value
+     */
+    static <T> ResilientValue<T> create(String description,
+                                        Supplier<T> loader,
+                                        RetryConfig retryConfig,
+                                        CircuitBreakerConfig circuitBreakerConfig) {
+        return new ResilientValueImpl<>(description, loader, retryConfig, circuitBreakerConfig);
+    }
+
+    /**
+     * Create an exception indicating that the source may become available later.
+     *
+     * @param message safe description of the failure
+     * @return a new unavailable exception
+     */
+    static UnavailableException unavailable(String message) {
+        return new UnavailableException(message);
+    }
+
+    /**
+     * Create an exception indicating that the source may become available later.
+     *
+     * @param message safe description of the failure
+     * @param cause cause of the failure
+     * @return a new unavailable exception
+     */
+    static UnavailableException unavailable(String message, Throwable cause) {
+        return new UnavailableException(message, cause);
+    }
+
+    /**
+     * Whether the value has already been loaded successfully.
+     *
+     * @return {@code true} if the value is loaded
+     */
+    boolean isLoaded();
+
+    /**
+     * Exception indicating that a source may become available later.
+     */
+    @Api.Internal
+    final class UnavailableException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        private UnavailableException(String message) {
+            super(Objects.requireNonNull(message));
+        }
+
+        private UnavailableException(String message, Throwable cause) {
+            super(Objects.requireNonNull(message), Objects.requireNonNull(cause));
+        }
+    }
+}

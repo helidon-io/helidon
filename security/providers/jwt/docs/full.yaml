@@ -34,16 +34,45 @@ security:
         # Can be USER or SERVICE
         # defaults to USER
         principal-type: USER
+        # Loading policy for verification JWK resources configured with a filesystem path or URI.
+        # Classpath and inline resources are validated at startup and do not use this policy.
+        # Once verification keys load successfully, that value is cached for the life of the provider.
+        jwk-loader:
+          retry:
+            # Total number of load calls, including the initial call; defaults to 3
+            calls: 3
+            # Base delay between calls; defaults to 200 milliseconds
+            delay: "PT0.2S"
+            # Delay factor; -1 selects the default factor unless jitter is configured
+            delay-factor: -1.0
+            # Retry jitter; the negative default leaves jitter disabled
+            jitter: "PT-1S"
+            # Overall retry budget checked between calls; defaults to 1 second.
+            # This is also the connect/read timeout for URI resources, but it does not interrupt
+            # filesystem reads or otherwise impose a hard end-to-end deadline.
+            overall-timeout: "PT1S"
+            # Whether metrics are enabled for verification-key loading retries; defaults to false
+            enable-metrics: false
+          circuit-breaker:
+            # Time before an open circuit permits a probe; defaults to 5 seconds
+            delay: "PT5S"
+            # Rolling window and failure percentage use the standard FT defaults
+            volume: 10
+            error-ratio: 60
+            # Successful probes required to close the circuit; defaults to 1
+            success-threshold: 1
+            # Whether metrics are enabled for the verification-key loading circuit; defaults to false
+            enable-metrics: false
         # Token extraction
         atn-token:
           # JWK configuration (where to get keys for verification/signatures)
           # either of the following (as defined in Resource utility):
           jwk.resource:
-            path: "/filesystem/path/of/jwk"
             resource-path: "classpath/resource"
-            url: "http://url/of/jwk"
-            content-plain: "{}"
-            content: "base64"
+            # path: "/filesystem/path/of/jwk"
+            # uri: "http://url/of/jwk"
+            # content-plain: "{}"
+            # content: "base64"
           # Whether to verify inbound JWT signatures
           # If set to false while authenticate is true, atn-token.jwt-issuer and
           # atn-token.jwt-audience are both required
@@ -70,11 +99,11 @@ security:
             # JWK configuration (where to get keys for signatures)
             # This is defined only once, as we can have more keys in a single jwk
             # either of the following:
-            path: "/filesystem/path/of/jwk"
             resource-path: "classpath/resource"
-            url: "http://url/of/jwk"
-            content-plain: "{}"
-            content: "base64"
+            # path: "/filesystem/path/of/jwk"
+            # uri: "http://url/of/jwk"
+            # content-plain: "{}"
+            # content: "base64"
           jwt-issuer: "issuer.of.JWT"
           # Used by OutboundConfig
           outbound:

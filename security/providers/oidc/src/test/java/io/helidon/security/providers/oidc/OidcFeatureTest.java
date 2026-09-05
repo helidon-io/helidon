@@ -49,6 +49,7 @@ import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
@@ -70,6 +71,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 /**
@@ -78,6 +81,9 @@ import static org.mockito.Mockito.when;
 class OidcFeatureTest {
     private static final String PARAM_NAME = "my-param-attempts";
     private static final URI DEFAULT_LOGOUT_ENDPOINT = URI.create("http://idp.example.test/logout");
+    private static final JwkKeys TEST_KEYS = JwkKeys.builder()
+            .addKey(Jwk.NONE_JWK)
+            .build();
     private static final String ID_TOKEN = SignedJwt.sign(
             Jwt.builder()
                     .algorithm("none")
@@ -92,7 +98,7 @@ class OidcFeatureTest {
             .identityUri(URI.create("http://localhost:7774/identity"))
             .tokenEndpointUri(URI.create("http://localhost:7774/token"))
             .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
-            .signJwk(JwkKeys.builder().build())
+            .signJwk(TEST_KEYS)
             .oidcMetadataWellKnown(false)
             .build();
     private final OidcConfig oidcConfigCustomParam = OidcConfig.builder()
@@ -101,7 +107,7 @@ class OidcFeatureTest {
             .identityUri(URI.create("http://localhost:7774/identity"))
             .tokenEndpointUri(URI.create("http://localhost:7774/token"))
             .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
-            .signJwk(JwkKeys.builder().build())
+            .signJwk(TEST_KEYS)
             .oidcMetadataWellKnown(false)
             .redirectAttemptParam(PARAM_NAME)
             .build();
@@ -111,7 +117,7 @@ class OidcFeatureTest {
             .identityUri(URI.create("http://localhost:7774/identity"))
             .tokenEndpointUri(URI.create("http://localhost:7774/token"))
             .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
-            .signJwk(JwkKeys.builder().build())
+            .signJwk(TEST_KEYS)
             .oidcMetadataWellKnown(false)
             .redirectAttemptCounterStrategy(NONE)
             .build();
@@ -121,7 +127,7 @@ class OidcFeatureTest {
             .identityUri(URI.create("http://localhost:7774/identity"))
             .tokenEndpointUri(URI.create("http://localhost:7774/token"))
             .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
-            .signJwk(JwkKeys.builder().build())
+            .signJwk(TEST_KEYS)
             .oidcMetadataWellKnown(false)
             .redirectAttemptCounterStrategy(COOKIE)
             .build();
@@ -141,6 +147,70 @@ class OidcFeatureTest {
                                                        .build())
                                     .build())
             .build();
+
+    @Test
+    void authenticationConsumersRejectMissingFixedSigningSourceAtStartup() {
+        OidcConfig invalidDefault = fixedConfigWithoutSigningJwk().build();
+
+        assertThrows(IllegalArgumentException.class, () -> OidcProvider.create(invalidDefault));
+        assertThrows(IllegalArgumentException.class, () -> OidcFeature.create(invalidDefault));
+        assertDoesNotThrow(() -> OidcFeature.builder()
+                .config(invalidDefault)
+                .enabled(false)
+                .build());
+    }
+
+    @Test
+    void authenticationConsumersRejectMissingFixedNamedTenantSigningSourceAtStartup() {
+        TenantConfig invalidNamedTenant = fixedTenantWithoutSigningJwk("named");
+        OidcConfig config = fixedConfig(TEST_KEYS)
+                .addTenantConfig(invalidNamedTenant)
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () -> OidcProvider.create(config));
+        assertThrows(IllegalArgumentException.class, () -> OidcFeature.create(config));
+    }
+
+    @Test
+    void configuredDefaultTenantOverridesUnusedRootDuringStartupValidation() {
+        TenantConfig configuredDefault = fixedTenant(DEFAULT_TENANT_ID, TEST_KEYS);
+        OidcConfig config = fixedConfigWithoutSigningJwk()
+                .addTenantConfig(configuredDefault)
+                .build();
+
+        assertDoesNotThrow(() -> OidcProvider.create(config));
+        assertDoesNotThrow(() -> OidcFeature.create(config));
+    }
+
+    @Test
+    void remoteJwkFromFixedMetadataIsDeferredAtStartup() {
+        OidcConfig config = fixedConfigWithoutSigningJwk()
+                .oidcMetadataJsonObject(JsonObject.builder()
+                                                .set("jwks_uri", "http://127.0.0.1:1/unavailable-jwks")
+                                                .build())
+                .build();
+
+        assertDoesNotThrow(() -> OidcProvider.create(config));
+        assertDoesNotThrow(() -> OidcFeature.create(config));
+    }
+
+    @Test
+    void customTenantWithInvalidFixedJwkEndpointFailsAtStartup() {
+        TenantConfig tenantConfig = Mockito.mock(TenantConfig.class, Mockito.CALLS_REAL_METHODS);
+        when(tenantConfig.name()).thenReturn("custom");
+        when(tenantConfig.identityUri()).thenReturn(URI.create("http://idp.example.test/identity"));
+        when(tenantConfig.serverType()).thenReturn("default");
+        when(tenantConfig.validateJwtWithJwk()).thenReturn(true);
+        when(tenantConfig.tenantSignJwk()).thenReturn(Optional.empty());
+        when(tenantConfig.oidcMetadataJsonObject()).thenReturn(JsonObject.builder()
+                                                                        .set("jwks_uri", "/relative-jwks")
+                                                                        .build());
+        OidcConfig config = fixedConfig(TEST_KEYS)
+                .addTenantConfig(tenantConfig)
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () -> OidcProvider.create(config));
+    }
 
     @Test
     void testLogoutRejectsInvalidState() throws Exception {
@@ -230,7 +300,7 @@ class OidcFeatureTest {
                 .tokenEndpointUri(URI.create("http://idp.example.test/token"))
                 .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
                 .logoutEndpointUri(logoutEndpoint)
-                .signJwk(JwkKeys.builder().build())
+                .signJwk(TEST_KEYS)
                 .oidcMetadataWellKnown(false)
                 .logoutEnabled(true)
                 .logoutUri("/oidc/logout")
@@ -249,6 +319,7 @@ class OidcFeatureTest {
         assertThat("ID token test cookie should be compressed", idTokenCookie, startsWith("~"));
 
         WebServer server = WebServer.builder()
+                .featuresDiscoverServices(false)
                 .port(0)
                 .addConnectionSelector(Http1ConnectionSelector.builder()
                                                .config(Http1Config.builder()
@@ -401,7 +472,7 @@ class OidcFeatureTest {
                 .identityUri(URI.create("http://localhost:7774/identity"))
                 .tokenEndpointUri(URI.create("http://localhost:7774/token"))
                 .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
-                .signJwk(JwkKeys.builder().build())
+                .signJwk(TEST_KEYS)
                 .oidcMetadataWellKnown(false)
                 .useParam(true)
                 .build();
@@ -510,6 +581,45 @@ class OidcFeatureTest {
         assertThat(feature.socketRequired(), is(false));
         assertThat(feature.hashCode(), not(0));
         assertThat(feature.toString(), notNullValue());
+    }
+
+    private static OidcConfig.Builder fixedConfigWithoutSigningJwk() {
+        return OidcConfig.builder()
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://idp.example.test/identity"))
+                .tokenEndpointUri(URI.create("http://idp.example.test/token"))
+                .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
+                .oidcMetadataWellKnown(false);
+    }
+
+    private static OidcConfig.Builder fixedConfig(JwkKeys signingJwk) {
+        return fixedConfigWithoutSigningJwk().signJwk(signingJwk);
+    }
+
+    private static TenantConfig fixedTenantWithoutSigningJwk(String name) {
+        return TenantConfig.tenantBuilder()
+                .name(name)
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://idp.example.test/identity"))
+                .tokenEndpointUri(URI.create("http://idp.example.test/token"))
+                .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
+                .oidcMetadataWellKnown(false)
+                .build();
+    }
+
+    private static TenantConfig fixedTenant(String name, JwkKeys signingJwk) {
+        return TenantConfig.tenantBuilder()
+                .name(name)
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://idp.example.test/identity"))
+                .tokenEndpointUri(URI.create("http://idp.example.test/token"))
+                .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
+                .oidcMetadataWellKnown(false)
+                .signJwk(signingJwk)
+                .build();
     }
 
     private ServerRequest request(String... cookies) {

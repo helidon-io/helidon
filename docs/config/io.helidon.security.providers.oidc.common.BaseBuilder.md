@@ -19,6 +19,20 @@ Base builder of the OIDC config components
 <tbody>
 <tr>
 <td>
+<a id="jwk-loader-retry"></a>
+<a href="io.helidon.faulttolerance.Retry.md">
+<code>jwk-<wbr>loader.<wbr>retry</code>
+</a>
+</td>
+<td>
+<code>Retry</code>
+</td>
+<td>
+</td>
+<td>Configure retry behavior used while loading OIDC metadata and signing JWK</td>
+</tr>
+<tr>
+<td>
 <a id="oidc-metadata-resource"></a>
 <a href="io.helidon.common.configurable.Resource.md">
 <code>oidc-<wbr>metadata.<wbr>resource</code>
@@ -115,6 +129,20 @@ Base builder of the OIDC config components
 <td>
 </td>
 <td>A resource pointing to JWK with private keys used for JWE content key decryption</td>
+</tr>
+<tr>
+<td>
+<a id="jwk-loader-circuit-breaker"></a>
+<a href="io.helidon.faulttolerance.CircuitBreaker.md">
+<code>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code>
+</a>
+</td>
+<td>
+<code>Circuit<wbr>Breaker</code>
+</td>
+<td>
+</td>
+<td>Configure circuit breaker behavior used while loading OIDC metadata and signing JWK</td>
 </tr>
 <tr>
 <td>

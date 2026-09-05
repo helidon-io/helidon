@@ -68,6 +68,19 @@ JWT authentication provider
 </tr>
 <tr>
 <td>
+<a id="jwk-loader"></a>
+<a href="io.helidon.security.providers.jwt.JwkLoaderConfig.md">
+<code>jwk-<wbr>loader</code>
+</a>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>Configuration for jwk-loader</td>
+</tr>
+<tr>
+<td>
 <code>jwt-<wbr>groups-<wbr>path</code>
 </td>
 <td>

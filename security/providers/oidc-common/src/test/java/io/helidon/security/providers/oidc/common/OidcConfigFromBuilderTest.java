@@ -145,6 +145,7 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Issuer", config.issuer(), nullValue()),
                 () -> assertThat("Client without authentication", config.generalWebClient(), notNullValue()),
                 () -> assertThat("Client with authentication", config.appWebClient(), notNullValue()),
+                () -> assertThat("Validate JWT with JWK", config.validateJwtWithJwk(), is(true)),
                 () -> assertThat("JWK Keys", config.signJwk(), notNullValue()));
     }
 

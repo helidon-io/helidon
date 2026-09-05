@@ -36,7 +36,7 @@ security:
     oidc-metadata-well-known: false
     token-endpoint-uri: "http://identity.oracle.com/tokens"
     authorization-endpoint-uri: "http://identity.oracle.com/authorization"
-    validate-jwt-with-jwk: true
+    validate-jwt-with-jwk: false
     token-signature-validation: false
     check-audience: false
     header-use: true

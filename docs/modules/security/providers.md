@@ -77,13 +77,19 @@ security:
 
 ### How does it work?
 
-At Helidon startup, if OIDC provider is configured, the following will happen:
+At Helidon startup, if the OIDC provider is configured, Helidon validates the
+configuration for consistency. This includes required client and identity
+values, the configured signing-key route, and any fixed metadata or JWK values.
+Inline and classpath resources are fixed and are therefore loaded and validated
+at startup.
 
-1.  `client-id`, `client-secret`, and `identityUri` are validated - these must
-    provide values
-2.  Unless all resources are configured as local resources, the provider
-    attempts to contact the `oidc-metadata.resource` endpoint to retrieve all
-    endpoints
+Metadata and JWK sources that may become available later are loaded on the first
+authentication request that needs them. These include filesystem paths, URIs,
+OIDC discovery, and a remote JWK URI obtained from fixed metadata. Each deferred
+load runs its configured retry policy inside its configured circuit breaker.
+After an exhausted retry sequence opens the circuit, later requests fail fast
+until the circuit permits another probe. A successfully loaded value is cached
+for the life of that tenant configuration.
 
 At runtime, depending on configuration...
 

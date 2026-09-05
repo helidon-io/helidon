@@ -20,9 +20,12 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.faulttolerance.CircuitBreakerConfig;
+import io.helidon.faulttolerance.RetryConfig;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
@@ -91,6 +94,55 @@ public interface TenantConfig {
      * @return set of keys used to verify tokens
      */
     Optional<JwkKeys> tenantSignJwk();
+
+    /**
+     * Repeatable resource configuration used to load signing JWK.
+     *
+     * @return signing JWK resource configuration, if configured
+     */
+    default Optional<ResourceConfig> tenantSignJwkResource() {
+        return Optional.empty();
+    }
+
+    /**
+     * Retry configuration used while loading OIDC metadata and signing JWK.
+     *
+     * @return retry configuration
+     */
+    default RetryConfig jwkRetryConfig() {
+        return RetryConfig.create();
+    }
+
+    /**
+     * Circuit breaker configuration used while loading OIDC metadata and signing JWK.
+     *
+     * @return circuit breaker configuration
+     */
+    default CircuitBreakerConfig jwkCircuitBreakerConfig() {
+        return CircuitBreakerConfig.create();
+    }
+
+    /**
+     * Whether creating the tenant requires a source that may become available later.
+     *
+     * @return {@code true} when tenant creation should be lazy
+     */
+    default boolean tenantLoadingLazy() {
+        JsonObject metadata = oidcMetadataJsonObject();
+        boolean metadataLoadingLazy = oidcMetadataResource().isPresent()
+                || (metadata == null && useWellKnown());
+        if (metadataLoadingLazy || !validateJwtWithJwk()) {
+            return metadataLoadingLazy;
+        }
+        if (tenantSignJwkResource().isPresent()) {
+            return true;
+        }
+        if (tenantSignJwk().isPresent() || metadata == null) {
+            return false;
+        }
+        String key = OidcUtil.resolveMetaKey("jwks_uri", serverType(), identityUri());
+        return metadata.stringValue(key).isPresent();
+    }
 
     /**
      * Logout endpoint on OIDC server.
@@ -184,6 +236,15 @@ public interface TenantConfig {
      * @return configured oidc metadata
      */
     JsonObject oidcMetadataJsonObject();
+
+    /**
+     * Repeatable resource configuration used to load OIDC metadata.
+     *
+     * @return OIDC metadata resource configuration, if configured
+     */
+    default Optional<ResourceConfig> oidcMetadataResource() {
+        return Optional.empty();
+    }
 
     /**
      * Whether to use OIDC well known metadata.

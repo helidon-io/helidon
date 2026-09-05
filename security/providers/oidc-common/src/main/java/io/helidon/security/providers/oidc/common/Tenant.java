@@ -16,15 +16,24 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
+import io.helidon.common.configurable.ResourceConfig;
+import io.helidon.common.configurable.ResourceException;
+import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
+import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundTarget;
+import io.helidon.security.providers.common.ResilientResource;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.HttpBasicOutboundConfig;
 import io.helidon.webclient.api.WebClient;
@@ -76,16 +85,20 @@ public class Tenant {
         Errors.Collector collector = Errors.collector();
 
         URI identityUri = tenantConfig.identityUri();
+        ResourceConfig metadataResource = tenantConfig.oidcMetadataResource().orElse(null);
+        JsonObject metadataJson = resolveMetadata(tenantConfig.oidcMetadataJsonObject(),
+                                                  metadataResource,
+                                                  tenantConfig.jwkRetryConfig().overallTimeout());
         OidcMetadata oidcMetadata = OidcMetadata.builder()
                 .remoteEnabled(tenantConfig.useWellKnown())
-                .json(tenantConfig.oidcMetadataJsonObject())
+                .json(metadataJson)
+                .reloadable(metadataResource != null)
                 .webClient(webClient)
                 .identityUri(identityUri)
-                .collector(collector)
                 .build();
 
         String serverType = tenantConfig.serverType();
-        String metaKey = resolveMetaKey("token_endpoint", serverType, identityUri);
+        String metaKey = OidcUtil.resolveMetaKey("token_endpoint", serverType, identityUri);
         URI tokenEndpointUri = oidcMetadata.getOidcEndpoint(collector,
                                                             tenantConfig.tenantTokenEndpointUri().orElse(null),
                                                             metaKey,
@@ -96,7 +109,7 @@ public class Tenant {
                                                                     "authorization_endpoint",
                                                                     "/oauth2/v1/authorize");
 
-        metaKey = resolveMetaKey("end_session_endpoint", serverType, identityUri);
+        metaKey = OidcUtil.resolveMetaKey("end_session_endpoint", serverType, identityUri);
         URI logoutEndpointUri = oidcMetadata.getOidcEndpoint(collector,
                                                              tenantConfig.tenantLogoutEndpointUri().orElse(null),
                                                              metaKey,
@@ -108,7 +121,7 @@ public class Tenant {
 
         URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
         if (!tenantConfig.validateJwtWithJwk()) {
-            metaKey = resolveMetaKey("introspection_endpoint", serverType, identityUri);
+            metaKey = OidcUtil.resolveMetaKey("introspection_endpoint", serverType, identityUri);
             introspectUri = oidcMetadata.getOidcEndpoint(collector,
                                                          introspectUri,
                                                          metaKey,
@@ -136,33 +149,12 @@ public class Tenant {
 
         WebClient appWebClient = webClientBuilder.build();
 
-        JwkKeys signJwk = tenantConfig.tenantSignJwk().orElseGet(() -> {
-            if (tenantConfig.validateJwtWithJwk()) {
-                // not configured - use default location
-                String jwksMetaKey = resolveMetaKey("jwks_uri", serverType, identityUri);
-                URI jwkUri = oidcMetadata.getOidcEndpoint(collector,
-                                                          null,
-                                                          jwksMetaKey,
-                                                          null);
-                if (jwkUri != null) {
-                    if ("idcs".equals(serverType)) {
-                        return IdcsSupport.signJwk(appWebClient,
-                                                   webClient,
-                                                   tokenEndpointUri,
-                                                   jwkUri,
-                                                   tenantConfig.clientTimeout(),
-                                                   tenantConfig);
-                    } else {
-                        return JwkKeys.builder()
-                                .json(webClient.get()
-                                              .uri(jwkUri)
-                                              .requestEntity(JsonObject.class))
-                                .build();
-                    }
-                }
-            }
-            return JwkKeys.builder().build();
-        });
+        JwkKeys signJwk = resolveSigningJwk(tenantConfig,
+                                            oidcMetadata,
+                                            collector,
+                                            appWebClient,
+                                            webClient,
+                                            tokenEndpointUri);
         return new Tenant(tenantConfig,
                           tokenEndpointUri,
                           authorizationEndpointUri,
@@ -171,6 +163,133 @@ public class Tenant {
                           appWebClient,
                           signJwk,
                           introspectUri);
+    }
+
+    private static JwkKeys resolveSigningJwk(TenantConfig tenantConfig,
+                                             OidcMetadata oidcMetadata,
+                                             Errors.Collector collector,
+                                             WebClient appWebClient,
+                                             WebClient webClient,
+                                             URI tokenEndpointUri) {
+        if (!tenantConfig.validateJwtWithJwk()) {
+            return JwkKeys.builder().build();
+        }
+
+        JwkKeys configuredKeys = tenantConfig.tenantSignJwk().orElse(null);
+        if (configuredKeys != null) {
+            return requireSigningKeys(configuredKeys, false);
+        }
+
+        ResourceConfig configuredResource = tenantConfig.tenantSignJwkResource().orElse(null);
+        if (configuredResource != null) {
+            String description = resourceDescription("OIDC signing JWK", configuredResource);
+            try {
+                JwkKeys keys = JwkKeys.builder()
+                        .resource(ResilientResource.create(description,
+                                                           configuredResource,
+                                                           tenantConfig.jwkRetryConfig().overallTimeout()))
+                        .build();
+                return requireSigningKeys(keys, true);
+            } catch (ResilientValue.UnavailableException e) {
+                throw e;
+            } catch (ResourceException e) {
+                throw ResilientValue.unavailable(description + " could not be read", e);
+            } catch (JsonException e) {
+                String detail = hasCause(e, IOException.class)
+                        ? " could not be read"
+                        : " does not contain valid JSON";
+                throw ResilientValue.unavailable(description + detail, e);
+            } catch (JwtException e) {
+                throw ResilientValue.unavailable(description + " does not contain usable verification keys", e);
+            }
+        }
+
+        String serverType = tenantConfig.serverType();
+        String jwksMetaKey = OidcUtil.resolveMetaKey("jwks_uri", serverType, tenantConfig.identityUri());
+        URI jwkUri = oidcMetadata.getOidcEndpoint(collector, null, jwksMetaKey, null);
+        if (collector.hasFatal()) {
+            if (oidcMetadata.reloadable()) {
+                collector.clear();
+                throw ResilientValue.unavailable("OIDC metadata does not contain a usable JWK endpoint");
+            }
+            collector.clear();
+            return JwkKeys.builder().build();
+        }
+
+        try {
+            JwkKeys keys;
+            if ("idcs".equals(serverType)) {
+                keys = IdcsSupport.signJwk(appWebClient,
+                                           webClient,
+                                           tokenEndpointUri,
+                                           jwkUri,
+                                           tenantConfig.clientTimeout(),
+                                           tenantConfig);
+            } else {
+                keys = JwkKeys.builder()
+                        .json(webClient.get()
+                                      .uri(jwkUri)
+                                      .requestEntity(JsonObject.class))
+                        .build();
+            }
+            return requireSigningKeys(keys, true);
+        } catch (ResilientValue.UnavailableException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw ResilientValue.unavailable("OIDC signing JWK is unavailable", e);
+        }
+    }
+
+    private static JwkKeys requireSigningKeys(JwkKeys keys, boolean mayBecomeAvailable) {
+        if (!keys.keys().isEmpty()) {
+            return keys;
+        }
+        if (mayBecomeAvailable) {
+            throw ResilientValue.unavailable("OIDC signing JWK contains no usable keys");
+        }
+        throw new IllegalArgumentException("Configured OIDC signing JWK must contain at least one usable key");
+    }
+
+    private static JsonObject resolveMetadata(JsonObject configuredMetadata,
+                                              ResourceConfig resourceConfig,
+                                              Duration ioTimeout) {
+        if (resourceConfig == null) {
+            return configuredMetadata;
+        }
+        String description = resourceDescription("OIDC metadata", resourceConfig);
+        try (var stream = ResilientResource.create(description, resourceConfig, ioTimeout).stream()) {
+            return JsonParser.create(stream).readJsonObject();
+        } catch (ResourceException e) {
+            throw ResilientValue.unavailable(description + " could not be read", e);
+        } catch (JsonException e) {
+            String detail = hasCause(e, IOException.class)
+                    ? " could not be read"
+                    : " does not contain valid JSON";
+            throw ResilientValue.unavailable(description + detail, e);
+        } catch (IOException e) {
+            throw ResilientValue.unavailable(description + " could not be closed", e);
+        }
+    }
+
+    private static String resourceDescription(String valueDescription, ResourceConfig resourceConfig) {
+        if (resourceConfig.path().isPresent()) {
+            return valueDescription + " filesystem source";
+        }
+        if (resourceConfig.uri().isPresent()) {
+            return valueDescription + " URI source";
+        }
+        return valueDescription + " resource";
+    }
+
+    private static boolean hasCause(Throwable throwable, Class<? extends Throwable> causeType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (causeType.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private static OutboundTarget outboundTarget(String name, URI endpointUri, TenantConfig tenantConfig) {
@@ -189,15 +308,6 @@ public class Tenant {
                 .customObject(HttpBasicOutboundConfig.class,
                               HttpBasicOutboundConfig.create(tenantConfig.clientId(), tenantConfig.clientSecret()))
                 .build();
-    }
-
-    private static String resolveMetaKey(String metaKey, String serverType, URI identityUri) {
-        if ("idcs".equals(serverType) && identityUri.toString().contains(".secure.")) {
-            //when server is IDCS and URI has ".secure." defined, we know we are using MTLS and need to obtain
-            //secured endpoint also.
-            return "secure_" + metaKey;
-        }
-        return metaKey;
     }
 
     /**

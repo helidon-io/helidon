@@ -41,6 +41,7 @@ import io.helidon.security.Subject;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.Jwk;
+import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy;
 import io.helidon.security.providers.oidc.common.Tenant;
@@ -64,6 +65,9 @@ import static org.mockito.Mockito.when;
  */
 class TenantAuthenticationHandlerTest {
     private static final String ATTEMPT_PARAM = "h_ra";
+    private static final JwkKeys TEST_KEYS = JwkKeys.builder()
+            .addKey(Jwk.NONE_JWK)
+            .build();
 
     @Test
     public void testCustomJwtGroupsPath() {
@@ -133,6 +137,7 @@ class TenantAuthenticationHandlerTest {
                 .clientSecret("123")
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
+                .signJwk(TEST_KEYS)
                 .useCookie(true)
                 .useHeader(false)
                 .redirect(false)
@@ -159,6 +164,7 @@ class TenantAuthenticationHandlerTest {
                 .clientSecret("123")
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
+                .signJwk(TEST_KEYS)
                 .useCookie(true)
                 .useHeader(false)
                 .redirect(false)
@@ -444,6 +450,7 @@ class TenantAuthenticationHandlerTest {
                 .clientSecret("123")
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
+                .signJwk(TEST_KEYS)
                 .redirectAttemptCounterStrategy(COOKIE)
                 .useParam(true)
                 .paramName("access token")
@@ -485,6 +492,7 @@ class TenantAuthenticationHandlerTest {
                 .clientSecret("123")
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
+                .signJwk(TEST_KEYS)
                 .redirectAttemptCounterStrategy(NONE)
                 .maxRedirects(0)
                 .build();
@@ -549,6 +557,7 @@ class TenantAuthenticationHandlerTest {
                 .clientSecret("123")
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
+                .signJwk(TEST_KEYS)
                 .redirectAttemptCounterStrategy(COOKIE)
                 .cookieSecure(true)
                 .cookieDomain("example.com")
@@ -590,6 +599,7 @@ class TenantAuthenticationHandlerTest {
                 .clientSecret("123")
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
+                .signJwk(TEST_KEYS)
                 .redirectAttemptCounterStrategy(strategy)
                 .useParam(useParam)
                 .build();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.lang.System.Logger.Level;
+import java.net.URI;
 
 import io.helidon.common.Errors;
 
@@ -45,5 +46,34 @@ final class OidcUtil {
         if (value == null) {
             collector.fatal(name + " must be configured (\"" + configKey + "\" key in config)");
         }
+    }
+
+    static String resolveMetaKey(String metaKey, String serverType, URI identityUri) {
+        if ("idcs".equals(serverType)
+                && identityUri != null
+                && identityUri.toString().contains(".secure.")) {
+            return "secure_" + metaKey;
+        }
+        return metaKey;
+    }
+
+    static URI validateHttpEndpoint(String value, String description) {
+        URI uri;
+        try {
+            uri = URI.create(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(description + " must be a valid URI", e);
+        }
+        String scheme = uri.getScheme();
+        if (!uri.isAbsolute()) {
+            throw new IllegalArgumentException(description + " must be an absolute URI");
+        }
+        if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+            throw new IllegalArgumentException(description + " must use HTTP or HTTPS");
+        }
+        if (uri.getHost() == null) {
+            throw new IllegalArgumentException(description + " HTTP URI must include a host");
+        }
+        return uri;
     }
 }

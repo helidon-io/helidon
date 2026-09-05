@@ -22,6 +22,7 @@ module io.helidon.security.providers.common {
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common;
+    requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.config;
     requires transitive io.helidon.security;

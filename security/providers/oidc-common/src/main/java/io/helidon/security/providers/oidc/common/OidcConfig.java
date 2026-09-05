@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
@@ -33,6 +34,7 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.faulttolerance.ResilientValue;
 import io.helidon.http.SetCookie;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.json.JsonSupport;
@@ -53,12 +55,15 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * Some of the configuration options below use "resource" type. The following configuration
  * can be used for a resource (example for oidc-metadata key):
  * {@code
- * oidc-metadata-path: "path/on/filesystem"
- * oidc-metadata-resource-path: "class-path/resource"
- * oidc-metadata-url: "URI on the net"
- * oidc-metadata-content-plain: "Value of the resource in plain text"
- * oidc-metadata-content: "Value in base64 encoded bytes"
+ * oidc-metadata.resource.path: "path/on/filesystem"
+ * oidc-metadata.resource.resource-path: "class-path/resource"
+ * oidc-metadata.resource.uri: "URI on the net"
+ * oidc-metadata.resource.content-plain: "Value of the resource in plain text"
+ * oidc-metadata.resource.content: "Value in base64 encoded bytes"
  * }
+ * Filesystem/URI resources, well-known metadata, and metadata-discovered signing JWKs load lazily with retry inside a
+ * circuit breaker; fixed sources validate eagerly. Successful loads are cached without periodic refresh. Retry overall
+ * timeout also bounds URI connect/read timeouts but cannot interrupt an operation already in progress.
  * <p>
  * Configuration options required (under security.providers[].${name}):
  * <table class="config">
@@ -212,6 +217,12 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT.
  *     See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
+ * <tr><td>jwk-loader.retry.*</td><td>3 calls, 200 ms initial delay with factor 2, 1 second overall timeout</td>
+ *     <td>Standard fault tolerance retry configuration for lazy metadata and signing JWK loads. The overall timeout is
+ *         also the connect and read timeout for explicit URI resources.</td></tr>
+ * <tr><td>jwk-loader.circuit-breaker.*</td>
+ *     <td>10 request volume, 60% error ratio, 5 second delay, 1 successful probe</td>
+ *     <td>Standard fault tolerance circuit breaker configuration around each retry batch.</td></tr>
  * <tr>
  *     <td>introspect-endpoint-uri</td>
  *     <td>"introspection_endpoint" in OIDC metadata, or identity-uri/oauth2/v1/introspect</td>
@@ -399,7 +410,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean fallbackToDefaultTenantEnabled;
     private final WebClient webClient;
     private final Supplier<WebClientConfig.Builder> webClientBuilderSupplier;
-    private final LazyValue<Tenant> defaultTenant;
+    private final Supplier<Tenant> defaultTenant;
     private final boolean useParam;
     private final String paramName;
     private final String idTokenParamName;
@@ -455,11 +466,20 @@ public final class OidcConfig extends TenantConfigImpl {
         this.pkceChallengeMethod = builder.pkceChallengeMethod;
 
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
-        this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
+        this.defaultTenant = tenantSupplier(this);
         this.outboundType = builder.outboundType;
         this.clientCredentialsConfig = builder.clientCredentialsConfig;
 
         LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
+    }
+
+    private Supplier<Tenant> tenantSupplier(TenantConfig tenantConfig) {
+        Supplier<Tenant> loader = () -> Tenant.create(this, tenantConfig);
+        return tenantConfig.tenantLoadingLazy()
+                ? ResilientValue.create("OIDC tenant configuration", loader,
+                                        tenantConfig.jwkRetryConfig(),
+                                        tenantConfig.jwkCircuitBreakerConfig())
+                : LazyValue.create(loader);
     }
 
     /**
@@ -754,6 +774,21 @@ public final class OidcConfig extends TenantConfigImpl {
             return tenantConfigurations.getOrDefault(TenantConfigFinder.DEFAULT_TENANT_ID, this);
         }
         return tenantConfig;
+    }
+
+    /** Validates configured tenants for authentication, resolving fixed sources eagerly. */
+    @Api.Internal
+    public void validateForAuthentication() {
+        OidcAuthenticationValidator.validate(this, tenantConfigurations, defaultTenant);
+    }
+
+    /**
+     * Validates a runtime tenant for authentication without accessing a reloadable source.
+     * @param tenantConfig tenant configuration to validate
+     */
+    @Api.Internal
+    public void validateTenantForAuthentication(TenantConfig tenantConfig) {
+        OidcAuthenticationValidator.validate(tenantConfig);
     }
 
     /**
