@@ -40,6 +40,9 @@ public final class HttpToken {
         if (token.isEmpty()) {
             throw new IllegalArgumentException("Token must not be empty");
         }
+        if (isValid(token)) {
+            return;
+        }
         for (int i = 0; i < token.length(); i++) {
             char aChar = token.charAt(i);
             if (aChar > 127) {
@@ -60,20 +63,36 @@ public final class HttpToken {
                                                            + "\n"
                                                            + debugToken(token));
             }
-            boolean valid = (aChar >= '0' && aChar <= '9')
-                    || (aChar >= 'A' && aChar <= 'Z')
-                    || (aChar >= 'a' && aChar <= 'z')
-                    || switch (aChar) {
-                        case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~' -> true;
-                        default -> false;
-                    };
-            if (!valid) {
+            if (!isValidCharacter(aChar)) {
                 throw new IllegalArgumentException("Token contains illegal character at position "
                                                            + hex(i)
                                                            + "\n"
                                                            + debugToken(token));
             }
         }
+    }
+
+    static boolean isValid(String token) {
+        Objects.requireNonNull(token);
+        if (token.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < token.length(); i++) {
+            if (!isValidCharacter(token.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isValidCharacter(char character) {
+        return character >= '0' && character <= '9'
+                || character >= 'A' && character <= 'Z'
+                || character >= 'a' && character <= 'z'
+                || switch (character) {
+                    case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~' -> true;
+                    default -> false;
+                };
     }
 
     private static String hex(int i) {

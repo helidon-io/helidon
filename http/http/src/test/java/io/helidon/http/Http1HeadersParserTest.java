@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 
 import org.junit.jupiter.api.Assertions;
@@ -66,6 +67,17 @@ class Http1HeadersParserTest {
 
         assertThat(headers.values(HeaderNames.TRANSFER_ENCODING), hasItems("gzip", "chunked"));
         assertThat(headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED), is(true));
+    }
+
+    @Test
+    void testObsTextRoundTrip() {
+        String first = "\u0080first\u00ff";
+        String second = "\u00ffsecond\u0080";
+
+        assertHeaderRoundTrip(HeaderValues.create("X-Obs-Single", first), true);
+        assertHeaderRoundTrip(HeaderValues.createCached("X-Obs-Cached", first), true);
+        assertHeaderRoundTrip(HeaderValues.create("X-Obs-Multiple", first, second), true);
+        assertHeaderRoundTrip(HeaderValues.create(HeaderNames.CONNECTION, "custom-" + first), false);
     }
 
     @Test
@@ -143,6 +155,18 @@ class Http1HeadersParserTest {
         DataReader reader =
                 DataReader.create(() -> (headerName + ":" + headerValue + "\r\n" + "\r\n").getBytes(StandardCharsets.US_ASCII));
         return Http1HeadersParser.readHeaders(reader, 1024, validate);
+    }
+
+    private static void assertHeaderRoundTrip(Header header, boolean validate) {
+        BufferData buffer = BufferData.growing(128);
+        header.writeHttp1Header(buffer);
+        buffer.write('\r');
+        buffer.write('\n');
+        byte[] bytes = buffer.readBytes();
+
+        WritableHeaders<?> parsed = Http1HeadersParser.readHeaders(DataReader.create(() -> bytes), 1024, validate);
+
+        assertThat(parsed.get(header.headerName()).allValues(), is(header.allValues()));
     }
 
     private static WritableHeaders<?> headers(String rawHeaders) {
