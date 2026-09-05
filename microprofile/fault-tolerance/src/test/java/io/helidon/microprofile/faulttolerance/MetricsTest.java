@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,21 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
+import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
+import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -464,5 +466,86 @@ class MetricsTest extends FaultToleranceTest {
         Histogram awaitingDuration = BulkheadWaitingDuration.get(
                 getMethodTag(bean, "concurrentAsync"));
         assertThat(awaitingDuration.getCount(), is(greaterThan(0L)));
+    }
+
+    @Test
+    void testBulkheadWaitingDurationRecordsRetriedQueueAttempts() throws Exception {
+        MetricsBean bean = newBean(MetricsBean.class);
+        Histogram waitingDuration = BulkheadWaitingDuration.get(
+                getMethodTag(bean, "retryingBulkhead"));
+        long startCount = waitingDuration.getCount();
+
+        CompletableFuture<String> blocker = bean.retryingBulkhead(true);
+        assertThat(bean.awaitRetryingBulkheadEntered(), is(true));
+
+        try {
+            CompletableFuture<String> retried = bean.retryingBulkhead(false);
+            assertCompleteExceptionally(retried, TimeoutException.class);
+            bean.releaseRetryingBulkhead();
+            awaitHistogramCount(waitingDuration, startCount + 3);
+        } finally {
+            bean.releaseRetryingBulkhead();
+            blocker.handle((result, throwable) -> null).get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    void testBulkheadWaitingDurationRecordsQueuedTimeout() throws Exception {
+        MetricsBean bean = newBean(MetricsBean.class);
+        Histogram waitingDuration = BulkheadWaitingDuration.get(
+                getMethodTag(bean, "timedBulkhead"));
+        long startCount = waitingDuration.getCount();
+
+        CompletableFuture<String> blocker = bean.timedBulkhead(true);
+        assertThat(bean.awaitTimedBulkheadEntered(), is(true));
+
+        try {
+            CompletableFuture<String> queued = bean.timedBulkhead(false);
+            assertCompleteExceptionally(queued, TimeoutException.class);
+            awaitHistogramCount(waitingDuration, startCount + 1);
+        } finally {
+            bean.releaseTimedBulkhead();
+            blocker.handle((result, throwable) -> null).get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    void testBulkheadWaitingDurationRecordsExplicitCancel() throws Exception {
+        MetricsBean bean = newBean(MetricsBean.class);
+        Histogram waitingDuration = BulkheadWaitingDuration.get(
+                getMethodTag(bean, "cancellableBulkhead"));
+        long startCount = waitingDuration.getCount();
+
+        CompletableFuture<String> blocker = bean.cancellableBulkhead(true);
+        assertThat(bean.awaitCancellableBulkheadEntered(), is(true));
+
+        try {
+            CompletableFuture<String> queued = bean.cancellableBulkhead(false);
+            Gauge<Long> executionsWaiting = BulkheadExecutionsWaiting.get(
+                    getMethodTag(bean, "cancellableBulkhead"));
+            awaitGaugeAtLeast(executionsWaiting, 1L);
+
+            assertThat(queued.cancel(true), is(true));
+            awaitHistogramCount(waitingDuration, startCount + 1);
+        } finally {
+            bean.releaseCancellableBulkhead();
+            blocker.handle((result, throwable) -> null).get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    private static void awaitGaugeAtLeast(Gauge<Long> gauge, long expected) throws InterruptedException {
+        long timeoutNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < timeoutNanos && gauge.getValue() < expected) {
+            Thread.sleep(10);
+        }
+        assertThat(gauge.getValue(), greaterThanOrEqualTo(expected));
+    }
+
+    private static void awaitHistogramCount(Histogram histogram, long expected) throws InterruptedException {
+        long timeoutNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < timeoutNanos && histogram.getCount() != expected) {
+            Thread.sleep(10);
+        }
+        assertThat(histogram.getCount(), is(expected));
     }
 }
