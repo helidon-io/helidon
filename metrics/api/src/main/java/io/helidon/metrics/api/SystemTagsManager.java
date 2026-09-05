@@ -26,8 +26,7 @@ import java.util.function.Function;
 import io.helidon.service.registry.Services;
 
 /**
- * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
- * meter registries) for all metrics.
+ * Deals with global and app-level tags to be included in the external representation for all metrics.
  */
 public interface SystemTagsManager {
 
@@ -66,8 +65,8 @@ public interface SystemTagsManager {
     }
 
     /**
-     * This method is now a no-op, it simply returns the current {@link io.helidon.service.registry.ServiceRegistry}
-     * backed instance.
+     * Returns the current {@link io.helidon.service.registry.ServiceRegistry}-backed instance, ignoring the provided
+     * configuration.
      *
      * @param metricsConfig ignored; must not be {@code null}
      * @return tags manager from the service registry
@@ -94,36 +93,50 @@ public interface SystemTagsManager {
     }
 
     /**
-     * Returns a scope tag so long as the candidate scope or configured default scope are present and the scope tag name
-     * is configured.
+     * Always returns empty because core metrics does not manage scope tags.
      *
-     * @param candidateScope candidate scope value
-     * @return {@link io.helidon.metrics.api.Tag} representing the scope if suitable; empty otherwise
+     * @param candidateScope ignored; must not be {@code null}
+     * @return empty
+     * @deprecated Core metrics does not manage scope tags, and this method will be removed.
      */
-    Optional<Tag> scopeTag(Optional<String> candidateScope);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Optional<Tag> scopeTag(Optional<String> candidateScope) {
+        Objects.requireNonNull(candidateScope);
+        return Optional.empty();
+    }
 
     /**
-     * Augments map entries (tag names and values) with, possibly, one more for the scope (if configured that way).
+     * No-op, will be removed.
      *
-     * @param tags original tags
-     * @param scope the scope value
-     * @return augmented iterable including, if appropriate, a scope tag entry
+     * @param tags original tags; must not be {@code null}
+     * @param scope ignored; must not be {@code null}
+     * @return provided tags
+     * @deprecated No-op, will be removed.
      */
-    Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope) {
+        Objects.requireNonNull(tags);
+        Objects.requireNonNull(scope);
+        return tags;
+    }
 
     /**
-     * Augments, if necessary, the provided tags with an additional tag with the scope tag name and value from the explicit
-     * scope provided, an existing tag, or the default scope value, if configured.
+     * No-op, will be removed.
      *
-     * @param tags original tags
-     * @param explicitScope explicit scope setting if available
-     * @return tags containing a tag for the scope
+     * @param tags original tags; must not be {@code null}
+     * @param explicitScope ignored; must not be {@code null}
+     * @return provided tags
+     * @deprecated No-op, will be removed.
      */
-    Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope) {
+        Objects.requireNonNull(tags);
+        Objects.requireNonNull(explicitScope);
+        return tags;
+    }
 
     /**
-     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting any system tags but including
-     * the scope tag, if these appear in the provided tags.
+     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting any system tags.
      *
      * @param tags tags to filter
      * @return tags without the system tags
@@ -131,12 +144,18 @@ public interface SystemTagsManager {
     Iterable<Tag> withoutSystemTags(Iterable<Tag> tags);
 
     /**
-     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting system and scope tags.
+     * Returns tags without system tags. Scope tags are treated as ordinary tags.
      *
-     * @param tags tags to filter
-     * @return tags without system or scope tags
+     * @param tags tags to filter; must not be {@code null}
+     * @return non-null tags without system tags
+     * @deprecated Use {@link #withoutSystemTags(Iterable)}. Scope tags are treated as ordinary tags, and this method will
+     * be removed.
      */
-    Iterable<Tag> withoutSystemOrScopeTags(Iterable<Tag> tags);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Iterable<Tag> withoutSystemOrScopeTags(Iterable<Tag> tags) {
+        Objects.requireNonNull(tags);
+        return Objects.requireNonNull(withoutSystemTags(tags));
+    }
 
     /**
      * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} representing the any system tags
@@ -167,37 +186,54 @@ public interface SystemTagsManager {
     Collection<String> reservedTagNamesUsed(Collection<String> tagNames);
 
     /**
-     * Invokes the specified consumer with the scope tag name setting from the configuration (if present) and the
-     * provided scope value. This method is most useful to assign a tag to a meter if configuration implies that.
+     * No-op, will be removed.
      *
-     * @param scope    scope value to use
-     * @param consumer uses the tag and scope in some appropriate way
+     * @param scope    ignored; must not be {@code null}
+     * @param consumer ignored; must not be {@code null}
+     * @deprecated No-op, will be removed.
      */
-    void assignScope(String scope, Function<Tag, ?> consumer);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default void assignScope(String scope, Function<Tag, ?> consumer) {
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(consumer);
+    }
 
     /**
-     * Returns the effective scope, given the provided candidate scope combined with any default scope value in the
-     * configuration which initialized this manager.
+     * Always returns empty because core metrics does not assign scopes.
      *
-     * @param candidateScope candidate scope
-     * @return effective scope, preferring the candidate and falling back to the default; empty if neither is present
+     * @param candidateScope ignored; must not be {@code null}
+     * @return empty
+     * @deprecated Core metrics does not assign scopes, and this method will be removed.
      */
-    Optional<String> effectiveScope(Optional<String> candidateScope);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Optional<String> effectiveScope(Optional<String> candidateScope) {
+        Objects.requireNonNull(candidateScope);
+        return Optional.empty();
+    }
 
     /**
-     * Returns the effective scope, given the provided explicit setting and tags (which might specify the scope) combined with
-     * any default scope value in the configuration which was used to initialize this system tags manager.
+     * Always returns empty because core metrics does not assign scopes.
      *
-     * @param explicitScope explicit scope to use (if present)
-     * @param tags tag which might specify the scope using the configured scope tag name
-     * @return effective scope; empty if none available from the arguments or the system default
+     * @param explicitScope ignored; must not be {@code null}
+     * @param tags ignored; must not be {@code null}
+     * @return empty
+     * @deprecated Core metrics does not assign scopes, and this method will be removed.
      */
-    Optional<String> effectiveScope(Optional<String> explicitScope, Iterable<Tag> tags);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Optional<String> effectiveScope(Optional<String> explicitScope, Iterable<Tag> tags) {
+        Objects.requireNonNull(explicitScope);
+        Objects.requireNonNull(tags);
+        return Optional.empty();
+    }
 
     /**
-     * Returns the scope tag name derived from configuration.
+     * Always returns empty because core metrics does not manage scope tags.
      *
-     * @return scope tag name; empty if not set
+     * @return empty
+     * @deprecated Core metrics does not manage scope tags, and this method will be removed.
      */
-    Optional<String> scopeTagName();
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Optional<String> scopeTagName() {
+        return Optional.empty();
+    }
 }

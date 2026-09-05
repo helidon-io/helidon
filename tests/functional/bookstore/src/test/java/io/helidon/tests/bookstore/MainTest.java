@@ -363,7 +363,7 @@ class MainTest {
 
                 jsonObject = response.entity();
                 assertThat("Checking request count",
-                        jsonObject.getJsonObject("vendor").getInt("requests.count"), greaterThan(0));
+                        jsonObject.getInt("requests.count"), greaterThan(0));
             }
 
             jsonObject = webClient.get()

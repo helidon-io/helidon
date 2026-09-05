@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,8 @@ import static io.micrometer.core.instrument.distribution.DistributionStatisticCo
 class MDistributionSummary extends MMeter<io.micrometer.core.instrument.DistributionSummary>
         implements io.helidon.metrics.api.DistributionSummary {
 
-    private MDistributionSummary(Meter.Id id,
-                                 io.micrometer.core.instrument.DistributionSummary delegate,
-                                 Optional<String> scope) {
-        super(id, delegate, scope);
-    }
-
-    private MDistributionSummary(Meter.Id id, io.micrometer.core.instrument.DistributionSummary delegate, Builder builder) {
-        super(id, delegate, builder);
+    private MDistributionSummary(Meter.Id id, io.micrometer.core.instrument.DistributionSummary delegate) {
+        super(id, delegate);
     }
 
     /**
@@ -73,13 +67,11 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
      * via a wrapper.
      *
      * @param summary the Micrometer summary
-     * @param scope   scope to apply
      * @return new wrapper around the summary
      */
     static MDistributionSummary create(Meter.Id id,
-                                       io.micrometer.core.instrument.DistributionSummary summary,
-                                       Optional<String> scope) {
-        return new MDistributionSummary(id, summary, scope);
+                                       io.micrometer.core.instrument.DistributionSummary summary) {
+        return new MDistributionSummary(id, summary);
     }
 
     @Override
@@ -155,7 +147,7 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
 
         @Override
         protected MDistributionSummary build(Meter.Id id, io.micrometer.core.instrument.DistributionSummary summary) {
-            return new MDistributionSummary(id, summary, this);
+            return new MDistributionSummary(id, summary);
         }
 
         @Override

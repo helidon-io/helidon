@@ -18,14 +18,19 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterEach;
@@ -65,7 +70,7 @@ class LimitMetricsTest {
     @AfterEach
     void cleanMeters() {
         for (String meterName : REAL_METER_NAMES) {
-            meterRegistry.remove(meterName, realMeterTags, Meter.Scope.VENDOR);
+            meterRegistry.remove(meterName, realMeterTags);
         }
     }
 
@@ -183,6 +188,52 @@ class LimitMetricsTest {
         assertThat(supplierCalls.get(), is(0));
     }
 
+    @Test
+    void customizerCanDistinguishSemaphoreAndAimdMetrics() {
+        AtomicReference<MetricsFactory> metricsFactoryRef = new AtomicReference<>();
+        MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
+            @Override
+            public void customize(Meter.Builder<?, ?> builder) {
+                builder.origin()
+                        .filter(origin -> origin.equals(SemaphoreMetrics.class.getName())
+                                || origin.equals(AimdMetrics.class.getName()))
+                        .ifPresent(origin -> builder.addTag(
+                                metricsFactoryRef.get().tagCreate("metric-origin", origin)));
+            }
+        };
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(MeterBuilderCustomizer.class,
+                                                                                                     customizer)
+                                                                                .build());
+        try {
+            MetricsFactory metricsFactory = manager.registry().get(MetricsFactory.class);
+            metricsFactoryRef.set(metricsFactory);
+            MeterRegistry meterRegistry = manager.registry().get(MeterRegistry.class);
+            AimdMetrics metrics = new AimdMetrics(true,
+                                                  new Semaphore(1),
+                                                  "origin_aware",
+                                                  new AtomicInteger(),
+                                                  new AtomicInteger(),
+                                                  new AtomicInteger(1));
+
+            metrics.register(metricsFactory, meterRegistry, List.of());
+
+            Tag semaphoreOrigin = metricsFactory.tagCreate("metric-origin", SemaphoreMetrics.class.getName());
+            Tag aimdOrigin = metricsFactory.tagCreate("metric-origin", AimdMetrics.class.getName());
+            assertThat("Semaphore meter uses the semaphore origin",
+                       hasMeter(meterRegistry,
+                                Meter.Type.GAUGE,
+                                "origin_aware_concurrent_requests",
+                                List.of(semaphoreOrigin)),
+                       is(true));
+            assertThat("AIMD meter uses the AIMD origin",
+                       hasMeter(meterRegistry, Meter.Type.GAUGE, "origin_aware_limit", List.of(aimdOrigin)),
+                       is(true));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
     private static boolean hasMeter(MeterRegistry meterRegistry,
                                     Meter.Type meterType,
                                     String meterName,
@@ -198,7 +249,7 @@ class LimitMetricsTest {
                 .collect(Collectors.toMap(Tag::key, Tag::value));
 
         long count = 0;
-        for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
+        for (Meter meter : meterRegistry.meters()) {
             if (meter.id().name().equals(meterName)
                     && meter.type() == meterType
                     && meter.id().tagsMap().entrySet().containsAll(expectedTags.entrySet())) {

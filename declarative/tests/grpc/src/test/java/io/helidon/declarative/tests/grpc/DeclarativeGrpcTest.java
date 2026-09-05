@@ -202,14 +202,12 @@ class DeclarativeGrpcTest {
     @Test
     void testUnaryMethodMetrics() {
         MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
-        List<Tag> methodTags = List.of(Tag.create("transport", "grpc"), Tag.create("scope", "application"));
-        List<Tag> methodTimerTags = List.of(Tag.create("scope", "application"));
+        List<Tag> methodTags = List.of(Tag.create("transport", "grpc"));
+        List<Tag> methodTimerTags = List.of();
         String grpcGreetMethod = ClientConfigGreetingClients.SERVICE_NAME + "/Greet";
-        List<Tag> grpcMethodTags = List.of(Tag.create("grpc.method", grpcGreetMethod),
-                                           Tag.create("scope", "vendor"));
+        List<Tag> grpcMethodTags = List.of(Tag.create("grpc.method", grpcGreetMethod));
         List<Tag> grpcDurationTags = List.of(Tag.create("grpc.method", grpcGreetMethod),
-                                             Tag.create("grpc.status", "OK"),
-                                             Tag.create("scope", "vendor"));
+                                             Tag.create("grpc.status", "OK"));
         long methodCounterBefore = counterCount(meterRegistry, "GreetingEndpoint.greet", methodTags);
         long methodTimerBefore = timerCount(meterRegistry, "grpc-greet", methodTimerTags);
         long grpcStartedBefore = counterCount(meterRegistry, "grpc.server.call.started", grpcMethodTags);

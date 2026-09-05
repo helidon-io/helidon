@@ -6,3 +6,4 @@ io.helidon.metrics.spi.MeterRegistryFormatterProvider
 io.helidon.metrics.api.MetricsFactory
 io.helidon.metrics.spi.MetersProvider
 io.helidon.metrics.spi.MeterRegistryLifeCycleListener
+io.helidon.metrics.spi.MeterBuilderCustomizer

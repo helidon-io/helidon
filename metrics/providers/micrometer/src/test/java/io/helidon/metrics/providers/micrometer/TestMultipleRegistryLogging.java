@@ -44,6 +44,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -63,6 +64,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
@@ -274,6 +276,104 @@ class TestMultipleRegistryLogging {
         } finally {
             metricsFactory.close();
         }
+    }
+
+    @Test
+    void testMeterBuilderCustomizersUseBuilderOriginOnce() {
+        String providerMeterName = "providerCustomized";
+        String ordinaryOriginMeterName = "originCustomized";
+        String sharedMeterName = "sharedOriginCustomized";
+        MetersProvider metersProvider = metricsFactory -> List.of(metricsFactory.counterBuilder(providerMeterName));
+        Map<String, AtomicInteger> originCustomizationCounts = Map.of(
+                metersProvider.getClass().getName(), new AtomicInteger(),
+                OrdinaryOrigin.class.getName(), new AtomicInteger(),
+                FirstOrigin.class.getName(), new AtomicInteger(),
+                SecondOrigin.class.getName(), new AtomicInteger());
+        AtomicInteger basicCustomizationCount = new AtomicInteger();
+        MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
+            @Override
+            public void customize(Meter.Builder<?, ?> builder) {
+                var origin = builder.origin();
+                if (origin.isEmpty() && builder.name().equals("regularCustomized")) {
+                    basicCustomizationCount.incrementAndGet();
+                    builder.addTag(MTag.of("customized", "regular"));
+                } else if (origin.isPresent()) {
+                    AtomicInteger customizationCount = originCustomizationCounts.get(origin.get());
+                    if (customizationCount != null
+                            && (builder.name().equals(providerMeterName)
+                            || builder.name().equals(ordinaryOriginMeterName)
+                            || builder.name().equals(sharedMeterName))) {
+                        customizationCount.incrementAndGet();
+                        builder.addTag(MTag.of("origin", originValue(origin.get(), metersProvider)));
+                    }
+                }
+            }
+        };
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(MeterBuilderCustomizer.class,
+                                                                                                     customizer)
+                                                                                .putContractInstance(MetersProvider.class,
+                                                                                                     metersProvider)
+                                                                                .build());
+        try {
+            MetricsFactory metricsFactory = manager.registry().get(MetricsFactory.class);
+            MeterRegistry meterRegistry = manager.registry().get(MeterRegistry.class);
+            Counter providerCounter = meterRegistry.counter(providerMeterName,
+                                                             List.of(MTag.of("origin", "provider")))
+                    .orElseThrow();
+            Counter regularCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("regularCustomized"));
+            Counter ordinaryOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(ordinaryOriginMeterName)
+                                                                               .origin(OrdinaryOrigin.class.getName()));
+            Counter firstOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(sharedMeterName)
+                                                                            .origin(FirstOrigin.class.getName()));
+            Counter secondOriginCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(sharedMeterName)
+                                                                             .origin(SecondOrigin.class.getName()));
+
+            assertThat("Basic customizer invocation count", basicCustomizationCount.get(), is(1));
+            originCustomizationCounts.forEach((origin, count) ->
+                                                       assertThat("Customization count for " + origin,
+                                                                  count.get(),
+                                                                  is(1)));
+            assertThat("Provider customization",
+                       providerCounter.unwrap(io.micrometer.core.instrument.Counter.class)
+                               .getId()
+                               .getTag("origin"),
+                       is("provider"));
+            assertThat("Regular customization",
+                       regularCounter.unwrap(io.micrometer.core.instrument.Counter.class)
+                               .getId()
+                               .getTag("customized"),
+                       is("regular"));
+            assertThat("Ordinary origin customization",
+                       ordinaryOriginCounter.id().tagsMap(),
+                       hasEntry("origin", OrdinaryOrigin.class.getName()));
+            assertThat("First shared-name origin customization",
+                       firstOriginCounter.id().tagsMap(),
+                       hasEntry("origin", FirstOrigin.class.getName()));
+            assertThat("Second shared-name origin customization",
+                       secondOriginCounter.id().tagsMap(),
+                       hasEntry("origin", SecondOrigin.class.getName()));
+            assertThat("Origin tags distinguish otherwise identical builders",
+                       secondOriginCounter,
+                       not(sameInstance(firstOriginCounter)));
+            assertThrows(NullPointerException.class,
+                         () -> metricsFactory.counterBuilder("nullOrigin").origin(null));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testBuilderOriginIsNotPartOfMeterIdentity() {
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+
+        Counter first = meterRegistry.getOrCreate(metricsFactory.counterBuilder("originIsNotIdentity")
+                                                          .origin(FirstOrigin.class.getName()));
+        Counter second = meterRegistry.getOrCreate(metricsFactory.counterBuilder("originIsNotIdentity")
+                                                           .origin(SecondOrigin.class.getName()));
+
+        assertThat(second, sameInstance(first));
     }
 
     @Test
@@ -970,6 +1070,19 @@ class TestMultipleRegistryLogging {
                 return type.cast(this);
             }
         };
+    }
+
+    private static String originValue(String origin, MetersProvider metersProvider) {
+        return origin.equals(metersProvider.getClass().getName()) ? "provider" : origin;
+    }
+
+    private static class FirstOrigin {
+    }
+
+    private static class OrdinaryOrigin {
+    }
+
+    private static class SecondOrigin {
     }
 
     private static class TestHandler extends Handler {

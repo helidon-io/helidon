@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -22,62 +23,68 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Configuration settings for a scope within the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} config section.
+ * Scope configuration retained for compatibility; core metrics ignores its settings.
+ *
+ * @deprecated Core metrics ignores these settings, and this type will be removed.
  */
-@Prototype.Configured
+@Deprecated(forRemoval = true, since = "27.0.0")
+@Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
+@Prototype.Configured(metadata = false)
 @Prototype.Blueprint
 @Prototype.CustomMethods(ScopeConfigSupport.class)
 interface ScopeConfigBlueprint {
 
     /**
-     * Name of the scope to which the configuration applies.
+     * Returns the configured scope name.
      *
-     * @return scope name
+     * @return configured scope name
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
     String name();
 
     /**
-     * Whether the scope is enabled.
+     * Returns whether the scope is configured as enabled.
      *
-     * @return if the scope is enabled
+     * @return configured value
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean enabled();
 
     /**
-     * Regular expression for meter names to include.
+     * Returns the configured meter-name inclusion pattern.
      *
-     * @return include expression
+     * @return configured inclusion pattern
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured("filter.include")
     Optional<Pattern> include();
 
     /**
-     * Regular expression for meter names to exclude.
+     * Returns the configured meter-name exclusion pattern.
      *
-     * @return exclude expression
+     * @return configured exclusion pattern
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured("filter.exclude")
     Optional<Pattern> exclude();
 
     /**
-     * Returns whether the specified meter name within the current scope is enabled according to the scope settings.
+     * Always returns {@code true} because core metrics does not apply scope filtering.
      *
-     * @param name meter name
-     * @return if the meter is enabled
+     * @param name ignored; must not be {@code null}
+     * @return true
+     * @deprecated Core metrics does not apply scope filtering, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     default boolean isMeterEnabled(String name) {
-        /*
-         The following must be true for the meter to be enabled:
-
-         1. The scope itself must be enabled (that's the default).
-         2. If there is an exclude pattern, the name must not match it.
-         3. If there is an include pattern, the name must match it.
-         */
-        return enabled()
-                && exclude().map(excludePattern -> !excludePattern.matcher(name).matches()).orElse(true)
-                && include().map(includePattern -> includePattern.matcher(name).matches()).orElse(true);
+        Objects.requireNonNull(name);
+        return true;
     }
 }

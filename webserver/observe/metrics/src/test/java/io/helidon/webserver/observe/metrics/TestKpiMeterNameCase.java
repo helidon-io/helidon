@@ -15,12 +15,18 @@
  */
 package io.helidon.webserver.observe.metrics;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import io.helidon.metrics.api.BuiltInMeterNameFormat;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 
@@ -28,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -173,6 +180,48 @@ class TestKpiMeterNameCase {
                 secondMetrics.close();
             }
             meterRegistry.close();
+        }
+    }
+
+    @Test
+    void customizerCanDistinguishKpiMetrics() {
+        AtomicReference<MetricsFactory> metricsFactoryRef = new AtomicReference<>();
+        MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
+            @Override
+            public void customize(Meter.Builder<?, ?> builder) {
+                if (builder.origin()
+                        .filter(origin -> origin.equals(KeyPerformanceIndicatorMetricsImpls.class.getName()))
+                        .isPresent()) {
+                    builder.addTag(metricsFactoryRef.get().tagCreate("metric-origin", "kpi"));
+                }
+            }
+        };
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(MeterBuilderCustomizer.class,
+                                                                                                     customizer)
+                                                                                .build());
+        KeyPerformanceIndicatorSupport.Metrics kpiMetrics = null;
+        try {
+            MetricsFactory metricsFactory = manager.registry().get(MetricsFactory.class);
+            metricsFactoryRef.set(metricsFactory);
+            MeterRegistry meterRegistry = manager.registry().get(MeterRegistry.class);
+            Counter regularCounter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("regular"));
+            kpiMetrics = KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
+                                                                 "requests.",
+                                                                 KeyPerformanceIndicatorMetricsConfig.create(),
+                                                                 BuiltInMeterNameFormat.CAMEL);
+
+            assertThat("KPI meter exposes its origin to the customizer",
+                       counter(meterRegistry).id().tagsMap(),
+                       hasEntry("metric-origin", "kpi"));
+            assertThat("Ordinary meter does not use the KPI origin",
+                       regularCounter.id().tagsMap(),
+                       not(hasEntry("metric-origin", "kpi")));
+        } finally {
+            if (kpiMetrics != null) {
+                kpiMetrics.close();
+            }
+            manager.shutdown();
         }
     }
 

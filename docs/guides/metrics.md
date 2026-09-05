@@ -59,23 +59,10 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 ### Using the Built-In Meters
 
-Helidon provides three built-in scopes of metrics: base, vendor, and
-application. Here are the metric endpoints:
-
-1.  `/observe/metrics?scope=base` - Base meters
-2.  `/observe/metrics?scope=vendor` - Helidon-specific meters
-3.  `/observe/metrics?scope=application` - Application-specific metrics data.
-
-Applications can add their own custom scopes as well simply by specifying a
-custom scope name when registering a meter.
-
-> [!NOTE]
-> The `/observe/metrics` endpoint returns data for all scopes.
-
 The built-in meters fall into these categories:
 
-1.  JVM behavior (in the base scope), and
-2.  basic key performance indicators for request handling (in the vendor scope).
+1.  JVM behavior, and
+2.  basic key performance indicators for request handling.
 
 A later section describes the [key performance indicator
 meters][key-performance] in detail.
@@ -134,19 +121,19 @@ curl http://localhost:8080/observe/metrics
 ```log [Response (partial)]
 # HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
 # TYPE classloader_loadedClasses_count gauge
-classloader_loadedClasses_count{scope="base",} 4878.0
+classloader_loadedClasses_count 4878.0
 # HELP classloader_unloadedClasses_total Displays the total number of classes unloaded since the Java virtual machine has started execution.
 # TYPE classloader_unloadedClasses_total counter
-classloader_unloadedClasses_total{scope="base",} 0.0
+classloader_unloadedClasses_total 0.0
 # HELP classloader_loadedClasses_total Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
 # TYPE classloader_loadedClasses_total counter
-classloader_loadedClasses_total{scope="base",} 4878.0
+classloader_loadedClasses_total 4878.0
 # HELP vthreads_submitFailures Virtual thread submit failures since metrics start-up
 # TYPE vthreads_submitFailures gauge
-vthreads_submitFailures{scope="base",} 0.0
+vthreads_submitFailures 0.0
 # HELP vthreads_pinned Number of pinned virtual threads since metrics start-up
 # TYPE vthreads_pinned gauge
-vthreads_pinned{scope="base",} 0.0
+vthreads_pinned 0.0
 ```
 
 You can get the same data in JSON format.
@@ -160,52 +147,47 @@ curl -H "Accept: application/json"  http://localhost:8080/observe/metrics
 <!--@mdc ::code-collapse -->
 ```json [Response]
 {
-  "base": {
-    "gc.total;name=G1 Young Generation": 2,
-    "cpu.systemLoadAverage": 11.0546875,
-    "classloader.loadedClasses.count": 5124.0,
-    "thread.count": 23.0,
-    "classloader.unloadedClasses.total": 0,
-    "vthreads.recentPinned": {
-      "count": 0,
-      "max": 0.0,
-      "mean": 0.0,
-      "elapsedTime": 0.0,
-      "p0.5": 0.0,
-      "p0.75": 0.0,
-      "p0.95": 0.0,
-      "p0.98": 0.0,
-      "p0.99": 0.0,
-      "p0.999": 0.0
-    },
-    "jvm.uptime": 138.233,
-    "gc.time;name=G1 Young Generation": 0,
-    "memory.committedHeap": 541065216,
-    "thread.max.count": 26.0,
-    "vthreads.pinned": 0,
-    "cpu.availableProcessors": 8.0,
-    "classloader.loadedClasses.total": 5124,
-    "thread.daemon.count": 20.0,
-    "memory.maxHeap": 8589934592,
-    "memory.usedHeap": 2.774652E+7,
-    "thread.starts": 28.0,
-    "vthreads.submitFailures": 0
+  "gc.total;name=G1 Young Generation": 2,
+  "cpu.systemLoadAverage": 11.0546875,
+  "classloader.loadedClasses.count": 5124.0,
+  "thread.count": 23.0,
+  "classloader.unloadedClasses.total": 0,
+  "vthreads.recentPinned": {
+    "count": 0,
+    "max": 0.0,
+    "mean": 0.0,
+    "elapsedTime": 0.0,
+    "p0.5": 0.0,
+    "p0.75": 0.0,
+    "p0.95": 0.0,
+    "p0.98": 0.0,
+    "p0.99": 0.0,
+    "p0.999": 0.0
   },
-  "vendor": {
-    "requests.count": 3
-  }
-
+  "jvm.uptime": 138.233,
+  "gc.time;name=G1 Young Generation": 0,
+  "memory.committedHeap": 541065216,
+  "thread.max.count": 26.0,
+  "vthreads.pinned": 0,
+  "cpu.availableProcessors": 8.0,
+  "classloader.loadedClasses.total": 5124,
+  "thread.daemon.count": 20.0,
+  "memory.maxHeap": 8589934592,
+  "memory.usedHeap": 2.774652E+7,
+  "thread.starts": 28.0,
+  "vthreads.submitFailures": 0,
+  "requests.count": 3
 }
 ```
 <!--@mdc :: -->
 
-You can get a single metric by specifying the scope and name as query parameters
-in the URL.
+You can get a single metric by specifying its name as a query parameter in the
+URL.
 
 Get the Helidon `requests.count` meter:
 
 ```shell [Terminal]
-curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=vendor&name=requests.count'
+curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?name=requests.count'
 ```
 
 ```json [Response]
@@ -214,12 +196,12 @@ curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope
 }
 ```
 
-The `base` meters illustrated above provide some insight into the behavior of
+The system meters illustrated above provide some insight into the behavior of
 the JVM in which the server runs.
 
-The `vendor` meter shown above gives an idea of the request traffic the server
-is handling. See the [later section][key-performance] for more information on
-the basic and extended key performance indicator meters.
+The request meter shown above gives an idea of the request traffic the server is
+handling. See the [later section][key-performance] for more information on the
+basic and extended key performance indicator meters.
 
 ### Controlling Metrics Behavior
 
@@ -498,13 +480,12 @@ Each meter has associated metadata that includes:
     (bytes, megabytes), etc.
 3.  a description of the meter.
 
-You can get the metadata for any scope, such as `/observe/metrics?scope=base`,
-as shown below:
+You can get the metadata for all registered meters as shown below:
 
 Get the metrics metadata using HTTP OPTIONS method:
 
 ```shell [Terminal]
-curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=base'
+curl -X OPTIONS -H "Accept: application/json"  http://localhost:8080/observe/metrics
 ```
 
 ```json [Response (partial)]
@@ -605,7 +586,7 @@ Build and run the application, then invoke the endpoints below:
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
-curl -H "Accept: application/json" 'http://localhost:8080/observe/metrics?scope=application'
+curl -H "Accept: application/json" 'http://localhost:8080/observe/metrics?name=cardCount'
 ```
 
 <!--@mdc ::code-callout -->
@@ -675,7 +656,7 @@ Build and run the application, then invoke the endpoints below:
 ```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
-curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application'
+curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?name=cardTimer'
 ```
 
 ```json [Response]
@@ -755,7 +736,7 @@ Build and run the application, then invoke the endpoints below:
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
-curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application'
+curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?name=cardDist'
 ```
 
 ```json [Response]
@@ -829,7 +810,7 @@ public class GreetingCards implements HttpService {
 Build and run the application, then invoke the endpoint below:
 
 ```shell [Terminal]
-curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application
+curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?name=temperature'
 ```
 
 <!--@mdc ::code-callout -->
@@ -988,10 +969,9 @@ kubectl delete -f ./metrics.yaml
 
 ### Summary
 
-This guide demonstrated how to use metrics in a Helidon application using
-various combinations of meters and scopes.
+This guide demonstrated how to use metrics in a Helidon application.
 
-- Access meters for all three built-in scopes: base, vendor, and application
+- Access built-in and application meters
 - Configure meters that are updated by the application when an application REST
   endpoint is invoked
 - Configure a `Gauge` meter

@@ -96,24 +96,6 @@ summarized in the following table:
 
 Types of Meters
 
-## Meters Category
-
-Helidon distinguishes among *scopes*, or categories, of meters.
-
-Helidon includes meters in the built-in scopes described below. Applications
-often register their own meters in the `application` scope but can create their
-own scopes and register meters within them.
-
-| Built-in Scope | Typical Usage                                                                                                                                |
-|----------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| `base`         | OS or Java runtime measurements (available heap, disk space, etc.).                                                                          |
-| `vendor`       | Implemented by vendors, including the `REST.request` metrics and other key performance indicator measurements (described in later sections). |
-| `application`  | Declared via annotations or programmatically registered by your service code.                                                                |
-
-When an application creates a new meter it can specify which scope the meter
-belongs to. If the application does not specify a scope for a new meter, the
-default scope is `application`.
-
 ## Meter Registry
 
 Helidon stores all meters in a *meter registry*. Typically, applications use the
@@ -250,16 +232,8 @@ Formats for `/observe/metrics` output:
 | OpenMetrics (Prometheus) | default (`text/plain`)            |
 | JSON                     | Header `Accept: application/json` |
 
-Clients can also limit the report by specifying the scope as a query parameter
-in the request URL:
-
-- `/observe/metrics?scope=base`
-- `/observe/metrics?scope=vendor`
-- `/observe/metrics?scope=application`
-
-Further, clients can narrow down to a specific metric name by adding the name as
-another query parameter, such as
-`/observe/metrics?scope=application&name=myCount`.
+Clients can narrow the report to a specific meter name using the `name` query
+parameter, such as `/observe/metrics?name=myCount`.
 
 Example Reporting: Prometheus format:
 
@@ -270,7 +244,7 @@ curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/observe/metrics
 ```text
 # HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
 # TYPE classloader_loadedClasses_count gauge
-classloader_loadedClasses_count{scope="base",} 5297.0
+classloader_loadedClasses_count 5297.0
 ```
 
 See the summary of the [OpenMetrics and Prometheus Format](#format) for more
@@ -284,10 +258,8 @@ curl -s -H 'Accept: application/json' -X GET http://localhost:8080/observe/metri
 
 ```json [Response]
 {
-   "base" : {
-      "memory.maxHeap" : 3817865216,
-      "memory.committedHeap" : 335544320
-    }
+  "memory.maxHeap" : 3817865216,
+  "memory.committedHeap" : 335544320
 }
 ```
 
@@ -303,11 +275,11 @@ not identical. This brief summary treats them as the same.
 The OpenMetrics/Prometheus format represents each meter using three lines of
 output as summarized in the following table.
 
-| Line prefix | Purpose                                                      | Format                                                |
-|-------------|--------------------------------------------------------------|-------------------------------------------------------|
-| `# TYPE`    | Displays the scope, name, and type of the meter              | `TYPE <scope>:<output-name> <meter-type>`             |
-| `# HELP`    | Displays the scope, name, and description of the meter       | `HELP <scope>:<output-name> <registered description>` |
-| (none)      | Displays the scope, meter ID, and current value of the meter | `<scope>:<output-name> <current value>`               |
+| Line prefix | Purpose                                              | Format                                        |
+|-------------|------------------------------------------------------|-----------------------------------------------|
+| `# TYPE`    | Displays the name and type of the meter              | `TYPE <output-name> <meter-type>`             |
+| `# HELP`    | Displays the name and description of the meter       | `HELP <output-name> <registered description>` |
+| (none)      | Displays the meter ID and current value of the meter | `<output-name> <current value>`               |
 
 The OpenMetrics/Prometheus output converts meter IDs in these ways:
 
@@ -365,7 +337,7 @@ The following table summarizes the naming for each meter type:
 <tr>
 <td>percentile</td>
 <td>none</td>
-<td><code>nameLengths{<wbr>scope="base",<wbr>quantile="0.5",<wbr>}</code></td>
+<td><code>nameLengths{<wbr>quantile="0.5",<wbr>}</code></td>
 </tr>
 <tr>
 <td><code>Gauge</code></td>
@@ -394,7 +366,7 @@ The following table summarizes the naming for each meter type:
 <tr>
 <td>percentile</td>
 <td>none</td>
-<td><code>vthreads_<wbr>recentPinned_<wbr>seconds{<wbr>scope="base",<wbr>quantile="0.5",<wbr>}</code></td>
+<td><code>vthreads_<wbr>recentPinned_<wbr>seconds{<wbr>quantile="0.5",<wbr>}</code></td>
 </tr>
 </tbody>
 </table>
@@ -407,53 +379,24 @@ Unlike OpenMetrics/Prometheus output, which combines the data and the metadata
 in a single response, you use an HTTP `GET` request to retrieve metrics JSON
 *data* and an `OPTIONS` request to retrieve *metadata* in JSON format.
 
-Helidon groups meters in the same scope together in JSON output as shown in the
-following example.
+Helidon reports meters directly in a single JSON object.
 
-JSON metrics output structured by scope (partial):
-
-<!--@mdc ::code-callout -->
-```json
-{
-  "application": { // <1>
-    "getTimer": {
-      "type": "timer",
-      "unit": "seconds",
-      "description": "Timer for getting the default greeting"
-    }
-  },
-  "vendor": { // <1>
-    "requests.count": {
-      "type": "counter",
-      "description": "Each request (regardless of HTTP method) will increase this counter"
-    }
-  },
-  "base": { // <1>
-    "cpu.systemLoadAverage": {
-      "type": "gauge",
-      "description": "Displays the system load average for the last minute."
-    },
-    "classloader.loadedClasses.count": {
-      "type": "gauge",
-      "description": "Displays the number of classes that are currently loaded in the Java virtual machine."
-    }
-  }
-}
-```
-1. Note the `application`, `vendor`, and `base` sections.
-<!--@mdc :: -->
-
-If an HTTP request [selects by scope](#metrics-endpoint), the output omits the
-extra level of structure that identifies the scope as shown in the following
-example.
-
-JSON metrics output for the base scope (partial):
+JSON metrics metadata output (partial):
 
 ```json
 {
+  "getTimer": {
+    "type": "timer",
+    "unit": "seconds",
+    "description": "Timer for getting the default greeting"
+  },
+  "requests.count": {
+    "type": "counter",
+    "description": "Each request (regardless of HTTP method) will increase this counter"
+  },
   "cpu.systemLoadAverage": {
     "type": "gauge",
-     "description": "Displays the system load average for the last minute."
+    "description": "Displays the system load average for the last minute."
   },
   "classloader.loadedClasses.count": {
     "type": "gauge",
@@ -704,10 +647,42 @@ See [Configuration options][io-helidon-metri-3].
 | Key                | Default Value |
 |--------------------|---------------|
 | `app-tag-name`     | `app`         |
-| `scoping.tag-name` | `scope`       |
-| `scoping.default`  | `application` |
 
 ## Metrics Configuration Migration
+
+### Metrics Scopes
+
+Metrics scopes were a MicroProfile-specific feature and are no longer part of
+the Helidon core metrics model in Helidon 27. The scope APIs remain temporarily
+for compatibility, are deprecated for removal, and have no effect. In
+particular:
+
+- meter and meter builder scope methods return no scope or ignore the provided
+  scope;
+- `metrics.scoping` configuration can still be parsed but does not affect
+  meters or output;
+- the `scope` query parameter is ignored; and
+- the legacy `/observe/metrics/application`, `/observe/metrics/base`, and
+  `/observe/metrics/vendor` paths expose the same unscoped metrics as
+  `/observe/metrics`.
+
+An integration which needs equivalent classification can implement it using
+ordinary meter tags:
+
+1. Choose an integration-owned tag name and values.
+2. Provide a [`MeterBuilderCustomizer`][meter-builder-customizer] service.
+   Override `customize(Meter.Builder)` and inspect `Meter.Builder.origin()` to
+   select a tag value based on the fully-qualified name of the type which
+   originated a meter. Helidon supplies the provider class name automatically
+   for meters contributed by a `MetersProvider`.
+3. Create the tag using `MetricsFactory.tagCreate` and add it to the builder
+   before registration. Other meter producers can provide origin information
+   using `Meter.Builder.origin(String)` and then register the builder using
+   `MeterRegistry.getOrCreate(builder)`. Do not use the deprecated scope methods.
+4. Translate any integration-specific selection into a tag-selection map and
+   pass it to the provider-neutral
+   [`MeterRegistryFormatterProvider.formatter`][formatter-provider] overload.
+   The integration owns its routes, query parameters, and response semantics.
 
 Helidon 27 always reports the system-provided `gc.time` meter as a `Gauge`.
 The former `metrics.gc-time-type` compatibility setting is no longer
@@ -846,8 +821,7 @@ configuration more fully.
 Helidon includes several pre-written example applications illustrating
 aspects of metrics:
 
-- [Enabling/disabling meters][enabling-disabli] using `MetricsObserver` and
-  `MetricsConfig`
+- [Filtering reported meters by name][filtering-meters] using the metrics endpoint
 - [Controlling key performance indicator metrics][controlling-key] using
   configuration and `KeyPerformanceIndicatorMetricsSettings`.
 
@@ -922,20 +896,20 @@ mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
 
-Retrieve application metrics:
+Retrieve the new counter:
 
 <!--@mdc ::code-callout -->
 ```shell [Terminal]
-curl 'http://localhost:8080/observe/metrics?scope=application' # <1>
+curl 'http://localhost:8080/observe/metrics?name=accessctr' # <1>
 ```
-1. Access the metrics endpoint, selecting only application meters.
+1. Access the metrics endpoint, selecting the counter by name.
 <!--@mdc :: -->
 
 <!--@mdc ::code-callout -->
 ```log [Response]
 # HELP accessctr_total
 # TYPE accessctr_total counter
-accessctr_total{scope="application",} 0.0 # <2>
+accessctr_total 0.0 # <2>
 ```
 2. Note the counter is zero; we have not accessed a service endpoint yet.
 <!--@mdc :: -->
@@ -950,17 +924,17 @@ curl http://localhost:8080/greet
 {"message":"Hello World"}
 ```
 
-Retrieve application metrics again:
+Retrieve the counter again:
 
 ```shell [Terminal]
-curl 'http://localhost:8080/observe/metrics?scope=application'
+curl 'http://localhost:8080/observe/metrics?name=accessctr'
 ```
 
 <!--@mdc ::code-callout -->
 ```text [Response]
 # HELP accessctr_total
 # TYPE accessctr_total counter
-accessctr_total{scope="application",} 1.0 # <1>
+accessctr_total 1.0 # <1>
 ```
 1. The counter now reports 1, reflecting our earlier access to the `/greet`
    endpoint.
@@ -1076,12 +1050,14 @@ server:
 [timeunit]: https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/util/concurrent/TimeUnit.html
 [meterregistry]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MeterRegistry.html
 [metricsfactory]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MetricsFactory.html
+[meter-builder-customizer]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/spi/MeterBuilderCustomizer.html
+[formatter-provider]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/spi/MeterRegistryFormatterProvider.html
 [meter-builder-ba]: <https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Meter.Builder.html#baseUnit(java.lang.String)>
 [timer-builder-ba]: <https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.Builder.html#baseUnit(java.util.concurrent.TimeUnit)>
 [wrapper]: https://helidon.io/docs/v27/apidocs/io.helidon.common/io/helidon/common/Wrapper.html
 [autohttpmetricsc]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md
 [helidon-opentele]: ../telemetry/opentelemetry.md#maven-coordinates
-[enabling-disabli]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/filtering/se
+[filtering-meters]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/filtering/se
 [controlling-key]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/kpi
 [micrometer-metri]: https://docs.micrometer.io/micrometer/reference/concepts
 [io-helidon-metri]: ../../config/io.helidon.metrics.providers.micrometer.OtlpPublisher.md#configuration-options

@@ -659,7 +659,11 @@ class BuilderCodegen implements CodegenExtension {
 
         typeArguments.forEach(classModel::addGenericArgument);
 
-        if (prototypeInfo.configured().isPresent()) {
+        if (prototypeInfo.configured().isPresent()
+                && prototypeInfo.blueprint()
+                        .findAnnotation(Types.PROTOTYPE_CONFIGURED)
+                        .flatMap(it -> it.booleanValue("metadata"))
+                        .orElse(true)) {
             var schemaGen = new SchemaGenerator(this.ctx);
             classModel.addAnnotation(schemaGen.type(prototypeInfo, options));
         }

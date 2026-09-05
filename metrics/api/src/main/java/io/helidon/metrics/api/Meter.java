@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -55,11 +56,15 @@ public interface Meter extends Wrapper {
     Type type();
 
     /**
-     * Returns the scope associated with the meter.
+     * Always returns empty because core metrics does not assign scopes.
      *
-     * @return scope
+     * @return empty
+     * @deprecated Core metrics does not assign scopes, and this method will be removed.
      */
-    Optional<String> scope();
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Optional<String> scope() {
+        return Optional.empty();
+    }
 
     /**
      * Type of meter.
@@ -161,12 +166,34 @@ public interface Meter extends Wrapper {
         B baseUnit(String baseUnit);
 
         /**
-         * Sets the scope to be associated with this meter.
+         * No-op, will be removed.
          *
-         * @param scope scope
+         * @param scope ignored; must not be {@code null}
          * @return updated builder
+         * @deprecated No-op, will be removed.
          */
-        B scope(String scope);
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        default B scope(String scope) {
+            Objects.requireNonNull(scope);
+            return identity();
+        }
+
+        /**
+         * Sets the fully-qualified name of the type which originated the meter. The origin is context for
+         * {@link io.helidon.metrics.spi.MeterBuilderCustomizer meter builder customization}; it is not part of the meter
+         * identity or output.
+         * <p>
+         * The default implementation validates but does not retain the origin for compatibility with existing builder
+         * implementations.
+         *
+         * @param origin fully-qualified name of the type which originated the meter
+         * @return updated builder
+         * @since 27.0.0
+         */
+        default B origin(String origin) {
+            Objects.requireNonNull(origin);
+            return identity();
+        }
 
         /**
          * Returns the name the builder will use.
@@ -197,11 +224,28 @@ public interface Meter extends Wrapper {
         Optional<String> baseUnit();
 
         /**
-         * Returns the scope set in the builder, if any.
+         * Returns the fully-qualified name of the type which originated the meter, if set.
+         * <p>
+         * The origin is customization context and is not part of the meter identity or output. The default implementation
+         * returns empty for compatibility with existing builder implementations.
          *
-         * @return the assigned scope if set; empty otherwise
+         * @return originating type name, if set
+         * @since 27.0.0
          */
-        Optional<String> scope();
+        default Optional<String> origin() {
+            return Optional.empty();
+        }
+
+        /**
+         * Always returns empty because core metrics does not assign scopes.
+         *
+         * @return empty
+         * @deprecated Core metrics does not assign scopes, and this method will be removed.
+         */
+        @Deprecated(forRemoval = true, since = "27.0.0")
+        default Optional<String> scope() {
+            return Optional.empty();
+        }
 
 
     }
@@ -249,33 +293,51 @@ public interface Meter extends Wrapper {
     }
 
     /**
-     * Constants for the pre-defined scopes.
+     * Legacy scope constants retained for compatibility.
+     *
+     * @deprecated Core metrics ignores scope values, and this type will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     class Scope {
 
         /**
-         * Application scope.
+         * Legacy application scope value retained for compatibility.
+         *
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String APPLICATION = "application";
 
         /**
-         * Base scope.
+         * Legacy base scope value retained for compatibility.
+         *
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String BASE = "base";
 
         /**
-         * Vendor scope.
+         * Legacy vendor scope value retained for compatibility.
+         *
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String VENDOR = "vendor";
 
         /**
-         * All the predefined scopes.
+         * Legacy built-in scope values retained for compatibility.
+         *
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final Set<String> BUILT_IN_SCOPES = Set.of(BASE, VENDOR, APPLICATION);
 
         /**
-         * Default scope if none is specified for a given meter.
+         * Legacy default scope value retained for compatibility.
+         *
+         * @deprecated Core metrics ignores scope values, and this constant will be removed.
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static final String DEFAULT = APPLICATION;
 
         private Scope() {

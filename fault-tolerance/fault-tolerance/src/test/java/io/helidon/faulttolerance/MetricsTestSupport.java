@@ -28,8 +28,6 @@ import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 
-import static io.helidon.metrics.api.Meter.Scope.VENDOR;
-
 @SuppressWarnings("unchecked")
 final class MetricsTestSupport {
     private MetricsTestSupport() {
@@ -58,7 +56,7 @@ final class MetricsTestSupport {
                                              Meter.Type meterType,
                                              String name,
                                              List<Tag> tags) {
-        for (Meter meter : meterRegistry.meters(List.of(VENDOR))) {
+        for (Meter meter : meterRegistry.meters()) {
             if (meterClass.isInstance(meter)
                     && meter.type() == meterType
                     && meter.id().name().equals(name)

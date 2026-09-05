@@ -15,10 +15,14 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
+
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
 
 /**
  * No-op implementation of the {@link io.helidon.metrics.api.MetricsFactory} interface.
@@ -44,18 +48,25 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     private final MeterRegistry meterRegistry;
     private final MetricsConfig metricsConfig;
+    private final List<MeterBuilderCustomizer> meterBuilderCustomizers;
 
     NoOpMetricsFactory() {
-        this(MetricsConfig.create());
+        this(MetricsConfig.create(), List.of());
     }
 
-    private NoOpMetricsFactory(MetricsConfig metricsConfig) {
+    private NoOpMetricsFactory(MetricsConfig metricsConfig, Collection<MeterBuilderCustomizer> meterBuilderCustomizers) {
         this.metricsConfig = metricsConfig;
-        this.meterRegistry = new NoOpMeterRegistry(this);
+        this.meterBuilderCustomizers = List.copyOf(meterBuilderCustomizers);
+        this.meterRegistry = new NoOpMeterRegistry(this, this.meterBuilderCustomizers);
     }
 
     static NoOpMetricsFactory create(MetricsConfig metricsConfig) {
-        return new NoOpMetricsFactory(metricsConfig);
+        return new NoOpMetricsFactory(metricsConfig, List.of());
+    }
+
+    static NoOpMetricsFactory create(MetricsConfig metricsConfig,
+                                     Collection<MeterBuilderCustomizer> meterBuilderCustomizers) {
+        return new NoOpMetricsFactory(metricsConfig, meterBuilderCustomizers);
     }
 
     @Override
@@ -74,12 +85,12 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     @Override
     public NoOpMeterRegistry.Builder meterRegistryBuilder() {
-        return NoOpMeterRegistry.builder(this);
+        return NoOpMeterRegistry.builder(this, meterBuilderCustomizers);
     }
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return new NoOpMeterRegistry(this);
+        return new NoOpMeterRegistry(this, meterBuilderCustomizers);
     }
 
     @Override

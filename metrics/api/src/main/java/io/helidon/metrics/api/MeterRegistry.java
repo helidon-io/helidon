@@ -18,10 +18,12 @@ package io.helidon.metrics.api;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.common.DeprecationSupport;
 import io.helidon.service.registry.Services;
 
 /**
@@ -76,19 +78,28 @@ public interface MeterRegistry extends Wrapper {
     Collection<Meter> meters(Predicate<Meter> filter);
 
     /**
-     * Returns previously-registered meters which match one of the specified scopes.
+     * Returns all previously-registered meters, ignoring the scope selection.
      *
-     * @param scopeSelection scopes to match
-     * @return matching meters
+     * @param scopeSelection ignored; must not be {@code null}
+     * @return all registered meters
+     * @deprecated Use {@link #meters()}. Scope selection is ignored and this method will be removed.
      */
-    Iterable<Meter> meters(Iterable<String> scopeSelection);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Iterable<Meter> meters(Iterable<String> scopeSelection) {
+        Objects.requireNonNull(scopeSelection);
+        return meters();
+    }
 
     /**
-     * Returns the scopes (if any) as represented by tags on meter IDs.
+     * Always returns an empty iterable and will be removed.
      *
-     * @return scopes across all registered meters
+     * @return empty iterable
+     * @deprecated Always returns an empty iterable and will be removed.
      */
-    Iterable<String> scopes();
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Iterable<String> scopes() {
+        return List.of();
+    }
 
     /**
      * Closes this meter registry and the resources it owns, including publisher registries.
@@ -99,15 +110,49 @@ public interface MeterRegistry extends Wrapper {
     void close();
 
     /**
-     * Returns whether the specified meter is enabled or not, based on whether the meter registry as a whole is enabled and also
-     * whether the config settings for filtering include and exclude indicate the specific meter is enabled.
+     * Returns whether the specified meter is enabled.
+     * <p>
+     * The default implementation delegates to the deprecated overload for compatibility with existing implementations.
+     * Implementations should override this method to apply provider-neutral enablement rules. Legacy implementations
+     * which override the deprecated overload continue to work.
+     *
+     * @param name name of the meter to check
+     * @param tags tags of the meter to check
+     * @return true if the meter is enabled; false otherwise
+     */
+    default boolean isMeterEnabled(String name, Map<String, String> tags) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(tags);
+
+        DeprecationSupport.requireOverride(this,
+                                           MeterRegistry.class,
+                                           "isMeterEnabled",
+                                           String.class,
+                                           Map.class,
+                                           Optional.class);
+
+        return isMeterEnabled(name, tags, Optional.empty());
+    }
+
+    /**
+     * Returns whether the specified meter is enabled, ignoring the scope.
+     * <p>
+     * The default implementation delegates to {@link #isMeterEnabled(String, Map)}. Implementations must override either
+     * this method or the scope-free overload.
      *
      * @param name  name of the meter to check
      * @param tags  tags of the meter to check
-     * @param scope scope, if present, of the meter to check
-     * @return true if the meter (and its meter registry) are enabled; false otherwise
+     * @param scope ignored; must not be {@code null}
+     * @return true if the meter is enabled; false otherwise
+     * @deprecated Use {@link #isMeterEnabled(String, Map)}. Scope is ignored and this method will be removed.
      */
-    boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(tags);
+        Objects.requireNonNull(scope);
+        return isMeterEnabled(name, tags);
+    }
 
     /**
      * Returns the default {@link io.helidon.metrics.api.Clock} in use by the registry.
@@ -203,13 +248,19 @@ public interface MeterRegistry extends Wrapper {
     Optional<Meter> remove(Meter.Id id);
 
     /**
-     * Removes a previously-registered meter with the specified ID and scope.
+     * Removes a previously-registered meter with the specified ID, ignoring the scope.
      *
      * @param id    ID for the meter to remove
-     * @param scope scope of the meter to remove
-     * @return the removed meter; empty if the specified ID and scope do not correspond to a registered meter
+     * @param scope ignored; must not be {@code null}
+     * @return the removed meter; empty if the specified ID does not correspond to a registered meter
+     * @deprecated Use {@link #remove(Meter.Id)}. Scope is ignored and this method will be removed.
      */
-    Optional<Meter> remove(Meter.Id id, String scope);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Optional<Meter> remove(Meter.Id id, String scope) {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(scope);
+        return remove(id);
+    }
 
     /**
      * Removes a previously-registered meter with the specified name and tags.
@@ -221,14 +272,21 @@ public interface MeterRegistry extends Wrapper {
     Optional<Meter> remove(String name, Iterable<Tag> tags);
 
     /**
-     * Removes a previously-registered meter with the specified name, tags, and scope.
+     * Removes a previously-registered meter with the specified name and tags, ignoring the scope.
      *
      * @param name  meter name
      * @param tags  tags for further identifying the meter
-     * @param scope scope within which to locate the meter
-     * @return the removed meter; empty if the specified name, tags, and scope do not correspond to a registered meter
+     * @param scope ignored; must not be {@code null}
+     * @return the removed meter; empty if the specified name and tags do not correspond to a registered meter
+     * @deprecated Use {@link #remove(String, Iterable)}. Scope is ignored and this method will be removed.
      */
-    Optional<Meter> remove(String name, Iterable<Tag> tags, String scope);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default Optional<Meter> remove(String name, Iterable<Tag> tags, String scope) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(tags);
+        Objects.requireNonNull(scope);
+        return remove(name, tags);
+    }
 
     /**
      * Indicates if the meter has been deleted.

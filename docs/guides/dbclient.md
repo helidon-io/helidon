@@ -712,7 +712,7 @@ It confirms that the database is UP.
 Check the metrics of your application:
 
 ```shell [Terminal]
-curl -H "Accept: application/json" http://localhost:8080/observe/metrics/application
+curl -H "Accept: application/json" 'http://localhost:8080/observe/metrics?name=db.counter.select-book'
 ```
 
 Response body:
