@@ -821,6 +821,7 @@ configuration more fully.
 Helidon includes several pre-written example applications illustrating
 aspects of metrics:
 
+- [Filtering reported meters by name][filtering-meters] using the metrics endpoint
 - [Controlling key performance indicator metrics][controlling-key] using
   configuration and `KeyPerformanceIndicatorMetricsSettings`.
 
@@ -1056,6 +1057,7 @@ server:
 [wrapper]: https://helidon.io/docs/v27/apidocs/io.helidon.common/io/helidon/common/Wrapper.html
 [autohttpmetricsc]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md
 [helidon-opentele]: ../telemetry/opentelemetry.md#maven-coordinates
+[filtering-meters]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/filtering/se
 [controlling-key]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/kpi
 [micrometer-metri]: https://docs.micrometer.io/micrometer/reference/concepts
 [io-helidon-metri]: ../../config/io.helidon.metrics.providers.micrometer.OtlpPublisher.md#configuration-options
