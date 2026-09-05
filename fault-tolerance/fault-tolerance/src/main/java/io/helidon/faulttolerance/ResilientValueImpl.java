@@ -19,7 +19,10 @@ package io.helidon.faulttolerance;
 import java.lang.System.Logger.Level;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+
+import io.helidon.common.LazyValue;
 
 final class ResilientValueImpl<T> implements ResilientValue<T> {
     private static final System.Logger LOGGER = System.getLogger(ResilientValue.class.getName());
@@ -28,8 +31,8 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     private final Supplier<T> loader;
     private final Retry retry;
     private final CircuitBreaker circuitBreaker;
-    private final AtomicBoolean loading = new AtomicBoolean();
     private final AtomicBoolean failed = new AtomicBoolean();
+    private final AtomicReference<LazyValue<Outcome<T>>> attempt;
 
     private volatile T value;
     private volatile boolean loaded;
@@ -42,6 +45,7 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         this.loader = Objects.requireNonNull(loader);
         this.retry = Retry.create(normalize(this.description, Objects.requireNonNull(retryConfig)));
         this.circuitBreaker = CircuitBreaker.create(normalize(this.description, Objects.requireNonNull(circuitBreakerConfig)));
+        this.attempt = new AtomicReference<>(newAttempt());
     }
 
     @Override
@@ -49,36 +53,22 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         if (loaded) {
             return value;
         }
-        if (!loading.compareAndSet(false, true)) {
-            if (loaded) {
-                return value;
-            }
-            throw new ResilientValue.UnavailableException(description + " is already being loaded");
+
+        LazyValue<Outcome<T>> currentAttempt = attempt.get();
+        Outcome<T> outcome = currentAttempt.get();
+        Throwable failure = outcome.failure();
+        if (failure == null) {
+            return outcome.value();
         }
 
-        try {
-            if (loaded) {
-                return value;
-            }
-            T loadedValue;
-            try {
-                loadedValue = circuitBreaker.invoke(this::loadWithRetry);
-            } catch (CircuitBreakerOpenException e) {
-                throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
-            } catch (UnavailableException e) {
-                failed.set(true);
-                LOGGER.log(Level.WARNING, "{0} is unavailable; retries are exhausted: {1}", description, e.getMessage());
-                throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
-            }
-            value = Objects.requireNonNull(loadedValue, "The loader for " + description + " returned null");
-            loaded = true;
-            if (failed.compareAndSet(true, false)) {
-                LOGGER.log(Level.INFO, "{0} is available again", description);
-            }
-            return loadedValue;
-        } finally {
-            loading.set(false);
+        attempt.compareAndSet(currentAttempt, newAttempt());
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
         }
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        throw new IllegalStateException("Unexpected checked failure loading " + description, failure);
     }
 
     @Override
@@ -112,11 +102,43 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         return description;
     }
 
+    private LazyValue<Outcome<T>> newAttempt() {
+        return LazyValue.create(() -> {
+            try {
+                return new Outcome<>(load(), null);
+            } catch (RuntimeException | Error e) {
+                return new Outcome<>(null, e);
+            }
+        });
+    }
+
+    private T load() {
+        T loadedValue;
+        try {
+            loadedValue = circuitBreaker.invoke(this::loadWithRetry);
+        } catch (CircuitBreakerOpenException e) {
+            throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
+        } catch (UnavailableException e) {
+            failed.set(true);
+            LOGGER.log(Level.WARNING, "{0} is unavailable; retries are exhausted: {1}", description, e.getMessage());
+            throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
+        }
+        value = Objects.requireNonNull(loadedValue, "The loader for " + description + " returned null");
+        loaded = true;
+        if (failed.compareAndSet(true, false)) {
+            LOGGER.log(Level.INFO, "{0} is available again", description);
+        }
+        return loadedValue;
+    }
+
     private T loadWithRetry() {
         try {
             return retry.invoke(loader);
         } catch (RetryTimeoutException e) {
             throw new ResilientValue.UnavailableException(description + " did not become available before the retry timeout", e);
         }
+    }
+
+    private record Outcome<T>(T value, Throwable failure) {
     }
 }

@@ -39,6 +39,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -147,12 +148,14 @@ class ResilientValueTest {
     }
 
     @Test
-    void concurrentFollowerFailsFast() throws InterruptedException {
+    void concurrentFollowerWaitsForLoad() throws InterruptedException {
         CountDownLatch loading = new CountDownLatch(1);
         CountDownLatch continueLoading = new CountDownLatch(1);
         AtomicInteger calls = new AtomicInteger();
-        AtomicReference<String> result = new AtomicReference<>();
-        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicReference<String> loaderResult = new AtomicReference<>();
+        AtomicReference<String> followerResult = new AtomicReference<>();
+        AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
+        AtomicReference<Throwable> followerFailure = new AtomicReference<>();
         ResilientValue<String> value = ResilientValue.create("test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
@@ -165,22 +168,70 @@ class ResilientValueTest {
 
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
-                result.set(value.get());
+                loaderResult.set(value.get());
             } catch (Throwable t) {
-                failure.set(t);
+                loaderFailure.set(t);
+            }
+        });
+        Thread followerThread = Thread.ofVirtual().unstarted(() -> {
+            try {
+                followerResult.set(value.get());
+            } catch (Throwable t) {
+                followerFailure.set(t);
             }
         });
         try {
             assertThat(loading.await(10, TimeUnit.SECONDS), is(true));
-            assertThrows(ResilientValue.UnavailableException.class, value::get);
+            followerThread.start();
+            awaitWaiting(followerThread);
             assertThat(calls.get(), is(1));
         } finally {
             continueLoading.countDown();
             loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
         }
         assertThat(loaderThread.isAlive(), is(false));
-        assertThat(result.get(), is("loaded"));
-        assertThat(failure.get(), is((Throwable) null));
+        assertThat(followerThread.isAlive(), is(false));
+        assertThat(loaderResult.get(), is("loaded"));
+        assertThat(followerResult.get(), is("loaded"));
+        assertThat(loaderFailure.get(), is((Throwable) null));
+        assertThat(followerFailure.get(), is((Throwable) null));
+        assertThat(calls.get(), is(1));
+    }
+
+    @Test
+    void concurrentFollowerReceivesLoadFailure() throws InterruptedException {
+        CountDownLatch loading = new CountDownLatch(1);
+        CountDownLatch continueLoading = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
+        AtomicReference<Throwable> followerFailure = new AtomicReference<>();
+        ResilientValue<String> value = ResilientValue.create("test value",
+                                                             () -> {
+                                                                 calls.incrementAndGet();
+                                                                 loading.countDown();
+                                                                 await(continueLoading);
+                                                                 throw new ResilientValue.UnavailableException("not ready");
+                                                             },
+                                                             retryConfig(1),
+                                                             circuitBreakerConfig());
+
+        Thread loaderThread = Thread.ofVirtual().start(() -> captureFailure(value, loaderFailure));
+        Thread followerThread = Thread.ofVirtual().unstarted(() -> captureFailure(value, followerFailure));
+        try {
+            assertThat(loading.await(10, TimeUnit.SECONDS), is(true));
+            followerThread.start();
+            awaitWaiting(followerThread);
+            assertThat(calls.get(), is(1));
+        } finally {
+            continueLoading.countDown();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+        assertThat(loaderThread.isAlive(), is(false));
+        assertThat(followerThread.isAlive(), is(false));
+        assertThat(loaderFailure.get(), instanceOf(ResilientValue.UnavailableException.class));
+        assertThat(followerFailure.get(), instanceOf(ResilientValue.UnavailableException.class));
         assertThat(calls.get(), is(1));
     }
 
@@ -369,7 +420,8 @@ class ResilientValueTest {
     private static void assertFollowerDoesNotLog(CapturingHandler handler) throws InterruptedException {
         CountDownLatch loading = new CountDownLatch(1);
         CountDownLatch continueLoading = new CountDownLatch(1);
-        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
+        AtomicReference<Throwable> followerFailure = new AtomicReference<>();
         ResilientValue<String> value = ResilientValue.create("concurrent logged value",
                                                              () -> {
                                                                  loading.countDown();
@@ -382,19 +434,30 @@ class ResilientValueTest {
             try {
                 value.get();
             } catch (Throwable t) {
-                failure.set(t);
+                loaderFailure.set(t);
+            }
+        });
+        Thread followerThread = Thread.ofVirtual().unstarted(() -> {
+            try {
+                value.get();
+            } catch (Throwable t) {
+                followerFailure.set(t);
             }
         });
 
         try {
             assertThat(loading.await(10, TimeUnit.SECONDS), is(true));
-            assertThrows(ResilientValue.UnavailableException.class, value::get);
+            followerThread.start();
+            awaitWaiting(followerThread);
         } finally {
             continueLoading.countDown();
             loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
         }
         assertThat(loaderThread.isAlive(), is(false));
-        assertThat(failure.get(), is((Throwable) null));
+        assertThat(followerThread.isAlive(), is(false));
+        assertThat(loaderFailure.get(), is((Throwable) null));
+        assertThat(followerFailure.get(), is((Throwable) null));
         assertThat(handler.messages(Level.WARNING).size(), is(1));
         assertThat(handler.messages(Level.INFO).size(), is(1));
     }
@@ -419,6 +482,22 @@ class ResilientValueTest {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting in test loader", e);
         }
+    }
+
+    private static void captureFailure(ResilientValue<?> value, AtomicReference<Throwable> failure) {
+        try {
+            value.get();
+        } catch (Throwable t) {
+            failure.set(t);
+        }
+    }
+
+    private static void awaitWaiting(Thread thread) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (thread.isAlive() && thread.getState() != Thread.State.WAITING && System.nanoTime() < deadline) {
+            Thread.sleep(1);
+        }
+        assertThat(thread.getState(), is(Thread.State.WAITING));
     }
 
     private static final class TestExecutor extends AbstractExecutorService {

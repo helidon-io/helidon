@@ -24,7 +24,7 @@ import io.helidon.common.Api;
 /**
  * A value loaded on first use using a retry protected by a circuit breaker.
  * A successfully loaded value is cached permanently. Failed loads may be tried again according to the configured
- * circuit breaker.
+ * circuit breaker. Concurrent callers wait for the active load attempt and share its result.
  *
  * @param <T> type of the loaded value
  */
