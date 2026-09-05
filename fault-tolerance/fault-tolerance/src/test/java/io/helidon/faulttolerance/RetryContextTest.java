@@ -211,6 +211,31 @@ class RetryContextTest {
     }
 
     @Test
+    void testCustomWaitFailureWithRestoredInterruptFlag() {
+        TerminalFailure waitFailure = new TerminalFailure();
+        Retry retry = Retry.builder()
+                .retryPolicy((firstCallMillis, lastDelay, call) -> Optional.of(1L))
+                .overallTimeout(Duration.ofSeconds(10))
+                .build();
+
+        try {
+            RetryException exception = assertThrows(RetryException.class,
+                                                    () -> retry.invoke(context -> {
+                                                        throw new TestFailure("invocation");
+                                                    }, delay -> {
+                                                        Thread.currentThread().interrupt();
+                                                        throw waitFailure;
+                                                    }));
+
+            assertThat(exception.outcome().termination(), is(RetryOutcome.Termination.INTERRUPTED));
+            assertThat(exception.getCause(), sameInstance(waitFailure));
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
     void testRetryPolicyFailure() {
         TestFailure invocationFailure = new TestFailure("invocation");
         TerminalFailure policyFailure = new TerminalFailure();

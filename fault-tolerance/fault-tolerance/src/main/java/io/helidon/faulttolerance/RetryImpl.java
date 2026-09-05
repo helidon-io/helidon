@@ -172,12 +172,12 @@ class RetryImpl implements Retry {
                 continueRetries = waitStrategy.await(Duration.ofMillis(delayMillis));
             } catch (RuntimeException t) {
                 Throwable interrupted = interrupted(t);
-                if (interrupted != null) {
+                if (interrupted != null || Thread.currentThread().isInterrupted()) {
                     Thread.currentThread().interrupt();
                     return terminateWait(legacy,
                                          RetryOutcome.Termination.INTERRUPTED,
                                          state,
-                                         interrupted);
+                                         interrupted == null ? t : interrupted);
                 }
                 return terminateWait(legacy, RetryOutcome.Termination.WAIT_FAILED, state, t);
             }
