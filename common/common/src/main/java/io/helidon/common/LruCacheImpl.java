@@ -41,6 +41,9 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
     private final int capacity;
 
     LruCacheImpl(int capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException("Capacity must not be negative");
+        }
         this.capacity = capacity;
     }
 
