@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,17 @@ public interface SpanContext {
      * @return span id
      */
     String spanId();
+
+    /**
+     * Whether the associated span is sampled.
+     * Implementations should override this method to report the tracer's sampling decision. The default returns
+     * {@code true} for compatibility with existing implementations.
+     *
+     * @return whether the span is sampled
+     */
+    default boolean sampled() {
+        return true;
+    }
 
     /**
      * Configure this context as a parent of the provided builder.

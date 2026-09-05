@@ -134,7 +134,7 @@
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
-        <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
+        <javadoc.link.prometheus>https://prometheus.github.io/client_java/api/</javadoc.link.prometheus>
         <javadoc.link.grpc-api>https://grpc.github.io/grpc-java/javadoc</javadoc.link.grpc-api>
 
         <!--suppress UnresolvedMavenProperty -->

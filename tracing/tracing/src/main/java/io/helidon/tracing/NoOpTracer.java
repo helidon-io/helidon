@@ -202,6 +202,11 @@ class NoOpTracer implements Tracer {
         }
 
         @Override
+        public boolean sampled() {
+            return false;
+        }
+
+        @Override
         public void asParent(io.helidon.tracing.Span.Builder<?> spanBuilder) {
         }
 

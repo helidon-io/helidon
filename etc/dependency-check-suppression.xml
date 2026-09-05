@@ -91,13 +91,6 @@
  -->
 <suppress>
    <notes><![CDATA[
-   file name: micrometer-registry-prometheus-simpleclient-1.13.4.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-registry-prometheus-simpleclient@.*$</packageUrl>
-   <cve>CVE-2019-3826</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
    file name: prometheus-metrics-core-1.2.1.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus-metrics-(.*)@.*$</packageUrl>
@@ -107,13 +100,6 @@
 <!-- False Positive.
      This CVE is against prometheus server (not client libraries).
  -->
-<suppress>
-    <notes><![CDATA[
-    file name: simpleclient-0.16.0.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient.*@.*$</packageUrl>
-    <cve>CVE-2026-42154</cve>
-</suppress>
 <suppress>
     <notes><![CDATA[
     file name: prometheus-metrics-core-1.3.10.jar
@@ -127,52 +113,6 @@
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-registry-prometheus.*@.*$</packageUrl>
     <cve>CVE-2026-42154</cve>
-</suppress>
-
-<!-- False Positives.
-     These are confusing prometheus simple client tracer for otel with OTel dotnet, Go, python
--->
-<suppress>
-    <notes><![CDATA[
-    file name: simpleclient_tracer_otel-0.16.0.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
-    <cve>CVE-2026-40894</cve>
-</suppress>
-<suppress>
-    <notes><![CDATA[
-    file name: simpleclient_tracer_otel-0.16.0.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
-    <cve>CVE-2026-39882</cve>
-</suppress>
-<suppress>
-    <notes><![CDATA[
-    file name: simpleclient_tracer_otel-0.16.0.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
-    <cve>CVE-2026-41078</cve>
-</suppress>
-<suppress>
-    <notes><![CDATA[
-    file name: simpleclient_tracer_otel-0.16.0.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
-    <cve>CVE-2023-47108</cve>
-</suppress>
-<suppress>
-    <notes><![CDATA[
-    file name: simpleclient_tracer_otel-0.16.0.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
-    <cve>CVE-2023-45142</cve>
-</suppress>
-<suppress>
-    <notes><![CDATA[
-    file name: simpleclient_tracer_otel-0.16.0.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
-    <cve>CVE-2023-43810</cve>
 </suppress>
 
 <!-- False Positives.

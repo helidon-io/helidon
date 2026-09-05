@@ -26,8 +26,6 @@ module io.helidon.metrics.traceexemplar {
     requires io.helidon.metrics.api;
     requires io.helidon.metrics.providers.micrometer;
 
-    requires simpleclient.tracer.common;
-
     provides io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider
             with io.helidon.metrics.exemplartrace.MicrometerSpanContextSupplierProvider;
 }

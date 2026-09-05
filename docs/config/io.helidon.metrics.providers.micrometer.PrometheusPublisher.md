@@ -26,7 +26,21 @@ Settings for a Micrometer Prometheus meter registry
 </td>
 <td>
 </td>
-<td>Property name prefix</td>
+<td>Prefix for Micrometer Prometheus property lookups; this setting does not add a prefix to exported metric names, and the legacy <code>prometheus.<wbr>histogram<wbr>Flavor</code> property is accepted for compatibility but ignored with a warning</td>
+</tr>
+<tr>
+<td>
+<a id="naming-convention"></a>
+<a href="io.helidon.metrics.providers.micrometer.PrometheusNamingConventionConfig.md">
+<code>naming-<wbr>convention</code>
+</a>
+</td>
+<td>
+<code>Prometheus<wbr>Naming<wbr>Convention<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Prometheus naming convention settings</td>
 </tr>
 <tr>
 <td>

@@ -28,10 +28,10 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.service.registry.Services;
 
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.exporter.common.TextFormat;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import io.prometheus.metrics.expositionformats.OpenMetricsTextFormatWriter;
+import io.prometheus.metrics.expositionformats.PrometheusTextFormatWriter;
 
 /**
  * Retrieves and prepares meter output from the specified meter registry according to the formats supported by the Prometheus
@@ -39,8 +39,8 @@ import io.prometheus.client.exporter.common.TextFormat;
  * <p>
  * Because the Prometheus exposition format is flat, and because some meter types have multiple values, the meter names
  * in the output repeat the actual meter name with suffixes to indicate the specific quantities (e.g.,
- * count, total, max) each reported value conveys. Further, meter names in the output might need the prefix
- * "m_" if the actual meter name starts with a digit or underscore and underscores replace special characters.
+ * count, total, max) each reported value conveys. The active Prometheus naming convention controls how meter and tag names
+ * are normalized.
  * </p>
  */
 public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
@@ -48,8 +48,8 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
      * Mapping from supported media types to the corresponding Prometheus registry content types.
      */
     public static final Map<MediaType, String> MEDIA_TYPE_TO_FORMAT = Map.of(
-            MediaTypes.TEXT_PLAIN, TextFormat.CONTENT_TYPE_004,
-            MediaTypes.APPLICATION_OPENMETRICS_TEXT, TextFormat.CONTENT_TYPE_OPENMETRICS_100);
+            MediaTypes.TEXT_PLAIN, PrometheusTextFormatWriter.CONTENT_TYPE,
+            MediaTypes.APPLICATION_OPENMETRICS_TEXT, OpenMetricsTextFormatWriter.CONTENT_TYPE);
 
     private static final Pattern SPECIAL_CHARACTERS_MAPPED_TO_UNDERSCORE_PATTERN = Pattern.compile("[-+.!?@#$%^&*`'\\s]+");
     private static final Pattern NON_DIGIT_OR_UNDERSCORE_PREFIX_PATTERN = Pattern.compile("^[0-9_]+.*");
@@ -117,20 +117,6 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     }
 
     /**
-     * Returns the Prometheus-format meter name suffixes for the given meter type.
-     *
-     * @param meterType {@link io.micrometer.core.instrument.Meter.Type} of interest
-     * @return suffixes used in reporting the corresponding meter's value(s)
-     */
-    static Set<String> meterNameSuffixes(Meter.Type meterType) {
-        return switch (meterType) {
-            case COUNTER -> Set.of("_total");
-            case DISTRIBUTION_SUMMARY, LONG_TASK_TIMER, TIMER -> Set.of("_count", "_sum", "_max", "_bucket");
-            case GAUGE, OTHER -> Set.of();
-        };
-    }
-
-    /**
      * Returns the Prometheus output governed by the previously-specified media type, optionally filtered
      * by the previously-specified scope and meter name selections.
      *
@@ -173,28 +159,17 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     }
 
     /**
-     * Prepares a set containing the names of meters from the specified Prometheus meter registry which match
+     * Prepares a set containing the names of metric families from the specified Prometheus meter registry which match
      * the specified scope and meter name selections.
      * <p>
-     * For meters with multiple values, the Prometheus registry essentially creates and actually displays in its output
-     * additional or "child" meters. A child meter's name is the parent's name plus a suffix consisting
-     * of the child meter's units (if any) plus the child name. For example, the timer {@code myDelay}  has child meters
-     * {@code myDelay_seconds_count}, {@code myDelay_seconds_sum}, and {@code myDelay_seconds_max}. (The output contains
-     * repetitions of the parent meter's name for each quantile, but that does not affect the meter names we need to ask
-     * the Prometheus meter registry to retrieve for us when we scrape.)
-     * </p>
-     * <p>
-     * We interpret any name selection passed to this method as specifying a parent name. We can ask the Prometheus meter
-     * registry to select specific meters by meter name when we scrape, but we need to pass it an expanded name selection that
-     * includes the relevant child meter names as well as the parent name. One way to choose those is first to collect the
-     * names from the Prometheus meter registry itself and derive the names to have the meter registry select by from those
-     * matching meters, their units, etc.
+     * The new Prometheus registry selects metric families, not individual emitted samples. Timers and distribution summaries
+     * use a base family for count, sum, buckets, and quantiles and a separate family for the maximum value.
      * </p>
      *
      * @param prometheusMeterRegistry Prometheus meter registry to query
      * @param scopes          scope names to select
      * @param names           meter names to select
-     * @return set of matching meter names (with units and suffixes as needed) to match the names as stored in the meter registry
+     * @return names of matching metric families as stored in the Prometheus registry
      */
     Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
                                      Set<String> scopes,
@@ -202,36 +177,27 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
 
         Set<String> result = new HashSet<>();
 
-        for (Meter meter : prometheusMeterRegistry.getMeters()) {
-            String meterName = meter.getId().getName();
+        for (io.helidon.metrics.api.Meter meter : meterRegistry.meters()) {
+            String meterName = meter.id().name();
             if ((!names.isEmpty() && !names.contains(meterName))
                 || (!scopes.isEmpty()
                             && scopeTagName != null
                             && !scopeTagName.isBlank()
-                            && !scopes.contains(meter.getId().getTag(scopeTagName)))) {
+                            && meter.scope().filter(scopes::contains).isEmpty())) {
                 continue;
             }
-            Set<String> allUnitsForMeterName = new HashSet<>();
-            allUnitsForMeterName.add("");
-            Set<String> allSuffixesForMeterName = new HashSet<>();
-            allSuffixesForMeterName.add("");
 
-            prometheusMeterRegistry.find(meterName)
-                    .meters()
-                    .forEach(m -> {
-                        Meter.Id meterId = m.getId();
-                        String normalizedUnit = normalizeUnit(meterId.getBaseUnit());
-                        if (!normalizedUnit.isBlank()) {
-                            allUnitsForMeterName.add("_" + normalizedUnit);
-                        }
-                        allSuffixesForMeterName.addAll(meterNameSuffixes(meterId.getType()));
-                    });
-
-            String normalizedMeterName = normalizeNameToPrometheus(meterName);
-
-            allUnitsForMeterName
-                    .forEach(units -> allSuffixesForMeterName
-                            .forEach(suffix -> result.add(normalizedMeterName + units + suffix)));
+            io.micrometer.core.instrument.Meter micrometerMeter =
+                    meter.unwrap(io.micrometer.core.instrument.Meter.class);
+            io.micrometer.core.instrument.Meter.Id meterId = micrometerMeter.getId();
+            String conventionName = prometheusMeterRegistry.config()
+                    .namingConvention()
+                    .name(meterId.getName(), meterId.getType(), meterId.getBaseUnit());
+            result.add(conventionName);
+            if (meter.type() == io.helidon.metrics.api.Meter.Type.TIMER
+                    || meter.type() == io.helidon.metrics.api.Meter.Type.DISTRIBUTION_SUMMARY) {
+                result.add(conventionName + "_max");
+            }
         }
         return result;
     }
@@ -261,10 +227,6 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         helpAndType.setLength(0);
         metricData.setLength(0);
         return result.toString();
-    }
-
-    private static String normalizeUnit(String unit) {
-        return unit == null ? "" : unit;
     }
 
     /**
