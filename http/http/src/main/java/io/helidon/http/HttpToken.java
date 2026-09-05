@@ -40,6 +40,9 @@ public final class HttpToken {
         if (token.isEmpty()) {
             throw new IllegalArgumentException("Token must not be empty");
         }
+        if (isValid(token)) {
+            return;
+        }
         for (int i = 0; i < token.length(); i++) {
             char aChar = token.charAt(i);
             if (aChar > 127) {

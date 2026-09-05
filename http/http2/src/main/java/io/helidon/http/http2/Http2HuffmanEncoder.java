@@ -47,7 +47,18 @@ public class Http2HuffmanEncoder {
     }
 
     static void validateLatin1(String value) {
-        for (int i = 0; i < value.length(); i++) {
+        int length = value.length();
+        int i = 0;
+        for (; i + 3 < length; i += 4) {
+            int characters = value.charAt(i)
+                    | value.charAt(i + 1)
+                    | value.charAt(i + 2)
+                    | value.charAt(i + 3);
+            if ((characters & 0xff00) != 0) {
+                throw new IllegalArgumentException("Header value contains a character above 0xff");
+            }
+        }
+        for (; i < length; i++) {
             if (value.charAt(i) > 0xff) {
                 throw new IllegalArgumentException("Header value contains a character above 0xff");
             }
