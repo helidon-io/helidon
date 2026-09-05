@@ -107,6 +107,63 @@ class RetryImpl implements Retry {
         return invoke(function, waitStrategy, false);
     }
 
+    @Override
+    public long retryCounter() {
+        return retryCounter.get();
+    }
+
+    private static long durationToNanos(Duration duration) {
+        try {
+            return duration.toNanos();
+        } catch (ArithmeticException e) {
+            return duration.isNegative() ? Long.MIN_VALUE : Long.MAX_VALUE;
+        }
+    }
+
+    private static long millisToNanos(long millis) {
+        if (millis > Long.MAX_VALUE / 1_000_000) {
+            return Long.MAX_VALUE;
+        }
+        return TimeUnit.MILLISECONDS.toNanos(millis);
+    }
+
+    private static long elapsedNanos(long startedNanos, long now) {
+        return Math.max(0, now - startedNanos);
+    }
+
+    private static Throwable unwrap(Throwable throwable) {
+        Throwable unwrapped = SupplierHelper.unwrapThrowable(throwable);
+        if (unwrapped instanceof ExecutionException) {
+            unwrapped = unwrapped.getCause();
+        }
+        return unwrapped == null ? throwable : unwrapped;
+    }
+
+    private static Throwable interrupted(Throwable throwable) {
+        Throwable current = throwable;
+        for (int i = 0; current != null && i < 64; i++) {
+            if (current instanceof InterruptedException) {
+                return current;
+            }
+            Throwable cause = current.getCause();
+            if (cause == current) {
+                return null;
+            }
+            current = cause;
+        }
+        return null;
+    }
+
+    private static <T> T throwLegacy(Throwable throwable) {
+        if (throwable instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (throwable instanceof Error error) {
+            throw error;
+        }
+        throw new SupplierException(throwable);
+    }
+
     private <T> T invoke(Function<RetryContext, ? extends T> function,
                          WaitStrategy waitStrategy,
                          boolean legacy) {
@@ -208,11 +265,6 @@ class RetryImpl implements Retry {
         }
     }
 
-    @Override
-    public long retryCounter() {
-        return retryCounter.get();
-    }
-
     private <T> T terminateAfterInvocation(boolean legacy,
                                            RetryOutcome.Termination termination,
                                            InvocationState state,
@@ -287,58 +339,6 @@ class RetryImpl implements Retry {
                 + " ms, must be lower than overallTimeout duration of: "
                 + overallTimeout
                 + ".";
-    }
-
-    private static long durationToNanos(Duration duration) {
-        try {
-            return duration.toNanos();
-        } catch (ArithmeticException e) {
-            return duration.isNegative() ? Long.MIN_VALUE : Long.MAX_VALUE;
-        }
-    }
-
-    private static long millisToNanos(long millis) {
-        if (millis > Long.MAX_VALUE / 1_000_000) {
-            return Long.MAX_VALUE;
-        }
-        return TimeUnit.MILLISECONDS.toNanos(millis);
-    }
-
-    private static long elapsedNanos(long startedNanos, long now) {
-        return Math.max(0, now - startedNanos);
-    }
-
-    private static Throwable unwrap(Throwable throwable) {
-        Throwable unwrapped = SupplierHelper.unwrapThrowable(throwable);
-        if (unwrapped instanceof ExecutionException) {
-            unwrapped = unwrapped.getCause();
-        }
-        return unwrapped == null ? throwable : unwrapped;
-    }
-
-    private static Throwable interrupted(Throwable throwable) {
-        Throwable current = throwable;
-        for (int i = 0; current != null && i < 64; i++) {
-            if (current instanceof InterruptedException) {
-                return current;
-            }
-            Throwable cause = current.getCause();
-            if (cause == current) {
-                return null;
-            }
-            current = cause;
-        }
-        return null;
-    }
-
-    private static <T> T throwLegacy(Throwable throwable) {
-        if (throwable instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-        if (throwable instanceof Error error) {
-            throw error;
-        }
-        throw new SupplierException(throwable);
     }
 
     private static final class InvocationState {

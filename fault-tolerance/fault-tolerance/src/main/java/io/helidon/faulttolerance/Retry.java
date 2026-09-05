@@ -121,6 +121,80 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
                                                         + getClass().getName());
     }
 
+    private static long durationToMillis(Duration duration) {
+        Objects.requireNonNull(duration);
+        try {
+            return Math.max(0, duration.toMillis());
+        } catch (ArithmeticException e) {
+            return duration.isNegative() ? 0 : Long.MAX_VALUE;
+        }
+    }
+
+    private static void validatePolicy(int calls,
+                                       Duration delay,
+                                       Duration jitter,
+                                       double jitterFactor,
+                                       Duration maxDelay) {
+        Objects.requireNonNull(delay);
+        Objects.requireNonNull(jitter);
+        Objects.requireNonNull(maxDelay);
+        if (calls < 1) {
+            throw new IllegalArgumentException("Calls must be at least 1");
+        }
+        if (delay.isNegative()) {
+            throw new IllegalArgumentException("Delay must not be negative");
+        }
+        if (jitter.isNegative()) {
+            throw new IllegalArgumentException("Jitter must not be negative");
+        }
+        if (!Double.isFinite(jitterFactor) || jitterFactor < 0 || jitterFactor >= 1) {
+            throw new IllegalArgumentException("Jitter factor must be greater than or equal to 0 and lower than 1");
+        }
+        if (!jitter.isZero() && jitterFactor != 0) {
+            throw new IllegalArgumentException("Jitter and jitter factor cannot both be greater than zero");
+        }
+        if (maxDelay.isNegative()) {
+            throw new IllegalArgumentException("Maximum delay must not be negative");
+        }
+    }
+
+    private static long multiply(long value, double factor) {
+        double result = value * factor;
+        if (Double.isNaN(result) || result <= 0) {
+            return 0;
+        }
+        if (result >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return (long) result;
+    }
+
+    private static long withJitter(SecureRandom random,
+                                   long delay,
+                                   long jitter,
+                                   double jitterFactor,
+                                   long maxDelay) {
+        long result = delay;
+        if (jitterFactor > 0) {
+            jitter = multiply(delay, jitterFactor);
+        }
+        if (jitter > 0) {
+            long randomJitter;
+            if (jitter <= Long.MAX_VALUE / 2) {
+                randomJitter = random.nextLong(-jitter, jitter);
+            } else {
+                long magnitude = random.nextLong(jitter);
+                randomJitter = random.nextBoolean() ? magnitude : -magnitude;
+            }
+            if (randomJitter > 0 && result > Long.MAX_VALUE - randomJitter) {
+                result = Long.MAX_VALUE;
+            } else {
+                result = Math.max(0, result + randomJitter);
+            }
+        }
+        return Math.min(result, maxDelay);
+    }
+
     /**
      * Strategy used to wait before another invocation attempt.
      */
@@ -483,77 +557,4 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
         }
     }
 
-    private static long durationToMillis(Duration duration) {
-        Objects.requireNonNull(duration);
-        try {
-            return Math.max(0, duration.toMillis());
-        } catch (ArithmeticException e) {
-            return duration.isNegative() ? 0 : Long.MAX_VALUE;
-        }
-    }
-
-    private static void validatePolicy(int calls,
-                                       Duration delay,
-                                       Duration jitter,
-                                       double jitterFactor,
-                                       Duration maxDelay) {
-        Objects.requireNonNull(delay);
-        Objects.requireNonNull(jitter);
-        Objects.requireNonNull(maxDelay);
-        if (calls < 1) {
-            throw new IllegalArgumentException("Calls must be at least 1");
-        }
-        if (delay.isNegative()) {
-            throw new IllegalArgumentException("Delay must not be negative");
-        }
-        if (jitter.isNegative()) {
-            throw new IllegalArgumentException("Jitter must not be negative");
-        }
-        if (!Double.isFinite(jitterFactor) || jitterFactor < 0 || jitterFactor >= 1) {
-            throw new IllegalArgumentException("Jitter factor must be greater than or equal to 0 and lower than 1");
-        }
-        if (!jitter.isZero() && jitterFactor != 0) {
-            throw new IllegalArgumentException("Jitter and jitter factor cannot both be greater than zero");
-        }
-        if (maxDelay.isNegative()) {
-            throw new IllegalArgumentException("Maximum delay must not be negative");
-        }
-    }
-
-    private static long multiply(long value, double factor) {
-        double result = value * factor;
-        if (Double.isNaN(result) || result <= 0) {
-            return 0;
-        }
-        if (result >= Long.MAX_VALUE) {
-            return Long.MAX_VALUE;
-        }
-        return (long) result;
-    }
-
-    private static long withJitter(SecureRandom random,
-                                   long delay,
-                                   long jitter,
-                                   double jitterFactor,
-                                   long maxDelay) {
-        long result = delay;
-        if (jitterFactor > 0) {
-            jitter = multiply(delay, jitterFactor);
-        }
-        if (jitter > 0) {
-            long randomJitter;
-            if (jitter <= Long.MAX_VALUE / 2) {
-                randomJitter = random.nextLong(-jitter, jitter);
-            } else {
-                long magnitude = random.nextLong(jitter);
-                randomJitter = random.nextBoolean() ? magnitude : -magnitude;
-            }
-            if (randomJitter > 0 && result > Long.MAX_VALUE - randomJitter) {
-                result = Long.MAX_VALUE;
-            } else {
-                result = Math.max(0, result + randomJitter);
-            }
-        }
-        return Math.min(result, maxDelay);
-    }
 }
