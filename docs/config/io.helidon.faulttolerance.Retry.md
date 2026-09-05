@@ -31,6 +31,17 @@
 </tr>
 <tr>
 <td>
+<code>max-<wbr>delay</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+</td>
+<td>Maximum delay between invocation attempts, including jitter</td>
+</tr>
+<tr>
+<td>
 <code>delay</code>
 </td>
 <td>
@@ -51,7 +62,7 @@
 <td>
 <code>PT-<wbr>1S</code>
 </td>
-<td>Jitter for <code>Retry.<wbr>Jitter<wbr>Retry<wbr>Policy</code></td>
+<td>Random jitter applied to the delay</td>
 </tr>
 <tr>
 <td>
@@ -64,6 +75,18 @@
 <code>3</code>
 </td>
 <td>Number of calls (first try + retries)</td>
+</tr>
+<tr>
+<td>
+<code>jitter-<wbr>factor</code>
+</td>
+<td>
+<code>Double</code>
+</td>
+<td>
+<code>-1.<wbr>0</code>
+</td>
+<td>Random jitter relative to the calculated delay</td>
 </tr>
 <tr>
 <td>

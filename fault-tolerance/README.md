@@ -17,24 +17,29 @@ In case the target method fails, it would first be retried, and then a fallback 
 
 # Retry
 
-| Option             | Value                   |
-|--------------------|-------------------------|
-| Interface          | `Retry`                 |
-| Can be injected    | yes                     |
-| Named              | yes                     |
-| Config interface   | `RetryConfig`           |
-| Config driven      | yes                     |
-| Implementation     | `RetryImpl`             |
-| Interceptor        | `RetryInterceptor`      |
-| Generated code     | yes                     |
-| Generated contract | `RetryMethod`           |
-| Throwables         | `RetryTimeoutException` |
-| Annotation(s)      | `FaultTolerance.Retry`  |
+| Option             | Value                                    |
+|--------------------|------------------------------------------|
+| Interface          | `Retry`                                  |
+| Can be injected    | yes                                      |
+| Named              | yes                                      |
+| Config interface   | `RetryConfig`                            |
+| Config driven      | yes                                      |
+| Implementation     | `RetryImpl`                              |
+| Interceptor        | `RetryInterceptor`                       |
+| Generated code     | yes                                      |
+| Generated contract | `RetryMethod`                            |
+| Throwables         | `RetryTimeoutException`, `RetryException` |
+| Annotation(s)      | `Ft.Retry`                               |
 
-Retry can have named instances (either from configuration of from custom `Provider`). Each such instance can have a different
-configuration and can be references from annotations.
-When used with `@FtRetry`, a named instance is located, and if not present, a custom instance is created based on the annotation
+Retry can have named instances (either from configuration or from a custom `Provider`). Each such instance can have a different
+configuration and can be referenced from annotations.
+When used with `@Ft.Retry`, a named instance is located, and if not present, a custom instance is created based on the annotation
 setup.
+
+The contextual `Retry.invoke` overload provides immutable metadata for each attempt and reports unsuccessful completion
+using `RetryException`, including the final outcome and termination reason. A custom `Retry.WaitStrategy` can keep an
+external resource alive while waiting or cancel further attempts. Exponential delay and jitter can be combined and
+bounded using `RetryConfig.maxDelay`; `RetryConfig.jitterFactor` applies jitter relative to the calculated delay.
 
 # Bulkhead
 

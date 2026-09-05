@@ -63,24 +63,44 @@ public final class Ft {
         String delay() default "PT0.2S";
 
         /**
-         * Delay retry policy factor. If unspecified (value of {@code -1}), Jitter retry policy would be used, unless
-         * jitter time is also unspecified.
+         * Delay retry policy factor. If unspecified (value of {@code -1}), a factor of {@code 2} is used unless jitter
+         * is configured, in which case the delay remains constant.
          * <p>
-         * Default when {@link io.helidon.faulttolerance.Retry.DelayingRetryPolicy} is used is {@code 2}.
+         * When both this option and {@link #jitter()} are configured, the delay factor is applied first and jitter is
+         * applied to the resulting delay.
          *
          * @return delay factor for delaying retry policy
          */
         double delayFactor() default -1;
 
         /**
-         * Jitter for {@link io.helidon.faulttolerance.Retry.JitterRetryPolicy}. If unspecified (value of {@code -1}),
-         * delaying retry policy is used. If both this value, and {@link #delayFactor()} are specified, delaying retry policy
-         * would be used.
+         * Random jitter applied to the delay. If unspecified (value of {@code PT-1S}), jitter is not applied.
+         * When both this option and {@link #delayFactor()} are configured, the delay factor is applied first and jitter
+         * is applied to the resulting delay. The final delay is capped by {@link #maxDelay()}, when configured.
          *
          * @return jitter duration
          * @see java.time.Duration#parse(CharSequence)
          */
         String jitter() default "PT-1S";
+
+        /**
+         * Random jitter relative to the calculated delay, from {@code 0} (inclusive) to {@code 1} (exclusive). For
+         * example, a value of {@code 0.2} applies a random jitter of up to twenty percent in either direction. This
+         * option cannot be combined with an explicitly configured {@link #jitter() absolute jitter}. A value of
+         * {@code -1} means relative jitter is not configured.
+         *
+         * @return relative jitter factor
+         */
+        double jitterFactor() default -1;
+
+        /**
+         * Maximum delay between invocation attempts, including jitter. If unspecified (value of {@code PT-1S}), the
+         * delay is not capped.
+         *
+         * @return maximum delay
+         * @see java.time.Duration#parse(CharSequence)
+         */
+        String maxDelay() default "PT-1S";
 
         /**
          * Duration of overall timeout.
