@@ -169,7 +169,9 @@ public class CorsPathValidatorTest {
     @Test
     public void testPreFlightConfiguredDefaultPortOrigins() {
         assertDefaultPortOriginAllowed("http://example.com:80", "http://example.com");
+        assertDefaultPortOriginAllowed("http://example.com:80", "http://example.com:80");
         assertDefaultPortOriginAllowed("https://example.com:443", "https://example.com");
+        assertDefaultPortOriginAllowed("https://example.com:443", "https://example.com:443");
     }
 
     @Test
@@ -181,6 +183,29 @@ public class CorsPathValidatorTest {
 
         var requestHeaders = WritableHeaders.create();
         requestHeaders.set(HeaderNames.ORIGIN, "https://example.com");
+        requestHeaders.set(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+
+        var statusCaptor = ArgumentCaptor.forClass(Status.class);
+        var response = response(ServerResponseHeaders.create());
+        when(response.status(statusCaptor.capture())).thenReturn(response);
+
+        CorsPathValidator.Result result = validator.preFlight(request("/greet", requestHeaders), response);
+
+        assertThat(result.matched(), is(true));
+        assertThat(result.shouldContinue(), is(false));
+        assertThat(statusCaptor.getValue(), is(Status.FORBIDDEN_403));
+        verify(response, times(1)).send();
+    }
+
+    @Test
+    public void testPreFlightMalformedDefaultPortOriginForbidden() {
+        CorsPathValidator validator = CorsPathValidator.create(CorsPathConfig.builder()
+                                                                       .pathPattern("/greet")
+                                                                       .allowOrigins(Set.of("https://example.com:8443:443"))
+                                                                       .build());
+
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, "https://example.com:8443");
         requestHeaders.set(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
         var statusCaptor = ArgumentCaptor.forClass(Status.class);

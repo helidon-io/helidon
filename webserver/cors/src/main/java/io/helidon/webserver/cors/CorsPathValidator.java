@@ -17,6 +17,7 @@
 package io.helidon.webserver.cors;
 
 import java.lang.System.Logger.Level;
+import java.net.URI;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
@@ -234,12 +235,15 @@ class CorsPathValidator {
 
     private static String normalizeDefaultPort(String origin) {
         int authorityOffset;
+        int defaultPort;
         int portLength;
         if (origin.startsWith("http://") && origin.endsWith(":80")) {
             authorityOffset = "http://".length();
+            defaultPort = 80;
             portLength = 3;
         } else if (origin.startsWith("https://") && origin.endsWith(":443")) {
             authorityOffset = "https://".length();
+            defaultPort = 443;
             portLength = 4;
         } else {
             return origin;
@@ -249,6 +253,14 @@ class CorsPathValidator {
                 || origin.indexOf('/', authorityOffset) != -1
                 || origin.indexOf('?', authorityOffset) != -1
                 || origin.indexOf('#', authorityOffset) != -1) {
+            return origin;
+        }
+        try {
+            URI uri = URI.create(origin);
+            if (uri.getHost() == null || uri.getUserInfo() != null || uri.getPort() != defaultPort) {
+                return origin;
+            }
+        } catch (IllegalArgumentException ignored) {
             return origin;
         }
         return origin.substring(0, portOffset);
@@ -274,7 +286,7 @@ class CorsPathValidator {
             log(req, Level.TRACE, "CORS allowing all origins; actual origin: %s", origin);
             return false;
         }
-        if (allowedOriginsExact.contains(origin)) {
+        if (allowedOriginsExact.contains(normalizeDefaultPort(origin))) {
             log(req, Level.TRACE, "CORS allowing origin; actual origin: %s, allowedOrigins: %s", origin, allowedOriginsExact);
             return false;
         }
