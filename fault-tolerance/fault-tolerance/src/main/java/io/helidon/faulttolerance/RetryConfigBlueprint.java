@@ -58,6 +58,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return number of desired calls, must be 1 (means no retries) or higher.
      */
+    @Option.Decorator(FtBuilderSupport.RetryIntegerOptionDecorator.class)
     @Option.Configured
     @Option.DefaultInt(DEFAULT_CALLS)
     int calls();
@@ -67,6 +68,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return delay between retries (combines with retry policy)
      */
+    @Option.Decorator(FtBuilderSupport.RetryDurationOptionDecorator.class)
     @Option.Configured
     @Option.Default("PT0.2S")
     Duration delay();
@@ -77,6 +79,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return delay factor for delaying retry policy
      */
+    @Option.Decorator(FtBuilderSupport.RetryDoubleOptionDecorator.class)
     @Option.Configured
     @Option.DefaultDouble(-1L)
     double delayFactor();
@@ -87,6 +90,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return jitter
      */
+    @Option.Decorator(FtBuilderSupport.RetryDurationOptionDecorator.class)
     @Option.Configured
     @Option.Default("PT-1S")
     Duration jitter();
@@ -99,6 +103,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return relative jitter factor
      */
+    @Option.Decorator(FtBuilderSupport.RetryDoubleOptionDecorator.class)
     @Option.Configured
     @Option.DefaultDouble(-1.0)
     default double jitterFactor() {
@@ -110,6 +115,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      *
      * @return maximum delay, if configured
      */
+    @Option.Decorator(FtBuilderSupport.RetryOptionalDurationOptionDecorator.class)
     @Option.Configured
     default Optional<Duration> maxDelay() {
         return Optional.empty();
@@ -144,6 +150,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
 
     /**
      * Explicitly configured retry policy.
+     * The most recently configured policy-related option takes precedence. Configuring calls, delay, delay factor,
+     * jitter, jitter factor, or maximum delay after this option clears it so a new policy is derived from those settings.
      *
      * @return retry policy
      */

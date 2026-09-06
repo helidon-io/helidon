@@ -17,11 +17,16 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 
 final class FtBuilderSupport {
     private FtBuilderSupport() {
+    }
+
+    private static void clearRetryPolicy(RetryConfig.BuilderBase<?, ?> target) {
+        target.clearRetryPolicy();
     }
 
     static class AsyncBuilderDecorator implements Prototype.BuilderDecorator<AsyncConfig.BuilderBase<?, ?>> {
@@ -63,10 +68,7 @@ final class FtBuilderSupport {
                 target.config()
                         .ifPresent(cfg -> target.name(cfg.name()));
             }
-            var retryPolicy = target.retryPolicy();
-            if (retryPolicy.isEmpty()
-                    || retryPolicy.get() instanceof Retry.DelayingRetryPolicy delayingPolicy
-                            && delayingPolicy.autoDerived()) {
+            if (target.retryPolicy().isEmpty()) {
                 target.retryPolicy(retryPolicy(target));
             }
         }
@@ -95,7 +97,7 @@ final class FtBuilderSupport {
                 delayBuilder.jitterFactor(target.jitterFactor());
             }
             target.maxDelay().ifPresent(delayBuilder::maxDelay);
-            return delayBuilder.autoDerived().build();
+            return delayBuilder.build();
         }
 
         private void validate(RetryConfig.BuilderBase<?, ?> target) {
@@ -129,6 +131,38 @@ final class FtBuilderSupport {
                     throw new IllegalArgumentException("Retry maximum delay must not be negative");
                 }
             });
+        }
+    }
+
+    static class RetryDoubleOptionDecorator
+            implements Prototype.OptionDecorator<RetryConfig.BuilderBase<?, ?>, Double> {
+        @Override
+        public void decorate(RetryConfig.BuilderBase<?, ?> target, Double ignored) {
+            clearRetryPolicy(target);
+        }
+    }
+
+    static class RetryDurationOptionDecorator
+            implements Prototype.OptionDecorator<RetryConfig.BuilderBase<?, ?>, Duration> {
+        @Override
+        public void decorate(RetryConfig.BuilderBase<?, ?> target, Duration ignored) {
+            clearRetryPolicy(target);
+        }
+    }
+
+    static class RetryIntegerOptionDecorator
+            implements Prototype.OptionDecorator<RetryConfig.BuilderBase<?, ?>, Integer> {
+        @Override
+        public void decorate(RetryConfig.BuilderBase<?, ?> target, Integer ignored) {
+            clearRetryPolicy(target);
+        }
+    }
+
+    static class RetryOptionalDurationOptionDecorator
+            implements Prototype.OptionDecorator<RetryConfig.BuilderBase<?, ?>, Optional<Duration>> {
+        @Override
+        public void decorate(RetryConfig.BuilderBase<?, ?> target, Optional<Duration> ignored) {
+            clearRetryPolicy(target);
         }
     }
 

@@ -207,16 +207,48 @@ class DelayRetryPolicyTest {
     }
 
     @Test
-    void testCopiedConfigurationPreservesExplicitRetryPolicy() {
-        Retry.RetryPolicy customPolicy = (_, _, _) -> Optional.of(123L);
+    void testClearedMaximumDelayConfiguredLastWins() {
         RetryConfig original = RetryConfig.builder()
-                .retryPolicy(customPolicy)
+                .delay(Duration.ofMillis(100))
+                .maxDelay(Duration.ofMillis(150))
                 .buildPrototype();
         RetryConfig changed = RetryConfig.builder(original)
-                .maxDelay(Duration.ofMillis(50))
+                .clearMaxDelay()
                 .buildPrototype();
 
-        assertThat(changed.retryPolicy().orElseThrow(), sameInstance(customPolicy));
+        assertThat(changed.maxDelay(), is(optionalEmpty()));
+        assertThat(changed.retryPolicy().orElseThrow().nextDelayMillis(0, 100, 2), optionalValue(is(200L)));
+    }
+
+    @Test
+    void testExplicitPolicyConfiguredLastWins() {
+        Retry.RetryPolicy reusedPolicy = RetryConfig.builder()
+                .delay(Duration.ofMillis(100))
+                .buildPrototype()
+                .retryPolicy()
+                .orElseThrow();
+        RetryConfig changed = RetryConfig.builder()
+                .delay(Duration.ofSeconds(5))
+                .retryPolicy(reusedPolicy)
+                .buildPrototype();
+
+        assertThat(changed.retryPolicy().orElseThrow(), sameInstance(reusedPolicy));
+        assertThat(changed.retryPolicy().orElseThrow().nextDelayMillis(0, 0, 1), optionalValue(is(100L)));
+    }
+
+    @Test
+    void testDelayConfiguredLastWins() {
+        Retry.RetryPolicy reusedPolicy = RetryConfig.builder()
+                .delay(Duration.ofMillis(100))
+                .buildPrototype()
+                .retryPolicy()
+                .orElseThrow();
+        RetryConfig changed = RetryConfig.builder()
+                .retryPolicy(reusedPolicy)
+                .delay(Duration.ofSeconds(5))
+                .buildPrototype();
+
+        assertThat(changed.retryPolicy().orElseThrow().nextDelayMillis(0, 0, 1), optionalValue(is(5_000L)));
     }
 
     @Test
