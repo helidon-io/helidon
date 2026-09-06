@@ -80,6 +80,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
+                <configuration>
+                    <extraArtifacts>
+                        <extraArtifact>io.helidon.codegen:helidon-codegen-apt:${project.version}</extraArtifact>
+                        <extraArtifact>io.helidon.codegen:helidon-codegen-helidon-copyright:${project.version}</extraArtifact>
+                    </extraArtifacts>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
