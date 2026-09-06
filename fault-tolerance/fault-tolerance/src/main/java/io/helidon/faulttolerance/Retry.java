@@ -302,7 +302,7 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
                 return Optional.empty();
             }
 
-            long delay = multiply(delayMillis, Math.pow(delayFactor, Math.max(0, call - 1)));
+            long delay = lastDelay == 0 ? delayMillis : multiply(lastDelay, delayFactor);
 
             return Optional.of(withJitter(RANDOM, delay, jitterMillis, jitterFactor, maxDelayMillis));
         }

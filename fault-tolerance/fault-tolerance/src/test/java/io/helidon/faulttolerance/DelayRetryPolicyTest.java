@@ -52,6 +52,21 @@ class DelayRetryPolicyTest {
     }
 
     @Test
+    void testFractionalDelayIsAppliedToPreviousDelay() {
+        Retry.DelayingRetryPolicy policy = Retry.DelayingRetryPolicy.builder()
+                .delay(Duration.ofMillis(1))
+                .calls(4)
+                .delayFactor(1.5)
+                .build();
+
+        long firstCall = System.currentTimeMillis();
+
+        assertThat(policy.nextDelayMillis(firstCall, 0, 1), optionalValue(is(1L)));
+        assertThat(policy.nextDelayMillis(firstCall, 1, 2), optionalValue(is(1L)));
+        assertThat(policy.nextDelayMillis(firstCall, 1, 3), optionalValue(is(1L)));
+    }
+
+    @Test
     void testNoDelay() {
         Retry.DelayingRetryPolicy policy = Retry.DelayingRetryPolicy.builder()
                 .delay(Duration.ZERO)
