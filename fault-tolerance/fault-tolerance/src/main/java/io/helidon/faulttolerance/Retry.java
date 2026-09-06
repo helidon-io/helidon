@@ -260,7 +260,7 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
         private final double jitterFactor;
         private final long maxDelayMillis;
 
-        private DelayingRetryPolicy(Builder builder) {
+        DelayingRetryPolicy(Builder builder) {
             validatePolicy(builder.calls, builder.delay, builder.jitter, builder.jitterFactor, builder.maxDelay);
             if (!Double.isFinite(builder.delayFactor) || builder.delayFactor < 0) {
                 throw new IllegalArgumentException("Delay factor must be a finite, non-negative number");

@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -175,6 +176,32 @@ class DelayRetryPolicyTest {
         Optional<Long> delay = policy.nextDelayMillis(System.currentTimeMillis(), 100, 2);
         assertThat(delay, optionalValue(both(greaterThanOrEqualTo(190L))
                                                  .and(lessThanOrEqualTo(205L))));
+    }
+
+    @Test
+    void testCopiedConfigurationRebuildsDerivedRetryPolicy() {
+        RetryConfig original = RetryConfig.builder()
+                .delay(Duration.ofMillis(100))
+                .buildPrototype();
+        RetryConfig changed = RetryConfig.builder(original)
+                .maxDelay(Duration.ofMillis(50))
+                .buildPrototype();
+
+        assertThat(changed.maxDelay(), optionalValue(is(Duration.ofMillis(50))));
+        assertThat(changed.retryPolicy().orElseThrow().nextDelayMillis(0, 100, 2), optionalValue(is(50L)));
+    }
+
+    @Test
+    void testCopiedConfigurationPreservesExplicitRetryPolicy() {
+        Retry.RetryPolicy customPolicy = (_, _, _) -> Optional.of(123L);
+        RetryConfig original = RetryConfig.builder()
+                .retryPolicy(customPolicy)
+                .buildPrototype();
+        RetryConfig changed = RetryConfig.builder(original)
+                .maxDelay(Duration.ofMillis(50))
+                .buildPrototype();
+
+        assertThat(changed.retryPolicy().orElseThrow(), sameInstance(customPolicy));
     }
 
     @Test
