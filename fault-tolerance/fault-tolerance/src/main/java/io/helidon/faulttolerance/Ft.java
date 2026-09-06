@@ -133,7 +133,9 @@ public final class Ft {
      * The fallback method must have the same signature (types and number of parameters), or have one additional parameter of
      * type {@code Throwable} to receive the last exception thrown.
      * <p>
-     * Fault tolerance will add all intermediate exceptions as {@link Throwable#addSuppressed(Throwable)}.
+     * When retries fail, fault tolerance adds up to 15 of the most recent intermediate exceptions as
+     * {@link Throwable#addSuppressed(Throwable) suppressed exceptions} to the last failure. Older intermediate
+     * exceptions are discarded.
      */
     @Retention(RetentionPolicy.CLASS)
     @Documented
