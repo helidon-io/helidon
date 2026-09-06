@@ -34,7 +34,9 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.http.SetCookie;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.json.JsonSupport;
@@ -180,43 +182,27 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>"Authorization" header with prefix "bearer "</td>
  *     <td>A {@link TokenHandler} configuration to process header containing a JWT</td>
  * </tr>
- * <tr>
- *     <td>oidc-metadata-well-known</td>
- *     <td>true</td>
- *     <td>If set to true, metadata will be loaded from default (well known)
- *          location, unless it is explicitly defined using oidc-metadata-resource. If set to false, it would not be loaded even
- *          if oidc-metadata-resource is not defined. In such a case all URIs must be explicitly
- *          defined (e.g. token-endpoint-uri).</td>
- * </tr>
- * <tr>
- *     <td>oidc-metadata.resource</td>
- *     <td>identity-uri/.well-known/openid-configuration</td>
+ * <tr><td>oidc-metadata-well-known</td><td>true</td>
+ *     <td>If set to true, metadata will be loaded from default (well known) location, unless it is explicitly defined
+ *         using oidc-metadata-resource. If set to false, it would not be loaded even if oidc-metadata-resource is not
+ *         defined. In such a case all URIs must be explicitly defined (e.g. token-endpoint-uri).</td></tr>
+ * <tr><td>oidc-metadata.resource</td><td>identity-uri/.well-known/openid-configuration</td>
  *     <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information
- *     about the identity server. See {@link Resource#create(io.helidon.config.Config)}</td>
- * </tr>
- * <tr>
- *     <td>token-endpoint-uri</td>
+ *         about the identity server. See {@link Resource#create(io.helidon.config.Config)}</td></tr>
+ * <tr><td>token-endpoint-uri</td>
  *     <td>token_endpoint in OIDC metadata, or identity-url/oauth2/v1/token if not available</td>
- *     <td>URI of a token endpoint used to obtain a JWT based on the authentication code.</td>
- * </tr>
- * <tr>
- *     <td>authorization-endpoint-uri</td>
+ *     <td>URI of a token endpoint used to obtain a JWT based on the authentication code.</td></tr>
+ * <tr><td>authorization-endpoint-uri</td>
  *     <td>"authorization_endpoint" in OIDC metadata, or identity-uri/oauth2/v1/authorize if not available</td>
- *     <td>URI of an authorization endpoint used to redirect users to for logging-in.</td>
- * </tr>
- * <tr>
- *     <td>validate-jwt-with-jwk</td>
- *     <td>true</td>
- *     <td>When true  - validate against jwk defined by "sign-jwk", when false
- *          validate JWT through OIDC Server endpoint "validation-endpoint-uri"</td>
- * </tr>
- * <tr>
- *     <td>sign-jwk.resource</td>
- *     <td>"jwks-uri" in OIDC metadata, or identity-uri/admin/v1/SigningCert/jwk if not available, only needed
- *              when jwt validation is done by us</td>
- *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT.
- *     See {@link Resource#create(io.helidon.config.Config)}</td>
- * </tr>
+ *     <td>URI of an authorization endpoint used to redirect users to for logging-in.</td></tr>
+ * <tr><td>validate-jwt-with-jwk</td><td>true</td>
+ *     <td>When true - validate against jwk defined by "sign-jwk", when false validate JWT through OIDC Server endpoint
+ *         "validation-endpoint-uri"</td></tr>
+ * <tr><td>sign-jwk.resource</td>
+ *     <td>"jwks-uri" in OIDC metadata, or identity-uri/admin/v1/SigningCert/jwk if not available, only needed when jwt
+ *         validation is done by us</td>
+ *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT. See
+ *         {@link Resource#create(io.helidon.config.Config)}</td></tr>
  * <tr><td>jwk-loader.retry.*</td><td>3 calls, 200 ms initial delay with factor 2, 1 second overall timeout</td>
  *     <td>Standard fault tolerance retry configuration for lazy metadata and signing JWK loads. The overall timeout is
  *         also the connect and read timeout for explicit URI resources.</td></tr>
@@ -1219,6 +1205,20 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("pkce-challenge-method").as(PkceChallengeMethod.class).ifPresent(this::pkceChallengeMethod);
 
             webClientConfigBuilder.config(config.get("webclient"));
+            return this;
+        }
+
+        @Override
+        @ConfiguredOption(key = "jwk-loader.retry", type = Retry.class)
+        public Builder jwkRetry(Retry jwkRetry) {
+            super.jwkRetry(jwkRetry);
+            return this;
+        }
+
+        @Override
+        @ConfiguredOption(key = "jwk-loader.circuit-breaker", type = CircuitBreaker.class)
+        public Builder jwkCircuitBreaker(CircuitBreaker jwkCircuitBreaker) {
+            super.jwkCircuitBreaker(jwkCircuitBreaker);
             return this;
         }
 
