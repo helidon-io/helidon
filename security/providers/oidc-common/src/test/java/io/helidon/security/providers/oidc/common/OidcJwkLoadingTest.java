@@ -30,8 +30,10 @@ import io.helidon.common.Errors;
 import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.CircuitBreakerConfig;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -45,6 +47,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -76,11 +79,25 @@ class OidcJwkLoadingTest {
                 .config(tenant)
                 .build();
 
-        assertThat(tenantConfig.jwkRetryConfig().calls(), is(2));
-        assertThat(tenantConfig.jwkRetryConfig().delay(), is(Duration.ofMillis(200)));
-        assertThat(tenantConfig.jwkCircuitBreakerConfig().volume(), is(10));
-        assertThat(tenantConfig.jwkCircuitBreakerConfig().delay(), is(Duration.ofSeconds(5)));
-        assertThat(tenantConfig.jwkCircuitBreakerConfig().successThreshold(), is(2));
+        assertThat(tenantConfig.jwkRetry().prototype().calls(), is(2));
+        assertThat(tenantConfig.jwkRetry().prototype().delay(), is(Duration.ofMillis(200)));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().volume(), is(10));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().delay(), is(Duration.ofSeconds(5)));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().successThreshold(), is(2));
+    }
+
+    @Test
+    void usesConfiguredFaultToleranceInstances() {
+        Retry retry = Retry.builder().calls(1).build();
+        CircuitBreaker circuitBreaker = CircuitBreaker.builder().volume(1).build();
+
+        TenantConfig tenantConfig = baseBuilder()
+                .jwkRetry(retry)
+                .jwkCircuitBreaker(circuitBreaker)
+                .build();
+
+        assertThat(tenantConfig.jwkRetry(), sameInstance(retry));
+        assertThat(tenantConfig.jwkCircuitBreaker(), sameInstance(circuitBreaker));
     }
 
     @Test
@@ -113,8 +130,8 @@ class OidcJwkLoadingTest {
                 .config(jitterTenant)
                 .build();
 
-        assertThat(jitterConfig.jwkRetryConfig().delayFactor(), is(-1D));
-        assertThat(jitterConfig.jwkRetryConfig().jitter(), is(Duration.ofMillis(3)));
+        assertThat(jitterConfig.jwkRetry().prototype().delayFactor(), is(-1D));
+        assertThat(jitterConfig.jwkRetry().prototype().jitter(), is(Duration.ofMillis(3)));
 
         Config jitterDefaults = config(Map.of("client-id", "client",
                                               "client-secret", "secret",
@@ -128,8 +145,8 @@ class OidcJwkLoadingTest {
                 .config(delayFactorTenant)
                 .build();
 
-        assertThat(delayFactorConfig.jwkRetryConfig().delayFactor(), is(3D));
-        assertThat(delayFactorConfig.jwkRetryConfig().jitter(), is(Duration.ofSeconds(-1)));
+        assertThat(delayFactorConfig.jwkRetry().prototype().delayFactor(), is(3D));
+        assertThat(delayFactorConfig.jwkRetry().prototype().jitter(), is(Duration.ofSeconds(-1)));
 
         Config explicitDelayFactorTenant = config(Map.of("name", "tenant",
                                                           "jwk-loader.retry.delay-factor", "3",
@@ -138,8 +155,8 @@ class OidcJwkLoadingTest {
                 .config(jitterDefaults)
                 .config(explicitDelayFactorTenant)
                 .build();
-        assertThat(explicitDelayFactorConfig.jwkRetryConfig().delayFactor(), is(3D));
-        assertThat(explicitDelayFactorConfig.jwkRetryConfig().jitter(), is(Duration.ofMillis(4)));
+        assertThat(explicitDelayFactorConfig.jwkRetry().prototype().delayFactor(), is(3D));
+        assertThat(explicitDelayFactorConfig.jwkRetry().prototype().jitter(), is(Duration.ofMillis(4)));
     }
 
     @Test
@@ -161,8 +178,8 @@ class OidcJwkLoadingTest {
         Path keyPath = temporaryDirectory.resolve("keys.json");
         baseBuilder()
                 .signJwk(ResourceConfig.builder().path(keyPath).buildPrototype())
-                .jwkRetryConfig(singleCallRetry())
-                .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                .jwkRetry(singleCallRetry())
+                .jwkCircuitBreaker(twoFailureCircuitBreaker())
                 .build();
     }
 
@@ -286,8 +303,8 @@ class OidcJwkLoadingTest {
         OidcConfig config = baseBuilder()
                 .oidcMetadata(ResourceConfig.builder().path(metadataPath).buildPrototype())
                 .signJwk(fixedJwkResource())
-                .jwkRetryConfig(singleCallRetry())
-                .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                .jwkRetry(singleCallRetry())
+                .jwkCircuitBreaker(twoFailureCircuitBreaker())
                 .build();
 
         assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
@@ -304,8 +321,8 @@ class OidcJwkLoadingTest {
         OidcConfig config = baseBuilder()
                 .oidcMetadata(ResourceConfig.builder().path(metadataPath).buildPrototype())
                 .signJwk(fixedJwkResource())
-                .jwkRetryConfig(singleCallRetry())
-                .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                .jwkRetry(singleCallRetry())
+                .jwkCircuitBreaker(twoFailureCircuitBreaker())
                 .build();
 
         assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
@@ -346,8 +363,8 @@ class OidcJwkLoadingTest {
         Path keyPath = temporaryDirectory.resolve("keys.json");
         OidcConfig config = baseBuilder()
                 .signJwk(ResourceConfig.builder().path(keyPath).buildPrototype())
-                .jwkRetryConfig(singleCallRetry())
-                .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                .jwkRetry(singleCallRetry())
+                .jwkCircuitBreaker(twoFailureCircuitBreaker())
                 .build();
 
         assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
@@ -363,8 +380,8 @@ class OidcJwkLoadingTest {
         OidcConfig config = baseBuilder()
                 .oidcMetadata(ResourceConfig.builder().path(metadataPath).buildPrototype())
                 .signJwk(ResourceConfig.builder().contentPlain(JWK_JSON).buildPrototype())
-                .jwkRetryConfig(singleCallRetry())
-                .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                .jwkRetry(singleCallRetry())
+                .jwkCircuitBreaker(twoFailureCircuitBreaker())
                 .build();
 
         assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
@@ -399,8 +416,8 @@ class OidcJwkLoadingTest {
         serverPort.set(server.port());
         try {
             OidcConfig config = remoteBuilder(server)
-                    .jwkRetryConfig(singleCallRetry())
-                    .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                    .jwkRetry(singleCallRetry())
+                    .jwkCircuitBreaker(twoFailureCircuitBreaker())
                     .build();
 
             assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
@@ -442,8 +459,8 @@ class OidcJwkLoadingTest {
             OidcConfig config = remoteBuilder(server)
                     .serverType("idcs")
                     .tokenEndpointAuthentication(OidcConfig.ClientAuthentication.NONE)
-                    .jwkRetryConfig(singleCallRetry())
-                    .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                    .jwkRetry(singleCallRetry())
+                    .jwkCircuitBreaker(twoFailureCircuitBreaker())
                     .build();
 
             assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
@@ -508,8 +525,8 @@ class OidcJwkLoadingTest {
         return baseBuilder()
                 .oidcMetadata(ResourceConfig.builder().path(metadataPath).buildPrototype())
                 .signJwk(fixedJwkResource())
-                .jwkRetryConfig(singleCallRetry())
-                .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                .jwkRetry(singleCallRetry())
+                .jwkCircuitBreaker(twoFailureCircuitBreaker())
                 .build();
     }
 

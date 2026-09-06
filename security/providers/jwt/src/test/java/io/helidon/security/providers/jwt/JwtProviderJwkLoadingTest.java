@@ -123,7 +123,7 @@ class JwtProviderJwkLoadingTest {
     @Test
     void reusedBuilderCreatesIndependentDynamicLoader() throws IOException {
         Path keysPath = tempDir.resolve("verify-jwk.json");
-        JwtProvider.Builder builder = providerBuilder(keysPath, false, defaultCircuitBreaker());
+        JwtProvider.Builder builder = providerBuilder(keysPath, false, twoFailureCircuitBreaker());
         JwtProvider firstProvider = builder.build();
 
         assertThat(firstProvider.authenticate(request(validToken())).status(),
@@ -298,7 +298,7 @@ class JwtProviderJwkLoadingTest {
                 """.formatted(keysPath.toString().replace("'", "''"));
 
         JwtProvider provider = JwtProvider.builder()
-                .jwkCircuitBreakerConfig(twoFailureCircuitBreaker())
+                .jwkCircuitBreaker(twoFailureCircuitBreaker())
                 .config(Config.just(configText, MediaTypes.APPLICATION_YAML))
                 .build();
 
@@ -372,8 +372,8 @@ class JwtProviderJwkLoadingTest {
                 .verifyJwk(ResourceConfig.builder()
                                    .path(keysPath)
                                    .buildPrototype())
-                .jwkRetryConfig(oneCallRetry())
-                .jwkCircuitBreakerConfig(circuitBreakerConfig)
+                .jwkRetry(oneCallRetry())
+                .jwkCircuitBreaker(circuitBreakerConfig)
                 .optional(optional);
     }
 

@@ -22,8 +22,8 @@ import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.common.configurable.ResourceConfig;
-import io.helidon.faulttolerance.CircuitBreakerConfig;
-import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
@@ -48,8 +48,8 @@ class TenantConfigImpl implements TenantConfig {
     private final Duration clientTimeout;
     private final JwkKeys signJwk;
     private final ResourceConfig signJwkResource;
-    private final RetryConfig jwkRetryConfig;
-    private final CircuitBreakerConfig jwkCircuitBreakerConfig;
+    private final Retry jwkRetry;
+    private final CircuitBreaker jwkCircuitBreaker;
     private final JwkKeys contentKeyDecryptionKeys;
     private final String clientSecret;
     private final URI introspectUri;
@@ -81,8 +81,8 @@ class TenantConfigImpl implements TenantConfig {
         this.clientSecret = builder.clientSecret();
         this.signJwk = builder.signJwk();
         this.signJwkResource = builder.signJwkResource();
-        this.jwkRetryConfig = builder.jwkRetryConfig();
-        this.jwkCircuitBreakerConfig = builder.jwkCircuitBreakerConfig();
+        this.jwkRetry = builder.jwkRetry();
+        this.jwkCircuitBreaker = builder.jwkCircuitBreaker();
         this.contentKeyDecryptionKeys = builder.contentKeyDecryptionKeys();
         this.oidcMetadataJsonObject = builder.oidcMetadataJsonObject();
         this.oidcMetadataResource = builder.oidcMetadataResource();
@@ -119,13 +119,13 @@ class TenantConfigImpl implements TenantConfig {
     }
 
     @Override
-    public RetryConfig jwkRetryConfig() {
-        return jwkRetryConfig;
+    public Retry jwkRetry() {
+        return jwkRetry;
     }
 
     @Override
-    public CircuitBreakerConfig jwkCircuitBreakerConfig() {
-        return jwkCircuitBreakerConfig;
+    public CircuitBreaker jwkCircuitBreaker() {
+        return jwkCircuitBreaker;
     }
 
     @Override

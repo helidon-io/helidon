@@ -22,6 +22,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
@@ -72,8 +74,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
     private JwkKeys signJwk;
     private ResourceConfig signJwkResource;
-    private RetryConfig jwkRetryConfig = RetryConfig.create();
-    private CircuitBreakerConfig jwkCircuitBreakerConfig = CircuitBreakerConfig.create();
+    private Retry jwkRetry = Retry.builder().build();
+    private CircuitBreaker jwkCircuitBreaker = CircuitBreaker.builder().build();
     private JwkKeys contentKeyDecryptionKeys;
     private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
     private URI introspectUri;
@@ -140,10 +142,10 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
 
         config.get("sign-jwk.resource").as(ResourceConfig::create).ifPresent(this::signJwk);
-        config.get("jwk-loader.retry").as(RetryConfig::create).ifPresent(this::jwkRetryConfig);
+        config.get("jwk-loader.retry").as(RetryConfig::create).ifPresent(this::jwkRetry);
         config.get("jwk-loader.circuit-breaker")
                 .as(CircuitBreakerConfig::create)
-                .ifPresent(this::jwkCircuitBreakerConfig);
+                .ifPresent(this::jwkCircuitBreaker);
         config.get("decryption-keys.resource").as(Resource::create).ifPresent(this::decryptionKeys);
 
         config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
@@ -324,27 +326,97 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     }
 
     /**
-     * Configure retry behavior used while loading OIDC metadata and signing JWK.
+     * Retry used while loading OIDC metadata and signing JWK.
      *
-     * @param retryConfig retry configuration
+     * @param jwkRetry retry to use
      * @return updated builder instance
      */
     @ConfiguredOption(key = "jwk-loader.retry", type = Retry.class)
-    public B jwkRetryConfig(RetryConfig retryConfig) {
-        this.jwkRetryConfig = Objects.requireNonNull(retryConfig);
+    public B jwkRetry(Retry jwkRetry) {
+        this.jwkRetry = Objects.requireNonNull(jwkRetry);
         return identity();
     }
 
     /**
-     * Configure circuit breaker behavior used while loading OIDC metadata and signing JWK.
+     * Retry used while loading OIDC metadata and signing JWK.
      *
-     * @param circuitBreakerConfig circuit breaker configuration
+     * @param jwkRetry prototype of retry to use
+     * @return updated builder instance
+     */
+    public B jwkRetry(RetryConfig jwkRetry) {
+        Objects.requireNonNull(jwkRetry);
+        return jwkRetry(jwkRetry.build());
+    }
+
+    /**
+     * Retry used while loading OIDC metadata and signing JWK.
+     *
+     * @param consumer consumer of builder of retry to use
+     * @return updated builder instance
+     */
+    public B jwkRetry(Consumer<RetryConfig.Builder> consumer) {
+        Objects.requireNonNull(consumer);
+        var builder = RetryConfig.builder();
+        consumer.accept(builder);
+        return jwkRetry(builder.build());
+    }
+
+    /**
+     * Retry used while loading OIDC metadata and signing JWK.
+     *
+     * @param supplier supplier of retry to use
+     * @return updated builder instance
+     */
+    public B jwkRetry(Supplier<? extends Retry> supplier) {
+        Objects.requireNonNull(supplier);
+        return jwkRetry(supplier.get());
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     *
+     * @param jwkCircuitBreaker circuit breaker to use
      * @return updated builder instance
      */
     @ConfiguredOption(key = "jwk-loader.circuit-breaker", type = CircuitBreaker.class)
-    public B jwkCircuitBreakerConfig(CircuitBreakerConfig circuitBreakerConfig) {
-        this.jwkCircuitBreakerConfig = Objects.requireNonNull(circuitBreakerConfig);
+    public B jwkCircuitBreaker(CircuitBreaker jwkCircuitBreaker) {
+        this.jwkCircuitBreaker = Objects.requireNonNull(jwkCircuitBreaker);
         return identity();
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     *
+     * @param jwkCircuitBreaker prototype of circuit breaker to use
+     * @return updated builder instance
+     */
+    public B jwkCircuitBreaker(CircuitBreakerConfig jwkCircuitBreaker) {
+        Objects.requireNonNull(jwkCircuitBreaker);
+        return jwkCircuitBreaker(jwkCircuitBreaker.build());
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     *
+     * @param consumer consumer of builder of circuit breaker to use
+     * @return updated builder instance
+     */
+    public B jwkCircuitBreaker(Consumer<CircuitBreakerConfig.Builder> consumer) {
+        Objects.requireNonNull(consumer);
+        var builder = CircuitBreakerConfig.builder();
+        consumer.accept(builder);
+        return jwkCircuitBreaker(builder.build());
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     *
+     * @param supplier supplier of circuit breaker to use
+     * @return updated builder instance
+     */
+    public B jwkCircuitBreaker(Supplier<? extends CircuitBreaker> supplier) {
+        Objects.requireNonNull(supplier);
+        return jwkCircuitBreaker(supplier.get());
     }
 
     /**
@@ -676,12 +748,12 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return signJwkResource;
     }
 
-    RetryConfig jwkRetryConfig() {
-        return jwkRetryConfig;
+    Retry jwkRetry() {
+        return jwkRetry;
     }
 
-    CircuitBreakerConfig jwkCircuitBreakerConfig() {
-        return jwkCircuitBreakerConfig;
+    CircuitBreaker jwkCircuitBreaker() {
+        return jwkCircuitBreaker;
     }
 
     boolean validateJwtWithJwk() {

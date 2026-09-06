@@ -20,11 +20,6 @@ import java.lang.System.Logger.Level;
 import java.net.URI;
 
 import io.helidon.common.Errors;
-import io.helidon.faulttolerance.CircuitBreaker;
-import io.helidon.faulttolerance.CircuitBreakerConfig;
-import io.helidon.faulttolerance.ResilientValue;
-import io.helidon.faulttolerance.Retry;
-import io.helidon.faulttolerance.RetryConfig;
 
 final class OidcUtil {
     private static final System.Logger LOGGER = System.getLogger(OidcUtil.class.getName());
@@ -82,21 +77,4 @@ final class OidcUtil {
         return uri;
     }
 
-    static Retry jwkRetry(String description, TenantConfig tenantConfig) {
-        return RetryConfig.builder(tenantConfig.jwkRetryConfig())
-                .clearApplyOn()
-                .addApplyOn(ResilientValue.UnavailableException.class)
-                .clearSkipOn()
-                .name(description + "-retry")
-                .build();
-    }
-
-    static CircuitBreaker jwkCircuitBreaker(String description, TenantConfig tenantConfig) {
-        return CircuitBreakerConfig.builder(tenantConfig.jwkCircuitBreakerConfig())
-                .clearApplyOn()
-                .addApplyOn(ResilientValue.UnavailableException.class)
-                .clearSkipOn()
-                .name(description + "-circuit-breaker")
-                .build();
-    }
 }

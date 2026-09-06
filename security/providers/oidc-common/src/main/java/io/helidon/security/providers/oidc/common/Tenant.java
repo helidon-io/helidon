@@ -88,7 +88,7 @@ public class Tenant {
         ResourceConfig metadataResource = tenantConfig.oidcMetadataResource().orElse(null);
         JsonObject metadataJson = resolveMetadata(tenantConfig.oidcMetadataJsonObject(),
                                                   metadataResource,
-                                                  tenantConfig.jwkRetryConfig().overallTimeout());
+                                                  tenantConfig.jwkRetry().prototype().overallTimeout());
         OidcMetadata oidcMetadata = OidcMetadata.builder()
                 .remoteEnabled(tenantConfig.useWellKnown())
                 .json(metadataJson)
@@ -186,7 +186,7 @@ public class Tenant {
             try {
                 JwkKeys keys = JwkKeys.builder()
                         .resource(Resource.create(configuredResource,
-                                                  tenantConfig.jwkRetryConfig().overallTimeout()))
+                                                  tenantConfig.jwkRetry().prototype().overallTimeout()))
                         .build();
                 return requireSigningKeys(keys, true);
             } catch (ResilientValue.UnavailableException e) {

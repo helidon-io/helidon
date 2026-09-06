@@ -24,8 +24,8 @@ import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.faulttolerance.CircuitBreakerConfig;
-import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
@@ -105,21 +105,21 @@ public interface TenantConfig {
     }
 
     /**
-     * Retry configuration used while loading OIDC metadata and signing JWK.
+     * Retry used while loading OIDC metadata and signing JWK.
      *
-     * @return retry configuration
+     * @return retry to use
      */
-    default RetryConfig jwkRetryConfig() {
-        return RetryConfig.create();
+    default Retry jwkRetry() {
+        return Retry.builder().build();
     }
 
     /**
-     * Circuit breaker configuration used while loading OIDC metadata and signing JWK.
+     * Circuit breaker used while loading OIDC metadata and signing JWK.
      *
-     * @return circuit breaker configuration
+     * @return circuit breaker to use
      */
-    default CircuitBreakerConfig jwkCircuitBreakerConfig() {
-        return CircuitBreakerConfig.create();
+    default CircuitBreaker jwkCircuitBreaker() {
+        return CircuitBreaker.builder().build();
     }
 
     /**

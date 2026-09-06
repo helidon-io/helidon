@@ -27,7 +27,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 
-import io.helidon.common.Errors;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -71,7 +69,6 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -422,16 +419,16 @@ class IdcsRoleMapperProviderTest {
     }
 
     @Test
-    void testSingleTenantMetadataFailureIsSharedByConcurrentRequests() throws Exception {
-        assertMetadataFailureSharedByConcurrentRequests(false);
+    void testSingleTenantMetadataRetryIsSharedByConcurrentRequests() throws Exception {
+        assertMetadataRetrySharedByConcurrentRequests(false);
     }
 
     @Test
-    void testMultitenantMetadataFailureIsSharedByConcurrentRequests() throws Exception {
-        assertMetadataFailureSharedByConcurrentRequests(true);
+    void testMultitenantMetadataRetryIsSharedByConcurrentRequests() throws Exception {
+        assertMetadataRetrySharedByConcurrentRequests(true);
     }
 
-    private void assertMetadataFailureSharedByConcurrentRequests(boolean multitenant) throws Exception {
+    private void assertMetadataRetrySharedByConcurrentRequests(boolean multitenant) throws Exception {
         int followerCount = 3;
         AtomicInteger metadataRequests = new AtomicInteger();
         AtomicInteger tokenRequests = new AtomicInteger();
@@ -528,24 +525,17 @@ class IdcsRoleMapperProviderTest {
             }
             releaseMetadataFailure.countDown();
 
-            RuntimeException firstFailure = null;
             for (Future<Optional<String>> request : requests) {
-                ExecutionException failure = assertThrows(ExecutionException.class,
-                                                          () -> request.get(10, TimeUnit.SECONDS));
-                assertThat(failure.getCause(), instanceOf(Errors.ErrorMessagesException.class));
-                if (firstFailure == null) {
-                    firstFailure = (RuntimeException) failure.getCause();
-                } else {
-                    assertThat(failure.getCause(), sameInstance(firstFailure));
-                }
+                assertThat(request.get(10, TimeUnit.SECONDS).orElseThrow(), is(accessToken));
             }
-            assertThat(metadataRequests.get(), is(1));
-            assertThat(tokenRequests.get(), is(0));
+            assertThat(metadataRequests.get(), is(2));
+            int expectedTokenRequests = multitenant ? 2 : 1;
+            assertThat(tokenRequests.get(), is(expectedTokenRequests));
 
             Optional<String> token = tokenRequest.apply(0);
             assertThat(token.orElseThrow(), is(accessToken));
             assertThat(metadataRequests.get(), is(2));
-            assertThat(tokenRequests.get(), is(1));
+            assertThat(tokenRequests.get(), is(expectedTokenRequests));
         } finally {
             releaseMetadataFailure.countDown();
             executor.shutdownNow();

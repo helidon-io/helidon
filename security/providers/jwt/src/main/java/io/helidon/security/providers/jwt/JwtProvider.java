@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -701,8 +703,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         private JwkKeys verifyKeys;
         private ResourceConfig verifyKeysResource;
         private ResilientValue<JwkKeys> verifyKeysLoader;
-        private RetryConfig retryConfig = RetryConfig.create();
-        private CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.create();
+        private Retry jwkRetry = Retry.builder().build();
+        private CircuitBreaker jwkCircuitBreaker = CircuitBreaker.builder().build();
         private JwkKeys signKeys;
         private String issuer;
         private String expectedAudience;
@@ -930,31 +932,101 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         /**
-         * Retry configuration used when loading verification keys from a filesystem path or URI.
+         * Retry used when loading verification keys from a filesystem path or URI.
          *
-         * @param retryConfig retry configuration
+         * @param jwkRetry retry to use
          * @return updated builder instance
          */
         @ConfiguredOption(key = "jwk-loader.retry", type = Retry.class)
-        public Builder jwkRetryConfig(RetryConfig retryConfig) {
-            this.retryConfig = Objects.requireNonNull(retryConfig);
+        public Builder jwkRetry(Retry jwkRetry) {
+            this.jwkRetry = Objects.requireNonNull(jwkRetry);
             this.verifyKeysLoader = null;
 
             return this;
         }
 
         /**
-         * Circuit breaker configuration used when loading verification keys from a filesystem path or URI.
+         * Retry used when loading verification keys from a filesystem path or URI.
          *
-         * @param circuitBreakerConfig circuit breaker configuration
+         * @param jwkRetry prototype of retry to use
+         * @return updated builder instance
+         */
+        public Builder jwkRetry(RetryConfig jwkRetry) {
+            Objects.requireNonNull(jwkRetry);
+            return jwkRetry(jwkRetry.build());
+        }
+
+        /**
+         * Retry used when loading verification keys from a filesystem path or URI.
+         *
+         * @param consumer consumer of builder of retry to use
+         * @return updated builder instance
+         */
+        public Builder jwkRetry(Consumer<RetryConfig.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = RetryConfig.builder();
+            consumer.accept(builder);
+            return jwkRetry(builder.build());
+        }
+
+        /**
+         * Retry used when loading verification keys from a filesystem path or URI.
+         *
+         * @param supplier supplier of retry to use
+         * @return updated builder instance
+         */
+        public Builder jwkRetry(Supplier<? extends Retry> supplier) {
+            Objects.requireNonNull(supplier);
+            return jwkRetry(supplier.get());
+        }
+
+        /**
+         * Circuit breaker used when loading verification keys from a filesystem path or URI.
+         *
+         * @param jwkCircuitBreaker circuit breaker to use
          * @return updated builder instance
          */
         @ConfiguredOption(key = "jwk-loader.circuit-breaker", type = CircuitBreaker.class)
-        public Builder jwkCircuitBreakerConfig(CircuitBreakerConfig circuitBreakerConfig) {
-            this.circuitBreakerConfig = Objects.requireNonNull(circuitBreakerConfig);
+        public Builder jwkCircuitBreaker(CircuitBreaker jwkCircuitBreaker) {
+            this.jwkCircuitBreaker = Objects.requireNonNull(jwkCircuitBreaker);
             this.verifyKeysLoader = null;
 
             return this;
+        }
+
+        /**
+         * Circuit breaker used when loading verification keys from a filesystem path or URI.
+         *
+         * @param jwkCircuitBreaker prototype of circuit breaker to use
+         * @return updated builder instance
+         */
+        public Builder jwkCircuitBreaker(CircuitBreakerConfig jwkCircuitBreaker) {
+            Objects.requireNonNull(jwkCircuitBreaker);
+            return jwkCircuitBreaker(jwkCircuitBreaker.build());
+        }
+
+        /**
+         * Circuit breaker used when loading verification keys from a filesystem path or URI.
+         *
+         * @param consumer consumer of builder of circuit breaker to use
+         * @return updated builder instance
+         */
+        public Builder jwkCircuitBreaker(Consumer<CircuitBreakerConfig.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = CircuitBreakerConfig.builder();
+            consumer.accept(builder);
+            return jwkCircuitBreaker(builder.build());
+        }
+
+        /**
+         * Circuit breaker used when loading verification keys from a filesystem path or URI.
+         *
+         * @param supplier supplier of circuit breaker to use
+         * @return updated builder instance
+         */
+        public Builder jwkCircuitBreaker(Supplier<? extends CircuitBreaker> supplier) {
+            Objects.requireNonNull(supplier);
+            return jwkCircuitBreaker(supplier.get());
         }
 
         /**
@@ -989,10 +1061,10 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 atnToken.get("jwt-audience").asString().ifPresent(this::expectedAudience);
                 atnToken.get("jwt-issuer").asString().ifPresent(this::expectedIssuer);
             }
-            config.get("jwk-loader.retry").as(RetryConfig::create).ifPresent(this::jwkRetryConfig);
+            config.get("jwk-loader.retry").as(RetryConfig::create).ifPresent(this::jwkRetry);
             config.get("jwk-loader.circuit-breaker")
                     .as(CircuitBreakerConfig::create)
-                    .ifPresent(this::jwkCircuitBreakerConfig);
+                    .ifPresent(this::jwkCircuitBreaker);
             Config signToken = config.get("sign-token");
             if (signToken.exists()) {
                 outboundConfig(OutboundConfig.create(signToken));
@@ -1093,21 +1165,11 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             ResourceConfig resourceConfig = verifyKeysResource;
             if (isDynamic(resourceConfig)) {
                 String description = sourceDescription(resourceConfig);
-                Duration ioTimeout = retryConfig.overallTimeout();
+                Duration ioTimeout = jwkRetry.prototype().overallTimeout();
                 verifyKeysLoader = ResilientValue.create(description,
                                                          () -> loadDynamicKeys(resourceConfig, description, ioTimeout),
-                                                         RetryConfig.builder(retryConfig)
-                                                                 .clearApplyOn()
-                                                                 .addApplyOn(ResilientValue.UnavailableException.class)
-                                                                 .clearSkipOn()
-                                                                 .name(description + "-retry")
-                                                                 .build(),
-                                                         CircuitBreakerConfig.builder(circuitBreakerConfig)
-                                                                 .clearApplyOn()
-                                                                 .addApplyOn(ResilientValue.UnavailableException.class)
-                                                                 .clearSkipOn()
-                                                                 .name(description + "-circuit-breaker")
-                                                                 .build());
+                                                         jwkRetry,
+                                                         jwkCircuitBreaker);
             } else {
                 verifyKeys = requireUsableKeys(JwkKeys.builder()
                                                        .resource(Resource.create(resourceConfig))

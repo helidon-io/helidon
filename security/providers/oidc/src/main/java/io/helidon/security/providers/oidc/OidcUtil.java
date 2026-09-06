@@ -23,11 +23,6 @@ import java.util.Locale;
 import java.util.Optional;
 
 import io.helidon.common.parameters.Parameters;
-import io.helidon.faulttolerance.CircuitBreaker;
-import io.helidon.faulttolerance.CircuitBreakerConfig;
-import io.helidon.faulttolerance.ResilientValue;
-import io.helidon.faulttolerance.Retry;
-import io.helidon.faulttolerance.RetryConfig;
 import io.helidon.http.HeaderNames;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.TenantConfig;
@@ -86,24 +81,6 @@ class OidcUtil {
                 }
             }
         }
-    }
-
-    static Retry jwkRetry(String description, TenantConfig tenantConfig) {
-        return RetryConfig.builder(tenantConfig.jwkRetryConfig())
-                .clearApplyOn()
-                .addApplyOn(ResilientValue.UnavailableException.class)
-                .clearSkipOn()
-                .name(description + "-retry")
-                .build();
-    }
-
-    static CircuitBreaker jwkCircuitBreaker(String description, TenantConfig tenantConfig) {
-        return CircuitBreakerConfig.builder(tenantConfig.jwkCircuitBreakerConfig())
-                .clearApplyOn()
-                .addApplyOn(ResilientValue.UnavailableException.class)
-                .clearSkipOn()
-                .name(description + "-circuit-breaker")
-                .build();
     }
 
 }
