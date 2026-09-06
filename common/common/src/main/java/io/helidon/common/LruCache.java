@@ -53,6 +53,7 @@ public interface LruCache<K, V> {
      * @param <K>      key type
      * @param <V>      value type
      * @return a new cache instance
+     * @throws IllegalArgumentException if {@code capacity} is negative
      */
     static <K, V> LruCache<K, V> create(int capacity) {
         return new LruCacheImpl<>(capacity);

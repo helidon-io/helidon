@@ -101,6 +101,11 @@ class LruCacheTest {
     }
 
     @Test
+    void testNegativeCapacity() {
+        assertThrows(IllegalArgumentException.class, () -> LruCache.create(-1));
+    }
+
+    @Test
     void testMaxCapacity() {
         LruCache<Integer, Integer> theCache = LruCache.create(10);
         for (int i = 0; i < 10; i++) {
