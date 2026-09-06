@@ -58,7 +58,7 @@ class JdbcClientConfigFactoryTest {
 
         assertThat(configurations.stream().map(JdbcClientConfig::name).toList(),
                    is(List.of("inventory", Service.Named.DEFAULT_NAME)));
-        assertThat(configurations.stream().map(value -> value.dataSource().orElseThrow()).toList(),
+        assertThat(configurations.stream().map(value -> value.dataSourceName().orElseThrow()).toList(),
                    is(List.of("inventory-source", "default-source")));
     }
 

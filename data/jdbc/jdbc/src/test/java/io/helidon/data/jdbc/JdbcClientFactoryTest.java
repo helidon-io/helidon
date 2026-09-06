@@ -66,11 +66,11 @@ class JdbcClientFactoryTest {
         DataSource dataSource = mock(DataSource.class);
         ServiceInstance<DataSource> instance = serviceInstance("shared-source", dataSource);
         JdbcClientConfig defaultConfig = JdbcClientConfig.builder()
-                .dataSource("shared-source")
+                .dataSourceName("shared-source")
                 .buildPrototype();
         JdbcClientConfig inventoryConfig = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("shared-source")
+                .dataSourceName("shared-source")
                 .buildPrototype();
         JdbcClientFactory factory = factory(List.of(defaultConfig, inventoryConfig), () -> List.of(instance));
 
@@ -92,7 +92,7 @@ class JdbcClientFactoryTest {
         ServiceInstance<DataSource> instance = serviceInstance("inventory-source", dataSource);
         JdbcClientConfig config = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .buildPrototype();
 
         Service.QualifiedInstance<JdbcClient> client = factory(List.of(config), () -> List.of(instance))
@@ -154,7 +154,7 @@ class JdbcClientFactoryTest {
         Service.QualifiedInstance<JdbcClient> client = factory.services().getFirst();
 
         assertQualifiedClient(client, "existing", config);
-        assertThat(client.get().prototype().dataSourceInstance().orElseThrow(), sameInstance(dataSource));
+        assertThat(client.get().prototype().dataSource().orElseThrow(), sameInstance(dataSource));
         verifyZeroInteractions(dataSource);
     }
 
@@ -167,7 +167,7 @@ class JdbcClientFactoryTest {
         ServiceInstance<DataSource> unrelated = serviceInstance("other-source", mock(DataSource.class));
         JdbcClientConfig config = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .buildPrototype();
 
         DataException failure = assertThrows(
@@ -188,7 +188,7 @@ class JdbcClientFactoryTest {
         String sensitiveDetail = "private-data-source-provider-detail";
         JdbcClientConfig config = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .buildPrototype();
         JdbcClientFactory factory = factory(
                 List.of(config),
@@ -215,7 +215,7 @@ class JdbcClientFactoryTest {
         String sensitiveDetail = "private-data-source-activation-detail";
         JdbcClientConfig config = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .buildPrototype();
         JdbcClientFactory factory = factory(List.of(config), () -> {
             throw new IllegalStateException(sensitiveDetail,
@@ -243,7 +243,7 @@ class JdbcClientFactoryTest {
         when(instance.get()).thenThrow(unexpected);
         JdbcClientConfig config = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .buildPrototype();
 
         IllegalStateException failure = assertThrows(
@@ -261,11 +261,11 @@ class JdbcClientFactoryTest {
     void rejectsDuplicateNamesBeforeSourceResolution() {
         JdbcClientConfig first = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("first-source")
+                .dataSourceName("first-source")
                 .buildPrototype();
         JdbcClientConfig second = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("second-source")
+                .dataSourceName("second-source")
                 .buildPrototype();
         JdbcClientFactory factory = factory(
                 List.of(first, second),
@@ -288,7 +288,7 @@ class JdbcClientFactoryTest {
         ServiceInstance<DataSource> namedSource = serviceInstance("inventory-source", mock(DataSource.class));
         JdbcClientConfig named = JdbcClientConfig.builder()
                 .name("inventory")
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .buildPrototype();
         JdbcClientConfig invalidDirect = JdbcClientConfig.builder()
                 .name("direct")

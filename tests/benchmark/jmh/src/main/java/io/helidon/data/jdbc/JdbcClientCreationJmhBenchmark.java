@@ -122,7 +122,7 @@ public class JdbcClientCreationJmhBenchmark {
         @Setup(Level.Trial)
         public void setup() {
             JdbcClientConfig config = JdbcClientConfig.builder()
-                    .dataSource("benchmark-data-source")
+                    .dataSourceName("benchmark-data-source")
                     .buildPrototype();
             client = new JdbcClientImpl(config,
                                         new UnusedDataSource(),

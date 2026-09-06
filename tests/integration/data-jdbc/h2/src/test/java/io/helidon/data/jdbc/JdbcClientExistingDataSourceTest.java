@@ -47,7 +47,7 @@ class JdbcClientExistingDataSourceTest {
                     .dataSource(dataSource)
                     .build();
 
-            assertThat(client.prototype().dataSourceInstance().orElseThrow(), sameInstance(dataSource));
+            assertThat(client.prototype().dataSource().orElseThrow(), sameInstance(dataSource));
             client.create("CREATE TABLE POKEMON (ID INT PRIMARY KEY, NAME VARCHAR(40) NOT NULL)")
                     .execute();
             assertPoolIdle(dataSource);

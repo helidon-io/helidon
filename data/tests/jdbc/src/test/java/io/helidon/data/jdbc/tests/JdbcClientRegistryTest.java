@@ -49,11 +49,11 @@ class JdbcClientRegistryTest {
         DataSource dataSource = mock(DataSource.class);
         JdbcClientConfig pokemon = JdbcClient.builder()
                 .name("pokemon")
-                .dataSource("shared-source")
+                .dataSourceName("shared-source")
                 .buildPrototype();
         JdbcClientConfig audit = JdbcClient.builder()
                 .name("audit")
-                .dataSource("shared-source")
+                .dataSourceName("shared-source")
                 .buildPrototype();
         ServiceRegistryManager manager = manager();
         try {
@@ -106,7 +106,7 @@ class JdbcClientRegistryTest {
                 "data.clients.jdbc.0.data-source", "yaml-source")));
         JdbcClientConfig programmatic = JdbcClient.builder()
                 .name("programmatic-client")
-                .dataSource("programmatic-source")
+                .dataSourceName("programmatic-source")
                 .buildPrototype();
         ServiceRegistryManager manager = manager();
         try {
@@ -131,7 +131,7 @@ class JdbcClientRegistryTest {
     void createsGeneratedRepositoryFromProgrammaticConfiguration() {
         DataSource dataSource = mock(DataSource.class);
         JdbcClientConfig config = JdbcClient.builder()
-                .dataSource("default-source")
+                .dataSourceName("default-source")
                 .buildPrototype();
         ServiceRegistryManager manager = manager();
         try {
@@ -154,7 +154,7 @@ class JdbcClientRegistryTest {
     @Test
     void rejectsLateProgrammaticReplacement() {
         JdbcClientConfig config = JdbcClient.builder()
-                .dataSource("unused-source")
+                .dataSourceName("unused-source")
                 .buildPrototype();
         ServiceRegistryManager manager = manager();
         try {

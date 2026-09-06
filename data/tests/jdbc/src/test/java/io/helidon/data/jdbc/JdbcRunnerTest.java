@@ -51,7 +51,7 @@ class JdbcRunnerTest {
     void rejectsNullImperativeBindValueBeforeConnectionAcquisition() {
         DataSource dataSource = mock(DataSource.class);
         JdbcClientConfig config = JdbcClientConfig.builder()
-                .dataSource("test-data-source")
+                .dataSourceName("test-data-source")
                 .buildPrototype();
         JdbcClient client = new JdbcClientImpl(config,
                                                dataSource,

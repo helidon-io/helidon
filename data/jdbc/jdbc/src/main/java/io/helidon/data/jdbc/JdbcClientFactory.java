@@ -71,7 +71,7 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
         }
 
         List<ServiceInstance<DataSource>> availableDataSources = List.of();
-        if (configs.stream().anyMatch(config -> config.dataSource().isPresent())) {
+        if (configs.stream().anyMatch(config -> config.dataSourceName().isPresent())) {
             try {
                 availableDataSources = List.copyOf(dataSources.get());
             } catch (RuntimeException failure) {
@@ -87,11 +87,11 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
             JdbcClientConfig config = prepared.config();
             DataSource dataSource;
             ServiceInstance<DataSource> dataSourceService = null;
-            if (config.dataSourceInstance().isPresent()) {
-                dataSource = config.dataSourceInstance().get();
-            } else if (config.dataSource().isPresent()) {
+            if (config.dataSource().isPresent()) {
+                dataSource = config.dataSource().get();
+            } else if (config.dataSourceName().isPresent()) {
                 dataSource = null;
-                String dataSourceName = config.dataSource().get();
+                String dataSourceName = config.dataSourceName().get();
                 Qualifier named = Qualifier.createNamed(dataSourceName);
                 List<ServiceInstance<DataSource>> matches = availableDataSources.stream()
                         .filter(instance -> instance.qualifiers().contains(named))

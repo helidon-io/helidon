@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,11 +92,13 @@ final class PersistenceConfiguration implements PersistenceUnitInfo {
 
         PersistenceUnitTransactionType txType = txType(txSupport.type());
         Map<String, Object> properties = new HashMap<>();
-        DataSource jtaDataSource = txType == PersistenceUnitTransactionType.JTA && jpaConfig.dataSource().isPresent()
-                ? dataSource(name, jpaConfig.dataSource().get(), dataSourcesSupplier)
+        DataSource jtaDataSource = txType == PersistenceUnitTransactionType.JTA
+                && jpaConfig.dataSourceName().isPresent()
+                ? dataSource(name, jpaConfig.dataSourceName().get(), dataSourcesSupplier)
                 : null;
-        DataSource nonJtaDataSource = txType != PersistenceUnitTransactionType.JTA && jpaConfig.dataSource().isPresent()
-                ? dataSource(name, jpaConfig.dataSource().get(), dataSourcesSupplier)
+        DataSource nonJtaDataSource = txType != PersistenceUnitTransactionType.JTA
+                && jpaConfig.dataSourceName().isPresent()
+                ? dataSource(name, jpaConfig.dataSourceName().get(), dataSourcesSupplier)
                 : null;
         if (jpaConfig.connection().isPresent()) {
             configureConnection(jpaConfig.connection().get(), properties);

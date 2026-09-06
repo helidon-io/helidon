@@ -33,7 +33,7 @@ public class StandaloneClientTransactionService {
     @Service.Inject
     StandaloneClientTransactionService() {
         this.client = JdbcClient.builder()
-                .dataSource("standalone-source")
+                .dataSourceName("standalone-source")
                 .build();
     }
 

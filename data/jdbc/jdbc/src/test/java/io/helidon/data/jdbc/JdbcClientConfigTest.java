@@ -91,10 +91,25 @@ class JdbcClientConfigTest {
                 .dataSource(dataSource)
                 .build();
 
-        assertThat(client.prototype().dataSourceInstance().orElseThrow(), sameInstance(dataSource));
-        assertThat(client.prototype().dataSource(), is(Optional.empty()));
+        assertThat(client.prototype().dataSource().orElseThrow(), sameInstance(dataSource));
+        assertThat(client.prototype().dataSourceName(), is(Optional.empty()));
         assertThat(client.prototype().connection(), is(Optional.empty()));
         verifyZeroInteractions(dataSource);
+    }
+
+    /**
+     * Verifies the established named-source builder overload remains
+     * compatible and stores its value in the type-specific name option.
+     */
+    @Test
+    void retainsNamedDataSourceCompatibilityOverload() {
+        JdbcClientConfig config = JdbcClient.builder()
+                .dataSource("inventory-source")
+                .buildPrototype();
+
+        assertThat(config.dataSourceName().orElseThrow(), is("inventory-source"));
+        assertThat(config.dataSource(), is(Optional.empty()));
+        assertThat(config.connection(), is(Optional.empty()));
     }
 
     /**
@@ -169,9 +184,9 @@ class JdbcClientConfigTest {
         SqlConfig sqlConfig = namedConfig;
 
         assertThat(sqlConfig, sameInstance(namedConfig));
-        assertThat(namedConfig.dataSource().orElseThrow(), is("reporting-source"));
+        assertThat(namedConfig.dataSourceName().orElseThrow(), is("reporting-source"));
         assertThat(directConfig.connection().orElseThrow().url(), is("jdbc:example:local"));
-        assertThat(instanceConfig.dataSourceInstance().orElseThrow(), sameInstance(dataSource));
+        assertThat(instanceConfig.dataSource().orElseThrow(), sameInstance(dataSource));
     }
 
     /**
@@ -188,7 +203,7 @@ class JdbcClientConfigTest {
         DataException conflictFailure = assertThrows(
                 DataException.class,
                 () -> JdbcClient.builder()
-                        .dataSource("private-source")
+                        .dataSourceName("private-source")
                         .connection(connection -> connection.url(sensitiveValue))
                         .buildPrototype());
 
@@ -211,11 +226,11 @@ class JdbcClientConfigTest {
     void rejectsConflictingConnectionSources() {
         DataSource dataSource = mock(DataSource.class);
         assertSourceConflict(() -> JdbcClient.builder()
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .connection(connection -> connection.url("jdbc:example:local"))
                 .buildPrototype());
         assertSourceConflict(() -> JdbcClient.builder()
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .dataSource(dataSource)
                 .buildPrototype());
         assertSourceConflict(() -> JdbcClient.builder()
@@ -223,7 +238,7 @@ class JdbcClientConfigTest {
                 .dataSource(dataSource)
                 .buildPrototype());
         assertSourceConflict(() -> JdbcClient.builder()
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .connection(connection -> connection.url("jdbc:example:local"))
                 .dataSource(dataSource)
                 .buildPrototype());
@@ -236,10 +251,10 @@ class JdbcClientConfigTest {
     void rejectsInvalidClientAndDataSourceNames() {
         DataException blankClientName = assertThrows(
                 DataException.class,
-                () -> JdbcClient.builder().name("  ").dataSource("inventory-source").buildPrototype());
+                () -> JdbcClient.builder().name("  ").dataSourceName("inventory-source").buildPrototype());
         DataException blankDataSourceName = assertThrows(
                 DataException.class,
-                () -> JdbcClient.builder().dataSource("  ").buildPrototype());
+                () -> JdbcClient.builder().dataSourceName("  ").buildPrototype());
 
         assertThat(blankClientName.getMessage(), is("A JDBC client name must not be blank."));
         assertThat(blankDataSourceName.getMessage(), is("A JDBC data source name must not be blank."));
@@ -252,7 +267,7 @@ class JdbcClientConfigTest {
     @Test
     void preservesParameterCountCacheConfiguration() {
         JdbcClientConfig config = JdbcClient.builder()
-                .dataSource("inventory-source")
+                .dataSourceName("inventory-source")
                 .parameterCountCacheCapacity(17)
                 .parameterCountCacheMaxSqlLength(2_048)
                 .buildPrototype();
@@ -277,7 +292,7 @@ class JdbcClientConfigTest {
         try {
             JdbcClientConfig config = JdbcClient.builder()
                     .name("inventory")
-                    .dataSource("inventory-source")
+                    .dataSourceName("inventory-source")
                     .buildPrototype();
 
             DataException failure = assertThrows(DataException.class, () -> JdbcClient.create(config));
@@ -306,7 +321,7 @@ class JdbcClientConfigTest {
         try {
             JdbcClientConfig config = JdbcClient.builder()
                     .name("inventory")
-                    .dataSource("inventory-source")
+                    .dataSourceName("inventory-source")
                     .buildPrototype();
 
             IllegalStateException failure = assertThrows(
@@ -399,24 +414,32 @@ class JdbcClientConfigTest {
     @Test
     void rejectsNullConstructionInputs() {
         JdbcClientConfig.Builder builder = JdbcClient.builder()
-                .dataSource("inventory-source");
+                .dataSourceName("inventory-source");
         NullPointerException configFailure = assertThrows(
                 NullPointerException.class,
                 () -> JdbcClient.create((JdbcClientConfig) null));
         NullPointerException consumerFailure = assertThrows(
                 NullPointerException.class,
                 () -> JdbcClient.create((Consumer<JdbcClientConfig.Builder>) null));
-        // The cast is required because dataSource(null) is ambiguous between the two overloads.
+        NullPointerException canonicalNameFailure = assertThrows(
+                NullPointerException.class,
+                () -> builder.dataSourceName(null));
+        // Explicit casts are required because dataSource(null) is ambiguous between the two overloads.
+        NullPointerException dataSourceNameFailure = assertThrows(
+                NullPointerException.class,
+                () -> builder.dataSource((String) null));
         NullPointerException dataSourceFailure = assertThrows(
                 NullPointerException.class,
                 () -> builder.dataSource((DataSource) null));
 
         assertThat(configFailure.getMessage(), is("The JDBC client configuration must not be null."));
         assertThat(consumerFailure.getMessage(), is("The JDBC client builder consumer must not be null."));
-        assertThat(dataSourceFailure.getMessage(), is("The data source must not be null."));
+        assertThat(canonicalNameFailure.getMessage(), nullValue());
+        assertThat(dataSourceNameFailure.getMessage(), is("The data source name must not be null."));
+        assertThat(dataSourceFailure.getMessage(), nullValue());
         JdbcClientConfig config = builder.buildPrototype();
-        assertThat(config.dataSource().orElseThrow(), is("inventory-source"));
-        assertThat(config.dataSourceInstance(), is(Optional.empty()));
+        assertThat(config.dataSourceName().orElseThrow(), is("inventory-source"));
+        assertThat(config.dataSource(), is(Optional.empty()));
     }
 
     private static void assertSourceConflict(Runnable construction) {

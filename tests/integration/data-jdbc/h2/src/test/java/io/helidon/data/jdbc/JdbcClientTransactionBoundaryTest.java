@@ -114,7 +114,7 @@ class JdbcClientTransactionBoundaryTest {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         GlobalServiceRegistry.registry(manager.registry());
         Services.set(JdbcClientConfig.class,
-                     JdbcClient.builder().dataSource("standalone-source").buildPrototype());
+                     JdbcClient.builder().dataSourceName("standalone-source").buildPrototype());
         return manager;
     }
 

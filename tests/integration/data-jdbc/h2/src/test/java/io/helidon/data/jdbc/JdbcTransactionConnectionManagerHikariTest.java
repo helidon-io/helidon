@@ -162,7 +162,7 @@ class JdbcTransactionConnectionManagerHikariTest {
     private static JdbcClient transactionAwareClient(DataSource dataSource,
                                                      JdbcTransactionConnectionManager manager) {
         JdbcClientConfig config = JdbcClientConfig.builder()
-                .dataSource("test-data-source")
+                .dataSourceName("test-data-source")
                 .buildPrototype();
         JdbcClientImpl.CachePolicy cachePolicy = JdbcClientConfigSupport.cachePolicy(config);
         return new JdbcClientImpl(config, dataSource, manager, cachePolicy);

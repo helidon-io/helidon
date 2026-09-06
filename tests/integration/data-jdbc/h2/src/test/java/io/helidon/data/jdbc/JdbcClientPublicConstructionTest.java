@@ -51,7 +51,7 @@ class JdbcClientPublicConstructionTest {
             Services.setNamed(DataSource.class, dataSource, "pokemon-source");
             JdbcClient client = JdbcClient.builder()
                     .name("pokemon-client")
-                    .dataSource("pokemon-source")
+                    .dataSourceName("pokemon-source")
                     .build();
 
             client.create("CREATE TABLE POKEMON (ID INT PRIMARY KEY, NAME VARCHAR(40) NOT NULL)")
@@ -73,7 +73,7 @@ class JdbcClientPublicConstructionTest {
                     DataException.class,
                     () -> JdbcClient.builder()
                             .name("reporting-client")
-                            .dataSource("missing-reporting-source")
+                            .dataSourceName("missing-reporting-source")
                             .build());
             assertThat(failure.getMessage(),
                        is("JDBC client 'reporting-client' could not resolve SQL data source "

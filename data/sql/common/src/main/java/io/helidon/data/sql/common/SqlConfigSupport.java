@@ -17,8 +17,6 @@ package io.helidon.data.sql.common;
 
 import java.util.Objects;
 
-import javax.sql.DataSource;
-
 import io.helidon.builder.api.Prototype;
 import io.helidon.data.DataException;
 
@@ -40,19 +38,19 @@ final class SqlConfigSupport {
         }
 
         /**
-         * Uses an existing application-owned data source as the connection
-         * source.
+         * Uses a registered data source as the connection source.
          * <p>
-         * The application retains ownership of the data source lifecycle.
+         * This compatibility overload is equivalent to
+         * {@code dataSourceName(dataSourceName)}.
          *
          * @param builder generated SQL configuration builder
-         * @param dataSource existing data source
-         * @throws NullPointerException if the data source is {@code null}
+         * @param dataSourceName registered data source name
+         * @throws NullPointerException if the data source name is {@code null}
          */
         @Prototype.BuilderMethod
-        static void dataSource(SqlConfig.BuilderBase<?, ?> builder, DataSource dataSource) {
-            Objects.requireNonNull(dataSource, "The data source must not be null.");
-            builder.dataSourceInstance(dataSource);
+        static void dataSource(SqlConfig.BuilderBase<?, ?> builder, String dataSourceName) {
+            Objects.requireNonNull(dataSourceName, "The data source name must not be null.");
+            builder.dataSourceName(dataSourceName);
         }
     }
 
@@ -72,8 +70,8 @@ final class SqlConfigSupport {
         public void decorate(SqlConfig.BuilderBase<?, ?> target) {
             Objects.requireNonNull(target, "The SQL configuration builder must not be null.");
             int sourceCount = target.connection().isPresent() ? 1 : 0;
+            sourceCount += target.dataSourceName().isPresent() ? 1 : 0;
             sourceCount += target.dataSource().isPresent() ? 1 : 0;
-            sourceCount += target.dataSourceInstance().isPresent() ? 1 : 0;
             if (sourceCount == 0) {
                 throw new DataException("SQL configuration does not define a connection source. Configure exactly one using "
                                                 + "connection properties, a data source name, or a DataSource instance.");

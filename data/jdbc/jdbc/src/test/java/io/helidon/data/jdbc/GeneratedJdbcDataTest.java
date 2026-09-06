@@ -75,7 +75,7 @@ class GeneratedJdbcDataTest {
 
     private static final class AlternateClient implements JdbcClient {
         private static final JdbcClientConfig CONFIG = JdbcClientConfig.builder()
-                .dataSource("test-data-source")
+                .dataSourceName("test-data-source")
                 .buildPrototype();
 
         private final AlternateStatement statement = new AlternateStatement();

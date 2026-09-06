@@ -34,7 +34,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Blueprint(createFromConfigPublic = false, createEmptyPublic = false, decorator = SqlConfigSupport.Decorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(SqlConfigSupport.CustomMethods.class)
-@Prototype.IncludeDefaultMethods("dataSourceInstance")
+@Prototype.IncludeDefaultMethods("dataSource")
 interface SqlConfigBlueprint {
     /**
      * Configuration of a direct connection to a database, with exactly one
@@ -46,13 +46,14 @@ interface SqlConfigBlueprint {
     Optional<ConnectionConfig> connection();
 
     /**
-     * Name of the {@link DataSource}, with exactly one connection source
-     * required.
+     * Name of the registered {@link DataSource}, with exactly one connection
+     * source required.
      *
-     * @return the name to use for {@link DataSource} lookup
+     * @return name used for data source lookup
      */
-    @Option.Configured
-    Optional<String> dataSource();
+    // Preserve the established configuration key after making the Java option name type-specific.
+    @Option.Configured("data-source")
+    Optional<String> dataSourceName();
 
     /**
      * Existing {@link DataSource} owned by application, with exactly one
@@ -61,12 +62,11 @@ interface SqlConfigBlueprint {
      * This option is available only to programmatic builders. The application
      * retains ownership of the data source lifecycle.
      *
-     * @return existing data source, or empty when one was not supplied
+     * @return configured existing data source
      */
-    // Hide the storage oriented builder methods as dataSource(DataSource) is the public API.
-    @Option.Access("")
+    // Prevent generated diagnostic text from exposing pool implementation details or sensitive state.
     @Option.Confidential
-    default Optional<DataSource> dataSourceInstance() {
+    default Optional<DataSource> dataSource() {
         return Optional.empty();
     }
 

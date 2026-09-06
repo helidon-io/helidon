@@ -41,8 +41,8 @@ final class JdbcClientConfigSupport {
      * @param config configuration to validate
      */
     static void validate(JdbcClientConfig config) {
-        validateClient(config.name(), config.dataSource());
-        validateSources(config.connection(), config.dataSource(), config.dataSourceInstance());
+        validateClient(config.name(), config.dataSourceName());
+        validateSources(config.connection(), config.dataSourceName(), config.dataSource());
         cachePolicy(config);
     }
 
@@ -87,21 +87,21 @@ final class JdbcClientConfigSupport {
         return cachePolicy(config.parameterCountCacheCapacity(), config.parameterCountCacheMaxSqlLength());
     }
 
-    private static void validateClient(String name, Optional<String> dataSource) {
+    private static void validateClient(String name, Optional<String> dataSourceName) {
         if (name.isBlank()) {
             throw new DataException("A JDBC client name must not be blank.");
         }
-        if (dataSource.filter(String::isBlank).isPresent()) {
+        if (dataSourceName.filter(String::isBlank).isPresent()) {
             throw new DataException("A JDBC data source name must not be blank.");
         }
     }
 
     private static void validateSources(Optional<ConnectionConfig> connection,
-                                        Optional<String> dataSource,
-                                        Optional<DataSource> dataSourceInstance) {
+                                        Optional<String> dataSourceName,
+                                        Optional<DataSource> dataSource) {
         int sourceCount = connection.isPresent() ? 1 : 0;
+        sourceCount += dataSourceName.isPresent() ? 1 : 0;
         sourceCount += dataSource.isPresent() ? 1 : 0;
-        sourceCount += dataSourceInstance.isPresent() ? 1 : 0;
         if (sourceCount != 1) {
             throw new DataException("A JDBC client requires exactly one connection source.");
         }
@@ -126,7 +126,7 @@ final class JdbcClientConfigSupport {
         @Override
         public void decorate(JdbcClientConfig.BuilderBase<?, ?> builder) {
             Objects.requireNonNull(builder, "The JDBC client configuration builder must not be null.");
-            validateClient(builder.name(), builder.dataSource());
+            validateClient(builder.name(), builder.dataSourceName());
             cachePolicy(builder.parameterCountCacheCapacity(), builder.parameterCountCacheMaxSqlLength());
         }
     }

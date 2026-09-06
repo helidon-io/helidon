@@ -38,7 +38,7 @@ class JdbcClientCacheConfigTest {
     @Test
     void providesEstablishedDefaults() {
         JdbcClientConfig config = JdbcClientConfig.builder()
-                .dataSource("unused")
+                .dataSourceName("unused")
                 .buildPrototype();
 
         assertCache(config, 256, 4_096);
@@ -56,7 +56,7 @@ class JdbcClientCacheConfigTest {
                 "properties.jdbc.parameter-count-cache.max-sql-length", "2048")));
         JdbcClientConfig configured = JdbcClientConfig.create(config);
         JdbcClientConfig programmatic = JdbcClientConfig.builder()
-                .dataSource("unused")
+                .dataSourceName("unused")
                 .parameterCountCacheCapacity(17)
                 .parameterCountCacheMaxSqlLength(2_048)
                 .buildPrototype();
@@ -125,6 +125,6 @@ class JdbcClientCacheConfigTest {
     }
 
     private static JdbcClientConfig.Builder cacheBuilder() {
-        return JdbcClientConfig.builder().dataSource("unused");
+        return JdbcClientConfig.builder().dataSourceName("unused");
     }
 }
