@@ -259,8 +259,9 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
         private final long jitterMillis;
         private final double jitterFactor;
         private final long maxDelayMillis;
+        private final boolean autoDerived;
 
-        DelayingRetryPolicy(Builder builder) {
+        private DelayingRetryPolicy(Builder builder) {
             validatePolicy(builder.calls, builder.delay, builder.jitter, builder.jitterFactor, builder.maxDelay);
             if (!Double.isFinite(builder.delayFactor) || builder.delayFactor < 0) {
                 throw new IllegalArgumentException("Delay factor must be a finite, non-negative number");
@@ -271,6 +272,7 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
             this.jitterMillis = durationToMillis(builder.jitter);
             this.jitterFactor = builder.jitterFactor;
             this.maxDelayMillis = durationToMillis(builder.maxDelay);
+            this.autoDerived = builder.autoDerived;
         }
 
         /**
@@ -307,6 +309,10 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
             return Optional.of(withJitter(RANDOM, delay, jitterMillis, jitterFactor, maxDelayMillis));
         }
 
+        boolean autoDerived() {
+            return autoDerived;
+        }
+
         @Override
         public boolean equals(Object object) {
             if (this == object) {
@@ -338,6 +344,7 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
             private Duration jitter = Duration.ZERO;
             private double jitterFactor;
             private Duration maxDelay = Duration.ofMillis(Long.MAX_VALUE);
+            private boolean autoDerived;
 
             private Builder() {
             }
@@ -345,6 +352,11 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
             @Override
             public DelayingRetryPolicy build() {
                 return new DelayingRetryPolicy(this);
+            }
+
+            Builder autoDerived() {
+                this.autoDerived = true;
+                return this;
             }
 
             /**

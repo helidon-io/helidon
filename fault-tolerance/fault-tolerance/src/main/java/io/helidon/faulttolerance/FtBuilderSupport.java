@@ -64,7 +64,9 @@ final class FtBuilderSupport {
                         .ifPresent(cfg -> target.name(cfg.name()));
             }
             var retryPolicy = target.retryPolicy();
-            if (retryPolicy.isEmpty() || retryPolicy.get() instanceof DerivedRetryPolicy) {
+            if (retryPolicy.isEmpty()
+                    || retryPolicy.get() instanceof Retry.DelayingRetryPolicy delayingPolicy
+                            && delayingPolicy.autoDerived()) {
                 target.retryPolicy(retryPolicy(target));
             }
         }
@@ -93,7 +95,7 @@ final class FtBuilderSupport {
                 delayBuilder.jitterFactor(target.jitterFactor());
             }
             target.maxDelay().ifPresent(delayBuilder::maxDelay);
-            return new DerivedRetryPolicy(delayBuilder);
+            return delayBuilder.autoDerived().build();
         }
 
         private void validate(RetryConfig.BuilderBase<?, ?> target) {
@@ -127,12 +129,6 @@ final class FtBuilderSupport {
                     throw new IllegalArgumentException("Retry maximum delay must not be negative");
                 }
             });
-        }
-    }
-
-    private static final class DerivedRetryPolicy extends Retry.DelayingRetryPolicy {
-        private DerivedRetryPolicy(Retry.DelayingRetryPolicy.Builder builder) {
-            super(builder);
         }
     }
 
