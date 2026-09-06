@@ -23,7 +23,7 @@ SQL specific configuration
 <td>
 <code>String</code>
 </td>
-<td>Name of the <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>, with exactly one of <code>connection</code> and <code>data-<wbr>source</code> required</td>
+<td>Name of the <code>Data<wbr>Source</code>, with exactly one connection source required</td>
 </tr>
 <tr>
 <td>
@@ -35,7 +35,7 @@ SQL specific configuration
 <td>
 <code>Connection<wbr>Config</code>
 </td>
-<td>Configuration of a direct connection to a database, with exactly one of <code>connection</code> and <code>data-<wbr>source</code> required</td>
+<td>Configuration of a direct connection to a database, with exactly one connection source required</td>
 </tr>
 </tbody>
 </table>
