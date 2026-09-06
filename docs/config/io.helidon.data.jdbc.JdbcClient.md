@@ -40,7 +40,7 @@ Configuration for a JDBC client
 </td>
 <td>
 </td>
-<td>Name of the <code>Data<wbr>Source</code>, with exactly one connection source required</td>
+<td>Name of the registered <code>Data<wbr>Source</code>, with exactly one connection source required</td>
 </tr>
 <tr>
 <td>
