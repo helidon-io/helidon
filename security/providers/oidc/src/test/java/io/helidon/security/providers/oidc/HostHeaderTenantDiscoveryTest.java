@@ -235,7 +235,7 @@ class HostHeaderTenantDiscoveryTest {
                                                     firstComplete);
             Thread secondRequest = null;
             boolean metadataRequested;
-            boolean secondCompletedBeforeRelease = false;
+            boolean secondWaitingBeforeRelease = false;
             int hitsBeforeRelease;
             try {
                 metadataRequested = idp.awaitMetadataRequest();
@@ -244,7 +244,8 @@ class HostHeaderTenantDiscoveryTest {
                                                       secondResponse,
                                                       secondFailure,
                                                       secondComplete);
-                    secondCompletedBeforeRelease = secondComplete.await(2, TimeUnit.SECONDS);
+                    awaitWaiting(secondRequest);
+                    secondWaitingBeforeRelease = secondComplete.getCount() == 1;
                 }
                 hitsBeforeRelease = idp.wellKnownHits();
             } finally {
@@ -256,7 +257,7 @@ class HostHeaderTenantDiscoveryTest {
             }
 
             assertThat("the first request should reach metadata discovery", metadataRequested, is(true));
-            assertThat("the concurrent follower should fail fast", secondCompletedBeforeRelease, is(true));
+            assertThat("the concurrent follower should wait for the active load", secondWaitingBeforeRelease, is(true));
             assertThat("only one request should load metadata", hitsBeforeRelease, is(1));
             assertThat("first request thread should complete", firstRequest.isAlive(), is(false));
             assertThat("second request thread should complete", secondRequest.isAlive(), is(false));
@@ -684,6 +685,14 @@ class HostHeaderTenantDiscoveryTest {
                 complete.countDown();
             }
         });
+    }
+
+    private static void awaitWaiting(Thread thread) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (thread.isAlive() && thread.getState() != Thread.State.WAITING && System.nanoTime() < deadline) {
+            Thread.sleep(1);
+        }
+        assertThat("concurrent request state", thread.getState(), is(Thread.State.WAITING));
     }
 
     private static final class FeatureServer implements AutoCloseable {

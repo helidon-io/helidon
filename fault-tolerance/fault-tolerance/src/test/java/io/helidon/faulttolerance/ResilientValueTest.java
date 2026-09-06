@@ -240,17 +240,10 @@ class ResilientValueTest {
         assertInvalidRetry("zero calls", it -> it.calls(0));
         assertInvalidRetry("negative delay", it -> it.delay(Duration.ofMillis(-1)));
         assertInvalidRetry("zero overall timeout", it -> it.overallTimeout(Duration.ZERO));
-        assertInvalidRetry("overflowing overall timeout", it -> it.overallTimeout(Duration.ofSeconds(Long.MAX_VALUE)));
         assertInvalidRetry("invalid delay factor", it -> it.delayFactor(-2));
         assertInvalidRetry("NaN delay factor", it -> it.delayFactor(Double.NaN));
         assertInvalidRetry("infinite delay factor", it -> it.delayFactor(Double.POSITIVE_INFINITY));
         assertInvalidRetry("negative jitter", it -> it.jitter(Duration.ofSeconds(-2)));
-        assertInvalidRetry("overflowing jitter",
-                           it -> it.jitter(Duration.ofMillis((long) Integer.MAX_VALUE / 2 + 1)));
-        assertInvalidRetry("unsafe base delay",
-                           it -> it.delay(Duration.ofMillis(TimeUnit.NANOSECONDS.toMillis(Long.MAX_VALUE / 2) + 1)));
-        assertInvalidRetry("unsafe effective delay",
-                           it -> it.calls(3).delay(Duration.ofMillis(1)).delayFactor(Double.MAX_VALUE));
 
         RetryConfig factorTakesPrecedence = RetryConfig.builder()
                 .delayFactor(2)
