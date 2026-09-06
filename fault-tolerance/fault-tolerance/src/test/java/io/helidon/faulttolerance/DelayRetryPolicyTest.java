@@ -161,6 +161,26 @@ class DelayRetryPolicyTest {
     }
 
     @Test
+    void testRelativeJitterDoesNotCompoundAcrossRetries() {
+        Retry.DelayingRetryPolicy policy = Retry.DelayingRetryPolicy.builder()
+                .delay(Duration.ofMillis(100))
+                .calls(3)
+                .delayFactor(1)
+                .jitterFactor(0.25)
+                .build();
+
+        for (int i = 0; i < 1_000; i++) {
+            long firstDelay = policy.nextDelayMillis(0, 0, 1).orElseThrow();
+            Optional<Long> secondDelay = policy.nextDelayMillis(0, firstDelay, 2);
+
+            assertThat("Relative jitter must remain within 25% of the configured delay",
+                       secondDelay,
+                       optionalValue(both(greaterThanOrEqualTo(75L))
+                                             .and(lessThanOrEqualTo(125L))));
+        }
+    }
+
+    @Test
     void testHugeDelayDoesNotOverflow() {
         Retry.DelayingRetryPolicy policy = Retry.DelayingRetryPolicy.builder()
                 .delay(Duration.ofMillis(Long.MAX_VALUE))

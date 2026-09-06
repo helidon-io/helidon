@@ -247,8 +247,9 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
      *     <li>Second retry - 200 millis (previous delay * factor)</li>
      *     <li>Third retry - 400 millis (previous delay * factor)</li>
      * </ul>
-     * An optional absolute or relative jitter is applied after multiplying the delay. The final non-negative delay,
-     * including jitter, is capped by the configured maximum delay.
+     * An optional absolute or relative jitter is applied independently after calculating each delay. A jittered delay
+     * does not affect the calculation of later delays. The final non-negative delay, including jitter, is capped by the
+     * configured maximum delay.
      */
     class DelayingRetryPolicy implements RetryPolicy {
         private static final SecureRandom RANDOM = new SecureRandom();
@@ -302,7 +303,12 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
                 return Optional.empty();
             }
 
-            long delay = call == 1 ? delayMillis : multiply(lastDelay, delayFactor);
+            long delay;
+            if (jitterMillis == 0 && jitterFactor == 0) {
+                delay = call == 1 ? delayMillis : multiply(lastDelay, delayFactor);
+            } else {
+                delay = multiply(delayMillis, Math.pow(delayFactor, Math.max(0, call - 1)));
+            }
 
             return Optional.of(withJitter(RANDOM, delay, jitterMillis, jitterFactor, maxDelayMillis));
         }

@@ -114,7 +114,9 @@ try {
 non-negative absolute `jitter` duration (`PT-1S` disables it) or a relative
 `jitter-factor` from zero inclusive to one exclusive (`-1` disables it); the
 two jitter options are mutually exclusive. The optional non-negative
-`max-delay` caps the final delay after jitter. A contextual invocation can also
+`max-delay` caps the final delay after jitter. Jitter is applied independently
+to each calculated exponential delay and does not affect later base-delay
+calculations. A contextual invocation can also
 supply a `Retry.WaitStrategy` to maintain an external resource while waiting
 or cancel another attempt by returning `false`. A strategy returning `true`
 must complete the requested wait and must restore the thread interrupt status

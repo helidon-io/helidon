@@ -62,7 +62,7 @@
 <td>
 <code>PT-<wbr>1S</code>
 </td>
-<td>Absolute random jitter that must be <code>PT-<wbr>1S</code> (disabled) or non-negative; it cannot be combined with <code>jitter-<wbr>factor</code>, is applied after <code>delay-<wbr>factor</code>, and is capped by <code>max-<wbr>delay</code> when present</td>
+<td>Absolute random jitter that must be <code>PT-<wbr>1S</code> (disabled) or non-negative; it cannot be combined with <code>jitter-<wbr>factor</code>, is applied independently after <code>delay-<wbr>factor</code>, does not affect later base-delay calculations, and is capped by <code>max-<wbr>delay</code> when present</td>
 </tr>
 <tr>
 <td>
@@ -86,7 +86,7 @@
 <td>
 <code>-1.<wbr>0</code>
 </td>
-<td>Relative random jitter that must be <code>-1</code> (disabled) or from <code>0</code> (inclusive) to <code>1</code> (exclusive); it cannot be combined with <code>jitter</code>, is applied after <code>delay-<wbr>factor</code>, and is capped by <code>max-<wbr>delay</code> when present</td>
+<td>Relative random jitter that must be <code>-1</code> (disabled) or from <code>0</code> (inclusive) to <code>1</code> (exclusive); it cannot be combined with <code>jitter</code>, is applied independently after <code>delay-<wbr>factor</code>, does not affect later base-delay calculations, and is capped by <code>max-<wbr>delay</code> when present</td>
 </tr>
 <tr>
 <td>

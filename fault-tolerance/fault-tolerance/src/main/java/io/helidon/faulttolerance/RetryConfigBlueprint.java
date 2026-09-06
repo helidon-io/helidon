@@ -86,7 +86,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
 
     /**
      * Absolute random jitter that must be {@code PT-1S} (disabled) or non-negative; it cannot be combined with
-     * {@code jitter-factor}, is applied after {@code delay-factor}, and is capped by {@code max-delay} when present.
+     * {@code jitter-factor}, is applied independently after {@code delay-factor}, does not affect later base-delay
+     * calculations, and is capped by {@code max-delay} when present.
      *
      * @return jitter
      */
@@ -97,8 +98,8 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
 
     /**
      * Relative random jitter that must be {@code -1} (disabled) or from {@code 0} (inclusive) to {@code 1} (exclusive);
-     * it cannot be combined with {@code jitter}, is applied after {@code delay-factor}, and is capped by
-     * {@code max-delay} when present.
+     * it cannot be combined with {@code jitter}, is applied independently after {@code delay-factor}, does not affect
+     * later base-delay calculations, and is capped by {@code max-delay} when present.
      * A value of {@code 0.2} applies a random jitter of up to twenty percent in either direction.
      *
      * @return relative jitter factor
