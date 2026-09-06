@@ -945,6 +945,133 @@ class Http1ClientTest {
         assertThat(connection.releaseCount(), is(0));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"\rX", "\n0"})
+    void testInvalidChunkDataDelimiterClosesConnection(String delimiter) {
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "\r\n"
+                + "2\r\n"
+                + "OK"
+                + delimiter
+                + "0\r\n\r\n";
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection(rawResponse.getBytes(StandardCharsets.US_ASCII));
+        Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request();
+
+        try {
+            var inputStream = response.entity().inputStream();
+            IllegalStateException firstFailure = assertThrows(IllegalStateException.class, inputStream::readAllBytes);
+            IllegalStateException secondFailure = assertThrows(IllegalStateException.class, inputStream::read);
+
+            assertThat(firstFailure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
+            assertThat(secondFailure.getMessage(), is(firstFailure.getMessage()));
+            assertThat(secondFailure, not(sameInstance(firstFailure)));
+        } finally {
+            response.close();
+        }
+
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void testChunkedResponsePreservesAdvertisedTrailers() {
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "Trailer: X-Test\r\n"
+                + "\r\n"
+                + "2\r\nOK\r\n"
+                + "0\r\n"
+                + "X-Test: value\r\n"
+                + "\r\n";
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection(rawResponse.getBytes(StandardCharsets.US_ASCII));
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.entity().as(String.class), is("OK"));
+            assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+        }
+
+        assertThat(connection.closeCount(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+    }
+
+    @Test
+    void testInvalidChunkedTrailersCloseConnection() {
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "Trailer: X-Test\r\n"
+                + "\r\n"
+                + "2\r\nOK\r\n"
+                + "0\r\n"
+                + "invalid trailer\r\n"
+                + "\r\n";
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection(rawResponse.getBytes(StandardCharsets.US_ASCII));
+        Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request();
+
+        try {
+            assertThrows(RuntimeException.class, () -> response.entity().as(String.class));
+            assertThat(connection.closeCount(), is(1));
+            assertThat(connection.releaseCount(), is(0));
+        } finally {
+            response.close();
+        }
+    }
+
+    @Test
+    void testChunkedTrailersWithSurplusCloseConnection() {
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Transfer-Encoding: chunked\r\n"
+                + "Trailer: X-Test\r\n"
+                + "\r\n"
+                + "2\r\nOK\r\n"
+                + "0\r\n"
+                + "X-Test: value\r\n"
+                + "\r\n"
+                + "surplus";
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection(rawResponse.getBytes(StandardCharsets.US_ASCII));
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                         () -> response.entity().as(String.class));
+            assertThat(failure.getMessage(), is("Unexpected data after response trailers"));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void testContentLengthResponseWithAdvisoryTrailerHeaderDoesNotReadTrailers() {
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Content-Length: 2\r\n"
+                + "Trailer: X-Test\r\n"
+                + "\r\n"
+                + "OK";
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection(rawResponse.getBytes(StandardCharsets.US_ASCII));
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.entity().as(String.class), is("OK"));
+        }
+
+        assertThat(connection.closeCount(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+    }
+
     // validates that HEAD is not allowed with entity payload
     @Test
     void testHeadMethod() {

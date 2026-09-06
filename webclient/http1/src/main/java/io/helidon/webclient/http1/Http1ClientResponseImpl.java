@@ -107,11 +107,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.parserMode = clientConfig.mediaTypeParserMode();
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
-        this.trailers = LazyValue.create(() -> Http1HeadersParser.readHeaders(
-                connection.reader(),
-                Http1ClientConfigSupport.maxHeadersSize(protocolConfig),
-                protocolConfig.validateResponseHeaders()
-        ));
+        this.trailers = LazyValue.create(this::readTrailers);
 
         OptionalLong contentLength = responseHeaders.contentLength();
         if (inputStream != null) {
@@ -258,6 +254,20 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         }
     }
 
+    private Headers readTrailers() {
+        DataReader reader = connection.reader();
+        Headers result = Http1HeadersParser.readHeaders(
+                reader,
+                Http1ClientConfigSupport.maxHeadersSize(protocolConfig),
+                protocolConfig.validateResponseHeaders()
+        );
+        // RFC 9112, section 6.3: buffered data after a final response must not be processed as another response.
+        if (reader.available() > 0) {
+            throw new IllegalStateException("Unexpected data after response trailers");
+        }
+        return result;
+    }
+
     private ReadableEntity entity(ClientRequestHeaders requestHeaders,
                                   ClientResponseHeaders responseHeaders) {
         if (inputStream == null) {
@@ -274,11 +284,29 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private void entityFullyRead() {
         try {
-            this.entityFullyRead = true;
             inputStream.close();
+            if (hasTrailers && entityLength == ENTITY_LENGTH_CHUNKED) {
+                trailers.get();
+            }
+            this.entityFullyRead = true;
             this.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            RuntimeException failure = new RuntimeException(e);
+            closeAfterEntityFailure(failure);
+            throw failure;
+        } catch (RuntimeException | Error e) {
+            closeAfterEntityFailure(e);
+            throw e;
+        }
+    }
+
+    private void closeAfterEntityFailure(Throwable failure) {
+        try {
+            connection.closeResource();
+        } catch (RuntimeException | Error closeFailure) {
+            if (closeFailure != failure) {
+                failure.addSuppressed(closeFailure);
+            }
         }
     }
 
