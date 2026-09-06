@@ -20,9 +20,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import io.helidon.common.Api;
+
 /**
  * Base implementation of {@link JsonParser}.
  */
+@Api.Preview
 public abstract class JsonParserBase implements JsonParser {
 
     private int nestingDepth;

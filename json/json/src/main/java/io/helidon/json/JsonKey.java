@@ -19,6 +19,8 @@ package io.helidon.json;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * A precomputed JSON object key.
  * <p>
@@ -26,6 +28,7 @@ import java.util.Objects;
  * re-encoding the property name on each serialization call.
  * </p>
  */
+@Api.Preview
 public final class JsonKey {
 
     private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();

@@ -19,6 +19,7 @@ package io.helidon.http.media.json;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
@@ -33,6 +34,7 @@ import io.helidon.json.JsonValue;
  * <p>
  * This media support adds serialization and deserialization for {@link io.helidon.json.JsonValue}.
  */
+@Api.Preview
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JsonSupport extends MediaSupportBase<JsonSupportConfig> implements RuntimeType.Api<JsonSupportConfig> {
     /**
