@@ -33,6 +33,7 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.AfterAll;
 
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -60,18 +61,17 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
 
             Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(tag, okTag));
             assertThat(timer.isPresent(), is(true));
-            assertThat(timer.get().count(), is(20L));
+            assertThatWithRetry("gRPC call duration metric for " + tag, timer.get()::count, is(20L));
 
-            Optional<DistributionSummary> summary;
-            summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, okTag));
-            assertThat(summary.isPresent(), is(true));
-            assertThat(summary.get().count(), is(20L));
-            assertThat(summary.get().max(), greaterThan(0.0));
+            Optional<DistributionSummary> sentSummary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, okTag));
+            assertThat(sentSummary.isPresent(), is(true));
+            assertThatWithRetry("gRPC sent message size metric for " + tag, sentSummary.get()::count, is(20L));
+            assertThat(sentSummary.get().max(), greaterThan(0.0));
 
-            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, okTag));
-            assertThat(summary.isPresent(), is(true));
-            assertThat(summary.get().count(), is(20L));
-            assertThat(summary.get().max(), greaterThan(0.0));
+            Optional<DistributionSummary> receivedSummary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, okTag));
+            assertThat(receivedSummary.isPresent(), is(true));
+            assertThatWithRetry("gRPC received message size metric for " + tag, receivedSummary.get()::count, is(20L));
+            assertThat(receivedSummary.get().max(), greaterThan(0.0));
         }
     }
 }

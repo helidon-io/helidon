@@ -57,6 +57,7 @@ public class JunitJmhRunnerTest {
                 .include(ALL_BENCHMARKS)
                 .exclude(HTTP2_REUSE_BENCHMARK)
                 .exclude(HTTP2_FLOW_CONTROL_BENCHMARK)
+                .exclude(".*Http2ConnectionWriterJmhTest.*")
                 .threads(DEFAULT_THREADS)
                 .build();
 

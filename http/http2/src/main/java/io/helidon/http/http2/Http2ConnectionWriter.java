@@ -35,6 +35,8 @@ import io.helidon.common.socket.SocketContext;
  * HTTP/2 connection writer.
  */
 public class Http2ConnectionWriter implements Http2StreamWriter {
+    // Do not let a peer-raised maximum frame size enlarge either payload in a response batch.
+    private static final int MAX_BATCHED_FRAME_PAYLOAD_LENGTH = Http2Setting.MAX_FRAME_SIZE.defaultValue().intValue();
     private static final Runnable NO_OP = () -> { };
     private static final int NO_RESET_STREAM = -1;
 
@@ -44,7 +46,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private final Lock windowUpdateLock = new ReentrantLock();
     private final Map<Integer, Long> pendingWindowUpdates = new LinkedHashMap<>();
     private final AtomicBoolean windowUpdateWriteScheduled = new AtomicBoolean();
-    private final AtomicReference<Throwable> windowUpdateFailure = new AtomicReference<>();
+    private final AtomicReference<Throwable> terminalFailure = new AtomicReference<>();
     private final SocketContext ctx;
     private final Http2FrameListener listener;
     private final Http2Headers.DynamicTable outboundDynamicTable;
@@ -86,7 +88,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         try {
             windowUpdateLock.lock();
             try {
-                throwIfWindowUpdateFailed();
+                throwIfTerminalFailure();
                 if (streamId != 0 && streamId == resetStreamId) {
                     return;
                 }
@@ -103,7 +105,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
         if (locked) {
             try {
-                throwIfWindowUpdateFailed();
+                throwIfTerminalFailure();
                 int count = pendingWindowUpdateCount();
                 Http2FrameData pending;
                 for (int i = 0; i < count && (pending = pollWindowUpdate()) != null; i++) {
@@ -111,7 +113,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 }
                 noLockWrite(frame);
             } catch (Throwable t) {
-                failWindowUpdatesAndClose(t);
+                failWriter(t);
                 throw t;
             } finally {
                 streamLock.unlock();
@@ -140,6 +142,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         Objects.requireNonNull(frame);
         Objects.requireNonNull(flowControl);
         Objects.requireNonNull(onEndStreamFrameWritten);
+        throwIfTerminalFailure();
         int written = 0;
         for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
             written += splitAndWrite(f, flowControl, onEndStreamFrameWritten);
@@ -179,72 +182,22 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
         int maxFrameSize = flowControl.maxFrameSize();
 
+        int written;
         lock();
         try {
-
-            int written = 0;
-            headerBuffer.clear();
-            headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
-
-            // Fast path when headers fits within the SETTINGS_MAX_FRAME_SIZE
-            if (headerBuffer.available() <= maxFrameSize) {
-                Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
-                        Http2FrameTypes.HEADERS,
-                        flags,
-                        streamId);
-                written += frameHeader.length();
-                written += Http2FrameHeader.LENGTH;
-
-                noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
-                if (flags.endOfStream()) {
-                    onEndStreamFrameWritten.run();
-                }
-                return written;
+            try {
+                written = noLockWriteHeaders(headers, streamId, flags, maxFrameSize);
+            } catch (Throwable t) {
+                failWriter(t);
+                throw t;
             }
-
-            // Split header frame to smaller continuation frames RFC 9113 §6.10
-            BufferData[] fragments = Http2Headers.split(headerBuffer, maxFrameSize);
-
-            // First header fragment
-            BufferData fragment = fragments[0];
-            Http2FrameHeader frameHeader;
-            frameHeader = Http2FrameHeader.create(fragment.available(),
-                    Http2FrameTypes.HEADERS,
-                    Http2Flag.HeaderFlags.create(flags.endOfStream() ? Http2Flag.END_OF_STREAM : 0),
-                    streamId);
-            written += frameHeader.length();
-            written += Http2FrameHeader.LENGTH;
-            noLockWrite(new Http2FrameData(frameHeader, fragment));
-
-            // Header continuation fragments in the middle
-            for (int i = 1; i < fragments.length - 1; i++) {
-                fragment = fragments[i];
-                frameHeader = Http2FrameHeader.create(fragment.available(),
-                        Http2FrameTypes.CONTINUATION,
-                        Http2Flag.ContinuationFlags.create(0),
-                        streamId);
-                written += frameHeader.length();
-                written += Http2FrameHeader.LENGTH;
-                noLockWrite(new Http2FrameData(frameHeader, fragment));
-            }
-
-            // Last header continuation fragment
-            fragment = fragments[fragments.length - 1];
-            frameHeader = Http2FrameHeader.create(fragment.available(),
-                    Http2FrameTypes.CONTINUATION,
-                    // Last fragment needs to indicate the end of headers
-                    Http2Flag.ContinuationFlags.create(Http2Flag.END_OF_HEADERS),
-                    streamId);
-            written += frameHeader.length();
-            written += Http2FrameHeader.LENGTH;
-            noLockWrite(new Http2FrameData(frameHeader, fragment));
-            if (flags.endOfStream()) {
-                onEndStreamFrameWritten.run();
-            }
-            return written;
         } finally {
             streamLock.unlock();
         }
+        if (flags.endOfStream()) {
+            onEndStreamFrameWritten.run();
+        }
+        return written;
     }
 
     @Override
@@ -275,15 +228,79 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                             Http2FrameData dataFrame,
                             FlowControl.Outbound flowControl,
                             Runnable onEndStreamFrameWritten) {
+        Objects.requireNonNull(headers);
+        Objects.requireNonNull(flags);
         Objects.requireNonNull(dataFrame);
+        Objects.requireNonNull(flowControl);
         Objects.requireNonNull(onEndStreamFrameWritten);
         // Executed on stream thread
-        int bytesWritten = 0;
-        bytesWritten += writeHeaders(headers, streamId, flags, flowControl);
-        writeData(dataFrame, flowControl, onEndStreamFrameWritten);
-        bytesWritten += Http2FrameHeader.LENGTH;
-        bytesWritten += dataFrame.header().length();
+        int dataLength = dataFrame.header().length();
+        int maxFrameSize = flowControl.maxFrameSize();
+        if (maxFrameSize <= 0 || dataLength > maxFrameSize || dataLength > MAX_BATCHED_FRAME_PAYLOAD_LENGTH) {
+            return writeHeaders(headers, streamId, flags, flowControl)
+                    + writeDataAfterHeaders(dataFrame, flowControl, onEndStreamFrameWritten);
+        }
 
+        int bytesWritten;
+        Http2FrameData[] splitFrames;
+        lock();
+        try {
+            splitFrames = flowControl.cut(dataFrame);
+            Http2FrameData writableFrame = switch (splitFrames.length) {
+            case 1 -> dataFrame;
+            case 2 -> splitFrames[0];
+            default -> null;
+            };
+            try {
+                noLockEncodeHeaders(headers);
+                BufferData[] batch = writableFrame != null
+                        && headerBuffer.available() <= maxFrameSize
+                        && headerBuffer.available() <= MAX_BATCHED_FRAME_PAYLOAD_LENGTH
+                        ? new BufferData[2]
+                        : null;
+                bytesWritten = noLockWriteEncodedHeaders(streamId, flags, maxFrameSize, batch);
+                if (windowUpdateWriteScheduled.get()) {
+                    if (batch != null) {
+                        writer.writeNow(batch[0]);
+                    }
+                    noLockDrainWindowUpdates();
+                    if (splitFrames.length == 1) {
+                        bytesWritten += noLockWriteData(dataFrame, flowControl);
+                    } else if (splitFrames.length == 2) {
+                        bytesWritten += noLockWriteData(splitFrames[0], flowControl);
+                    }
+                } else {
+                    if (batch == null) {
+                        if (writableFrame != null) {
+                            bytesWritten += noLockWriteData(writableFrame, flowControl);
+                        }
+                    } else {
+                        if (writableFrame != null) {
+                            batch[1] = noLockFrameBuffer(writableFrame);
+                        }
+                        writer.writeNow(BufferData.create(batch));
+                        if (writableFrame != null) {
+                            flowControl.decrementWindowSize(writableFrame.header().length());
+                            bytesWritten += frameBytes(writableFrame);
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                failWriter(t);
+                throw t;
+            }
+        } finally {
+            streamLock.unlock();
+        }
+
+        if (splitFrames.length == 1) {
+            runEndStreamCallback(dataFrame, onEndStreamFrameWritten);
+        } else {
+            Http2FrameData remainingFrame = splitFrames.length == 2 ? splitFrames[1] : dataFrame;
+            flowControl.blockTillUpdate();
+            bytesWritten += splitAndWrite(remainingFrame, flowControl, NO_OP, true);
+            runEndStreamCallback(dataFrame, onEndStreamFrameWritten);
+        }
         return bytesWritten;
     }
 
@@ -302,12 +319,29 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
+    private static void runEndStreamCallback(Http2FrameData frame, Runnable onEndStreamFrameWritten) {
+        if (frame.header().type() == Http2FrameType.DATA
+                && frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
+            onEndStreamFrameWritten.run();
+        }
+    }
+
+    private int writeDataAfterHeaders(Http2FrameData frame,
+                                      FlowControl.Outbound flowControl,
+                                      Runnable onEndStreamFrameWritten) {
+        int written = 0;
+        for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
+            written += splitAndWrite(f, flowControl, NO_OP, true);
+        }
+        runEndStreamCallback(frame, onEndStreamFrameWritten);
+        return written;
+    }
+
     private void lockedWrite(Http2FrameData frame) {
         boolean reset = frame.header().type() == Http2FrameType.RST_STREAM;
         long fenceGeneration = -1;
         lock();
         try {
-            throwIfWindowUpdateFailed();
             if (reset) {
                 List<Http2FrameData> windowUpdates = new ArrayList<>();
                 windowUpdateLock.lock();
@@ -329,7 +363,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             noLockWrite(frame);
         } catch (Throwable t) {
             if (reset) {
-                failWindowUpdatesAndClose(t);
+                failWriter(t);
             }
             throw t;
         } finally {
@@ -357,7 +391,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                     .start(this::drainWindowUpdates);
         } catch (RuntimeException | Error e) {
             windowUpdateWriteScheduled.set(false);
-            failWindowUpdatesAndClose(e);
+            failWriter(e);
             throw e;
         }
     }
@@ -371,11 +405,14 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 for (int i = 0; i < count && (frame = pollWindowUpdate()) != null; i++) {
                     noLockWrite(frame);
                 }
+            } catch (Throwable t) {
+                // Publish the terminal state while still owning streamLock so a waiting writer cannot slip through.
+                failWriter(t);
             } finally {
                 streamLock.unlock();
             }
         } catch (Throwable t) {
-            failWindowUpdatesAndClose(t);
+            failWriter(t);
         } finally {
             windowUpdateWriteScheduled.set(false);
             if (hasPendingWindowUpdates()) {
@@ -433,15 +470,17 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void failWindowUpdatesAndClose(Throwable failure) {
-        if (!windowUpdateFailure.compareAndSet(null, failure)) {
+    private void failWriter(Throwable failure) {
+        if (!terminalFailure.compareAndSet(null, failure)) {
             return;
         }
         clearWindowUpdates();
         try {
             writer.close();
         } catch (Throwable closeFailure) {
-            failure.addSuppressed(closeFailure);
+            if (closeFailure != failure) {
+                failure.addSuppressed(closeFailure);
+            }
         }
     }
 
@@ -454,10 +493,10 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void throwIfWindowUpdateFailed() {
-        Throwable failure = windowUpdateFailure.get();
+    private void throwIfTerminalFailure() {
+        Throwable failure = terminalFailure.get();
         if (failure != null) {
-            throw new IllegalStateException("Failed to write HTTP/2 window update", failure);
+            throw new IllegalStateException("HTTP/2 connection writer has failed", failure);
         }
     }
 
@@ -467,9 +506,19 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         } catch (InterruptedException e) {
             throw new IllegalStateException("Interrupted", e);
         }
+        try {
+            throwIfTerminalFailure();
+        } catch (Throwable t) {
+            streamLock.unlock();
+            throw t;
+        }
     }
 
     private void noLockWrite(Http2FrameData frame) {
+        writer.writeNow(noLockFrameBuffer(frame));
+    }
+
+    private BufferData noLockFrameBuffer(Http2FrameData frame) {
         Http2FrameHeader frameHeader = frame.header();
         int streamId = frameHeader.streamId();
         listener.frameHeader(ctx, streamId, frameHeader);
@@ -478,17 +527,117 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         listener.frameHeader(ctx, streamId, headerData);
 
         if (frameHeader.length() == 0) {
-            writer.writeNow(headerData);
+            return headerData;
+        }
+        BufferData data = frame.data().copy();
+        listener.frame(ctx, streamId, data);
+        return BufferData.create(headerData, data);
+    }
+
+    private int noLockWriteHeaders(Http2Headers headers,
+                                   int streamId,
+                                   Http2Flag.HeaderFlags flags,
+                                   int maxFrameSize) {
+        noLockEncodeHeaders(headers);
+        return noLockWriteEncodedHeaders(streamId, flags, maxFrameSize, null);
+    }
+
+    private void noLockEncodeHeaders(Http2Headers headers) {
+        headerBuffer.clear();
+        headers.write(outboundDynamicTable, responseHuffman, headerBuffer);
+    }
+
+    private int noLockWriteEncodedHeaders(int streamId,
+                                          Http2Flag.HeaderFlags flags,
+                                          int maxFrameSize,
+                                          BufferData[] batch) {
+        int written = 0;
+
+        // Fast path when headers fits within the SETTINGS_MAX_FRAME_SIZE
+        if (headerBuffer.available() <= maxFrameSize) {
+            Http2FrameHeader frameHeader = Http2FrameHeader.create(headerBuffer.available(),
+                                                                   Http2FrameTypes.HEADERS,
+                                                                   flags,
+                                                                   streamId);
+            written += frameHeader.length();
+            written += Http2FrameHeader.LENGTH;
+
+            noLockWrite(new Http2FrameData(frameHeader, headerBuffer), batch);
+            return written;
+        }
+
+        // Split header frame to smaller continuation frames RFC 9113 §6.10
+        BufferData[] fragments = Http2Headers.split(headerBuffer, maxFrameSize);
+
+        // First header fragment
+        BufferData fragment = fragments[0];
+        Http2FrameHeader frameHeader;
+        frameHeader = Http2FrameHeader.create(fragment.available(),
+                                              Http2FrameTypes.HEADERS,
+                                              Http2Flag.HeaderFlags.create(flags.endOfStream()
+                                                                                   ? Http2Flag.END_OF_STREAM
+                                                                                   : 0),
+                                              streamId);
+        written += frameHeader.length();
+        written += Http2FrameHeader.LENGTH;
+        noLockWrite(new Http2FrameData(frameHeader, fragment), batch);
+
+        // Header continuation fragments in the middle
+        for (int i = 1; i < fragments.length - 1; i++) {
+            fragment = fragments[i];
+            frameHeader = Http2FrameHeader.create(fragment.available(),
+                                                  Http2FrameTypes.CONTINUATION,
+                                                  Http2Flag.ContinuationFlags.create(0),
+                                                  streamId);
+            written += frameHeader.length();
+            written += Http2FrameHeader.LENGTH;
+            noLockWrite(new Http2FrameData(frameHeader, fragment), batch);
+        }
+
+        // Last header continuation fragment
+        fragment = fragments[fragments.length - 1];
+        frameHeader = Http2FrameHeader.create(fragment.available(),
+                                              Http2FrameTypes.CONTINUATION,
+                                              // Last fragment needs to indicate the end of headers
+                                              Http2Flag.ContinuationFlags.create(Http2Flag.END_OF_HEADERS),
+                                              streamId);
+        written += frameHeader.length();
+        written += Http2FrameHeader.LENGTH;
+        noLockWrite(new Http2FrameData(frameHeader, fragment), batch);
+        return written;
+    }
+
+    private void noLockWrite(Http2FrameData frame, BufferData[] batch) {
+        if (batch == null) {
+            noLockWrite(frame);
         } else {
-            BufferData data = frame.data().copy();
-            listener.frame(ctx, streamId, data);
-            writer.writeNow(BufferData.create(headerData, data));
+            batch[0] = noLockFrameBuffer(frame);
+        }
+    }
+
+    private void noLockDrainWindowUpdates() {
+        try {
+            int count = pendingWindowUpdateCount();
+            Http2FrameData frame;
+            for (int i = 0; i < count && (frame = pollWindowUpdate()) != null; i++) {
+                noLockWrite(frame);
+            }
+        } catch (Throwable t) {
+            failWriter(t);
+            throw t;
         }
     }
 
     private int splitAndWrite(Http2FrameData frame,
                               FlowControl.Outbound flowControl,
                               Runnable onEndStreamFrameWritten) {
+        return splitAndWrite(frame, flowControl, onEndStreamFrameWritten, false);
+    }
+
+    private int splitAndWrite(Http2FrameData frame,
+                              FlowControl.Outbound flowControl,
+                              Runnable onEndStreamFrameWritten,
+                              boolean terminateOnFailure) {
         int written = 0;
         Http2FrameData currFrame = frame;
         while (true) {
@@ -498,12 +647,17 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 splitFrames = flowControl.cut(currFrame);
                 if (splitFrames.length == 1) {
                     // windows are wide enough
-                    written += noLockWriteData(currFrame, flowControl, onEndStreamFrameWritten);
+                    written += noLockWriteData(currFrame, flowControl);
                     break;
                 } else if (splitFrames.length == 2) {
                     // write send-able part and block until window update with the rest
-                    written += noLockWriteData(splitFrames[0], flowControl, onEndStreamFrameWritten);
+                    written += noLockWriteData(splitFrames[0], flowControl);
                 }
+            } catch (Throwable t) {
+                if (terminateOnFailure) {
+                    failWriter(t);
+                }
+                throw t;
             } finally {
                 streamLock.unlock();
             }
@@ -515,18 +669,13 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 currFrame = splitFrames[1];
             }
         }
+        runEndStreamCallback(frame, onEndStreamFrameWritten);
         return written;
     }
 
-    private int noLockWriteData(Http2FrameData frame,
-                                FlowControl.Outbound flowControl,
-                                Runnable onEndStreamFrameWritten) {
+    private int noLockWriteData(Http2FrameData frame, FlowControl.Outbound flowControl) {
         noLockWrite(frame);
         flowControl.decrementWindowSize(frame.header().length());
-        if (frame.header().type() == Http2FrameType.DATA
-                && frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
-            onEndStreamFrameWritten.run();
-        }
         return frameBytes(frame);
     }
 

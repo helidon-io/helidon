@@ -160,6 +160,7 @@ class RapidResetTest {
 
             } catch (UncheckedIOException ex) {
                 assertThat(ex.getCause(), instanceOf(SocketException.class));
+                break;
             }
         }
         String http2GoAway = gotGoAway.get(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
