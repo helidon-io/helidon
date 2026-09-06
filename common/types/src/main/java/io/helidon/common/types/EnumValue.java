@@ -18,6 +18,8 @@ package io.helidon.common.types;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * When creating an {@link io.helidon.common.types.Annotation}, we may need to create an enum value
  * without access to the enumeration.
@@ -25,6 +27,7 @@ import java.util.Objects;
  * In such a case, you can use this type when calling
  * {@link io.helidon.common.types.Annotation.Builder#property(String, Object)}
  */
+@Api.Stable
 public interface EnumValue extends AnnotationProperty.ConstantValue {
 
     @Override

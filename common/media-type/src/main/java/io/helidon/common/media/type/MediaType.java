@@ -16,10 +16,13 @@
 
 package io.helidon.common.media.type;
 
+import io.helidon.common.Api;
+
 /**
  * Media type support and known media types.
  * @see io.helidon.common.media.type.MediaTypes
  */
+@Api.Stable
 public interface MediaType {
 
     /**

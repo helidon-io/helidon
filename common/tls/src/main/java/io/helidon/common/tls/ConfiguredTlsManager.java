@@ -56,6 +56,7 @@ import io.helidon.common.LazyValue;
 /**
  * The default configured {@link TlsManager} implementation.
  */
+@Api.Stable
 public class ConfiguredTlsManager implements TlsManager {
     private static final System.Logger LOGGER = System.getLogger(ConfiguredTlsManager.class.getName());
     // secure random cannot be stored in native image, it must

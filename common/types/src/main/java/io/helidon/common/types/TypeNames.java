@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
 import io.helidon.common.Size;
@@ -40,6 +41,7 @@ import io.helidon.common.Weight;
 /**
  * Commonly used type names.
  */
+@Api.Stable
 public final class TypeNames {
     /**
      * Type name for {@link java.lang.String}.

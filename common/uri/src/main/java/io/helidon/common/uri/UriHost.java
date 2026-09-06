@@ -20,12 +20,15 @@ import java.net.IDN;
 import java.util.Locale;
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * Normalized host value.
  * <p>
  * The value never contains a port or IPv6 brackets. DNS names are normalized to lower-case ASCII, IPv4 literals to
  * decimal dotted-quad form, and IPv6 literals to canonical compressed lower-case text form.
  */
+@Api.Stable
 public final class UriHost {
     private final String value;
     private final Kind kind;

@@ -20,9 +20,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
+import io.helidon.common.Api;
+
 /**
  * Support for handling {@link io.helidon.common.context.Context} across thread boundaries.
  */
+@Api.Stable
 public final class Contexts {
     private static final ScopedValue<Context> REGISTRY = ScopedValue.newInstance();
     // this is a very small memory overhead, with quite a big impact when a lot of new

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.Api;
+
 /**
  * Captures log records in memory for later retrieval.
  * <p>
@@ -30,6 +32,7 @@ import java.util.logging.Logger;
  *     test--using try-with-resource--will automatically clear the handler's log records and detach the handler from the logger.
  * </p>
  */
+@Api.Stable
 public class InMemoryLoggingHandler extends Handler implements AutoCloseable {
 
     /**

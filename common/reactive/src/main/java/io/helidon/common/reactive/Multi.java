@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
+
 /**
  * Represents a {@link Flow.Publisher} emitting zero or more items, optionally followed by
  * an error or completion.
@@ -46,6 +48,7 @@ import java.util.stream.Stream;
  * @param <T> item type
  * @see Single
  */
+@Api.Stable
 public interface Multi<T> extends Subscribable<T> {
 
     // --------------------------------------------------------------------------------------------------------

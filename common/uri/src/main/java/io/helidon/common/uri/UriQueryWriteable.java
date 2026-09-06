@@ -19,9 +19,12 @@ package io.helidon.common.uri;
 import java.util.List;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
+
 /**
  * Mutable HTTP query.
  */
+@Api.Stable
 public interface UriQueryWriteable extends UriQuery {
     /**
      * Create a new HTTP Query to write parameter into.

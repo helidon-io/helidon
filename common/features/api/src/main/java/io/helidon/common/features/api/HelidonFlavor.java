@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package io.helidon.common.features.api;
 
+import io.helidon.common.Api;
 import io.helidon.common.features.metadata.Flavor;
 
 /**
  * Flavors of Helidon.
  */
+@Api.Stable
 public enum HelidonFlavor {
     /**
      * The "Standard Edition" flavor.
@@ -37,6 +39,7 @@ public enum HelidonFlavor {
      * @param flavor metadata flavor (as loaded from JSON descriptor).
      * @return Helidon flavor that matches the metadata flavor (this is a simple copy)
      */
+    @Api.Internal
     public static HelidonFlavor map(Flavor flavor) {
         return switch (flavor) {
             case SE -> SE;

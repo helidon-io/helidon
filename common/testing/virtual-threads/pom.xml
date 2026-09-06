@@ -29,4 +29,12 @@
 
     <name>Helidon Virtual Threads Testing Utilities</name>
 
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
 </project>

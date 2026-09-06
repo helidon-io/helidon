@@ -30,6 +30,7 @@ import io.helidon.common.Api;
 /**
  * Wrapper around a byte array.
  */
+@Api.Stable
 public interface BufferData {
     /**
      * Empty byte array.

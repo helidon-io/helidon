@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Tag;
@@ -29,6 +30,7 @@ import io.helidon.service.registry.Service;
 /**
  * Contract for a concurrency limiter.
  */
+@Api.Preview
 @Service.Contract
 public interface Limit extends LimitAlgorithm, NamedService {
     /**

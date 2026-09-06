@@ -38,12 +38,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.common.LazyValue;
 
 /**
  * Create reactive stream from standard IO resources.
  */
+@Api.Stable
 public interface IoMulti {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package io.helidon.common.buffers;
 
+import io.helidon.common.Api;
+
 /**
  * Write data to the underlying transport (most likely a socket).
  * Do not combine {@link #write(io.helidon.common.buffers.BufferData)} and {@link #writeNow(io.helidon.common.buffers.BufferData)}
  * to a single underlying transport, unless you can guarantee there will not be a race between these two methods.
  */
+@Api.Stable
 public interface DataWriter extends AutoCloseable {
     /**
      * Write buffers, may delay writing and may write on a different thread.

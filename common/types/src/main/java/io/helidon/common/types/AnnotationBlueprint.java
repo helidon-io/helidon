@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * An annotation with defined values.
@@ -54,6 +55,7 @@ import io.helidon.builder.api.Prototype;
  *     <li>arrays - available as a {@link java.util.List} of values</li>
  * </ul>
  */
+@Api.Stable
 @Prototype.Blueprint(createEmptyPublic = false)
 @Prototype.CustomMethods(AnnotationSupport.class)
 @Prototype.Implement("java.lang.Comparable<Annotation>")

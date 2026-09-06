@@ -25,11 +25,13 @@ import javax.net.ssl.SSLParameters;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.tls.spi.TlsManagerProvider;
 
 /**
  * TLS configuration, used by web server listeners, web client and other components that need TLS.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = TlsConfigDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(TlsConfigSupport.CustomMethods.class)

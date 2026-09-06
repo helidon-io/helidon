@@ -24,12 +24,14 @@ import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 
 /**
  * Plain socket based on NIO {@link java.nio.channels.SocketChannel}.
  * This socket uses ByteBuffer for reading and writing.
  */
+@Api.Internal
 public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
     private static final int BUFFER_LENGTH = 8 * 1024;
 

@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.NativeImageHelper;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.metadata.Aot;
@@ -59,6 +60,7 @@ import io.helidon.common.features.metadata.Flavor;
  *   YAML
  * </pre>
  */
+@Api.Internal
 public final class HelidonFeatures {
     static final AtomicBoolean PRINTED = new AtomicBoolean();
     static final AtomicReference<HelidonFlavor> CURRENT_FLAVOR = new AtomicReference<>();

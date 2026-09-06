@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.common.buffers;
 
+import io.helidon.common.Api;
+
 /**
  * Extracted from Guava.
  * <p>
@@ -26,6 +28,7 @@ package io.helidon.common.buffers;
  * original author Gregory Kick
  * original since 7.0
  */
+@Api.Internal
 public final class Ascii {
 
     private Ascii() {

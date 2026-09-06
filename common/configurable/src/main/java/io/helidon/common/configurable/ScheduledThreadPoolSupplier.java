@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -32,6 +33,7 @@ import io.helidon.config.Config;
  * Supplier of a custom scheduled thread pool.
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
+@Api.Stable
 public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExecutorService>,
                                                           RuntimeType.Api<ScheduledThreadPoolConfig> {
 

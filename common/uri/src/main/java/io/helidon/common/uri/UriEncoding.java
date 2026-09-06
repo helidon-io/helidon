@@ -24,9 +24,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * Support for encoding and decoding of URI in HTTP.
  */
+@Api.Stable
 public final class UriEncoding {
     private static final char[] HEX_DIGITS = {
             '0', '1', '2', '3', '4', '5', '6', '7',

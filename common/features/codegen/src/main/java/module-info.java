@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
  * Codegen for metadata for Helidon features.
  */
 module io.helidon.common.features.codegen {
+
+    requires static io.helidon.common;
 
     requires io.helidon.codegen;
     requires io.helidon.metadata.hson;

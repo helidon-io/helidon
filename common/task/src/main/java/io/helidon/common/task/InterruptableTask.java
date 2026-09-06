@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,15 @@ package io.helidon.common.task;
 
 import java.util.concurrent.Callable;
 
+import io.helidon.common.Api;
+
 /**
  * An interruptable task that can implements both {@link Runnable} and
  * {@link Callable}.
  *
  * @param <T> type of value returned by task
  */
+@Api.Internal
 public interface InterruptableTask<T> extends Runnable, Callable<T> {
 
     /**

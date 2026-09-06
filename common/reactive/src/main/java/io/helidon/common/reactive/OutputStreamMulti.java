@@ -27,10 +27,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
+import io.helidon.common.Api;
+
 /**
  * Output stream that {@link java.util.concurrent.Flow.Publisher} publishes any data written to it as {@link java.nio.ByteBuffer}
  * events.
  */
+@Api.Stable
 public class OutputStreamMulti extends OutputStream implements Multi<ByteBuffer> {
 
     private static final int BUFFER_SIZE = 4 * 1024;

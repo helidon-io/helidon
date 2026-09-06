@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package io.helidon.common.buffers;
 
 import java.nio.charset.Charset;
 
+import io.helidon.common.Api;
+
 /**
  * String that materializes only when requested.
  */
+@Api.Internal
 public class LazyString {
     private static final boolean[] IS_OWS = new boolean[256];
     static {

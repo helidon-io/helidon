@@ -24,8 +24,9 @@
 module io.helidon.common.resumable {
     requires java.management;
 
+    requires static io.helidon.common;
+
     uses io.helidon.common.resumable.ResumableSupport;
 
-    // This will be an internal API
     exports io.helidon.common.resumable;
 }

@@ -42,6 +42,7 @@ import io.helidon.common.buffers.DataReader;
 /**
  * TLS NIO helidon socket.
  */
+@Api.Internal
 public final class TlsNioSocket extends NioSocket {
 
     private final Lock handshakeLock = new ReentrantLock();

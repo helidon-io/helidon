@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.helidon.common.pki;
 
+import io.helidon.common.Api;
+
 /**
  * Exception caused by PKI handling (keystores, keys, certificates).
  */
+@Api.Stable
 public class PkiException extends RuntimeException {
     PkiException(String message) {
         super(message);

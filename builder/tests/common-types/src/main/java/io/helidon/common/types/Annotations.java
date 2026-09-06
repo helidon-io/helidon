@@ -19,9 +19,12 @@ package io.helidon.common.types;
 import java.util.Collection;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Annotation utilities.
  */
+@Api.Stable
 public final class Annotations {
     /**
      * Override annotation.

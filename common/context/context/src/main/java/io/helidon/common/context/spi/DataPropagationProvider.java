@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.common.context.spi;
 
+import io.helidon.common.Api;
+
 /**
  * This is an SPI provider which helps user to propagate values from one thread to another.
  *
@@ -24,6 +26,7 @@ package io.helidon.common.context.spi;
  *
  * @param <T> an actual type of the data which will be propagated
  */
+@Api.Stable
 public interface DataPropagationProvider<T> {
 
     /**

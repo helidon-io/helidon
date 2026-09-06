@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.common.reactive;
 
+import io.helidon.common.Api;
+
 /**
  * A collector accumulates the items provided when {@link #collect(java.lang.Object)} is invoked and makes them available in a
  * single container object with {@link #value()}.
@@ -22,6 +24,7 @@ package io.helidon.common.reactive;
  * @param <T> collected items type (input)
  * @param <U> result container type (output)
  */
+@Api.Stable
 public interface Collector<T, U> {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.common.Api;
+
 /**
  * Makes intentional blocking when waiting for {@link CompletableFuture} more convenient with {@link Awaitable#await()}
  * and {@link Awaitable#await(long, java.util.concurrent.TimeUnit)} methods.
  *
  * @param <T> payload type
  */
+@Api.Stable
 public interface Awaitable<T> {
 
     /**

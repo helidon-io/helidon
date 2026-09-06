@@ -18,6 +18,8 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * If this exception is thrown from a limited task within
  * {@link Limit#call(java.util.concurrent.Callable)}, the
@@ -27,6 +29,7 @@ import java.util.Objects;
  * This exception should never be thrown by {@link Limit}, it should always
  * be translated to a proper return type, or actual exception.
  */
+@Api.Preview
 public class IgnoreTaskException extends RuntimeException {
     /**
      * Desired return value, if we want to ignore the result, yet we still provide valid response.

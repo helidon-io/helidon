@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 /**
@@ -35,6 +36,7 @@ import io.helidon.common.concurrency.limits.spi.LimitProvider;
 @Prototype.Blueprint
 @Prototype.Configured(value = FixedLimit.TYPE, root = false)
 @Prototype.Provides(LimitProvider.class)
+@Api.Preview
 interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit>, ClockConfig {
     /**
      * Number of permits to allow.

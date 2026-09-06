@@ -35,6 +35,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata-hson</artifactId>
         </dependency>

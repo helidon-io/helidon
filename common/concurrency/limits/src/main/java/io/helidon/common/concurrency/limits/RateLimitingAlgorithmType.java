@@ -16,9 +16,12 @@
 
 package io.helidon.common.concurrency.limits;
 
+import io.helidon.common.Api;
+
 /**
  * Rate limiting algorithms controlling the generation of tokens for requests.
  */
+@Api.Preview
 public enum RateLimitingAlgorithmType {
   /**
    * Requests require tokens from a bucket that fills over time.

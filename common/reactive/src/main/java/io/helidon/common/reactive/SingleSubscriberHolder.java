@@ -22,11 +22,14 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
+
 /**
  * A subscriber container that accepts only a single, one-time subscriber registration.
  *
  * @param <T> the type of the {@code Subscriber}
  */
+@Api.Stable
 public class SingleSubscriberHolder<T> {
     private static final IllegalStateException ALREADY_CLOSED = new IllegalStateException("Publisher already closed.");
     private static final IllegalStateException CANCELLED = new IllegalStateException("Canceled before any subscriber is "

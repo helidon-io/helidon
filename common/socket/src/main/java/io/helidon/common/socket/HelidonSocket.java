@@ -19,11 +19,13 @@ package io.helidon.common.socket;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 
 /**
  * Socket abstraction to allow usage of TLS or even non-socket transport.
  */
+@Api.Preview
 public interface HelidonSocket extends SocketContext, Supplier<byte[]> {
     /**
      * Close the underlying socket.

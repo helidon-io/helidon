@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -35,6 +36,7 @@ import io.helidon.config.Config;
  * <li>Value is permitted</li>
  * </ol>
  */
+@Api.Stable
 public class AllowList implements Predicate<String>, RuntimeType.Api<AllowListConfig> {
     private static final System.Logger LOGGER = System.getLogger(AllowList.class.getName());
     private static final String ALLOWED_MATCHED_LOG_FORMAT = "Value '%s' is allowed by %s";

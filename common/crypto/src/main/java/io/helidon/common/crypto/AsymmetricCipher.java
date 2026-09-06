@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Objects;
 
 import javax.crypto.Cipher;
 
+import io.helidon.common.Api;
 import io.helidon.common.Base64Value;
 
 /**
@@ -31,6 +32,7 @@ import io.helidon.common.Base64Value;
  * It requires to have a {@link PrivateKey} provided for decryption purposes and
  * a {@link PublicKey} for encryption purposes.
  */
+@Api.Stable
 public class AsymmetricCipher implements CommonCipher {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
+import io.helidon.common.Api;
 
 /**
  * Represents a {@link Flow.Publisher} that may: signal one item then completes, complete without
@@ -43,6 +44,7 @@ import java.util.logging.Level;
  * @param <T> item type
  * @see Multi
  */
+@Api.Stable
 public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitable<T> {
 
     // --------------------------------------------------------------------------------------------------------

@@ -18,6 +18,8 @@ package io.helidon.common.testing.junit5;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import io.helidon.common.Api;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -25,6 +27,7 @@ import org.hamcrest.TypeSafeMatcher;
 /**
  * Hamcrest matchers for {@link java.nio.file.Path}.
  */
+@Api.Stable
 public final class FileMatchers {
     private FileMatchers() {
     }

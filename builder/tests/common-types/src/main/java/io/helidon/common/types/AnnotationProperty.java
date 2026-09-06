@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * A property of an annotation.
  * A property has a value. It may also contain a reference to a constant that defines its value, for example
@@ -27,6 +29,7 @@ import java.util.Objects;
  * <p>
  * Support types are defined on {@link io.helidon.common.types.Annotation}.
  */
+@Api.Stable
 public interface AnnotationProperty {
     /**
      * Create a new annotation property.

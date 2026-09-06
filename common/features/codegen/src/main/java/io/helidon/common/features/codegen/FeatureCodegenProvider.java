@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import java.util.Set;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
  * Service provider implementation for {@link io.helidon.codegen.spi.CodegenExtensionProvider}.
  */
+@Api.Internal
 public class FeatureCodegenProvider implements CodegenExtensionProvider {
     /**
      * Public constructor required by {@link java.util.ServiceLoader}.

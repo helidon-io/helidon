@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.common.reactive;
 
+import io.helidon.common.Api;
+
 /**
  * Defines delay for next read/poll operation in a polling {@link java.util.concurrent.Flow.Publisher publisher}.
  * <p>
@@ -24,6 +26,7 @@ package io.helidon.common.reactive;
  * It is possible to use included static factory methods for some standard schemas.
  */
 @FunctionalInterface
+@Api.Stable
 public interface RetrySchema {
 
     /**

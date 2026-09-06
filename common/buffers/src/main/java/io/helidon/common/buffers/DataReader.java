@@ -23,9 +23,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 /**
  * Data reader that can pull additional data.
  */
+@Api.Stable
 public class DataReader {
     private final Supplier<byte[]> bytesSupplier;
     private final boolean ignoreLoneEol;

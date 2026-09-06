@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.common.types;
 
 import java.util.List;
+
+import io.helidon.common.Api;
 
 /**
  * Signature of a {@link io.helidon.common.types.TypedElementInfo}.
@@ -41,6 +43,7 @@ import java.util.List;
  *
  * @see #text()
  */
+@Api.Stable
 public sealed interface ElementSignature permits ElementSignatures.FieldSignature,
                                                  ElementSignatures.MethodSignature,
                                                  ElementSignatures.ParameterSignature,
