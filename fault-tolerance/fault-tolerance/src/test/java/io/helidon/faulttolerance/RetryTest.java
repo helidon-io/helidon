@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,11 @@ class RetryTest {
     @Test
     public void testLastDelay() {
         List<Long> lastDelayCalls = new ArrayList<>();
+        List<Integer> callIndices = new ArrayList<>();
         Retry retry = Retry.builder()
                 .retryPolicy((firstCallMillis, lastDelay, call) -> {
                     lastDelayCalls.add(lastDelay);
+                    callIndices.add(call);
                     return Optional.of(lastDelay + 1);
                 })
                 .build();
@@ -46,6 +48,7 @@ class RetryTest {
         assertThat(req.call.get(), is(4));
 
         assertThat("Last delay should increase", lastDelayCalls, contains(0L, 1L, 2L));
+        assertThat("Call is the number of completed attempts", callIndices, contains(1, 2, 3));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Configuration of a circuit breaker.
  */
-@Prototype.Blueprint(decorator = CircuitBreakerConfigBlueprint.BuilderDecorator.class)
+@Prototype.Blueprint(decorator = FtBuilderSupport.CircuitBreakerBuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.circuit-breakers")
 interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker> {
     /**
@@ -132,13 +132,4 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
     @Option.DefaultBoolean(false)
     boolean enableMetrics();
 
-    class BuilderDecorator implements Prototype.BuilderDecorator<CircuitBreakerConfig.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(CircuitBreakerConfig.BuilderBase<?, ?> target) {
-            if (target.name().isEmpty()) {
-                target.config()
-                        .ifPresent(cfg -> target.name(cfg.name()));
-            }
-        }
-    }
 }

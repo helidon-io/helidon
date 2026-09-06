@@ -26,6 +26,7 @@ import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.Annotation;
+import io.helidon.config.Config;
 import io.helidon.faulttolerance.Ft;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.metrics.api.Gauge;
@@ -39,7 +40,9 @@ import io.helidon.tracing.Tracing;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class FactoryProvidedContractAnnotationsCodegenTest {
@@ -48,6 +51,7 @@ class FactoryProvidedContractAnnotationsCodegenTest {
             GenericType.class,
             Annotation.class,
             Prototype.class,
+            Config.class,
             Service.class,
             Ft.class,
             Retry.class,
@@ -59,6 +63,44 @@ class FactoryProvidedContractAnnotationsCodegenTest {
             Span.class,
             Tracer.class
     );
+
+    @Test
+    void testRetryUsesCanonicalConfig() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("RetriedService.java", """
+                        package com.example;
+
+                        import io.helidon.faulttolerance.Ft;
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        class RetriedService {
+                            @Ft.Retry(calls = 7,
+                                      delay = "PT0.1S",
+                                      delayFactor = 2,
+                                      jitterFactor = 0.2,
+                                      maxDelay = "PT5S",
+                                      overallTimeout = "PT1M")
+                            String value() {
+                                return "value";
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = Files.readString(result.sourceOutput().resolve("com/example/RetriedService_value__Retry.java"));
+        assertThat(generated, containsString("RetryConfig.builder()"));
+        assertThat(generated, containsString(".jitterFactor(0.2)"));
+        assertThat(generated, containsString(".maxDelay(Duration.parse(\"PT5S\"))"));
+        assertThat(generated, not(containsString("DelayingRetryPolicy.builder()")));
+    }
 
     @Test
     void testSupplierProvidedFtContractDoesNotGenerateInterceptor() throws IOException {

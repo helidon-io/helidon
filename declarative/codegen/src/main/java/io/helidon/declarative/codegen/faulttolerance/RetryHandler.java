@@ -174,55 +174,18 @@ final class RetryHandler extends FtHandler {
                                                  RETRY_ANNOTATION,
                                                  "jitter",
                                                  annotation.stringValue("jitter").orElse("PT-1S"));
+        double jitterFactor = annotation.doubleValue("jitterFactor").orElse(-1.0);
+        String maxDelayDuration = validateDuration(typeName,
+                                                   element,
+                                                   RETRY_ANNOTATION,
+                                                   "maxDelay",
+                                                   annotation.stringValue("maxDelay").orElse("PT-1S"));
         String overallTimeoutDuration = validateDuration(typeName,
                                                          element,
                                                          RETRY_ANNOTATION,
                                                          "overallTimeout",
                                                          annotation.stringValue("overallTimeout").orElse("PT1S"));
 
-        /*
-        First build the retry policy
-         */
-        builder.addContent("var policy = ")
-                .addContent(RETRY)
-                .addContent(".");
-
-        if (jitterDuration.equals("PT-1S") || delayFactor > 0) {
-            delayFactor = delayFactor > 0 ? delayFactor : 2.0;
-            // delaying
-            builder.addContentLine("DelayingRetryPolicy.builder()")
-                    .increaseContentPadding()
-                    .increaseContentPadding()
-                    .addContent(".delayFactor(")
-                    .addContent(String.valueOf(delayFactor))
-                    .addContentLine(")");
-        } else {
-            // jittery
-            builder.addContentLine("JitterRetryPolicy.builder()")
-                    .increaseContentPadding()
-                    .increaseContentPadding()
-                    .addContent(".jitter(")
-                    .addContent(Duration.class)
-                    .addContent(".parse(\"")
-                    .addContent(jitterDuration)
-                    .addContentLine("\"))");
-        }
-        builder.addContent(".calls(")
-                .addContent(String.valueOf(calls))
-                .addContentLine(")");
-        builder.addContent(".delay(")
-                .addContent(Duration.class)
-                .addContent(".parse(\"")
-                .addContent(delayDuration)
-                .addContentLine("\"))");
-        builder.addContentLine(".build();")
-                .decreaseContentPadding()
-                .decreaseContentPadding();
-        builder.addContentLine();
-
-        /*
-        Now build the retry itself
-         */
         builder.addContent("return ")
                 .addContent(RETRY_CONFIG)
                 .addContentLine(".builder()")
@@ -230,8 +193,33 @@ final class RetryHandler extends FtHandler {
                 .increaseContentPadding()
                 .addContentLine(".applyOn(APPLY_ON)")
                 .addContentLine(".skipOn(SKIP_ON)")
-                .addContentLine(".retryPolicy(policy)")
-                .addContent(".overallTimeout(")
+                .addContent(".calls(")
+                .addContent(String.valueOf(calls))
+                .addContentLine(")")
+                .addContent(".delay(")
+                .addContent(Duration.class)
+                .addContent(".parse(\"")
+                .addContent(delayDuration)
+                .addContentLine("\"))")
+                .addContent(".delayFactor(")
+                .addContent(String.valueOf(delayFactor))
+                .addContentLine(")")
+                .addContent(".jitter(")
+                .addContent(Duration.class)
+                .addContent(".parse(\"")
+                .addContent(jitterDuration)
+                .addContentLine("\"))")
+                .addContent(".jitterFactor(")
+                .addContent(String.valueOf(jitterFactor))
+                .addContentLine(")");
+        if (!Duration.parse(maxDelayDuration).equals(Duration.ofSeconds(-1))) {
+            builder.addContent(".maxDelay(")
+                    .addContent(Duration.class)
+                    .addContent(".parse(\"")
+                    .addContent(maxDelayDuration)
+                    .addContentLine("\"))");
+        }
+        builder.addContent(".overallTimeout(")
                 .addContent(Duration.class)
                 .addContent(".parse(\"")
                 .addContent(overallTimeoutDuration)

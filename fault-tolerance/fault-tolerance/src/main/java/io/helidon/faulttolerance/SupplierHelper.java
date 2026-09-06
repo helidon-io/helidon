@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,10 @@ public class SupplierHelper {
     }
 
     /**
-     * Maps a supplier returning a {@code CompletionStage<T>} to a supplier returning {@code T}
-     * by waiting on the stage to produce a value.
+     * Maps a supplier returning a {@code CompletionStage<T>} to a supplier returning {@code T} by waiting on the stage;
+     * interruption of the calling thread during that wait restores its interrupt status before propagation as
+     * {@link SupplierException}, while an {@link InterruptedException} reported by the stage does not modify the calling
+     * thread's interrupt status.
      *
      * @param supplier the async supplier
      * @param timeout time to wait
@@ -45,6 +47,9 @@ public class SupplierHelper {
             try {
                 CompletionStage<T> result = supplier.get();
                 return result.toCompletableFuture().get(timeout, unit);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw toRuntimeException(e);
             } catch (Throwable t) {
                 Throwable throwable = unwrapThrowable(t);
                 throw toRuntimeException(throwable);

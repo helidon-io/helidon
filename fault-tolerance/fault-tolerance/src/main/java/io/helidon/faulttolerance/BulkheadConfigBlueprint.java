@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.builder.api.Prototype;
  * {@link Bulkhead} configuration bean.
  */
 @Prototype.Configured("fault-tolerance.bulkheads")
-@Prototype.Blueprint(decorator = BulkheadConfigBlueprint.BuilderDecorator.class)
+@Prototype.Blueprint(decorator = FtBuilderSupport.BulkheadBuilderDecorator.class)
 interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
     /**
      * Default limit.
@@ -91,13 +91,4 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
     @Option.DefaultBoolean(false)
     boolean enableMetrics();
 
-    class BuilderDecorator implements Prototype.BuilderDecorator<BulkheadConfig.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(BulkheadConfig.BuilderBase<?, ?> target) {
-            if (target.name().isEmpty()) {
-                target.config()
-                        .ifPresent(cfg -> target.name(cfg.name()));
-            }
-        }
-    }
 }

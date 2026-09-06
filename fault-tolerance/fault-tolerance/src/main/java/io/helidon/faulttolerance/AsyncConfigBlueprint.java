@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * {@link Async} configuration bean.
  */
-@Prototype.Blueprint(decorator = AsyncConfigBlueprint.BuilderDecorator.class)
+@Prototype.Blueprint(decorator = FtBuilderSupport.AsyncBuilderDecorator.class)
 @Prototype.Configured
 interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
     /**
@@ -59,13 +59,4 @@ interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
      */
     Optional<CompletableFuture<Async>> onStart();
 
-    class BuilderDecorator implements Prototype.BuilderDecorator<AsyncConfig.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(AsyncConfig.BuilderBase<?, ?> target) {
-            if (target.name().isEmpty()) {
-                target.config()
-                        .ifPresent(cfg -> target.name(cfg.name()));
-            }
-        }
-    }
 }
