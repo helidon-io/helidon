@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("WebClient HTTP/3 support")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"WebClient", "HTTP/3"})
-@Features.Preview
+@Features.Incubating
 module io.helidon.webclient.http3 {
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
