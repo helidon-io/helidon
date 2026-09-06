@@ -26,7 +26,7 @@ Configuration for server.features.security.security.providers.oidc.tenants.jwk-l
 <td>
 <code>Circuit<wbr>Breaker</code>
 </td>
-<td>Configure circuit breaker behavior used while loading OIDC metadata and signing JWK</td>
+<td>Circuit breaker used while loading OIDC metadata and signing JWK</td>
 </tr>
 <tr>
 <td>
@@ -38,7 +38,7 @@ Configuration for server.features.security.security.providers.oidc.tenants.jwk-l
 <td>
 <code>Retry</code>
 </td>
-<td>Configure retry behavior used while loading OIDC metadata and signing JWK</td>
+<td>Retry used while loading OIDC metadata and signing JWK</td>
 </tr>
 </tbody>
 </table>

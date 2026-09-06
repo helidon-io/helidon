@@ -26,7 +26,7 @@ Configuration for security.providers.jwt.jwk-loader
 <td>
 <code>Circuit<wbr>Breaker</code>
 </td>
-<td>Circuit breaker configuration used when loading verification keys from a filesystem path or URI</td>
+<td>Circuit breaker used when loading verification keys from a filesystem path or URI</td>
 </tr>
 <tr>
 <td>
@@ -38,7 +38,7 @@ Configuration for security.providers.jwt.jwk-loader
 <td>
 <code>Retry</code>
 </td>
-<td>Retry configuration used when loading verification keys from a filesystem path or URI</td>
+<td>Retry used when loading verification keys from a filesystem path or URI</td>
 </tr>
 </tbody>
 </table>
