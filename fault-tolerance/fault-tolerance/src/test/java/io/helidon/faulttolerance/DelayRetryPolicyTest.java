@@ -68,6 +68,21 @@ class DelayRetryPolicyTest {
     }
 
     @Test
+    void testZeroFactorDoesNotResetToBaseDelay() {
+        Retry.DelayingRetryPolicy policy = Retry.DelayingRetryPolicy.builder()
+                .delay(Duration.ofMillis(100))
+                .calls(4)
+                .delayFactor(0)
+                .build();
+
+        long firstCall = System.currentTimeMillis();
+
+        assertThat(policy.nextDelayMillis(firstCall, 0, 1), optionalValue(is(100L)));
+        assertThat(policy.nextDelayMillis(firstCall, 100, 2), optionalValue(is(0L)));
+        assertThat(policy.nextDelayMillis(firstCall, 0, 3), optionalValue(is(0L)));
+    }
+
+    @Test
     void testNoDelay() {
         Retry.DelayingRetryPolicy policy = Retry.DelayingRetryPolicy.builder()
                 .delay(Duration.ZERO)
