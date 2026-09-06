@@ -376,7 +376,8 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
                                                     Duration readTimeout) {
         Http2Headers headers = readHeaders(stream, readTimeout);
 
-        ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
+        ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders(),
+                                                                              clientConfig.mediaTypeParserMode());
         this.responseStatus = headers.status();
         captureProtocolResponse(responseStatus, responseHeaders);
 

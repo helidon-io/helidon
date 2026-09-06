@@ -19,9 +19,12 @@ package io.helidon.webclient.http2;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequestBase;
@@ -34,6 +37,9 @@ import io.helidon.webclient.http1.Http1Client;
 
 class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse>
         implements Http2ClientRequest, Http2StreamConfig, FullClientRequest<Http2ClientRequest> {
+    // RFC 9110, section 8.1: these define the replayed representation data's format and encoding.
+    private static final Set<HeaderName> REPRESENTATION_HEADERS = Set.of(HeaderNames.CONTENT_TYPE,
+                                                                         HeaderNames.CONTENT_ENCODING);
 
     private final Http2ClientImpl http2Client;
     private int priority = 16;
@@ -89,7 +95,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     Http2ClientRequestImpl(Http2ClientRequestImpl request,
                            Method method,
                            ClientUri clientUri,
-                           Map<String, String> properties) {
+                           Map<String, String> properties,
+                           boolean preserveEntity) {
         this(request.http2Client,
              request.delegate,
              method,
@@ -117,6 +124,9 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.readContinueTimeout(request.readContinueTimeout());
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         this.outputStreamRedirect(request.outputStreamRedirect);
+        if (preserveEntity) {
+            REPRESENTATION_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
+        }
     }
 
     @Override

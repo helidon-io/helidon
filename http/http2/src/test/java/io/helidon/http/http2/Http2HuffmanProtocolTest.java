@@ -51,8 +51,8 @@ class Http2HuffmanProtocolTest {
     }
 
     @Test
-    void preservesLowByteEncodingCompatibility() {
-        assertArrayEquals(encode("abca"), encode("abc\u0161"));
+    void rejectsCharactersAboveLatin1() {
+        assertThrows(IllegalArgumentException.class, () -> encode("abc\u0161"));
     }
 
     private static byte[] encode(String value) {

@@ -16,7 +16,7 @@
 
 package io.helidon.http.http2;
 
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.HuffmanCodec;
@@ -42,37 +42,43 @@ public class Http2HuffmanEncoder {
         return new Http2HuffmanEncoder();
     }
 
+    static byte[] encodeLatin1(String value) {
+        return value.getBytes(StandardCharsets.ISO_8859_1);
+    }
+
+    static void validateLatin1(String value) {
+        int length = value.length();
+        int i = 0;
+        for (; i + 3 < length; i += 4) {
+            int characters = value.charAt(i)
+                    | value.charAt(i + 1)
+                    | value.charAt(i + 2)
+                    | value.charAt(i + 3);
+            if ((characters & 0xff00) != 0) {
+                throw new IllegalArgumentException("Header value contains a character above 0xff");
+            }
+        }
+        for (; i < length; i++) {
+            if (value.charAt(i) > 0xff) {
+                throw new IllegalArgumentException("Header value contains a character above 0xff");
+            }
+        }
+    }
+
     void encode(BufferData buffer, String string) {
-        CharSequence value = new Latin1View(string);
+        validateLatin1(string);
+        encodeValidated(buffer, string);
+    }
+
+    void encodeValidated(BufferData buffer, String string) {
         byte[] bytes = new byte[string.length()];
-        int encodedLength = HuffmanCodec.encode(value, bytes);
+        int encodedLength = HuffmanCodec.encode(string, bytes);
         if (encodedLength == -1) {
-            bytes = new byte[HuffmanCodec.encodedLength(value)];
-            encodedLength = HuffmanCodec.encode(value, bytes);
+            bytes = new byte[HuffmanCodec.encodedLength(string)];
+            encodedLength = HuffmanCodec.encode(string, bytes);
         }
 
         buffer.writeHpackInt(encodedLength, HUFFMAN_ENCODED, 7);
         buffer.write(bytes, 0, encodedLength);
-    }
-
-    private record Latin1View(String value) implements CharSequence {
-        private Latin1View {
-            Objects.requireNonNull(value, "value");
-        }
-
-        @Override
-        public int length() {
-            return value.length();
-        }
-
-        @Override
-        public char charAt(int index) {
-            return (char) (value.charAt(index) & 0xFF);
-        }
-
-        @Override
-        public CharSequence subSequence(int start, int end) {
-            return new Latin1View(value.substring(start, end));
-        }
     }
 }

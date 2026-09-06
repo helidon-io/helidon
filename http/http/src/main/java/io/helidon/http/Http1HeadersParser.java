@@ -85,7 +85,7 @@ public final class Http1HeadersParser {
                 headerValue = connectionHeaderValue(reader, eol);
             } else {
                 // we do not need the string until somebody asks for this header (unless validation is on)
-                LazyString value = reader.readLazyString(StandardCharsets.US_ASCII, eol);
+                LazyString value = reader.readLazyString(StandardCharsets.ISO_8859_1, eol);
                 headerValue = HeaderValues.create(header, value);
             }
             reader.skip(2);
@@ -115,7 +115,8 @@ public final class Http1HeadersParser {
             return HeaderValues.CONNECTION_CLOSE;
         }
         // some other (unexpected) combination
-        return HeaderValues.create(HeaderNames.CONNECTION, new LazyString(bytes, 0, bytes.length, StandardCharsets.US_ASCII));
+        return HeaderValues.create(HeaderNames.CONNECTION,
+                                   new LazyString(bytes, 0, bytes.length, StandardCharsets.ISO_8859_1));
     }
 
     private static boolean isKeepAlive(byte[] buffer) {

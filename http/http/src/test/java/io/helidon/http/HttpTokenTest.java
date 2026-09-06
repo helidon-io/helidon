@@ -18,6 +18,8 @@ package io.helidon.http;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,10 +44,12 @@ class HttpTokenTest {
     }
 
     private static void assertValid(String token) {
+        assertThat(HttpToken.isValid(token), is(true));
         assertDoesNotThrow(() -> HttpToken.validate(token));
     }
 
     private static void assertInvalid(String token) {
+        assertThat(HttpToken.isValid(token), is(false));
         assertThrows(IllegalArgumentException.class, () -> HttpToken.validate(token));
     }
 }

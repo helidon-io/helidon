@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http2HeadersTest {
     private static final HeaderName CUSTOM_HEADER_NAME = HeaderNames.create("custom-key");
+    private static final Method CUSTOM_METHOD = Method.create("SEARCH");
 
     /*
     https://www.rfc-editor.org/rfc/rfc7541.html#appendix-C.2.1
@@ -187,6 +188,91 @@ class Http2HeadersTest {
         buffer.read(actual);
 
         assertThat(actual, is(expected));
+    }
+
+    @Test
+    void testLatin1HeaderValueRoundTrip() {
+        assertHeaderValueRoundTrip("\u0080\u00ff");
+        assertHeaderValueRoundTrip("a\u0080\u00ffb");
+    }
+
+    @Test
+    void testRejectsNonLatin1ValueBeforeWritingOrIndexing() {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        BufferData buffer = BufferData.growing(32);
+        Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create()
+                                                               .add(HeaderNames.CONTENT_TYPE, "text/plain")
+                                                               .add(CUSTOM_HEADER_NAME, "\u0100"))
+                .method(CUSTOM_METHOD)
+                .scheme("https")
+                .path("/");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> http2Headers.write(dynamicTable, Http2HuffmanEncoder.create(), buffer));
+        assertThat(dynamicTable.currentTableSize(), is(0));
+        assertThat(buffer.available(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"custom-\u0080", ":custom", ":bad\u0100"})
+    void testRejectsInvalidHeaderNameBeforeWritingOrIndexing(String invalidName) {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        BufferData buffer = BufferData.growing(32);
+        Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create()
+                                                               .add(HeaderNames.CONTENT_TYPE, "text/plain")
+                                                               .add(HeaderNames.create(invalidName), "value"))
+                .method(CUSTOM_METHOD)
+                .scheme("https")
+                .path("/");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> http2Headers.write(dynamicTable, Http2HuffmanEncoder.create(), buffer));
+        assertThat(dynamicTable.currentTableSize(), is(0));
+        assertThat(buffer.available(), is(0));
+    }
+
+    @Test
+    void testFailedHeaderEncodingDoesNotPoisonNextHeaderBlock() {
+        DynamicTable outboundTable = DynamicTable.create(Http2Settings.create());
+        Http2HuffmanEncoder encoder = Http2HuffmanEncoder.create();
+        Http2Headers rejected = Http2Headers.create(WritableHeaders.create()
+                                                            .add(HeaderNames.HOST, "invalid-\u0100.example")
+                                                            .add(HeaderNames.CONTENT_TYPE, "text/plain"))
+                .method(CUSTOM_METHOD)
+                .scheme("https")
+                .path("/");
+
+        rejected.validateRequest();
+
+        BufferData rejectedBlock = BufferData.growing(64);
+        assertThrows(IllegalArgumentException.class,
+                     () -> rejected.write(outboundTable, encoder, rejectedBlock));
+        assertThat(outboundTable.currentTableSize(), is(0));
+        assertThat(rejectedBlock.available(), is(0));
+
+        BufferData nextBlock = BufferData.growing(64);
+        Http2Headers.create(WritableHeaders.create()
+                                    .add(HeaderNames.HOST, "example.com")
+                                    .add(HeaderNames.CONTENT_TYPE, "text/plain"))
+                .method(CUSTOM_METHOD)
+                .scheme("https")
+                .path("/")
+                .write(outboundTable, encoder, nextBlock);
+
+        DynamicTable inboundTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers decoded = headers(HexFormat.of().formatHex(nextBlock.readBytes()), inboundTable);
+
+        assertThat(decoded.method(), is(CUSTOM_METHOD));
+    }
+
+    @Test
+    void testRejectsNonAsciiLiteralHeaderName() {
+        String hexEncoded = "40 01 80 01 61";
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> headers(hexEncoded, dynamicTable));
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
     }
 
     @Test
@@ -608,6 +694,19 @@ class Http2HeadersTest {
                                    dynamicTable,
                                    Http2HuffmanDecoder.create(),
                                    new Http2FrameData(header, data));
+    }
+
+    private void assertHeaderValueRoundTrip(String value) {
+        DynamicTable outboundTable = DynamicTable.create(Http2Settings.create());
+        BufferData buffer = BufferData.growing(32);
+        Http2Headers outbound = Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, value));
+        outbound.write(outboundTable, Http2HuffmanEncoder.create(), buffer);
+
+        String encoded = HexFormat.of().formatHex(buffer.readBytes());
+        DynamicTable inboundTable = DynamicTable.create(Http2Settings.create());
+        Headers decoded = headers(encoded, inboundTable).httpHeaders();
+
+        assertThat(decoded.get(CUSTOM_HEADER_NAME).get(), is(value));
     }
 
     private static String requestHeaders(String authority, String... hostValues) {

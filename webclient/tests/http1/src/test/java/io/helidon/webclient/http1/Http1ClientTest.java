@@ -78,6 +78,7 @@ class Http1ClientTest {
     private static final Header REQ_EXPECT_100_HEADER_NAME = HeaderValues.createCached(
             HeaderNames.create("X-Req-Expect100"), "true");
     private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
+    private static final HeaderName ENTITY_METADATA_HEADER = HeaderNames.create("X-Entity-Metadata");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
     private static final long NO_CONTENT_LENGTH = -1L;
 
@@ -95,7 +96,12 @@ class Http1ClientTest {
     static void routing(HttpRules rules) {
         rules.put("/test", Http1ClientTest::responseHandler);
         rules.put("/redirectKeepMethod", Http1ClientTest::redirectKeepMethod);
+        rules.put("/redirectChainStart", Http1ClientTest::redirectChainStart);
+        rules.put("/redirectChainSecond", Http1ClientTest::redirectChainSecond);
+        rules.put("/redirectChainFinal", Http1ClientTest::redirectChainFinal);
         rules.put("/redirect", Http1ClientTest::redirect);
+        rules.get("/redirectDropEntity", Http1ClientTest::redirectDropEntity);
+        rules.get("/afterDropEntity", Http1ClientTest::afterDropEntity);
         rules.get("/afterRedirect", Http1ClientTest::afterRedirectGet);
         rules.put("/afterRedirect", Http1ClientTest::afterRedirectPut);
         rules.put("/chunkresponse", Http1ClientTest::chunkResponseHandler);
@@ -404,9 +410,37 @@ class Http1ClientTest {
         }
 
         try (HttpClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(ENTITY_METADATA_HEADER, "drop")
                 .submit("Test entity")) {
             assertThat(response.lastEndpointUri().path().path(), is("/afterRedirect"));
             assertThat(response.status(), is(Status.NO_CONTENT_204));
+        }
+    }
+
+    @Test
+    void testSameMethodRedirectDropsEntityHeaders() {
+        try (HttpClientResponse response = injectedHttp1client.get("/redirectDropEntity")
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(ENTITY_METADATA_HEADER, "drop")
+                .submit("Test entity")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("GET without entity metadata"));
+        }
+    }
+
+    @Test
+    void testOutputStreamChainedRedirectsWithCustomReasonPhrases() {
+        try (HttpClientResponse response = injectedHttp1client.put("/redirectChainStart")
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(ENTITY_METADATA_HEADER, "drop")
+                .sendExpectContinue(true)
+                .outputStream(output -> {
+                    output.write("Test entity".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Test entity"));
         }
     }
 
@@ -486,6 +520,43 @@ class Http1ClientTest {
                 .send();
     }
 
+    private static void redirectDropEntity(ServerRequest req, ServerResponse res) {
+        res.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, "/afterDropEntity")
+                .send();
+    }
+
+    private static void afterDropEntity(ServerRequest req, ServerResponse res) {
+        if (req.content().hasEntity()
+                || req.headers().contains(HeaderNames.CONTENT_TYPE)
+                || req.headers().contains(ENTITY_METADATA_HEADER)) {
+            res.status(Status.BAD_REQUEST_400).send("Entity metadata was preserved");
+            return;
+        }
+        res.send("GET without entity metadata");
+    }
+
+    private static void redirectChainStart(ServerRequest req, ServerResponse res) {
+        res.status(Status.create(307, "Custom Temporary Redirect"))
+                .header(HeaderNames.LOCATION, "/redirectChainSecond")
+                .send();
+    }
+
+    private static void redirectChainSecond(ServerRequest req, ServerResponse res) {
+        res.status(Status.create(308, "Custom Permanent Redirect"))
+                .header(HeaderNames.LOCATION, "/redirectChainFinal")
+                .send();
+    }
+
+    private static void redirectChainFinal(ServerRequest req, ServerResponse res) {
+        if (req.headers().contains(ENTITY_METADATA_HEADER)
+                || !req.headers().contains(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)) {
+            res.status(Status.BAD_REQUEST_400).send("Unexpected redirected request headers");
+            return;
+        }
+        res.send(req.content().as(String.class));
+    }
+
     private static void afterRedirectGet(ServerRequest req, ServerResponse res) {
         if (req.content().hasEntity()) {
             res.status(Status.BAD_REQUEST_400)
@@ -496,6 +567,11 @@ class Http1ClientTest {
     }
 
     private static void afterRedirectPut(ServerRequest req, ServerResponse res) {
+        if (req.headers().contains(ENTITY_METADATA_HEADER)
+                || !req.headers().contains(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)) {
+            res.status(Status.BAD_REQUEST_400).send("Unexpected redirected request headers");
+            return;
+        }
         String entity = req.content().as(String.class);
         if (!entity.equals("Test entity")) {
             res.status(Status.BAD_REQUEST_400)

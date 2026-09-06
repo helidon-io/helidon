@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,10 +109,11 @@ final class HttpMediaTypeImpl implements HttpMediaType {
     public String text() {
         StringBuilder result = new StringBuilder(mediaType.text());
         for (Map.Entry<String, String> param : parameters.entrySet()) {
+            HttpToken.validate(param.getKey());
             result.append("; ")
                     .append(param.getKey())
-                    .append('=')
-                    .append(param.getValue());
+                    .append('=');
+            appendParameterValue(result, param.getValue());
         }
         return result.toString();
     }
@@ -136,6 +137,35 @@ final class HttpMediaTypeImpl implements HttpMediaType {
     @Override
     public String toString() {
         return text();
+    }
+
+    private static void appendParameterValue(StringBuilder target, String value) {
+        Objects.requireNonNull(value);
+        if (HttpToken.isValid(value)) {
+            target.append(value);
+            return;
+        }
+
+        target.append('"');
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (ch == '"' || ch == '\\') {
+                target.append('\\');
+            } else if (!isQuotedText(ch)) {
+                throw new IllegalArgumentException("Invalid media type parameter value");
+            }
+            target.append(ch);
+        }
+        target.append('"');
+    }
+
+    private static boolean isQuotedText(char ch) {
+        return ch == '\t'
+                || ch == ' '
+                || ch == 0x21
+                || ch >= 0x23 && ch <= 0x5b
+                || ch >= 0x5d && ch <= 0x7e
+                || ch >= 0x80 && ch <= 0xff;
     }
 
     private boolean subtypeMismatch(MediaType other) {

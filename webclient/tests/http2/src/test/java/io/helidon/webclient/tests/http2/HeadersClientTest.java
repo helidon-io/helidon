@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.tests.http2;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.media.type.ParserMode;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -68,10 +71,12 @@ class HeadersClientTest {
     private static final Header TRAILER_HEADER = HeaderValues.create("Trailer-header", "trailer-test");
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
+    private static final String INVALID_CONTENT_TYPE = "text/plain; charset=";
     private static final Vertx VERTX = Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1000*60*60));
     private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private static HttpServer SERVER;
     private static Http2Client CLIENT;
+    private static Http2Client RELAXED_CLIENT;
     private static HttpClient VERTX_CLIENT;
 
     @BeforeAll
@@ -132,6 +137,18 @@ class HeadersClientTest {
                         case "/100-continue-not" -> {
                             res.setStatusCode(418).send();
                         }
+                        case "/invalid-content-type" -> {
+                            res.putHeader(HeaderNames.CONTENT_TYPE.defaultCase(), INVALID_CONTENT_TYPE);
+                            res.end();
+                        }
+                        case "/invalid-content-type-upload" -> req.body(ignored -> {
+                            res.putHeader(HeaderNames.CONTENT_TYPE.defaultCase(), INVALID_CONTENT_TYPE);
+                            res.end();
+                        });
+                        case "/invalid-content-type-before-upload" -> {
+                            res.putHeader(HeaderNames.CONTENT_TYPE.defaultCase(), INVALID_CONTENT_TYPE);
+                            res.setStatusCode(418).end();
+                        }
                         case "/100-continue" -> {
                             AtomicBoolean continueSent = new AtomicBoolean(false);
                             req.body(event -> {
@@ -173,6 +190,11 @@ class HeadersClientTest {
         CLIENT = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .readContinueTimeout(Duration.ofSeconds(2))
+                .build();
+        RELAXED_CLIENT = Http2Client.builder()
+                .baseUri("http://localhost:" + port + "/")
+                .readContinueTimeout(Duration.ofSeconds(2))
+                .mediaTypeParserMode(ParserMode.RELAXED)
                 .build();
 
         HttpClientOptions clientOptions = new HttpClientOptions()
@@ -279,6 +301,55 @@ class HeadersClientTest {
             Header after100Header = HeaderValues.create("after_100", "test");
             assertThat(res.headers(), hasHeader(before100Header));
             assertThat(res.headers(), hasHeader(after100Header));
+        }
+    }
+
+    @Test
+    void contentTypeUsesConfiguredParserMode() {
+        try (Http2ClientResponse res = CLIENT
+                .method(Method.GET)
+                .path("/invalid-content-type")
+                .priorKnowledge(true)
+                .request()) {
+            assertThrows(BadRequestException.class, res.headers()::contentType);
+        }
+
+        try (Http2ClientResponse res = RELAXED_CLIENT
+                .method(Method.GET)
+                .path("/invalid-content-type")
+                .priorKnowledge(true)
+                .request()) {
+            assertThat(res.headers().contentType().orElseThrow().text(), is("text/plain"));
+        }
+    }
+
+    @Test
+    void outputStreamContentTypeUsesConfiguredParserMode() {
+        try (Http2ClientResponse res = RELAXED_CLIENT
+                .method(Method.PUT)
+                .path("/invalid-content-type-upload")
+                .priorKnowledge(true)
+                .outputStream(output -> {
+                    output.write(DATA.getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(res.headers().contentType().orElseThrow().text(), is("text/plain"));
+        }
+    }
+
+    @Test
+    void preUploadContentTypeUsesConfiguredParserMode() {
+        try (Http2ClientResponse res = RELAXED_CLIENT
+                .method(Method.PUT)
+                .path("/invalid-content-type-before-upload")
+                .priorKnowledge(true)
+                .sendExpectContinue(true)
+                .outputStream(output -> {
+                    output.write(DATA.getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(res.status(), is(Status.I_AM_A_TEAPOT_418));
+            assertThat(res.headers().contentType().orElseThrow().text(), is("text/plain"));
         }
     }
 
