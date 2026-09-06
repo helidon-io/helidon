@@ -477,8 +477,8 @@ public final class OidcConfig extends TenantConfigImpl {
         Supplier<Tenant> loader = () -> Tenant.create(this, tenantConfig);
         return tenantConfig.tenantLoadingLazy()
                 ? ResilientValue.create("OIDC tenant configuration", loader,
-                                        tenantConfig.jwkRetryConfig(),
-                                        tenantConfig.jwkCircuitBreakerConfig())
+                                        OidcUtil.jwkRetry("OIDC tenant configuration", tenantConfig),
+                                        OidcUtil.jwkCircuitBreaker("OIDC tenant configuration", tenantConfig))
                 : LazyValue.create(loader);
     }
 

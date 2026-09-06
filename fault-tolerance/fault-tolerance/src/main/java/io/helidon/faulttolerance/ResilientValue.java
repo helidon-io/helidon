@@ -31,20 +31,22 @@ import io.helidon.common.Api;
 @Api.Internal
 public interface ResilientValue<T> extends Supplier<T> {
     /**
-     * Create a resilient value using the provided fault tolerance configuration.
+     * Create a resilient value using the provided fault tolerance handlers.
+     * Fault tolerance state belongs to the supplied handlers; callers should supply dedicated instances when state
+     * must not be shared with other operations.
      *
      * @param description safe description of the value, used in messages and logs
      * @param loader supplier that loads the value
-     * @param retryConfig retry configuration
-     * @param circuitBreakerConfig circuit breaker configuration
+     * @param retry retry handler
+     * @param circuitBreaker circuit breaker handler
      * @param <T> type of the loaded value
      * @return a new resilient value
      */
     static <T> ResilientValue<T> create(String description,
                                         Supplier<T> loader,
-                                        RetryConfig retryConfig,
-                                        CircuitBreakerConfig circuitBreakerConfig) {
-        return new ResilientValueImpl<>(description, loader, retryConfig, circuitBreakerConfig);
+                                        Retry retry,
+                                        CircuitBreaker circuitBreaker) {
+        return new ResilientValueImpl<>(description, loader, retry, circuitBreaker);
     }
 
     /**

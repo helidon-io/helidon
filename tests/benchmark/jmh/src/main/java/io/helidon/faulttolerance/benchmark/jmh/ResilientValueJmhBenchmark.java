@@ -55,26 +55,28 @@ public class ResilientValueJmhBenchmark {
         cachedValue = ResilientValue.create("jmh-cached", () -> {
             cachedLoads.incrementAndGet();
             return VALUE;
-        }, RetryConfig.create(), CircuitBreakerConfig.create());
+        }, RetryConfig.builder().build(), CircuitBreakerConfig.builder().build());
         cachedValue.get();
 
-        RetryConfig retryConfig = RetryConfig.builder()
+        var retry = RetryConfig.builder()
                 .calls(1)
                 .delay(Duration.ZERO)
                 .overallTimeout(Duration.ofSeconds(1))
                 .enableMetrics(false)
-                .buildPrototype();
-        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.builder()
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
+        var circuitBreaker = CircuitBreakerConfig.builder()
                 .volume(1)
                 .errorRatio(100)
                 .successThreshold(1)
                 .delay(Duration.ofHours(1))
                 .enableMetrics(false)
-                .buildPrototype();
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
         openValue = ResilientValue.create("jmh-open", () -> {
             unavailableLoads.incrementAndGet();
             throw new ResilientValue.UnavailableException("Expected benchmark failure");
-        }, retryConfig, circuitBreakerConfig);
+        }, retry, circuitBreaker);
 
         try {
             openValue.get();

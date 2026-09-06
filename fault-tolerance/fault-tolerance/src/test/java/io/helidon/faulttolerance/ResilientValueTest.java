@@ -55,8 +55,8 @@ class ResilientValueTest {
                                                                  }
                                                                  return "loaded";
                                                              },
-                                                             retryConfig(3),
-                                                             circuitBreakerConfig());
+                                                             retry(3),
+                                                             circuitBreaker());
 
         assertThat(value.isLoaded(), is(false));
         assertThat(value.get(), is("loaded"));
@@ -76,8 +76,8 @@ class ResilientValueTest {
                                                                  }
                                                                  return "loaded";
                                                              },
-                                                             retryConfig(3),
-                                                             circuitBreakerConfig(executor));
+                                                             retry(3),
+                                                             circuitBreaker(executor));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(3));
@@ -105,8 +105,8 @@ class ResilientValueTest {
                                                                  calls.incrementAndGet();
                                                                  throw new ResilientValue.UnavailableException("not ready");
                                                              },
-                                                             retry,
-                                                             circuitBreakerConfig(executor));
+                                                             retry(retry),
+                                                             circuitBreaker(executor));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(1));
@@ -124,11 +124,35 @@ class ResilientValueTest {
                                                                  }
                                                                  return "loaded";
                                                              },
-                                                             retryConfig(3),
-                                                             circuitBreakerConfig());
+                                                             retry(3),
+                                                             circuitBreaker());
 
         assertThrows(IllegalStateException.class, value::get);
         assertThat(calls.get(), is(1));
+        assertThat(value.get(), is("loaded"));
+        assertThat(calls.get(), is(2));
+    }
+
+    @Test
+    void suppliedRetryControlsExceptionClassification() {
+        AtomicInteger calls = new AtomicInteger();
+        Retry retry = RetryConfig.builder()
+                .calls(2)
+                .delay(Duration.ZERO)
+                .delayFactor(0)
+                .overallTimeout(Duration.ofSeconds(1))
+                .addApplyOn(IllegalStateException.class)
+                .build();
+        ResilientValue<String> value = ResilientValue.create("test value",
+                                                             () -> {
+                                                                 if (calls.incrementAndGet() == 1) {
+                                                                     throw new IllegalStateException("retry this");
+                                                                 }
+                                                                 return "loaded";
+                                                             },
+                                                             retry,
+                                                             circuitBreaker());
+
         assertThat(value.get(), is("loaded"));
         assertThat(calls.get(), is(2));
     }
@@ -138,8 +162,8 @@ class ResilientValueTest {
         AtomicInteger calls = new AtomicInteger();
         ResilientValue<String> value = ResilientValue.create("test value",
                                                              () -> calls.incrementAndGet() == 1 ? null : "loaded",
-                                                             retryConfig(3),
-                                                             circuitBreakerConfig());
+                                                             retry(3),
+                                                             circuitBreaker());
 
         assertThrows(NullPointerException.class, value::get);
         assertThat(calls.get(), is(1));
@@ -163,8 +187,8 @@ class ResilientValueTest {
                                                                  await(continueLoading);
                                                                  return "loaded";
                                                              },
-                                                             retryConfig(1),
-                                                             circuitBreakerConfig());
+                                                             retry(1),
+                                                             circuitBreaker());
 
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
@@ -213,8 +237,8 @@ class ResilientValueTest {
                                                                  await(continueLoading);
                                                                  throw new ResilientValue.UnavailableException("not ready");
                                                              },
-                                                             retryConfig(1),
-                                                             circuitBreakerConfig());
+                                                             retry(1),
+                                                             circuitBreaker());
 
         Thread loaderThread = Thread.ofVirtual().start(() -> captureFailure(value, loaderFailure));
         Thread followerThread = Thread.ofVirtual().unstarted(() -> captureFailure(value, followerFailure));
@@ -320,8 +344,8 @@ class ResilientValueTest {
                                                                  calls.incrementAndGet();
                                                                  throw new ResilientValue.UnavailableException("safe failure");
                                                              },
-                                                             testRetry,
-                                                             testBreaker);
+                                                             retry(testRetry),
+                                                             circuitBreaker(testBreaker));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(5));
@@ -350,32 +374,51 @@ class ResilientValueTest {
         }
     }
 
-    private static RetryConfig retryConfig(int calls) {
+    private static Retry retry(int calls) {
         return RetryConfig.builder()
                 .calls(calls)
                 .delay(Duration.ZERO)
                 .delayFactor(0)
                 .overallTimeout(Duration.ofSeconds(1))
-                .buildPrototype();
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
     }
 
-    private static CircuitBreakerConfig circuitBreakerConfig() {
+    private static CircuitBreaker circuitBreaker() {
         return CircuitBreakerConfig.builder()
                 .volume(1)
                 .errorRatio(100)
                 .successThreshold(1)
                 .delay(Duration.ofDays(1))
-                .buildPrototype();
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
     }
 
-    private static CircuitBreakerConfig circuitBreakerConfig(TestExecutor executor) {
+    private static CircuitBreaker circuitBreaker(TestExecutor executor) {
         return CircuitBreakerConfig.builder()
                 .volume(1)
                 .errorRatio(100)
                 .successThreshold(1)
                 .delay(Duration.ZERO)
                 .executor(executor)
-                .buildPrototype();
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
+    }
+
+    private static Retry retry(RetryConfig config) {
+        return RetryConfig.builder(config)
+                .clearApplyOn()
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .clearSkipOn()
+                .build();
+    }
+
+    private static CircuitBreaker circuitBreaker(CircuitBreakerConfig config) {
+        return CircuitBreakerConfig.builder(config)
+                .clearApplyOn()
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .clearSkipOn()
+                .build();
     }
 
     private static Config config(Map<String, String> values) {
@@ -394,8 +437,8 @@ class ResilientValueTest {
                                                                  }
                                                                  return "loaded";
                                                              },
-                                                             retryConfig(1),
-                                                             circuitBreakerConfig(executor));
+                                                             retry(1),
+                                                             circuitBreaker(executor));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThrows(ResilientValue.UnavailableException.class, value::get);
@@ -421,8 +464,8 @@ class ResilientValueTest {
                                                                  await(continueLoading);
                                                                  return "loaded";
                                                              },
-                                                             retryConfig(1),
-                                                             circuitBreakerConfig());
+                                                             retry(1),
+                                                             circuitBreaker());
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
                 value.get();

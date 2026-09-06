@@ -39,12 +39,12 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
 
     ResilientValueImpl(String description,
                        Supplier<T> loader,
-                       RetryConfig retryConfig,
-                       CircuitBreakerConfig circuitBreakerConfig) {
+                       Retry retry,
+                       CircuitBreaker circuitBreaker) {
         this.description = requireDescription(description);
         this.loader = Objects.requireNonNull(loader);
-        this.retry = Retry.create(normalize(this.description, Objects.requireNonNull(retryConfig)));
-        this.circuitBreaker = CircuitBreaker.create(normalize(this.description, Objects.requireNonNull(circuitBreakerConfig)));
+        this.retry = Objects.requireNonNull(retry);
+        this.circuitBreaker = Objects.requireNonNull(circuitBreaker);
         this.attempt = new AtomicReference<>(newAttempt());
     }
 
@@ -74,24 +74,6 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     @Override
     public boolean isLoaded() {
         return loaded;
-    }
-
-    private static RetryConfig normalize(String description, RetryConfig config) {
-        return RetryConfig.builder(config)
-                .clearApplyOn()
-                .addApplyOn(UnavailableException.class)
-                .clearSkipOn()
-                .name(description + "-retry")
-                .buildPrototype();
-    }
-
-    private static CircuitBreakerConfig normalize(String description, CircuitBreakerConfig config) {
-        return CircuitBreakerConfig.builder(config)
-                .clearApplyOn()
-                .addApplyOn(UnavailableException.class)
-                .clearSkipOn()
-                .name(description + "-circuit-breaker")
-                .buildPrototype();
     }
 
     private static String requireDescription(String description) {

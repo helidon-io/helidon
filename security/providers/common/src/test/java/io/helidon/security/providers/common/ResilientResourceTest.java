@@ -78,13 +78,15 @@ class ResilientResourceTest {
                                 .calls(1)
                                 .delay(Duration.ZERO)
                                 .overallTimeout(ioTimeout)
-                                .buildPrototype(),
+                                .addApplyOn(ResilientValue.UnavailableException.class)
+                                .build(),
                         CircuitBreakerConfig.builder()
                                 .volume(1)
                                 .errorRatio(100)
                                 .successThreshold(1)
                                 .delay(Duration.ofMinutes(1))
-                                .buildPrototype());
+                                .addApplyOn(ResilientValue.UnavailableException.class)
+                                .build());
 
                 long beforeFirstLoad = System.nanoTime();
                 assertThrows(ResilientValue.UnavailableException.class, value::get);

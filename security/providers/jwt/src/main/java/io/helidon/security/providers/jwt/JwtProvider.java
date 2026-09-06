@@ -1097,8 +1097,18 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 Duration ioTimeout = retryConfig.overallTimeout();
                 verifyKeysLoader = ResilientValue.create(description,
                                                          () -> loadDynamicKeys(resourceConfig, description, ioTimeout),
-                                                         retryConfig,
-                                                         circuitBreakerConfig);
+                                                         RetryConfig.builder(retryConfig)
+                                                                 .clearApplyOn()
+                                                                 .addApplyOn(ResilientValue.UnavailableException.class)
+                                                                 .clearSkipOn()
+                                                                 .name(description + "-retry")
+                                                                 .build(),
+                                                         CircuitBreakerConfig.builder(circuitBreakerConfig)
+                                                                 .clearApplyOn()
+                                                                 .addApplyOn(ResilientValue.UnavailableException.class)
+                                                                 .clearSkipOn()
+                                                                 .name(description + "-circuit-breaker")
+                                                                 .build());
             } else {
                 verifyKeys = requireUsableKeys(JwkKeys.builder()
                                                        .resource(Resource.create(resourceConfig))
