@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,9 +89,11 @@ public interface WebClientServiceRequest {
     CompletionStage<WebClientServiceRequest> whenSent();
 
     /**
-     * Completes when the full processing of this request is done (e.g. we have received a full response).
+     * Completes when processing of the request and response has finished.
+     * The exact completion point is protocol-specific and may follow a full entity read, explicit response close, or an
+     * entity-processing failure. Normal completion does not imply that the response entity was fully read successfully.
      *
-     * @return completion stage that finishes when we receive and fully read response from the server
+     * @return completion stage that finishes when request and response processing has completed
      */
     CompletionStage<WebClientServiceResponse> whenComplete();
 
