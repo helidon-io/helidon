@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.Proxy;
 import java.net.URI;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -104,6 +106,60 @@ final class ResourceUtil {
         } catch (IOException e) {
             throw new ResourceException("Failed to open stream to uri: " + uri, e);
         }
+    }
+
+    /**
+     * Create input stream for a URI using explicit connection and read timeouts.
+     *
+     * @param uri resource URI
+     * @param timeout connection and read timeout
+     * @return stream of that URI
+     */
+    static InputStream toIs(URI uri, Duration timeout) {
+        Objects.requireNonNull(uri, "Resource URI must not be null");
+        Objects.requireNonNull(timeout, "Resource URI timeout must not be null");
+        try {
+            return toIs(uri.toURL().openConnection(), timeout);
+        } catch (IOException e) {
+            throw new ResourceException("Failed to open stream to configured URI", e);
+        }
+    }
+
+    /**
+     * Create input stream for a URI through a proxy using explicit connection and read timeouts.
+     *
+     * @param uri resource URI
+     * @param proxy HTTP proxy to access the URI
+     * @param timeout connection and read timeout
+     * @return stream of that URI
+     */
+    static InputStream toIs(URI uri, Proxy proxy, Duration timeout) {
+        Objects.requireNonNull(uri, "Resource URI must not be null");
+        Objects.requireNonNull(proxy, "Resource URI proxy must not be null");
+        Objects.requireNonNull(timeout, "Resource URI timeout must not be null");
+        try {
+            return toIs(uri.toURL().openConnection(proxy), timeout);
+        } catch (IOException e) {
+            throw new ResourceException("Failed to open stream to configured URI", e);
+        }
+    }
+
+    private static InputStream toIs(URLConnection connection, Duration timeout) throws IOException {
+        int timeoutMillis = timeoutMillis(timeout);
+        connection.setConnectTimeout(timeoutMillis);
+        connection.setReadTimeout(timeoutMillis);
+        connection.setUseCaches(false);
+        return connection.getInputStream();
+    }
+
+    private static int timeoutMillis(Duration timeout) {
+        long timeoutMillis;
+        try {
+            timeoutMillis = timeout.toMillis();
+        } catch (ArithmeticException e) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(1, timeoutMillis));
     }
 
     private static ClassLoader contextClassLoader() {

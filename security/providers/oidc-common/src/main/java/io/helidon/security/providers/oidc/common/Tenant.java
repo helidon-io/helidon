@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
+import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.common.configurable.ResourceException;
 import io.helidon.faulttolerance.ResilientValue;
@@ -33,7 +34,6 @@ import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundTarget;
-import io.helidon.security.providers.common.ResilientResource;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.HttpBasicOutboundConfig;
 import io.helidon.webclient.api.WebClient;
@@ -185,9 +185,8 @@ public class Tenant {
             String description = resourceDescription("OIDC signing JWK", configuredResource);
             try {
                 JwkKeys keys = JwkKeys.builder()
-                        .resource(ResilientResource.create(description,
-                                                           configuredResource,
-                                                           tenantConfig.jwkRetryConfig().overallTimeout()))
+                        .resource(Resource.create(configuredResource,
+                                                  tenantConfig.jwkRetryConfig().overallTimeout()))
                         .build();
                 return requireSigningKeys(keys, true);
             } catch (ResilientValue.UnavailableException e) {
@@ -257,7 +256,7 @@ public class Tenant {
             return configuredMetadata;
         }
         String description = resourceDescription("OIDC metadata", resourceConfig);
-        try (var stream = ResilientResource.create(description, resourceConfig, ioTimeout).stream()) {
+        try (var stream = Resource.create(resourceConfig, ioTimeout).stream()) {
             return JsonParser.create(stream).readJsonObject();
         } catch (ResourceException e) {
             throw new ResilientValue.UnavailableException(description + " could not be read", e);

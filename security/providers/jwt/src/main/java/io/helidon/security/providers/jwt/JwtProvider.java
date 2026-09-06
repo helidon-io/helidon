@@ -69,7 +69,6 @@ import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
-import io.helidon.security.providers.common.ResilientResource;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
@@ -1121,9 +1120,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                                                Duration ioTimeout) {
             try {
                 return requireUsableKeys(JwkKeys.builder()
-                                                 .resource(ResilientResource.create(description,
-                                                                                    resourceConfig,
-                                                                                    ioTimeout))
+                                                 .resource(Resource.create(resourceConfig, ioTimeout))
                                                  .build());
             } catch (ResourceException e) {
                 throw new ResilientValue.UnavailableException(description + " could not be read", e);
