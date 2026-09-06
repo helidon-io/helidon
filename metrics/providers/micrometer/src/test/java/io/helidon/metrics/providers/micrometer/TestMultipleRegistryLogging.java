@@ -497,7 +497,13 @@ class TestMultipleRegistryLogging {
         String helidonMeterName = "helidonDuringClose";
         String micrometerMeterName = "micrometerDuringClose";
         BlockingCloseMeterRegistry publisher = new BlockingCloseMeterRegistry();
-        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+        AtomicInteger customizationCount = new AtomicInteger();
+        MeterBuilderCustomizer customizer = _ -> customizationCount.incrementAndGet();
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(),
+                                                                                   List.of(),
+                                                                                   List.of(customizer),
+                                                                                   List.of(),
+                                                                                   new NoOpSpanContextSupplierProvider());
         MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
                                                                  .addPublisher(new TestPublisher(publisher))
                                                                  .warnOnMultipleRegistries(false)
@@ -513,6 +519,7 @@ class TestMultipleRegistryLogging {
             assertThrows(IllegalStateException.class,
                          () -> meterRegistry.getOrCreate(metricsFactory.counterBuilder(helidonMeterName)),
                          "Creating a Helidon meter while the registry is closing");
+            assertThat("Customizer is not invoked while the registry is closing", customizationCount.get(), is(0));
             delegate.counter(micrometerMeterName);
 
             assertThat("Closing registry remains empty", meterRegistry.meters(), hasSize(0));
@@ -532,6 +539,7 @@ class TestMultipleRegistryLogging {
             assertThrows(IllegalStateException.class,
                          () -> meterRegistry.getOrCreate(metricsFactory.counterBuilder("afterClose")),
                          "Creating a meter after registry close");
+            assertThat("Customizer is not invoked after registry close", customizationCount.get(), is(0));
         } finally {
             publisher.continueClose.countDown();
             executor.shutdownNow();

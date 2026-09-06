@@ -296,6 +296,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
             HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder) {
         Objects.requireNonNull(builder);
+        lock.readLock().lock();
+        try {
+            checkOpen();
+        } finally {
+            lock.readLock().unlock();
+        }
         metricsFactory.customize(builder);
         return getOrCreateCustomized(builder);
     }
