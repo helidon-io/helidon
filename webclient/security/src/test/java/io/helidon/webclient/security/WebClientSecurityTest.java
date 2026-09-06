@@ -82,6 +82,9 @@ class WebClientSecurityTest {
                     .addService(stopBeforeNetwork)
                     .build();
 
+            assertThat("Outbound provider lookups before first request", providerLookups.get(), is(0));
+
+            assertThrows(TestException.class, () -> client.get().request());
             assertThrows(TestException.class, () -> client.get().request());
 
             assertThat("Outbound provider lookups", providerLookups.get(), is(1));

@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
@@ -52,15 +54,25 @@ public class WebClientSecurity implements WebClientService {
     private static final String PROVIDER_NAME = "io.helidon.security.rest.client.security.providerName";
 
     private final Security security;
+    private final LazyValue<SecurityState> lazySecurityState;
     private final boolean defaultOutboundSecurity;
 
     private WebClientSecurity() {
-        this(null);
+        this.security = null;
+        this.lazySecurityState = null;
+        this.defaultOutboundSecurity = false;
     }
 
     private WebClientSecurity(Security security) {
         this.security = security;
+        this.lazySecurityState = null;
         this.defaultOutboundSecurity = security != null && !security.resolveOutboundProvider(null).isEmpty();
+    }
+
+    private WebClientSecurity(Supplier<Security> security) {
+        this.security = null;
+        this.lazySecurityState = LazyValue.create(() -> new SecurityState(security.get()));
+        this.defaultOutboundSecurity = false;
     }
 
     /**
@@ -87,6 +99,10 @@ public class WebClientSecurity implements WebClientService {
         return new WebClientSecurity(security);
     }
 
+    static WebClientSecurity create(Supplier<Security> security) {
+        return new WebClientSecurity(security);
+    }
+
     @Override
     public String type() {
         return "security";
@@ -98,6 +114,13 @@ public class WebClientSecurity implements WebClientService {
             return chain.proceed(request);
         }
 
+        Security security = this.security;
+        boolean defaultOutboundSecurity = this.defaultOutboundSecurity;
+        if (lazySecurityState != null) {
+            SecurityState state = lazySecurityState.get();
+            security = state.security();
+            defaultOutboundSecurity = state.defaultOutboundSecurity();
+        }
         String explicitProvider = request.properties().get(PROVIDER_NAME);
         if (security != null
                 && (!security.enabled()
@@ -122,7 +145,7 @@ public class WebClientSecurity implements WebClientService {
         } else {
             // we have our own security - we need to use this instance for outbound,
             // so we cannot re-use the context
-            context = createContext(request);
+            context = createContext(request, security);
         }
 
         Tracer tracer = context.tracer();
@@ -236,7 +259,7 @@ public class WebClientSecurity implements WebClientService {
         }
     }
 
-    private SecurityContext createContext(WebClientServiceRequest request) {
+    private SecurityContext createContext(WebClientServiceRequest request, Security security) {
         ClientUri uri = request.uri();
         SecurityContext.Builder builder = security.contextBuilder(UUID.randomUUID().toString())
                 .endpointConfig(EndpointConfig.builder()
@@ -263,6 +286,12 @@ public class WebClientSecurity implements WebClientService {
             span.end();
         } else {
             span.end(throwable);
+        }
+    }
+
+    private record SecurityState(Security security, boolean defaultOutboundSecurity) {
+        private SecurityState(Security security) {
+            this(security, security != null && !security.resolveOutboundProvider(null).isEmpty());
         }
     }
 }

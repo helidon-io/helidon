@@ -51,6 +51,6 @@ public class WebClientSecurityProvider implements WebClientServiceProvider {
         Objects.requireNonNull(config);
         Objects.requireNonNull(name);
         Objects.requireNonNull(serviceRegistry);
-        return WebClientSecurity.create(serviceRegistry.get(Security.class));
+        return WebClientSecurity.create(serviceRegistry.supply(Security.class));
     }
 }
