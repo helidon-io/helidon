@@ -167,6 +167,35 @@ public class CorsPathValidatorTest {
     }
 
     @Test
+    public void testPreFlightConfiguredDefaultPortOrigins() {
+        assertDefaultPortOriginAllowed("http://example.com:80", "http://example.com");
+        assertDefaultPortOriginAllowed("https://example.com:443", "https://example.com");
+    }
+
+    @Test
+    public void testPreFlightNonDefaultPortOriginForbidden() {
+        CorsPathValidator validator = CorsPathValidator.create(CorsPathConfig.builder()
+                                                                       .pathPattern("/greet")
+                                                                       .allowOrigins(Set.of("https://example.com:444"))
+                                                                       .build());
+
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, "https://example.com");
+        requestHeaders.set(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+
+        var statusCaptor = ArgumentCaptor.forClass(Status.class);
+        var response = response(ServerResponseHeaders.create());
+        when(response.status(statusCaptor.capture())).thenReturn(response);
+
+        CorsPathValidator.Result result = validator.preFlight(request("/greet", requestHeaders), response);
+
+        assertThat(result.matched(), is(true));
+        assertThat(result.shouldContinue(), is(false));
+        assertThat(statusCaptor.getValue(), is(Status.FORBIDDEN_403));
+        verify(response, times(1)).send();
+    }
+
+    @Test
     public void testPreFlightCustomPattern() {
         CorsPathValidator validator = CorsPathValidator.create(CorsPathConfig.builder()
                                                                        .pathPattern("/greet")
@@ -509,6 +538,25 @@ public class CorsPathValidatorTest {
 
         assertThat("There should be 1 configured response header", responseHeaders.size(), is(1));
         assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is(Cors.ALLOW_ALL)));
+    }
+
+    private static void assertDefaultPortOriginAllowed(String allowedOrigin, String origin) {
+        CorsPathValidator validator = CorsPathValidator.create(CorsPathConfig.builder()
+                                                                       .pathPattern("/greet")
+                                                                       .allowOrigins(Set.of(allowedOrigin))
+                                                                       .build());
+
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, origin);
+        requestHeaders.set(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+
+        var responseHeaders = ServerResponseHeaders.create();
+        CorsPathValidator.Result result = validator.preFlight(request("/greet", requestHeaders),
+                                                              response(responseHeaders));
+
+        assertThat(result.matched(), is(true));
+        assertThat(result.shouldContinue(), is(true));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is(origin)));
     }
 
     private static ServerRequest request(String path, Headers headers) {
