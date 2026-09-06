@@ -18,22 +18,27 @@ package io.helidon.data.sql.common;
 
 import java.util.Optional;
 
+import javax.sql.DataSource;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
  * SQL specific configuration.
  * Database connection may be configured using connection string, username
- * and password or using {@link javax.sql.DataSource} name.
+ * and password, using a {@link DataSource} name, or by supplying an existing
+ * {@link DataSource} programmatically.
  * Database connection must be configured by exactly one of the options
  * mentioned above.
  */
 @Prototype.Blueprint(createFromConfigPublic = false, createEmptyPublic = false, decorator = SqlConfigSupport.Decorator.class)
 @Prototype.Configured
+@Prototype.CustomMethods(SqlConfigSupport.CustomMethods.class)
+@Prototype.IncludeDefaultMethods("dataSourceInstance")
 interface SqlConfigBlueprint {
     /**
-     * Configuration of a direct connection to a database, with exactly one of
-     * {@code connection} and {@code data-source} required.
+     * Configuration of a direct connection to a database, with exactly one
+     * connection source required.
      *
      * @return connection configuration
      */
@@ -41,12 +46,28 @@ interface SqlConfigBlueprint {
     Optional<ConnectionConfig> connection();
 
     /**
-     * Name of the {@link javax.sql.DataSource}, with exactly one of
-     * {@code connection} and {@code data-source} required.
+     * Name of the {@link DataSource}, with exactly one connection source
+     * required.
      *
-     * @return the name to use for {@link javax.sql.DataSource} lookup
+     * @return the name to use for {@link DataSource} lookup
      */
     @Option.Configured
     Optional<String> dataSource();
+
+    /**
+     * Existing {@link DataSource} owned by application, with exactly one
+     * connection source required.
+     * <p>
+     * This option is available only to programmatic builders. The application
+     * retains ownership of the data source lifecycle.
+     *
+     * @return existing data source, or empty when one was not supplied
+     */
+    // Hide the storage oriented builder methods as dataSource(DataSource) is the public API.
+    @Option.Access("")
+    @Option.Confidential
+    default Optional<DataSource> dataSourceInstance() {
+        return Optional.empty();
+    }
 
 }

@@ -134,6 +134,31 @@ class JdbcClientFactoryTest {
     }
 
     /**
+     * Verifies a registry-managed client retains its supplied data source by
+     * identity without discovering named data source services or opening a
+     * connection.
+     */
+    @Test
+    void publishesExistingDataSourceWithoutRegistryDiscovery() {
+        DataSource dataSource = mock(DataSource.class);
+        JdbcClientConfig config = JdbcClientConfig.builder()
+                .name("existing")
+                .dataSource(dataSource)
+                .buildPrototype();
+        JdbcClientFactory factory = factory(
+                List.of(config),
+                () -> {
+                    throw new AssertionError("Named data source discovery was not expected");
+                });
+
+        Service.QualifiedInstance<JdbcClient> client = factory.services().getFirst();
+
+        assertQualifiedClient(client, "existing", config);
+        assertThat(client.get().prototype().dataSourceInstance().orElseThrow(), sameInstance(dataSource));
+        verifyZeroInteractions(dataSource);
+    }
+
+    /**
      * Verifies a missing named data source reports the logical client and data
      * source names without activating unrelated services.
      */

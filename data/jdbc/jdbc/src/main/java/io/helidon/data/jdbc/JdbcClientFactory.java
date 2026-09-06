@@ -87,7 +87,9 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
             JdbcClientConfig config = prepared.config();
             DataSource dataSource;
             ServiceInstance<DataSource> dataSourceService = null;
-            if (config.dataSource().isPresent()) {
+            if (config.dataSourceInstance().isPresent()) {
+                dataSource = config.dataSourceInstance().get();
+            } else if (config.dataSource().isPresent()) {
                 dataSource = null;
                 String dataSourceName = config.dataSource().get();
                 Qualifier named = Qualifier.createNamed(dataSourceName);

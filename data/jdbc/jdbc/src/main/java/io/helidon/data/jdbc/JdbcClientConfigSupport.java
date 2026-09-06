@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.sql.DataSource;
+
 import io.helidon.builder.api.Prototype;
 import io.helidon.data.DataException;
 import io.helidon.data.sql.common.ConnectionConfig;
@@ -39,7 +41,8 @@ final class JdbcClientConfigSupport {
      * @param config configuration to validate
      */
     static void validate(JdbcClientConfig config) {
-        validate(config.name(), config.connection(), config.dataSource());
+        validateClient(config.name(), config.dataSource());
+        validateSources(config.connection(), config.dataSource(), config.dataSourceInstance());
         cachePolicy(config);
     }
 
@@ -84,19 +87,23 @@ final class JdbcClientConfigSupport {
         return cachePolicy(config.parameterCountCacheCapacity(), config.parameterCountCacheMaxSqlLength());
     }
 
-    private static void validate(String name,
-                                 Optional<ConnectionConfig> connection,
-                                 Optional<String> dataSource) {
+    private static void validateClient(String name, Optional<String> dataSource) {
         if (name.isBlank()) {
             throw new DataException("A JDBC client name must not be blank.");
         }
-        int sourceCount = connection.isPresent() ? 1 : 0;
-        sourceCount += dataSource.isPresent() ? 1 : 0;
-        if (sourceCount != 1) {
-            throw new DataException("A JDBC client requires exactly one connection source.");
-        }
         if (dataSource.filter(String::isBlank).isPresent()) {
             throw new DataException("A JDBC data source name must not be blank.");
+        }
+    }
+
+    private static void validateSources(Optional<ConnectionConfig> connection,
+                                        Optional<String> dataSource,
+                                        Optional<DataSource> dataSourceInstance) {
+        int sourceCount = connection.isPresent() ? 1 : 0;
+        sourceCount += dataSource.isPresent() ? 1 : 0;
+        sourceCount += dataSourceInstance.isPresent() ? 1 : 0;
+        if (sourceCount != 1) {
+            throw new DataException("A JDBC client requires exactly one connection source.");
         }
     }
 
@@ -109,10 +116,17 @@ final class JdbcClientConfigSupport {
      */
     static final class Decorator implements Prototype.BuilderDecorator<JdbcClientConfig.BuilderBase<?, ?>> {
 
+        /**
+         * Validates a generated JDBC client configuration builder.
+         *
+         * @param builder generated JDBC client configuration builder
+         * @throws NullPointerException if the builder is {@code null}
+         * @throws DataException if the client configuration is invalid
+         */
         @Override
         public void decorate(JdbcClientConfig.BuilderBase<?, ?> builder) {
             Objects.requireNonNull(builder, "The JDBC client configuration builder must not be null.");
-            validate(builder.name(), builder.connection(), builder.dataSource());
+            validateClient(builder.name(), builder.dataSource());
             cachePolicy(builder.parameterCountCacheCapacity(), builder.parameterCountCacheMaxSqlLength());
         }
     }

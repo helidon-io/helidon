@@ -35,7 +35,10 @@ import io.helidon.service.registry.Service;
  * <p>
  * A client built through {@link #builder()} or {@link #create(JdbcClientConfig)}
  * owns a connection for each terminal operation. It does not participate in
- * a transaction established by a transaction annotation on its caller.
+ * a transaction established by a transaction annotation on its caller. When
+ * the configuration supplies an existing {@link javax.sql.DataSource}, the
+ * application retains ownership of that data source and the client does not
+ * close it.
  * <p>
  * Annotation based applications inject a registry managed client with the
  * {@code jdbc} {@link io.helidon.data.Data.ProviderType} and a {@link Service.Named}

@@ -21,9 +21,12 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+
+import javax.sql.DataSource;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -46,6 +49,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class JdbcClientConfigTest {
@@ -73,6 +77,24 @@ class JdbcClientConfigTest {
         } finally {
             DriverManager.deregisterDriver(driver);
         }
+    }
+
+    /**
+     * Verifies the public builder retains an existing data source by identity
+     * and constructs a standalone client without opening a connection.
+     */
+    @Test
+    void buildsClientFromExistingDataSource() {
+        DataSource dataSource = mock(DataSource.class);
+
+        JdbcClient client = JdbcClient.builder()
+                .dataSource(dataSource)
+                .build();
+
+        assertThat(client.prototype().dataSourceInstance().orElseThrow(), sameInstance(dataSource));
+        assertThat(client.prototype().dataSource(), is(Optional.empty()));
+        assertThat(client.prototype().connection(), is(Optional.empty()));
+        verifyZeroInteractions(dataSource);
     }
 
     /**
@@ -128,7 +150,7 @@ class JdbcClientConfigTest {
     }
 
     /**
-     * Verifies the client configuration inherits both shared SQL source
+     * Verifies the client configuration inherits all shared SQL source
      * choices and remains assignable to the shared contract.
      */
     @Test
@@ -140,11 +162,16 @@ class JdbcClientConfigTest {
         JdbcClientConfig directConfig = JdbcClientConfig.builder()
                 .connection(connection -> connection.url("jdbc:example:local"))
                 .buildPrototype();
+        DataSource dataSource = mock(DataSource.class);
+        JdbcClientConfig instanceConfig = JdbcClientConfig.builder()
+                .dataSource(dataSource)
+                .buildPrototype();
         SqlConfig sqlConfig = namedConfig;
 
         assertThat(sqlConfig, sameInstance(namedConfig));
         assertThat(namedConfig.dataSource().orElseThrow(), is("reporting-source"));
         assertThat(directConfig.connection().orElseThrow().url(), is("jdbc:example:local"));
+        assertThat(instanceConfig.dataSourceInstance().orElseThrow(), sameInstance(dataSource));
     }
 
     /**
@@ -165,22 +192,40 @@ class JdbcClientConfigTest {
                         .connection(connection -> connection.url(sensitiveValue))
                         .buildPrototype());
 
-        assertThat(missingFailure.getMessage(), is("Both connection and DataSource config options are missing"));
-        assertThat(conflictFailure.getMessage(), is("Both connection and DataSource config options are present"));
+        assertThat(missingFailure.getMessage(),
+                   is("SQL configuration does not define a connection source. Configure exactly one using "
+                              + "connection properties, a data source name, or a DataSource instance."));
+        assertThat(conflictFailure.getMessage(),
+                   is("SQL configuration defines multiple connection sources. Configure exactly one using "
+                              + "connection properties, a data source name, or a DataSource instance."));
         assertThat(missingFailure.getMessage(), not(containsString(sensitiveValue)));
         assertThat(conflictFailure.getMessage(), not(containsString("private-source")));
         assertThat(conflictFailure.getMessage(), not(containsString(sensitiveValue)));
     }
 
     /**
-     * Verifies selecting both inherited connection sources is rejected before
-     * a client can be constructed.
+     * Verifies every combination of multiple inherited connection sources is
+     * rejected before a client can be constructed.
      */
     @Test
     void rejectsConflictingConnectionSources() {
+        DataSource dataSource = mock(DataSource.class);
         assertSourceConflict(() -> JdbcClient.builder()
                 .dataSource("inventory-source")
                 .connection(connection -> connection.url("jdbc:example:local"))
+                .buildPrototype());
+        assertSourceConflict(() -> JdbcClient.builder()
+                .dataSource("inventory-source")
+                .dataSource(dataSource)
+                .buildPrototype());
+        assertSourceConflict(() -> JdbcClient.builder()
+                .connection(connection -> connection.url("jdbc:example:local"))
+                .dataSource(dataSource)
+                .buildPrototype());
+        assertSourceConflict(() -> JdbcClient.builder()
+                .dataSource("inventory-source")
+                .connection(connection -> connection.url("jdbc:example:local"))
+                .dataSource(dataSource)
                 .buildPrototype());
     }
 
@@ -328,25 +373,57 @@ class JdbcClientConfigTest {
     }
 
     /**
+     * Verifies generated diagnostic text treats an existing data source as a
+     * confidential value and does not invoke its application-defined text.
+     */
+    @Test
+    void redactsExistingDataSourceFromConfigurationText() {
+        String sensitiveValue = "private-data-source-description";
+        DataSource dataSource = mock(DataSource.class);
+        when(dataSource.toString()).thenReturn(sensitiveValue);
+        JdbcClientConfig.Builder builder = JdbcClient.builder()
+                .dataSource(dataSource);
+        JdbcClientConfig config = builder.buildPrototype();
+
+        assertThat(builder.toString(), not(containsString(sensitiveValue)));
+        assertThat(config.toString(), not(containsString(sensitiveValue)));
+        assertThat(builder.toString(), containsString("****"));
+        assertThat(config.toString(), containsString("****"));
+        verifyZeroInteractions(dataSource);
+    }
+
+    /**
      * Verifies public construction boundaries reject null input with simple
      * diagnostics that contain no application state.
      */
     @Test
     void rejectsNullConstructionInputs() {
+        JdbcClientConfig.Builder builder = JdbcClient.builder()
+                .dataSource("inventory-source");
         NullPointerException configFailure = assertThrows(
                 NullPointerException.class,
                 () -> JdbcClient.create((JdbcClientConfig) null));
         NullPointerException consumerFailure = assertThrows(
                 NullPointerException.class,
                 () -> JdbcClient.create((Consumer<JdbcClientConfig.Builder>) null));
+        // The cast is required because dataSource(null) is ambiguous between the two overloads.
+        NullPointerException dataSourceFailure = assertThrows(
+                NullPointerException.class,
+                () -> builder.dataSource((DataSource) null));
 
         assertThat(configFailure.getMessage(), is("The JDBC client configuration must not be null."));
         assertThat(consumerFailure.getMessage(), is("The JDBC client builder consumer must not be null."));
+        assertThat(dataSourceFailure.getMessage(), is("The data source must not be null."));
+        JdbcClientConfig config = builder.buildPrototype();
+        assertThat(config.dataSource().orElseThrow(), is("inventory-source"));
+        assertThat(config.dataSourceInstance(), is(Optional.empty()));
     }
 
     private static void assertSourceConflict(Runnable construction) {
         DataException failure = assertThrows(DataException.class, construction::run);
-        assertThat(failure.getMessage(), is("Both connection and DataSource config options are present"));
+        assertThat(failure.getMessage(),
+                   is("SQL configuration defines multiple connection sources. Configure exactly one using "
+                              + "connection properties, a data source name, or a DataSource instance."));
     }
 
     /**

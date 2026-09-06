@@ -69,7 +69,9 @@ final class JdbcClientImpl implements JdbcClient {
         CachePolicy cachePolicy = JdbcClientConfigSupport.cachePolicy(config);
         String clientDescription = JdbcClientConfigSupport.clientDescription(config.name());
         DataSource dataSource;
-        if (config.dataSource().isPresent()) {
+        if (config.dataSourceInstance().isPresent()) {
+            dataSource = config.dataSourceInstance().get();
+        } else if (config.dataSource().isPresent()) {
             String dataSourceName = config.dataSource().get();
             String resolutionMessage = clientDescription + " could not resolve SQL data source '"
                     + dataSourceName + "'.";

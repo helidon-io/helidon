@@ -24,8 +24,10 @@ import io.helidon.service.registry.Service;
 /**
  * Configuration for a JDBC client.
  * <p>
- * A client can use a named data source or direct connection settings.
- * Registry managed clients are configured under {@code data.clients.jdbc}.
+ * A client can use an existing application-owned data source, a named data
+ * source, or direct connection settings. An existing data source can be
+ * supplied only through a programmatic builder. Registry managed clients are
+ * configured under {@code data.clients.jdbc}.
  */
 @Api.Preview
 @Prototype.Blueprint(createEmptyPublic = false, decorator = JdbcClientConfigSupport.Decorator.class)
