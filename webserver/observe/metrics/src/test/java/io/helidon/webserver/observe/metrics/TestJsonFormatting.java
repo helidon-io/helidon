@@ -224,6 +224,41 @@ class TestJsonFormatting {
     }
 
     @Test
+    void testRetrievingBySystemTags() {
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("env", "prod")))
+                .build();
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            meterRegistry.getOrCreate(metricsFactory.counterBuilder("system-tagged")).increment(3);
+            meterRegistry.getOrCreate(metricsFactory.counterBuilder("system-tag-collision")
+                                              .addTag(metricsFactory.tagCreate("env", "test")))
+                    .increment(5);
+
+            JsonFormatter matchingFormatter = JsonFormatter.builder(metricsConfig, meterRegistry)
+                    .tagSelection(Map.of("env", List.of("prod")))
+                    .build();
+            JsonFormatter nonMatchingFormatter = JsonFormatter.builder(metricsConfig, meterRegistry)
+                    .tagSelection(Map.of("env", List.of("test")))
+                    .build();
+
+            JsonObject jsonOutput = checkAndCast(matchingFormatter.format());
+            assertThat("Counter selected by system tag",
+                       jsonOutput.numberValue("system-tagged").orElseThrow().intValue(),
+                       is(3));
+            assertThat("System tag takes precedence over a same-named meter tag",
+                       jsonOutput.numberValue("system-tag-collision").orElseThrow().intValue(),
+                       is(5));
+            assertThat("Counter excluded by non-matching system tag",
+                       nonMatchingFormatter.format(),
+                       OptionalMatcher.optionalEmpty());
+        } finally {
+            meterRegistry.close();
+        }
+    }
+
+    @Test
     void testScopeLikeTagsRemainOrdinaryTags() {
         MetricsConfig metricsConfig = MetricsConfig.create();
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);

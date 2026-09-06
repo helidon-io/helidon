@@ -72,6 +72,7 @@ class JsonFormatter implements MeterRegistryFormatter {
     private final MetricsConfig metricsConfig;
     private final MeterRegistry meterRegistry;
     private final SystemTagsManager systemTagsManager;
+    private final Map<String, String> systemTagPairs;
 
     private JsonFormatter(Builder builder) {
         meterNameSelection = builder.meterNameSelection;
@@ -81,6 +82,7 @@ class JsonFormatter implements MeterRegistryFormatter {
         metricsConfig = builder.metricsConfig;
         meterRegistry = builder.meterRegistry;
         systemTagsManager = SystemTagsManager.create(metricsConfig, meterRegistry.metricsFactory());
+        systemTagPairs = systemTagsManager.displayTagPairs();
     }
 
     /**
@@ -287,11 +289,16 @@ class JsonFormatter implements MeterRegistryFormatter {
             return true;
         }
         for (Map.Entry<String, Set<String>> selection : tagSelection.entrySet()) {
-            boolean matches = false;
-            for (Tag tag : meterId.tags()) {
-                if (tag.key().equals(selection.getKey()) && selection.getValue().contains(tag.value())) {
-                    matches = true;
-                    break;
+            boolean matches;
+            if (systemTagPairs.containsKey(selection.getKey())) {
+                matches = selection.getValue().contains(systemTagPairs.get(selection.getKey()));
+            } else {
+                matches = false;
+                for (Tag tag : meterId.tags()) {
+                    if (tag.key().equals(selection.getKey()) && selection.getValue().contains(tag.value())) {
+                        matches = true;
+                        break;
+                    }
                 }
             }
             if (!matches) {
