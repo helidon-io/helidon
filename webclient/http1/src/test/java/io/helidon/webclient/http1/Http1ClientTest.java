@@ -16,7 +16,13 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -26,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -492,6 +499,55 @@ class Http1ClientTest {
             System.clearProperty("http.nonProxyHosts");
         }
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInvalidHeaderClosesAcquiredConnection(boolean outputStream) throws Exception {
+        try (ConnectionCloseServer server = ConnectionCloseServer.start()) {
+            Http1Client testClient = Http1Client.builder()
+                    .connectionCacheSize(1)
+                    .build();
+            try {
+                Http1ClientRequest request = testClient.put(server.uri())
+                        .header(HeaderNames.create("X-Test"), "\u0100");
+
+                assertThrows(IllegalArgumentException.class, () -> {
+                    if (outputStream) {
+                        request.outputStream(OutputStream::close);
+                    } else {
+                        request.submit("test");
+                    }
+                });
+                assertThat(server.awaitFirstConnectionClose(), is(true));
+
+                try (Http1ClientResponse response = testClient.get(server.uri()).request()) {
+                    assertThat(response.status(), is(Status.OK_200));
+                }
+                server.awaitCompletion();
+            } finally {
+                testClient.closeResource();
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInvalidHeaderDoesNotCloseExplicitConnection(boolean outputStream) {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1ClientRequest request = client.put("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .header(HeaderNames.create("X-Test"), "\u0100");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            if (outputStream) {
+                request.outputStream(OutputStream::close);
+            } else {
+                request.submit("test");
+            }
+        });
+        assertThat(connection.closeCount(), is(0));
+        assertThat(connection.releaseCount(), is(0));
     }
 
     @ParameterizedTest
@@ -1071,6 +1127,76 @@ class Http1ClientTest {
             }
         }
 
+    }
+
+    private record ConnectionCloseServer(ServerSocket server,
+                                         CompletableFuture<Boolean> firstConnectionClosed,
+                                         CompletableFuture<Void> completion) implements AutoCloseable {
+        private static final byte[] RESPONSE = ("HTTP/1.1 200 OK\r\n"
+                + "Connection: close\r\n"
+                + "Content-Length: 0\r\n"
+                + "\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        static ConnectionCloseServer start() throws IOException {
+            ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
+            server.setSoTimeout(5_000);
+            CompletableFuture<Boolean> firstConnectionClosed = new CompletableFuture<>();
+            CompletableFuture<Void> completion = CompletableFuture.runAsync(() -> {
+                try (Socket socket = server.accept()) {
+                    socket.setSoTimeout(5_000);
+                    firstConnectionClosed.complete(socket.getInputStream().read() == -1);
+                } catch (IOException e) {
+                    firstConnectionClosed.completeExceptionally(e);
+                    throw new UncheckedIOException(e);
+                }
+
+                try (Socket socket = server.accept()) {
+                    socket.setSoTimeout(5_000);
+                    readHeaders(socket.getInputStream());
+                    socket.getOutputStream().write(RESPONSE);
+                    socket.getOutputStream().flush();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            return new ConnectionCloseServer(server, firstConnectionClosed, completion);
+        }
+
+        String uri() {
+            return "http://127.0.0.1:" + server.getLocalPort() + "/test";
+        }
+
+        boolean awaitFirstConnectionClose() throws Exception {
+            return firstConnectionClosed.get(5, TimeUnit.SECONDS);
+        }
+
+        void awaitCompletion() throws Exception {
+            completion.get(5, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() {
+            try {
+                server.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        private static void readHeaders(InputStream inputStream) throws IOException {
+            int matched = 0;
+            while (matched < 4) {
+                int next = inputStream.read();
+                if (next == -1) {
+                    throw new IllegalStateException("HTTP/1 request headers were not complete");
+                }
+                matched = switch (matched) {
+                case 0, 2 -> next == '\r' ? matched + 1 : 0;
+                case 1, 3 -> next == '\n' ? matched + 1 : next == '\r' ? 1 : 0;
+                default -> throw new IllegalStateException("Unexpected header parser state");
+                };
+            }
+        }
     }
 
     private static class FakeSocket implements HelidonSocket {

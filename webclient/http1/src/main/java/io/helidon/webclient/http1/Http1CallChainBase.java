@@ -149,19 +149,30 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         // either use the explicit connection, or obtain one (keep alive or one-off)
         effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
-        effectiveConnection.readTimeout(this.timeout);
+        try {
+            effectiveConnection.readTimeout(this.timeout);
 
-        DataWriter writer = effectiveConnection.writer();
-        DataReader reader = effectiveConnection.reader();
-        ClientUri uri = serviceRequest.uri();
-        ClientRequestHeaders headers = serviceRequest.headers();
+            DataWriter writer = effectiveConnection.writer();
+            DataReader reader = effectiveConnection.reader();
+            ClientUri uri = serviceRequest.uri();
+            ClientRequestHeaders headers = serviceRequest.headers();
 
-        writeBuffer.clear();
-        originalRequest.sanitizeRedirectHeaders(uri, headers);
-        prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
-        headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
+            writeBuffer.clear();
+            originalRequest.sanitizeRedirectHeaders(uri, headers);
+            prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
-        return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
+            return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
+        } catch (RuntimeException | Error e) {
+            if (connection == null) {
+                try {
+                    effectiveConnection.closeResource();
+                } catch (Throwable closeFailure) {
+                    e.addSuppressed(closeFailure);
+                }
+            }
+            throw e;
+        }
     }
 
     abstract WebClientServiceResponse doProceed(ClientConnection connection,

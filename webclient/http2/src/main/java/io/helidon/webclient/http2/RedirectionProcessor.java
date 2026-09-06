@@ -32,12 +32,15 @@ class RedirectionProcessor {
     }
 
     static boolean redirectionStatusCode(Status status) {
-        return status.family() == Status.Family.REDIRECTION;
+        // 304 is not a redirect; it instructs a cache to reuse its stored representation.
+        return status.code() != Status.NOT_MODIFIED_304.code()
+                && status.family() == Status.Family.REDIRECTION;
     }
 
     static boolean keepsMethodAndEntity(Status status) {
-        return status == Status.TEMPORARY_REDIRECT_307
-                || status == Status.PERMANENT_REDIRECT_308;
+        int statusCode = status.code();
+        return statusCode == Status.TEMPORARY_REDIRECT_307.code()
+                || statusCode == Status.PERMANENT_REDIRECT_308.code();
     }
 
     static void validateEntityRedirect(Http2ClientRequestImpl request,
@@ -119,14 +122,16 @@ class RedirectionProcessor {
                 clientRequest = new Http2ClientRequestImpl(clientRequest,
                                                            clientRequest.method(),
                                                            redirectUri,
-                                                           request.properties());
+                                                           request.properties(),
+                                                           true);
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes
                 entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
                 clientRequest = new Http2ClientRequestImpl(clientRequest,
                                                            Method.GET,
                                                            redirectUri,
-                                                           request.properties());
+                                                           request.properties(),
+                                                           false);
             }
         }
     }

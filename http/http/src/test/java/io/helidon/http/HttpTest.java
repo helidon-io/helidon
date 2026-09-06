@@ -96,6 +96,8 @@ class HttpTest {
                 arguments("Valid-Header-Name", "H\u001ceaderValue1", false),
                 arguments("Valid-Header-Name", "HeaderValue1, Header\u007fValue", false),
                 arguments("Valid-Header-Name", "HeaderValue1\u001f, HeaderValue2", false),
+                arguments("Valid-Header-Name", "\u0100HeaderValue", false),
+                arguments("Valid-Header-Name", "Header\u0100Value", false),
                 arguments("Header\u001aName", "Valid-Header-Value", false),
                 arguments("Header\u000EName", "Valid-Header-Value", false),
                 arguments("HeaderName\r\n", "Valid-Header-Value", false),

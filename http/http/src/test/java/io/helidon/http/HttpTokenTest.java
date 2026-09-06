@@ -19,8 +19,10 @@ package io.helidon.http;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpTokenTest {
@@ -34,5 +36,33 @@ class HttpTokenTest {
         assertThat(message, containsString("Token contains whitespace character at position 6"));
         assertThat(message, not(containsString("secret")));
         assertThat(message, not(containsString("73 65 63 72 65 74")));
+    }
+
+    @Test
+    void testValidTokens() {
+        assertValid("*");
+        assertValid("gzip");
+        assertValid("x-gzip_1");
+        assertValid("!#$%&'*+-.^_`|~");
+    }
+
+    @Test
+    void testInvalidTokens() {
+        assertInvalid("");
+        assertInvalid("g zip");
+        assertInvalid("gzip;level=1");
+        assertInvalid("x/gzip");
+        assertInvalid("\u00e9");
+        assertInvalid("\u0100");
+    }
+
+    private static void assertValid(String token) {
+        assertThat(HttpToken.isValid(token), is(true));
+        assertDoesNotThrow(() -> HttpToken.validate(token));
+    }
+
+    private static void assertInvalid(String token) {
+        assertThat(HttpToken.isValid(token), is(false));
+        assertThrows(IllegalArgumentException.class, () -> HttpToken.validate(token));
     }
 }

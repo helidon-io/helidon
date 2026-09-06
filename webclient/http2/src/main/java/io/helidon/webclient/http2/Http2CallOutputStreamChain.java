@@ -113,6 +113,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         }
 
         Http2Headers responseHeaders = readHeaders(outputStream.stream);
+        ClientResponseHeaders clientResponseHeaders = ClientResponseHeaders.create(
+                responseHeaders.httpHeaders(),
+                clientConfig().mediaTypeParserMode());
 
         if (clientRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseHeaders.status())) {
@@ -143,7 +146,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             Http2ClientRequestImpl request = new Http2ClientRequestImpl(outputStream.lastRequest,
                                                                         redirectedMethod,
                                                                         redirectUri,
-                                                                        outputStream.lastRequest.properties());
+                                                                        outputStream.lastRequest.properties(),
+                                                                        sendEntity);
             request.outputStreamRedirect(false);
             request.readTimeout(outputStream.originalRequest.readTimeout());
             int numberOfRedirects = outputStream.numberOfRedirects() + 1;
@@ -172,7 +176,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                      outputStream.stream,
                                      whenComplete(),
                                      responseHeaders.status(),
-                                     ClientResponseHeaders.create(responseHeaders.httpHeaders()));
+                                     clientResponseHeaders);
     }
 
     @Override
@@ -213,7 +217,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         Http2ClientRequestImpl redirectedRequest = new Http2ClientRequestImpl(clientRequest(),
                                                                               method,
                                                                               redirectUri,
-                                                                              clientRequest().properties());
+                                                                              clientRequest().properties(),
+                                                                              sendEntity);
         redirectedRequest.readTimeout(clientRequest().readTimeout());
         redirectedRequest.maxRedirects(clientRequest().maxRedirects() - 1);
         if (sendEntity) {
@@ -489,6 +494,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 if (status != Status.CONTINUE_100) {
                     Http2Headers responseHeaders = readHeaders(stream);
                     Status responseStatus = responseHeaders.status();
+                    ClientResponseHeaders clientResponseHeaders = ClientResponseHeaders.create(
+                            responseHeaders.httpHeaders(),
+                            clientConfig.mediaTypeParserMode());
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
                         checkRedirectHeaders(responseHeaders);
@@ -501,8 +509,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                                      stream,
                                                                      whenComplete,
                                                                      responseHeaders.status(),
-                                                                     ClientResponseHeaders.create(
-                                                                             responseHeaders.httpHeaders()));
+                                                                     clientResponseHeaders);
                         //we are not sending anything by this OS, we need to interrupt it.
                         throw new OutputStreamInterruptedException();
                     }
@@ -515,8 +522,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
-            if (lastStatus == Status.TEMPORARY_REDIRECT_307
-                    || lastStatus == Status.PERMANENT_REDIRECT_308) {
+            if (RedirectionProcessor.keepsMethodAndEntity(lastStatus)) {
                 method = originalRequest.method();
                 sendEntity = true;
             } else {
@@ -551,7 +557,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 Http2ClientRequestImpl clientRequest = new Http2ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
-                                                                                  lastRequest.properties());
+                                                                                  lastRequest.properties(),
+                                                                                  sendEntity);
                 clientRequest.followRedirects(false);
                 clientRequest.readTimeout(originalRequest.readTimeout());
                 try {
@@ -572,8 +579,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                     if (RedirectionProcessor.redirectionStatusCode(response.status())) {
                         try (response) {
                             checkRedirectHeaders(response.headers());
-                            if (response.status() != Status.TEMPORARY_REDIRECT_307
-                                    && response.status() != Status.PERMANENT_REDIRECT_308) {
+                            if (!RedirectionProcessor.keepsMethodAndEntity(response.status())) {
                                 method = Method.GET;
                                 sendEntity = false;
                             }

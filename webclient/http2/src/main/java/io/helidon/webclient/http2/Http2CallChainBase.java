@@ -220,7 +220,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                                                     Duration readTimeout) {
         Http2Headers headers = readHeaders(stream, readTimeout);
 
-        ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
+        ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders(),
+                                                                              clientConfig.mediaTypeParserMode());
         this.responseStatus = headers.status();
 
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();

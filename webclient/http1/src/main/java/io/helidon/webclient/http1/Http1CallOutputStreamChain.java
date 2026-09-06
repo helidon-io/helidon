@@ -158,7 +158,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             Http1ClientRequestImpl request = new Http1ClientRequestImpl(cos.lastRequest,
                                                                         sendEntity ? cos.lastRequest.method() : Method.GET,
                                                                         redirectUri,
-                                                                        cos.lastRequest.properties());
+                                                                        cos.lastRequest.properties(),
+                                                                        sendEntity);
             if (sendEntity) {
                 request.maxRedirects(cos.lastRequest.maxRedirects() - numberOfRedirects);
             }
@@ -517,14 +518,14 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
-            if (lastStatus == Status.TEMPORARY_REDIRECT_307
-                    || lastStatus == Status.PERMANENT_REDIRECT_308) {
+            if (RedirectionProcessor.keepsMethodAndEntity(lastStatus)) {
                 method = originalRequest.method();
                 sendEntity = true;
             } else {
                 method = Method.GET;
                 sendEntity = false;
             }
+            connection.closeResource();
             while (numberOfRedirects < originalRequest.maxRedirects()) {
                 numberOfRedirects++;
                 URI newUri = URI.create(redirectedUri);
@@ -535,7 +536,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     redirectUri.port(lastUri.port());
                 }
                 lastUri = redirectUri;
-                connection.closeResource();
                 boolean sendEmptyEntity = false;
                 if (sendEntity && !lastRequest.canReplayEntityTo(redirectUri)) {
                     // User code already provided bytes for the original origin; do not replay them across origins.
@@ -547,7 +547,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 Http1ClientRequestImpl clientRequest = new Http1ClientRequestImpl(lastRequest,
                                                                                   method,
                                                                                   redirectUri,
-                                                                                  lastRequest.properties());
+                                                                                  lastRequest.properties(),
+                                                                                  sendEntity);
                 clientRequest.followRedirects(false);
                 Http1ClientResponseImpl response;
                 if (sendEntity && !sendEmptyEntity) {
@@ -572,8 +573,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     boolean closeRedirectProbeConnection = sendEntity && !sendEmptyEntity;
                     try {
                         checkRedirectHeaders(response.headers());
-                        if (response.status() != Status.TEMPORARY_REDIRECT_307
-                                && response.status() != Status.PERMANENT_REDIRECT_308) {
+                        if (!RedirectionProcessor.keepsMethodAndEntity(response.status())) {
                             method = Method.GET;
                             sendEntity = false;
                         }
