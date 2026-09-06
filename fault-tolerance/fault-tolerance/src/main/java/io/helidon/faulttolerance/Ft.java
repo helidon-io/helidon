@@ -67,7 +67,7 @@ public final class Ft {
          * is configured, in which case the delay remains constant.
          * <p>
          * When both this option and {@link #jitter()} are configured, the delay factor is applied first and jitter is
-         * applied to the resulting delay.
+         * applied independently to the resulting delay. A jittered delay does not affect later base-delay calculations.
          *
          * @return delay factor for delaying retry policy
          */
@@ -76,7 +76,8 @@ public final class Ft {
         /**
          * Random jitter applied to the delay. If unspecified (value of {@code PT-1S}), jitter is not applied.
          * When both this option and {@link #delayFactor()} are configured, the delay factor is applied first and jitter
-         * is applied to the resulting delay. The final delay is capped by {@link #maxDelay()}, when configured.
+         * is applied independently to the resulting delay. A jittered delay does not affect later base-delay calculations.
+         * The final delay is capped by {@link #maxDelay()}, when configured.
          *
          * @return jitter duration
          * @see java.time.Duration#parse(CharSequence)
@@ -86,7 +87,8 @@ public final class Ft {
         /**
          * Random jitter relative to the calculated delay, from {@code 0} (inclusive) to {@code 1} (exclusive). For
          * example, a value of {@code 0.2} applies a random jitter of up to twenty percent in either direction. This
-         * option cannot be combined with an explicitly configured {@link #jitter() absolute jitter}. A value of
+         * option cannot be combined with an explicitly configured {@link #jitter() absolute jitter}. Each retry applies
+         * relative jitter independently, and a jittered delay does not affect later base-delay calculations. A value of
          * {@code -1} means relative jitter is not configured.
          *
          * @return relative jitter factor
