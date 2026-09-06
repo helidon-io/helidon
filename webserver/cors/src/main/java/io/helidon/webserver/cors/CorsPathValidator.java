@@ -17,7 +17,6 @@
 package io.helidon.webserver.cors;
 
 import java.lang.System.Logger.Level;
-import java.net.URI;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +24,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import io.helidon.common.uri.UriValidationException;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -79,6 +80,7 @@ class CorsPathValidator {
                     // this is a pattern
                     originPatterns.add(Pattern.compile(origin, Pattern.CASE_INSENSITIVE));
                 } else {
+                    exactMatchOrigins.add(origin);
                     exactMatchOrigins.add(normalizeDefaultPort(origin));
                 }
             }
@@ -235,15 +237,12 @@ class CorsPathValidator {
 
     private static String normalizeDefaultPort(String origin) {
         int authorityOffset;
-        int defaultPort;
         int portLength;
         if (origin.startsWith("http://") && origin.endsWith(":80")) {
             authorityOffset = "http://".length();
-            defaultPort = 80;
             portLength = 3;
         } else if (origin.startsWith("https://") && origin.endsWith(":443")) {
             authorityOffset = "https://".length();
-            defaultPort = 443;
             portLength = 4;
         } else {
             return origin;
@@ -256,11 +255,8 @@ class CorsPathValidator {
             return origin;
         }
         try {
-            URI uri = URI.create(origin);
-            if (uri.getHost() == null || uri.getUserInfo() != null || uri.getPort() != defaultPort) {
-                return origin;
-            }
-        } catch (IllegalArgumentException ignored) {
+            UriValidator.validateHost(origin.substring(authorityOffset, portOffset));
+        } catch (UriValidationException ignored) {
             return origin;
         }
         return origin.substring(0, portOffset);
@@ -286,7 +282,7 @@ class CorsPathValidator {
             log(req, Level.TRACE, "CORS allowing all origins; actual origin: %s", origin);
             return false;
         }
-        if (allowedOriginsExact.contains(normalizeDefaultPort(origin))) {
+        if (allowedOriginsExact.contains(origin)) {
             log(req, Level.TRACE, "CORS allowing origin; actual origin: %s, allowedOrigins: %s", origin, allowedOriginsExact);
             return false;
         }
