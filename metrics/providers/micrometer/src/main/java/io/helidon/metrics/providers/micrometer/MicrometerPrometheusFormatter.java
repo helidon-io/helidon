@@ -262,8 +262,9 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
 
         while (metricFamilySamples.hasMoreElements()) {
             Collector.MetricFamilySamples family = metricFamilySamples.nextElement();
+            Set<String> meterTagNames = commonLabelNames(family.samples);
             List<Collector.MetricFamilySamples.Sample> matchingSamples = family.samples.stream()
-                    .filter(sample -> matchesTagSelection(prometheusMeterRegistry, sample))
+                    .filter(sample -> matchesTagSelection(prometheusMeterRegistry, meterTagNames, sample))
                     .toList();
             if (!matchingSamples.isEmpty()) {
                 matchingFamilies.add(new Collector.MetricFamilySamples(family.name,
@@ -288,10 +289,25 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         return result.toString();
     }
 
+    private static Set<String> commonLabelNames(List<Collector.MetricFamilySamples.Sample> samples) {
+        if (samples.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> result = new HashSet<>(samples.getFirst().labelNames);
+        samples.stream()
+                .skip(1)
+                .forEach(sample -> result.retainAll(sample.labelNames));
+        return result;
+    }
+
     private boolean matchesTagSelection(PrometheusMeterRegistry prometheusMeterRegistry,
+                                        Set<String> meterTagNames,
                                         Collector.MetricFamilySamples.Sample sample) {
         for (Map.Entry<String, Set<String>> selection : tagSelection.entrySet()) {
             String tagName = prometheusMeterRegistry.config().namingConvention().tagKey(selection.getKey());
+            if (!meterTagNames.contains(tagName)) {
+                return false;
+            }
             int labelIndex = sample.labelNames.indexOf(tagName);
             if (labelIndex < 0 || !selection.getValue().contains(sample.labelValues.get(labelIndex))) {
                 return false;

@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -234,6 +235,69 @@ class TestPrometheusFormatting {
                                                   "app",
                                                   "1.0")),
                          endsWith(OPENMETRICS_EOF)));
+    }
+
+    @Test
+    void testGeneratedLabelsDoNotSatisfyTagSelection() {
+        DistributionSummary summary = meterRegistry.getOrCreate(metricsFactory.distributionSummaryBuilder(
+                "generatedLabelSelection",
+                metricsFactory.distributionStatisticsConfigBuilder()
+                        .buckets(1, 2)
+                        .percentiles(0.5)));
+        summary.record(1);
+
+        var bucketFormatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .meterNameSelection(Set.of("generatedLabelSelection"))
+                .tagSelection(Map.of("le", Set.of("+Inf")))
+                .build();
+        var quantileFormatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .meterNameSelection(Set.of("generatedLabelSelection"))
+                .tagSelection(Map.of("quantile", Set.of("0.5")))
+                .build();
+
+        assertThat("Generated bucket label does not match a meter tag selection",
+                   bucketFormatter.format(),
+                   OptionalMatcher.optionalEmpty());
+        assertThat("Generated quantile label does not match a meter tag selection",
+                   quantileFormatter.format(),
+                   OptionalMatcher.optionalEmpty());
+    }
+
+    @Test
+    void testActualTagSelectionRetainsCompleteDistributionFamily() {
+        DistributionSummary summary = meterRegistry.getOrCreate(metricsFactory.distributionSummaryBuilder(
+                "actualTagDistribution",
+                metricsFactory.distributionStatisticsConfigBuilder()
+                        .buckets(1, 2)
+                        .percentiles(0.5))
+                                                                         .addTag(metricsFactory.tagCreate("kind",
+                                                                                                         "selected")));
+        DistributionSummary other = meterRegistry.getOrCreate(metricsFactory.distributionSummaryBuilder(
+                "actualTagDistribution",
+                metricsFactory.distributionStatisticsConfigBuilder()
+                        .buckets(1, 2)
+                        .percentiles(0.5))
+                                                                       .addTag(metricsFactory.tagCreate("kind", "other")));
+        summary.record(1);
+        other.record(2);
+
+        var formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .meterNameSelection(Set.of("actualTagDistribution"))
+                .tagSelection(Map.of("kind", Set.of("selected")))
+                .build();
+
+        assertThat("Actual meter tag selection retains the complete distribution family",
+                   checkAndCast(formatter.format()),
+                   allOf(containsString("actualTagDistribution_bucket{kind=\"selected\",le=\"1.0\"} 1.0"),
+                         containsString("actualTagDistribution_bucket{kind=\"selected\",le=\"2.0\"} 1.0"),
+                         containsString("actualTagDistribution_bucket{kind=\"selected\",le=\"+Inf\"} 1.0"),
+                         containsString("actualTagDistribution_count{kind=\"selected\"} 1.0"),
+                         containsString("actualTagDistribution_sum{kind=\"selected\"} 1.0"),
+                         containsString("actualTagDistribution{kind=\"selected\",quantile=\"0.5\"} 1.0"),
+                         not(containsString("kind=\"other\""))));
     }
 
     @Test
