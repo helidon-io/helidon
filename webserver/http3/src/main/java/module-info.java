@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("WebServer HTTP/3 support")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"WebServer", "HTTP/3"})
-@Features.Preview
+@Features.Incubating
 module io.helidon.webserver.http3 {
     requires static io.helidon.common.features.api;
     requires transitive io.helidon.builder.api;
