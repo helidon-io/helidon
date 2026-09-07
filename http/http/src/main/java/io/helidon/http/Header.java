@@ -114,7 +114,7 @@ public interface Header extends Value<String> {
      * {@code U+00FF} therefore represent opaque HTTP field-value octets; they are not interpreted
      * as UTF-8 or as ISO-8859-1 text.
      *
-     * @return value bytes
+     * @return a new byte array containing the value bytes
      * @throws IllegalArgumentException if the value contains a character above {@code U+00FF}
      */
     default byte[] valueBytes() {
@@ -127,12 +127,21 @@ public interface Header extends Value<String> {
      * @param buffer buffer to write to (should be growing)
      */
     default void writeHttp1Header(BufferData buffer) {
-        byte[] nameBytes = headerName().nameBytes();
+        HeaderName headerName = headerName();
+        HeaderNameEnum indexedName;
+        byte[] nameBytes;
+        if (headerName instanceof HeaderNameEnum enumName) {
+            indexedName = enumName;
+            nameBytes = null;
+        } else {
+            indexedName = null;
+            nameBytes = headerName.nameBytes();
+        }
         if (valueCount() == 1) {
-            writeHeader(buffer, nameBytes, valueBytes());
+            writeHeader(buffer, indexedName, nameBytes, valueBytes());
         } else {
             for (String value : allValues()) {
-                writeHeader(buffer, nameBytes, encodeValue(value));
+                writeHeader(buffer, indexedName, nameBytes, encodeValue(value));
             }
         }
     }
@@ -195,9 +204,13 @@ public interface Header extends Value<String> {
         return position;
     }
 
-    private void writeHeader(BufferData buffer, byte[] nameBytes, byte[] valueBytes) {
+    private void writeHeader(BufferData buffer, HeaderNameEnum indexedName, byte[] nameBytes, byte[] valueBytes) {
         // header name
-        buffer.write(nameBytes);
+        if (indexedName == null) {
+            buffer.write(nameBytes);
+        } else {
+            indexedName.writeName(buffer);
+        }
         // ": "
         buffer.write(':');
         buffer.write(' ');

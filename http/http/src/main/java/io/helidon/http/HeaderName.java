@@ -60,7 +60,7 @@ public sealed interface HeaderName permits HeaderNameImpl, HeaderNameEnum {
     /**
      * Name bytes of the {@link #defaultCase()} in US-ASCII encoding.
      *
-     * @return name bytes
+     * @return a new byte array containing the name bytes
      */
     default byte[] nameBytes() {
         return defaultCase().getBytes(StandardCharsets.US_ASCII);

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.common.buffers.Ascii;
+import io.helidon.common.buffers.BufferData;
 
 /*
  * Do not add random headers here. These headers are optimized for performance, and each header added to this enum
@@ -153,7 +154,11 @@ enum HeaderNameEnum implements HeaderName {
 
     @Override
     public byte[] nameBytes() {
-        return nameBytes;
+        return nameBytes.clone();
+    }
+
+    void writeName(BufferData buffer) {
+        BufferData.writeFromShared(buffer, nameBytes);
     }
 
     static class Strings {

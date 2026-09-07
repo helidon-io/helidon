@@ -118,6 +118,27 @@ public interface BufferData {
     }
 
     /**
+     * Write shared bytes to a target without allowing an arbitrary target implementation to retain the byte array.
+     *
+     * @param target target buffer
+     * @param bytes shared bytes to write
+     */
+    @Api.Internal
+    static void writeFromShared(BufferData target, byte[] bytes) {
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(bytes, "bytes");
+        if (target.getClass() == FixedBufferData.class) {
+            ((FixedBufferData) target).write(bytes, 0, bytes.length);
+        } else if (target.getClass() == GrowingBufferData.class) {
+            ((GrowingBufferData) target).write(bytes, 0, bytes.length);
+        } else {
+            for (byte value : bytes) {
+                target.write(value);
+            }
+        }
+    }
+
+    /**
      * Growing buffer data.
      * The buffer will grow when necessary to accommodate more bytes.
      * @param initialLength initial buffer length
