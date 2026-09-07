@@ -71,7 +71,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -154,10 +153,10 @@ class OidcFeatureTest {
 
         assertThrows(IllegalArgumentException.class, () -> OidcProvider.create(invalidDefault));
         assertThrows(IllegalArgumentException.class, () -> OidcFeature.create(invalidDefault));
-        assertDoesNotThrow(() -> OidcFeature.builder()
+        OidcFeature.builder()
                 .config(invalidDefault)
                 .enabled(false)
-                .build());
+                .build();
     }
 
     @Test
@@ -178,8 +177,8 @@ class OidcFeatureTest {
                 .addTenantConfig(configuredDefault)
                 .build();
 
-        assertDoesNotThrow(() -> OidcProvider.create(config));
-        assertDoesNotThrow(() -> OidcFeature.create(config));
+        OidcProvider.create(config);
+        OidcFeature.create(config);
     }
 
     @Test
@@ -190,8 +189,8 @@ class OidcFeatureTest {
                                                 .build())
                 .build();
 
-        assertDoesNotThrow(() -> OidcProvider.create(config));
-        assertDoesNotThrow(() -> OidcFeature.create(config));
+        OidcProvider.create(config);
+        OidcFeature.create(config);
     }
 
     @Test
