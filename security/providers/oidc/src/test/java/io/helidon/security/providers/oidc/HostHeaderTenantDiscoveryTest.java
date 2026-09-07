@@ -633,6 +633,7 @@ class HostHeaderTenantDiscoveryTest {
         return Map.of("jwk-loader.retry.calls", "1",
                       "jwk-loader.retry.delay", "PT0S",
                       "jwk-loader.retry.overall-timeout", "PT1S",
+                      "jwk-loader.timeout.timeout", "PT1S",
                       "jwk-loader.circuit-breaker.volume", "1",
                       "jwk-loader.circuit-breaker.error-ratio", "100",
                       "fallback-to-default-tenant-enabled", "true");

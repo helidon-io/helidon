@@ -35,6 +35,8 @@ import io.helidon.faulttolerance.CircuitBreakerConfig;
 import io.helidon.faulttolerance.ResilientValue;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.Timeout;
+import io.helidon.faulttolerance.TimeoutConfig;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
@@ -81,23 +83,41 @@ class OidcJwkLoadingTest {
 
         assertThat(tenantConfig.jwkRetry().prototype().calls(), is(2));
         assertThat(tenantConfig.jwkRetry().prototype().delay(), is(Duration.ofMillis(200)));
-        assertThat(tenantConfig.jwkCircuitBreaker().prototype().volume(), is(10));
+        assertThat(tenantConfig.jwkRetry().prototype().overallTimeout(), is(Duration.ofSeconds(11)));
+        assertThat(tenantConfig.jwkTimeout().prototype().timeout(), is(Duration.ofSeconds(5)));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().volume(), is(1));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().errorRatio(), is(100));
         assertThat(tenantConfig.jwkCircuitBreaker().prototype().delay(), is(Duration.ofSeconds(5)));
         assertThat(tenantConfig.jwkCircuitBreaker().prototype().successThreshold(), is(2));
     }
 
     @Test
     void usesConfiguredFaultToleranceInstances() {
-        Retry retry = Retry.builder().calls(1).build();
+        Retry retry = Retry.builder().calls(1).overallTimeout(Duration.ofSeconds(5)).build();
         CircuitBreaker circuitBreaker = CircuitBreaker.builder().volume(1).build();
+        Timeout timeout = Timeout.builder().timeout(Duration.ofSeconds(1)).build();
 
         TenantConfig tenantConfig = baseBuilder()
                 .jwkRetry(retry)
                 .jwkCircuitBreaker(circuitBreaker)
+                .jwkTimeout(timeout)
                 .build();
 
         assertThat(tenantConfig.jwkRetry(), sameInstance(retry));
         assertThat(tenantConfig.jwkCircuitBreaker(), sameInstance(circuitBreaker));
+        assertThat(tenantConfig.jwkTimeout(), sameInstance(timeout));
+    }
+
+    @Test
+    void rejectsInconsistentJwkTimeoutAtStartup() {
+        assertThrows(Errors.ErrorMessagesException.class,
+                     () -> baseBuilder()
+                             .jwkTimeout(Timeout.builder().timeout(Duration.ZERO).build())
+                             .build());
+        assertThrows(Errors.ErrorMessagesException.class,
+                     () -> baseBuilder()
+                             .jwkRetry(Retry.builder().overallTimeout(Duration.ofSeconds(4)).build())
+                             .build());
     }
 
     @Test
@@ -114,6 +134,9 @@ class OidcJwkLoadingTest {
         assertThat(metadata,
                    containsString("\"key\":\"jwk-loader.circuit-breaker\",\"type\":"
                                           + "\"io.helidon.faulttolerance.CircuitBreaker\""));
+        assertThat(metadata,
+                   containsString("\"key\":\"jwk-loader.timeout\",\"type\":"
+                                          + "\"io.helidon.faulttolerance.Timeout\""));
     }
 
     @Test
@@ -502,7 +525,7 @@ class OidcJwkLoadingTest {
         return RetryConfig.builder()
                 .calls(1)
                 .delay(Duration.ZERO)
-                .overallTimeout(Duration.ofSeconds(1))
+                .overallTimeout(Duration.ofSeconds(5))
                 .buildPrototype();
     }
 

@@ -26,6 +26,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
@@ -105,21 +106,35 @@ public interface TenantConfig {
     }
 
     /**
-     * Retry used while loading OIDC metadata and signing JWK.
+     * Retry used while loading OIDC metadata and signing JWKs.
+     * Defaults to two attempts within an 11-second overall timeout. The retry wraps attempts guarded by
+     * {@link #jwkTimeout()}.
      *
      * @return retry to use
      */
     default Retry jwkRetry() {
-        return Retry.builder().build();
+        return BaseBuilder.defaultJwkRetry();
     }
 
     /**
-     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     * Timeout applied to each attempt to load OIDC metadata and signing JWKs.
+     * Defaults to 5 seconds. The timeout must be positive and must not exceed the retry overall timeout.
+     *
+     * @return timeout to use
+     */
+    default Timeout jwkTimeout() {
+        return BaseBuilder.defaultJwkTimeout();
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWKs.
+     * By default, the circuit opens after one exhausted retry batch and permits a recovery probe after 5 seconds. The
+     * circuit breaker wraps the complete retry batch.
      *
      * @return circuit breaker to use
      */
     default CircuitBreaker jwkCircuitBreaker() {
-        return CircuitBreaker.builder().build();
+        return BaseBuilder.defaultJwkCircuitBreaker();
     }
 
     /**

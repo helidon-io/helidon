@@ -24,6 +24,7 @@ import java.util.Optional;
 import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
@@ -50,6 +51,7 @@ class TenantConfigImpl implements TenantConfig {
     private final ResourceConfig signJwkResource;
     private final Retry jwkRetry;
     private final CircuitBreaker jwkCircuitBreaker;
+    private final Timeout jwkTimeout;
     private final JwkKeys contentKeyDecryptionKeys;
     private final String clientSecret;
     private final URI introspectUri;
@@ -83,6 +85,7 @@ class TenantConfigImpl implements TenantConfig {
         this.signJwkResource = builder.signJwkResource();
         this.jwkRetry = builder.jwkRetry();
         this.jwkCircuitBreaker = builder.jwkCircuitBreaker();
+        this.jwkTimeout = builder.jwkTimeout();
         this.contentKeyDecryptionKeys = builder.contentKeyDecryptionKeys();
         this.oidcMetadataJsonObject = builder.oidcMetadataJsonObject();
         this.oidcMetadataResource = builder.oidcMetadataResource();
@@ -121,6 +124,11 @@ class TenantConfigImpl implements TenantConfig {
     @Override
     public Retry jwkRetry() {
         return jwkRetry;
+    }
+
+    @Override
+    public Timeout jwkTimeout() {
+        return jwkTimeout;
     }
 
     @Override

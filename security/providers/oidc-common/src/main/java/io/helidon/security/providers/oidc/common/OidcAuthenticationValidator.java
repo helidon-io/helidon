@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -40,6 +41,7 @@ final class OidcAuthenticationValidator {
 
     static void validate(TenantConfig tenantConfig) {
         Objects.requireNonNull(tenantConfig);
+        validateJwkFaultTolerance(tenantConfig);
         if (!tenantConfig.validateJwtWithJwk()
                 || tenantConfig.tenantSignJwk().isPresent()
                 || tenantConfig.tenantSignJwkResource().isPresent()
@@ -63,6 +65,18 @@ final class OidcAuthenticationValidator {
                     "OIDC metadata must contain a JWK URI when JWT validation with JWK is enabled");
         }
         OidcUtil.validateHttpEndpoint(jwkEndpoint, "OIDC metadata JWK endpoint");
+    }
+
+    private static void validateJwkFaultTolerance(TenantConfig tenantConfig) {
+        Duration timeout = Objects.requireNonNull(tenantConfig.jwkTimeout()).prototype().timeout();
+        Duration retryTimeout = Objects.requireNonNull(tenantConfig.jwkRetry()).prototype().overallTimeout();
+        if (timeout.isNegative() || timeout.isZero()) {
+            throw new IllegalArgumentException("jwk-loader.timeout.timeout must be positive");
+        }
+        if (timeout.compareTo(retryTimeout) > 0) {
+            throw new IllegalArgumentException("jwk-loader.timeout.timeout must not exceed "
+                                                       + "jwk-loader.retry.overall-timeout");
+        }
     }
 
     private static void validateKnownTenant(TenantConfig tenantConfig, Supplier<Tenant> tenantSupplier) {

@@ -22,7 +22,9 @@ import java.util.function.Supplier;
 import io.helidon.common.Api;
 
 /**
- * A value loaded on first use using a retry protected by a circuit breaker.
+ * A value loaded on first use using a timeout and retry protected by a circuit breaker.
+ * Each loader invocation is guarded by the timeout, the retry repeats timed attempts, and the circuit breaker wraps
+ * the complete retry batch.
  * A successfully loaded value is cached permanently. Failed loads may be tried again according to the configured
  * circuit breaker. Concurrent callers wait for the active load attempt and share its result.
  *
@@ -39,14 +41,17 @@ public interface ResilientValue<T> extends Supplier<T> {
      * @param loader supplier that loads the value
      * @param retry retry handler
      * @param circuitBreaker circuit breaker handler
+     * @param timeout timeout handler applied to each load attempt
      * @param <T> type of the loaded value
      * @return a new resilient value
+     * @throws IllegalArgumentException if the timeout is not positive or exceeds the retry overall timeout
      */
     static <T> ResilientValue<T> create(String description,
                                         Supplier<T> loader,
                                         Retry retry,
-                                        CircuitBreaker circuitBreaker) {
-        return new ResilientValueImpl<>(description, loader, retry, circuitBreaker);
+                                        CircuitBreaker circuitBreaker,
+                                        Timeout timeout) {
+        return new ResilientValueImpl<>(description, loader, retry, circuitBreaker, timeout);
     }
 
     /**

@@ -85,11 +85,21 @@ at startup.
 
 Metadata and JWK sources that may become available later are loaded on the first
 authentication request that needs them. These include filesystem paths, URIs,
-OIDC discovery, and a remote JWK URI obtained from fixed metadata. Each deferred
-load runs its configured retry policy inside its configured circuit breaker.
-After an exhausted retry sequence opens the circuit, later requests fail fast
-until the circuit permits another probe. A successfully loaded value is cached
-for the life of that tenant configuration.
+OIDC discovery, and a remote JWK URI obtained from fixed metadata. Concurrent
+requests share the initial load rather than starting duplicate loads. Each
+attempt runs inside `jwk-loader.timeout`, attempts are grouped by
+`jwk-loader.retry`, and the complete retry batch runs inside
+`jwk-loader.circuit-breaker`.
+
+By default, an attempt times out after 5 seconds. At most two attempts are made,
+separated by a 200 ms delay, within an 11-second overall retry timeout. The
+11-second budget accommodates both 5-second attempts and the delay. The
+circuit opens after the first exhausted batch, rejects requests for 5 seconds,
+and then permits a recovery probe. A successfully loaded value is cached for
+the life of that tenant configuration. All three policies use the standard
+Helidon Fault Tolerance configuration options under `jwk-loader`. Configuration
+is rejected at startup if the attempt timeout is not positive or exceeds the
+overall retry timeout.
 
 At runtime, depending on configuration...
 
@@ -800,6 +810,20 @@ security.
 
 Authentication is based on validating the token (signature, valid before etc.)
 and on asserting the subject of the JWT subject claim.
+
+Inline and classpath verification JWK resources are loaded and validated when
+the provider starts. Filesystem and URI resources are loaded on the first
+authentication request because they may become available later. Concurrent
+requests share that initial load. Each attempt has a default 5-second timeout;
+at most two attempts are made, separated by 200 ms, within an 11-second overall
+retry timeout. After the first exhausted batch, the circuit breaker rejects
+loads for 5 seconds before permitting a recovery probe. A successful key set is
+cached for the life of the provider. Configure the standard Timeout, Retry, and
+Circuit Breaker options under `jwk-loader.timeout`, `jwk-loader.retry`, and
+`jwk-loader.circuit-breaker`, respectively. The 11-second budget accommodates
+both 5-second attempts and the retry delay. Configuration is rejected at
+startup if the attempt timeout is not positive or exceeds the overall retry
+timeout.
 
 For outbound, we support either token propagation (e.g. the token from request
 is propagated further) or support for generating a brand-new token based on

@@ -46,6 +46,8 @@ import io.helidon.faulttolerance.CircuitBreakerConfig;
 import io.helidon.faulttolerance.ResilientValue;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.Timeout;
+import io.helidon.faulttolerance.TimeoutConfig;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
@@ -703,8 +705,9 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         private JwkKeys verifyKeys;
         private ResourceConfig verifyKeysResource;
         private ResilientValue<JwkKeys> verifyKeysLoader;
-        private Retry jwkRetry = Retry.builder().build();
-        private CircuitBreaker jwkCircuitBreaker = CircuitBreaker.builder().build();
+        private Retry jwkRetry = defaultJwkRetry();
+        private CircuitBreaker jwkCircuitBreaker = defaultJwkCircuitBreaker();
+        private Timeout jwkTimeout = defaultJwkTimeout();
         private JwkKeys signKeys;
         private String issuer;
         private String expectedAudience;
@@ -718,6 +721,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
         @Override
         public JwtProvider build() {
+            validateJwkFaultTolerance();
             if (verifyKeysResource != null) {
                 validateResourceConfig(verifyKeysResource);
                 prepareVerifyKeys();
@@ -932,7 +936,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         /**
-         * Retry used when loading verification keys from a filesystem path or URI.
+         * Retry used when loading verification keys from a filesystem path or URI; by default, it wraps two
+         * timeout-guarded attempts within an 11-second overall timeout.
          *
          * @param jwkRetry retry to use
          * @return updated builder instance
@@ -981,7 +986,58 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         /**
-         * Circuit breaker used when loading verification keys from a filesystem path or URI.
+         * Timeout applied to each attempt to load verification keys from a filesystem path or URI; it defaults to
+         * 5 seconds, must be positive, and must not exceed the retry overall timeout.
+         *
+         * @param jwkTimeout timeout to use
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "jwk-loader.timeout", type = Timeout.class)
+        public Builder jwkTimeout(Timeout jwkTimeout) {
+            this.jwkTimeout = Objects.requireNonNull(jwkTimeout);
+            this.verifyKeysLoader = null;
+
+            return this;
+        }
+
+        /**
+         * Timeout applied to each attempt to load verification keys from a filesystem path or URI.
+         *
+         * @param jwkTimeout prototype of timeout to use
+         * @return updated builder instance
+         */
+        public Builder jwkTimeout(TimeoutConfig jwkTimeout) {
+            Objects.requireNonNull(jwkTimeout);
+            return jwkTimeout(jwkTimeout.build());
+        }
+
+        /**
+         * Timeout applied to each attempt to load verification keys from a filesystem path or URI.
+         *
+         * @param consumer consumer of builder of timeout to use
+         * @return updated builder instance
+         */
+        public Builder jwkTimeout(Consumer<TimeoutConfig.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TimeoutConfig.builder();
+            consumer.accept(builder);
+            return jwkTimeout(builder.build());
+        }
+
+        /**
+         * Timeout applied to each attempt to load verification keys from a filesystem path or URI.
+         *
+         * @param supplier supplier of timeout to use
+         * @return updated builder instance
+         */
+        public Builder jwkTimeout(Supplier<? extends Timeout> supplier) {
+            Objects.requireNonNull(supplier);
+            return jwkTimeout(supplier.get());
+        }
+
+        /**
+         * Circuit breaker around each complete retry batch used to load verification keys from a filesystem path or
+         * URI; by default, the circuit opens after one exhausted batch and permits a recovery probe after 5 seconds.
          *
          * @param jwkCircuitBreaker circuit breaker to use
          * @return updated builder instance
@@ -1061,9 +1117,14 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 atnToken.get("jwt-audience").asString().ifPresent(this::expectedAudience);
                 atnToken.get("jwt-issuer").asString().ifPresent(this::expectedIssuer);
             }
-            config.get("jwk-loader.retry").as(RetryConfig::create).ifPresent(this::jwkRetry);
+            config.get("jwk-loader.retry")
+                    .as(it -> RetryConfig.builder(defaultJwkRetry().prototype()).config(it).build())
+                    .ifPresent(this::jwkRetry);
+            config.get("jwk-loader.timeout")
+                    .as(it -> TimeoutConfig.builder(defaultJwkTimeout().prototype()).config(it).build())
+                    .ifPresent(this::jwkTimeout);
             config.get("jwk-loader.circuit-breaker")
-                    .as(CircuitBreakerConfig::create)
+                    .as(it -> CircuitBreakerConfig.builder(defaultJwkCircuitBreaker().prototype()).config(it).build())
                     .ifPresent(this::jwkCircuitBreaker);
             Config signToken = config.get("sign-token");
             if (signToken.exists()) {
@@ -1165,15 +1226,49 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             ResourceConfig resourceConfig = verifyKeysResource;
             if (isDynamic(resourceConfig)) {
                 String description = sourceDescription(resourceConfig);
-                Duration ioTimeout = jwkRetry.prototype().overallTimeout();
+                Duration ioTimeout = jwkTimeout.prototype().timeout();
                 verifyKeysLoader = ResilientValue.create(description,
                                                          () -> loadDynamicKeys(resourceConfig, description, ioTimeout),
                                                          jwkRetry,
-                                                         jwkCircuitBreaker);
+                                                         jwkCircuitBreaker,
+                                                         jwkTimeout);
             } else {
                 verifyKeys = requireUsableKeys(JwkKeys.builder()
                                                        .resource(Resource.create(resourceConfig))
                                                        .build());
+            }
+        }
+
+        static Retry defaultJwkRetry() {
+            return Retry.builder()
+                    .calls(2)
+                    .overallTimeout(Duration.ofSeconds(11))
+                    .addApplyOn(ResilientValue.UnavailableException.class)
+                    .build();
+        }
+
+        static CircuitBreaker defaultJwkCircuitBreaker() {
+            return CircuitBreaker.builder()
+                    .volume(1)
+                    .errorRatio(100)
+                    .addApplyOn(ResilientValue.UnavailableException.class)
+                    .build();
+        }
+
+        static Timeout defaultJwkTimeout() {
+            return Timeout.builder()
+                    .timeout(Duration.ofSeconds(5))
+                    .build();
+        }
+
+        private void validateJwkFaultTolerance() {
+            Duration timeout = jwkTimeout.prototype().timeout();
+            if (timeout.isNegative() || timeout.isZero()) {
+                throw new IllegalArgumentException("jwk-loader.timeout.timeout must be positive");
+            }
+            if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
+                throw new IllegalArgumentException("jwk-loader.timeout.timeout must not exceed "
+                                                           + "jwk-loader.retry.overall-timeout");
             }
         }
 

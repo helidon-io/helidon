@@ -29,7 +29,7 @@ Base builder of the OIDC config components
 </td>
 <td>
 </td>
-<td>Retry used while loading OIDC metadata and signing JWK</td>
+<td>Retry used while loading OIDC metadata and signing JWKs; by default, it wraps two timeout-guarded attempts within an 11-second overall timeout</td>
 </tr>
 <tr>
 <td>
@@ -142,7 +142,7 @@ Base builder of the OIDC config components
 </td>
 <td>
 </td>
-<td>Circuit breaker used while loading OIDC metadata and signing JWK</td>
+<td>Circuit breaker around each complete retry batch used to load OIDC metadata and signing JWKs; by default, the circuit opens after one exhausted batch and permits a recovery probe after 5 seconds</td>
 </tr>
 <tr>
 <td>
@@ -212,6 +212,20 @@ Base builder of the OIDC config components
 <td>
 </td>
 <td>URI of a token endpoint used to obtain a JWT based on the authentication code</td>
+</tr>
+<tr>
+<td>
+<a id="jwk-loader-timeout"></a>
+<a href="io.helidon.faulttolerance.Timeout.md">
+<code>jwk-<wbr>loader.<wbr>timeout</code>
+</a>
+</td>
+<td>
+<code>Timeout</code>
+</td>
+<td>
+</td>
+<td>Timeout applied to each attempt to load OIDC metadata and signing JWKs; it defaults to 5 seconds, must be positive, and must not exceed the retry overall timeout</td>
 </tr>
 <tr>
 <td>

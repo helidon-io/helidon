@@ -35,8 +35,11 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.CircuitBreakerConfig;
+import io.helidon.faulttolerance.ResilientValue;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.Timeout;
+import io.helidon.faulttolerance.TimeoutConfig;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -56,6 +59,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     static final String DEFAULT_REALM = "helidon";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
+    private static final Duration DEFAULT_JWK_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration DEFAULT_JWK_RETRY_OVERALL_TIMEOUT = Duration.ofSeconds(11);
 
     private JsonObject oidcMetadata;
     private ResourceConfig oidcMetadataResource;
@@ -74,8 +79,9 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
     private JwkKeys signJwk;
     private ResourceConfig signJwkResource;
-    private Retry jwkRetry = Retry.builder().build();
-    private CircuitBreaker jwkCircuitBreaker = CircuitBreaker.builder().build();
+    private Retry jwkRetry = defaultJwkRetry();
+    private CircuitBreaker jwkCircuitBreaker = defaultJwkCircuitBreaker();
+    private Timeout jwkTimeout = defaultJwkTimeout();
     private JwkKeys contentKeyDecryptionKeys;
     private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
     private URI introspectUri;
@@ -107,6 +113,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         validateAbsoluteUri(collector, logoutEndpointUri, "logout-endpoint-uri");
         validateAbsoluteUri(collector, tokenEndpointUri, "token-endpoint-uri");
         validateAbsoluteUri(collector, introspectUri, "introspect-endpoint-uri");
+        validateJwkFaultTolerance(collector);
 
         if (audience == null && !optionalAudience && identityUri != null) {
             this.audience = identityUri.toString();
@@ -142,9 +149,14 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
 
         config.get("sign-jwk.resource").as(ResourceConfig::create).ifPresent(this::signJwk);
-        config.get("jwk-loader.retry").as(RetryConfig::create).ifPresent(this::jwkRetry);
+        config.get("jwk-loader.retry")
+                .as(it -> RetryConfig.builder(defaultJwkRetry().prototype()).config(it).build())
+                .ifPresent(this::jwkRetry);
+        config.get("jwk-loader.timeout")
+                .as(it -> TimeoutConfig.builder(defaultJwkTimeout().prototype()).config(it).build())
+                .ifPresent(this::jwkTimeout);
         config.get("jwk-loader.circuit-breaker")
-                .as(CircuitBreakerConfig::create)
+                .as(it -> CircuitBreakerConfig.builder(defaultJwkCircuitBreaker().prototype()).config(it).build())
                 .ifPresent(this::jwkCircuitBreaker);
         config.get("decryption-keys.resource").as(Resource::create).ifPresent(this::decryptionKeys);
 
@@ -326,7 +338,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     }
 
     /**
-     * Retry used while loading OIDC metadata and signing JWK.
+     * Retry used while loading OIDC metadata and signing JWKs; by default, it wraps two timeout-guarded attempts
+     * within an 11-second overall timeout.
      *
      * @param jwkRetry retry to use
      * @return updated builder instance
@@ -373,7 +386,56 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     }
 
     /**
-     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     * Timeout applied to each attempt to load OIDC metadata and signing JWKs; it defaults to 5 seconds, must be
+     * positive, and must not exceed the retry overall timeout.
+     *
+     * @param jwkTimeout timeout to use
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-loader.timeout", type = Timeout.class)
+    public B jwkTimeout(Timeout jwkTimeout) {
+        this.jwkTimeout = Objects.requireNonNull(jwkTimeout);
+        return identity();
+    }
+
+    /**
+     * Timeout applied to each attempt to load OIDC metadata and signing JWK.
+     *
+     * @param jwkTimeout prototype of timeout to use
+     * @return updated builder instance
+     */
+    public B jwkTimeout(TimeoutConfig jwkTimeout) {
+        Objects.requireNonNull(jwkTimeout);
+        return jwkTimeout(jwkTimeout.build());
+    }
+
+    /**
+     * Timeout applied to each attempt to load OIDC metadata and signing JWK.
+     *
+     * @param consumer consumer of builder of timeout to use
+     * @return updated builder instance
+     */
+    public B jwkTimeout(Consumer<TimeoutConfig.Builder> consumer) {
+        Objects.requireNonNull(consumer);
+        var builder = TimeoutConfig.builder();
+        consumer.accept(builder);
+        return jwkTimeout(builder.build());
+    }
+
+    /**
+     * Timeout applied to each attempt to load OIDC metadata and signing JWK.
+     *
+     * @param supplier supplier of timeout to use
+     * @return updated builder instance
+     */
+    public B jwkTimeout(Supplier<? extends Timeout> supplier) {
+        Objects.requireNonNull(supplier);
+        return jwkTimeout(supplier.get());
+    }
+
+    /**
+     * Circuit breaker around each complete retry batch used to load OIDC metadata and signing JWKs; by default, the
+     * circuit opens after one exhausted batch and permits a recovery probe after 5 seconds.
      *
      * @param jwkCircuitBreaker circuit breaker to use
      * @return updated builder instance
@@ -752,6 +814,10 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return jwkRetry;
     }
 
+    Timeout jwkTimeout() {
+        return jwkTimeout;
+    }
+
     CircuitBreaker jwkCircuitBreaker() {
         return jwkCircuitBreaker;
     }
@@ -781,6 +847,38 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
             throw new IllegalArgumentException("Configured OIDC signing JWK must contain at least one usable key");
         }
         return keys;
+    }
+
+    static Retry defaultJwkRetry() {
+        return Retry.builder()
+                .calls(2)
+                .overallTimeout(DEFAULT_JWK_RETRY_OVERALL_TIMEOUT)
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
+    }
+
+    static CircuitBreaker defaultJwkCircuitBreaker() {
+        return CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
+    }
+
+    static Timeout defaultJwkTimeout() {
+        return Timeout.builder()
+                .timeout(DEFAULT_JWK_TIMEOUT)
+                .build();
+    }
+
+    private void validateJwkFaultTolerance(Errors.Collector collector) {
+        Duration timeout = jwkTimeout.prototype().timeout();
+        if (timeout.isNegative() || timeout.isZero()) {
+            collector.fatal("jwk-loader.timeout.timeout must be positive");
+        }
+        if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
+            collector.fatal("jwk-loader.timeout.timeout must not exceed jwk-loader.retry.overall-timeout");
+        }
     }
 
     private static boolean isDynamic(ResourceConfig resourceConfig) {

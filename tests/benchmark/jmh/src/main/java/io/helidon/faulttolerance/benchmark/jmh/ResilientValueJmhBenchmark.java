@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.faulttolerance.CircuitBreakerConfig;
 import io.helidon.faulttolerance.RetryConfig;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.TimeoutConfig;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -55,7 +56,7 @@ public class ResilientValueJmhBenchmark {
         cachedValue = ResilientValue.create("jmh-cached", () -> {
             cachedLoads.incrementAndGet();
             return VALUE;
-        }, RetryConfig.builder().build(), CircuitBreakerConfig.builder().build());
+        }, RetryConfig.builder().build(), CircuitBreakerConfig.builder().build(), TimeoutConfig.builder().build());
         cachedValue.get();
 
         var retry = RetryConfig.builder()
@@ -76,7 +77,7 @@ public class ResilientValueJmhBenchmark {
         openValue = ResilientValue.create("jmh-open", () -> {
             unavailableLoads.incrementAndGet();
             throw new ResilientValue.UnavailableException("Expected benchmark failure");
-        }, retry, circuitBreaker);
+        }, retry, circuitBreaker, TimeoutConfig.builder().build());
 
         try {
             openValue.get();

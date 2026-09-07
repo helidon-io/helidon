@@ -234,7 +234,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return ResilientValue.create("OIDC tenant authentication",
                                      loader,
                                      tenantConfig.jwkRetry(),
-                                     tenantConfig.jwkCircuitBreaker());
+                                     tenantConfig.jwkCircuitBreaker(),
+                                     tenantConfig.jwkTimeout());
     }
 
     private void removeTenantAuthenticationHandler(String tenantId) {

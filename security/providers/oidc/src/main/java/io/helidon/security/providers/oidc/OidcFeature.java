@@ -390,7 +390,8 @@ public final class OidcFeature implements HttpFeature {
         return ResilientValue.create("OIDC web feature tenant",
                                      loader,
                                      tenantConfig.jwkRetry(),
-                                     tenantConfig.jwkCircuitBreaker());
+                                     tenantConfig.jwkCircuitBreaker(),
+                                     tenantConfig.jwkTimeout());
     }
 
     private void removeTenant(String tenantId) {

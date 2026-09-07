@@ -40,6 +40,7 @@ import io.helidon.config.Config;
 import io.helidon.faulttolerance.CircuitBreakerConfig;
 import io.helidon.faulttolerance.ResilientValue;
 import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.TimeoutConfig;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
@@ -266,6 +267,8 @@ class JwtProviderJwkLoadingTest {
                     calls: 1
                     delay: "PT0S"
                     overall-timeout: "PT1S"
+                  timeout:
+                    timeout: "PT1S"
                   circuit-breaker:
                     volume: 2
                     error-ratio: 100
@@ -295,6 +298,8 @@ class JwtProviderJwkLoadingTest {
                     calls: 1
                     delay: "PT0S"
                     overall-timeout: "PT1S"
+                  timeout:
+                    timeout: "PT1S"
                 """.formatted(keysPath.toString().replace("'", "''"));
 
         JwtProvider provider = JwtProvider.builder()
@@ -323,6 +328,31 @@ class JwtProviderJwkLoadingTest {
         assertThat(metadata,
                    containsString("\"key\":\"jwk-loader.circuit-breaker\",\"type\":"
                                           + "\"io.helidon.faulttolerance.CircuitBreaker\""));
+        assertThat(metadata,
+                   containsString("\"key\":\"jwk-loader.timeout\",\"type\":"
+                                          + "\"io.helidon.faulttolerance.Timeout\""));
+    }
+
+    @Test
+    void hasJwkFaultToleranceDefaults() {
+        assertThat(JwtProvider.Builder.defaultJwkTimeout().prototype().timeout(), is(Duration.ofSeconds(5)));
+        assertThat(JwtProvider.Builder.defaultJwkRetry().prototype().calls(), is(2));
+        assertThat(JwtProvider.Builder.defaultJwkRetry().prototype().overallTimeout(), is(Duration.ofSeconds(11)));
+        assertThat(JwtProvider.Builder.defaultJwkCircuitBreaker().prototype().volume(), is(1));
+        assertThat(JwtProvider.Builder.defaultJwkCircuitBreaker().prototype().errorRatio(), is(100));
+        assertThat(JwtProvider.Builder.defaultJwkCircuitBreaker().prototype().delay(), is(Duration.ofSeconds(5)));
+    }
+
+    @Test
+    void rejectsInconsistentJwkTimeoutAtStartup() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> JwtProvider.builder()
+                             .jwkTimeout(TimeoutConfig.builder().timeout(Duration.ZERO).buildPrototype())
+                             .build());
+        assertThrows(IllegalArgumentException.class,
+                     () -> JwtProvider.builder()
+                             .jwkRetry(RetryConfig.builder().overallTimeout(Duration.ofSeconds(4)).buildPrototype())
+                             .build());
     }
 
     @Test
@@ -373,6 +403,7 @@ class JwtProviderJwkLoadingTest {
                                    .path(keysPath)
                                    .buildPrototype())
                 .jwkRetry(oneCallRetry())
+                .jwkTimeout(TimeoutConfig.builder().timeout(Duration.ofSeconds(1)).buildPrototype())
                 .jwkCircuitBreaker(circuitBreakerConfig)
                 .optional(optional);
     }

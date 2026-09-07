@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -56,7 +57,8 @@ class ResilientValueTest {
                                                                  return "loaded";
                                                              },
                                                              retry(3),
-                                                             circuitBreaker());
+                                                             circuitBreaker(),
+                                                             timeout());
 
         assertThat(value.isLoaded(), is(false));
         assertThat(value.get(), is("loaded"));
@@ -77,7 +79,8 @@ class ResilientValueTest {
                                                                  return "loaded";
                                                              },
                                                              retry(3),
-                                                             circuitBreaker(executor));
+                                                             circuitBreaker(executor),
+                                                             timeout());
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(3));
@@ -106,12 +109,45 @@ class ResilientValueTest {
                                                                  throw new ResilientValue.UnavailableException("not ready");
                                                              },
                                                              retry(retry),
-                                                             circuitBreaker(executor));
+                                                             circuitBreaker(executor),
+                                                             timeout(Duration.ofNanos(1)));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(1));
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(1));
+    }
+
+    @Test
+    void timeoutIsRetriedInsideCircuitBreaker() {
+        TestExecutor executor = new TestExecutor();
+        FailingTimeout timeout = new FailingTimeout();
+        ResilientValue<String> value = ResilientValue.create("test value",
+                                                             () -> "unreachable",
+                                                             retry(2),
+                                                             circuitBreaker(executor),
+                                                             timeout);
+
+        assertThrows(ResilientValue.UnavailableException.class, value::get);
+        assertThat(timeout.calls(), is(2));
+        assertThrows(ResilientValue.UnavailableException.class, value::get);
+        assertThat(timeout.calls(), is(2));
+    }
+
+    @Test
+    void validatesTimeoutAgainstRetry() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> ResilientValue.create("test value",
+                                                 () -> "value",
+                                                 retry(1),
+                                                 circuitBreaker(),
+                                                 timeout(Duration.ZERO)));
+        assertThrows(IllegalArgumentException.class,
+                     () -> ResilientValue.create("test value",
+                                                 () -> "value",
+                                                 retry(1),
+                                                 circuitBreaker(),
+                                                 timeout(Duration.ofSeconds(2))));
     }
 
     @Test
@@ -125,7 +161,8 @@ class ResilientValueTest {
                                                                  return "loaded";
                                                              },
                                                              retry(3),
-                                                             circuitBreaker());
+                                                             circuitBreaker(),
+                                                             timeout());
 
         assertThrows(IllegalStateException.class, value::get);
         assertThat(calls.get(), is(1));
@@ -151,7 +188,8 @@ class ResilientValueTest {
                                                                  return "loaded";
                                                              },
                                                              retry,
-                                                             circuitBreaker());
+                                                             circuitBreaker(),
+                                                             timeout());
 
         assertThat(value.get(), is("loaded"));
         assertThat(calls.get(), is(2));
@@ -163,7 +201,8 @@ class ResilientValueTest {
         ResilientValue<String> value = ResilientValue.create("test value",
                                                              () -> calls.incrementAndGet() == 1 ? null : "loaded",
                                                              retry(3),
-                                                             circuitBreaker());
+                                                             circuitBreaker(),
+                                                             timeout());
 
         assertThrows(NullPointerException.class, value::get);
         assertThat(calls.get(), is(1));
@@ -188,7 +227,8 @@ class ResilientValueTest {
                                                                  return "loaded";
                                                              },
                                                              retry(1),
-                                                             circuitBreaker());
+                                                             circuitBreaker(),
+                                                             timeout());
 
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
@@ -238,7 +278,8 @@ class ResilientValueTest {
                                                                  throw new ResilientValue.UnavailableException("not ready");
                                                              },
                                                              retry(1),
-                                                             circuitBreaker());
+                                                             circuitBreaker(),
+                                                             timeout());
 
         Thread loaderThread = Thread.ofVirtual().start(() -> captureFailure(value, loaderFailure));
         Thread followerThread = Thread.ofVirtual().unstarted(() -> captureFailure(value, followerFailure));
@@ -345,7 +386,8 @@ class ResilientValueTest {
                                                                  throw new ResilientValue.UnavailableException("safe failure");
                                                              },
                                                              retry(testRetry),
-                                                             circuitBreaker(testBreaker));
+                                                             circuitBreaker(testBreaker),
+                                                             timeout());
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(5));
@@ -381,6 +423,17 @@ class ResilientValueTest {
                 .delayFactor(0)
                 .overallTimeout(Duration.ofSeconds(1))
                 .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
+    }
+
+    private static Timeout timeout() {
+        return timeout(Duration.ofSeconds(1));
+    }
+
+    private static Timeout timeout(Duration duration) {
+        return TimeoutConfig.builder()
+                .timeout(duration)
+                .currentThread(true)
                 .build();
     }
 
@@ -438,7 +491,8 @@ class ResilientValueTest {
                                                                  return "loaded";
                                                              },
                                                              retry(1),
-                                                             circuitBreaker(executor));
+                                                             circuitBreaker(executor),
+                                                             timeout());
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThrows(ResilientValue.UnavailableException.class, value::get);
@@ -465,7 +519,8 @@ class ResilientValueTest {
                                                                  return "loaded";
                                                              },
                                                              retry(1),
-                                                             circuitBreaker());
+                                                             circuitBreaker(),
+                                                             timeout());
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
                 value.get();
@@ -580,6 +635,33 @@ class ResilientValueTest {
             }
             task.run();
             return true;
+        }
+    }
+
+    private static final class FailingTimeout implements Timeout {
+        private final AtomicInteger calls = new AtomicInteger();
+        private final TimeoutConfig prototype = TimeoutConfig.builder()
+                .timeout(Duration.ofSeconds(1))
+                .buildPrototype();
+
+        @Override
+        public String name() {
+            return "failing-timeout";
+        }
+
+        @Override
+        public <T> T invoke(Supplier<? extends T> supplier) {
+            calls.incrementAndGet();
+            throw new TimeoutException("Expected test timeout");
+        }
+
+        @Override
+        public TimeoutConfig prototype() {
+            return prototype;
+        }
+
+        int calls() {
+            return calls.get();
         }
     }
 

@@ -17,6 +17,7 @@
 package io.helidon.faulttolerance;
 
 import java.lang.System.Logger.Level;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,6 +32,7 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     private final Supplier<T> loader;
     private final Retry retry;
     private final CircuitBreaker circuitBreaker;
+    private final Timeout timeout;
     private final AtomicBoolean failed = new AtomicBoolean();
     private final AtomicReference<LazyValue<Outcome<T>>> attempt;
 
@@ -40,11 +42,14 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     ResilientValueImpl(String description,
                        Supplier<T> loader,
                        Retry retry,
-                       CircuitBreaker circuitBreaker) {
+                       CircuitBreaker circuitBreaker,
+                       Timeout timeout) {
         this.description = requireDescription(description);
         this.loader = Objects.requireNonNull(loader);
         this.retry = Objects.requireNonNull(retry);
         this.circuitBreaker = Objects.requireNonNull(circuitBreaker);
+        this.timeout = Objects.requireNonNull(timeout);
+        validateTimeout(retry.prototype().overallTimeout(), timeout.prototype().timeout());
         this.attempt = new AtomicReference<>(newAttempt());
     }
 
@@ -84,6 +89,15 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         return description;
     }
 
+    private static void validateTimeout(Duration retryTimeout, Duration attemptTimeout) {
+        if (attemptTimeout.isNegative() || attemptTimeout.isZero()) {
+            throw new IllegalArgumentException("Timeout must be positive");
+        }
+        if (attemptTimeout.compareTo(retryTimeout) > 0) {
+            throw new IllegalArgumentException("Timeout must not exceed retry overall timeout");
+        }
+    }
+
     private LazyValue<Outcome<T>> newAttempt() {
         return LazyValue.create(() -> {
             try {
@@ -115,9 +129,17 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
 
     private T loadWithRetry() {
         try {
-            return retry.invoke(loader);
+            return retry.invoke(this::loadWithTimeout);
         } catch (RetryTimeoutException e) {
             throw new ResilientValue.UnavailableException(description + " did not become available before the retry timeout", e);
+        }
+    }
+
+    private T loadWithTimeout() {
+        try {
+            return timeout.invoke(loader);
+        } catch (TimeoutException e) {
+            throw new ResilientValue.UnavailableException(description + " load attempt timed out", e);
         }
     }
 
