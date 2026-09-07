@@ -69,6 +69,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     private static final Pattern SPECIAL_CHARACTERS_MAPPED_TO_UNDERSCORE_PATTERN = Pattern.compile("[-+.!?@#$%^&*`'\\s]+");
     private static final Pattern NON_DIGIT_OR_UNDERSCORE_PREFIX_PATTERN = Pattern.compile("^[0-9_]+.*");
     private static final Pattern NON_IDENTIFIER_PATTERN = Pattern.compile("[^A-Za-z0-9_:]");
+    private static final Set<String> MICROMETER_GENERATED_LABEL_NAMES = Set.of("le", "quantile", "statistic", "vmrange");
 
     private final Set<String> meterNames;
     private final Map<String, Set<String>> tagSelection;
@@ -259,6 +260,17 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         return unit == null ? "" : unit;
     }
 
+    private static Set<String> commonLabelNames(List<Collector.MetricFamilySamples.Sample> samples) {
+        if (samples.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> result = new HashSet<>(samples.getFirst().labelNames);
+        samples.stream()
+                .skip(1)
+                .forEach(sample -> result.retainAll(sample.labelNames));
+        return result;
+    }
+
     private static Map<String, Set<String>> meterTagNamesByFamily(PrometheusMeterRegistry prometheusMeterRegistry) {
         Map<String, Set<String>> result = new HashMap<>();
         var namingConvention = prometheusMeterRegistry.config().namingConvention();
@@ -284,11 +296,19 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                 ? prometheusMeterRegistry.getPrometheusRegistry().metricFamilySamples()
                 : prometheusMeterRegistry.getPrometheusRegistry().filteredMetricFamilySamples(meterNamesOfInterest);
         List<Collector.MetricFamilySamples> matchingFamilies = new ArrayList<>();
-        Map<String, Set<String>> meterTagNamesByFamily = meterTagNamesByFamily(prometheusMeterRegistry);
+        var namingConvention = prometheusMeterRegistry.config().namingConvention();
+        boolean selectsGeneratedLabel = tagSelection.keySet().stream()
+                .map(namingConvention::tagKey)
+                .anyMatch(MICROMETER_GENERATED_LABEL_NAMES::contains);
+        Map<String, Set<String>> meterTagNamesByFamily = selectsGeneratedLabel
+                ? meterTagNamesByFamily(prometheusMeterRegistry)
+                : Map.of();
 
         while (metricFamilySamples.hasMoreElements()) {
             Collector.MetricFamilySamples family = metricFamilySamples.nextElement();
-            Set<String> meterTagNames = meterTagNamesByFamily.getOrDefault(family.name, Set.of());
+            Set<String> meterTagNames = selectsGeneratedLabel
+                    ? meterTagNamesByFamily.getOrDefault(family.name, Set.of())
+                    : commonLabelNames(family.samples);
             List<Collector.MetricFamilySamples.Sample> matchingSamples = family.samples.stream()
                     .filter(sample -> matchesTagSelection(prometheusMeterRegistry, meterTagNames, sample))
                     .toList();

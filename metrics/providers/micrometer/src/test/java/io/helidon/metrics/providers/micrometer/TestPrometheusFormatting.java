@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
@@ -287,6 +288,11 @@ class TestPrometheusFormatting {
                 .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
                 .tagSelection(Map.of("real", Set.of("yes")))
                 .build();
+        var actualStatisticTagFormatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .meterNameSelection(Set.of("actualStatisticTag"))
+                .tagSelection(Map.of("statistic", Set.of("COUNT")))
+                .build();
 
         assertThat("Generated common label does not match a meter tag selection",
                    statisticFormatter.format(),
@@ -295,6 +301,9 @@ class TestPrometheusFormatting {
                    checkAndCast(realTagFormatter.format()),
                    allOf(containsString("generatedCommonLabel{real=\"yes\",statistic=\"COUNT\"} 1.0"),
                          containsString("generatedCommonLabel_sum{real=\"yes\",statistic=\"TOTAL\"} 2.0")));
+        assertThat("Actual meter tag which shares a generated label name remains selectable",
+                   checkAndCast(actualStatisticTagFormatter.format()),
+                   containsString("actualStatisticTag{statistic=\"COUNT\"} 3.0"));
     }
 
     @Test
@@ -499,7 +508,7 @@ class TestPrometheusFormatting {
                 counter.increment(i + 1);
             }
 
-            trackingRegistry.resetMeterEnumerationCount();
+            trackingRegistry.resetMeterInspectionCounts();
             var formatter = MicrometerPrometheusFormatter.builder(customRegistry)
                     .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
                     .tagSelection(Map.of(TEST_TAG_NAME, Set.of("selected")))
@@ -508,6 +517,9 @@ class TestPrometheusFormatting {
             String output = checkAndCast(formatter.format());
             assertThat("Tag-only selection bypasses meter name expansion",
                        trackingRegistry.meterEnumerationCount(),
+                       is(0));
+            assertThat("Ordinary tag-only selection does not traverse meter IDs",
+                       trackingRegistry.meterIterationCount(),
                        is(0));
             assertThat("Only the matching high-cardinality sample is formatted",
                        output,
@@ -580,6 +592,7 @@ class TestPrometheusFormatting {
     private static class TrackingPrometheusMeterRegistry extends PrometheusMeterRegistry {
 
         private int meterEnumerationCount;
+        private int meterIterationCount;
 
         private TrackingPrometheusMeterRegistry() {
             super(PrometheusConfig.DEFAULT);
@@ -591,12 +604,23 @@ class TestPrometheusFormatting {
             return super.getMeters();
         }
 
+        @Override
+        public void forEachMeter(Consumer<? super Meter> consumer) {
+            meterIterationCount++;
+            super.forEachMeter(consumer);
+        }
+
         private int meterEnumerationCount() {
             return meterEnumerationCount;
         }
 
-        private void resetMeterEnumerationCount() {
+        private int meterIterationCount() {
+            return meterIterationCount;
+        }
+
+        private void resetMeterInspectionCounts() {
             meterEnumerationCount = 0;
+            meterIterationCount = 0;
         }
     }
 }
