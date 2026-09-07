@@ -35,7 +35,7 @@ final class TenantCache<T> {
     private final Function<TenantConfig, Supplier<T>> valueFactory;
     private final LruCache<String, Supplier<T>> values = LruCache.create();
     private final ReentrantLock lock = new ReentrantLock();
-    private final Map<String, Long> versions = new HashMap<>();
+    private final Map<String, Resolution> inFlightResolutions = new HashMap<>();
 
     TenantCache(List<TenantConfigFinder> tenantConfigFinders,
                 OidcConfig oidcConfig,
@@ -53,6 +53,7 @@ final class TenantCache<T> {
         }
 
         while (true) {
+            Resolution resolution;
             long version;
             lock.lock();
             try {
@@ -60,17 +61,36 @@ final class TenantCache<T> {
                 if (cachedValue.isPresent()) {
                     return cachedValue;
                 }
-                version = versions.getOrDefault(tenantId, 0L);
+                resolution = inFlightResolutions.computeIfAbsent(tenantId, _ -> new Resolution());
+                version = resolution.retain();
             } finally {
                 lock.unlock();
             }
 
-            Optional<ResolvedTenantConfig> resolved = resolve(tenantId);
+            Optional<ResolvedTenantConfig> resolved;
+            try {
+                resolved = resolve(tenantId);
+            } catch (RuntimeException | Error e) {
+                boolean currentResolution;
+                lock.lock();
+                try {
+                    currentResolution = resolution.version() == version;
+                    release(tenantId, resolution);
+                } finally {
+                    lock.unlock();
+                }
+                if (currentResolution) {
+                    throw e;
+                }
+                continue;
+            }
             Supplier<T> value;
             TenantConfig tenantConfig;
             lock.lock();
             try {
-                if (version != versions.getOrDefault(tenantId, 0L)) {
+                boolean currentResolution = resolution.version() == version;
+                release(tenantId, resolution);
+                if (!currentResolution) {
                     continue;
                 }
                 if (resolved.isEmpty()) {
@@ -119,13 +139,44 @@ final class TenantCache<T> {
     private void remove(String tenantId) {
         lock.lock();
         try {
-            versions.merge(tenantId, 1L, Long::sum);
+            Resolution resolution = inFlightResolutions.get(tenantId);
+            if (resolution != null) {
+                resolution.invalidate();
+            }
             values.remove(tenantId);
         } finally {
             lock.unlock();
         }
     }
 
+    private void release(String tenantId, Resolution resolution) {
+        if (resolution.release()) {
+            inFlightResolutions.remove(tenantId, resolution);
+        }
+    }
+
     private record ResolvedTenantConfig(String cacheKey, TenantConfig tenantConfig) {
+    }
+
+    private static final class Resolution {
+        private long version;
+        private int users;
+
+        private long retain() {
+            users++;
+            return version;
+        }
+
+        private long version() {
+            return version;
+        }
+
+        private void invalidate() {
+            version++;
+        }
+
+        private boolean release() {
+            return --users == 0;
+        }
     }
 }

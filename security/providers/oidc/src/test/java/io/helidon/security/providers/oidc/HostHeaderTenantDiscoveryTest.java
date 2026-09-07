@@ -385,6 +385,9 @@ class HostHeaderTenantDiscoveryTest {
                 configRequested = configFinder.awaitConfigRequest();
                 if (configRequested) {
                     configFinder.update(tenantConfig(currentIdp.identityUri()));
+                    for (int i = 0; i < 1_000; i++) {
+                        configFinder.invalidate(tenantId);
+                    }
                 }
             } finally {
                 configFinder.releaseConfigResponse();
@@ -426,7 +429,9 @@ class HostHeaderTenantDiscoveryTest {
             try {
                 configRequested = configFinder.awaitConfigRequest();
                 if (configRequested) {
-                    configFinder.invalidate("unrelated.example.test");
+                    for (int i = 0; i < 1_000; i++) {
+                        configFinder.invalidate("unrelated-" + i + ".example.test");
+                    }
                 }
             } finally {
                 configFinder.releaseConfigResponse();
