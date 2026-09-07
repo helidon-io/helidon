@@ -127,7 +127,9 @@ class TestAutoMetricsConfig {
 
         assertThat("GET /metrics", config.isMeasured(Method.GET, UriPath.create("/metrics")), is(false));
         assertThat("Updated HTTP metrics default", config.useUpdatedHttpMetrics(), is(true));
-        assertThat(config.knownMethods(), is(AutoHttpMetricsConfigSupport.DEFAULT_KNOWN_METHODS));
+        assertThat(config.knownMethods(),
+                   is(List.of("CONNECT", "DELETE", "GET", "HEAD", "LIST", "OPTIONS", "PATCH", "POST", "PUT",
+                              "QUERY", "TRACE")));
 
     }
 

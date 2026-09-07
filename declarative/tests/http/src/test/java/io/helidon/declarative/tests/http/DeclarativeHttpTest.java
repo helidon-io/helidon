@@ -91,6 +91,16 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testQuery() {
+        GreetServiceClient typedClient = registry.get(Lookup.builder()
+                                                              .addContract(GreetServiceClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
+
+        assertThat(typedClient.query("name = 'Ada'"), is("Result: name = 'Ada'"));
+    }
+
+    @Test
     void testInheritedClientRetry() {
         InheritedFtClient typedClient = registry.get(Lookup.builder()
                                                               .addContract(InheritedFtClient.class)

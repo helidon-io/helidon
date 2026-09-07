@@ -166,6 +166,11 @@ class GreetServiceEndpoint implements GreetService {
         return List.of(new GreetingDto(this.greeting.get()), new GreetingDto("Hello"));
     }
 
+    @Override
+    public String query(@Http.Entity String query) {
+        return "Result: " + query;
+    }
+
     @Ft.Fallback(value = "fallback", applyOn = IllegalStateException.class)
     @Override
     public String failingFallback(@Http.HeaderParam(HeaderNames.HOST_NAME) String host) {
