@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.config.Config;
@@ -61,6 +62,20 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
     private static final Duration DEFAULT_JWK_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_JWK_RETRY_OVERALL_TIMEOUT = Duration.ofSeconds(11);
+    private static final RetryConfig DEFAULT_JWK_RETRY_CONFIG = RetryConfig.builder()
+            .calls(2)
+            .overallTimeout(DEFAULT_JWK_RETRY_OVERALL_TIMEOUT)
+            .addApplyOn(ResilientValue.UnavailableException.class)
+            .buildPrototype();
+    private static final CircuitBreakerConfig DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG = CircuitBreakerConfig.builder()
+            .volume(1)
+            .errorRatio(100)
+            .addApplyOn(ResilientValue.UnavailableException.class)
+            .buildPrototype();
+    private static final TimeoutConfig DEFAULT_JWK_TIMEOUT_CONFIG = TimeoutConfig.builder()
+            .timeout(DEFAULT_JWK_TIMEOUT)
+            .currentThread(true)
+            .buildPrototype();
 
     private JsonObject oidcMetadata;
     private ResourceConfig oidcMetadataResource;
@@ -79,9 +94,15 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
     private JwkKeys signJwk;
     private ResourceConfig signJwkResource;
-    private Retry jwkRetry = defaultJwkRetry();
-    private CircuitBreaker jwkCircuitBreaker = defaultJwkCircuitBreaker();
-    private Timeout jwkTimeout = defaultJwkTimeout();
+    private RetryConfig jwkRetryConfig = DEFAULT_JWK_RETRY_CONFIG;
+    private Retry jwkRetry;
+    private Supplier<? extends Retry> jwkRetrySupplier;
+    private CircuitBreakerConfig jwkCircuitBreakerConfig = DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG;
+    private CircuitBreaker jwkCircuitBreaker;
+    private Supplier<? extends CircuitBreaker> jwkCircuitBreakerSupplier;
+    private TimeoutConfig jwkTimeoutConfig = DEFAULT_JWK_TIMEOUT_CONFIG;
+    private Timeout jwkTimeout;
+    private Supplier<? extends Timeout> jwkTimeoutSupplier;
     private JwkKeys contentKeyDecryptionKeys;
     private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
     private URI introspectUri;
@@ -96,26 +117,15 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     }
 
     static Retry defaultJwkRetry() {
-        return Retry.builder()
-                .calls(2)
-                .overallTimeout(DEFAULT_JWK_RETRY_OVERALL_TIMEOUT)
-                .addApplyOn(ResilientValue.UnavailableException.class)
-                .build();
+        return RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG).build();
     }
 
     static CircuitBreaker defaultJwkCircuitBreaker() {
-        return CircuitBreaker.builder()
-                .volume(1)
-                .errorRatio(100)
-                .addApplyOn(ResilientValue.UnavailableException.class)
-                .build();
+        return CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG).build();
     }
 
     static Timeout defaultJwkTimeout() {
-        return Timeout.builder()
-                .timeout(DEFAULT_JWK_TIMEOUT)
-                .currentThread(true)
-                .build();
+        return TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG).build();
     }
 
     void buildConfiguration() {
@@ -136,7 +146,9 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         validateAbsoluteUri(collector, logoutEndpointUri, "logout-endpoint-uri");
         validateAbsoluteUri(collector, tokenEndpointUri, "token-endpoint-uri");
         validateAbsoluteUri(collector, introspectUri, "introspect-endpoint-uri");
-        validateJwkFaultTolerance(collector);
+        if (jwkLoadingLazy()) {
+            validateJwkFaultTolerance(collector);
+        }
 
         if (audience == null && !optionalAudience && identityUri != null) {
             this.audience = identityUri.toString();
@@ -173,13 +185,13 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
 
         config.get("sign-jwk.resource").as(ResourceConfig::create).ifPresent(this::signJwk);
         config.get("jwk-loader.retry")
-                .as(it -> RetryConfig.builder(defaultJwkRetry().prototype()).config(it).build())
+                .as(it -> RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG).config(it).buildPrototype())
                 .ifPresent(this::jwkRetry);
         config.get("jwk-loader.timeout")
-                .as(it -> TimeoutConfig.builder(defaultJwkTimeout().prototype()).config(it).build())
+                .as(it -> TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG).config(it).buildPrototype())
                 .ifPresent(this::jwkTimeout);
         config.get("jwk-loader.circuit-breaker")
-                .as(it -> CircuitBreakerConfig.builder(defaultJwkCircuitBreaker().prototype()).config(it).build())
+                .as(it -> CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG).config(it).buildPrototype())
                 .ifPresent(this::jwkCircuitBreaker);
         config.get("decryption-keys.resource").as(Resource::create).ifPresent(this::decryptionKeys);
 
@@ -370,18 +382,23 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     @ConfiguredOption(key = "jwk-loader.retry", type = Retry.class)
     public B jwkRetry(Retry jwkRetry) {
         this.jwkRetry = Objects.requireNonNull(jwkRetry);
+        this.jwkRetryConfig = jwkRetry.prototype();
+        this.jwkRetrySupplier = null;
         return identity();
     }
 
     /**
      * Retry used while loading OIDC metadata and signing JWK.
+     * The supplier is invoked only when a reloadable tenant source requires the retry.
      *
      * @param jwkRetry prototype of retry to use
      * @return updated builder instance
      */
     public B jwkRetry(RetryConfig jwkRetry) {
-        Objects.requireNonNull(jwkRetry);
-        return jwkRetry(jwkRetry.build());
+        this.jwkRetryConfig = Objects.requireNonNull(jwkRetry);
+        this.jwkRetry = null;
+        this.jwkRetrySupplier = null;
+        return identity();
     }
 
     /**
@@ -394,7 +411,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         Objects.requireNonNull(consumer);
         var builder = RetryConfig.builder();
         consumer.accept(builder);
-        return jwkRetry(builder.build());
+        return jwkRetry(builder.buildPrototype());
     }
 
     /**
@@ -404,8 +421,10 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      * @return updated builder instance
      */
     public B jwkRetry(Supplier<? extends Retry> supplier) {
-        Objects.requireNonNull(supplier);
-        return jwkRetry(supplier.get());
+        this.jwkRetrySupplier = Objects.requireNonNull(supplier);
+        this.jwkRetryConfig = null;
+        this.jwkRetry = null;
+        return identity();
     }
 
     /**
@@ -421,18 +440,23 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     @ConfiguredOption(key = "jwk-loader.timeout", type = Timeout.class)
     public B jwkTimeout(Timeout jwkTimeout) {
         this.jwkTimeout = Objects.requireNonNull(jwkTimeout);
+        this.jwkTimeoutConfig = jwkTimeout.prototype();
+        this.jwkTimeoutSupplier = null;
         return identity();
     }
 
     /**
      * Timeout applied to each attempt to load OIDC metadata and signing JWK.
+     * The supplier is invoked only when a reloadable tenant source requires the timeout.
      *
      * @param jwkTimeout prototype of timeout to use
      * @return updated builder instance
      */
     public B jwkTimeout(TimeoutConfig jwkTimeout) {
-        Objects.requireNonNull(jwkTimeout);
-        return jwkTimeout(jwkTimeout.build());
+        this.jwkTimeoutConfig = Objects.requireNonNull(jwkTimeout);
+        this.jwkTimeout = null;
+        this.jwkTimeoutSupplier = null;
+        return identity();
     }
 
     /**
@@ -445,7 +469,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         Objects.requireNonNull(consumer);
         var builder = TimeoutConfig.builder();
         consumer.accept(builder);
-        return jwkTimeout(builder.build());
+        return jwkTimeout(builder.buildPrototype());
     }
 
     /**
@@ -455,8 +479,10 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      * @return updated builder instance
      */
     public B jwkTimeout(Supplier<? extends Timeout> supplier) {
-        Objects.requireNonNull(supplier);
-        return jwkTimeout(supplier.get());
+        this.jwkTimeoutSupplier = Objects.requireNonNull(supplier);
+        this.jwkTimeoutConfig = null;
+        this.jwkTimeout = null;
+        return identity();
     }
 
     /**
@@ -469,18 +495,23 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     @ConfiguredOption(key = "jwk-loader.circuit-breaker", type = CircuitBreaker.class)
     public B jwkCircuitBreaker(CircuitBreaker jwkCircuitBreaker) {
         this.jwkCircuitBreaker = Objects.requireNonNull(jwkCircuitBreaker);
+        this.jwkCircuitBreakerConfig = jwkCircuitBreaker.prototype();
+        this.jwkCircuitBreakerSupplier = null;
         return identity();
     }
 
     /**
      * Circuit breaker used while loading OIDC metadata and signing JWK.
+     * The supplier is invoked only when a reloadable tenant source requires the circuit breaker.
      *
      * @param jwkCircuitBreaker prototype of circuit breaker to use
      * @return updated builder instance
      */
     public B jwkCircuitBreaker(CircuitBreakerConfig jwkCircuitBreaker) {
-        Objects.requireNonNull(jwkCircuitBreaker);
-        return jwkCircuitBreaker(jwkCircuitBreaker.build());
+        this.jwkCircuitBreakerConfig = Objects.requireNonNull(jwkCircuitBreaker);
+        this.jwkCircuitBreaker = null;
+        this.jwkCircuitBreakerSupplier = null;
+        return identity();
     }
 
     /**
@@ -493,7 +524,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         Objects.requireNonNull(consumer);
         var builder = CircuitBreakerConfig.builder();
         consumer.accept(builder);
-        return jwkCircuitBreaker(builder.build());
+        return jwkCircuitBreaker(builder.buildPrototype());
     }
 
     /**
@@ -503,8 +534,10 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      * @return updated builder instance
      */
     public B jwkCircuitBreaker(Supplier<? extends CircuitBreaker> supplier) {
-        Objects.requireNonNull(supplier);
-        return jwkCircuitBreaker(supplier.get());
+        this.jwkCircuitBreakerSupplier = Objects.requireNonNull(supplier);
+        this.jwkCircuitBreakerConfig = null;
+        this.jwkCircuitBreaker = null;
+        return identity();
     }
 
     /**
@@ -832,16 +865,49 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return signJwkResource;
     }
 
-    Retry jwkRetry() {
-        return jwkRetry;
+    LazyValue<Retry> jwkRetry() {
+        Retry instance = jwkRetry;
+        Supplier<? extends Retry> supplier = jwkRetrySupplier;
+        RetryConfig prototype = jwkRetryConfig;
+        return LazyValue.create(() -> {
+            if (instance != null) {
+                return instance;
+            }
+            if (supplier != null) {
+                return Objects.requireNonNull(supplier.get());
+            }
+            return RetryConfig.builder(prototype).build();
+        });
     }
 
-    Timeout jwkTimeout() {
-        return jwkTimeout;
+    LazyValue<Timeout> jwkTimeout() {
+        Timeout instance = jwkTimeout;
+        Supplier<? extends Timeout> supplier = jwkTimeoutSupplier;
+        TimeoutConfig prototype = jwkTimeoutConfig;
+        return LazyValue.create(() -> {
+            if (instance != null) {
+                return instance;
+            }
+            if (supplier != null) {
+                return Objects.requireNonNull(supplier.get());
+            }
+            return TimeoutConfig.builder(prototype).build();
+        });
     }
 
-    CircuitBreaker jwkCircuitBreaker() {
-        return jwkCircuitBreaker;
+    LazyValue<CircuitBreaker> jwkCircuitBreaker() {
+        CircuitBreaker instance = jwkCircuitBreaker;
+        Supplier<? extends CircuitBreaker> supplier = jwkCircuitBreakerSupplier;
+        CircuitBreakerConfig prototype = jwkCircuitBreakerConfig;
+        return LazyValue.create(() -> {
+            if (instance != null) {
+                return instance;
+            }
+            if (supplier != null) {
+                return Objects.requireNonNull(supplier.get());
+            }
+            return CircuitBreakerConfig.builder(prototype).build();
+        });
     }
 
     boolean validateJwtWithJwk() {
@@ -943,15 +1009,36 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         this.clientTimeout(Duration.ofMillis(millis));
     }
 
+    private boolean jwkLoadingLazy() {
+        boolean metadataLoadingLazy = oidcMetadataResource != null
+                || (oidcMetadata == null && useWellKnown);
+        if (metadataLoadingLazy || !validateJwtWithJwk) {
+            return metadataLoadingLazy;
+        }
+        if (signJwkResource != null) {
+            return true;
+        }
+        if (signJwk != null || oidcMetadata == null) {
+            return false;
+        }
+        String key = OidcUtil.resolveMetaKey("jwks_uri", serverType, identityUri);
+        return oidcMetadata.stringValue(key).isPresent();
+    }
+
     private void validateJwkFaultTolerance(Errors.Collector collector) {
-        Duration timeout = jwkTimeout.prototype().timeout();
+        RetryConfig retryConfig = jwkRetryConfig;
+        TimeoutConfig timeoutConfig = jwkTimeoutConfig;
+        if (retryConfig == null || timeoutConfig == null) {
+            return;
+        }
+        Duration timeout = timeoutConfig.timeout();
         if (timeout.isNegative() || timeout.isZero()) {
             collector.fatal("jwk-loader.timeout.timeout must be positive");
         }
-        if (!jwkTimeout.prototype().currentThread()) {
+        if (!timeoutConfig.currentThread()) {
             collector.fatal("jwk-loader.timeout.current-thread must be true");
         }
-        if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
+        if (timeout.compareTo(retryConfig.overallTimeout()) > 0) {
             collector.fatal("jwk-loader.timeout.timeout must not exceed jwk-loader.retry.overall-timeout");
         }
     }

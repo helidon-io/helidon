@@ -21,6 +21,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.Retry;
@@ -49,9 +50,9 @@ class TenantConfigImpl implements TenantConfig {
     private final Duration clientTimeout;
     private final JwkKeys signJwk;
     private final ResourceConfig signJwkResource;
-    private final Retry jwkRetry;
-    private final CircuitBreaker jwkCircuitBreaker;
-    private final Timeout jwkTimeout;
+    private final LazyValue<Retry> jwkRetry;
+    private final LazyValue<CircuitBreaker> jwkCircuitBreaker;
+    private final LazyValue<Timeout> jwkTimeout;
     private final JwkKeys contentKeyDecryptionKeys;
     private final String clientSecret;
     private final URI introspectUri;
@@ -123,17 +124,17 @@ class TenantConfigImpl implements TenantConfig {
 
     @Override
     public Retry jwkRetry() {
-        return jwkRetry;
+        return jwkRetry.get();
     }
 
     @Override
     public Timeout jwkTimeout() {
-        return jwkTimeout;
+        return jwkTimeout.get();
     }
 
     @Override
     public CircuitBreaker jwkCircuitBreaker() {
-        return jwkCircuitBreaker;
+        return jwkCircuitBreaker.get();
     }
 
     @Override

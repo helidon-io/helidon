@@ -49,6 +49,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -112,17 +113,86 @@ class OidcJwkLoadingTest {
     }
 
     @Test
+    void unusedFaultToleranceSuppliersAreLazy() {
+        AtomicInteger creations = new AtomicInteger();
+        OidcConfig config = baseBuilder()
+                .signJwk(fixedJwkResource())
+                .jwkRetry(() -> {
+                    creations.incrementAndGet();
+                    return BaseBuilder.defaultJwkRetry();
+                })
+                .jwkCircuitBreaker(() -> {
+                    creations.incrementAndGet();
+                    return BaseBuilder.defaultJwkCircuitBreaker();
+                })
+                .jwkTimeout(() -> {
+                    creations.incrementAndGet();
+                    return BaseBuilder.defaultJwkTimeout();
+                })
+                .build();
+
+        assertThat(creations.get(), is(0));
+
+        config.jwkRetry();
+        config.jwkCircuitBreaker();
+        config.jwkTimeout();
+        assertThat(creations.get(), is(3));
+    }
+
+    @Test
+    void prototypeFaultToleranceInstancesAreIndependent() {
+        RetryConfig retry = RetryConfig.builder()
+                .calls(1)
+                .overallTimeout(Duration.ofSeconds(1))
+                .buildPrototype();
+        CircuitBreakerConfig circuitBreaker = CircuitBreakerConfig.builder()
+                .volume(1)
+                .errorRatio(100)
+                .successThreshold(1)
+                .delay(Duration.ofDays(1))
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .buildPrototype();
+        TimeoutConfig timeout = TimeoutConfig.builder()
+                .timeout(Duration.ofSeconds(1))
+                .currentThread(true)
+                .buildPrototype();
+        OidcConfig.Builder builder = baseBuilder()
+                .signJwk(fixedJwkResource())
+                .jwkRetry(retry)
+                .jwkCircuitBreaker(circuitBreaker)
+                .jwkTimeout(timeout);
+
+        OidcConfig first = builder.build();
+        OidcConfig second = builder.build();
+
+        assertThat(first.jwkRetry(), not(sameInstance(second.jwkRetry())));
+        assertThat(first.jwkCircuitBreaker(), not(sameInstance(second.jwkCircuitBreaker())));
+        assertThat(first.jwkTimeout(), not(sameInstance(second.jwkTimeout())));
+        assertThrows(ResilientValue.UnavailableException.class,
+                     () -> first.jwkCircuitBreaker().invoke(() -> {
+                         throw new ResilientValue.UnavailableException("not ready");
+                     }));
+        assertThat(second.jwkCircuitBreaker().invoke(() -> "available"), is("available"));
+    }
+
+    @Test
     void rejectsInconsistentJwkTimeoutAtStartup() {
+        ResourceConfig reloadableJwk = ResourceConfig.builder()
+                .path(temporaryDirectory.resolve("keys.json"))
+                .buildPrototype();
         assertThrows(Errors.ErrorMessagesException.class,
                      () -> baseBuilder()
+                             .signJwk(reloadableJwk)
                              .jwkTimeout(Timeout.builder().timeout(Duration.ZERO).build())
                              .build());
         assertThrows(Errors.ErrorMessagesException.class,
                      () -> baseBuilder()
+                             .signJwk(reloadableJwk)
                              .jwkRetry(Retry.builder().overallTimeout(Duration.ofSeconds(4)).build())
                              .build());
         assertThrows(Errors.ErrorMessagesException.class,
                      () -> baseBuilder()
+                             .signJwk(reloadableJwk)
                              .jwkTimeout(Timeout.builder()
                                                  .timeout(Duration.ofSeconds(1))
                                                  .currentThread(false)

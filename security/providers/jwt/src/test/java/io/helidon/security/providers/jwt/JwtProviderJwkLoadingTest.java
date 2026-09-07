@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -178,7 +179,7 @@ class JwtProviderJwkLoadingTest {
     @Test
     void reusedBuilderCreatesIndependentDynamicLoader() throws IOException {
         Path keysPath = tempDir.resolve("verify-jwk.json");
-        JwtProvider.Builder builder = providerBuilder(keysPath, false, twoFailureCircuitBreaker());
+        JwtProvider.Builder builder = providerBuilder(keysPath, false, defaultCircuitBreaker());
         JwtProvider firstProvider = builder.build();
 
         assertThat(firstProvider.authenticate(request(validToken())).status(),
@@ -188,6 +189,55 @@ class JwtProviderJwkLoadingTest {
         JwtProvider secondProvider = builder.build();
         assertThat(secondProvider.authenticate(request(validToken())).status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
+    }
+
+    @Test
+    void unusedFaultToleranceSuppliersAreLazy() {
+        AtomicInteger creations = new AtomicInteger();
+        JwtProvider.builder()
+                .authenticate(false)
+                .verifyJwk(ResourceConfig.builder()
+                                   .path(tempDir.resolve("missing.json"))
+                                   .buildPrototype())
+                .jwkRetry(() -> {
+                    creations.incrementAndGet();
+                    return JwtProvider.Builder.defaultJwkRetry();
+                })
+                .jwkCircuitBreaker(() -> {
+                    creations.incrementAndGet();
+                    return JwtProvider.Builder.defaultJwkCircuitBreaker();
+                })
+                .jwkTimeout(() -> {
+                    creations.incrementAndGet();
+                    return JwtProvider.Builder.defaultJwkTimeout();
+                })
+                .build();
+
+        assertThat(creations.get(), is(0));
+    }
+
+    @Test
+    void dynamicFaultToleranceSuppliersAreCreatedOnce() {
+        AtomicInteger creations = new AtomicInteger();
+        JwtProvider.builder()
+                .verifyJwk(ResourceConfig.builder()
+                                   .path(tempDir.resolve("missing.json"))
+                                   .buildPrototype())
+                .jwkRetry(() -> {
+                    creations.incrementAndGet();
+                    return JwtProvider.Builder.defaultJwkRetry();
+                })
+                .jwkCircuitBreaker(() -> {
+                    creations.incrementAndGet();
+                    return JwtProvider.Builder.defaultJwkCircuitBreaker();
+                })
+                .jwkTimeout(() -> {
+                    creations.incrementAndGet();
+                    return JwtProvider.Builder.defaultJwkTimeout();
+                })
+                .build();
+
+        assertThat(creations.get(), is(3));
     }
 
     @Test
@@ -400,16 +450,22 @@ class JwtProviderJwkLoadingTest {
 
     @Test
     void rejectsInconsistentJwkTimeoutAtStartup() {
+        ResourceConfig reloadableJwk = ResourceConfig.builder()
+                .path(tempDir.resolve("missing.json"))
+                .buildPrototype();
         assertThrows(IllegalArgumentException.class,
                      () -> JwtProvider.builder()
+                             .verifyJwk(reloadableJwk)
                              .jwkTimeout(TimeoutConfig.builder().timeout(Duration.ZERO).buildPrototype())
                              .build());
         assertThrows(IllegalArgumentException.class,
                      () -> JwtProvider.builder()
+                             .verifyJwk(reloadableJwk)
                              .jwkRetry(RetryConfig.builder().overallTimeout(Duration.ofSeconds(4)).buildPrototype())
                              .build());
         assertThrows(IllegalArgumentException.class,
                      () -> JwtProvider.builder()
+                             .verifyJwk(reloadableJwk)
                              .jwkTimeout(TimeoutConfig.builder()
                                                  .timeout(Duration.ofSeconds(1))
                                                  .currentThread(false)

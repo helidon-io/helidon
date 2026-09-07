@@ -87,19 +87,23 @@ public class Tenant {
         Errors.Collector collector = Errors.collector();
 
         URI identityUri = tenantConfig.identityUri();
-        Duration jwkTimeout = tenantConfig.jwkTimeout().prototype().timeout();
+        Duration jwkTimeout = tenantConfig.tenantLoadingLazy()
+                ? tenantConfig.jwkTimeout().prototype().timeout()
+                : null;
         ResourceConfig metadataResource = tenantConfig.oidcMetadataResource().orElse(null);
         JsonObject metadataJson = resolveMetadata(tenantConfig.oidcMetadataJsonObject(),
                                                   metadataResource,
                                                   jwkTimeout);
-        OidcMetadata oidcMetadata = OidcMetadata.builder()
+        OidcMetadata.Builder oidcMetadataBuilder = OidcMetadata.builder()
                 .remoteEnabled(tenantConfig.useWellKnown())
                 .json(metadataJson)
                 .reloadable(metadataResource != null)
                 .webClient(webClient)
-                .readTimeout(jwkTimeout)
-                .identityUri(identityUri)
-                .build();
+                .identityUri(identityUri);
+        if (jwkTimeout != null) {
+            oidcMetadataBuilder.readTimeout(jwkTimeout);
+        }
+        OidcMetadata oidcMetadata = oidcMetadataBuilder.build();
 
         String serverType = tenantConfig.serverType();
         String metaKey = OidcUtil.resolveMetaKey("token_endpoint", serverType, identityUri);

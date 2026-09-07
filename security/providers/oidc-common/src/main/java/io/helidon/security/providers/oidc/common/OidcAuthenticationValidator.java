@@ -41,7 +41,9 @@ final class OidcAuthenticationValidator {
 
     static void validate(TenantConfig tenantConfig) {
         Objects.requireNonNull(tenantConfig);
-        validateJwkFaultTolerance(tenantConfig);
+        if (tenantConfig.tenantLoadingLazy()) {
+            validateJwkFaultTolerance(tenantConfig);
+        }
         if (!tenantConfig.validateJwtWithJwk()
                 || tenantConfig.tenantSignJwk().isPresent()
                 || tenantConfig.tenantSignJwkResource().isPresent()
