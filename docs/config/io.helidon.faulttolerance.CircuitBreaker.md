@@ -27,7 +27,7 @@ Configuration of a circuit breaker
 <td>
 <code>10</code>
 </td>
-<td>Rolling window size used to calculate ratio of failed requests</td>
+<td>Rolling window size used to calculate ratio of failed requests; must be at least 1 and its product with the configured error ratio must not exceed 2,147,483,647</td>
 </tr>
 <tr>
 <td>
@@ -39,7 +39,7 @@ Configuration of a circuit breaker
 <td>
 <code>PT5S</code>
 </td>
-<td>How long to wait before transitioning from open to half-open state</td>
+<td>How long to wait before transitioning from open to half-open state; must not be negative and must be small enough to represent in milliseconds</td>
 </tr>
 <tr>
 <td>
@@ -51,7 +51,7 @@ Configuration of a circuit breaker
 <td>
 <code>60</code>
 </td>
-<td>How many failures out of 100 will trigger the circuit to open</td>
+<td>How many failures out of 100 will trigger the circuit to open; must be between 1 and 100, inclusive, and its product with the configured volume must not exceed 2,147,483,647</td>
 </tr>
 <tr>
 <td>
@@ -75,7 +75,7 @@ Configuration of a circuit breaker
 <td>
 <code>1</code>
 </td>
-<td>How many successful calls will close a half-open circuit</td>
+<td>How many successful calls will close a half-open circuit; must be at least 1</td>
 </tr>
 </tbody>
 </table>
