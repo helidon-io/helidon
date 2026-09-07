@@ -224,9 +224,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
     }
 
     private JwkKeys verificationKeys(Jwt jwt) {
-        if (defaultJwk != null
-                && jwt.keyId().isEmpty()
-                && jwt.algorithm().map(defaultJwk.algorithm()::equals).orElse(true)) {
+        if (jwt.keyId().isEmpty()) {
             return EMPTY_JWK_KEYS;
         }
         if (verifyKeys != null) {

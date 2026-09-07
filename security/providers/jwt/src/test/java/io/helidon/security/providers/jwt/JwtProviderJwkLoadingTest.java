@@ -123,6 +123,20 @@ class JwtProviderJwkLoadingTest {
     }
 
     @Test
+    void signedTokenWithoutKeyIdDoesNotAttemptDynamicLoad() throws IOException {
+        Path keysPath = tempDir.resolve("verify-jwk.json");
+        JwtProvider provider = provider(keysPath, false, defaultCircuitBreaker());
+
+        AuthenticationResponse response = provider.authenticate(request(signedTokenWithoutKeyId()));
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.description().orElseThrow(), containsString("no kid is defined"));
+        writeVerificationKeys(keysPath);
+        assertThat(provider.authenticate(request(validToken())).status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+    }
+
+    @Test
     void unsignedTokensDoNotRequireVerificationKeys() {
         JwtProvider withoutKeys = JwtProvider.builder()
                 .allowUnsigned(true)
@@ -493,6 +507,20 @@ class JwtProviderJwkLoadingTest {
                 .issuer("jwt.example.com")
                 .algorithm(JwkRSA.ALG_RS256)
                 .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .build();
+        return SignedJwt.sign(jwt, SIGN_KEYS.forKeyId("sign-rsa").orElseThrow()).tokenContent();
+    }
+
+    private static String signedTokenWithoutKeyId() {
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user-id")
+                .preferredUsername("user")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
                 .issueTime(now)
                 .expirationTime(now.plus(1, ChronoUnit.HOURS))
                 .addAudience("audience.application.id")
