@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,7 +35,6 @@ import java.util.stream.Collectors;
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.LruCache;
 import io.helidon.common.Weight;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -158,10 +156,7 @@ public final class OidcFeature implements HttpFeature {
     private static final String STATE_PARAM_NAME = "state";
     private static final String DEFAULT_REDIRECT = "/index.html";
 
-    private final List<TenantConfigFinder> oidcConfigFinders;
-    private final LruCache<String, Supplier<Tenant>> tenants = LruCache.create();
-    private final ReentrantLock tenantsLock = new ReentrantLock();
-    private final Map<String, Long> tenantVersions = new HashMap<>();
+    private final TenantCache<Tenant> tenants;
     private final OidcConfig oidcConfig;
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
@@ -178,16 +173,15 @@ public final class OidcFeature implements HttpFeature {
             this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
             this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
             this.stateCookieHandler = oidcConfig.stateCookieHandler();
-            this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
             oidcConfig.validateForAuthentication();
-            this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(this::removeTenant));
+            this.tenants = new TenantCache<>(builder.tenantConfigFinders, oidcConfig, this::tenantSupplier);
         } else {
             this.tokenCookieHandler = null;
             this.idTokenCookieHandler = null;
             this.refreshTokenCookieHandler = null;
             this.tenantCookieHandler = null;
             this.stateCookieHandler = null;
-            this.oidcConfigFinders = List.of();
+            this.tenants = new TenantCache<>(List.of(), oidcConfig, this::tenantSupplier);
         }
     }
 
@@ -337,48 +331,7 @@ public final class OidcFeature implements HttpFeature {
     }
 
     private Optional<Supplier<Tenant>> cachedTenant(String tenantName) {
-        while (true) {
-            long version;
-            tenantsLock.lock();
-            try {
-                Optional<Supplier<Tenant>> cachedTenant = tenants.get(tenantName);
-                if (cachedTenant.isPresent()) {
-                    return cachedTenant;
-                }
-                version = tenantVersions.getOrDefault(tenantName, 0L);
-            } finally {
-                tenantsLock.unlock();
-            }
-
-            Optional<TenantConfigResolver.ResolvedTenantConfig> resolved =
-                    TenantConfigResolver.resolve(oidcConfigFinders, oidcConfig, tenantName);
-            Supplier<Tenant> tenant;
-            TenantConfig tenantConfig;
-            tenantsLock.lock();
-            try {
-                if (version != tenantVersions.getOrDefault(tenantName, 0L)) {
-                    continue;
-                }
-                if (resolved.isEmpty()) {
-                    return Optional.empty();
-                }
-                TenantConfigResolver.ResolvedTenantConfig resolvedTenant = resolved.orElseThrow();
-                tenantConfig = resolvedTenant.tenantConfig();
-                tenant = tenants.get(resolvedTenant.cacheKey())
-                        .orElseGet(() -> {
-                            Supplier<Tenant> newTenant = tenantSupplier(tenantConfig);
-                            tenants.put(resolvedTenant.cacheKey(), newTenant);
-                            return newTenant;
-                        });
-            } finally {
-                tenantsLock.unlock();
-            }
-
-            if (!tenantConfig.tenantLoadingLazy()) {
-                tenant.get();
-            }
-            return Optional.of(tenant);
-        }
+        return tenants.get(tenantName);
     }
 
     private Supplier<Tenant> tenantSupplier(TenantConfig tenantConfig) {
@@ -392,16 +345,6 @@ public final class OidcFeature implements HttpFeature {
                                      tenantConfig.jwkRetry(),
                                      tenantConfig.jwkCircuitBreaker(),
                                      tenantConfig.jwkTimeout());
-    }
-
-    private void removeTenant(String tenantId) {
-        tenantsLock.lock();
-        try {
-            tenantVersions.merge(tenantId, 1L, Long::sum);
-            tenants.remove(tenantId);
-        } finally {
-            tenantsLock.unlock();
-        }
     }
 
     private void logoutWithTenant(ServerRequest req,

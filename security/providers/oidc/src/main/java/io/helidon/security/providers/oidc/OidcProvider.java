@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.LruCache;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -88,15 +87,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final boolean optional;
     private final OidcConfig oidcConfig;
     private final List<TenantIdFinder> tenantIdFinders;
-    private final List<TenantConfigFinder> tenantConfigFinders;
     private final boolean propagate;
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
     private final String jwtGroupsPath;
     private final String jwtGroupsSeparator;
-    private final LruCache<String, Supplier<TenantAuthenticationHandler>> tenantAuthHandlers = LruCache.create();
-    private final ReentrantLock tenantAuthHandlersLock = new ReentrantLock();
-    private final Map<String, Long> tenantAuthHandlerVersions = new HashMap<>();
+    private final TenantCache<TenantAuthenticationHandler> tenantAuthHandlers;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -107,12 +103,12 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         this.jwtGroupsSeparator = builder.jwtGroupsSeparator;
         this.outboundConfig = oidcOutboundConfig;
 
-        tenantConfigFinders = List.copyOf(builder.tenantConfigFinders);
         tenantIdFinders = List.copyOf(builder.tenantIdFinders);
 
         oidcConfig.validateForAuthentication();
-        tenantConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder
-                .onChange(this::removeTenantAuthenticationHandler));
+        tenantAuthHandlers = new TenantCache<>(builder.tenantConfigFinders,
+                                               oidcConfig,
+                                               this::tenantAuthenticationHandler);
     }
 
     /**
@@ -172,49 +168,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     private Optional<Supplier<TenantAuthenticationHandler>> cachedTenantAuthenticationHandler(String tenantId) {
-        while (true) {
-            long version;
-            tenantAuthHandlersLock.lock();
-            try {
-                Optional<Supplier<TenantAuthenticationHandler>> cachedHandler = tenantAuthHandlers.get(tenantId);
-                if (cachedHandler.isPresent()) {
-                    return cachedHandler;
-                }
-                version = tenantAuthHandlerVersions.getOrDefault(tenantId, 0L);
-            } finally {
-                tenantAuthHandlersLock.unlock();
-            }
-
-            Optional<TenantConfigResolver.ResolvedTenantConfig> resolved =
-                    TenantConfigResolver.resolve(tenantConfigFinders, oidcConfig, tenantId);
-            Supplier<TenantAuthenticationHandler> handler;
-            TenantConfig tenantConfig;
-            tenantAuthHandlersLock.lock();
-            try {
-                if (version != tenantAuthHandlerVersions.getOrDefault(tenantId, 0L)) {
-                    continue;
-                }
-                if (resolved.isEmpty()) {
-                    return Optional.empty();
-                }
-                TenantConfigResolver.ResolvedTenantConfig resolvedTenant = resolved.orElseThrow();
-                tenantConfig = resolvedTenant.tenantConfig();
-                handler = tenantAuthHandlers.get(resolvedTenant.cacheKey())
-                        .orElseGet(() -> {
-                            Supplier<TenantAuthenticationHandler> newHandler =
-                                    tenantAuthenticationHandler(tenantConfig);
-                            tenantAuthHandlers.put(resolvedTenant.cacheKey(), newHandler);
-                            return newHandler;
-                        });
-            } finally {
-                tenantAuthHandlersLock.unlock();
-            }
-
-            if (!tenantConfig.tenantLoadingLazy()) {
-                handler.get();
-            }
-            return Optional.of(handler);
-        }
+        return tenantAuthHandlers.get(tenantId);
     }
 
     private Supplier<TenantAuthenticationHandler> tenantAuthenticationHandler(TenantConfig tenantConfig) {
@@ -236,16 +190,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                      tenantConfig.jwkRetry(),
                                      tenantConfig.jwkCircuitBreaker(),
                                      tenantConfig.jwkTimeout());
-    }
-
-    private void removeTenantAuthenticationHandler(String tenantId) {
-        tenantAuthHandlersLock.lock();
-        try {
-            tenantAuthHandlerVersions.merge(tenantId, 1L, Long::sum);
-            tenantAuthHandlers.remove(tenantId);
-        } finally {
-            tenantAuthHandlersLock.unlock();
-        }
     }
 
     private AuthenticationResponse unknownTenantResponse() {
