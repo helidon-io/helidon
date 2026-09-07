@@ -1389,7 +1389,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             resourceConfig.get("proxy-host")
                     .asString()
                     .filter(String::isBlank)
-                    .ifPresent(ignored -> {
+                    .ifPresent(_ -> {
                         throw new JwtException("Verification JWK proxy host must not be blank");
                     });
         }

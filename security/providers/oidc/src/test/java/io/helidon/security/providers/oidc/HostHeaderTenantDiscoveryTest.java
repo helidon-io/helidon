@@ -928,7 +928,7 @@ class HostHeaderTenantDiscoveryTest {
         private final String tenantId;
         private final AtomicReference<TenantConfig> tenantConfig;
         private final AtomicInteger configCalls = new AtomicInteger();
-        private Consumer<String> changeListener = ignored -> { };
+        private Consumer<String> changeListener = _ -> { };
         private volatile CountDownLatch configRequest;
         private volatile CountDownLatch configResponseGate;
 

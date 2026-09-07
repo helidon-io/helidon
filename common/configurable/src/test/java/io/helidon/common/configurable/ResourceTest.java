@@ -142,7 +142,7 @@ class ResourceTest {
         try (ServerSocket serverSocket = new ServerSocket()) {
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
             Thread serverThread = Thread.ofVirtual().start(() -> {
-                try (Socket ignored = serverSocket.accept()) {
+                try (Socket _ = serverSocket.accept()) {
                     accepted.countDown();
                     releaseServer.await();
                 } catch (Throwable t) {
