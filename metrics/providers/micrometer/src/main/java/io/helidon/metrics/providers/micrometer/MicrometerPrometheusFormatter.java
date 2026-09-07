@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -37,7 +38,11 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.service.registry.Services;
 
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.Collector;
@@ -254,14 +259,23 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         return unit == null ? "" : unit;
     }
 
-    private static Set<String> commonLabelNames(List<Collector.MetricFamilySamples.Sample> samples) {
-        if (samples.isEmpty()) {
-            return Set.of();
-        }
-        Set<String> result = new HashSet<>(samples.getFirst().labelNames);
-        samples.stream()
-                .skip(1)
-                .forEach(sample -> result.retainAll(sample.labelNames));
+    private static Map<String, Set<String>> meterTagNamesByFamily(PrometheusMeterRegistry prometheusMeterRegistry) {
+        Map<String, Set<String>> result = new HashMap<>();
+        var namingConvention = prometheusMeterRegistry.config().namingConvention();
+        prometheusMeterRegistry.forEachMeter(meter -> {
+            Meter.Id meterId = meter.getId();
+            String conventionName = meterId.getConventionName(namingConvention);
+            String familyName = meterId.getType() == Meter.Type.COUNTER && conventionName.endsWith("_total")
+                    ? conventionName.substring(0, conventionName.length() - "_total".length())
+                    : conventionName;
+            result.computeIfAbsent(familyName,
+                                   _ -> meterId.getConventionTags(namingConvention).stream()
+                                           .map(Tag::getKey)
+                                           .collect(Collectors.toUnmodifiableSet()));
+            if (meter instanceof Timer || meter instanceof DistributionSummary || meter instanceof LongTaskTimer) {
+                result.putIfAbsent(conventionName + "_max", result.get(familyName));
+            }
+        });
         return result;
     }
 
@@ -270,10 +284,11 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                 ? prometheusMeterRegistry.getPrometheusRegistry().metricFamilySamples()
                 : prometheusMeterRegistry.getPrometheusRegistry().filteredMetricFamilySamples(meterNamesOfInterest);
         List<Collector.MetricFamilySamples> matchingFamilies = new ArrayList<>();
+        Map<String, Set<String>> meterTagNamesByFamily = meterTagNamesByFamily(prometheusMeterRegistry);
 
         while (metricFamilySamples.hasMoreElements()) {
             Collector.MetricFamilySamples family = metricFamilySamples.nextElement();
-            Set<String> meterTagNames = commonLabelNames(family.samples);
+            Set<String> meterTagNames = meterTagNamesByFamily.getOrDefault(family.name, Set.of());
             List<Collector.MetricFamilySamples.Sample> matchingSamples = family.samples.stream()
                     .filter(sample -> matchesTagSelection(prometheusMeterRegistry, meterTagNames, sample))
                     .toList();

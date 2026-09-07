@@ -34,7 +34,9 @@ import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Statistic;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -263,6 +265,36 @@ class TestPrometheusFormatting {
         assertThat("Generated quantile label does not match a meter tag selection",
                    quantileFormatter.format(),
                    OptionalMatcher.optionalEmpty());
+    }
+
+    @Test
+    void testGeneratedCommonLabelDoesNotSatisfyTagSelection() {
+        Meter.builder("generatedCommonLabel",
+                      Meter.Type.OTHER,
+                      List.of(new Measurement(() -> 1, Statistic.COUNT),
+                              new Measurement(() -> 2, Statistic.TOTAL)))
+                .tag("real", "yes")
+                .register(MicrometerPrometheusFormatter.prometheusMeterRegistry(meterRegistry).orElseThrow());
+        meterRegistry.getOrCreate(metricsFactory.gaugeBuilder("actualStatisticTag", () -> 3)
+                                          .addTag(metricsFactory.tagCreate("statistic", "COUNT")));
+
+        var statisticFormatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .meterNameSelection(Set.of("generatedCommonLabel"))
+                .tagSelection(Map.of("statistic", Set.of("COUNT")))
+                .build();
+        var realTagFormatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .tagSelection(Map.of("real", Set.of("yes")))
+                .build();
+
+        assertThat("Generated common label does not match a meter tag selection",
+                   statisticFormatter.format(),
+                   OptionalMatcher.optionalEmpty());
+        assertThat("Actual meter tag selection retains the complete custom meter family",
+                   checkAndCast(realTagFormatter.format()),
+                   allOf(containsString("generatedCommonLabel{real=\"yes\",statistic=\"COUNT\"} 1.0"),
+                         containsString("generatedCommonLabel_sum{real=\"yes\",statistic=\"TOTAL\"} 2.0")));
     }
 
     @Test
