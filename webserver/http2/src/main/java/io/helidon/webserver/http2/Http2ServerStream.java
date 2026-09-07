@@ -34,11 +34,13 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
@@ -676,6 +678,11 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 return;
             }
             completed = true;
+        } catch (HttpException e) {
+            if (!handleHttpException(e)) {
+                return;
+            }
+            completed = true;
         } catch (Http2Exception e) {
             ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 stream exception, code: %s, message: %s",
                     e.code(), e.getMessage());
@@ -749,6 +756,23 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 }
             }
         }
+    }
+
+    private boolean handleHttpException(HttpException exception) {
+        DirectHandler.EventType eventType = exception instanceof BadRequestException
+                ? DirectHandler.EventType.BAD_REQUEST
+                : DirectHandler.EventType.OTHER;
+        return handleRequestException(RequestException.builder()
+                                              .cause(exception)
+                                              .type(eventType)
+                                              .message(exception.getMessage())
+                                              .status(exception.status())
+                                              .setKeepAlive(exception.keepAlive())
+                                              .request(DirectTransportRequest.create(
+                                                      prologue,
+                                                      Http2ServerRequest.requestHeaders(headers)))
+                                              .update(it -> exception.headers().forEach(it::header))
+                                              .build());
     }
 
     private boolean handleRequestException(RequestException exception) {
@@ -1584,6 +1608,10 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     response.status(Status.SERVICE_UNAVAILABLE_503)
                             .send("Too Many Concurrent Requests");
                     response.commit();
+                }
+            } catch (HttpException e) {
+                if (!handleHttpException(e)) {
+                    return;
                 }
             } finally {
                 try {

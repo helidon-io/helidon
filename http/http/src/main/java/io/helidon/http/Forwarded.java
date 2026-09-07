@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package io.helidon.http;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
+import io.helidon.common.uri.UriValidator;
 
 import static io.helidon.http.HeaderNames.FORWARDED;
 
@@ -49,15 +51,17 @@ public class Forwarded {
      */
     public static Forwarded create(String string) {
         // first split by semicolon, as that separates the directives
-        String[] directives = string.split(";");
         String by = null;
         String forClient = null;
         String host = null;
         String proto = null;
 
-        for (String directive : directives) {
+        for (String directive : split(string, ';')) {
+            if (directive.isEmpty()) {
+                continue;
+            }
             int index = directive.indexOf('=');
-            if (index == -1 && !directive.isEmpty()) {
+            if (index == -1) {
                 throw new IllegalArgumentException("Invalid Forwarded header");
             }
             String name = directive.substring(0, index);
@@ -71,6 +75,7 @@ public class Forwarded {
                 forClient = value;
             }
             case "host" -> {
+                validateHost(value);
                 host = value;
             }
             case "proto" -> {
@@ -97,12 +102,30 @@ public class Forwarded {
      * @return list of forwarded headers, will be empty if the header does not exist.
      */
     public static List<Forwarded> create(Headers headers) {
-        List<String> values = headers.values(FORWARDED);
+        List<String> values = headers.all(FORWARDED, List::of);
         return values.isEmpty() ? List.of() : values.stream()
-                    .flatMap(it -> Arrays.stream(it.split(",")))
+                    .flatMap(it -> split(it, ',').stream())
                     .map(String::trim)
+                    .filter(it -> !it.isEmpty())
                     .map(Forwarded::create)
                     .toList();
+    }
+
+    static int hostPortDelimiter(String authority) {
+        if (!authority.startsWith("[")) {
+            return authority.lastIndexOf(':');
+        }
+        int closingBracket = authority.lastIndexOf(']');
+        if (closingBracket < 0) {
+            throw new IllegalArgumentException("Invalid Forwarded header");
+        }
+        if (closingBracket + 1 == authority.length()) {
+            return -1;
+        }
+        if (authority.charAt(closingBracket + 1) == ':') {
+            return closingBracket + 1;
+        }
+        throw new IllegalArgumentException("Invalid Forwarded header");
     }
 
     /**
@@ -141,9 +164,65 @@ public class Forwarded {
         return proto;
     }
 
+    private static void validateHost(String authority) {
+        int portDelimiter = hostPortDelimiter(authority);
+        String host = portDelimiter < 0 ? authority : authority.substring(0, portDelimiter);
+
+        try {
+            UriValidator.validateHost(host);
+            if (portDelimiter >= 0) {
+                String port = authority.substring(portDelimiter + 1);
+                for (int i = 0; i < port.length(); i++) {
+                    char c = port.charAt(i);
+                    if (c < '0' || c > '9') {
+                        throw new IllegalArgumentException("Port is not numeric");
+                    }
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid Forwarded header", e);
+        }
+    }
+
+    private static List<String> split(String string, char delimiter) {
+        List<String> result = new ArrayList<>();
+        int start = 0;
+        boolean quoted = false;
+        boolean escaped = false;
+        for (int i = 0; i < string.length(); i++) {
+            char c = string.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (quoted && c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                quoted = !quoted;
+            } else if (!quoted && c == delimiter) {
+                result.add(string.substring(start, i));
+                start = i + 1;
+            }
+        }
+        if (quoted || escaped) {
+            throw new IllegalArgumentException("Invalid Forwarded header");
+        }
+        result.add(string.substring(start));
+        return result;
+    }
+
     private static String unquote(String string) {
-        if (string.indexOf('"') == 0 && string.lastIndexOf('"') == string.length() - 1) {
-            return string.substring(1, string.length() - 1);
+        int lastIndex = string.length() - 1;
+        if (string.indexOf('"') == 0 && string.lastIndexOf('"') == lastIndex) {
+            int escapeIndex = string.indexOf('\\', 1);
+            if (escapeIndex < 0) {
+                return string.substring(1, lastIndex);
+            }
+            StringBuilder result = new StringBuilder(lastIndex - 1);
+            result.append(string, 1, escapeIndex);
+            for (int i = escapeIndex; i < lastIndex; i++) {
+                char c = string.charAt(i);
+                result.append(c == '\\' ? string.charAt(++i) : c);
+            }
+            return result.toString();
         }
         return string;
     }
