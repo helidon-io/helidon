@@ -376,6 +376,7 @@ class JwtProviderJwkLoadingTest {
     @Test
     void hasJwkFaultToleranceDefaults() {
         assertThat(JwtProvider.Builder.defaultJwkTimeout().prototype().timeout(), is(Duration.ofSeconds(5)));
+        assertThat(JwtProvider.Builder.defaultJwkTimeout().prototype().currentThread(), is(true));
         assertThat(JwtProvider.Builder.defaultJwkRetry().prototype().calls(), is(2));
         assertThat(JwtProvider.Builder.defaultJwkRetry().prototype().overallTimeout(), is(Duration.ofSeconds(11)));
         assertThat(JwtProvider.Builder.defaultJwkCircuitBreaker().prototype().volume(), is(1));
@@ -392,6 +393,13 @@ class JwtProviderJwkLoadingTest {
         assertThrows(IllegalArgumentException.class,
                      () -> JwtProvider.builder()
                              .jwkRetry(RetryConfig.builder().overallTimeout(Duration.ofSeconds(4)).buildPrototype())
+                             .build());
+        assertThrows(IllegalArgumentException.class,
+                     () -> JwtProvider.builder()
+                             .jwkTimeout(TimeoutConfig.builder()
+                                                 .timeout(Duration.ofSeconds(1))
+                                                 .currentThread(false)
+                                                 .buildPrototype())
                              .build());
     }
 
@@ -443,7 +451,10 @@ class JwtProviderJwkLoadingTest {
                                    .path(keysPath)
                                    .buildPrototype())
                 .jwkRetry(oneCallRetry())
-                .jwkTimeout(TimeoutConfig.builder().timeout(Duration.ofSeconds(1)).buildPrototype())
+                .jwkTimeout(TimeoutConfig.builder()
+                                    .timeout(Duration.ofSeconds(1))
+                                    .currentThread(true)
+                                    .buildPrototype())
                 .jwkCircuitBreaker(circuitBreakerConfig)
                 .optional(optional);
     }

@@ -387,7 +387,10 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
 
     /**
      * Timeout applied to each attempt to load OIDC metadata and signing JWKs; it defaults to 5 seconds, must be
-     * positive, and must not exceed the retry overall timeout.
+     * positive, must execute on the current thread, and must not exceed the retry overall timeout. Current-thread
+     * execution ensures that a retry cannot overlap an attempt that is still unwinding after an interrupt. The
+     * deadline interrupts the loader; prompt termination also depends on the underlying I/O honoring interruption or
+     * enforcing its own timeout.
      *
      * @param jwkTimeout timeout to use
      * @return updated builder instance
@@ -868,6 +871,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     static Timeout defaultJwkTimeout() {
         return Timeout.builder()
                 .timeout(DEFAULT_JWK_TIMEOUT)
+                .currentThread(true)
                 .build();
     }
 
@@ -875,6 +879,9 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         Duration timeout = jwkTimeout.prototype().timeout();
         if (timeout.isNegative() || timeout.isZero()) {
             collector.fatal("jwk-loader.timeout.timeout must be positive");
+        }
+        if (!jwkTimeout.prototype().currentThread()) {
+            collector.fatal("jwk-loader.timeout.current-thread must be true");
         }
         if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
             collector.fatal("jwk-loader.timeout.timeout must not exceed jwk-loader.retry.overall-timeout");

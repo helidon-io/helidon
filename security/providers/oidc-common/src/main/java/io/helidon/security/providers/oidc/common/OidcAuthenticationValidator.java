@@ -73,6 +73,9 @@ final class OidcAuthenticationValidator {
         if (timeout.isNegative() || timeout.isZero()) {
             throw new IllegalArgumentException("jwk-loader.timeout.timeout must be positive");
         }
+        if (!tenantConfig.jwkTimeout().prototype().currentThread()) {
+            throw new IllegalArgumentException("jwk-loader.timeout.current-thread must be true");
+        }
         if (timeout.compareTo(retryTimeout) > 0) {
             throw new IllegalArgumentException("jwk-loader.timeout.timeout must not exceed "
                                                        + "jwk-loader.retry.overall-timeout");

@@ -148,6 +148,15 @@ class ResilientValueTest {
                                                  retry(1),
                                                  circuitBreaker(),
                                                  timeout(Duration.ofSeconds(2))));
+        assertThrows(IllegalArgumentException.class,
+                     () -> ResilientValue.create("test value",
+                                                 () -> "value",
+                                                 retry(1),
+                                                 circuitBreaker(),
+                                                 TimeoutConfig.builder()
+                                                         .timeout(Duration.ofSeconds(1))
+                                                         .currentThread(false)
+                                                         .build()));
     }
 
     @Test
@@ -298,6 +307,59 @@ class ResilientValueTest {
         assertThat(loaderFailure.get(), instanceOf(ResilientValue.UnavailableException.class));
         assertThat(followerFailure.get(), instanceOf(ResilientValue.UnavailableException.class));
         assertThat(calls.get(), is(1));
+    }
+
+    @Test
+    void timeoutDoesNotOverlapRetry() throws InterruptedException {
+        CountDownLatch firstAttemptStarted = new CountDownLatch(1);
+        CountDownLatch firstAttemptInterrupted = new CountDownLatch(1);
+        CountDownLatch releaseFirstAttempt = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        AtomicInteger active = new AtomicInteger();
+        AtomicInteger maximumActive = new AtomicInteger();
+        AtomicReference<String> result = new AtomicReference<>();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        ResilientValue<String> value = ResilientValue.create("test value",
+                                                             () -> {
+                                                                 int call = calls.incrementAndGet();
+                                                                 int currentActive = active.incrementAndGet();
+                                                                 maximumActive.accumulateAndGet(currentActive, Math::max);
+                                                                 try {
+                                                                     if (call == 1) {
+                                                                         firstAttemptStarted.countDown();
+                                                                         awaitAfterInterrupt(releaseFirstAttempt,
+                                                                                             firstAttemptInterrupted);
+                                                                     }
+                                                                     return "loaded";
+                                                                 } finally {
+                                                                     active.decrementAndGet();
+                                                                 }
+                                                             },
+                                                             retry(2),
+                                                             circuitBreaker(),
+                                                             timeout(Duration.ofMillis(20)));
+
+        Thread loaderThread = Thread.ofVirtual().start(() -> {
+            try {
+                result.set(value.get());
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        });
+        try {
+            assertThat(firstAttemptStarted.await(10, TimeUnit.SECONDS), is(true));
+            assertThat(firstAttemptInterrupted.await(10, TimeUnit.SECONDS), is(true));
+            assertThat(calls.get(), is(1));
+            assertThat(active.get(), is(1));
+        } finally {
+            releaseFirstAttempt.countDown();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+        assertThat(loaderThread.isAlive(), is(false));
+        assertThat(result.get(), is("loaded"));
+        assertThat(failure.get(), is((Throwable) null));
+        assertThat(calls.get(), is(2));
+        assertThat(maximumActive.get(), is(1));
     }
 
     @Test
@@ -575,6 +637,17 @@ class ResilientValueTest {
         }
     }
 
+    private static void awaitAfterInterrupt(CountDownLatch latch, CountDownLatch interrupted) {
+        while (true) {
+            try {
+                latch.await();
+                return;
+            } catch (InterruptedException _) {
+                interrupted.countDown();
+            }
+        }
+    }
+
     private static void captureFailure(ResilientValue<?> value, AtomicReference<Throwable> failure) {
         try {
             value.get();
@@ -642,6 +715,7 @@ class ResilientValueTest {
         private final AtomicInteger calls = new AtomicInteger();
         private final TimeoutConfig prototype = TimeoutConfig.builder()
                 .timeout(Duration.ofSeconds(1))
+                .currentThread(true)
                 .buildPrototype();
 
         @Override

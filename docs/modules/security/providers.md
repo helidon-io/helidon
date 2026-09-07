@@ -98,8 +98,12 @@ circuit opens after the first exhausted batch, rejects requests for 5 seconds,
 and then permits a recovery probe. A successfully loaded value is cached for
 the life of that tenant configuration. All three policies use the standard
 Helidon Fault Tolerance configuration options under `jwk-loader`. Configuration
-is rejected at startup if the attempt timeout is not positive or exceeds the
-overall retry timeout.
+is rejected at startup if the attempt timeout is not positive, exceeds the
+overall retry timeout, or does not use current-thread execution. Running the
+loader on the calling thread prevents a retry from overlapping a timed-out
+attempt that is still unwinding after interruption. The timeout interrupts the
+loader at its deadline; prompt termination also depends on the underlying I/O
+honoring interruption or enforcing its own timeout.
 
 At runtime, depending on configuration...
 
@@ -822,8 +826,11 @@ cached for the life of the provider. Configure the standard Timeout, Retry, and
 Circuit Breaker options under `jwk-loader.timeout`, `jwk-loader.retry`, and
 `jwk-loader.circuit-breaker`, respectively. The 11-second budget accommodates
 both 5-second attempts and the retry delay. Configuration is rejected at
-startup if the attempt timeout is not positive or exceeds the overall retry
-timeout.
+startup if the attempt timeout is not positive, exceeds the overall retry
+timeout, or does not use current-thread execution. This prevents a retry from
+overlapping a timed-out loader that is still unwinding after interruption. The
+deadline interrupts the loader, so prompt termination also depends on the
+underlying I/O honoring interruption or enforcing its own timeout.
 
 If `allow-unsigned` is explicitly enabled, a token using the `none` algorithm
 without a key ID does not require or trigger loading of verification JWKs.

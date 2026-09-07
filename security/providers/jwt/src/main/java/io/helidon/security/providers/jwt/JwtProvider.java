@@ -1009,7 +1009,10 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
         /**
          * Timeout applied to each attempt to load verification keys from a filesystem path or URI; it defaults to
-         * 5 seconds, must be positive, and must not exceed the retry overall timeout.
+         * 5 seconds, must be positive, must execute on the current thread, and must not exceed the retry overall
+         * timeout. Current-thread execution ensures that a retry cannot overlap an attempt that is still unwinding
+         * after an interrupt. The deadline interrupts the loader; prompt termination also depends on the underlying
+         * I/O honoring interruption or enforcing its own timeout.
          *
          * @param jwkTimeout timeout to use
          * @return updated builder instance
@@ -1280,6 +1283,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         static Timeout defaultJwkTimeout() {
             return Timeout.builder()
                     .timeout(Duration.ofSeconds(5))
+                    .currentThread(true)
                     .build();
         }
 
@@ -1287,6 +1291,9 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             Duration timeout = jwkTimeout.prototype().timeout();
             if (timeout.isNegative() || timeout.isZero()) {
                 throw new IllegalArgumentException("jwk-loader.timeout.timeout must be positive");
+            }
+            if (!jwkTimeout.prototype().currentThread()) {
+                throw new IllegalArgumentException("jwk-loader.timeout.current-thread must be true");
             }
             if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
                 throw new IllegalArgumentException("jwk-loader.timeout.timeout must not exceed "

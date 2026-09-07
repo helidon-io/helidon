@@ -50,6 +50,9 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         this.circuitBreaker = Objects.requireNonNull(circuitBreaker);
         this.timeout = Objects.requireNonNull(timeout);
         validateTimeout(retry.prototype().overallTimeout(), timeout.prototype().timeout());
+        if (!timeout.prototype().currentThread()) {
+            throw new IllegalArgumentException("Timeout must execute on the current thread");
+        }
         this.attempt = new AtomicReference<>(newAttempt());
     }
 

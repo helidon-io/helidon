@@ -62,6 +62,7 @@ public class ResilientValueJmhBenchmark {
                 .build();
         var cachedTimeout = TimeoutConfig.builder()
                 .timeout(Duration.ofSeconds(1))
+                .currentThread(true)
                 .enableMetrics(false)
                 .build();
         cachedValue = ResilientValue.create("jmh-cached", () -> {
@@ -87,6 +88,7 @@ public class ResilientValueJmhBenchmark {
                 .build();
         var timeout = TimeoutConfig.builder()
                 .timeout(Duration.ofSeconds(1))
+                .currentThread(true)
                 .enableMetrics(false)
                 .build();
         openValue = ResilientValue.create("jmh-open", () -> {

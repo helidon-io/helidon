@@ -225,7 +225,7 @@ Base builder of the OIDC config components
 </td>
 <td>
 </td>
-<td>Timeout applied to each attempt to load OIDC metadata and signing JWKs; it defaults to 5 seconds, must be positive, and must not exceed the retry overall timeout</td>
+<td>Timeout applied to each attempt to load OIDC metadata and signing JWKs; it defaults to 5 seconds, must be positive, must execute on the current thread, and must not exceed the retry overall timeout</td>
 </tr>
 <tr>
 <td>

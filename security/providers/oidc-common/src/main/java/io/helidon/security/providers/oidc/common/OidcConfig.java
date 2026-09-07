@@ -195,8 +195,8 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *         validation is done by us</td>
  *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT. See
  *         {@link Resource#create(io.helidon.config.Config)}</td></tr>
- * <tr><td>jwk-loader.timeout.*</td><td>5 second timeout</td>
- *     <td>Standard fault tolerance timeout for each lazy load attempt.</td></tr>
+ * <tr><td>jwk-loader.timeout.*</td><td>5 second timeout, current-thread execution</td>
+ *     <td>Current-thread execution prevents retries from overlapping attempts that are still unwinding.</td></tr>
  * <tr><td>jwk-loader.retry.*</td><td>2 calls, 200 ms delay, 11 second overall timeout</td>
  *     <td>Standard fault tolerance retry configuration around the timed attempts.</td></tr>
  * <tr><td>jwk-loader.circuit-breaker.*</td><td>1 request volume, 100% error ratio, 5 second delay</td>

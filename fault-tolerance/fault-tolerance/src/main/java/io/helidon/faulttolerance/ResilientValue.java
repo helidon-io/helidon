@@ -25,6 +25,9 @@ import io.helidon.common.Api;
  * A value loaded on first use using a timeout and retry protected by a circuit breaker.
  * Each loader invocation is guarded by the timeout, the retry repeats timed attempts, and the circuit breaker wraps
  * the complete retry batch.
+ * The timeout must execute on the current thread so a retry cannot overlap a timed-out loader that is still
+ * unwinding. The timeout interrupts the loader at its deadline; interruption-aware or independently bounded I/O is
+ * required for prompt termination.
  * A successfully loaded value is cached permanently. Failed loads may be tried again according to the configured
  * circuit breaker. Concurrent callers wait for the active load attempt and share its result.
  *
@@ -44,7 +47,8 @@ public interface ResilientValue<T> extends Supplier<T> {
      * @param timeout timeout handler applied to each load attempt
      * @param <T> type of the loaded value
      * @return a new resilient value
-     * @throws IllegalArgumentException if the timeout is not positive or exceeds the retry overall timeout
+     * @throws IllegalArgumentException if the timeout is not positive, exceeds the retry overall timeout, or does not
+     *                                  execute on the current thread
      */
     static <T> ResilientValue<T> create(String description,
                                         Supplier<T> loader,

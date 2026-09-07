@@ -19,9 +19,11 @@ package io.helidon.security.providers.oidc.common;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.common.configurable.ResourceException;
@@ -50,7 +52,7 @@ public class Tenant {
     private final String authorizationEndpointUri;
     private final URI logoutEndpointUri;
     private final String issuer;
-    private final WebClient appWebClient;
+    private final LazyValue<WebClient> appWebClient;
     private final JwkKeys signJwk;
     private final URI introspectUri;
 
@@ -59,7 +61,7 @@ public class Tenant {
                    URI authorizationEndpointUri,
                    URI logoutEndpointUri,
                    String issuer,
-                   WebClient appWebClient,
+                   LazyValue<WebClient> appWebClient,
                    JwkKeys signJwk,
                    URI introspectUri) {
         this.tenantConfig = tenantConfig;
@@ -129,25 +131,11 @@ public class Tenant {
         }
 
         collector.collect().checkValid();
-        WebClientConfig.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
-
-        if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
-            HttpBasicAuthProvider.Builder httpBasicAuthBuilder = HttpBasicAuthProvider.builder()
-                    .addOutboundTarget(outboundTarget("oidc-token", tokenEndpointUri, tenantConfig));
-
-            if (introspectUri != null) {
-                httpBasicAuthBuilder.addOutboundTarget(outboundTarget("oidc-introspect", introspectUri, tenantConfig));
-            }
-
-            HttpBasicAuthProvider httpBasicAuth = httpBasicAuthBuilder.build();
-            Security tokenOutboundSecurity = Security.builder()
-                    .addOutboundSecurityProvider(httpBasicAuth)
-                    .build();
-
-            webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
-        }
-
-        WebClient appWebClient = webClientBuilder.build();
+        URI resolvedIntrospectUri = introspectUri;
+        Supplier<WebClient> appWebClient = () -> createAppWebClient(oidcConfig,
+                                                                    tenantConfig,
+                                                                    tokenEndpointUri,
+                                                                    resolvedIntrospectUri);
 
         JwkKeys signJwk = resolveSigningJwk(tenantConfig,
                                             oidcMetadata,
@@ -155,20 +143,24 @@ public class Tenant {
                                             appWebClient,
                                             webClient,
                                             tokenEndpointUri);
-        return new Tenant(tenantConfig,
-                          tokenEndpointUri,
-                          authorizationEndpointUri,
-                          logoutEndpointUri,
-                          issuer,
-                          appWebClient,
-                          signJwk,
-                          introspectUri);
+        Tenant tenant = new Tenant(tenantConfig,
+                                   tokenEndpointUri,
+                                   authorizationEndpointUri,
+                                   logoutEndpointUri,
+                                   issuer,
+                                   LazyValue.create(appWebClient),
+                                   signJwk,
+                                   resolvedIntrospectUri);
+        if (!tenantConfig.tenantLoadingLazy()) {
+            tenant.appWebClient();
+        }
+        return tenant;
     }
 
     private static JwkKeys resolveSigningJwk(TenantConfig tenantConfig,
                                              OidcMetadata oidcMetadata,
                                              Errors.Collector collector,
-                                             WebClient appWebClient,
+                                             Supplier<WebClient> appWebClient,
                                              WebClient webClient,
                                              URI tokenEndpointUri) {
         if (!tenantConfig.validateJwtWithJwk()) {
@@ -218,12 +210,17 @@ public class Tenant {
         try {
             JwkKeys keys;
             if ("idcs".equals(serverType)) {
-                keys = IdcsSupport.signJwk(appWebClient,
-                                           webClient,
-                                           tokenEndpointUri,
-                                           jwkUri,
-                                           tenantConfig.clientTimeout(),
-                                           tenantConfig);
+                WebClient idcsClient = appWebClient.get();
+                try {
+                    keys = IdcsSupport.signJwk(idcsClient,
+                                               webClient,
+                                               tokenEndpointUri,
+                                               jwkUri,
+                                               tenantConfig.clientTimeout(),
+                                               tenantConfig);
+                } finally {
+                    idcsClient.closeResource();
+                }
             } else {
                 keys = JwkKeys.builder()
                         .json(webClient.get()
@@ -237,6 +234,31 @@ public class Tenant {
         } catch (RuntimeException e) {
             throw new ResilientValue.UnavailableException("OIDC signing JWK is unavailable", e);
         }
+    }
+
+    private static WebClient createAppWebClient(OidcConfig oidcConfig,
+                                                TenantConfig tenantConfig,
+                                                URI tokenEndpointUri,
+                                                URI introspectUri) {
+        WebClientConfig.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
+
+        if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
+            HttpBasicAuthProvider.Builder httpBasicAuthBuilder = HttpBasicAuthProvider.builder()
+                    .addOutboundTarget(outboundTarget("oidc-token", tokenEndpointUri, tenantConfig));
+
+            if (introspectUri != null) {
+                httpBasicAuthBuilder.addOutboundTarget(outboundTarget("oidc-introspect", introspectUri, tenantConfig));
+            }
+
+            HttpBasicAuthProvider httpBasicAuth = httpBasicAuthBuilder.build();
+            Security tokenOutboundSecurity = Security.builder()
+                    .addOutboundSecurityProvider(httpBasicAuth)
+                    .build();
+
+            webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
+        }
+
+        return webClientBuilder.build();
     }
 
     private static JwkKeys requireSigningKeys(JwkKeys keys, boolean mayBecomeAvailable) {
@@ -356,6 +378,7 @@ public class Tenant {
 
     /**
      * Client with configured proxy and security.
+     * For a lazily loaded tenant, the client is created only after the tenant configuration has loaded successfully.
      * When token endpoint authentication is {@link OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC},
      * client credentials are scoped to POST requests on the token endpoint scheme, host, and path and, when JWT
      * introspection is used, to POST requests on the introspection endpoint scheme, host, and path.
@@ -363,7 +386,7 @@ public class Tenant {
      * @return client for communicating with OIDC identity server
      */
     public WebClient appWebClient() {
-        return appWebClient;
+        return appWebClient.get();
     }
 
     /**

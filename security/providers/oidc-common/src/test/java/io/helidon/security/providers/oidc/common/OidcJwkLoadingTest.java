@@ -85,6 +85,7 @@ class OidcJwkLoadingTest {
         assertThat(tenantConfig.jwkRetry().prototype().delay(), is(Duration.ofMillis(200)));
         assertThat(tenantConfig.jwkRetry().prototype().overallTimeout(), is(Duration.ofSeconds(11)));
         assertThat(tenantConfig.jwkTimeout().prototype().timeout(), is(Duration.ofSeconds(5)));
+        assertThat(tenantConfig.jwkTimeout().prototype().currentThread(), is(true));
         assertThat(tenantConfig.jwkCircuitBreaker().prototype().volume(), is(1));
         assertThat(tenantConfig.jwkCircuitBreaker().prototype().errorRatio(), is(100));
         assertThat(tenantConfig.jwkCircuitBreaker().prototype().delay(), is(Duration.ofSeconds(5)));
@@ -95,7 +96,7 @@ class OidcJwkLoadingTest {
     void usesConfiguredFaultToleranceInstances() {
         Retry retry = Retry.builder().calls(1).overallTimeout(Duration.ofSeconds(5)).build();
         CircuitBreaker circuitBreaker = CircuitBreaker.builder().volume(1).build();
-        Timeout timeout = Timeout.builder().timeout(Duration.ofSeconds(1)).build();
+        Timeout timeout = Timeout.builder().timeout(Duration.ofSeconds(1)).currentThread(true).build();
 
         TenantConfig tenantConfig = baseBuilder()
                 .jwkRetry(retry)
@@ -117,6 +118,13 @@ class OidcJwkLoadingTest {
         assertThrows(Errors.ErrorMessagesException.class,
                      () -> baseBuilder()
                              .jwkRetry(Retry.builder().overallTimeout(Duration.ofSeconds(4)).build())
+                             .build());
+        assertThrows(Errors.ErrorMessagesException.class,
+                     () -> baseBuilder()
+                             .jwkTimeout(Timeout.builder()
+                                                 .timeout(Duration.ofSeconds(1))
+                                                 .currentThread(false)
+                                                 .build())
                              .build());
     }
 

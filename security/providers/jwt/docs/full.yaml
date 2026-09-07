@@ -40,14 +40,14 @@ security:
         # Loading policy for verification JWK resources configured with a filesystem path or URI.
         # Classpath and inline resources are validated at startup and do not use this policy.
         # The circuit breaker wraps a complete retry batch, and timeout applies to each attempt.
-        # The timeout must be positive and must not exceed the retry overall timeout.
+        # The timeout must be positive, run on the calling thread, and not exceed the retry overall timeout.
         # Once verification keys load successfully, that value is cached for the life of the provider.
         jwk-loader:
           timeout:
             # Maximum duration of each load attempt; defaults to 5 seconds
             timeout: "PT5S"
-            # Whether the load executes on the calling thread; defaults to false
-            current-thread: false
+            # Required so a retry cannot overlap an attempt still unwinding after interruption; defaults to true
+            current-thread: true
             # Whether metrics are enabled for verification-key loading timeouts; defaults to false
             enable-metrics: false
           retry:
