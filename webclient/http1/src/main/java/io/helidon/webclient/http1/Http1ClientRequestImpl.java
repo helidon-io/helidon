@@ -46,9 +46,14 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse>
         implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
-    // RFC 9110, section 8.1: these define the replayed representation data's format and encoding.
-    private static final Set<HeaderName> REPRESENTATION_HEADERS = Set.of(HeaderNames.CONTENT_TYPE,
-                                                                         HeaderNames.CONTENT_ENCODING);
+    private static final Set<HeaderName> REPLAYABLE_HEADERS = Set.of(HeaderNames.ACCEPT,
+                                                                     HeaderNames.ACCEPT_CHARSET,
+                                                                     HeaderNames.ACCEPT_ENCODING,
+                                                                     HeaderNames.ACCEPT_LANGUAGE,
+                                                                     HeaderNames.CONTENT_ENCODING,
+                                                                     HeaderNames.CONTENT_LANGUAGE,
+                                                                     HeaderNames.CONTENT_LOCATION,
+                                                                     HeaderNames.CONTENT_TYPE);
 
     private final Http1ClientImpl http1Client;
     private final FullClientRequest<?> delegate;
@@ -123,7 +128,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         outputStreamRedirect(request.outputStreamRedirect());
         outputStreamRedirects(request.outputStreamRedirects());
         if (preserveEntity) {
-            REPRESENTATION_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
+            REPLAYABLE_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
         }
     }
 

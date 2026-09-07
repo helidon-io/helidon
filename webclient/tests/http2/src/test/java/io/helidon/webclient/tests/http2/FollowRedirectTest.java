@@ -55,8 +55,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class FollowRedirectTest {
     private static final StringBuilder BUFFER = new StringBuilder();
     private static final String PATH_COOKIE = "pathOnly=redirect-secret";
+    private static final String QUERY_ACCEPT = "application/json";
     private static final String QUERY_CONTENT_TYPE = "application/sql";
     private static final String QUERY_ENTITY = "select * from example";
+    private static final String QUERY_LANGUAGE = "en";
     private static final HeaderName REDIRECT_HEADER = HeaderNames.create("X-Redirect-Test");
     private static final AtomicReference<String> REDIRECT_SOURCE_COOKIE = new AtomicReference<>();
     private static final AtomicReference<String> REDIRECT_TARGET_COOKIE = new AtomicReference<>();
@@ -82,7 +84,14 @@ class FollowRedirectTest {
                 .route(Method.QUERY,
                        "/queryRedirect303",
                        (_, res) -> queryRedirect(res, Status.SEE_OTHER_303, "/queryRedirectGetTarget"))
+                .route(Method.QUERY,
+                       "/queryRedirectHeaders301",
+                       (_, res) -> queryRedirect(res, Status.MOVED_PERMANENTLY_301, "/queryRedirectHeadersTarget"))
+                .route(Method.QUERY,
+                       "/queryRedirectHeaders302",
+                       (_, res) -> queryRedirect(res, Status.FOUND_302, "/queryRedirectHeadersTarget"))
                 .route(Method.QUERY, "/queryRedirectTarget", FollowRedirectTest::queryRedirectTarget)
+                .route(Method.QUERY, "/queryRedirectHeadersTarget", FollowRedirectTest::queryRedirectHeadersTarget)
                 .get("/queryRedirectGetTarget", FollowRedirectTest::queryRedirectGetTarget)
                 .route(Method.PUT, "/infiniteRedirect", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
@@ -270,6 +279,22 @@ class FollowRedirectTest {
     }
 
     @Test
+    void queryRedirectPreservesRequestHeaders() {
+        for (int redirectStatus : new int[] {301, 302}) {
+            try (Http2ClientResponse response = webClient.method(Method.QUERY)
+                    .uri("/queryRedirectHeaders" + redirectStatus)
+                    .header(HeaderNames.ACCEPT, QUERY_ACCEPT)
+                    .header(HeaderNames.CONTENT_LANGUAGE, QUERY_LANGUAGE)
+                    .header(HeaderNames.CONTENT_TYPE, QUERY_CONTENT_TYPE)
+                    .submit(QUERY_ENTITY)) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class),
+                           is(Method.QUERY + ":" + QUERY_ACCEPT + ":" + QUERY_LANGUAGE + ":" + QUERY_ENTITY));
+            }
+        }
+    }
+
+    @Test
     void querySubmitUsesMediaWriterContentType() {
         try (Http2ClientResponse response = webClient.method(Method.QUERY)
                 .uri("/queryRedirectTarget")
@@ -424,52 +449,6 @@ class FollowRedirectTest {
         assertEntityOutputStreamWithRedirectAfter();
     }
 
-    private void assertEmptyOutputStreamWithRedirectAfter() {
-        String expected = "Upload completed!";
-        try (Http2ClientResponse response = webClient.put()
-                .path("/redirectAfterUpload")
-                .outputStream(OutputStream::close)) {
-            assertThat(response.entity().as(String.class), is(expected));
-        }
-    }
-
-    private void assertEntityOutputStreamWithRedirectAfter() {
-        String expected = """
-                Upload completed!
-                0123456789
-                0123456789
-                0123456789""";
-        try (Http2ClientResponse response = webClient.put()
-                .path("/redirectAfterUpload")
-                .outputStream(it -> {
-                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
-                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
-                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
-                    it.close();
-                })) {
-            assertThat(response.entity().as(String.class), is(expected));
-        }
-    }
-
-    private static void queryRedirect(ServerResponse response, Status status, String target) {
-        response.status(status)
-                .header(HeaderNames.LOCATION, target)
-                .send();
-    }
-
-    private static void queryRedirectTarget(ServerRequest request, ServerResponse response) {
-        String contentType = request.headers().get(HeaderNames.CONTENT_TYPE).get();
-        response.send(request.prologue().method() + ":" + contentType + ":" + request.content().as(String.class));
-    }
-
-    private static void queryRedirectGetTarget(ServerRequest request, ServerResponse response) {
-        if (request.content().hasEntity() || request.headers().contains(HeaderNames.CONTENT_TYPE)) {
-            response.status(Status.BAD_REQUEST_400).send("Entity metadata was preserved");
-            return;
-        }
-        response.send("GET without entity metadata");
-    }
-
     @Test
     void testOutputStreamEntityNotKeptIntercepted() {
         String expected = "GET plain endpoint reached";
@@ -513,6 +492,61 @@ class FollowRedirectTest {
                 }, String.class);
 
         assertThat(http2ClientResponse.entity(), is("Request did not timeout"));
+    }
+
+    private static void queryRedirect(ServerResponse response, Status status, String target) {
+        response.status(status)
+                .header(HeaderNames.LOCATION, target)
+                .send();
+    }
+
+    private static void queryRedirectTarget(ServerRequest request, ServerResponse response) {
+        String contentType = request.headers().get(HeaderNames.CONTENT_TYPE).get();
+        response.send(request.prologue().method() + ":" + contentType + ":" + request.content().as(String.class));
+    }
+
+    private static void queryRedirectHeadersTarget(ServerRequest request, ServerResponse response) {
+        String accept = request.headers().get(HeaderNames.ACCEPT).get();
+        String contentLanguage = request.headers().get(HeaderNames.CONTENT_LANGUAGE).get();
+        response.send(request.prologue().method()
+                              + ":" + accept
+                              + ":" + contentLanguage
+                              + ":" + request.content().as(String.class));
+    }
+
+    private static void queryRedirectGetTarget(ServerRequest request, ServerResponse response) {
+        if (request.content().hasEntity() || request.headers().contains(HeaderNames.CONTENT_TYPE)) {
+            response.status(Status.BAD_REQUEST_400).send("Entity metadata was preserved");
+            return;
+        }
+        response.send("GET without entity metadata");
+    }
+
+    private void assertEmptyOutputStreamWithRedirectAfter() {
+        String expected = "Upload completed!";
+        try (Http2ClientResponse response = webClient.put()
+                .path("/redirectAfterUpload")
+                .outputStream(OutputStream::close)) {
+            assertThat(response.entity().as(String.class), is(expected));
+        }
+    }
+
+    private void assertEntityOutputStreamWithRedirectAfter() {
+        String expected = """
+                Upload completed!
+                0123456789
+                0123456789
+                0123456789""";
+        try (Http2ClientResponse response = webClient.put()
+                .path("/redirectAfterUpload")
+                .outputStream(it -> {
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.close();
+                })) {
+            assertThat(response.entity().as(String.class), is(expected));
+        }
     }
 
 }

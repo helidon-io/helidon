@@ -83,8 +83,10 @@ class Http1ClientTest {
     private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final HeaderName ENTITY_METADATA_HEADER = HeaderNames.create("X-Entity-Metadata");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
+    private static final String QUERY_ACCEPT = "application/json";
     private static final String QUERY_CONTENT_TYPE = "application/sql";
     private static final String QUERY_ENTITY = "select * from example";
+    private static final String QUERY_LANGUAGE = "en";
     private static final long NO_CONTENT_LENGTH = -1L;
 
     private final String baseURI;
@@ -114,7 +116,14 @@ class Http1ClientTest {
         rules.route(Method.QUERY,
                     "/queryRedirect303",
                     (_, res) -> queryRedirect(res, Status.SEE_OTHER_303, "/queryRedirectGetTarget"));
+        rules.route(Method.QUERY,
+                    "/queryRedirectHeaders301",
+                    (_, res) -> queryRedirect(res, Status.MOVED_PERMANENTLY_301, "/queryRedirectHeadersTarget"));
+        rules.route(Method.QUERY,
+                    "/queryRedirectHeaders302",
+                    (_, res) -> queryRedirect(res, Status.FOUND_302, "/queryRedirectHeadersTarget"));
         rules.route(Method.QUERY, "/queryRedirectTarget", Http1ClientTest::queryRedirectTarget);
+        rules.route(Method.QUERY, "/queryRedirectHeadersTarget", Http1ClientTest::queryRedirectHeadersTarget);
         rules.get("/queryRedirectGetTarget", Http1ClientTest::queryRedirectGetTarget);
         rules.get("/redirectDropEntity", Http1ClientTest::redirectDropEntity);
         rules.get("/afterDropEntity", Http1ClientTest::afterDropEntity);
@@ -472,6 +481,21 @@ class Http1ClientTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {301, 302})
+    void queryRedirectPreservesRequestHeaders(int redirectStatus) {
+        try (HttpClientResponse response = injectedHttp1client.method(Method.QUERY)
+                .uri("/queryRedirectHeaders" + redirectStatus)
+                .header(HeaderNames.ACCEPT, QUERY_ACCEPT)
+                .header(HeaderNames.CONTENT_LANGUAGE, QUERY_LANGUAGE)
+                .header(HeaderNames.CONTENT_TYPE, QUERY_CONTENT_TYPE)
+                .submit(QUERY_ENTITY)) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class),
+                       is(Method.QUERY + ":" + QUERY_ACCEPT + ":" + QUERY_LANGUAGE + ":" + QUERY_ENTITY));
+        }
+    }
+
     @Test
     void querySubmitUsesMediaWriterContentType() {
         try (HttpClientResponse response = injectedHttp1client.method(Method.QUERY)
@@ -625,6 +649,15 @@ class Http1ClientTest {
     private static void queryRedirectTarget(ServerRequest request, ServerResponse response) {
         String contentType = request.headers().get(HeaderNames.CONTENT_TYPE).get();
         response.send(request.prologue().method() + ":" + contentType + ":" + request.content().as(String.class));
+    }
+
+    private static void queryRedirectHeadersTarget(ServerRequest request, ServerResponse response) {
+        String accept = request.headers().get(HeaderNames.ACCEPT).get();
+        String contentLanguage = request.headers().get(HeaderNames.CONTENT_LANGUAGE).get();
+        response.send(request.prologue().method()
+                              + ":" + accept
+                              + ":" + contentLanguage
+                              + ":" + request.content().as(String.class));
     }
 
     private static void queryRedirectGetTarget(ServerRequest request, ServerResponse response) {
