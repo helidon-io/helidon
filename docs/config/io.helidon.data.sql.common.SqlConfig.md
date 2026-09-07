@@ -2,7 +2,7 @@
 
 ## Description
 
-SQL specific configuration
+SQL specific connection configuration
 
 ## Configuration options
 
@@ -23,7 +23,7 @@ SQL specific configuration
 <td>
 <code>String</code>
 </td>
-<td>Name of the registered <code>Data<wbr>Source</code>, with exactly one connection source required</td>
+<td>Name of the registered <code>Data<wbr>Source</code> to use</td>
 </tr>
 <tr>
 <td>
@@ -35,7 +35,7 @@ SQL specific configuration
 <td>
 <code>Connection<wbr>Config</code>
 </td>
-<td>Configuration of a direct connection to a database, with exactly one connection source required</td>
+<td>Direct JDBC connection properties</td>
 </tr>
 </tbody>
 </table>

@@ -17,6 +17,7 @@ package io.helidon.data.codegen;
 
 import java.util.Optional;
 
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -74,5 +76,27 @@ class RepositoryInfoBuilderTest {
 
         assertThat(result.entityInfo(), is(entityInfo));
         assertThat(result.id(), is(idType));
+    }
+
+    @Test
+    void reportsUnavailableEntityTypeInformation() {
+        TypeName entityType = TypeName.create("example.Contact");
+        TypeName idType = TypeName.create(Long.class);
+        CodegenContext context = mock(CodegenContext.class);
+        when(context.typeInfo(entityType)).thenReturn(Optional.empty());
+        TypeInfo repository = TypeInfo.builder()
+                .typeName(TypeName.create("example.ContactRepository"))
+                .kind(ElementKind.INTERFACE)
+                .build();
+
+        CodegenException failure = assertThrows(
+                CodegenException.class,
+                () -> new RepositoryInfoBuilder(context)
+                        .interfaceInfo(repository)
+                        .addInterface(DataCodegenTypes.CRUD_REPOSITORY,
+                                      new RepositoryInterfaceInfo(DataCodegenTypes.CRUD_REPOSITORY, entityType, idType))
+                        .build());
+
+        assertThat(failure.getMessage(), is("Entity type information is unavailable for 'example.Contact'."));
     }
 }

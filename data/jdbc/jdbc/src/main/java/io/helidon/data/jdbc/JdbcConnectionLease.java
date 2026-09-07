@@ -79,7 +79,7 @@ interface JdbcConnectionLease extends AutoCloseable {
     final class Owned implements JdbcConnectionLease {
 
         private static final String AUTO_COMMIT_REQUIRED =
-                "Datasources used for JDBC operations must provide connections with auto-commit enabled.";
+                "Data sources used for JDBC operations must provide connections with auto-commit enabled.";
 
         private final Connection connection;
         private boolean closed;

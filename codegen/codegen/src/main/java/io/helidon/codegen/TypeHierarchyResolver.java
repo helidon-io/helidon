@@ -61,6 +61,7 @@ public class TypeHierarchyResolver {
      * Creates a resolver for an environment specific type information lookup.
      *
      * @param typeInfoLookup lookup used for types that are not already present in a hierarchy
+     * @throws NullPointerException if {@code typeInfoLookup} is {@code null}
      */
     protected TypeHierarchyResolver(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
         this.typeInfoLookup = Objects.requireNonNull(typeInfoLookup,
@@ -86,6 +87,7 @@ public class TypeHierarchyResolver {
      *
      * @param interfaceInfo interface to inspect
      * @return resolved methods in declaration order
+     * @throws NullPointerException if {@code interfaceInfo} is {@code null}
      */
     public final List<ResolvedMethod> effectiveInterfaceMethods(TypeInfo interfaceInfo) {
         Objects.requireNonNull(interfaceInfo, "The interface information must not be null.");
@@ -109,6 +111,7 @@ public class TypeHierarchyResolver {
      * @param candidate type whose hierarchy is inspected
      * @param expected requested supertype
      * @return the resolved supertype, or an empty optional when it is not present
+     * @throws NullPointerException if {@code candidate} or {@code expected} is {@code null}
      */
     public final Optional<TypeName> resolveSupertype(TypeName candidate, TypeName expected) {
         Objects.requireNonNull(candidate, "The candidate type must not be null.");
@@ -124,6 +127,7 @@ public class TypeHierarchyResolver {
      * @param useSiteType concrete use of the enclosing type
      * @param memberType member type declared by the enclosing type
      * @return member type with enclosing type variables substituted
+     * @throws NullPointerException if {@code enclosingType}, {@code useSiteType}, or {@code memberType} is {@code null}
      */
     public final TypeName resolveMemberType(TypeInfo enclosingType,
                                             TypeName useSiteType,
@@ -144,9 +148,12 @@ public class TypeHierarchyResolver {
      * @param interfaceInfo inspected interface
      * @param declaration source declaration
      * @return the compiler resolved member, or an empty optional to use the portable model
+     * @throws NullPointerException if {@code interfaceInfo} or {@code declaration} is {@code null}
      */
     protected Optional<TypedElementInfo> resolveEnvironmentMember(TypeInfo interfaceInfo,
                                                                   TypedElementInfo declaration) {
+        Objects.requireNonNull(interfaceInfo, "The interface information must not be null.");
+        Objects.requireNonNull(declaration, "The source declaration must not be null.");
         return Optional.empty();
     }
 
@@ -157,10 +164,14 @@ public class TypeHierarchyResolver {
      * @param overrider possible overriding declaration
      * @param overridden possible overridden declaration
      * @return the compiler decision, or an empty optional to use the portable model
+     * @throws NullPointerException if {@code interfaceInfo}, {@code overrider}, or {@code overridden} is {@code null}
      */
     protected Optional<Boolean> environmentOverrides(TypeInfo interfaceInfo,
                                                      TypedElementInfo overrider,
                                                      TypedElementInfo overridden) {
+        Objects.requireNonNull(interfaceInfo, "The interface information must not be null.");
+        Objects.requireNonNull(overrider, "The overriding declaration must not be null.");
+        Objects.requireNonNull(overridden, "The overridden declaration must not be null.");
         return Optional.empty();
     }
 
@@ -172,10 +183,14 @@ public class TypeHierarchyResolver {
      * @param candidate candidate declaration
      * @param existing declaration that must be implemented
      * @return the compiler decision, or an empty optional to use the portable model
+     * @throws NullPointerException if {@code interfaceInfo}, {@code candidate}, or {@code existing} is {@code null}
      */
     protected Optional<Boolean> environmentReturnTypeAssignable(TypeInfo interfaceInfo,
                                                                 TypedElementInfo candidate,
                                                                 TypedElementInfo existing) {
+        Objects.requireNonNull(interfaceInfo, "The interface information must not be null.");
+        Objects.requireNonNull(candidate, "The candidate declaration must not be null.");
+        Objects.requireNonNull(existing, "The existing declaration must not be null.");
         return Optional.empty();
     }
 
@@ -185,8 +200,11 @@ public class TypeHierarchyResolver {
      * @param candidate type whose hierarchy is inspected
      * @param expected requested supertype
      * @return the resolved supertype, or an empty optional to use the portable model
+     * @throws NullPointerException if {@code candidate} or {@code expected} is {@code null}
      */
     protected Optional<TypeName> resolveEnvironmentSupertype(TypeName candidate, TypeName expected) {
+        Objects.requireNonNull(candidate, "The candidate type must not be null.");
+        Objects.requireNonNull(expected, "The requested supertype must not be null.");
         return Optional.empty();
     }
 
@@ -591,8 +609,6 @@ public class TypeHierarchyResolver {
                                 && environmentOverrides(interfaceInfo, other.method(), candidate.method())
                                         .orElseGet(() -> isSubtype(other.owner(), candidate.owner()))))
                 .toList();
-        MethodCandidate first = candidates.getFirst();
-
         MethodCandidate selected = null;
         for (MethodCandidate candidate : candidates) {
             boolean compatible = candidates.stream()
@@ -608,11 +624,17 @@ public class TypeHierarchyResolver {
             }
         }
         if (selected == null) {
-            MethodCandidate second = candidates.size() == 1 ? first : candidates.get(1);
+            List<String> returnTypes = candidates.stream()
+                    .map(candidate -> "'" + candidate.method().typeName().resolvedName() + "'")
+                    .distinct()
+                    .sorted()
+                    .toList();
             throw new CodegenException("Inherited method '" + signature.text()
-                                               + "' has return types that cannot be implemented by one method.",
-                                       first.method().originatingElementValue(),
-                                       second.method().originatingElementValue());
+                                               + "' has incompatible return types: "
+                                               + String.join(", ", returnTypes) + ".",
+                                       candidates.stream()
+                                               .map(candidate -> candidate.method().originatingElementValue())
+                                               .toArray());
         }
         TypedElementInfo method = compatibleCheckedExceptions(selected.method(), candidates);
         return new ResolvedMethod(method,

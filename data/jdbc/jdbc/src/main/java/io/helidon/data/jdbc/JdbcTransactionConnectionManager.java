@@ -87,7 +87,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         association.require(AssociationState.ACTIVE, "acquire a connection");
         Object identity = transactionIdentity(dataSource);
         if (association.dataSourceIdentitySet && !sameIdentity(association.dataSourceIdentity, identity)) {
-            throw new DataException("A local JDBC transaction cannot use more than one datasource.");
+            throw new DataException("A local JDBC transaction cannot use more than one data source.");
         }
         if (!association.dataSourceIdentitySet) {
             // Fix the identity before acquisition so a failed first data source cannot be replaced by another one.
@@ -107,7 +107,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                 if (!JdbcExceptionTranslator.invoke("inspecting transaction automatic commit mode",
                                                     connection::getAutoCommit)) {
                     throw JdbcExceptionTranslator.safeException(
-                            "Datasources used for local JDBC transactions must provide connections with auto-commit enabled.");
+                            "Data sources used for local JDBC transactions must provide connections with auto-commit enabled.");
                 }
                 JdbcExceptionTranslator.invokeVoid("disabling automatic commit mode",
                                                    () -> connection.setAutoCommit(false));

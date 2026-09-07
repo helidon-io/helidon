@@ -26,9 +26,9 @@ enum JdbcSqlLexicalProfile {
      * JDBC clients.
      * <p>
      * Square brackets remain ordinary punctuation. Backtick identifiers,
-     * PostgreSQL escape and dollar quoted strings, and Oracle alternative
-     * quoted strings are protected regions. A doubled question mark is
-     * preserved as driver escape syntax rather than reported as two bind
+     * PostgreSQL escape and dollar-quoted strings, and Oracle
+     * alternative-quoted strings are protected regions. A doubled question mark
+     * is preserved as driver escape syntax rather than reported as two bind
      * markers. A no-whitespace double-dash sequence and nested block comments
      * are rejected.
      */

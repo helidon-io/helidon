@@ -72,22 +72,22 @@ public interface JdbcSqlScanHandler {
     enum RegionKind {
 
         /**
-         * A single quoted string.
+         * A single-quoted string.
          */
         SINGLE_QUOTE,
 
         /**
-         * A double quoted identifier.
+         * A double-quoted identifier.
          */
         DOUBLE_QUOTE,
 
         /**
-         * A backtick quoted identifier.
+         * A backtick-quoted identifier.
          */
         BACKTICK_IDENTIFIER,
 
         /**
-         * A bracket quoted identifier.
+         * A bracket-quoted identifier.
          */
         BRACKET_IDENTIFIER,
 
@@ -102,12 +102,12 @@ public interface JdbcSqlScanHandler {
         BLOCK_COMMENT,
 
         /**
-         * A PostgreSQL dollar quoted string.
+         * A PostgreSQL dollar-quoted string.
          */
         DOLLAR_QUOTE,
 
         /**
-         * An Oracle alternative quoted string.
+         * An Oracle alternative-quoted string.
          */
         ALTERNATIVE_QUOTE
     }

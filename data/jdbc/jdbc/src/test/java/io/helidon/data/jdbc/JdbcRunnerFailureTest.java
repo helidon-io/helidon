@@ -197,7 +197,7 @@ class JdbcRunnerFailureTest {
 
         assertThat(failure.getCause(), instanceOf(SQLException.class));
         assertThat(failure.getCause().getMessage(),
-                   is("Datasources used for JDBC operations must provide connections with auto-commit enabled."));
+                   is("Data sources used for JDBC operations must provide connections with auto-commit enabled."));
         assertThat(failure.getCause().getSuppressed().length, is(2));
         Throwable safeAbort = failure.getCause().getSuppressed()[0];
         assertThat(safeAbort.getMessage(),
@@ -1152,7 +1152,7 @@ class JdbcRunnerFailureTest {
 
         assertThat(failure.getCause(), instanceOf(SQLException.class));
         assertThat(failure.getCause().getMessage(),
-                   is("Datasources used for JDBC operations must provide connections with auto-commit enabled."));
+                   is("Data sources used for JDBC operations must provide connections with auto-commit enabled."));
         InOrder cleanup = inOrder(connection);
         cleanup.verify(connection).getAutoCommit();
         cleanup.verify(connection).abort(any());

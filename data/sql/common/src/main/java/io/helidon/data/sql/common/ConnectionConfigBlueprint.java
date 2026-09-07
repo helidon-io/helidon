@@ -28,9 +28,11 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 interface ConnectionConfigBlueprint {
     /**
-     * Database connection url.
+     * JDBC connection URL.
+     * <p>
+     * This value is required and must not be empty.
      *
-     * @return the connection url
+     * @return JDBC connection URL
      */
     @Option.Configured
     String url();
@@ -53,9 +55,9 @@ interface ConnectionConfigBlueprint {
     Optional<char[]> password();
 
     /**
-     * JDBC driver class for database connection.
+     * Fully qualified name of the JDBC driver class.
      *
-     * @return the JDBC driver class name
+     * @return configured JDBC driver class name
      */
     @Option.Configured
     @Option.Redundant

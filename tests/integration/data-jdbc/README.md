@@ -80,12 +80,20 @@ tests/integration/data-jdbc/
     mysql/
     oracle/
     pgsql/                Generated repository tests by database.
+  mixed-provider/         H2/Hikari application combining Jakarta Persistence and JDBC repositories.
 ```
 
 The imperative and declarative database leaves add the appropriate
 `common/src/<db>` source and resource directories as test roots. Keep
 database-specific setup in the database leaf or `common/src/<db>`; keep portable
 test contracts in `common/src/main/java`.
+
+The `mixed-provider` module is an independent application and test suite. It
+uses both Jakarta Persistence and JDBC annotation processors, verifies the
+generated repository implementations and their provider-specific qualifiers,
+and invokes application endpoints backed by a Jakarta Persistence repository,
+a declarative JDBC repository, and the imperative `JdbcClient` API. Its Hikari
+pool uses an in-memory H2 database initialized from `mixed-provider/src/main/resources/init.sql`.
 
 ## Maven profiles
 
@@ -115,15 +123,16 @@ run:
 mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests verify
 ```
 
-This command runs the provider-level H2 tests and the imperative and declarative
-test suites for H2, MySQL, PostgreSQL, and Oracle Database. The external database
-tests use Testcontainers. They are skipped when Docker is unavailable, so a
-successful Maven build does not by itself prove that those database tests ran.
+This command runs the provider-level H2 tests, the mixed-provider test, and the
+imperative and declarative test suites for H2, MySQL, PostgreSQL, and Oracle
+Database. The external database tests use Testcontainers. They are skipped when
+Docker is unavailable, so a successful Maven build does not by itself prove
+that those database tests ran.
 
 ### Run only H2 tests
 
-Explicitly deactivate the profile to run the provider-level, imperative, and
-declarative H2 tests without Docker:
+Explicitly deactivate the profile to run the provider-level, mixed-provider,
+imperative, and declarative H2 tests without Docker:
 
 ```bash
 mvn -f tests/integration/data-jdbc/pom.xml -P-long-tests verify
@@ -148,6 +157,12 @@ mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl declarative/h2,decla
 
 ```bash
 mvn -f tests/integration/data-jdbc/pom.xml -pl h2 -am verify
+```
+
+### Run only the mixed-provider test
+
+```bash
+mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
 ```
 
 ## Test design notes

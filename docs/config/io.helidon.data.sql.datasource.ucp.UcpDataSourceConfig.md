@@ -311,7 +311,7 @@ UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>
 <td>
 <code>String</code>
 </td>
-<td>JDBC driver class for database connection</td>
+<td>Fully qualified name of the JDBC driver class</td>
 </tr>
 <tr>
 <td>
@@ -338,7 +338,7 @@ UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>
 <td>
 <code>String</code>
 </td>
-<td>Database connection url</td>
+<td>JDBC connection URL</td>
 </tr>
 <tr>
 <td>

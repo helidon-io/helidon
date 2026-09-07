@@ -34,5 +34,6 @@
         <module>h2</module>
         <module>imperative</module>
         <module>declarative</module>
+        <module>mixed-provider</module>
     </modules>
 </project>

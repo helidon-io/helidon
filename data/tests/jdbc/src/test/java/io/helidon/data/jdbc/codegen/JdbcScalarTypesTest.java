@@ -94,7 +94,7 @@ class JdbcScalarTypesTest {
                     IllegalArgumentException.class,
                     () -> JdbcScalarTypes.nullJdbcTypeConstant(unsupported));
             assertThat(failure.getMessage(),
-                       is("Helidon Data JDBC provider does not support type '"
+                       is("The Helidon Data JDBC provider does not support type '"
                                   + unsupported.resolvedName() + "' as a portable scalar."));
         }
     }

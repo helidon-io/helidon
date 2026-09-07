@@ -110,7 +110,7 @@ final class JdbcScalarAccess {
             statement.setObject(index, value);
         } else {
             throw new IllegalArgumentException(
-                    "Helidon Data JDBC provider does not support type '"
+                    "The Helidon Data JDBC provider does not support type '"
                             + value.getClass().getTypeName() + "' as a portable scalar.");
         }
     }
@@ -170,7 +170,7 @@ final class JdbcScalarAccess {
             return resultSet.getObject(index, targetType);
         }
         throw new IllegalArgumentException(
-                "Helidon Data JDBC provider does not support type '"
+                "The Helidon Data JDBC provider does not support type '"
                         + targetType.getTypeName() + "' as a portable scalar.");
     }
 

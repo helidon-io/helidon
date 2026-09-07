@@ -95,7 +95,7 @@ class JdbcClientConfigFactoryTest {
                 DataException.class,
                 () -> new JdbcClientConfigFactory(() -> config).services());
 
-        assertThat(failure.getMessage(), is("The Default JDBC Client is configured more than once."));
+        assertThat(failure.getMessage(), is("The default JDBC client is configured more than once."));
     }
 
     /**

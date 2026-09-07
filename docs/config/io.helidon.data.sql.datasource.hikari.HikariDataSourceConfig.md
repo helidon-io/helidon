@@ -149,7 +149,7 @@ Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data
 <td>
 <code>String</code>
 </td>
-<td>JDBC driver class for database connection</td>
+<td>Fully qualified name of the JDBC driver class</td>
 </tr>
 <tr>
 <td>
@@ -176,7 +176,7 @@ Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data
 <td>
 <code>String</code>
 </td>
-<td>Database connection url</td>
+<td>JDBC connection URL</td>
 </tr>
 <tr>
 <td>

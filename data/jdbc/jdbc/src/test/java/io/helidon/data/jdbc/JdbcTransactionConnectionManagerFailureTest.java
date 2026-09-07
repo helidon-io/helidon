@@ -142,6 +142,43 @@ class JdbcTransactionConnectionManagerFailureTest {
         manager.end();
     }
 
+    @Test
+    void reportsMultipleTransactionDataSourcesUsingStandardTerminology() throws Exception {
+        DataSource firstDataSource = mock(DataSource.class);
+        DataSource secondDataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        when(firstDataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        JdbcTransactionConnectionManager manager = activeManager("multiple-data-sources");
+        manager.acquire(firstDataSource).close();
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> manager.acquire(secondDataSource));
+
+        assertThat(failure.getMessage(),
+                   is("A local JDBC transaction cannot use more than one data source."));
+        manager.rollback("multiple-data-sources");
+        manager.end();
+    }
+
+    @Test
+    void reportsTransactionAutoCommitFailuresUsingStandardTerminology() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(false);
+        JdbcTransactionConnectionManager manager = activeManager("auto-commit");
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> manager.acquire(dataSource));
+
+        assertThat(failure.getCause().getMessage(),
+                   is("Data sources used for local JDBC transactions must provide connections "
+                              + "with auto-commit enabled."));
+        manager.rollback("auto-commit");
+        manager.end();
+    }
+
     private static JdbcTransactionConnectionManager activeManager(String identity) {
         JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
         manager.start(Jdbc.PROVIDER);

@@ -198,7 +198,7 @@ class JdbcMethodPlanRoundContextTest {
     }
 
     @Test
-    void reportsMissingAndBlankStatementAnnotationsAsCompleteSentences() {
+    void reportsInvalidStatementAnnotationsAsCompleteSentences() {
         TypedElementInfo missingStatement = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
                 .elementName("missingStatement")
@@ -210,6 +210,19 @@ class JdbcMethodPlanRoundContextTest {
                 () -> JdbcMethodPlan.create(missingStatement, new TypesRoundContext(Map.of())));
         assertThat(missing.getMessage(),
                    is("An abstract JDBC repository method must declare @Jdbc.Statement."));
+
+        TypedElementInfo missingSql = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("missingSql")
+                .typeName(TypeNames.STRING)
+                .enclosingType(TypeName.create("example.Repository"))
+                .addAnnotation(Annotation.create(JdbcCodegenTypes.JDBC_STATEMENT))
+                .build();
+        CodegenException missingSqlFailure = assertThrows(
+                CodegenException.class,
+                () -> JdbcMethodPlan.create(missingSql, new TypesRoundContext(Map.of())));
+        assertThat(missingSqlFailure.getMessage(),
+                   is("The @Jdbc.Statement annotation must declare an SQL statement."));
 
         CodegenException blank = assertThrows(
                 CodegenException.class,

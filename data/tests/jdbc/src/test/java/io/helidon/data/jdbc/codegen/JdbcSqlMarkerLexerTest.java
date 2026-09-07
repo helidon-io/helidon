@@ -63,7 +63,7 @@ class JdbcSqlMarkerLexerTest {
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
                                                          () -> JdbcSqlMarkerLexer.parse(sql));
 
-        assertThat(failure.getMessage(), containsString("Ambiguous double-dash SQL sequence"));
+        assertThat(failure.getMessage(), containsString("The double-dash SQL sequence is ambiguous"));
         assertThat(failure.getMessage(), containsString("PORTABLE"));
         assertThat(failure.getMessage(), endsWith("offset is 20."));
         assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));

@@ -33,12 +33,13 @@ import io.helidon.service.registry.Service;
  * Statement and result stages are single use and are not safe for concurrent
  * use.
  * <p>
- * A client built through {@link #builder()} or {@link #create(JdbcClientConfig)}
- * owns a connection for each terminal operation. It does not participate in
- * a transaction established by a transaction annotation on its caller. When
- * the configuration supplies an existing {@link javax.sql.DataSource}, the
- * application retains ownership of that data source and the client does not
- * close it.
+ * A client created programmatically obtains and closes one connection for
+ * each terminal operation. It does not participate in a transaction established
+ * by a transaction annotation on its caller. A configured data source name is
+ * resolved through the global service registry. When an existing
+ * {@link javax.sql.DataSource} is supplied directly, the application retains
+ * ownership of the data source, while the client closes each connection it
+ * obtains from it.
  * <p>
  * Annotation based applications inject a registry managed client with the
  * {@code jdbc} {@link io.helidon.data.Data.ProviderType} and a {@link Service.Named}
@@ -65,7 +66,9 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * @param config JDBC client configuration
      * @return configured JDBC client
      * @throws NullPointerException if the configuration is {@code null}
-     * @throws io.helidon.data.DataException if the configuration cannot create a direct client
+     * @throws io.helidon.data.DataException if the configuration is invalid,
+     *                                          a named data source cannot be resolved,
+     *                                          or a JDBC driver cannot be resolved for direct connection settings
      */
     static JdbcClient create(JdbcClientConfig config) {
         Objects.requireNonNull(config, "The JDBC client configuration must not be null.");
@@ -78,7 +81,9 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * @param consumer builder updates
      * @return configured JDBC client
      * @throws NullPointerException if the consumer is {@code null}
-     * @throws io.helidon.data.DataException if the configuration cannot create a direct client
+     * @throws io.helidon.data.DataException if the configuration is invalid,
+     *                                          a named data source cannot be resolved,
+     *                                          or a JDBC driver cannot be resolved for direct connection settings
      */
     static JdbcClient create(Consumer<JdbcClientConfig.Builder> consumer) {
         Objects.requireNonNull(consumer, "The JDBC client builder consumer must not be null.");
@@ -369,7 +374,9 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param type requested scalar type
          * @param <T> scalar type
          * @return non-null value
-         * @throws io.helidon.data.DataException if the column contains SQL {@code NULL} or cannot be read
+         * @throws io.helidon.data.DataException if the label is absent or ambiguous,
+         *                                          the column contains SQL {@code NULL},
+         *                                          or the column cannot be read
          * @throws NullPointerException if the label or type is {@code null}
          * @throws IllegalArgumentException if the label or type is invalid
          * @throws IllegalStateException if the row is no longer active or the

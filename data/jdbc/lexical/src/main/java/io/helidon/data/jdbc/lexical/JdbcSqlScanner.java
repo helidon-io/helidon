@@ -92,8 +92,9 @@ public final class JdbcSqlScanner {
                 if (!JdbcSqlLexicalRules.lineComment(source, index)) {
                     // Databases disagree whether a no-whitespace double dash is subtraction or a comment. Rejecting
                     // it keeps marker recognition deterministic instead of inspecting text a driver may ignore.
-                    throw malformed("Ambiguous double-dash SQL sequence; place whitespace after the second dash for "
-                                             + "a comment or separate consecutive subtraction operators");
+                    throw malformed("The double-dash SQL sequence is ambiguous because text following a portable "
+                                             + "comment opener must begin with whitespace or a control character, and "
+                                             + "consecutive subtraction operators must be separated");
                 }
                 int start = index;
                 ordinary();

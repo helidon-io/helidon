@@ -24,45 +24,42 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * SQL specific configuration.
- * Database connection may be configured using connection string, username
- * and password, using a {@link DataSource} name, or by supplying an existing
- * {@link DataSource} programmatically.
- * Database connection must be configured by exactly one of the options
- * mentioned above.
+ * SQL specific connection configuration.
+ * <p>
+ * Exactly one connection source is required: direct JDBC connection
+ * properties, the name of a registered {@link DataSource}, or an existing
+ * {@link DataSource} supplied programmatically.
  */
 @Prototype.Blueprint(createFromConfigPublic = false, createEmptyPublic = false, decorator = SqlConfigSupport.Decorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(SqlConfigSupport.CustomMethods.class)
+// Include the default accessor so generated builders expose dataSource(DataSource).
 @Prototype.IncludeDefaultMethods("dataSource")
 interface SqlConfigBlueprint {
     /**
-     * Configuration of a direct connection to a database, with exactly one
-     * connection source required.
+     * Direct JDBC connection properties.
      *
-     * @return connection configuration
+     * @return configured connection properties
      */
     @Option.Configured
     Optional<ConnectionConfig> connection();
 
     /**
-     * Name of the registered {@link DataSource}, with exactly one connection
-     * source required.
+     * Name of the registered {@link DataSource} to use.
      *
-     * @return name used for data source lookup
+     * @return configured data source name
      */
     // Preserve the established configuration key after making the Java option name type-specific.
     @Option.Configured("data-source")
     Optional<String> dataSourceName();
 
     /**
-     * Existing {@link DataSource} owned by application, with exactly one
-     * connection source required.
+     * Existing {@link DataSource} owned by the application.
      * <p>
-     * This option is available only to programmatic builders. The application
+     * This option is available only through programmatic builders. The application
      * retains ownership of the data source lifecycle.
      *
-     * @return configured existing data source
+     * @return configured data source
      */
     // Prevent generated diagnostic text from exposing pool implementation details or sensitive state.
     @Option.Confidential

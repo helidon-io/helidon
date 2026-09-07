@@ -40,6 +40,55 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class TypeHierarchyResolverTest {
 
     /**
+     * Verifies that resolver entry points reject every null argument.
+     */
+    @Test
+    void rejectsNullAtResolverBoundaries() {
+        TypeHierarchyResolver resolver = TypeHierarchyResolver.create(_ -> Optional.empty());
+        TypeInfo interfaceInfo = typeInfo(TypeName.create("example.Repository"), ElementKind.INTERFACE);
+
+        assertThrows(NullPointerException.class, () -> new TypeHierarchyResolver(null));
+        assertThrows(NullPointerException.class, () -> resolver.effectiveInterfaceMethods(null));
+        assertThrows(NullPointerException.class, () -> resolver.resolveSupertype(null, TypeNames.OBJECT));
+        assertThrows(NullPointerException.class, () -> resolver.resolveSupertype(TypeNames.STRING, null));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.resolveMemberType(null, TypeNames.STRING, TypeNames.STRING));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.resolveMemberType(interfaceInfo, null, TypeNames.STRING));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.resolveMemberType(interfaceInfo, TypeNames.STRING, null));
+    }
+
+    /**
+     * Verifies that portable environment extension points reject null instead of selecting the fallback.
+     */
+    @Test
+    void rejectsNullAtEnvironmentExtensionBoundaries() {
+        TypeHierarchyResolver resolver = TypeHierarchyResolver.create(_ -> Optional.empty());
+        TypeInfo interfaceInfo = typeInfo(TypeName.create("example.Repository"), ElementKind.INTERFACE);
+        TypedElementInfo declaration = method("find", TypeNames.STRING, Modifier.ABSTRACT);
+
+        assertThrows(NullPointerException.class, () -> resolver.resolveEnvironmentMember(null, declaration));
+        assertThrows(NullPointerException.class, () -> resolver.resolveEnvironmentMember(interfaceInfo, null));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.environmentOverrides(null, declaration, declaration));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.environmentOverrides(interfaceInfo, null, declaration));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.environmentOverrides(interfaceInfo, declaration, null));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.environmentReturnTypeAssignable(null, declaration, declaration));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.environmentReturnTypeAssignable(interfaceInfo, null, declaration));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.environmentReturnTypeAssignable(interfaceInfo, declaration, null));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.resolveEnvironmentSupertype(null, TypeNames.OBJECT));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.resolveEnvironmentSupertype(TypeNames.STRING, null));
+    }
+
+    /**
      * Verifies Java array return type covariance in the portable model.
      */
     @Test
@@ -347,7 +396,8 @@ class TypeHierarchyResolverTest {
                                                         .effectiveInterfaceMethods(repository));
 
         assertThat(failure.getMessage(),
-                   is("Inherited method 'find()' has return types that cannot be implemented by one method."));
+                   is("Inherited method 'find()' has incompatible return types: "
+                              + "'java.lang.Integer', 'java.lang.String'."));
         assertThat(failure.originatingElements(), is(List.of(stringOrigin, integerOrigin)));
     }
 

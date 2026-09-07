@@ -70,7 +70,7 @@ class RepositoryInfoBuilder extends RepositoryInfo.Builder {
                         .build();
                 return new RepositoryInfo(interfaceInfo(), interfaces(), placeholder, id);
             }
-            throw new CodegenException("Could not find " + entity + " entity type information");
+            throw new CodegenException("Entity type information is unavailable for '" + entity + "'.");
         }
         return new RepositoryInfo(interfaceInfo(), interfaces(), maybeEntityInfo.get(), id);
     }

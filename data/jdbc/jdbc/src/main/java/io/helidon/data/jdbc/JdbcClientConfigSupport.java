@@ -57,7 +57,7 @@ final class JdbcClientConfigSupport {
             validate(config);
             if (!names.add(config.name())) {
                 if (Service.Named.DEFAULT_NAME.equals(config.name())) {
-                    throw new DataException("The Default JDBC Client is configured more than once.");
+                    throw new DataException("The default JDBC client is configured more than once.");
                 }
                 throw new DataException("More than one JDBC client configuration uses the name '"
                                                 + config.name() + "'.");
@@ -102,8 +102,15 @@ final class JdbcClientConfigSupport {
         int sourceCount = connection.isPresent() ? 1 : 0;
         sourceCount += dataSourceName.isPresent() ? 1 : 0;
         sourceCount += dataSource.isPresent() ? 1 : 0;
-        if (sourceCount != 1) {
-            throw new DataException("A JDBC client requires exactly one connection source.");
+        if (sourceCount == 0) {
+            throw new DataException("The JDBC client configuration does not define a connection source. "
+                                            + "Configure exactly one using connection properties, a data source name, "
+                                            + "or a DataSource instance.");
+        }
+        if (sourceCount > 1) {
+            throw new DataException("The JDBC client configuration defines multiple connection sources. "
+                                            + "Configure exactly one using connection properties, a data source name, "
+                                            + "or a DataSource instance.");
         }
     }
 

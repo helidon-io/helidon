@@ -64,6 +64,8 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
         List<JdbcClientConfig> configs = List.copyOf(configurations.get());
         JdbcClientConfigSupport.validateAll(configs);
 
+        // Stage client creation so every configuration is validated and every named data source registration
+        // is resolved before any inactive data source service is activated.
         List<PreparedClient> preparedClients = new ArrayList<>(configs.size());
         for (JdbcClientConfig config : configs) {
             JdbcClientImpl.CachePolicy cachePolicy = JdbcClientConfigSupport.cachePolicy(config);

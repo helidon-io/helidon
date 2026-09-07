@@ -128,12 +128,12 @@ class JdbcBindingMatrixTest {
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
                                                             () -> client.create(SQL).bind(1, value));
             assertThat(failure.getMessage(),
-                       is("Helidon Data JDBC provider does not support type '"
+                       is("The Helidon Data JDBC provider does not support type '"
                                   + value.getClass().getTypeName() + "' as a portable scalar."));
             IllegalArgumentException accessFailure = assertThrows(IllegalArgumentException.class,
                                                                   () -> JdbcScalarAccess.bind(statement, 1, value));
             assertThat(accessFailure.getMessage(),
-                       is("Helidon Data JDBC provider does not support type '"
+                       is("The Helidon Data JDBC provider does not support type '"
                                   + value.getClass().getTypeName() + "' as a portable scalar."));
         }
         for (Class<?> type : List.of(OffsetTime.class, OffsetDateTime.class)) {
@@ -141,17 +141,17 @@ class JdbcBindingMatrixTest {
                                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
                                                                     .map(type));
             assertThat(failure.getMessage(),
-                       is("Helidon Data JDBC provider does not support type '"
+                       is("The Helidon Data JDBC provider does not support type '"
                                   + type.getTypeName() + "' as a portable scalar."));
             IllegalArgumentException accessFailure = assertThrows(IllegalArgumentException.class,
                                                                   () -> JdbcScalarAccess.read(resultSet, 1, type));
             assertThat(accessFailure.getMessage(),
-                       is("Helidon Data JDBC provider does not support type '"
+                       is("The Helidon Data JDBC provider does not support type '"
                                   + type.getTypeName() + "' as a portable scalar."));
             IllegalArgumentException rowFailure = assertThrows(IllegalArgumentException.class,
                                                                () -> row.get(1, type));
             assertThat(rowFailure.getMessage(),
-                       is("Helidon Data JDBC provider does not support type '"
+                       is("The Helidon Data JDBC provider does not support type '"
                                   + type.getTypeName() + "' as a portable scalar."));
         }
 

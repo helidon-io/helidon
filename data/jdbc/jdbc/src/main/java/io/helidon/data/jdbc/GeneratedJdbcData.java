@@ -60,7 +60,8 @@ public final class GeneratedJdbcData {
         // unrelated or unbounded bind array without scanning the SQL again.
         if (parameterCount < 0 || parameterCount > sql.length()) {
             throw new IllegalArgumentException(
-                    "The JDBC parameter count must be between zero and the SQL statement length.");
+                    "The JDBC parameter count must be between zero and the SQL statement length, inclusive. "
+                            + "The requested count was " + parameterCount + ".");
         }
         if (client instanceof JdbcClientImpl clientImpl) {
             return clientImpl.createGenerated(sql, parameterCount);

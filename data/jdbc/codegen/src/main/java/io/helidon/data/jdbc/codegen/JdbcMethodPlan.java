@@ -103,7 +103,7 @@ final class JdbcMethodPlan {
                 .orElseThrow(() -> failure(method,
                                            "An abstract JDBC repository method must declare @Jdbc.Statement."));
         String sql = statement.stringValue()
-                .orElseThrow(() -> failure(method, "The @Jdbc.Statement annotation must declare SQL statement."));
+                .orElseThrow(() -> failure(method, "The @Jdbc.Statement annotation must declare an SQL statement."));
         if (sql.isBlank()) {
             throw failure(method, "The SQL statement declared by @Jdbc.Statement must not be blank.");
         }

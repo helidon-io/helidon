@@ -27,6 +27,8 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -124,8 +126,19 @@ class JdbcClientCacheTest {
         JdbcClient client = client(dataSource);
 
         assertThrows(NullPointerException.class, () -> GeneratedJdbcData.createGenerated(client, null, 0));
-        assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.createGenerated(client, "select 1", -1));
-        assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.createGenerated(client, "?", 2));
+        IllegalArgumentException negative = assertThrows(
+                IllegalArgumentException.class,
+                () -> GeneratedJdbcData.createGenerated(client, "select 1", -1));
+        IllegalArgumentException excessive = assertThrows(
+                IllegalArgumentException.class,
+                () -> GeneratedJdbcData.createGenerated(client, "?", 2));
+
+        assertThat(negative.getMessage(),
+                   is("The JDBC parameter count must be between zero and the SQL statement length, inclusive. "
+                              + "The requested count was -1."));
+        assertThat(excessive.getMessage(),
+                   is("The JDBC parameter count must be between zero and the SQL statement length, inclusive. "
+                              + "The requested count was 2."));
 
         verifyNoMoreInteractions(dataSource);
     }

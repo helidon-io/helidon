@@ -29,7 +29,7 @@ Configuration for a JDBC client
 </td>
 <td>
 </td>
-<td>Configuration of a direct connection to a database, with exactly one connection source required</td>
+<td>Direct JDBC connection properties</td>
 </tr>
 <tr>
 <td>
@@ -40,7 +40,7 @@ Configuration for a JDBC client
 </td>
 <td>
 </td>
-<td>Name of the registered <code>Data<wbr>Source</code>, with exactly one connection source required</td>
+<td>Name of the registered <code>Data<wbr>Source</code> to use</td>
 </tr>
 <tr>
 <td>

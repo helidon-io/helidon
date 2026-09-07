@@ -43,7 +43,7 @@ public final class Jdbc {
     }
 
     /**
-     * Selects the JDBC client managed by registry, used by a repository.
+     * Selects the JDBC client managed by the registry, used by a repository.
      * <p>
      * The value names the required {@link JdbcClient} qualified with
      * {@link io.helidon.service.registry.Service.Named}. When this annotation
@@ -65,7 +65,8 @@ public final class Jdbc {
     /**
      * Declares the SQL statement executed by a repository method.
      * <p>
-     * SQL statement may use named markers matching Java parameter names or
+     * Every abstract JDBC repository method must declare this annotation.
+     * The SQL statement may use named markers matching Java parameter names or
      * positional JDBC markers. A statement must use one style consistently.
      */
     @Target(ElementType.METHOD)
@@ -100,7 +101,7 @@ public final class Jdbc {
      */
     public enum ExecutionType {
         /**
-         * Allows code generation infer query or update behavior from the method
+         * Allows code generation to infer query or update behavior from the method
          * signature and its JDBC annotations.
          */
         AUTO,
@@ -119,7 +120,7 @@ public final class Jdbc {
     /**
      * Requests generated keys from an update statement.
      * <p>
-     * An empty value uses the default generated keys by the JDBC driver.
+     * An empty value requests the generated keys selected by the JDBC driver.
      * Otherwise, the provided values are passed to JDBC in declaration order.
      */
     @Target(ElementType.METHOD)
@@ -129,19 +130,21 @@ public final class Jdbc {
         /**
          * Returns the requested generated column names.
          *
-         * @return column names, or an empty array to use the driver defaults
+         * @return column names, or an empty array to request the keys selected
+         *         by the JDBC driver
          */
         String[] value() default {};
     }
 
     /**
-     * Selects an application row mapper for query or generated key rows.
+     * Selects an application row mapper for query or generated-key rows.
      * <p>
      * With a mapper class, generated code injects that exact service type.
      * Without an explicit mapper class, generated code requires a row mapper
      * service whose generic result type exactly matches the repository result
-     * type. When this annotation is absent, supported records use generated
-     * mapping.
+     * type. When this annotation is absent for a query or generated-key result,
+     * supported scalar results are mapped from column one, and supported records
+     * use generated component mapping.
      * <p>
      * A mapper used by a singleton repository must be stateless or safe for
      * concurrent use. The mapper receives a scoped {@link JdbcClient.Row} and
