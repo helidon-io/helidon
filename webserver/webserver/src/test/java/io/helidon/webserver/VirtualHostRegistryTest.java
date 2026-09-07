@@ -291,4 +291,5 @@ class VirtualHostRegistryTest {
                 .trustAll(true)
                 .build();
     }
+
 }

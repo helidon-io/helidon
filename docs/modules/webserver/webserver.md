@@ -869,8 +869,23 @@ optional requested URI discovery settings:
 - which type or types of requested URI discovery to use:
   - `FORWARDED` - uses the `Forwarded` header
   - `X_FORWARDED` - uses the `X-Forwarded-*` headers
-  - `HOST` - uses the `Host` header
+  - `HOST` - uses the effective request authority: the absolute-form target
+    authority for HTTP/1 when present, otherwise the `Host` header
 - what intermediate nodes to trust
+
+For an HTTP/1 absolute-form request-target, Helidon ignores a conflicting
+`Host` header and uses the target authority for `request.authority()` and URI
+reconstruction. The target scheme is also used as a fallback. Helidon rejects
+an HTTPS target received over an unsecured connection unless requested URI
+discovery trusts the sending proxy and independently establishes HTTPS.
+The built-in requested URI discovery context applies this absolute-form
+authority and scheme handling. Before requested URI discovery, Helidon exposes
+the effective request authority through the `Host` header. Custom
+`RequestedUriDiscoveryContext` implementations that use the request-target
+scheme must override the `uriInfo` method which accepts both the decoded request
+path and the explicit scheme. The binary-compatible default method delegates to
+the older path-based method without the explicit scheme; both methods receive
+the effective authority through the request headers.
 
 When your application invokes `request.requestedUri()` Helidon iterates through
 the discovery types you set up for the receiving connection, gathering
@@ -880,6 +895,9 @@ intermediate nodes reflected in those headers, then Helidon tries the next
 discovery type you set up. Helidon uses the `HOST` discovery type if you do not
 set up discovery yourself or if, for a particular request, it cannot assemble
 the request information using any discovery type you did set up for the socket.
+Trusted forwarding metadata takes precedence over absolute-form target
+components; missing components fall back to the target and then to the current
+request information as applicable.
 
 ### Setting Up Requested URI Discovery Programmatically
 

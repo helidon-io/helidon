@@ -72,6 +72,10 @@ record here.
     <suppress files="openapi/openapi/src/main/java/io/helidon/openapi/OpenApiDocument\.java"
             checks="FileLength"/>
 
+    <!-- Preserve the combined HTTP/2 stream lifecycle and requested-URI error handling. -->
+    <suppress files="io[/\\]helidon[/\\]webserver[/\\]http2[/\\]Http2ServerStream\.java$"
+            checks="FileLength"/>
+
     <!--
     - Module exclusions
     -->

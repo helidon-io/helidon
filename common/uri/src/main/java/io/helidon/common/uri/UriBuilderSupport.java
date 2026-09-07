@@ -28,7 +28,7 @@ final class UriBuilderSupport {
 
         @Override
         public void decorate(UriInfo.BuilderBase<?, ?> target) {
-            if (target.port() == 0) {
+            if (target.port() == -1) {
                 target.port(defaultPort(target.scheme()));
             }
         }
@@ -58,20 +58,22 @@ final class UriBuilderSupport {
          */
         @Prototype.BuilderMethod
         static void authority(UriInfo.BuilderBase<?, ?> builder, String authority) {
-            int index = authority.lastIndexOf(':');
-            if (index < 1) {
-                // no colon, no port
-                builder.host(authority);
-                return;
+            int portDelimiter;
+            if (authority.startsWith("[")) {
+                int closingBracket = authority.lastIndexOf(']');
+                portDelimiter = closingBracket >= 0
+                        && closingBracket + 1 < authority.length()
+                        && authority.charAt(closingBracket + 1) == ':'
+                                ? closingBracket + 1
+                                : -1;
+            } else {
+                portDelimiter = authority.lastIndexOf(':');
             }
-            // this may still be an IPv6 address
-            if (authority.charAt(authority.length() - 1) == ']') {
-                // IPv6 without port
-                builder.host(authority);
-                return;
+            String host = portDelimiter < 1 ? authority : authority.substring(0, portDelimiter);
+            builder.host(UriEncoding.decodeHost(host));
+            if (portDelimiter >= 1) {
+                builder.port(Integer.parseInt(authority.substring(portDelimiter + 1)));
             }
-            builder.host(authority.substring(0, index));
-            builder.port(Integer.parseInt(authority.substring(index + 1)));
         }
 
         /**

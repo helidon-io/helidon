@@ -30,7 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class UriInfoTest {
     @Test
     void testDefaults() {
-        UriInfo uriInfo = UriInfo.create();
+        UriInfo.Builder builder = UriInfo.builder();
+        assertThat(builder.port(), is(-1));
+        UriInfo uriInfo = builder.build();
 
         assertAll(
                 () -> assertThat(uriInfo.scheme(), is("http")),
@@ -45,6 +47,16 @@ class UriInfoTest {
     }
 
     @Test
+    void testExplicitUndefinedPort() {
+        UriInfo.Builder builder = UriInfo.builder()
+                .scheme("https")
+                .port(-1);
+
+        assertThat(builder.port(), is(-1));
+        assertThat(builder.build().port(), is(443));
+    }
+
+    @Test
     void testUppercaseHttpsDefaultPort() {
         UriInfo uriInfo = UriInfo.builder()
                 .scheme("HTTPS")
@@ -53,6 +65,18 @@ class UriInfoTest {
 
         assertThat(uriInfo.port(), is(443));
         assertThat(uriInfo.authority(), is("localhost:443"));
+    }
+
+    @Test
+    void testExplicitZeroPort() {
+        UriInfo uriInfo = UriInfo.builder()
+                .host("localhost")
+                .port(0)
+                .build();
+
+        assertThat(uriInfo.port(), is(0));
+        assertThat(uriInfo.authority(), is("localhost:0"));
+        assertThat(uriInfo.toUri(), is(URI.create("http://localhost:0/")));
     }
 
     @Test
@@ -82,6 +106,31 @@ class UriInfoTest {
                 () -> assertThat(uriInfo.toUri(), is(uri))
         );
     }
+
+    @Test
+    void encodesStructuralDelimitersInHostData() {
+        UriInfo userInfoDelimiter = UriInfo.builder()
+                .host("victim@attacker.example")
+                .build();
+        UriInfo portDelimiter = UriInfo.builder()
+                .host("api.example.com:443")
+                .build();
+        UriInfo encodedSubDelimiter = UriInfo.builder()
+                .authority("name%2cpart")
+                .build();
+
+        assertAll(
+                () -> assertThat(userInfoDelimiter.authority(), is("victim%40attacker.example:80")),
+                () -> assertThat(userInfoDelimiter.toUri(),
+                                 is(URI.create("http://victim%40attacker.example:80/"))),
+                () -> assertThat(portDelimiter.authority(), is("api.example.com%3A443:80")),
+                () -> assertThat(portDelimiter.toUri(),
+                                 is(URI.create("http://api.example.com%3A443:80/"))),
+                () -> assertThat(encodedSubDelimiter.authority(), is("name%2Cpart:80")),
+                () -> assertThat(encodedSubDelimiter.toUri(), is(URI.create("http://name%2Cpart:80/")))
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("authorities")
     void testAuthority(AuthorityData data) {
