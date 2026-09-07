@@ -58,9 +58,13 @@ public class MetricsFormatterJmhBenchmark {
 
     private MeterRegistry oneMatchMeterRegistry;
     private MeterRegistry allMatchMeterRegistry;
+    private MeterRegistry distinctFamiliesOneMatchMeterRegistry;
+    private MeterRegistry distinctFamiliesAllMatchMeterRegistry;
     private MeterRegistryFormatter prometheusUnfilteredFormatter;
     private MeterRegistryFormatter prometheusOneSelectedFormatter;
     private MeterRegistryFormatter prometheusAllSelectedFormatter;
+    private MeterRegistryFormatter prometheusDistinctFamiliesOneSelectedFormatter;
+    private MeterRegistryFormatter prometheusDistinctFamiliesAllSelectedFormatter;
     private MeterRegistryFormatter jsonUnfilteredFormatter;
     private MeterRegistryFormatter jsonOneSelectedFormatter;
     private MeterRegistryFormatter jsonAllSelectedFormatter;
@@ -71,8 +75,10 @@ public class MetricsFormatterJmhBenchmark {
                 .warnOnMultipleRegistries(false)
                 .build();
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        oneMatchMeterRegistry = createMeterRegistry(metricsFactory, metricsConfig, false);
-        allMatchMeterRegistry = createMeterRegistry(metricsFactory, metricsConfig, true);
+        oneMatchMeterRegistry = createMeterRegistry(metricsFactory, metricsConfig, false, false);
+        allMatchMeterRegistry = createMeterRegistry(metricsFactory, metricsConfig, true, false);
+        distinctFamiliesOneMatchMeterRegistry = createMeterRegistry(metricsFactory, metricsConfig, false, true);
+        distinctFamiliesAllMatchMeterRegistry = createMeterRegistry(metricsFactory, metricsConfig, true, true);
 
         prometheusUnfilteredFormatter = formatter(MediaTypes.TEXT_PLAIN,
                                                    metricsConfig,
@@ -86,6 +92,14 @@ public class MetricsFormatterJmhBenchmark {
                                                     metricsConfig,
                                                     allMatchMeterRegistry,
                                                     selection());
+        prometheusDistinctFamiliesOneSelectedFormatter = formatter(MediaTypes.TEXT_PLAIN,
+                                                                    metricsConfig,
+                                                                    distinctFamiliesOneMatchMeterRegistry,
+                                                                    selection());
+        prometheusDistinctFamiliesAllSelectedFormatter = formatter(MediaTypes.TEXT_PLAIN,
+                                                                    metricsConfig,
+                                                                    distinctFamiliesAllMatchMeterRegistry,
+                                                                    selection());
         jsonUnfilteredFormatter = formatter(MediaTypes.APPLICATION_JSON,
                                             metricsConfig,
                                             oneMatchMeterRegistry,
@@ -104,6 +118,8 @@ public class MetricsFormatterJmhBenchmark {
     public void tearDown() {
         oneMatchMeterRegistry.close();
         allMatchMeterRegistry.close();
+        distinctFamiliesOneMatchMeterRegistry.close();
+        distinctFamiliesAllMatchMeterRegistry.close();
     }
 
     @Benchmark
@@ -119,6 +135,16 @@ public class MetricsFormatterJmhBenchmark {
     @Benchmark
     public Object formatPrometheusTagSelectedAll() {
         return prometheusAllSelectedFormatter.format().orElseThrow();
+    }
+
+    @Benchmark
+    public Object formatPrometheusDistinctFamiliesTagSelectedOne() {
+        return prometheusDistinctFamiliesOneSelectedFormatter.format().orElseThrow();
+    }
+
+    @Benchmark
+    public Object formatPrometheusDistinctFamiliesTagSelectedAll() {
+        return prometheusDistinctFamiliesAllSelectedFormatter.format().orElseThrow();
     }
 
     @Benchmark
@@ -138,13 +164,15 @@ public class MetricsFormatterJmhBenchmark {
 
     private MeterRegistry createMeterRegistry(MetricsFactory metricsFactory,
                                               MetricsConfig metricsConfig,
-                                              boolean selectAll) {
+                                              boolean selectAll,
+                                              boolean distinctFamilies) {
         MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
         for (int i = 0; i < cardinality; i++) {
             String selectionTagValue = selectAll || i == cardinality - 1
                     ? SELECTED_TAG_VALUE
                     : UNSELECTED_TAG_VALUE;
-            meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(METER_NAME, () -> 1)
+            String meterName = distinctFamilies ? METER_NAME + "." + i : METER_NAME;
+            meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(meterName, () -> 1)
                                               .addTag(metricsFactory.tagCreate(SERIES_TAG_NAME, Integer.toString(i)))
                                               .addTag(metricsFactory.tagCreate(SELECTION_TAG_NAME, selectionTagValue)));
         }
