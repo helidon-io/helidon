@@ -24,7 +24,7 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>HOST</code></td>
-<td>This is the default, only the <code>io.<wbr>helidon.<wbr>http.<wbr>Header#<wbr>HOST</code> header is used to discover requested URI</td>
+<td>This is the default; an HTTP/1 absolute-form request-target supplies the authority, otherwise the <code>io.<wbr>helidon.<wbr>http.<wbr>Header#<wbr>HOST</code> header is used to discover the requested URI</td>
 </tr>
 </tbody>
 </table>

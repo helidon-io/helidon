@@ -38,6 +38,18 @@ class UriEncodingTest {
     }
 
     @Test
+    void hostEncodingPreservesEncodedReservedData() {
+        assertAll(
+                () -> assertThat(UriEncoding.decodeHost("%61pi+name%40example.com%3a443"),
+                                 is("api+name%40example.com%3A443")),
+                () -> assertThat(UriEncoding.encodeHost("api+name%40example.com%3A443"),
+                                 is("api+name%40example.com%3A443")),
+                () -> assertThat(UriEncoding.decodeHost("name%2cpart"), is("name%2Cpart")),
+                () -> assertThat(UriEncoding.encodeHost("victim@attacker.example:443"),
+                                 is("victim%40attacker.example%3A443")));
+    }
+
+    @Test
     void malformedHexEscapesRemainLiteral() {
         assertAll(
                 () -> assertThat(decodeUri("%2G"), is("%2G")),

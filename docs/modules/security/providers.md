@@ -234,13 +234,20 @@ Possible <code>tenant-id-style</code> configuration options:
 <tbody>
 <tr>
 <td><code>host-header</code></td>
-<td>Tenant configuration will be selected based on your host present in the <code>Host</code> header value.</td>
+<td>Tenant configuration is selected using the effective request authority exposed in the <code>Host</code> header.
+For an HTTP/1 absolute-form request-target, its authority replaces a conflicting received <code>Host</code> value.
+For HTTP/2, <code>:authority</code> supplies the effective <code>Host</code> entry when present; a conflicting
+<code>Host</code> value is rejected, and <code>Host</code> is used only when <code>:authority</code> is absent. Trusted
+requested-URI discovery can produce a different external URI, but it does not replace the effective <code>Host</code>
+entry used for tenant selection.</td>
 <td> </td>
 </tr>
 <tr>
 <td><code>domain</code></td>
-<td>Similar to the <code>host-header</code> style, but now the tenant name is identified just as a part of the host name. By default, it selects the third domain level.</p>
-<p>Example: Host header value from inbound request is <code>my.helidon.com</code> → domain level 3 is <code>my</code>, domain level 2 is <code>helidon</code> and domain level 1 is <code>com</code>.</td>
+<td>Similar to the <code>host-header</code> style, but now the tenant name is identified just as a part of the effective
+host name. By default, it selects the third domain level.
+<p>Example: effective request host is <code>my.helidon.com</code> → domain level 3 is <code>my</code>, domain level 2 is
+<code>helidon</code> and domain level 1 is <code>com</code>.</p></td>
 <td><code>tenant-id-domain-level: &lt;domain level&gt;</code></td>
 </tr>
 <tr>

@@ -214,6 +214,91 @@ class SniTest {
     }
 
     @Test
+    void rejectsAbsoluteTargetAuthorityMismatchEvenWhenHostMatchesSni() throws Exception {
+        try (SSLSocket socket = tlsSocket(SNI_HOST, VIRTUAL_HOST_CIPHER)) {
+            socket.setSoTimeout(5000);
+            socket.startHandshake();
+
+            OutputStream output = socket.getOutputStream();
+            output.write(("GET https://" + OTHER_HOST + "/ HTTP/1.1\r\n"
+                                  + "Host: " + SNI_HOST + "\r\n"
+                                  + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            output.flush();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
+            assertThat(reader.readLine(), startsWith("HTTP/1.1 421 "));
+        }
+    }
+
+    @Test
+    void acceptsPercentEncodedAbsoluteTargetAuthorityWhenSniMatches() throws Exception {
+        try (SSLSocket socket = tlsSocket(SNI_HOST, VIRTUAL_HOST_CIPHER)) {
+            socket.setSoTimeout(5000);
+            socket.startHandshake();
+
+            OutputStream output = socket.getOutputStream();
+            output.write(("GET https://%61pi.example.com/ HTTP/1.1\r\n"
+                                  + "Host: " + SNI_HOST + "\r\n"
+                                  + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            output.flush();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
+            assertThat(reader.readLine(), startsWith("HTTP/1.1 200 "));
+        }
+    }
+
+    @Test
+    void rejectsEncodedStructuralDelimiterWhenDecodedHostWouldMatchSni() throws Exception {
+        try (SSLSocket socket = tlsSocket(SNI_HOST, VIRTUAL_HOST_CIPHER)) {
+            socket.setSoTimeout(5000);
+            socket.startHandshake();
+
+            OutputStream output = socket.getOutputStream();
+            output.write(("GET https://api.example.com%3A443/ HTTP/1.1\r\n"
+                                  + "Host: " + SNI_HOST + "\r\n"
+                                  + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            output.flush();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
+            assertThat(reader.readLine(), startsWith("HTTP/1.1 400 "));
+        }
+    }
+
+    @Test
+    void acceptsAbsoluteTargetEmptyPortWhenSniMatches() throws Exception {
+        try (SSLSocket socket = tlsSocket(SNI_HOST, VIRTUAL_HOST_CIPHER)) {
+            socket.setSoTimeout(5000);
+            socket.startHandshake();
+
+            OutputStream output = socket.getOutputStream();
+            output.write(("GET https://" + SNI_HOST + ":/ HTTP/1.1\r\n"
+                                  + "Host: " + OTHER_HOST + "\r\n"
+                                  + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            output.flush();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
+            assertThat(reader.readLine(), startsWith("HTTP/1.1 200 "));
+        }
+    }
+
+    @Test
+    void rejectsAbsoluteTargetUserInfoWhenSniMatches() throws Exception {
+        try (SSLSocket socket = tlsSocket(SNI_HOST, VIRTUAL_HOST_CIPHER)) {
+            socket.setSoTimeout(5000);
+            socket.startHandshake();
+
+            OutputStream output = socket.getOutputStream();
+            output.write(("GET https://user@@" + SNI_HOST + "/ HTTP/1.1\r\n"
+                                  + "Host: " + OTHER_HOST + "\r\n"
+                                  + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            output.flush();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
+            assertThat(reader.readLine(), startsWith("HTTP/1.1 400 "));
+        }
+    }
+
+    @Test
     void rejectsUnmatchedSniAuthorityMismatch() {
         try (Http1ClientResponse response = defaultTlsClient.get()
                 .header(HeaderValues.create(HeaderNames.HOST, DIFFERENT_HOST))
