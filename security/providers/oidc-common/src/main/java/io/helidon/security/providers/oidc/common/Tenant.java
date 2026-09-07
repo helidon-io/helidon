@@ -87,15 +87,17 @@ public class Tenant {
         Errors.Collector collector = Errors.collector();
 
         URI identityUri = tenantConfig.identityUri();
+        Duration jwkTimeout = tenantConfig.jwkTimeout().prototype().timeout();
         ResourceConfig metadataResource = tenantConfig.oidcMetadataResource().orElse(null);
         JsonObject metadataJson = resolveMetadata(tenantConfig.oidcMetadataJsonObject(),
                                                   metadataResource,
-                                                  tenantConfig.jwkTimeout().prototype().timeout());
+                                                  jwkTimeout);
         OidcMetadata oidcMetadata = OidcMetadata.builder()
                 .remoteEnabled(tenantConfig.useWellKnown())
                 .json(metadataJson)
                 .reloadable(metadataResource != null)
                 .webClient(webClient)
+                .readTimeout(jwkTimeout)
                 .identityUri(identityUri)
                 .build();
 
@@ -142,7 +144,8 @@ public class Tenant {
                                             collector,
                                             appWebClient,
                                             webClient,
-                                            tokenEndpointUri);
+                                            tokenEndpointUri,
+                                            jwkTimeout);
         Tenant tenant = new Tenant(tenantConfig,
                                    tokenEndpointUri,
                                    authorizationEndpointUri,
@@ -259,7 +262,8 @@ public class Tenant {
                                              Errors.Collector collector,
                                              Supplier<WebClient> appWebClient,
                                              WebClient webClient,
-                                             URI tokenEndpointUri) {
+                                             URI tokenEndpointUri,
+                                             Duration readTimeout) {
         if (!tenantConfig.validateJwtWithJwk()) {
             return JwkKeys.builder().build();
         }
@@ -275,7 +279,7 @@ public class Tenant {
             try {
                 JwkKeys keys = JwkKeys.builder()
                         .resource(Resource.create(configuredResource,
-                                                  tenantConfig.jwkTimeout().prototype().timeout()))
+                                                  readTimeout))
                         .build();
                 return requireSigningKeys(keys, true);
             } catch (ResilientValue.UnavailableException e) {
@@ -313,7 +317,7 @@ public class Tenant {
                                                webClient,
                                                tokenEndpointUri,
                                                jwkUri,
-                                               tenantConfig.clientTimeout(),
+                                               readTimeout,
                                                tenantConfig);
                 } finally {
                     idcsClient.closeResource();
@@ -322,6 +326,7 @@ public class Tenant {
                 keys = JwkKeys.builder()
                         .json(webClient.get()
                                       .uri(jwkUri)
+                                      .readTimeout(readTimeout)
                                       .requestEntity(JsonObject.class))
                         .build();
             }

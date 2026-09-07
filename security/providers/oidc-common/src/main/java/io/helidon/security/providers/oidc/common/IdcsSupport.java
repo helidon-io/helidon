@@ -42,7 +42,7 @@ class IdcsSupport {
                            WebClient generalClient,
                            URI tokenEndpointUri,
                            URI signJwkUri,
-                           Duration clientTimeout,
+                           Duration readTimeout,
                            TenantConfig tenantConfig) {
         //  need to get token to be able to request this endpoint
         Parameters.Builder formBuilder = Parameters.builder("idcs-form-params")
@@ -58,6 +58,7 @@ class IdcsSupport {
 
         try (HttpClientResponse response = appWebClient.post()
                 .uri(tokenEndpointUri)
+                .readTimeout(readTimeout)
                 .header(HeaderValues.ACCEPT_JSON)
                 .submit(form)) {
 
@@ -70,6 +71,7 @@ class IdcsSupport {
                 // get the jwk from server
                 JsonObject jwkJson = generalClient.get()
                         .uri(signJwkUri)
+                        .readTimeout(readTimeout)
                         .header(HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
                         .requestEntity(JsonObject.class);
 

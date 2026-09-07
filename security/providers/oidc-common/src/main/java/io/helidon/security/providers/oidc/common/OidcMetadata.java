@@ -18,6 +18,8 @@ package io.helidon.security.providers.oidc.common;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
+import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
@@ -132,6 +134,7 @@ final class OidcMetadata {
         private JsonObject metadata;
         private WebClient webClient;
         private URI identityUri;
+        private Duration readTimeout;
         private boolean reloadable;
 
         private Builder() {
@@ -168,6 +171,11 @@ final class OidcMetadata {
             return this;
         }
 
+        Builder readTimeout(Duration readTimeout) {
+            this.readTimeout = Objects.requireNonNull(readTimeout);
+            return this;
+        }
+
         Builder identityUri(URI identityUri) {
             this.identityUri = identityUri;
             return this;
@@ -179,6 +187,7 @@ final class OidcMetadata {
             try {
                 this.metadata = webClient.get()
                         .uri(wellKnown)
+                        .readTimeout(readTimeout)
                         .requestEntity(JsonObject.class);
                 this.reloadable = true;
 

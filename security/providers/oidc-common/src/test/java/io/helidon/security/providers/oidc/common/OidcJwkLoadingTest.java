@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -51,6 +52,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OidcJwkLoadingTest {
@@ -461,6 +463,80 @@ class OidcJwkLoadingTest {
     }
 
     @Test
+    void wellKnownMetadataUsesJwkReadTimeout() {
+        AtomicInteger metadataRequests = new AtomicInteger();
+        AtomicInteger jwkRequests = new AtomicInteger();
+        AtomicInteger serverPort = new AtomicInteger();
+        WebServer server = WebServer.builder()
+                .routing(routing -> routing
+                        .get("/identity/.well-known/openid-configuration", (req, res) -> {
+                            metadataRequests.incrementAndGet();
+                            delayResponse();
+                            res.header(HeaderValues.CONTENT_TYPE_JSON)
+                                    .send("{\"jwks_uri\":\"http://localhost:" + serverPort.get() + "/jwks\"}");
+                        })
+                        .get("/jwks", (req, res) -> {
+                            jwkRequests.incrementAndGet();
+                            res.header(HeaderValues.CONTENT_TYPE_JSON).send(JWK_JSON);
+                        }))
+                .build()
+                .start();
+        serverPort.set(server.port());
+        try {
+            OidcConfig config = remoteBuilder(server)
+                    .jwkRetry(singleCallRetry())
+                    .jwkTimeout(shortJwkTimeout())
+                    .jwkCircuitBreaker(twoFailureCircuitBreaker())
+                    .build();
+
+            long started = System.nanoTime();
+            assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
+            assertThat(Duration.ofNanos(System.nanoTime() - started), lessThan(Duration.ofMillis(750)));
+            assertThat(metadataRequests.get(), is(1));
+            assertThat(jwkRequests.get(), is(0));
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
+    void discoveredJwkUsesJwkReadTimeout() {
+        AtomicInteger metadataRequests = new AtomicInteger();
+        AtomicInteger jwkRequests = new AtomicInteger();
+        AtomicInteger serverPort = new AtomicInteger();
+        WebServer server = WebServer.builder()
+                .routing(routing -> routing
+                        .get("/identity/.well-known/openid-configuration", (req, res) -> {
+                            metadataRequests.incrementAndGet();
+                            res.header(HeaderValues.CONTENT_TYPE_JSON)
+                                    .send("{\"jwks_uri\":\"http://localhost:" + serverPort.get() + "/jwks\"}");
+                        })
+                        .get("/jwks", (req, res) -> {
+                            jwkRequests.incrementAndGet();
+                            delayResponse();
+                            res.header(HeaderValues.CONTENT_TYPE_JSON).send(JWK_JSON);
+                        }))
+                .build()
+                .start();
+        serverPort.set(server.port());
+        try {
+            OidcConfig config = remoteBuilder(server)
+                    .jwkRetry(singleCallRetry())
+                    .jwkTimeout(shortJwkTimeout())
+                    .jwkCircuitBreaker(twoFailureCircuitBreaker())
+                    .build();
+
+            long started = System.nanoTime();
+            assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
+            assertThat(Duration.ofNanos(System.nanoTime() - started), lessThan(Duration.ofMillis(750)));
+            assertThat(metadataRequests.get(), is(1));
+            assertThat(jwkRequests.get(), is(1));
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
     void idcsReloadObtainsFreshToken() {
         AtomicInteger tokenRequests = new AtomicInteger();
         AtomicInteger serverPort = new AtomicInteger();
@@ -537,6 +613,13 @@ class OidcJwkLoadingTest {
                 .buildPrototype();
     }
 
+    private static TimeoutConfig shortJwkTimeout() {
+        return TimeoutConfig.builder()
+                .timeout(Duration.ofMillis(100))
+                .currentThread(true)
+                .buildPrototype();
+    }
+
     private static CircuitBreakerConfig twoFailureCircuitBreaker() {
         return CircuitBreakerConfig.builder()
                 .volume(2)
@@ -544,6 +627,15 @@ class OidcJwkLoadingTest {
                 .successThreshold(1)
                 .delay(Duration.ofSeconds(1))
                 .buildPrototype();
+    }
+
+    private static void delayResponse() {
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while delaying test response", e);
+        }
     }
 
     private static ResourceConfig fixedJwkResource() {
