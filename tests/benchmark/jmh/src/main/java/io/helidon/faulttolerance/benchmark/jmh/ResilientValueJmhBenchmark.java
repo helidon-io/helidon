@@ -37,7 +37,7 @@ import org.openjdk.jmh.annotations.TearDown;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Thread)
+@State(Scope.Benchmark)
 public class ResilientValueJmhBenchmark {
     private static final String VALUE = "value";
 
@@ -53,10 +53,21 @@ public class ResilientValueJmhBenchmark {
         cachedLoads = new AtomicInteger();
         unavailableLoads = new AtomicInteger();
 
+        var cachedRetry = RetryConfig.builder()
+                .overallTimeout(Duration.ofSeconds(1))
+                .enableMetrics(false)
+                .build();
+        var cachedCircuitBreaker = CircuitBreakerConfig.builder()
+                .enableMetrics(false)
+                .build();
+        var cachedTimeout = TimeoutConfig.builder()
+                .timeout(Duration.ofSeconds(1))
+                .enableMetrics(false)
+                .build();
         cachedValue = ResilientValue.create("jmh-cached", () -> {
             cachedLoads.incrementAndGet();
             return VALUE;
-        }, RetryConfig.builder().build(), CircuitBreakerConfig.builder().build(), TimeoutConfig.builder().build());
+        }, cachedRetry, cachedCircuitBreaker, cachedTimeout);
         cachedValue.get();
 
         var retry = RetryConfig.builder()
@@ -74,10 +85,14 @@ public class ResilientValueJmhBenchmark {
                 .enableMetrics(false)
                 .addApplyOn(ResilientValue.UnavailableException.class)
                 .build();
+        var timeout = TimeoutConfig.builder()
+                .timeout(Duration.ofSeconds(1))
+                .enableMetrics(false)
+                .build();
         openValue = ResilientValue.create("jmh-open", () -> {
             unavailableLoads.incrementAndGet();
             throw new ResilientValue.UnavailableException("Expected benchmark failure");
-        }, retry, circuitBreaker, TimeoutConfig.builder().build());
+        }, retry, circuitBreaker, timeout);
 
         try {
             openValue.get();

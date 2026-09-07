@@ -36,7 +36,7 @@ class ResilientValueJmhRunnerTest {
                 .include("^" + Pattern.quote(ResilientValueJmhBenchmark.class.getName())
                                  + "\\.(directFieldRead|cachedValueRead|openBreakerRejection)$")
                 .forks(Integer.getInteger("resilient.value.jmh.forks", 3))
-                .threads(1)
+                .threads(Integer.getInteger("resilient.value.jmh.threads", 4))
                 .resultFormat(ResultFormatType.JSON)
                 .result(result)
                 .warmupIterations(Integer.getInteger("resilient.value.jmh.warmupIterations", 5))
