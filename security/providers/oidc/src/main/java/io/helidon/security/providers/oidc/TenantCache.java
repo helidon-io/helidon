@@ -47,11 +47,16 @@ final class TenantCache<T> {
     }
 
     Optional<Supplier<T>> get(String tenantId) {
+        Optional<Supplier<T>> cachedValue = values.get(tenantId);
+        if (cachedValue.isPresent()) {
+            return cachedValue;
+        }
+
         while (true) {
             long version;
             lock.lock();
             try {
-                Optional<Supplier<T>> cachedValue = values.get(tenantId);
+                cachedValue = values.get(tenantId);
                 if (cachedValue.isPresent()) {
                     return cachedValue;
                 }
