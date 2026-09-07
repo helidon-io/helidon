@@ -564,16 +564,6 @@ final class JdbcTxSupport implements TxSupport {
         }
     }
 
-    @FunctionalInterface
-    private interface ListenerAction {
-        /**
-         * Delivers one lifecycle event.
-         *
-         * @param listener receiving listener
-         */
-        void accept(TxLifeCycle listener);
-    }
-
     /**
      * Validated states of one local transaction.
      */
@@ -585,6 +575,16 @@ final class JdbcTxSupport implements TxSupport {
         COMMITTED,
         ROLLED_BACK,
         FAILED
+    }
+
+    @FunctionalInterface
+    private interface ListenerAction {
+        /**
+         * Delivers one lifecycle event.
+         *
+         * @param listener receiving listener
+         */
+        void accept(TxLifeCycle listener);
     }
 
     /**

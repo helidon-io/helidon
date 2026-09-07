@@ -586,25 +586,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
-     * Implemented only by internal datasource adapters whose configuration defines a stable transaction identity.
-     */
-    interface IdentitySource {
-        /**
-         * Returns the immutable identity used across equivalent adapters.
-         *
-         * @return stable datasource identity
-         */
-        StableIdentity transactionIdentity();
-    }
-
-    /**
-     * Marker for immutable value identities.
-     * Ordinary pooled datasources continue to use object identity.
-     */
-    interface StableIdentity {
-    }
-
-    /**
      * Validated lifecycle states of one connection association.
      */
     private enum AssociationState {
@@ -624,6 +605,25 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         COMMITTED,
         ROLLED_BACK,
         UNKNOWN
+    }
+
+    /**
+     * Implemented only by internal datasource adapters whose configuration defines a stable transaction identity.
+     */
+    interface IdentitySource {
+        /**
+         * Returns the immutable identity used across equivalent adapters.
+         *
+         * @return stable datasource identity
+         */
+        StableIdentity transactionIdentity();
+    }
+
+    /**
+     * Marker for immutable value identities.
+     * Ordinary pooled datasources continue to use object identity.
+     */
+    interface StableIdentity {
     }
 
     /**

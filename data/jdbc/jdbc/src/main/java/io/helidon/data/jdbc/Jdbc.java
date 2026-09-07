@@ -43,6 +43,27 @@ public final class Jdbc {
     }
 
     /**
+     * Execution choices supported by the JDBC repository provider.
+     */
+    public enum ExecutionType {
+        /**
+         * Allows code generation to infer query or update behavior from the method
+         * signature and its JDBC annotations.
+         */
+        AUTO,
+
+        /**
+         * Executes the statement as a query and maps its rows.
+         */
+        QUERY,
+
+        /**
+         * Executes the statement as an update.
+         */
+        UPDATE
+    }
+
+    /**
      * Selects the JDBC client managed by the registry, used by a repository.
      * <p>
      * The value names the required {@link JdbcClient} qualified with
@@ -94,27 +115,6 @@ public final class Jdbc {
          * @return execution type
          */
         ExecutionType value() default ExecutionType.AUTO;
-    }
-
-    /**
-     * Execution choices supported by the JDBC repository provider.
-     */
-    public enum ExecutionType {
-        /**
-         * Allows code generation to infer query or update behavior from the method
-         * signature and its JDBC annotations.
-         */
-        AUTO,
-
-        /**
-         * Executes the statement as a query and maps its rows.
-         */
-        QUERY,
-
-        /**
-         * Executes the statement as an update.
-         */
-        UPDATE
     }
 
     /**
