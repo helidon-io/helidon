@@ -37,17 +37,20 @@ class RedirectionProcessor {
                 && status.family() == Status.Family.REDIRECTION;
     }
 
-    static boolean keepsMethodAndEntity(Status status) {
+    static boolean keepsMethodAndEntity(Method method, Status status) {
         int statusCode = status.code();
         return statusCode == Status.TEMPORARY_REDIRECT_307.code()
-                || statusCode == Status.PERMANENT_REDIRECT_308.code();
+                || statusCode == Status.PERMANENT_REDIRECT_308.code()
+                || (Method.QUERY.equals(method)
+                        && (statusCode == Status.MOVED_PERMANENTLY_301.code()
+                        || statusCode == Status.FOUND_302.code()));
     }
 
     static void validateEntityRedirect(Http2ClientRequestImpl request,
                                        Status status,
                                        ClientUri redirectUri,
                                        boolean hasEntity) {
-        if (keepsMethodAndEntity(status)
+        if (keepsMethodAndEntity(request.method(), status)
                 && hasEntity
                 && !request.canReplayEntityTo(redirectUri)) {
             throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
@@ -112,9 +115,9 @@ class RedirectionProcessor {
                 redirectUri.host(resolvedUri.host());
                 redirectUri.port(resolvedUri.port());
             }
-            //Method and entity is required to be the same as with original request with 307 and 308 requests
+            // Method and entity must be retained for 307 and 308, and for QUERY with 301 and 302.
             validateEntityRedirect(clientRequest, clientResponse.status(), redirectUri, clientResponse.hasRequestEntity());
-            if (keepsMethodAndEntity(clientResponse.status())) {
+            if (keepsMethodAndEntity(clientRequest.method(), clientResponse.status())) {
                 Object requestEntity = clientResponse.requestEntity();
                 if (requestEntity != null) {
                     entityToBeSent = requestEntity;

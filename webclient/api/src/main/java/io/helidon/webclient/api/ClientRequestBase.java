@@ -434,6 +434,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Api.Internal
     protected final R requestWithoutRouteCleanup() {
         additionalHeaders();
+        validateQueryContentType();
         return validateAndSubmit(BufferData.EMPTY_BYTES);
     }
 
@@ -444,6 +445,9 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                 rejectHeadWithEntity();
             }
             additionalHeaders();
+            if (entity instanceof byte[]) {
+                validateQueryContentType();
+            }
             return validateAndSubmit(entity);
         } finally {
             clearSelectedProxyRoute();
@@ -455,6 +459,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         try {
             rejectHeadWithEntity();
             additionalHeaders();
+            validateQueryContentType();
             validateRequest();
             return doOutputStream(outputStreamConsumer);
         } finally {
@@ -841,6 +846,12 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private void rejectHeadWithEntity() {
         if (Method.HEAD.equals(this.method)) {
             throw new IllegalArgumentException("Payload in method '" + Method.HEAD + "' has no defined semantics");
+        }
+    }
+
+    private void validateQueryContentType() {
+        if (Method.QUERY.equals(this.method) && !headers.contains(HeaderNames.CONTENT_TYPE)) {
+            throw new IllegalArgumentException("Content-Type header is required for method '" + Method.QUERY + "'");
         }
     }
 

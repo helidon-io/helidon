@@ -185,6 +185,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             }
         }
 
+        if (method() == Method.QUERY && !headers().contains(HeaderNames.CONTENT_TYPE)) {
+            throw new IllegalArgumentException("Content-Type header is required for method '" + Method.QUERY + "'");
+        }
+
         if (followRedirects()) {
             return RedirectionProcessor.invokeWithFollowRedirects(this, entityBytes);
         }

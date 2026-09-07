@@ -24,6 +24,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,7 @@ import io.helidon.common.GenericType;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
@@ -76,6 +78,8 @@ class CrossOriginRedirectHeaderTest {
     private static final AtomicReference<CapturedHeaders> CROSS_ORIGIN_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<String> CROSS_ORIGIN_BODY_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<String> CROSS_ORIGIN_PROTOCOL_CAPTURE = new AtomicReference<>();
+    private static final AtomicReference<Method> CROSS_ORIGIN_METHOD_CAPTURE = new AtomicReference<>();
+    private static final AtomicReference<String> CROSS_ORIGIN_CONTENT_TYPE_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<Boolean> CROSS_ORIGIN_EXPECT_CAPTURE = new AtomicReference<>();
     private static final AtomicReference<String> CROSS_ORIGIN_AUTHORITY_CAPTURE = new AtomicReference<>();
 
@@ -97,6 +101,17 @@ class CrossOriginRedirectHeaderTest {
                     CROSS_ORIGIN_PROTOCOL_CAPTURE.set(req.prologue().protocolVersion());
                     CROSS_ORIGIN_EXPECT_CAPTURE.set(req.headers().contains(HeaderNames.EXPECT));
                     CROSS_ORIGIN_AUTHORITY_CAPTURE.set(req.requestedUri().authority());
+                    try (InputStream inputStream = req.content().inputStream()) {
+                        CROSS_ORIGIN_BODY_CAPTURE.set(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
+                        res.send("captured");
+                    } catch (Exception e) {
+                        res.status(Status.INTERNAL_SERVER_ERROR_500)
+                                .send(e.getMessage());
+                    }
+                }).route(Method.QUERY, "/capture-query", (req, res) -> {
+                    CROSS_ORIGIN_CAPTURE.set(capturedHeaders(req));
+                    CROSS_ORIGIN_METHOD_CAPTURE.set(req.prologue().method());
+                    CROSS_ORIGIN_CONTENT_TYPE_CAPTURE.set(req.headers().get(HeaderNames.CONTENT_TYPE).get());
                     try (InputStream inputStream = req.content().inputStream()) {
                         CROSS_ORIGIN_BODY_CAPTURE.set(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
                         res.send("captured");
@@ -152,6 +167,18 @@ class CrossOriginRedirectHeaderTest {
                                             "http://localhost:" + redirectTargetServer.port() + "/capture-body")
                                     .send();
                         })
+                        .route(Method.QUERY, "/redirect/cross-origin-query-301", (req, res) -> {
+                            res.status(Status.MOVED_PERMANENTLY_301)
+                                    .header(HeaderNames.LOCATION,
+                                            "http://localhost:" + redirectTargetServer.port() + "/capture-query")
+                                    .send();
+                        })
+                        .route(Method.QUERY, "/redirect/cross-origin-query-302", (req, res) -> {
+                            res.status(Status.FOUND_302)
+                                    .header(HeaderNames.LOCATION,
+                                            "http://localhost:" + redirectTargetServer.port() + "/capture-query")
+                                    .send();
+                        })
                         .get("/capture", (req, res) -> {
                             SAME_ORIGIN_CAPTURE.set(capturedHeaders(req));
                             res.send("captured");
@@ -176,6 +203,8 @@ class CrossOriginRedirectHeaderTest {
         CROSS_ORIGIN_CAPTURE.set(null);
         CROSS_ORIGIN_BODY_CAPTURE.set(null);
         CROSS_ORIGIN_PROTOCOL_CAPTURE.set(null);
+        CROSS_ORIGIN_METHOD_CAPTURE.set(null);
+        CROSS_ORIGIN_CONTENT_TYPE_CAPTURE.set(null);
         CROSS_ORIGIN_EXPECT_CAPTURE.set(null);
         CROSS_ORIGIN_AUTHORITY_CAPTURE.set(null);
     }
@@ -255,6 +284,53 @@ class CrossOriginRedirectHeaderTest {
     @Test
     void rejectsBufferedEntityOnCrossOrigin308Redirect() {
         rejectBufferedEntityOnCrossOriginRedirect("/redirect/cross-origin-keep-method-308");
+    }
+
+    @Test
+    void rejectsBufferedQueryOnCrossOriginRedirect() {
+        for (String redirectPath : List.of("/redirect/cross-origin-query-301", "/redirect/cross-origin-query-302")) {
+            resetCapturedHeaders();
+            Http2Client client = newClient(true, true);
+            try {
+                IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                               () -> client.method(Method.QUERY)
+                                                                       .uri(redirectPath)
+                                                                       .header(HeaderNames.CONTENT_TYPE, "application/sql")
+                                                                       .submit(requestBodyBytes()));
+                assertThat(exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
+                assertThat(CROSS_ORIGIN_CAPTURE.get(), is(nullValue()));
+                assertThat(CROSS_ORIGIN_BODY_CAPTURE.get(), is(nullValue()));
+            } finally {
+                client.closeResource();
+            }
+        }
+    }
+
+    @Test
+    void followsCrossOriginQueryWithEntityWhenEnabled() {
+        for (String redirectPath : List.of("/redirect/cross-origin-query-301", "/redirect/cross-origin-query-302")) {
+            resetCapturedHeaders();
+            Http2Client client = newClient(true, true, true);
+            try {
+                try (Http2ClientResponse response = client.method(Method.QUERY)
+                        .uri(redirectPath)
+                        .header(HeaderNames.CONTENT_TYPE, "application/sql")
+                        .submit(requestBodyBytes())) {
+                    assertThat(response.status(), is(Status.OK_200));
+                }
+
+                CapturedHeaders captured = CROSS_ORIGIN_CAPTURE.get();
+                assertThat(captured, is(notNullValue()));
+                assertThat(captured.authorization(), is(nullValue()));
+                assertThat(captured.proxyAuthorization(), is(nullValue()));
+                assertThat(captured.apiKey(), is(nullValue()));
+                assertThat(CROSS_ORIGIN_METHOD_CAPTURE.get(), is(Method.QUERY));
+                assertThat(CROSS_ORIGIN_CONTENT_TYPE_CAPTURE.get(), is("application/sql"));
+                assertThat(CROSS_ORIGIN_BODY_CAPTURE.get(), is(REQUEST_BODY));
+            } finally {
+                client.closeResource();
+            }
+        }
     }
 
     @Test

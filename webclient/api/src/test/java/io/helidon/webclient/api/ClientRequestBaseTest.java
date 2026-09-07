@@ -93,6 +93,70 @@ class ClientRequestBaseTest {
         assertThat(request.endpointCount(), is(0));
     }
 
+    @Test
+    void rejectsQueriesKnownToLackContentTypeBeforeServices() {
+        AtomicInteger serviceCount = new AtomicInteger();
+        HttpClientConfig config = HttpClientConfig.builder()
+                .addService((chain, request) -> {
+                    serviceCount.incrementAndGet();
+                    return chain.proceed(request);
+                })
+                .build();
+        TestRequest request = new TestRequest(config, Method.QUERY, "http://service.example");
+        TestRequest byteRequest = new TestRequest(config, Method.QUERY, "http://service.example");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                           request::request);
+        IllegalArgumentException byteException = assertThrows(IllegalArgumentException.class,
+                                                               () -> byteRequest.submit(new byte[] {1}));
+
+        assertThat(exception.getMessage(), containsString("Content-Type header is required"));
+        assertThat(byteException.getMessage(), containsString("Content-Type header is required"));
+        assertThat(serviceCount.get(), is(0));
+        assertThat(request.endpointCount(), is(0));
+        assertThat(byteRequest.endpointCount(), is(0));
+    }
+
+    @Test
+    void rejectsQueryOutputStreamWithoutContentTypeBeforeServices() {
+        AtomicInteger serviceCount = new AtomicInteger();
+        AtomicInteger handlerCount = new AtomicInteger();
+        HttpClientConfig config = HttpClientConfig.builder()
+                .addService((chain, request) -> {
+                    serviceCount.incrementAndGet();
+                    return chain.proceed(request);
+                })
+                .build();
+        TestRequest request = new TestRequest(config, Method.QUERY, "http://service.example");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                           () -> request.outputStream(_ ->
+                                                                   handlerCount.incrementAndGet()));
+
+        assertThat(exception.getMessage(), containsString("Content-Type header is required"));
+        assertThat(handlerCount.get(), is(0));
+        assertThat(serviceCount.get(), is(0));
+        assertThat(request.endpointCount(), is(0));
+    }
+
+    @Test
+    void acceptsQueryContentTypeForEntityApis() {
+        TestRequest submitRequest = new TestRequest(Method.QUERY, "http://service.example");
+        submitRequest.header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN).submit("query");
+        assertThat(submitRequest.endpointCount(), is(1));
+
+        TestRequest streamRequest = new TestRequest(Method.QUERY, "http://service.example");
+        streamRequest.header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN).outputStream(_ -> { });
+        assertThat(streamRequest.endpointCount(), is(1));
+    }
+
+    @Test
+    void customMethodEntityDoesNotRequireContentType() {
+        TestRequest request = new TestRequest(Method.create("CUSTOM"), "http://service.example");
+        request.submit("entity");
+        assertThat(request.endpointCount(), is(1));
+    }
+
     /**
      * Verify that query parameters are preserved when resolving URI templates (cf. issue #8566).
      * Make sure to test both absolute and relative URIs as they are handled differently when resolving.

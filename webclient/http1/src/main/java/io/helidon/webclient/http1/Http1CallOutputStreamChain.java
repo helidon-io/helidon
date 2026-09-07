@@ -122,10 +122,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 redirectUri.host(resolvedUri.host());
                 redirectUri.port(resolvedUri.port());
             }
-            boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(responseStatus);
+            boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(cos.lastRequest.method(), responseStatus);
             ClientRequest.OutputStreamHandler handler = osHandler;
             if (sendEntity && !cos.lastRequest.canReplayEntityTo(redirectUri)) {
-                // Replaying a 307/308 output-stream body to a new origin can leak credentials or form data.
+                // Replaying a method-preserving output-stream body to a new origin can leak credentials or form data.
                 if (cos.hasEntity()) {
                     connection.closeResource();
                     throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
@@ -514,7 +514,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
-            if (RedirectionProcessor.keepsMethodAndEntity(lastStatus)) {
+            if (RedirectionProcessor.keepsMethodAndEntity(lastRequest.method(), lastStatus)) {
                 method = originalRequest.method();
                 sendEntity = true;
             } else {
@@ -568,7 +568,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     boolean closeRedirectProbeConnection = sendEntity && !sendEmptyEntity;
                     try {
                         checkRedirectHeaders(response.headers());
-                        if (!RedirectionProcessor.keepsMethodAndEntity(response.status())) {
+                        if (!RedirectionProcessor.keepsMethodAndEntity(lastRequest.method(), response.status())) {
                             method = Method.GET;
                             sendEntity = false;
                         }

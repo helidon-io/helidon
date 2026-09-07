@@ -38,11 +38,22 @@ class RedirectionProcessorTest {
 
     @Test
     void methodAndEntityPreservationUsesStatusCode() {
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.TEMPORARY_REDIRECT_307), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.PERMANENT_REDIRECT_308), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.create(307, "Custom")), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.create(308, "Custom")), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.FOUND_302), is(false));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.TEMPORARY_REDIRECT_307), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.PERMANENT_REDIRECT_308), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.create(307, "Custom")), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.create(308, "Custom")), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.FOUND_302), is(false));
+    }
+
+    @Test
+    void queryPreservationUsesStatusCode() {
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.MOVED_PERMANENTLY_301), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.FOUND_302), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.TEMPORARY_REDIRECT_307), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.PERMANENT_REDIRECT_308), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.create(301, "Custom")), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.create(302, "Custom")), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.SEE_OTHER_303), is(false));
     }
 
     @Test

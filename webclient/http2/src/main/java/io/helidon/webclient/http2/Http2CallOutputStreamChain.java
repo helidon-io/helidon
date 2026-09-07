@@ -143,10 +143,11 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 redirectUri.host(resolvedUri.host());
                 redirectUri.port(resolvedUri.port());
             }
-            boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(responseHeaders.status());
+            boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(outputStream.lastRequest.method(),
+                                                                           responseHeaders.status());
             ClientRequest.OutputStreamHandler handler = streamHandler;
             if (sendEntity && !outputStream.lastRequest.canReplayEntityTo(redirectUri)) {
-                // Replaying a 307/308 output-stream body to a new origin can leak credentials or form data.
+                // Replaying a method-preserving output-stream body to a new origin can leak credentials or form data.
                 if (outputStream.hasEntity()) {
                     try {
                         outputStream.stream.cancel();
@@ -216,7 +217,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 redirectUri.port(resolvedUri.port());
             }
 
-            if (RedirectionProcessor.keepsMethodAndEntity(response.status())) {
+            if (RedirectionProcessor.keepsMethodAndEntity(clientRequest().method(), response.status())) {
                 method = clientRequest().method();
                 sendEntity = true;
             } else {
@@ -493,7 +494,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
-            if (RedirectionProcessor.keepsMethodAndEntity(lastStatus)) {
+            if (RedirectionProcessor.keepsMethodAndEntity(lastRequest.method(), lastStatus)) {
                 method = originalRequest.method();
                 sendEntity = true;
             } else {
@@ -551,7 +552,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                     if (RedirectionProcessor.redirectionStatusCode(response.status())) {
                         try (response) {
                             checkRedirectHeaders(response.headers());
-                            if (!RedirectionProcessor.keepsMethodAndEntity(response.status())) {
+                            if (!RedirectionProcessor.keepsMethodAndEntity(lastRequest.method(), response.status())) {
                                 method = Method.GET;
                                 sendEntity = false;
                             }

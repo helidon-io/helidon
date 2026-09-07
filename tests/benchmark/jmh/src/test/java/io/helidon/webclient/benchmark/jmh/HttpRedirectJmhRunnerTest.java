@@ -30,7 +30,9 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 class HttpRedirectJmhRunnerTest {
-    private static final String METHODS = "(http1PutOutputStreamRedirect|http2PutOutputStreamRedirect)";
+    private static final String METHODS = "(http1PutOutputStreamRedirect|http2PutOutputStreamRedirect"
+            + "|http1QueryEntityRedirect|http2QueryEntityRedirect"
+            + "|http1QueryOutputStreamRedirect|http2QueryOutputStreamRedirect)";
 
     @Test
     void runExactBenchmarks() throws RunnerException {
@@ -43,8 +45,8 @@ class HttpRedirectJmhRunnerTest {
                 .include(include)
                 .threads(1)
                 .forks(Integer.getInteger("http.redirect.jmh.forks", 3))
-                .warmupIterations(Integer.getInteger("http.redirect.jmh.warmupIterations", 3))
-                .measurementIterations(Integer.getInteger("http.redirect.jmh.measurementIterations", 5))
+                .warmupIterations(Integer.getInteger("http.redirect.jmh.warmupIterations", 5))
+                .measurementIterations(Integer.getInteger("http.redirect.jmh.measurementIterations", 30))
                 .mode(Mode.SingleShotTime)
                 .timeUnit(TimeUnit.MICROSECONDS)
                 .addProfiler(GCProfiler.class)
