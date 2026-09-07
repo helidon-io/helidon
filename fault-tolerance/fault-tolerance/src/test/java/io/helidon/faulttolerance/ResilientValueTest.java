@@ -546,9 +546,9 @@ class ResilientValueTest {
         ResilientValue<String> value = ResilientValue.create("logged test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() == 1) {
-                                                                     throw new ResilientValue.UnavailableException("safe failure detail",
-                                                                                                      new IllegalStateException(
-                                                                                                              "raw cause"));
+                                                                    throw new ResilientValue.UnavailableException(
+                                                                            "safe failure detail",
+                                                                            new IllegalStateException("raw cause"));
                                                                  }
                                                                  return "loaded";
                                                              },
