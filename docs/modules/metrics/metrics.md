@@ -783,10 +783,10 @@ requests Helidon measures; use the `methods` setting in a `paths` entry for that
 purpose.
 
 By default, Helidon records `CONNECT`, `DELETE`, `GET`, `HEAD`, `LIST`,
-`OPTIONS`, `PATCH`, `POST`, `PUT`, and `TRACE` as their canonical method names.
-Helidon records any other method as `_OTHER`. Method names in the configuration
-are canonicalized using Helidon's HTTP method model; for example, `propfind`
-becomes `PROPFIND`.
+`OPTIONS`, `PATCH`, `POST`, `PUT`, `QUERY`, and `TRACE` as their canonical
+method names. Helidon records any other method as `_OTHER`. Method names in the
+configuration are canonicalized using Helidon's HTTP method model; for example,
+`propfind` becomes `PROPFIND`.
 
 Assigning `known-methods` replaces the entire default list. Include every
 default method you want to retain.

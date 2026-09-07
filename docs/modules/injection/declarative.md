@@ -181,8 +181,9 @@ Annotations on endpoint methods:
   to return (if a custom one is required)
 - [`io.helidon.http.Http.Path`][io-helidon-http] - path (context) this method
   will be available on (subpath of the endpoint path)
-- [`io.helidon.http.Http.GET`][io-helidon-http-2] (and other methods) -
-  definition of HTTP method this method will serve
+- [`io.helidon.http.Http.GET`][io-helidon-http-2] (and other methods, including
+  `io.helidon.http.Http.QUERY`) - definition of HTTP method this method will
+  serve
 - [`io.helidon.http.Http.HttpMethod`][io-helidon-http-3] - for custom HTTP
   method names (mutually exclusive with above)
 - [`io.helidon.http.Http.Produces`][io-helidon-http-4] - what media type this
@@ -191,6 +192,10 @@ Annotations on endpoint methods:
 - [`io.helidon.http.Http.Consumes`][io-helidon-http-5] - what media type this
   method accepts (request entity content type), replacing the endpoint default;
   an empty array clears it
+
+For a QUERY endpoint, use `@Http.QUERY` with `@Http.Entity` for the query
+content and `@Http.Consumes` for its required media type. The application still
+defines the query format and validates that the content matches that media type.
 
 Annotations on method parameters:
 
@@ -323,8 +328,9 @@ Annotations on endpoint methods:
   header to compute and include in every request to the server
 - [`io.helidon.http.Http.Path`][io-helidon-http] - path (context) the server
   serves this endpoint method on
-- [`io.helidon.http.Http.GET`][io-helidon-http-2] (and other methods) -
-  definition of HTTP method this method will invoke
+- [`io.helidon.http.Http.GET`][io-helidon-http-2] (and other methods, including
+  `io.helidon.http.Http.QUERY`) - definition of HTTP method this method will
+  invoke
 - [`io.helidon.http.Http.HttpMethod`][io-helidon-http-3] - for custom HTTP
   method names (mutually exclusive with above)
 - [`io.helidon.http.Http.Produces`][io-helidon-http-4] - what media type this
@@ -333,6 +339,9 @@ Annotations on endpoint methods:
 - [`io.helidon.http.Http.Consumes`][io-helidon-http-5] - what media type this
   method accepts (request entity content type), replacing the client type
   default; an empty array clears it
+
+For a QUERY client method, use `@Http.QUERY`, annotate its query content with
+`@Http.Entity`, and declare the content media type using `@Http.Consumes`.
 
 Annotations on method parameters:
 
