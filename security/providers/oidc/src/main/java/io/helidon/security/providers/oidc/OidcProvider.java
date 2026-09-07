@@ -96,7 +96,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final String jwtGroupsSeparator;
     private final LruCache<String, Supplier<TenantAuthenticationHandler>> tenantAuthHandlers = LruCache.create();
     private final ReentrantLock tenantAuthHandlersLock = new ReentrantLock();
-    private long tenantAuthHandlersVersion;
+    private final Map<String, Long> tenantAuthHandlerVersions = new HashMap<>();
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -180,7 +180,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 if (cachedHandler.isPresent()) {
                     return cachedHandler;
                 }
-                version = tenantAuthHandlersVersion;
+                version = tenantAuthHandlerVersions.getOrDefault(tenantId, 0L);
             } finally {
                 tenantAuthHandlersLock.unlock();
             }
@@ -191,7 +191,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             TenantConfig tenantConfig;
             tenantAuthHandlersLock.lock();
             try {
-                if (version != tenantAuthHandlersVersion) {
+                if (version != tenantAuthHandlerVersions.getOrDefault(tenantId, 0L)) {
                     continue;
                 }
                 if (resolved.isEmpty()) {
@@ -241,7 +241,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private void removeTenantAuthenticationHandler(String tenantId) {
         tenantAuthHandlersLock.lock();
         try {
-            tenantAuthHandlersVersion++;
+            tenantAuthHandlerVersions.merge(tenantId, 1L, Long::sum);
             tenantAuthHandlers.remove(tenantId);
         } finally {
             tenantAuthHandlersLock.unlock();

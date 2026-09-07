@@ -395,8 +395,50 @@ class HostHeaderTenantDiscoveryTest {
             assertThat("authentication should complete", request.isAlive(), is(false));
             assertThat("authentication failure", failure.get(), is((Throwable) null));
             assertUnauthorized(response.get(), "request using concurrently updated tenant");
+            assertThat("updated tenant configuration should be resolved again", configFinder.configCalls(), is(2));
             assertThat("stale tenant configuration must not be loaded", staleIdp.wellKnownHits(), is(0));
             assertThat("updated tenant configuration should be loaded", currentIdp.wellKnownHits(), is(1));
+        }
+    }
+
+    @Test
+    void unrelatedTenantChangeDuringProviderResolutionDoesNotRestartResolution() throws InterruptedException {
+        String tenantId = "default.example.test";
+
+        try (MockIdpServer idp = new MockIdpServer()) {
+            MutableTenantConfigFinder configFinder = new MutableTenantConfigFinder(
+                    tenantId,
+                    tenantConfig(idp.identityUri()));
+            Config config = oidcProviderConfig(idp.identityUri(), oneAttemptLoaderConfig());
+            OidcProvider provider = OidcProvider.builder()
+                    .oidcConfig(oidcConfig(config))
+                    .config(config)
+                    .discoverTenantConfigProviders(false)
+                    .addTenantConfigFinder(configFinder)
+                    .build();
+            AtomicReference<AuthenticationResponse> response = new AtomicReference<>();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            CountDownLatch complete = new CountDownLatch(1);
+            configFinder.blockConfigResponse();
+
+            Thread request = authenticateAsync(provider, response, failure, complete);
+            boolean configRequested;
+            try {
+                configRequested = configFinder.awaitConfigRequest();
+                if (configRequested) {
+                    configFinder.invalidate("unrelated.example.test");
+                }
+            } finally {
+                configFinder.releaseConfigResponse();
+                request.join(TimeUnit.SECONDS.toMillis(5));
+            }
+
+            assertThat("tenant config should be requested", configRequested, is(true));
+            assertThat("authentication should complete", request.isAlive(), is(false));
+            assertThat("authentication failure", failure.get(), is((Throwable) null));
+            assertUnauthorized(response.get(), "request using stable tenant");
+            assertThat("unrelated change must not restart tenant resolution", configFinder.configCalls(), is(1));
+            assertThat("stable tenant configuration should be loaded", idp.wellKnownHits(), is(1));
         }
     }
 
@@ -493,8 +535,61 @@ class HostHeaderTenantDiscoveryTest {
                 assertThat("feature response", responseStatus.get(), is(Status.UNAUTHORIZED_401));
             }
 
+            assertThat("updated feature tenant configuration should be resolved again", configFinder.configCalls(), is(2));
             assertThat("stale feature tenant configuration must not be loaded", staleIdp.wellKnownHits(), is(0));
             assertThat("updated feature tenant configuration should be loaded", currentIdp.wellKnownHits(), is(1));
+        }
+    }
+
+    @Test
+    void unrelatedTenantChangeDuringFeatureResolutionDoesNotRestartResolution() throws InterruptedException {
+        String tenantId = "stable";
+
+        try (MockIdpServer idp = new MockIdpServer()) {
+            MutableTenantConfigFinder configFinder = new MutableTenantConfigFinder(
+                    tenantId,
+                    tenantConfig(idp.identityUri()));
+            Map<String, String> additionalConfig = new HashMap<>(oneAttemptLoaderConfig());
+            additionalConfig.put("cookie-encryption-state-enabled", "false");
+            Config config = oidcProviderConfig(idp.identityUri(), additionalConfig);
+            AtomicReference<Status> responseStatus = new AtomicReference<>();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            configFinder.blockConfigResponse();
+
+            try (FeatureServer server = new FeatureServer(config, configFinder)) {
+                Thread request = Thread.startVirtualThread(() -> {
+                    try (HttpClientResponse response = server.client()
+                            .get()
+                            .path("/oidc/redirect")
+                            .queryParam("code", "test-code")
+                            .queryParam("state", "test-state")
+                            .queryParam("h_tenant", tenantId)
+                            .header(HeaderNames.COOKIE, stateCookie("test-state"))
+                            .request()) {
+                        responseStatus.set(response.status());
+                    } catch (Throwable t) {
+                        failure.set(t);
+                    }
+                });
+                boolean configRequested;
+                try {
+                    configRequested = configFinder.awaitConfigRequest();
+                    if (configRequested) {
+                        configFinder.invalidate("unrelated");
+                    }
+                } finally {
+                    configFinder.releaseConfigResponse();
+                    request.join(TimeUnit.SECONDS.toMillis(5));
+                }
+
+                assertThat("tenant config should be requested", configRequested, is(true));
+                assertThat("feature request should complete", request.isAlive(), is(false));
+                assertThat("feature request failure", failure.get(), is((Throwable) null));
+                assertThat("feature response", responseStatus.get(), is(Status.UNAUTHORIZED_401));
+            }
+
+            assertThat("unrelated change must not restart feature tenant resolution", configFinder.configCalls(), is(1));
+            assertThat("stable feature tenant configuration should be loaded", idp.wellKnownHits(), is(1));
         }
     }
 
@@ -832,6 +927,7 @@ class HostHeaderTenantDiscoveryTest {
     private static final class MutableTenantConfigFinder implements TenantConfigFinder {
         private final String tenantId;
         private final AtomicReference<TenantConfig> tenantConfig;
+        private final AtomicInteger configCalls = new AtomicInteger();
         private Consumer<String> changeListener = ignored -> { };
         private volatile CountDownLatch configRequest;
         private volatile CountDownLatch configResponseGate;
@@ -844,6 +940,7 @@ class HostHeaderTenantDiscoveryTest {
         @Override
         public Optional<TenantConfig> config(String tenantId) {
             if (this.tenantId.equals(tenantId)) {
+                configCalls.incrementAndGet();
                 TenantConfig currentConfig = tenantConfig.get();
                 CountDownLatch request = configRequest;
                 CountDownLatch responseGate = configResponseGate;
@@ -869,6 +966,14 @@ class HostHeaderTenantDiscoveryTest {
         private void update(TenantConfig tenantConfig) {
             this.tenantConfig.set(tenantConfig);
             changeListener.accept(tenantId);
+        }
+
+        private void invalidate(String tenantId) {
+            changeListener.accept(tenantId);
+        }
+
+        private int configCalls() {
+            return configCalls.get();
         }
 
         private void blockConfigResponse() {

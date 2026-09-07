@@ -161,7 +161,7 @@ public final class OidcFeature implements HttpFeature {
     private final List<TenantConfigFinder> oidcConfigFinders;
     private final LruCache<String, Supplier<Tenant>> tenants = LruCache.create();
     private final ReentrantLock tenantsLock = new ReentrantLock();
-    private long tenantsVersion;
+    private final Map<String, Long> tenantVersions = new HashMap<>();
     private final OidcConfig oidcConfig;
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
@@ -345,7 +345,7 @@ public final class OidcFeature implements HttpFeature {
                 if (cachedTenant.isPresent()) {
                     return cachedTenant;
                 }
-                version = tenantsVersion;
+                version = tenantVersions.getOrDefault(tenantName, 0L);
             } finally {
                 tenantsLock.unlock();
             }
@@ -356,7 +356,7 @@ public final class OidcFeature implements HttpFeature {
             TenantConfig tenantConfig;
             tenantsLock.lock();
             try {
-                if (version != tenantsVersion) {
+                if (version != tenantVersions.getOrDefault(tenantName, 0L)) {
                     continue;
                 }
                 if (resolved.isEmpty()) {
@@ -397,7 +397,7 @@ public final class OidcFeature implements HttpFeature {
     private void removeTenant(String tenantId) {
         tenantsLock.lock();
         try {
-            tenantsVersion++;
+            tenantVersions.merge(tenantId, 1L, Long::sum);
             tenants.remove(tenantId);
         } finally {
             tenantsLock.unlock();
