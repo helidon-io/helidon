@@ -299,6 +299,15 @@ public final class Http {
     }
 
     /**
+     * QUERY method of an HTTP endpoint.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @HttpMethod(Method.QUERY_NAME)
+    public @interface QUERY {
+    }
+
+    /**
      * PUT method of an HTTP endpoint.
      */
     @Retention(RetentionPolicy.CLASS)

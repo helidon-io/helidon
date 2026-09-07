@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -47,6 +48,18 @@ class HttpMethodTest {
             .filter(it -> it.getType().equals(String.class))
             .map(Field::getName)
             .collect(Collectors.toSet());
+
+    @Test
+    void testQueryMethod() {
+        MethodPredicate predicate = Method.predicate(Method.QUERY);
+
+        assertAll(
+                () -> assertThat(Method.create("QUERY"), sameInstance(Method.QUERY)),
+                () -> assertThat(Method.create("query"), sameInstance(Method.QUERY)),
+                () -> assertThat(predicate.test(Method.QUERY), is(true)),
+                () -> assertThat(predicate.test(Method.POST), is(false))
+        );
+    }
 
     @Test
     void testAllMethodConstantsAreValid() throws NoSuchFieldException, IllegalAccessException {

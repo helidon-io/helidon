@@ -192,6 +192,7 @@ enum HeaderNameEnum implements HeaderName {
         static final String USER_AGENT_NAME = "User-Agent";
         static final String VIA_NAME = "Via";
         static final String ACCEPT_PATCH_NAME = "Accept-Patch";
+        static final String ACCEPT_QUERY_NAME = "Accept-Query";
         static final String ACCEPT_RANGES_NAME = "Accept-Ranges";
         static final String AGE_NAME = "Age";
         static final String ALLOW_NAME = "Allow";
