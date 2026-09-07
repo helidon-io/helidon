@@ -39,7 +39,7 @@ JWT authentication provider
 <td>
 <code>false</code>
 </td>
-<td>Configure support for unsigned JWT</td>
+<td>Configure support for unsigned JWTs without requiring verification JWKs</td>
 </tr>
 <tr>
 <td>

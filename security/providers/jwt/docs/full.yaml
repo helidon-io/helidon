@@ -27,6 +27,9 @@ security:
         # Set to false for outbound-only providers that should not authenticate inbound requests
         # defaults to true
         authenticate: true
+        # DANGEROUS: Accept tokens with algorithm "none" and no key ID; defaults to false.
+        # Such tokens do not require or load verification JWKs. Signed tokens still require matching keys.
+        allow-unsigned: false
         # If set to true, identity will be propagated further using the configured header and format
         # The user id from current subject will be propagated
         # defaults to true

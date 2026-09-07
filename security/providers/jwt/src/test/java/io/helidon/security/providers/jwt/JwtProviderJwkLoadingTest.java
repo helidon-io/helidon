@@ -48,6 +48,7 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
@@ -122,6 +123,45 @@ class JwtProviderJwkLoadingTest {
     }
 
     @Test
+    void unsignedTokensDoNotRequireVerificationKeys() {
+        JwtProvider withoutKeys = JwtProvider.builder()
+                .allowUnsigned(true)
+                .build();
+        JwtProvider withEmptyKeys = JwtProvider.builder()
+                .verifyJwk(JwkKeys.builder().build())
+                .allowUnsigned(true)
+                .build();
+
+        assertThat(withoutKeys.authenticate(request(unsignedToken(null))).status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(withEmptyKeys.authenticate(request(unsignedToken(null))).status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+    }
+
+    @Test
+    void unsignedTokensDoNotLoadDynamicVerificationKeys() {
+        Path keysPath = tempDir.resolve("missing-jwk.json");
+        JwtProvider provider = providerBuilder(keysPath, false, defaultCircuitBreaker())
+                .allowUnsigned(true)
+                .build();
+
+        assertThat(provider.authenticate(request(unsignedToken(null))).status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+    }
+
+    @Test
+    void allowUnsignedDoesNotPermitOtherTokensWithoutKeys() {
+        JwtProvider provider = JwtProvider.builder()
+                .allowUnsigned(true)
+                .build();
+
+        assertThat(provider.authenticate(request(validToken())).status(),
+                   is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(provider.authenticate(request(unsignedToken("unexpected"))).status(),
+                   is(SecurityResponse.SecurityStatus.FAILURE));
+    }
+
+    @Test
     void reusedBuilderCreatesIndependentDynamicLoader() throws IOException {
         Path keysPath = tempDir.resolve("verify-jwk.json");
         JwtProvider.Builder builder = providerBuilder(keysPath, false, twoFailureCircuitBreaker());
@@ -139,7 +179,7 @@ class JwtProviderJwkLoadingTest {
     @Test
     void fixedSourcesFailFast() {
         assertThrows(JwtException.class,
-                     () -> JwtProvider.builder().verifyJwk(JwkKeys.builder().build()));
+                     () -> JwtProvider.builder().verifyJwk(JwkKeys.builder().build()).build());
         assertThrows(RuntimeException.class,
                      () -> JwtProvider.builder()
                              .verifyJwk(ResourceConfig.builder()
@@ -447,6 +487,20 @@ class JwtProviderJwkLoadingTest {
                 .addAudience("audience.application.id")
                 .build();
         return SignedJwt.sign(jwt, SIGN_KEYS.forKeyId("sign-rsa").orElseThrow()).tokenContent();
+    }
+
+    private static String unsignedToken(String keyId) {
+        Instant now = Instant.now();
+        Jwt.Builder builder = Jwt.builder()
+                .subject("user-id")
+                .preferredUsername("user")
+                .algorithm(Jwk.ALG_NONE)
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS));
+        if (keyId != null) {
+            builder.keyId(keyId);
+        }
+        return SignedJwt.sign(builder.build(), Jwk.NONE_JWK).tokenContent();
     }
 
     private static ProviderRequest request(String token) {

@@ -90,6 +90,7 @@ import io.helidon.security.util.TokenHandler;
 public final class JwtProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(JwtProvider.class.getName());
     private static final String DEFAULT_JWT_GROUPS_PATH = "groups";
+    private static final JwkKeys EMPTY_JWK_KEYS = JwkKeys.builder().build();
 
     private final boolean optional;
     private final boolean authenticate;
@@ -196,20 +197,21 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             //invalid token
             return failOrAbstain("Invalid token" + e);
         }
+        Jwt jwt = signedJwt.getJwt();
         if (verifySignature) {
             JwkKeys keys;
             try {
-                keys = verifyKeys == null ? verifyKeysLoader.get() : verifyKeys;
+                keys = verificationKeys(jwt);
             } catch (ResilientValue.UnavailableException e) {
                 return failOrAbstain("JWT verification keys are temporarily unavailable");
             }
-            Errors errors = signedJwt.verifySignature(keys, defaultJwk);
+            Jwk fallbackJwk = jwt.keyId().isEmpty() ? defaultJwk : null;
+            Errors errors = signedJwt.verifySignature(keys, fallbackJwk);
             if (!errors.isValid()) {
                 return failOrAbstain(errors.toString());
             }
         }
 
-        Jwt jwt = signedJwt.getJwt();
         Errors validate = validateJwt(jwt);
         if (!validate.isValid()) {
             return failOrAbstain(validate.toString());
@@ -219,6 +221,21 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         } catch (JwtException e) {
             return failOrAbstain(e.getMessage());
         }
+    }
+
+    private JwkKeys verificationKeys(Jwt jwt) {
+        if (defaultJwk != null
+                && jwt.keyId().isEmpty()
+                && jwt.algorithm().map(defaultJwk.algorithm()::equals).orElse(true)) {
+            return EMPTY_JWK_KEYS;
+        }
+        if (verifyKeys != null) {
+            return verifyKeys;
+        }
+        if (verifyKeysLoader != null) {
+            return verifyKeysLoader.get();
+        }
+        return EMPTY_JWK_KEYS;
     }
 
     private Errors validateJwt(Jwt jwt) {
@@ -726,7 +743,10 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 validateResourceConfig(verifyKeysResource);
                 prepareVerifyKeys();
             }
-            if (authenticate && verifySignature && verifyKeys == null && verifyKeysLoader == null) {
+            if (verifyKeys != null && !allowUnsigned) {
+                verifyKeys = requireUsableKeys(verifyKeys);
+            }
+            if (authenticate && verifySignature && !allowUnsigned && verifyKeys == null && verifyKeysLoader == null) {
                 throw new JwtException("Failed to extract verify JWK from configuration");
             }
             if (authenticate
@@ -781,15 +801,17 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         /**
-         * Configure support for unsigned JWT.
+         * Configure support for unsigned JWTs without requiring verification JWKs.
          * If this is set to {@code true} any JWT that has algorithm
          * set to {@code none} and no {@code kid} defined will be accepted.
+         * Such a token does not trigger loading of a configured verification JWK resource. Signed tokens continue to
+         * require matching verification keys.
          * Note that this has serious security impact - if JWT can be sent
          *  from a third party, this allows the third party to send ANY JWT
-         *  and it would be accpted as valid.
+         *  and it would be accepted as valid.
          *
          * @param allowUnsigned to allow unsigned (insecure) JWT
-         * @return updated builder insdtance
+         * @return updated builder instance
          */
         @ConfiguredOption("false")
         public Builder allowUnsigned(boolean allowUnsigned) {
@@ -896,9 +918,9 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          */
         @ConfiguredOption(key = "atn-token.jwk.resource")
         public Builder verifyJwk(Resource verifyJwkResource) {
-            this.verifyKeys = requireUsableKeys(JwkKeys.builder()
-                                                         .resource(Objects.requireNonNull(verifyJwkResource))
-                                                         .build());
+            this.verifyKeys = JwkKeys.builder()
+                    .resource(Objects.requireNonNull(verifyJwkResource))
+                    .build();
             this.verifyKeysResource = null;
             this.verifyKeysLoader = null;
 
@@ -912,7 +934,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          * @return updated builder instance
          */
         public Builder verifyJwk(JwkKeys verifyKeys) {
-            this.verifyKeys = requireUsableKeys(verifyKeys);
+            this.verifyKeys = Objects.requireNonNull(verifyKeys);
             this.verifyKeysResource = null;
             this.verifyKeysLoader = null;
 
@@ -1233,9 +1255,9 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                                                          jwkCircuitBreaker,
                                                          jwkTimeout);
             } else {
-                verifyKeys = requireUsableKeys(JwkKeys.builder()
-                                                       .resource(Resource.create(resourceConfig))
-                                                       .build());
+                verifyKeys = JwkKeys.builder()
+                        .resource(Resource.create(resourceConfig))
+                        .build();
             }
         }
 

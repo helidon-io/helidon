@@ -825,6 +825,12 @@ both 5-second attempts and the retry delay. Configuration is rejected at
 startup if the attempt timeout is not positive or exceeds the overall retry
 timeout.
 
+If `allow-unsigned` is explicitly enabled, a token using the `none` algorithm
+without a key ID does not require or trigger loading of verification JWKs.
+Signed tokens still require matching verification keys. Enabling unsigned
+tokens is dangerous and should be limited to environments where untrusted
+parties cannot supply JWTs.
+
 For outbound, we support either token propagation (e.g. the token from request
 is propagated further) or support for generating a brand-new token based on
 configuration of this provider.
