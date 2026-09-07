@@ -95,6 +95,29 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     BaseBuilder() {
     }
 
+    static Retry defaultJwkRetry() {
+        return Retry.builder()
+                .calls(2)
+                .overallTimeout(DEFAULT_JWK_RETRY_OVERALL_TIMEOUT)
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
+    }
+
+    static CircuitBreaker defaultJwkCircuitBreaker() {
+        return CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .build();
+    }
+
+    static Timeout defaultJwkTimeout() {
+        return Timeout.builder()
+                .timeout(DEFAULT_JWK_TIMEOUT)
+                .currentThread(true)
+                .build();
+    }
+
     void buildConfiguration() {
         this.serverType = OidcUtil.fixServerType(serverType);
 
@@ -733,10 +756,6 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return identity();
     }
 
-    private void clientTimeoutMillis(long millis) {
-        this.clientTimeout(Duration.ofMillis(millis));
-    }
-
     OidcConfig.ClientAuthentication tokenEndpointAuthentication() {
         return tokenEndpointAuthentication;
     }
@@ -852,42 +871,6 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return keys;
     }
 
-    static Retry defaultJwkRetry() {
-        return Retry.builder()
-                .calls(2)
-                .overallTimeout(DEFAULT_JWK_RETRY_OVERALL_TIMEOUT)
-                .addApplyOn(ResilientValue.UnavailableException.class)
-                .build();
-    }
-
-    static CircuitBreaker defaultJwkCircuitBreaker() {
-        return CircuitBreaker.builder()
-                .volume(1)
-                .errorRatio(100)
-                .addApplyOn(ResilientValue.UnavailableException.class)
-                .build();
-    }
-
-    static Timeout defaultJwkTimeout() {
-        return Timeout.builder()
-                .timeout(DEFAULT_JWK_TIMEOUT)
-                .currentThread(true)
-                .build();
-    }
-
-    private void validateJwkFaultTolerance(Errors.Collector collector) {
-        Duration timeout = jwkTimeout.prototype().timeout();
-        if (timeout.isNegative() || timeout.isZero()) {
-            collector.fatal("jwk-loader.timeout.timeout must be positive");
-        }
-        if (!jwkTimeout.prototype().currentThread()) {
-            collector.fatal("jwk-loader.timeout.current-thread must be true");
-        }
-        if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
-            collector.fatal("jwk-loader.timeout.timeout must not exceed jwk-loader.retry.overall-timeout");
-        }
-    }
-
     private static boolean isDynamic(ResourceConfig resourceConfig) {
         return resourceConfig.path().isPresent() || resourceConfig.uri().isPresent();
     }
@@ -919,34 +902,6 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
             throw new IllegalArgumentException(description + " proxy can only be configured for a URI resource");
         }
         resourceConfig.uri().ifPresent(uri -> validateResourceUri(uri, description));
-    }
-
-    private void validateMetadata(Errors.Collector collector) {
-        if (oidcMetadata == null) {
-            return;
-        }
-        validateMetadataUri(collector, "authorization_endpoint");
-        validateMetadataUri(collector, OidcUtil.resolveMetaKey("token_endpoint", serverType, identityUri));
-        validateMetadataUri(collector, OidcUtil.resolveMetaKey("end_session_endpoint", serverType, identityUri));
-        validateMetadataUri(collector, OidcUtil.resolveMetaKey("introspection_endpoint", serverType, identityUri));
-        validateMetadataUri(collector, OidcUtil.resolveMetaKey("jwks_uri", serverType, identityUri));
-    }
-
-    private void validateMetadataUri(Errors.Collector collector, String key) {
-        oidcMetadata.stringValue(key).ifPresent(value -> {
-            try {
-                URI uri = URI.create(value);
-                if (!uri.isAbsolute()) {
-                    collector.fatal("OIDC metadata field \"" + key + "\" must be an absolute URI");
-                } else if (!isHttpUri(uri)) {
-                    collector.fatal("OIDC metadata field \"" + key + "\" must use HTTP or HTTPS");
-                } else if (uri.getHost() == null) {
-                    collector.fatal("OIDC metadata field \"" + key + "\" HTTP URI must include a host");
-                }
-            } catch (IllegalArgumentException e) {
-                collector.fatal("OIDC metadata field \"" + key + "\" must be a valid URI");
-            }
-        });
     }
 
     private static void validateAbsoluteUri(Errors.Collector collector, URI uri, String key) {
@@ -982,6 +937,51 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     private static boolean isHttpUri(URI uri) {
         String scheme = uri.getScheme();
         return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+    }
+
+    private void clientTimeoutMillis(long millis) {
+        this.clientTimeout(Duration.ofMillis(millis));
+    }
+
+    private void validateJwkFaultTolerance(Errors.Collector collector) {
+        Duration timeout = jwkTimeout.prototype().timeout();
+        if (timeout.isNegative() || timeout.isZero()) {
+            collector.fatal("jwk-loader.timeout.timeout must be positive");
+        }
+        if (!jwkTimeout.prototype().currentThread()) {
+            collector.fatal("jwk-loader.timeout.current-thread must be true");
+        }
+        if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
+            collector.fatal("jwk-loader.timeout.timeout must not exceed jwk-loader.retry.overall-timeout");
+        }
+    }
+
+    private void validateMetadata(Errors.Collector collector) {
+        if (oidcMetadata == null) {
+            return;
+        }
+        validateMetadataUri(collector, "authorization_endpoint");
+        validateMetadataUri(collector, OidcUtil.resolveMetaKey("token_endpoint", serverType, identityUri));
+        validateMetadataUri(collector, OidcUtil.resolveMetaKey("end_session_endpoint", serverType, identityUri));
+        validateMetadataUri(collector, OidcUtil.resolveMetaKey("introspection_endpoint", serverType, identityUri));
+        validateMetadataUri(collector, OidcUtil.resolveMetaKey("jwks_uri", serverType, identityUri));
+    }
+
+    private void validateMetadataUri(Errors.Collector collector, String key) {
+        oidcMetadata.stringValue(key).ifPresent(value -> {
+            try {
+                URI uri = URI.create(value);
+                if (!uri.isAbsolute()) {
+                    collector.fatal("OIDC metadata field \"" + key + "\" must be an absolute URI");
+                } else if (!isHttpUri(uri)) {
+                    collector.fatal("OIDC metadata field \"" + key + "\" must use HTTP or HTTPS");
+                } else if (uri.getHost() == null) {
+                    collector.fatal("OIDC metadata field \"" + key + "\" HTTP URI must include a host");
+                }
+            } catch (IllegalArgumentException e) {
+                collector.fatal("OIDC metadata field \"" + key + "\" must be a valid URI");
+            }
+        });
     }
 
 }

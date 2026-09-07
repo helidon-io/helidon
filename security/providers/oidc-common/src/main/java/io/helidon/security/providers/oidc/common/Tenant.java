@@ -157,6 +157,103 @@ public class Tenant {
         return tenant;
     }
 
+    /**
+     * Provided tenant configuration.
+     *
+     * @return tenant configuration
+     */
+    public TenantConfig tenantConfig() {
+        return tenantConfig;
+    }
+
+    /**
+     * Token endpoint URI.
+     *
+     * @return endpoint URI
+     */
+    public URI tokenEndpointUri() {
+        return tokenEndpointUri;
+    }
+
+    /**
+     * Authorization endpoint.
+     *
+     * @return authorization endpoint uri as a string
+     */
+    public String authorizationEndpointUri() {
+        return authorizationEndpointUri;
+    }
+
+    /**
+     * Logout endpoint on OIDC server.
+     *
+     * @return URI of the logout endpoint
+     */
+    public URI logoutEndpointUri() {
+        return logoutEndpointUri;
+    }
+
+    /**
+     * Token issuer.
+     *
+     * @return token issuer
+     */
+    public String issuer() {
+        return issuer;
+    }
+
+    /**
+     * Client with configured proxy and security.
+     * For a lazily loaded tenant, the client is created only after the tenant configuration has loaded successfully.
+     * When token endpoint authentication is {@link OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC},
+     * client credentials are scoped to POST requests on the token endpoint scheme, host, and path and, when JWT
+     * introspection is used, to POST requests on the introspection endpoint scheme, host, and path.
+     *
+     * @return client for communicating with OIDC identity server
+     */
+    public WebClient appWebClient() {
+        return appWebClient.get();
+    }
+
+    /**
+     * JWK used for signature validation.
+     *
+     * @return set of keys used to verify tokens
+     */
+    public JwkKeys signJwk() {
+        return signJwk;
+    }
+
+    /**
+     * Introspection endpoint URI.
+     *
+     * @return introspection endpoint URI
+     */
+    public URI introspectUri() {
+        if (introspectUri == null) {
+            throw new SecurityException("Introspect URI is not configured when using validate with JWK.");
+        }
+        return introspectUri;
+    }
+
+    private static OutboundTarget outboundTarget(String name, URI endpointUri, TenantConfig tenantConfig) {
+        String scheme = endpointUri.getScheme();
+        String host = endpointUri.getHost();
+        if (scheme == null || host == null) {
+            throw new SecurityException("OIDC endpoint URI must be absolute with scheme and host when using "
+                                                + OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC);
+        }
+        String path = endpointUri.getPath();
+        return OutboundTarget.builder(name)
+                .addTransport(scheme)
+                .addHost(host)
+                .addPath(Pattern.quote(path == null || path.isEmpty() ? "/" : path))
+                .addMethod("POST")
+                .customObject(HttpBasicOutboundConfig.class,
+                              HttpBasicOutboundConfig.create(tenantConfig.clientId(), tenantConfig.clientSecret()))
+                .build();
+    }
+
     private static JwkKeys resolveSigningJwk(TenantConfig tenantConfig,
                                              OidcMetadata oidcMetadata,
                                              Errors.Collector collector,
@@ -311,103 +408,6 @@ public class Tenant {
             current = current.getCause();
         }
         return false;
-    }
-
-    private static OutboundTarget outboundTarget(String name, URI endpointUri, TenantConfig tenantConfig) {
-        String scheme = endpointUri.getScheme();
-        String host = endpointUri.getHost();
-        if (scheme == null || host == null) {
-            throw new SecurityException("OIDC endpoint URI must be absolute with scheme and host when using "
-                                                + OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC);
-        }
-        String path = endpointUri.getPath();
-        return OutboundTarget.builder(name)
-                .addTransport(scheme)
-                .addHost(host)
-                .addPath(Pattern.quote(path == null || path.isEmpty() ? "/" : path))
-                .addMethod("POST")
-                .customObject(HttpBasicOutboundConfig.class,
-                              HttpBasicOutboundConfig.create(tenantConfig.clientId(), tenantConfig.clientSecret()))
-                .build();
-    }
-
-    /**
-     * Provided tenant configuration.
-     *
-     * @return tenant configuration
-     */
-    public TenantConfig tenantConfig() {
-        return tenantConfig;
-    }
-
-    /**
-     * Token endpoint URI.
-     *
-     * @return endpoint URI
-     */
-    public URI tokenEndpointUri() {
-        return tokenEndpointUri;
-    }
-
-    /**
-     * Authorization endpoint.
-     *
-     * @return authorization endpoint uri as a string
-     */
-    public String authorizationEndpointUri() {
-        return authorizationEndpointUri;
-    }
-
-    /**
-     * Logout endpoint on OIDC server.
-     *
-     * @return URI of the logout endpoint
-     */
-    public URI logoutEndpointUri() {
-        return logoutEndpointUri;
-    }
-
-    /**
-     * Token issuer.
-     *
-     * @return token issuer
-     */
-    public String issuer() {
-        return issuer;
-    }
-
-    /**
-     * Client with configured proxy and security.
-     * For a lazily loaded tenant, the client is created only after the tenant configuration has loaded successfully.
-     * When token endpoint authentication is {@link OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC},
-     * client credentials are scoped to POST requests on the token endpoint scheme, host, and path and, when JWT
-     * introspection is used, to POST requests on the introspection endpoint scheme, host, and path.
-     *
-     * @return client for communicating with OIDC identity server
-     */
-    public WebClient appWebClient() {
-        return appWebClient.get();
-    }
-
-    /**
-     * JWK used for signature validation.
-     *
-     * @return set of keys used to verify tokens
-     */
-    public JwkKeys signJwk() {
-        return signJwk;
-    }
-
-    /**
-     * Introspection endpoint URI.
-     *
-     * @return introspection endpoint URI
-     */
-    public URI introspectUri() {
-        if (introspectUri == null) {
-            throw new SecurityException("Introspect URI is not configured when using validate with JWK.");
-        }
-        return introspectUri;
     }
 
 }

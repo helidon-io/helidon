@@ -734,6 +734,29 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         private Builder() {
         }
 
+        static Retry defaultJwkRetry() {
+            return Retry.builder()
+                    .calls(2)
+                    .overallTimeout(Duration.ofSeconds(11))
+                    .addApplyOn(ResilientValue.UnavailableException.class)
+                    .build();
+        }
+
+        static CircuitBreaker defaultJwkCircuitBreaker() {
+            return CircuitBreaker.builder()
+                    .volume(1)
+                    .errorRatio(100)
+                    .addApplyOn(ResilientValue.UnavailableException.class)
+                    .build();
+        }
+
+        static Timeout defaultJwkTimeout() {
+            return Timeout.builder()
+                    .timeout(Duration.ofSeconds(5))
+                    .currentThread(true)
+                    .build();
+        }
+
         @Override
         public JwtProvider build() {
             validateJwkFaultTolerance();
@@ -1234,71 +1257,6 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             return value;
         }
 
-        private void verifyKeys(Config config) {
-            Config resource = config.get("jwk.resource");
-            if (resource.exists()) {
-                validateResourceConfig(resource);
-                verifyJwk(ResourceConfig.create(resource));
-            }
-        }
-
-        private void prepareVerifyKeys() {
-            if (verifyKeys != null || verifyKeysResource == null) {
-                return;
-            }
-            ResourceConfig resourceConfig = verifyKeysResource;
-            if (isDynamic(resourceConfig)) {
-                String description = sourceDescription(resourceConfig);
-                Duration ioTimeout = jwkTimeout.prototype().timeout();
-                verifyKeysLoader = ResilientValue.create(description,
-                                                         () -> loadDynamicKeys(resourceConfig, description, ioTimeout),
-                                                         jwkRetry,
-                                                         jwkCircuitBreaker,
-                                                         jwkTimeout);
-            } else {
-                verifyKeys = JwkKeys.builder()
-                        .resource(Resource.create(resourceConfig))
-                        .build();
-            }
-        }
-
-        static Retry defaultJwkRetry() {
-            return Retry.builder()
-                    .calls(2)
-                    .overallTimeout(Duration.ofSeconds(11))
-                    .addApplyOn(ResilientValue.UnavailableException.class)
-                    .build();
-        }
-
-        static CircuitBreaker defaultJwkCircuitBreaker() {
-            return CircuitBreaker.builder()
-                    .volume(1)
-                    .errorRatio(100)
-                    .addApplyOn(ResilientValue.UnavailableException.class)
-                    .build();
-        }
-
-        static Timeout defaultJwkTimeout() {
-            return Timeout.builder()
-                    .timeout(Duration.ofSeconds(5))
-                    .currentThread(true)
-                    .build();
-        }
-
-        private void validateJwkFaultTolerance() {
-            Duration timeout = jwkTimeout.prototype().timeout();
-            if (timeout.isNegative() || timeout.isZero()) {
-                throw new IllegalArgumentException("jwk-loader.timeout.timeout must be positive");
-            }
-            if (!jwkTimeout.prototype().currentThread()) {
-                throw new IllegalArgumentException("jwk-loader.timeout.current-thread must be true");
-            }
-            if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
-                throw new IllegalArgumentException("jwk-loader.timeout.timeout must not exceed "
-                                                           + "jwk-loader.retry.overall-timeout");
-            }
-        }
-
         private static JwkKeys loadDynamicKeys(ResourceConfig resourceConfig,
                                                String description,
                                                Duration ioTimeout) {
@@ -1422,6 +1380,48 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             if (("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
                     && uri.getHost() == null) {
                 throw new JwtException("Verification JWK HTTP URI must include a host");
+            }
+        }
+
+        private void verifyKeys(Config config) {
+            Config resource = config.get("jwk.resource");
+            if (resource.exists()) {
+                validateResourceConfig(resource);
+                verifyJwk(ResourceConfig.create(resource));
+            }
+        }
+
+        private void prepareVerifyKeys() {
+            if (verifyKeys != null || verifyKeysResource == null) {
+                return;
+            }
+            ResourceConfig resourceConfig = verifyKeysResource;
+            if (isDynamic(resourceConfig)) {
+                String description = sourceDescription(resourceConfig);
+                Duration ioTimeout = jwkTimeout.prototype().timeout();
+                verifyKeysLoader = ResilientValue.create(description,
+                                                         () -> loadDynamicKeys(resourceConfig, description, ioTimeout),
+                                                         jwkRetry,
+                                                         jwkCircuitBreaker,
+                                                         jwkTimeout);
+            } else {
+                verifyKeys = JwkKeys.builder()
+                        .resource(Resource.create(resourceConfig))
+                        .build();
+            }
+        }
+
+        private void validateJwkFaultTolerance() {
+            Duration timeout = jwkTimeout.prototype().timeout();
+            if (timeout.isNegative() || timeout.isZero()) {
+                throw new IllegalArgumentException("jwk-loader.timeout.timeout must be positive");
+            }
+            if (!jwkTimeout.prototype().currentThread()) {
+                throw new IllegalArgumentException("jwk-loader.timeout.current-thread must be true");
+            }
+            if (timeout.compareTo(jwkRetry.prototype().overallTimeout()) > 0) {
+                throw new IllegalArgumentException("jwk-loader.timeout.timeout must not exceed "
+                                                           + "jwk-loader.retry.overall-timeout");
             }
         }
 
