@@ -181,8 +181,8 @@ public interface Resource extends RuntimeType.Api<ResourceConfig> {
 
     /**
      * Create resource from its configuration, using an explicit timeout when opening and reading a URI resource.
-     * The timeout does not apply to other resource types. URI connection caching is disabled so each invocation opens
-     * a fresh resource.
+     * The timeout does not apply to other resource types. Resource source precedence and location are the same as for
+     * {@link #create(ResourceConfig)}. URI connection caching is disabled so each invocation opens a fresh resource.
      * <p>
      * Positive sub-millisecond values use one millisecond. Values larger than the maximum timeout supported by
      * {@link java.net.URLConnection} use that maximum.
@@ -199,18 +199,18 @@ public interface Resource extends RuntimeType.Api<ResourceConfig> {
             throw new IllegalArgumentException("Resource URI timeout must be positive");
         }
 
-        if (config.uri().isEmpty()) {
+        if (config.path().isPresent() || config.resourcePath().isPresent() || config.uri().isEmpty()) {
             return create(config);
         }
 
+        URI uri = config.uri().orElseThrow();
         InputStream inputStream;
         if (config.useProxy() && config.proxy().isPresent()) {
-            inputStream = ResourceUtil.toIs(config.uri().orElseThrow(), config.proxy().orElseThrow(), timeout);
+            inputStream = ResourceUtil.toIs(uri, config.proxy().orElseThrow(), timeout);
         } else {
-            inputStream = ResourceUtil.toIs(config.uri().orElseThrow(), timeout);
+            inputStream = ResourceUtil.toIs(uri, timeout);
         }
-        String description = config.description().isBlank() ? "URI resource" : config.description();
-        return ResourceUtil.from(inputStream, description, Source.URL);
+        return ResourceUtil.from(inputStream, uri.toString(), Source.URL);
     }
 
     /**

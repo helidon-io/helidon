@@ -24,6 +24,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -181,6 +182,43 @@ class ResourceTest {
         Resource resource = Resource.create(resourceConfig, Duration.ofSeconds(1));
 
         assertThat(resource.string(), is(STRING_CONTENT));
+    }
+
+    @Test
+    void testConfigTimeoutPreservesSourcePrecedence() {
+        URI unavailableUri = URI.create("http://127.0.0.1:1/unavailable");
+        ResourceConfig pathConfig = ResourceConfig.builder()
+                .path(Path.of("src/test/resources/sample.txt"))
+                .resourcePath("sample.txt")
+                .uri(unavailableUri)
+                .buildPrototype();
+        ResourceConfig classpathConfig = ResourceConfig.builder()
+                .resourcePath("sample.txt")
+                .uri(unavailableUri)
+                .buildPrototype();
+
+        Resource pathResource = Resource.create(pathConfig, Duration.ofSeconds(1));
+        Resource classpathResource = Resource.create(classpathConfig, Duration.ofSeconds(1));
+
+        assertThat(pathResource.sourceType(), is(Resource.Source.FILE));
+        assertThat(pathResource.string().trim(), is(COPYRIGHT_TEXT));
+        assertThat(classpathResource.sourceType(), is(Resource.Source.CLASSPATH));
+        assertThat(classpathResource.string().trim(), is(COPYRIGHT_TEXT));
+    }
+
+    @Test
+    void testConfigTimeoutPreservesUriLocation() {
+        URI uri = Path.of("src/test/resources/sample.txt").toUri();
+        ResourceConfig resourceConfig = ResourceConfig.builder()
+                .uri(uri)
+                .description("configured description")
+                .buildPrototype();
+
+        Resource resource = Resource.create(resourceConfig, Duration.ofSeconds(1));
+
+        assertThat(resource.sourceType(), is(Resource.Source.URL));
+        assertThat(resource.location(), is(uri.toString()));
+        assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
     }
 
     @Test
