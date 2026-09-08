@@ -187,7 +187,7 @@ When you inject a client, use its configured name as the Service Registry
 qualifier. If that client is unavailable, Helidon reports the missing service
 instead of silently switching to `@default`.
 
-### Programmatic Configuration
+### Configure Clients in Code
 
 Configuration does not have to come from a file. To supply it from application
 code, install every client configuration before the first lookup of
@@ -210,7 +210,9 @@ Services.set(JdbcClientConfig.class, contacts, audit);
 ```
 
 Pass the complete client list in one `Services.set` call. This list replaces
-the YAML configuration rather than adding to it.
+the YAML configuration rather than adding to it. The Service Registry uses
+these configurations for generated repositories and injected `JdbcClient`
+instances.
 
 The same approach can publish a client backed by a `DataSource` that the
 application already owns:
@@ -256,11 +258,12 @@ statement that needs to remain portable:
 ## Local Transactions
 
 Repositories and injected `JdbcClient` services can participate in a Helidon
-local JDBC transaction. Place `@Tx.Required`, `@Tx.New`, or another transaction
-annotation on the service or repository method that defines the transaction
-boundary. The client must be managed by the Service Registry. A client created
-directly with `JdbcClient.builder()` does not join a transaction established by
-an annotation.
+local JDBC transaction. Declare `@Tx.Required`, `@Tx.New`, or another
+transaction annotation on a service method, a repository method, or a
+repository interface according to the boundary the application needs. The
+client must be managed by the Service Registry. A client created directly with
+`JdbcClient.builder()` does not join a transaction established by an
+annotation.
 
 During a transaction, JDBC work stays on the calling thread. Operations against
 the same data source reuse one connection. Helidon rejects an attempt to use a
@@ -268,17 +271,9 @@ second data source in that transaction. The supported propagation modes are
 `REQUIRED`, `MANDATORY`, `SUPPORTED`, `NEW`, `NEVER`, and `UNSUPPORTED`. A
 `NEW` transaction uses an independent connection rather than a savepoint.
 
-Helidon can apply a transaction annotation only when it sees that annotation
-during the current compilation. It cannot apply one inherited only from a
-separately compiled service or repository interface. For the repository
-workaround, see [Transaction Annotations in Compiled Parent
-Interfaces](declarative.md#current-limitation-transaction-annotations-in-compiled-parent-interfaces).
-
-For a repository, annotate the individual methods that need a transaction.
-Putting a transaction annotation on the repository type can also affect how
-Helidon creates the repository service. See [Transaction Annotations on Repository
-Types](declarative.md#current-limitation-transaction-annotations-on-repository-types)
-for the current limitation and its workaround.
+The placement and inheritance of transaction annotations affect generated
+repositories. See [Transactions](declarative.md#transactions) for guidance on
+choosing the appropriate location.
 
 A local JDBC connection cannot join a JTA or XA transaction, or a transaction
 owned by another data provider. If another provider already owns the active

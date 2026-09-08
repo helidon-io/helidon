@@ -1,7 +1,5 @@
 <!--@frontmatter
 description: "Define Helidon Data repositories that execute JDBC statements"
-navigation:
-  icon: i-lucide-files
 -->
 # Declarative JDBC Repositories
 
@@ -86,10 +84,12 @@ interface ContactRepository extends Data.GenericRepository<Contact, Long> {
 }
 ```
 
-Every abstract operation still needs its own `@Jdbc.Statement`. Do not extend
-`Data.BasicRepository`, `Data.CrudRepository`, or `Data.PageableRepository`.
-Those interfaces expect generated entity operations, which the JDBC provider
-does not create, so Helidon rejects them during compilation.
+The JDBC provider does not create SQL for operations inherited from a parent
+interface, so each abstract operation needs its own `@Jdbc.Statement`.
+`Data.BasicRepository`, `Data.CrudRepository`, and `Data.PageableRepository`
+declare operations that depend on generated entity behavior and are therefore
+not suitable parent interfaces for a JDBC repository. Helidon reports a
+compilation error when a repository extends one of them.
 
 ## Repository Methods
 
@@ -319,33 +319,27 @@ paging through a result.
 
 ## Transactions
 
-To include a repository operation in a local JDBC transaction, put the required
-transaction annotation directly on that repository method. The general
-transaction behavior and supported propagation modes are described in
-[Local Transactions](README.md#local-transactions).
+Repository methods can participate in the local JDBC transactions described in
+[Local Transactions](README.md#local-transactions). A transaction annotation
+can be declared on an individual method or on the repository interface. Choose
+the location according to the boundary that the application needs:
 
-### Current Limitation: Transaction Annotations on Repository Types
+- An annotation on a repository method applies to that operation. This is the
+  clearest choice when repository methods need different propagation behavior.
+  An annotation on the repository interface is copied to the generated service
+  class, so it can affect creation of the repository as well as calls to its
+  methods. For example, `@Tx.Mandatory` can prevent the first repository lookup
+  outside a transaction. `@Tx.Required` or `@Tx.New` can start a transaction
+  while Helidon creates the service. Helidon does not treat an interface
+  annotation only as a default for repository methods, and precedence between
+  interface and method annotations is not currently defined.
 
-Do not put a transaction annotation on the repository interface. Helidon
-currently copies that annotation to the generated service class, where it can
-affect construction of the repository as well as calls to its methods. For
-example, `@Tx.Mandatory` can prevent the first repository lookup outside a
-transaction. `@Tx.Required` or `@Tx.New` can start a transaction merely to
-construct the service.
-
-An annotation on the repository type does not act as a method default, and its
-precedence relative to a method annotation is not defined. Annotate each method
-that needs transaction propagation instead.
-
-### Current Limitation: Transaction Annotations in Compiled Parent Interfaces
-
-Transaction annotations are available only from source during repository
-generation. If a child repository is compiled against a parent class file,
-Helidon cannot recover an annotation declared only on the parent method or
-interface.
-
-Redeclare the complete method and its transaction annotation on the child
-repository. Another option is to put the transaction boundary on an application
-service method that Helidon compiles directly. The `-parameters` compiler option
-preserves parameter names, but it does not preserve transaction annotations for
-repository generation.
+- Helidon can include an annotation in generated code only when the annotation
+  is available in source during compilation. If a child repository is compiled
+  against a parent class file, an annotation declared only on the parent method
+  or interface is not available to the generator. If the child needs that
+  transaction behavior, redeclare the complete method and its annotation on the
+  child repository. You can also place the transaction boundary on an
+  application service method compiled with the repository. The `-parameters`
+  compiler option preserves parameter names, but it does not make transaction
+  annotations available to repository generation.
