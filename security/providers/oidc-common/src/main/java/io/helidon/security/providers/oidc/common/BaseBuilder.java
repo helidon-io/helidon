@@ -409,7 +409,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      */
     public B jwkRetry(Consumer<RetryConfig.Builder> consumer) {
         Objects.requireNonNull(consumer);
-        var builder = RetryConfig.builder();
+        var builder = RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG);
         consumer.accept(builder);
         return jwkRetry(builder.buildPrototype());
     }
@@ -522,7 +522,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      */
     public B jwkCircuitBreaker(Consumer<CircuitBreakerConfig.Builder> consumer) {
         Objects.requireNonNull(consumer);
-        var builder = CircuitBreakerConfig.builder();
+        var builder = CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG);
         consumer.accept(builder);
         return jwkCircuitBreaker(builder.buildPrototype());
     }

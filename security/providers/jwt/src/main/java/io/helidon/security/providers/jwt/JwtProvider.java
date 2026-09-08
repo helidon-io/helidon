@@ -1043,7 +1043,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          */
         public Builder jwkRetry(Consumer<RetryConfig.Builder> consumer) {
             Objects.requireNonNull(consumer);
-            var builder = RetryConfig.builder();
+            var builder = RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG);
             consumer.accept(builder);
             return jwkRetry(builder.buildPrototype());
         }
@@ -1164,7 +1164,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          */
         public Builder jwkCircuitBreaker(Consumer<CircuitBreakerConfig.Builder> consumer) {
             Objects.requireNonNull(consumer);
-            var builder = CircuitBreakerConfig.builder();
+            var builder = CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG);
             consumer.accept(builder);
             return jwkCircuitBreaker(builder.buildPrototype());
         }

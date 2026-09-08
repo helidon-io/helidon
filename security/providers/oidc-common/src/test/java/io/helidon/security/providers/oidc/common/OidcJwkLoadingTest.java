@@ -117,6 +117,20 @@ class OidcJwkLoadingTest {
     }
 
     @Test
+    void consumerFaultToleranceUsesJwkDefaults() {
+        TenantConfig tenantConfig = baseBuilder()
+                .jwkRetry(it -> it.calls(4))
+                .jwkCircuitBreaker(it -> it.successThreshold(2))
+                .build();
+
+        assertThat(tenantConfig.jwkRetry().prototype().calls(), is(4));
+        assertThat(tenantConfig.jwkRetry().prototype().overallTimeout(), is(Duration.ofSeconds(11)));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().volume(), is(1));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().errorRatio(), is(100));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().successThreshold(), is(2));
+    }
+
+    @Test
     void unusedFaultToleranceSuppliersAreLazy() {
         AtomicInteger creations = new AtomicInteger();
         OidcConfig config = baseBuilder()

@@ -526,6 +526,22 @@ class JwtProviderJwkLoadingTest {
     }
 
     @Test
+    void consumerFaultToleranceUsesJwkDefaults() throws IOException {
+        Path keysPath = tempDir.resolve("missing.json");
+        JwtProvider provider = JwtProvider.builder()
+                .verifyJwk(ResourceConfig.builder().path(keysPath).buildPrototype())
+                .jwkRetry(it -> it.calls(1))
+                .jwkCircuitBreaker(it -> it.delay(Duration.ofDays(1)))
+                .build();
+
+        assertThat(provider.authenticate(request(validToken())).status(),
+                   is(SecurityResponse.SecurityStatus.FAILURE));
+        writeVerificationKeys(keysPath);
+        assertThat(provider.authenticate(request(validToken())).status(),
+                   is(SecurityResponse.SecurityStatus.FAILURE));
+    }
+
+    @Test
     void warningsDescribeSafeFailureCategories() throws IOException {
         Logger logger = Logger.getLogger(ResilientValue.class.getName());
         CapturingHandler handler = new CapturingHandler();
