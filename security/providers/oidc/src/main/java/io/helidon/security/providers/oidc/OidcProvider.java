@@ -314,26 +314,28 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
             clientCredentialsConfig.scope().ifPresent(scope -> formBuilder.add("scope", scope));
 
-            HttpClientRequest postRequest = oidcConfig.appWebClient()
-                    .post()
-                    .uri(oidcConfig.tokenEndpointUri());
+            try {
+                HttpClientRequest postRequest = oidcConfig.appWebClient()
+                        .post()
+                        .uri(oidcConfig.tokenEndpointUri());
 
-            OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
+                OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
 
-            try (var response = postRequest.submit(formBuilder.build())) {
-                if (response.status().family() == Status.Family.SUCCESSFUL) {
-                    JsonObject jsonObject = response.as(JsonObject.class);
-                    String accessToken = jsonObject.stringValue("access_token")
-                            .orElseThrow(() -> new IllegalStateException("JSON field \"access_token\" must be defined"));
+                try (var response = postRequest.submit(formBuilder.build())) {
+                    if (response.status().family() == Status.Family.SUCCESSFUL) {
+                        JsonObject jsonObject = response.as(JsonObject.class);
+                        String accessToken = jsonObject.stringValue("access_token")
+                                .orElseThrow(() -> new IllegalStateException("JSON field \"access_token\" must be defined"));
 
-                    Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
-                    target.tokenHandler.header(headers, accessToken);
-                    return OutboundSecurityResponse.withHeaders(headers);
-                } else {
-                    return OutboundSecurityResponse.builder()
-                            .status(SecurityResponse.SecurityStatus.FAILURE)
-                            .description("Could not obtain access token from the identity server")
-                            .build();
+                        Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                        target.tokenHandler.header(headers, accessToken);
+                        return OutboundSecurityResponse.withHeaders(headers);
+                    } else {
+                        return OutboundSecurityResponse.builder()
+                                .status(SecurityResponse.SecurityStatus.FAILURE)
+                                .description("Could not obtain access token from the identity server")
+                                .build();
+                    }
                 }
             } catch (Exception e) {
                 return OutboundSecurityResponse.builder()

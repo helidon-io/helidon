@@ -21,14 +21,17 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.faulttolerance.ResilientValue;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
@@ -40,6 +43,7 @@ import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
@@ -58,6 +62,7 @@ import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
@@ -66,6 +71,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -146,6 +152,9 @@ class OidcFeatureTest {
                                                        .build())
                                     .build())
             .build();
+
+    @TempDir
+    Path temporaryDirectory;
 
     @Test
     void authenticationConsumersRejectMissingFixedSigningSourceAtStartup() {
@@ -531,6 +540,46 @@ class OidcFeatureTest {
 
         List<String> authorization = response.requestHeaders().get("Authorization");
         assertThat("Authorization header", authorization, hasItem("Bearer " + tokenContent));
+    }
+
+    @Test
+    void clientCredentialsMapsUnavailableDefaultTenant() {
+        Config outboundType = Config.create(ConfigSources.create(Map.of("outbound-type", "CLIENT_CREDENTIALS")));
+        OidcConfig unavailableConfig = OidcConfig.builder()
+                .config(outboundType)
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://idp.example.test/identity"))
+                .oidcMetadata(ResourceConfig.builder()
+                                      .path(temporaryDirectory.resolve("missing-metadata.json"))
+                                      .buildPrototype())
+                .oidcMetadataWellKnown(false)
+                .build();
+        OidcProvider unavailableProvider = OidcProvider.builder()
+                .oidcConfig(unavailableConfig)
+                .outboundConfig(OutboundConfig.builder()
+                                        .addTarget(OutboundTarget.builder("enabled")
+                                                           .addHost("service.example.test")
+                                                           .config(Config.create(ConfigSources.create(Map.of(
+                                                                   "propagate",
+                                                                   "true"))))
+                                                           .build())
+                                        .build())
+                .build();
+        SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
+                .targetUri(URI.create("http://service.example.test"))
+                .path("/test")
+                .build();
+
+        OutboundSecurityResponse response = unavailableProvider.outboundSecurity(
+                Mockito.mock(ProviderRequest.class),
+                outboundEnv,
+                EndpointConfig.builder().build());
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.description().orElseThrow(),
+                   is("An error occurred while obtaining access token from the identity server"));
+        assertThat(response.throwable().orElseThrow(), instanceOf(ResilientValue.UnavailableException.class));
     }
 
     @Test
