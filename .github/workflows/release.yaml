@@ -152,12 +152,9 @@ jobs:
     strategy:
       matrix:
         archetype:
-          - bare-se
-          - bare-mp
+          - custom-se
           - quickstart-se
-          - quickstart-mp
           - database-se
-          - database-mp
     runs-on: ubuntu-22.04
     name: smoketest/${{ matrix.archetype }}
     steps:

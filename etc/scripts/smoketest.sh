@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,6 +56,19 @@ $(basename "${0}") [ OPTIONS ] --version=V
 EOF
 }
 
+# Path to this script
+if [ -h "${0}" ] ; then
+    SCRIPT_PATH="$(readlink "${0}")"
+else
+    SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
+
+# Path to the root of the workspace
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
+
 # parse command line args
 ARGS=( "${@}" )
 for ((i=0;i<${#ARGS[@]};i++))
@@ -84,6 +97,7 @@ for ((i=0;i<${#ARGS[@]};i++))
     ;;
   esac
 }
+
 readonly ARGS
 readonly ARCHETYPE
 
@@ -96,6 +110,30 @@ fi
 PID=""
 trap '[ -n "${PID}" ] && kill ${PID} 2> /dev/null || true' 0
 
+install_cli() {
+  readonly HCMD=/tmp/helidon
+
+  if [ -x ${HCMD} ]; then
+    return
+  fi
+
+  case "$(uname -s)" in
+      Linux)
+          local platform="linux"
+          ;;
+      Darwin)
+          local platform="darwin"
+          ;;
+      *)
+          echo "Unsupported platform: $(uname -s)" >&2
+          exit 1
+          ;;
+  esac
+
+  curl --output-dir "$(dirname $HCMD)" -sS -L -O https://helidon.io/cli/latest/${platform}/helidon
+  chmod +x ${HCMD}
+}
+
 # arg1: uri
 wait_ready() {
   sleep 6
@@ -105,7 +143,7 @@ wait_ready() {
   fi
 
   case ${1} in
-  bare-*)
+  custom-*)
     # no-op
     ;;
   *-mp)
@@ -136,7 +174,7 @@ http_get() {
 test_app(){
   # health & metrics
   case ${1} in
-  bare-*)
+  custom-*)
     # no-op
     ;;
   *-se)
@@ -154,11 +192,11 @@ test_app(){
   database-*)
     # no-op
     ;;
-  bare-se|quickstart-*)
+  quickstart-*)
     http_get http://localhost:8080/greet
     http_get http://localhost:8080/greet/Joe
     ;;
-  bare-mp)
+  custom-se)
     http_get http://localhost:8080/simple-greet
     ;;
   esac
@@ -167,19 +205,22 @@ test_app(){
 # arg1: archetype
 test_archetype(){
   printf "\n*******************************************"
-  printf "\nINFO: %s - Generating project" "${ARCHETYPE}"
+  printf "\nINFO: Installing CLI"
+  printf "\n*******************************************\n\n"
+  install_cli
+  ${HCMD} --version --reset --url "file:///${WS_DIR}/archetypes/archetypes/target/cli-data/"
+
+  local application
+  application="$(echo "${ARCHETYPE}" | cut -f1 -d-)"
+
+  local flavor
+  flavor="$(echo "${ARCHETYPE}" | cut -f2 -d-)"
+
+  printf "\n*******************************************"
+  printf "\nINFO: %s %s - Generating project" "${application}" "${flavor}"
   printf "\n*******************************************\n\n"
 
-  # shellcheck disable=SC2086
-  mvn ${MVN_ARGS} -U \
-    -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId="helidon-${ARCHETYPE}" \
-    -DarchetypeVersion="${VERSION}" \
-    -DgroupId=io.helidon.smoketest \
-    -DartifactId=helidon-"${ARCHETYPE}" \
-    -Dpackage=io.helidon.smoketest."${ARCHETYPE/-/.}" \
-    archetype:generate
+  ${HCMD} init --batch --version "${VERSION}" --flavor "${flavor}" --archetype "${application}"
 
   printf "\n*******************************************"
   printf "\nINFO: %s - Building jar" "${ARCHETYPE}"
@@ -187,14 +228,14 @@ test_archetype(){
 
   # shellcheck disable=SC2086
   mvn ${MVN_ARGS} \
-    -f "helidon-${ARCHETYPE}/pom.xml" \
+    -f "${ARCHETYPE}/pom.xml" \
     clean package
 
   printf "\n*******************************************"
   printf "\nINFO: %s - Running and pinging app using jar image" "${ARCHETYPE}"
   printf "\n*******************************************\n\n"
 
-  java -jar "helidon-${ARCHETYPE}/target/helidon-${ARCHETYPE}.jar" &
+  java -jar "${ARCHETYPE}/target/${ARCHETYPE}.jar" &
   PID=${!}
   wait_ready "${ARCHETYPE}"
   test_app "${ARCHETYPE}"
@@ -204,18 +245,20 @@ test_archetype(){
   printf "\nINFO: %s - Building jlink image" "${ARCHETYPE}"
   printf "\n*******************************************\n\n"
 
+  # -Djlink.image.additionalModules is Workaround for Java 26. See issue #11527
   # shellcheck disable=SC2086
   mvn ${MVN_ARGS} \
-    -f "helidon-${ARCHETYPE}/pom.xml" \
+    -f "${ARCHETYPE}/pom.xml" \
     -DskipTests \
     -Pjlink-image \
+    -Djlink.image.additionalModules=jdk.compiler \
     package
 
   printf "\n*******************************************"
   printf "\nINFO: %s - Running and pinging app using jlink image" "${ARCHETYPE}"
   printf "\n*******************************************\n\n"
 
-  "helidon-${ARCHETYPE}/target/helidon-${ARCHETYPE}-jri/bin/start" &
+  "${ARCHETYPE}/target/${ARCHETYPE}-jri/bin/start" &
   PID=${!}
   wait_ready "${ARCHETYPE}"
   test_app "${ARCHETYPE}"
