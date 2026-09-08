@@ -116,8 +116,8 @@ class TimeoutImpl implements Timeout {
                 interruptLock.lock();
                 try {
                     if (callReturned.compareAndSet(false, true)) {
-                        thisThread.interrupt();
                         interrupted.set(true);      // needed if InterruptedException caught in supplier
+                        thisThread.interrupt();
                     }
                 } finally {
                     interruptLock.unlock();

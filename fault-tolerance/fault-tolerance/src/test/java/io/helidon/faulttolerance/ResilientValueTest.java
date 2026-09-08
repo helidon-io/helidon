@@ -366,6 +366,62 @@ class ResilientValueTest {
     }
 
     @Test
+    void timeoutInterruptDoesNotCancelRetry() throws InterruptedException {
+        CountDownLatch firstAttemptStarted = new CountDownLatch(1);
+        CountDownLatch releaseFirstAttempt = new CountDownLatch(1);
+        CountDownLatch interruptStarted = new CountDownLatch(1);
+        CountDownLatch supplierInterrupted = new CountDownLatch(1);
+        CountDownLatch returnFromInterrupt = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<String> result = new AtomicReference<>();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicBoolean interrupted = new AtomicBoolean();
+        ResilientValue<String> value = ResilientValue.create("test value",
+                                                             () -> {
+                                                                 if (calls.incrementAndGet() == 1) {
+                                                                     firstAttemptStarted.countDown();
+                                                                     try {
+                                                                         releaseFirstAttempt.await();
+                                                                     } catch (InterruptedException e) {
+                                                                         supplierInterrupted.countDown();
+                                                                         throw new SupplierException(e);
+                                                                     }
+                                                                 }
+                                                                 return "loaded";
+                                                             },
+                                                             retry(2),
+                                                             circuitBreaker(),
+                                                             timeout(Duration.ofMillis(20)));
+
+        Thread loaderThread = new CoordinatedInterruptThread(() -> {
+            try {
+                result.set(value.get());
+            } catch (Throwable t) {
+                failure.set(t);
+            } finally {
+                interrupted.set(Thread.currentThread().isInterrupted());
+            }
+        }, interruptStarted, returnFromInterrupt);
+        loaderThread.start();
+        try {
+            assertThat(firstAttemptStarted.await(10, TimeUnit.SECONDS), is(true));
+            assertThat(interruptStarted.await(10, TimeUnit.SECONDS), is(true));
+            assertThat(supplierInterrupted.await(10, TimeUnit.SECONDS), is(true));
+            awaitWaiting(loaderThread);
+        } finally {
+            returnFromInterrupt.countDown();
+            releaseFirstAttempt.countDown();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+
+        assertThat(loaderThread.isAlive(), is(false));
+        assertThat(result.get(), is("loaded"));
+        assertThat(failure.get(), is((Throwable) null));
+        assertThat(calls.get(), is(2));
+        assertThat(interrupted.get(), is(false));
+    }
+
+    @Test
     void callerInterruptStopsRetries() throws InterruptedException {
         CountDownLatch loading = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
@@ -710,6 +766,26 @@ class ResilientValueTest {
             Thread.sleep(1);
         }
         assertThat(thread.getState(), is(Thread.State.WAITING));
+    }
+
+    private static final class CoordinatedInterruptThread extends Thread {
+        private final CountDownLatch interruptStarted;
+        private final CountDownLatch returnFromInterrupt;
+
+        private CoordinatedInterruptThread(Runnable task,
+                                           CountDownLatch interruptStarted,
+                                           CountDownLatch returnFromInterrupt) {
+            super(task, "resilient-value-timeout-test");
+            this.interruptStarted = interruptStarted;
+            this.returnFromInterrupt = returnFromInterrupt;
+        }
+
+        @Override
+        public void interrupt() {
+            super.interrupt();
+            interruptStarted.countDown();
+            await(returnFromInterrupt);
+        }
     }
 
     private static final class TestExecutor extends AbstractExecutorService {
