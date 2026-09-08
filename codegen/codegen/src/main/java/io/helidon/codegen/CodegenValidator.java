@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.codegen;
 import java.net.URI;
 import java.time.Duration;
 
+import io.helidon.common.Api;
 import io.helidon.common.Size;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -26,6 +27,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Validation utilities.
  */
+@Api.Stable
 public final class CodegenValidator {
     private CodegenValidator() {
     }

@@ -19,6 +19,7 @@ package io.helidon.codegen.classmodel;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
@@ -32,6 +33,7 @@ import io.helidon.common.types.TypedElementInfo;
  * @see io.helidon.codegen.classmodel.Constructor
  * @see io.helidon.codegen.classmodel.Field
  */
+@Api.Stable
 public interface ContentBuilder<T extends ContentBuilder<T>> {
     /**
      * Set new content.

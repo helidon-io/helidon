@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -32,6 +33,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Executable base, used by method and constructor.
  */
+@Api.Stable
 public abstract class Executable extends AnnotatedComponent {
 
     private final Content content;
@@ -310,4 +312,3 @@ public abstract class Executable extends AnnotatedComponent {
     }
 
 }
-

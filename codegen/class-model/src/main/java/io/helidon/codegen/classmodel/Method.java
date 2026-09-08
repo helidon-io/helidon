@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
@@ -34,6 +35,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Model of the method which should be created in the specific type.
  */
+@Api.Stable
 public final class Method extends Executable {
 
     private final Map<String, TypeArgument> declaredTokens;

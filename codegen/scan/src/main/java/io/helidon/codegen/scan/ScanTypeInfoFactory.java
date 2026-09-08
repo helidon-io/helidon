@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.TypeInfoFactoryBase;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -53,6 +54,7 @@ import static java.util.function.Predicate.not;
 /**
  * Factory to analyze processed types and to provide {@link io.helidon.common.types.TypeInfo} for them.
  */
+@Api.Internal
 public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
     // we expect that annotations themselves are not code generated, and can be cached
     private static final Map<TypeName, List<Annotation>> META_ANNOTATION_CACHE = new ConcurrentHashMap<>();

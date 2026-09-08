@@ -17,12 +17,14 @@ package io.helidon.codegen.classmodel;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 
 /**
  * Constructor model.
  */
+@Api.Stable
 public final class Constructor extends Executable {
 
     private Constructor(Builder builder) {

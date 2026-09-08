@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -28,6 +29,7 @@ import io.helidon.common.types.TypeNames;
 /**
  * Field model representation.
  */
+@Api.Stable
 public final class EnumConstant extends AnnotatedComponent {
     private final Content content;
 

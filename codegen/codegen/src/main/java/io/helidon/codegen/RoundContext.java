@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.ModuleTypeInfo;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -31,6 +32,7 @@ import io.helidon.common.types.TypedElementInfo;
  * Context of a single round of code generation.
  * For example the first round may generate types, that require additional code generation.
  */
+@Api.Stable
 public interface RoundContext {
     /**
      * Annotations available in this round, the collection contains only annotations valid for the extension being invoked.

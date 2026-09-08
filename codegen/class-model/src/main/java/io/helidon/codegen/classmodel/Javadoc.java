@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ElementKind;
 
 /**
@@ -40,6 +41,7 @@ import io.helidon.common.types.ElementKind;
  *     <li>everything else</li>
  * </ul>
  */
+@Api.Stable
 public final class Javadoc extends ModelComponent {
 
     private final List<String> content;

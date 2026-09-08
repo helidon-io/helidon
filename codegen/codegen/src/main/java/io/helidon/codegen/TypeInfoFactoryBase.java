@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.Set;
 import io.helidon.codegen.spi.AnnotationMapper;
 import io.helidon.codegen.spi.ElementMapper;
 import io.helidon.codegen.spi.TypeMapper;
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
@@ -38,6 +39,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Common code for type info factories.
  */
+@Api.Internal
 public abstract class TypeInfoFactoryBase {
     private static final Set<TypeName> IGNORED_ANNOTATIONS = Set.of(TypeName.create(SuppressWarnings.class),
                                                                     TypeName.create(Override.class),

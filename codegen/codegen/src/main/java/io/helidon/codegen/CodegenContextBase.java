@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.helidon.codegen.spi.ElementMapper;
 import io.helidon.codegen.spi.ElementMapperProvider;
 import io.helidon.codegen.spi.TypeMapper;
 import io.helidon.codegen.spi.TypeMapperProvider;
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.TypeInfo;
@@ -39,6 +40,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Base of codegen context implementation taking care of the common parts of the API.
  */
+@Api.Internal
 public abstract class CodegenContextBase implements CodegenContext {
     // class -> method name -> element signature
     private final Map<TypeName, Map<String, ElementSignatures>> uniqueNames = new HashMap<>();

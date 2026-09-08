@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package io.helidon.codegen;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.metadata.MetadataConstants;
 
 /**
  * Support for Helidon manifest file, that lists all manifest resources on the classpath.
  */
+@Api.Stable
 public class ManifestResource {
     private final FilerTextResource manifestResource;
     private final List<String> locations;

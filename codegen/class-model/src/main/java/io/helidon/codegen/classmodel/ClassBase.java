@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -37,6 +38,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Abstract class type model. Contains common logic for all class related models.
  */
+@Api.Stable
 public abstract class ClassBase extends AnnotatedComponent {
 
     private final boolean isFinal;
