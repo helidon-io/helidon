@@ -28,7 +28,7 @@ import io.helidon.service.registry.Service;
 /**
  * Declarative gRPC client annotations.
  */
-@Api.Incubating
+@Api.Preview
 public final class RpcClient {
     private RpcClient() {
     }
