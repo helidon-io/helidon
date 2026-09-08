@@ -912,10 +912,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         } catch (SocketWriterException | UncheckedIOException writeException) {
             throw new ServerConnectionException("Failed to write request exception", writeException);
         }
-        flushBeforeClose();
-
         if (status == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);
         }
+
+        flushBeforeClose();
     }
 }
