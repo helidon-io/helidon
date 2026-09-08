@@ -15,6 +15,9 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
@@ -37,20 +40,48 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
     public MicrometerPrometheusFormatterProvider() {
     }
 
+    /**
+     * Returns a formatter, if possible, ignoring the scope-specific arguments.
+     *
+     * @param mediaType media type of the desired output
+     * @param metricsConfig metrics configuration
+     * @param meterRegistry meter registry from which to gather data
+     * @param ignoredScopeTagName ignored; must not be {@code null}
+     * @param ignoredScopeSelection ignored; must not be {@code null}
+     * @param nameSelection meter names to format; empty means no name-based restriction
+     * @return compatible formatter; empty if none
+     * @deprecated Use {@link #formatter(MediaType, MetricsConfig, MeterRegistry, Map, Iterable)}. Scope-specific arguments
+     * are ignored and this method will be removed.
+     */
+    @Override
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
+                                                      MetricsConfig metricsConfig,
+                                                      MeterRegistry meterRegistry,
+                                                      Optional<String> ignoredScopeTagName,
+                                                      Iterable<String> ignoredScopeSelection,
+                                                      Iterable<String> nameSelection) {
+        Objects.requireNonNull(ignoredScopeTagName);
+        Objects.requireNonNull(ignoredScopeSelection);
+        return formatter(mediaType, metricsConfig, meterRegistry, Map.of(), nameSelection);
+    }
+
     @Override
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                       MetricsConfig metricsConfig,
                                                       MeterRegistry meterRegistry,
-                                                      Optional<String> scopeTagName,
-                                                      Iterable<String> scopeSelection,
+                                                      Map<String, Collection<String>> tagSelection,
                                                       Iterable<String> nameSelection) {
+        Objects.requireNonNull(mediaType);
+        Objects.requireNonNull(metricsConfig);
+        Objects.requireNonNull(meterRegistry);
+        Objects.requireNonNull(tagSelection);
+        Objects.requireNonNull(nameSelection);
         return (matches(mediaType, MediaTypes.TEXT_PLAIN) || matches(mediaType, MediaTypes.APPLICATION_OPENMETRICS_TEXT))
                 && MicrometerPrometheusFormatter.prometheusMeterRegistry(meterRegistry).isPresent()
                 ? Optional.of(create(mediaType,
-                                     metricsConfig,
                                      meterRegistry,
-                                     scopeTagName,
-                                     scopeSelection,
+                                     tagSelection,
                                      nameSelection))
                 : Optional.empty();
     }
@@ -60,16 +91,13 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
     }
 
     private static MicrometerPrometheusFormatter create(MediaType mediaType,
-                                                        MetricsConfig metricsConfig,
                                                         MeterRegistry meterRegistry,
-                                                        Optional<String> scopeTagName,
-                                                        Iterable<String> scopeSelection,
+                                                        Map<String, Collection<String>> tagSelection,
                                                         Iterable<String> nameSelection) {
-        MicrometerPrometheusFormatter.Builder builder = MicrometerPrometheusFormatter.builder(meterRegistry)
+        return MicrometerPrometheusFormatter.builder(meterRegistry)
                 .resultMediaType(mediaType)
-                .scopeSelection(scopeSelection)
-                .meterNameSelection(nameSelection);
-        scopeTagName.ifPresent(builder::scopeTagName);
-        return builder.build();
+                .tagSelection(tagSelection)
+                .meterNameSelection(nameSelection)
+                .build();
     }
 }

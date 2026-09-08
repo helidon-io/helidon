@@ -22,12 +22,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.StreamSupport;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
@@ -51,7 +48,6 @@ import io.helidon.service.registry.Services;
 class SystemTagsManagerImpl implements SystemTagsManager {
 
     private final Map<String, String> systemTagPairs = new TreeMap<>();
-    private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for global tags, app, and scope
     private final MetricsFactory metricsFactory;
 
     /*
@@ -60,10 +56,6 @@ class SystemTagsManagerImpl implements SystemTagsManager {
      */
     private final LazyValue<List<Tag>> systemTags;
     private final Set<String> reservedTagNames;
-
-    // tag, if any specified
-    private String scopeTagName;
-    private String defaultScopeValue;
 
     @Service.Inject
     SystemTagsManagerImpl(MetricsFactory metricsFactory) {
@@ -95,16 +87,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                                                               systemTagPairs.put(tagNameToUse, appNameToUse))
                 );
 
-        systemAndScopeTagNames.addAll(systemTagPairs.keySet());
-        metricsConfig.scoping().tagName().ifPresent(scopeTagNameToUse -> {
-            systemAndScopeTagNames.add(scopeTagNameToUse);
-            scopeTagName = scopeTagNameToUse;
-        });
-        defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
-
         Set<String> reservedTagNames = new HashSet<>();
         metricsConfig.appTagName().ifPresent(reservedTagNames::add);
-        metricsConfig.scoping().tagName().ifPresent(reservedTagNames::add);
         this.reservedTagNames = Set.copyOf(reservedTagNames);
 
     }
@@ -118,21 +102,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
-    public Optional<Tag> scopeTag(Optional<String> candidateScope) {
-        return scopeTagName == null
-                ? Optional.empty()
-                : effectiveScope(candidateScope)
-                        .map(sc -> metricsFactory.tagCreate(scopeTagName, sc));
-    }
-
-    @Override
     public Iterable<Tag> withoutSystemTags(Iterable<Tag> tags) {
         return without(tags, systemTagPairs.keySet());
-    }
-
-    @Override
-    public Iterable<Tag> withoutSystemOrScopeTags(Iterable<Tag> tags) {
-        return without(tags, systemAndScopeTagNames);
     }
 
     private Iterable<Tag> without(Iterable<Tag> tags, Collection<String> unwantedTagNames) {
@@ -148,38 +119,6 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return result;
     }
     @Override
-    public Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope) {
-        if (scopeTagName == null) {
-            return tags;
-        }
-        Map<String, Tag> tagsMap = new TreeMap<>();
-
-        if (defaultScopeValue != null) {
-            tagsMap.put(scopeTagName,
-                        metricsFactory.tagCreate(scopeTagName, defaultScopeValue));
-        }
-
-        tags.forEach(tag -> tagsMap.put(tag.key(), // If scope is set in a tag, the tag's value overrides the default in the map.
-                                        tag));
-
-        explicitScope.ifPresent(s -> tagsMap.put(scopeTagName,
-                                                 metricsFactory.tagCreate(scopeTagName, explicitScope.get())));
-
-        return tagsMap.values();
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope) {
-        if (scopeTagName == null) {
-            return tags;
-        }
-        Map<String, String> result = new TreeMap<>();
-        tags.forEach((tag -> result.put(tag.getKey(), tag.getValue())));
-        result.put(scopeTagName, scope);
-        return result.entrySet();
-    }
-
-    @Override
     public Iterable<Tag> displayTags() {
         return Collections.unmodifiableCollection(systemTags.get());
     }
@@ -190,45 +129,9 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
-    public void assignScope(String validScope, Function<Tag, ?> tagSetter) {
-        if (scopeTagName != null) {
-            tagSetter.apply(metricsFactory.tagCreate(scopeTagName, validScope));
-        }
-    }
-
-    @Override
-    public Optional<String> effectiveScope(Optional<String> candidateScope) {
-        return candidateScope.isEmpty() && defaultScopeValue == null
-                ? Optional.empty()
-                : Optional.of(candidateScope.orElse(defaultScopeValue));
-    }
-
-    @Override
-    public Optional<String> effectiveScope(Optional<String> explicitScope, Iterable<Tag> tags) {
-        return explicitScope
-                .or(() -> scopeFromTags(tags))
-                .or(() -> Optional.ofNullable(defaultScopeValue));
-    }
-
-    @Override
-    public Optional<String> scopeTagName() {
-        return Optional.ofNullable(scopeTagName);
-    }
-
-    @Override
     public Collection<String> reservedTagNamesUsed(Collection<String> tagNames) {
         Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
         reservedTagNamesUsed.retainAll(reservedTagNames);
         return reservedTagNamesUsed;
     }
-
-    private Optional<String> scopeFromTags(Iterable<Tag> tags) {
-        return (scopeTagName != null)
-                ? StreamSupport.stream(tags.spliterator(), false)
-                .filter(tag -> tag.key().equals(scopeTagName))
-                .findAny()
-                .map(Tag::value)
-                : Optional.empty();
-    }
-
 }

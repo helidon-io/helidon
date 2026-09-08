@@ -33,6 +33,7 @@ module io.helidon.metrics.api {
     uses io.helidon.metrics.spi.ExemplarService;
     uses io.helidon.metrics.spi.MetricsProgrammaticConfig;
     uses io.helidon.metrics.spi.MetricsFactoryProvider;
+    uses io.helidon.metrics.spi.MeterBuilderCustomizer;
     uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
     uses io.helidon.metrics.api.MetricsFactory;
     uses io.helidon.metrics.spi.MetersProvider;

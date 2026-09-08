@@ -54,6 +54,14 @@ public final class Option {
          * @return whether to merge the nested object into this object
          */
         boolean merge() default false;
+
+        /**
+         * Whether to include this option in generated configuration metadata.
+         * This setting does not affect configuration reading.
+         *
+         * @return whether to include this option in generated configuration metadata
+         */
+        boolean metadata() default true;
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.systemmeters;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -34,10 +35,12 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
@@ -183,6 +186,41 @@ class TestVirtualThreadsMetersConfigs {
         } finally {
             meterRegistry.close();
             provider.close();
+            metricsFactory.close();
+        }
+    }
+
+    @Test
+    void checkRecentPinnedTimerLookupWithCustomizedTags() {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = configuredMetricsFactory(config);
+        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
+        MeterBuilderCustomizer customizer = new MeterBuilderCustomizer() {
+            @Override
+            public void customize(Meter.Builder<?, ?> builder) {
+                builder.addTag(metricsFactory.tagCreate("customized", "true"));
+            }
+        };
+        try {
+            var meterBuilders = provider.meterBuilders(metricsFactory, meterRegistry);
+            meterBuilders.forEach(builder -> customizer.customize(builder.origin(provider.getClass().getName())));
+            Timer.Builder recentPinnedBuilder = meterBuilders.stream()
+                    .filter(builder -> builder.name().equals(METER_NAME_PREFIX + RECENT_PINNED))
+                    .map(Timer.Builder.class::cast)
+                    .findFirst()
+                    .orElseThrow();
+            Timer registeredTimer = meterRegistry.getOrCreate(recentPinnedBuilder);
+
+            Timer foundTimer = provider.findPinned();
+            foundTimer.record(Duration.ofMillis(10));
+
+            assertThat("Pinned timer using customized identity", foundTimer, sameInstance(registeredTimer));
+            assertThat("Customized pinned timer use", registeredTimer.count(), is(1L));
+            assertThat("Customized pinned timer tag", registeredTimer.id().tagsMap(), hasEntry("customized", "true"));
+        } finally {
+            provider.close();
+            meterRegistry.close();
             metricsFactory.close();
         }
     }

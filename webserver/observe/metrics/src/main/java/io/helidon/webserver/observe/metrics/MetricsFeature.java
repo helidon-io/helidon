@@ -15,7 +15,9 @@
  */
 package io.helidon.webserver.observe.metrics;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -27,7 +29,6 @@ import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.http.media.json.JsonSupport;
 import io.helidon.json.JsonObject;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -54,6 +55,7 @@ class MetricsFeature {
      */
     static final String KPI_METER_NAME_PREFIX = "requests";
     private static final String KPI_METER_NAME_PREFIX_WITH_DOT = KPI_METER_NAME_PREFIX + ".";
+    private static final Set<String> LEGACY_ENDPOINT_ALIASES = Set.of("application", "base", "vendor");
 
     private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Status.NOT_FOUND_404)
             .send("Metrics are disabled");
@@ -122,12 +124,10 @@ class MetricsFeature {
 
     Optional<?> output(ServerRequest req,
                        MediaType mediaType,
-                       Iterable<String> scopeSelection,
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           metricsConfig.scoping().tagName(),
-                                                           scopeSelection,
+                                                           Map.of(),
                                                            nameSelection);
 
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -139,12 +139,10 @@ class MetricsFeature {
     }
 
     Optional<?> outputMetadata(MediaType mediaType,
-                       Iterable<String> scopeSelection,
-                       Iterable<String> nameSelection) {
+                               Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           metricsConfig.scoping().tagName(),
-                                                           scopeSelection,
+                                                           Map.of(),
                                                            nameSelection);
 
         return formatter.formatMetadata();
@@ -174,15 +172,13 @@ class MetricsFeature {
 
     private MeterRegistryFormatter chooseFormatter(MeterRegistry meterRegistry,
                                                    MediaType mediaType,
-                                                   Optional<String> scopeTagName,
-                                                   Iterable<String> scopeSelection,
+                                                   Map<String, Collection<String>> tagSelection,
                                                    Iterable<String> nameSelection) {
         Optional<MeterRegistryFormatter> formatter = formatterProviders.stream()
                 .map(provider -> provider.formatter(mediaType,
                                                     metricsConfig,
                                                     meterRegistry,
-                                                    scopeTagName,
-                                                    scopeSelection,
+                                                    tagSelection,
                                                     nameSelection))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -200,12 +196,11 @@ class MetricsFeature {
     }
 
     private void getAll(ServerRequest req, ServerResponse res) {
-        getMatching(req, res, req.query().all("scope", List::of), req.query().all("name", List::of));
+        getMatching(req, res, req.query().all("name", List::of));
     }
 
     private void getMatching(ServerRequest req,
                              ServerResponse res,
-                             Iterable<String> scopeSelection,
                              Iterable<String> nameSelection) {
         MediaType mediaType = bestAccepted(req);
         res.header(HeaderValues.CACHE_NO_CACHE)
@@ -218,7 +213,6 @@ class MetricsFeature {
 
         getOrOptionsMatching(mediaType, req, res, () -> output(req,
                                                           mediaType,
-                                                          scopeSelection,
                                                           nameSelection));
     }
 
@@ -255,38 +249,21 @@ class MetricsFeature {
         if (!observerMetricsConfig.permitAll()) {
             rules.any(SecureHandler.authorize(observerMetricsConfig.roles().toArray(new String[0])));
         }
-        // routing to root of metrics
-        // As of Helidon 4, this is the only path we should need because scope-based or metric-name-based
-        // selection should use query parameters instead of paths.
         rules.get("/", this::getAll)
                 .options("/", this::optionsAll);
 
-        // routing to each scope
-        // As of Helidon 4, users should use /metrics?scope=xyz instead of /metrics/xyz, and
-        // /metrics/?scope=xyz&name=abc instead of /metrics/xyz/abc. These routings are kept
-        // temporarily for backward compatibility.
-
-        Meter.Scope.BUILT_IN_SCOPES
-                .forEach(scope -> {
-                    boolean isScopeEnabled = metricsConfig.isScopeEnabled(scope);
-                    rules.get("/" + scope,
-                              isScopeEnabled ? (req, res) -> getMatching(req, res, Set.of(scope), Set.of())
-                                      : DISABLED_ENDPOINT_HANDLER)
-                            .get("/" + scope + "/{metric}",
-                                 isScopeEnabled ? (req, res) -> getByName(req, res, Set.of(scope)) // should use ?scope=
-                                         : DISABLED_ENDPOINT_HANDLER)
-                            .options("/" + scope,
-                                     isScopeEnabled ? (req, res) -> optionsMatching(req, res, Set.of(scope), Set.of())
-                                             : DISABLED_ENDPOINT_HANDLER)
-                            .options("/" + scope + "/{metric}",
-                                     isScopeEnabled ? (req, res) -> optionsByName(req, res, Set.of(scope))
-                                             : DISABLED_ENDPOINT_HANDLER);
-                });
+        // Retain the former built-in paths as aliases for compatibility, without assigning special semantics to them.
+        LEGACY_ENDPOINT_ALIASES.forEach(alias -> {
+            rules.get("/" + alias, this::getAll)
+                    .get("/" + alias + "/{metric}", this::getByName)
+                    .options("/" + alias, this::optionsAll)
+                    .options("/" + alias + "/{metric}", this::optionsByName);
+        });
     }
 
-    private void getByName(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection) {
+    private void getByName(ServerRequest req, ServerResponse res) {
         String metricName = req.path().pathParameters().get("metric");
-        getMatching(req, res, scopeSelection, Set.of(metricName));
+        getMatching(req, res, Set.of(metricName));
     }
 
     private void postRequestProcessing(PostRequestMetricsSupport prms,
@@ -299,17 +276,16 @@ class MetricsFeature {
     }
 
     private void optionsAll(ServerRequest req, ServerResponse res) {
-        optionsMatching(req, res, req.query().all("scope", List::of), req.query().all("name", List::of));
+        optionsMatching(req, res, req.query().all("name", List::of));
     }
 
-    private void optionsByName(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection) {
+    private void optionsByName(ServerRequest req, ServerResponse res) {
         String metricName = req.path().pathParameters().get("metric");
-        optionsMatching(req, res, scopeSelection, Set.of(metricName));
+        optionsMatching(req, res, Set.of(metricName));
     }
 
     private void optionsMatching(ServerRequest req,
                                  ServerResponse res,
-                                 Iterable<String> scopeSelection,
                                  Iterable<String> nameSelection) {
         MediaType mediaType = bestAcceptedForMetadata(req);
         if (mediaType == null) {
@@ -319,9 +295,7 @@ class MetricsFeature {
             return;
         }
 
-        getOrOptionsMatching(mediaType, req, res, () -> outputMetadata(mediaType,
-                                                                  scopeSelection,
-                                                                  nameSelection));
+        getOrOptionsMatching(mediaType, req, res, () -> outputMetadata(mediaType, nameSelection));
     }
 
     private void setUpDisabledEndpoints(HttpRules rules) {
@@ -335,8 +309,7 @@ class MetricsFeature {
                 .map(provider -> provider.formatter(MediaTypes.TEXT_PLAIN,
                                                     metricsConfig,
                                                     meterRegistry,
-                                                    metricsConfig.scoping().tagName(),
-                                                    List.of(),
+                                                    Map.of(),
                                                     List.of()))
                 .anyMatch(Optional::isPresent);
     }

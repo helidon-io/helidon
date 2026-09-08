@@ -18,11 +18,14 @@ package io.helidon.metrics.api;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
 
 /**
  * No-op implementation of {@link io.helidon.metrics.api.MeterRegistry}.
@@ -36,13 +39,15 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new CopyOnWriteArrayList<>();
     private final MetricsFactory factory;
+    private final List<MeterBuilderCustomizer> meterBuilderCustomizers;
 
-    NoOpMeterRegistry(MetricsFactory factory) {
+    NoOpMeterRegistry(MetricsFactory factory, Collection<MeterBuilderCustomizer> meterBuilderCustomizers) {
         this.factory = factory;
+        this.meterBuilderCustomizers = List.copyOf(meterBuilderCustomizers);
     }
 
-    static Builder builder(NoOpMetricsFactory noOpMetricsFactory) {
-        return new Builder(noOpMetricsFactory);
+    static Builder builder(NoOpMetricsFactory noOpMetricsFactory, Collection<MeterBuilderCustomizer> meterBuilderCustomizers) {
+        return new Builder(noOpMetricsFactory, meterBuilderCustomizers);
     }
 
     @Override
@@ -56,11 +61,6 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     @Override
     public Collection<Meter> meters(Predicate<Meter> filter) {
-        return Set.of();
-    }
-
-    @Override
-    public Iterable<Meter> meters(Iterable<String> scopeSelection) {
         return Set.of();
     }
 
@@ -86,16 +86,6 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
-    public Optional<Meter> remove(Meter.Id id, String scope) {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<Meter> remove(String name, Iterable<Tag> tags, String scope) {
-        return Optional.empty();
-    }
-
-    @Override
     public <M extends Meter> Optional<M> meter(Class<M> mClass, String name, Iterable<Tag> tags) {
         return Optional.empty();
     }
@@ -106,23 +96,17 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
-    public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
+    public boolean isMeterEnabled(String name, Map<String, String> tags) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(tags);
         return true;
     }
 
     @Override
-    public Iterable<String> scopes() {
-        return Set.of();
-    }
-
-    @Override
     public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
-        NoOpMeter.Builder<?, ?> b = (NoOpMeter.Builder<?, ?>) builder;
-        M result = findOrRegister(NoOpMeter.Id.create(b.name(),
-                                                      b.tags()),
-                                  builder);
-        onAddListeners.forEach(listener -> listener.accept(result));
-        return result;
+        Objects.requireNonNull(builder);
+        meterBuilderCustomizers.forEach(customizer -> customizer.customize(builder));
+        return getOrCreateCustomized(builder);
     }
 
     @Override
@@ -142,6 +126,15 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
         return factory;
     }
 
+    private <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreateCustomized(B builder) {
+        NoOpMeter.Builder<?, ?> b = (NoOpMeter.Builder<?, ?>) builder;
+        M result = findOrRegister(NoOpMeter.Id.create(b.name(),
+                                                      b.tags()),
+                                  builder);
+        onAddListeners.forEach(listener -> listener.accept(result));
+        return result;
+    }
+
     private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {
         NoOpMeter.Builder<?, ?> noOpBuilder = (NoOpMeter.Builder<?, ?>) builder;
         // The following cast will always succeed if we create the meter by invoking the builder,
@@ -154,14 +147,16 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     static class Builder implements MeterRegistry.Builder<Builder, NoOpMeterRegistry> {
 
         private final MetricsFactory factory;
+        private final Collection<MeterBuilderCustomizer> meterBuilderCustomizers;
 
-        Builder(NoOpMetricsFactory factory) {
+        Builder(NoOpMetricsFactory factory, Collection<MeterBuilderCustomizer> meterBuilderCustomizers) {
             this.factory = factory;
+            this.meterBuilderCustomizers = meterBuilderCustomizers;
         }
 
         @Override
         public NoOpMeterRegistry build() {
-            return new NoOpMeterRegistry(factory);
+            return new NoOpMeterRegistry(factory, meterBuilderCustomizers);
         }
 
         @Override

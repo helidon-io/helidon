@@ -139,8 +139,7 @@ class GaugeHandler {
                                                                    () -> endpoint.get().gaugeValue())
                                                              .description("Gauge annotation on method gaugeValue()")
                                                              .tags(tags)
-                                                             .baseUnit("bytes")
-                                                             .scope("application"));
+                                                             .baseUnit("bytes"));
 
             serviceSupplier
          */
@@ -156,9 +155,6 @@ class GaugeHandler {
                 .increaseContentPadding()
                 .addContent(".description(")
                 .addContentLiteral(gauge.description())
-                .addContentLine(")")
-                .addContent(".scope(")
-                .addContentLiteral(gauge.scope())
                 .addContentLine(")")
                 .addContent(".baseUnit(")
                 .addContentLiteral(gauge.unit())

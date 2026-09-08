@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,14 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.Optional;
-
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 
 
 class MCounter extends MMeter<io.micrometer.core.instrument.Counter> implements io.helidon.metrics.api.Counter {
 
-    private MCounter(Meter.Id id, io.micrometer.core.instrument.Counter delegate, Builder builder) {
-        super(id, delegate, builder);
-    }
-
-    private MCounter(Meter.Id id, io.micrometer.core.instrument.Counter delegate, Optional<String> scope) {
-        super(id, delegate, scope);
+    private MCounter(Meter.Id id, io.micrometer.core.instrument.Counter delegate) {
+        super(id, delegate);
     }
 
     /**
@@ -48,11 +42,10 @@ class MCounter extends MMeter<io.micrometer.core.instrument.Counter> implements 
      * via a wrapper.
      *
      * @param counter the Micrometer counter
-     * @param scope scope to apply
      * @return new wrapper around the counter
      */
-    static MCounter create(Meter.Id id, io.micrometer.core.instrument.Counter counter, Optional<String> scope) {
-        return new MCounter(id, counter, scope);
+    static MCounter create(Meter.Id id, io.micrometer.core.instrument.Counter counter) {
+        return new MCounter(id, counter);
     }
 
     @Override
@@ -89,7 +82,7 @@ class MCounter extends MMeter<io.micrometer.core.instrument.Counter> implements 
 
         @Override
         public MCounter build(Meter.Id id, io.micrometer.core.instrument.Counter counter) {
-            return new MCounter(id, counter, this);
+            return new MCounter(id, counter);
         }
 
         @Override

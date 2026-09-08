@@ -18,10 +18,8 @@ package io.helidon.metrics.spi;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.service.registry.Services;
 
 /**
@@ -46,19 +44,25 @@ public interface MetricsProgrammaticConfig {
     }
 
     /**
-     * Default tag value to use for the scope tag if none is specified when the meter ID is created.
+     * Returns the retained default scope value; the default implementation returns empty and core metrics ignores any
+     * supplied value.
      *
-     * @return default scope tag value
+     * @return default scope value
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<String> scopeDefaultValue() {
         return Optional.empty();
     }
 
     /**
-     * Name to use for a tag, added to each meter's identity, conveying its scope in output.
+     * Returns the retained scope tag name; the default implementation returns empty and core metrics ignores any supplied
+     * value.
      *
-     * @return the scope tag name
+     * @return scope tag name
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     default Optional<String> scopeTagName() {
         return Optional.empty();
     }
@@ -73,14 +77,13 @@ public interface MetricsProgrammaticConfig {
     }
 
     /**
-     * Returns the reserved tag names (for scope and app).
+     * Returns the reserved tag name for the app, if configured.
      *
      * @return reserved tag names
      */
     default Set<String> reservedTagNames() {
-        return Stream.of(scopeTagName(), appTagName())
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+        return appTagName()
+                .stream()
                 .collect(Collectors.toUnmodifiableSet());
     }
 
@@ -92,19 +95,8 @@ public interface MetricsProgrammaticConfig {
      * @return metrics config with any overrides applied
      */
     default MetricsConfig.Builder apply(MetricsConfig.Builder builder) {
-
-        ScopingConfig.Builder scopingBuilder = builder
-                .scoping()
-                .map(ScopingConfig::builder)
-                .orElseGet(ScopingConfig::builder);
-
-        scopeDefaultValue().ifPresent(scopingBuilder::defaultValue);
-        scopeTagName().ifPresent(scopingBuilder::tagName);
-
         appTagName().ifPresent(builder::appTagName);
-
-        return builder
-                .scoping(scopingBuilder);
+        return builder;
     }
 
     /**
