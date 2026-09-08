@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
@@ -34,6 +35,7 @@ import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_SUPPORT;
  * A provider of parameters when code generating call of methods with annotated parameter, such
  * as HTTP headers, path parameters etc.
  */
+@Api.Preview
 public abstract class AbstractParametersProvider {
     /**
      * Constructor with no side effects.
