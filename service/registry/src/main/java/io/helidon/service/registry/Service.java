@@ -42,7 +42,7 @@ import io.helidon.common.types.TypeName;
  * {@link io.helidon.service.registry.ServiceRegistry} instead. This restriction applies throughout the service lifecycle,
  * including construction, post-construct, business methods, and pre-destroy.
  */
-@Api.Preview
+@Api.Stable
 public final class Service {
     private Service() {
     }

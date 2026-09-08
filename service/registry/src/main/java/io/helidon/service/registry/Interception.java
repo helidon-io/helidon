@@ -29,7 +29,7 @@ import io.helidon.common.Api;
  * Interception annotations and types.
  * This is the entry point for any annotation and type related to interception in Helidon Service Registry.
  */
-@Api.Preview
+@Api.Stable
 public final class Interception {
     private Interception() {
     }
