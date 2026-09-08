@@ -400,12 +400,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 description = e.getMessage() == null ? "Failed to process gRPC request" : e.getMessage();
             }
             if (status.getCode() == Status.Code.RESOURCE_EXHAUSTED) {
-                String debugDescription = description;
-                if (MAX_MESSAGE_SIZE_EXCEEDED.equals(description)) {
-                    debugDescription += ", maximum bytes: " + grpcConfig.maxReadBufferSize()
-                            + ", declared message bytes: " + entityBytesLeft;
-                }
-                LOGGER.log(DEBUG, debugDescription + ", data bytes: " + data.available());
+                LOGGER.log(DEBUG, description
+                        + ", maximum bytes: " + grpcConfig.maxReadBufferSize()
+                        + ", declared message bytes: " + entityBytesLeft
+                        + ", data bytes: " + data.available());
             } else {
                 LOGGER.log(ERROR, description, e);
             }
