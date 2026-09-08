@@ -68,11 +68,13 @@ final class JdbcRepositoryGenerator extends BasePersistenceGenerator {
                                            RepositoryInfo repositoryInfo,
                                            TypeName className,
                                            ClassModel.Builder classModel) {
-        // Entity repository parents request derived entity operations.
-        // JDBC repositories support explicit SQL only.
-        if (!repositoryInfo.interfacesInfo().isEmpty()) {
-            throw new CodegenException("JDBC repositories must use explicitly annotated SQL methods and must not "
-                                               + "extend entity repository interfaces.",
+        // Data.GenericRepository identifies only the entity and identifier types. Every other recognized Data
+        // repository interface declares operations for which JDBC behavior has not been defined.
+        if (repositoryInfo.interfaceNames()
+                .stream()
+                .anyMatch(interfaceName -> !JdbcCodegenTypes.DATA_GENERIC_REPOSITORY.equals(interfaceName))) {
+            throw new CodegenException("A JDBC repository may extend Data.GenericRepository, but it must not extend "
+                                               + "a Data repository interface that declares operations.",
                                        repositoryInfo.interfaceInfo().originatingElementValue());
         }
         JdbcRepositoryClassGenerator.generate(codegenContext,

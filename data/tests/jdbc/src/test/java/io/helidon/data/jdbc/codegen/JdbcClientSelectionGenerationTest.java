@@ -19,6 +19,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Set;
 
@@ -126,6 +127,80 @@ class JdbcClientSelectionGenerationTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("A JDBC repository @Jdbc.Client value must not be blank."));
+    }
+
+    /**
+     * Proves that direct and indirect GenericRepository inheritance supplies entity metadata without requesting
+     * derived repository operations.
+     */
+    @Test
+    void acceptsGenericRepositoryParent() {
+        TestCompiler.Result result = compile("BookRepositories.java", """
+                package example;
+
+                import java.util.List;
+
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+
+                record Book(long id) {
+                }
+
+                interface BookRepository extends Data.GenericRepository<Book, Long> {
+                }
+
+                @Data.Repository
+                @Data.Provider("jdbc")
+                interface Books extends Data.GenericRepository<Book, Long> {
+                    @Jdbc.Statement("SELECT ID FROM BOOK")
+                    List<Book> all();
+                }
+
+                @Data.Repository
+                @Data.Provider("jdbc")
+                interface IndirectBooks extends BookRepository {
+                    @Jdbc.Statement("SELECT ID FROM BOOK")
+                    List<Book> all();
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(Files.exists(result.sourceOutput().resolve("example/Books__Jdbc.java")), is(true));
+        assertThat(Files.exists(result.sourceOutput().resolve("example/IndirectBooks__Jdbc.java")), is(true));
+    }
+
+    /**
+     * Proves that JDBC rejects Data repository parents that declare operations before it attempts to generate their
+     * inherited entity operations.
+     */
+    @Test
+    void rejectsOperationBearingDataRepositoryParent() {
+        for (String repositoryType : List.of("BasicRepository", "CrudRepository", "PageableRepository")) {
+            String repositoryName = "Invalid" + repositoryType;
+            TestCompiler.Result result = compile(repositoryName + ".java", """
+                    package example;
+
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.Jdbc;
+
+                    record Book(long id) {
+                    }
+
+                    @Data.Repository
+                    @Data.Provider("jdbc")
+                    interface %s extends Data.%s<Book, Long> {
+                        @Jdbc.Statement("SELECT ID FROM BOOK")
+                        Book find();
+                    }
+                    """.formatted(repositoryName, repositoryType));
+
+            String diagnostics = String.join("\n", result.diagnostics());
+            assertThat(diagnostics, result.success(), is(false));
+            assertThat(diagnostics,
+                       containsString("A JDBC repository may extend Data.GenericRepository, but it must not extend "
+                                              + "a Data repository interface that declares operations."));
+        }
     }
 
     private static TestCompiler.Result compile(String fileName, String source) {
