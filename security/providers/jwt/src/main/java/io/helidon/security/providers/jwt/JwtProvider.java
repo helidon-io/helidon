@@ -191,13 +191,14 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
     private AuthenticationResponse authenticateToken(String token) {
         SignedJwt signedJwt;
+        Jwt jwt;
         try {
             signedJwt = SignedJwt.parseToken(token);
+            jwt = signedJwt.getJwt();
         } catch (Exception e) {
             //invalid token
             return failOrAbstain("Invalid token" + e);
         }
-        Jwt jwt = signedJwt.getJwt();
         if (verifySignature) {
             JwkKeys keys;
             try {

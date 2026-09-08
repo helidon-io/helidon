@@ -127,6 +127,22 @@ class JwtProviderJwkLoadingTest {
     }
 
     @Test
+    void invalidTypedClaimsDoNotEscapeOrAttemptDynamicLoad() throws IOException {
+        Path keysPath = tempDir.resolve("verify-jwk.json");
+        JwtProvider required = provider(keysPath, false, defaultCircuitBreaker());
+        JwtProvider optional = provider(keysPath, true, defaultCircuitBreaker());
+
+        AuthenticationResponse requiredResponse = required.authenticate(request(invalidTypedClaimToken()));
+        AuthenticationResponse optionalResponse = optional.authenticate(request(invalidTypedClaimToken()));
+
+        assertThat(requiredResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(optionalResponse.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        writeVerificationKeys(keysPath);
+        assertThat(required.authenticate(request(validToken())).status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+    }
+
+    @Test
     void signedTokenWithoutKeyIdDoesNotAttemptDynamicLoad() throws IOException {
         Path keysPath = tempDir.resolve("verify-jwk.json");
         JwtProvider provider = provider(keysPath, false, defaultCircuitBreaker());
@@ -585,6 +601,10 @@ class JwtProviderJwkLoadingTest {
                 .addAudience("audience.application.id")
                 .build();
         return SignedJwt.sign(jwt, SIGN_KEYS.forKeyId("sign-rsa").orElseThrow()).tokenContent();
+    }
+
+    private static String invalidTypedClaimToken() {
+        return "eyJhbGciOiJSUzI1NiIsImtpZCI6InZlcmlmeS1yc2EifQ.eyJzdWIiOiJqb2UiLCJleHAiOiJvb3BzIn0.AA";
     }
 
     private static String unsignedToken(String keyId) {
