@@ -98,6 +98,7 @@ public interface RoundContext {
      * @param mainTrigger         a type that caused this, may be the processor itself, if not bound to any type
      * @param originatingElements possible originating elements  (such as Element in APT, or ClassInfo in classpath scanning)
      */
+    @Api.Internal
     void addGeneratedType(TypeName type, ClassModel.Builder newClass, TypeName mainTrigger, Object... originatingElements);
 
     /**
@@ -111,6 +112,7 @@ public interface RoundContext {
      * @param type type of the generated type
      * @return class model of the new type if any
      */
+    @Api.Internal
     Optional<ClassModel.Builder> generatedType(TypeName type);
 
     /**

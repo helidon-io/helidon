@@ -42,6 +42,7 @@ public interface CodegenFiler {
      *                            (you can use {@link io.helidon.common.types.TypeInfo#originatingElementValue()})
      * @return written path, we expect to always run on local file system
      */
+    @Api.Internal
     Path writeSourceFile(ClassModel classModel, Object... originatingElements);
 
     /**

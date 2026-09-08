@@ -107,6 +107,7 @@ public interface CodegenContext {
      *
      * @return list of mapper
      */
+    @Api.Internal
     List<ElementMapper> elementMappers();
 
     /**
@@ -115,6 +116,7 @@ public interface CodegenContext {
      *
      * @return list of mapper
      */
+    @Api.Internal
     List<TypeMapper> typeMappers();
 
     /**
@@ -123,6 +125,7 @@ public interface CodegenContext {
      *
      * @return list of mapper
      */
+    @Api.Internal
     List<AnnotationMapper> annotationMappers();
 
     /**
