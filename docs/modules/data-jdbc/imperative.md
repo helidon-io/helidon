@@ -1,7 +1,5 @@
 <!--@frontmatter
 description: "Execute JDBC statements with the Helidon JDBC client"
-navigation:
-  icon: i-lucide-terminal
 -->
 # JDBC Client
 
@@ -15,6 +13,12 @@ each operation is created and called.
 Add the runtime dependency described in
 [Helidon Data with JDBC](README.md#maven-coordinates). The annotation processor
 is not required for imperative use.
+
+The examples on this page use the Data JDBC client:
+
+```java
+import io.helidon.data.jdbc.JdbcClient;
+```
 
 ## Creating a Client
 
@@ -102,6 +106,8 @@ final class ContactStore {
 
 The `@default` qualifier matches the configured client name. See
 [Helidon Config](README.md#helidon-config) for other client configurations and
+[Configure Clients in Code](README.md#configure-clients-in-code) when the
+application supplies client configuration without a configuration file. See
 [Local Transactions](README.md#local-transactions) for transaction behavior.
 
 ## Executing Statements
@@ -173,19 +179,28 @@ on the JDBC driver.
 
 ## Results and Resource Ownership
 
-Choose the terminal method from the number of rows the operation expects.
-`one()` requires exactly one row, `optional()` accepts zero or one, and `list()`
-collects every row. Helidon reports a cardinality mismatch with
-`NoResultException` or `NonUniqueResultException`.
+Finish each query with the method that matches the number of rows you expect:
 
-By the time a terminal method returns, the result is fully available and
-Helidon has closed the result set, statement, and connection. The API therefore
-does not expose a stream, cursor, or iterator that remains connected to JDBC
-resources. Helidon does not impose a row limit on `list()`, so constrain large
-results in SQL and use deterministic ordering for paging.
+- Use `one()` when the query must return exactly one row. No rows result in
+  `NoResultException`, and more than one results in `NonUniqueResultException`.
 
-You can safely share a `JdbcClient` between threads. In contrast, the statement,
-generated key, and result stages belong to one operation. Use each stage once
-and do not share it between threads. A failure reported by the JDBC driver
-becomes a `DataException`, while an exception thrown by an application mapper
-reaches the caller unchanged.
+- Use `optional()` when the query can return zero or one row. More than one row
+  results in `NonUniqueResultException`.
+
+- Use `list()` when you want every returned row. Helidon does not impose a row
+  limit, so limit large results in SQL and use deterministic ordering when
+  paging through them.
+
+The value returned by any of these methods is fully available to the
+application. Before returning it, Helidon closes the result set, statement, and
+connection used for the operation. This is why the API does not return a
+stream, cursor, or iterator that remains connected to JDBC resources.
+
+Keep and share the `JdbcClient` itself as needed. Create a new statement chain
+for each operation and finish it with one terminal method. Do not retain or
+share the intermediate statement, generated key, or result stages between
+threads.
+
+A problem reported by the JDBC driver becomes a `DataException`. If an
+application mapper throws an exception, Helidon passes it back to the caller
+unchanged.
