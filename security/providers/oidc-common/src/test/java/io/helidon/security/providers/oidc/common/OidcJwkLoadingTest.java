@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,6 +56,9 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Answers.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class OidcJwkLoadingTest {
     private static final String JWK_JSON = """
@@ -344,6 +348,36 @@ class OidcJwkLoadingTest {
                                  .buildPrototype())
                 .build();
         assertThat(reloadableSigningJwk.tenantLoadingLazy(), is(true));
+    }
+
+    @Test
+    void customTenantConfigClassifiesOnlyRecoverableResourcesAsLazy() {
+        TenantConfig inlineMetadata = mock(TenantConfig.class, CALLS_REAL_METHODS);
+        when(inlineMetadata.oidcMetadataResource())
+                .thenReturn(Optional.of(ResourceConfig.builder().contentPlain("{}").buildPrototype()));
+        assertThat(inlineMetadata.tenantLoadingLazy(), is(false));
+
+        TenantConfig classpathSigningJwk = mock(TenantConfig.class, CALLS_REAL_METHODS);
+        when(classpathSigningJwk.validateJwtWithJwk()).thenReturn(true);
+        when(classpathSigningJwk.tenantSignJwkResource())
+                .thenReturn(Optional.of(ResourceConfig.builder().resourcePath("keys.json").buildPrototype()));
+        when(classpathSigningJwk.tenantSignJwk()).thenReturn(Optional.empty());
+        assertThat(classpathSigningJwk.tenantLoadingLazy(), is(false));
+
+        TenantConfig uriMetadata = mock(TenantConfig.class, CALLS_REAL_METHODS);
+        when(uriMetadata.oidcMetadataResource())
+                .thenReturn(Optional.of(ResourceConfig.builder()
+                                                .uri(URI.create("https://identity.example/metadata"))
+                                                .buildPrototype()));
+        assertThat(uriMetadata.tenantLoadingLazy(), is(true));
+
+        TenantConfig pathSigningJwk = mock(TenantConfig.class, CALLS_REAL_METHODS);
+        when(pathSigningJwk.validateJwtWithJwk()).thenReturn(true);
+        when(pathSigningJwk.tenantSignJwkResource())
+                .thenReturn(Optional.of(ResourceConfig.builder()
+                                                .path(temporaryDirectory.resolve("keys.json"))
+                                                .buildPrototype()));
+        assertThat(pathSigningJwk.tenantLoadingLazy(), is(true));
     }
 
     @Test

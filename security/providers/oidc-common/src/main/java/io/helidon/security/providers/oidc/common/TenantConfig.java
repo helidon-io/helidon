@@ -144,12 +144,12 @@ public interface TenantConfig {
      */
     default boolean tenantLoadingLazy() {
         JsonObject metadata = oidcMetadataJsonObject();
-        boolean metadataLoadingLazy = oidcMetadataResource().isPresent()
+        boolean metadataLoadingLazy = oidcMetadataResource().filter(TenantConfig::isDynamic).isPresent()
                 || (metadata == null && useWellKnown());
         if (metadataLoadingLazy || !validateJwtWithJwk()) {
             return metadataLoadingLazy;
         }
-        if (tenantSignJwkResource().isPresent()) {
+        if (tenantSignJwkResource().filter(TenantConfig::isDynamic).isPresent()) {
             return true;
         }
         if (tenantSignJwk().isPresent() || metadata == null) {
@@ -275,6 +275,10 @@ public interface TenantConfig {
      */
     default Optional<JwkKeys> contentKeyDecryptionKeys() {
         return Optional.empty();
+    }
+
+    private static boolean isDynamic(ResourceConfig resourceConfig) {
+        return resourceConfig.path().isPresent() || resourceConfig.uri().isPresent();
     }
 
     /**
