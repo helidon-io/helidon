@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package io.helidon.builder.codegen.jackson;
 
 import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 import io.helidon.builder.codegen.spi.BuilderCodegenExtensionProvider;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
  * Java {@link java.util.ServiceLoader} provider implementation to add Jackson support to the builder code generator.
  */
+@Api.Internal
 public class JacksonBuilderExtensionProvider implements BuilderCodegenExtensionProvider {
     /**
      * Constructor required by Java {@link java.util.ServiceLoader}.

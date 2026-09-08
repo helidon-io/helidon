@@ -24,6 +24,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Definition of an option that is a provider (i.e. loaded through registry or service loader).
  */
+@Api.Incubating
 @Prototype.Blueprint(detach = true)
 interface OptionProviderBlueprint {
     /**

@@ -28,6 +28,7 @@ import io.helidon.common.types.TypeName;
  * {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.codegen.spi.CodegenExtensionProvider},
  * that code generates builders and implementations for blueprints.
  */
+@Api.Internal
 public class BuilderCodegenProvider implements CodegenExtensionProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

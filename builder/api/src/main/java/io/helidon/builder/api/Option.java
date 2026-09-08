@@ -28,6 +28,7 @@ import io.helidon.common.Api;
 /**
  * Prototype option annotations.
  */
+@Api.Stable
 public final class Option {
     private Option() {
     }

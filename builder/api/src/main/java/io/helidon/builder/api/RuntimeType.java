@@ -16,9 +16,12 @@
 
 package io.helidon.builder.api;
 
+import io.helidon.common.Api;
+
 /**
  * This class holds all types related to runtime types, configured from prototypes.
  */
+@Api.Stable
 public final class RuntimeType {
     private RuntimeType() {
     }

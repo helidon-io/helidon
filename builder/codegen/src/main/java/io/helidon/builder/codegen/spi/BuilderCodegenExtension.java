@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,12 @@ import io.helidon.builder.codegen.PrototypeInfo;
 import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.Api;
 
 /**
  * Extension to modify the builder and prototype that is generated.
  */
+@Api.Incubating
 public interface BuilderCodegenExtension {
     /**
      * An extension can update the prototype information, add annotations to types, add custom methods etc.
