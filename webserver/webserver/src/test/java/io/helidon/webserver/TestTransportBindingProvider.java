@@ -16,10 +16,11 @@
 
 package io.helidon.webserver;
 
+import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -163,12 +164,14 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
     }
 
     private static int bindDatagramSocket(String name) {
-        try {
-            DatagramSocket socket = new DatagramSocket(0, InetAddress.getLoopbackAddress());
+        InetAddress address = InetAddress.getLoopbackAddress();
+        try (ServerSocket tcpSocket = new ServerSocket(0, 50, address)) {
+            // The lifecycle test reuses this port for TCP, so select it from the TCP allocator.
+            DatagramSocket socket = new DatagramSocket(tcpSocket.getLocalPort(), address);
             closeBoundSocket(name);
             BOUND_SOCKETS.put(name, socket);
             return socket.getLocalPort();
-        } catch (SocketException e) {
+        } catch (IOException e) {
             throw new IllegalStateException("Failed to bind test transport socket", e);
         }
     }
