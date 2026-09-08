@@ -66,6 +66,20 @@ OpenTelemetry settings
 </tr>
 <tr>
 <td>
+<a id="resource"></a>
+<a href="io.helidon.telemetry.otelconfig.OpenTelemetryResourceConfig.md">
+<code>resource</code>
+</a>
+</td>
+<td>
+<code>Open<wbr>Telemetry<wbr>Resource<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Resource settings shared by all configured signals</td>
+</tr>
+<tr>
+<td>
 <code>service</code>
 </td>
 <td>

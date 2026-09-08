@@ -83,7 +83,7 @@
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
-        <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
+        <version.lib.opentelemetry.semconv>1.43.0</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry>1.65.0</version.lib.opentelemetry>
         <version.lib.parsson>1.1.9</version.lib.parsson>
         <version.lib.postgresql>42.7.13</version.lib.postgresql>

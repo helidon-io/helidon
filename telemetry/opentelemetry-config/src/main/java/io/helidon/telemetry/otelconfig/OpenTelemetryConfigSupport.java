@@ -24,10 +24,14 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.semconv.ContainerAttributes;
+import io.opentelemetry.semconv.DeploymentAttributes;
 import io.opentelemetry.semconv.ServiceAttributes;
 
 final class OpenTelemetryConfigSupport {
@@ -52,10 +56,7 @@ final class OpenTelemetryConfigSupport {
             var tracingBuilderInfo = tracingConfig.tracingBuilderInfo();
             var sdkTracerProviderBuilder = tracingBuilderInfo.sdkTracerProviderBuilder();
 
-            var attributesBuilder = tracingConfig.tracingBuilderInfo().attributesBuilder();
-            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
-
-            var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
+            var resource = resource(target, tracingConfig.tracingBuilderInfo().attributesBuilder());
             sdkTracerProviderBuilder.setResource(resource);
 
             openTelemetrySdkBuilder.setTracerProvider(sdkTracerProviderBuilder.build());
@@ -66,10 +67,7 @@ final class OpenTelemetryConfigSupport {
             var metricsBuilderInfo = metricsConfig.metricsBuilderInfo();
             var sdkMeterProviderBuilder = metricsBuilderInfo.sdkMeterProviderBuilder();
 
-            var attributesBuilder = metricsConfig.metricsBuilderInfo().attributesBuilder();
-            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
-
-            var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
+            var resource = resource(target, metricsConfig.metricsBuilderInfo().attributesBuilder());
             sdkMeterProviderBuilder.setResource(resource);
 
             openTelemetrySdkBuilder.setMeterProvider(sdkMeterProviderBuilder.build());
@@ -80,10 +78,7 @@ final class OpenTelemetryConfigSupport {
             var loggingBuilderInfo = loggingConfig.loggingBuilderInfo();
             var sdkLoggerProviderBuilder = loggingBuilderInfo.sdkLoggerProviderBuilder();
 
-            var attributesBuilder = loggingConfig.loggingBuilderInfo().attributesBuilder();
-            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
-
-            var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
+            var resource = resource(target, loggingConfig.loggingBuilderInfo().attributesBuilder());
             sdkLoggerProviderBuilder.setResource(resource);
 
             openTelemetrySdkBuilder.setLoggerProvider(sdkLoggerProviderBuilder.build());
@@ -92,6 +87,43 @@ final class OpenTelemetryConfigSupport {
         var sdk = openTelemetrySdkBuilder.build();
         target.openTelemetrySdk(sdk);
         return sdk;
+    }
+
+    private static Resource resource(OpenTelemetryConfig.BuilderBase<?, ?> target,
+                                     AttributesBuilder signalAttributesBuilder) {
+        var resourceConfig = target.resource();
+        var commonAttributes = resourceConfig
+                .flatMap(OpenTelemetryResourceConfig::attributes)
+                .map(AttributesBuilder::build)
+                .orElseGet(Attributes::empty);
+
+        var semanticAttributesBuilder = Attributes.builder()
+                .put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
+        resourceConfig.ifPresent(config -> {
+            config.serviceNamespace().ifPresent(value -> semanticAttributesBuilder.put(ServiceAttributes.SERVICE_NAMESPACE,
+                                                                                        value));
+            config.serviceInstanceId().ifPresent(value -> semanticAttributesBuilder.put(ServiceAttributes.SERVICE_INSTANCE_ID,
+                                                                                         value));
+            config.deploymentEnvironmentName()
+                    .ifPresent(value -> semanticAttributesBuilder.put(DeploymentAttributes.DEPLOYMENT_ENVIRONMENT_NAME,
+                                                                      value));
+            config.containerId().ifPresent(value -> semanticAttributesBuilder.put(ContainerAttributes.CONTAINER_ID,
+                                                                                  value));
+            config.containerImageName()
+                    .ifPresent(value -> semanticAttributesBuilder.put(ContainerAttributes.CONTAINER_IMAGE_NAME, value));
+            if (!config.containerImageTags().isEmpty()) {
+                semanticAttributesBuilder.put(ContainerAttributes.CONTAINER_IMAGE_TAGS, config.containerImageTags());
+            }
+            if (!config.containerImageRepoDigests().isEmpty()) {
+                semanticAttributesBuilder.put(ContainerAttributes.CONTAINER_IMAGE_REPO_DIGESTS,
+                                              config.containerImageRepoDigests());
+            }
+        });
+
+        return Resource.getDefault()
+                .merge(Resource.create(commonAttributes))
+                .merge(Resource.create(signalAttributesBuilder.build()))
+                .merge(Resource.create(semanticAttributesBuilder.build()));
     }
 
     static class BuildDecorator implements Prototype.BuilderDecorator<OpenTelemetryConfig.BuilderBase<?, ?>> {
