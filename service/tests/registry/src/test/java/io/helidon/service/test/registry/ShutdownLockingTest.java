@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -43,6 +44,7 @@ class ShutdownLockingTest {
         CountDownLatch factoryEntered = new CountDownLatch(1);
         CountDownLatch continueFactory = new CountDownLatch(1);
         CountDownLatch shutdownStarted = new CountDownLatch(1);
+        CountDownLatch factoryLookupCompleted = new CountDownLatch(1);
         CountDownLatch completed = new CountDownLatch(2);
         AtomicReference<Throwable> lookupFailure = new AtomicReference<>();
         AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
@@ -51,13 +53,19 @@ class ShutdownLockingTest {
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
                 .addServiceDescriptor(ShutdownLockingTest_LookupServicesFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ShutdownLockingTest_ExistingService__ServiceDescriptor.INSTANCE)
                 .addServiceDescriptor(ShutdownLockingTest_NotYetActive__ServiceDescriptor.INSTANCE)
                 .addServiceDescriptor(ShutdownLockingTest_ShutdownSignal__ServiceDescriptor.INSTANCE)
                 .build();
         ServiceRegistryManager manager = ServiceRegistryManager.create(config);
         ServiceRegistry registry = manager.registry();
-        LookupServicesFactory.prepare(registry, factoryEntered, continueFactory);
-        ShutdownSignal.prepare(shutdownStarted);
+        ExistingService existingService = registry.get(ExistingService.class);
+        LookupServicesFactory.prepare(registry,
+                                      existingService,
+                                      factoryEntered,
+                                      continueFactory,
+                                      factoryLookupCompleted);
+        ShutdownSignal.prepare(shutdownStarted, factoryLookupCompleted);
         registry.get(ShutdownSignal.class);
 
         Thread lookupThread = Thread.ofVirtual()
@@ -98,15 +106,21 @@ class ShutdownLockingTest {
     @Service.Singleton
     static class LookupServicesFactory implements Service.ServicesFactory<FactoryProduct> {
         private static volatile ServiceRegistry registry;
+        private static volatile ExistingService existingService;
         private static volatile CountDownLatch factoryEntered;
         private static volatile CountDownLatch continueFactory;
+        private static volatile CountDownLatch factoryLookupCompleted;
 
         static void prepare(ServiceRegistry registry,
+                            ExistingService existingService,
                             CountDownLatch factoryEntered,
-                            CountDownLatch continueFactory) {
+                            CountDownLatch continueFactory,
+                            CountDownLatch factoryLookupCompleted) {
             LookupServicesFactory.registry = registry;
+            LookupServicesFactory.existingService = existingService;
             LookupServicesFactory.factoryEntered = factoryEntered;
             LookupServicesFactory.continueFactory = continueFactory;
+            LookupServicesFactory.factoryLookupCompleted = factoryLookupCompleted;
         }
 
         @Override
@@ -119,10 +133,21 @@ class ShutdownLockingTest {
                 throw new AssertionError(e);
             }
 
-            registry.firstActive(ServiceRegistry.class);
-            assertThrows(ScopeNotActiveException.class, () -> registry.get(NotYetActive.class));
+            try {
+                assertThat("existing service available during shutdown",
+                           registry.firstActive(ExistingService.class).orElseThrow(),
+                           sameInstance(existingService));
+                assertThrows(ScopeNotActiveException.class, () -> registry.get(NotYetActive.class));
+            } finally {
+                factoryLookupCompleted.countDown();
+            }
             return List.of(Service.QualifiedInstance.create(new FactoryProduct() { }, Set.of()));
         }
+    }
+
+    @Service.Singleton
+    @Service.RunLevel(Service.RunLevel.NORMAL - 1)
+    static class ExistingService {
     }
 
     @Service.Singleton
@@ -133,14 +158,24 @@ class ShutdownLockingTest {
     @Service.RunLevel(Service.RunLevel.NORMAL + 1)
     static class ShutdownSignal {
         private static volatile CountDownLatch shutdownStarted = new CountDownLatch(0);
+        private static volatile CountDownLatch factoryLookupCompleted = new CountDownLatch(0);
 
-        static void prepare(CountDownLatch shutdownStarted) {
+        static void prepare(CountDownLatch shutdownStarted, CountDownLatch factoryLookupCompleted) {
             ShutdownSignal.shutdownStarted = shutdownStarted;
+            ShutdownSignal.factoryLookupCompleted = factoryLookupCompleted;
         }
 
         @Service.PreDestroy
         void signalShutdown() {
             shutdownStarted.countDown();
+            try {
+                assertThat("factory lookup completed during shutdown",
+                           factoryLookupCompleted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
+                           is(true));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+            }
         }
     }
 }
