@@ -106,7 +106,6 @@
         <version.lib.maven.plugin.api>3.9.15</version.lib.maven.plugin.api>
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
         <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
-        <version.lib.groovy>2.4.16</version.lib.groovy>
         <version.lib.nimbus.jose.jwt>10.4</version.lib.nimbus.jose.jwt>
         <!--
         !Version statement! - end
@@ -129,7 +128,7 @@
         <version.plugin.helidon-build-tools>4.0.26</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.install>3.1.2</version.plugin.install>
-        <version.plugin.invoker>3.2.2</version.plugin.invoker>
+        <version.plugin.invoker>3.10.1</version.plugin.invoker>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>${version.lib.jandex}</version.plugin.jandex>
         <version.plugin.jar>3.3.0</version.plugin.jar>
@@ -893,13 +892,6 @@
                             <goal>install</goal>
                         </goals>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.codehaus.groovy</groupId>
-                            <artifactId>groovy</artifactId>
-                            <version>${version.lib.groovy}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.antlr</groupId>
@@ -1447,6 +1439,31 @@
             <modules>
                 <module>tests</module>
             </modules>
+        </profile>
+        <profile>
+            <id>invoker-split-repository</id>
+            <activation>
+                <property>
+                    <name>aether.enhancedLocalRepository.split</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-invoker-plugin</artifactId>
+                            <configuration>
+                                <properties>
+                                    <aether.enhancedLocalRepository.split>true</aether.enhancedLocalRepository.split>
+                                    <aether.enhancedLocalRepository.localPrefix>${aether.enhancedLocalRepository.localPrefix}</aether.enhancedLocalRepository.localPrefix>
+                                </properties>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
         <profile>
             <id>javadoc</id>
