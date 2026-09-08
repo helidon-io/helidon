@@ -38,7 +38,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Abstract class type model. Contains common logic for all class related models.
  */
-@Api.Stable
+@Api.Internal
 public abstract class ClassBase extends AnnotatedComponent {
 
     private final boolean isFinal;

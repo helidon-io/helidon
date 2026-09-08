@@ -31,7 +31,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Annotation parameter model.
  */
-@Api.Stable
+@Api.Internal
 public final class AnnotationParameter extends CommonComponent {
 
     private final Set<TypeName> importedTypes;

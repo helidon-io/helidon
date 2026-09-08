@@ -25,7 +25,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Objects which describes exception throws configuration.
  */
-@Api.Stable
+@Api.Internal
 public class Throws extends DescribableComponent {
 
     private Throws(Builder builder) {

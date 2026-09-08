@@ -25,7 +25,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Objects which describes return type configuration.
  */
-@Api.Stable
+@Api.Internal
 public final class Returns extends DescribableComponent {
 
     private Returns(Builder builder) {

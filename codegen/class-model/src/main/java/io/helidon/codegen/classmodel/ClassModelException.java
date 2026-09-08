@@ -20,7 +20,7 @@ import io.helidon.common.Api;
 /**
  * Exception message which corresponds to the error in class model creation.
  */
-@Api.Stable
+@Api.Internal
 public class ClassModelException extends RuntimeException {
 
     ClassModelException(String message) {

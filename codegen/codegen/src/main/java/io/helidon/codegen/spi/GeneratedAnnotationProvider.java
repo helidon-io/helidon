@@ -23,7 +23,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Service provider interface to provide customization of generated annotation.
  */
-@Api.Stable
+@Api.Internal
 public interface GeneratedAnnotationProvider {
     /**
      * Create a generated annotation.

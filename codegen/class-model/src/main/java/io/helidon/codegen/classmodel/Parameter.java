@@ -27,7 +27,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Method parameter model.
  */
-@Api.Stable
+@Api.Internal
 public final class Parameter extends AnnotatedComponent {
 
     private final boolean vararg;

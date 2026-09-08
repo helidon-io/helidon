@@ -31,7 +31,7 @@ import io.helidon.common.types.TypeName;
  * @see io.helidon.codegen.spi.ElementMapperProvider
  * @see io.helidon.codegen.spi.TypeMapperProvider
  */
-@Api.Stable
+@Api.Internal
 public interface CodegenProvider {
     /**
      * Configuration options that are supported.

@@ -44,7 +44,7 @@ import io.helidon.common.types.TypeName;
  *     {@link Builder#addField(Field)} to add record components, as non-static fields are not supported in records</li>
  * </ul>
  */
-@Api.Stable
+@Api.Internal
 public final class ClassModel extends ClassBase {
 
     /**

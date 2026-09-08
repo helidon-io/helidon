@@ -22,7 +22,7 @@ import io.helidon.common.Api;
 /**
  * Code processing and generation extension.
  */
-@Api.Stable
+@Api.Internal
 public interface CodegenExtension {
     /**
      * Process a round of code analysis and generation.

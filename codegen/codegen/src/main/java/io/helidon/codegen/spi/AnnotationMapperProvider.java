@@ -23,7 +23,7 @@ import io.helidon.common.Api;
  * {@link java.util.ServiceLoader} provider interface for annotation mapping.
  * This provider is used to load all mappers accessible through {@link io.helidon.codegen.CodegenContext#annotationMappers()}.
  */
-@Api.Stable
+@Api.Internal
 public interface AnnotationMapperProvider extends CodegenProvider {
     /**
      * Create an annotation mapper based on provided options.

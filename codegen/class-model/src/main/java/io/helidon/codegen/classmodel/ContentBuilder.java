@@ -33,7 +33,7 @@ import io.helidon.common.types.TypedElementInfo;
  * @see io.helidon.codegen.classmodel.Constructor
  * @see io.helidon.codegen.classmodel.Field
  */
-@Api.Stable
+@Api.Internal
 public interface ContentBuilder<T extends ContentBuilder<T>> {
     /**
      * Set new content.

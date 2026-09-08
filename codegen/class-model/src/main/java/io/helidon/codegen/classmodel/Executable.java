@@ -33,7 +33,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Executable base, used by method and constructor.
  */
-@Api.Stable
+@Api.Internal
 public abstract class Executable extends AnnotatedComponent {
 
     private final Content content;

@@ -41,7 +41,7 @@ import io.helidon.common.types.ElementKind;
  *     <li>everything else</li>
  * </ul>
  */
-@Api.Stable
+@Api.Internal
 public final class Javadoc extends ModelComponent {
 
     private final List<String> content;

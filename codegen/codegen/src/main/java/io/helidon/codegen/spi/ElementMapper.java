@@ -25,7 +25,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Maps (or removes) elements.
  */
-@Api.Stable
+@Api.Internal
 public interface ElementMapper {
     /**
      * Check if the element is supported.

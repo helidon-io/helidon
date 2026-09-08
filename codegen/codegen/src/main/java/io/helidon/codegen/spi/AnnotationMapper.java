@@ -26,7 +26,7 @@ import io.helidon.common.types.ElementKind;
 /**
  * Maps annotation from a single annotation instance to zero or more annotation instances.
  */
-@Api.Stable
+@Api.Internal
 public interface AnnotationMapper {
     /**
      * Check if the annotation is supported.

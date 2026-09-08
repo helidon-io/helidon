@@ -35,7 +35,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Model of the method which should be created in the specific type.
  */
-@Api.Stable
+@Api.Internal
 public final class Method extends Executable {
 
     private final Map<String, TypeArgument> declaredTokens;

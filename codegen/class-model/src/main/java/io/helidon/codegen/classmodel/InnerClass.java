@@ -20,7 +20,7 @@ import io.helidon.common.Api;
 /**
  * Inner class model.
  */
-@Api.Stable
+@Api.Internal
 public final class InnerClass extends ClassBase {
 
     //Collected directly specified imports when building this class

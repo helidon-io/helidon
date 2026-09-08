@@ -23,7 +23,7 @@ import io.helidon.common.Api;
  * {@link java.util.ServiceLoader} provider interface for type mapping.
  * This provider is used to load all mappers accessible through {@link io.helidon.codegen.CodegenContext#typeMappers()}.
  */
-@Api.Stable
+@Api.Internal
 public interface TypeMapperProvider extends CodegenProvider {
     /**
      * Create a type mapper based on provided options.

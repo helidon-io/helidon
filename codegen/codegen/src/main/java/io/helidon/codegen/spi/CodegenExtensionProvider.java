@@ -25,7 +25,7 @@ import io.helidon.common.types.TypeName;
  * Each implementation will be called with types that match its declared {@link #supportedAnnotations()} and
  * {@link #supportedAnnotationPackages()}.
  */
-@Api.Stable
+@Api.Internal
 public interface CodegenExtensionProvider extends CodegenProvider {
     /**
      * Create a new instance of the extension provider.

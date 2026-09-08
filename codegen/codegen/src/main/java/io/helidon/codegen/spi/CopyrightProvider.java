@@ -22,7 +22,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Extension point to customize copyright headers for generated types.
  */
-@Api.Stable
+@Api.Internal
 public interface CopyrightProvider {
     /**
      * Create a copyright header, including comment begin/end, or line comments.

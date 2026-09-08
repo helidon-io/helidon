@@ -33,7 +33,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Model of the annotation.
  */
-@Api.Stable
+@Api.Internal
 public final class Annotation extends CommonComponent {
 
     private final List<AnnotationParameter> parameters;

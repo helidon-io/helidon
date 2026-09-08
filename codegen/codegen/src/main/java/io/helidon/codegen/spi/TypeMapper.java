@@ -27,7 +27,7 @@ import io.helidon.common.types.TypeInfo;
  * This mapper can be used to handle complex changes to a definition of a type, such as combining
  * multiple annotations into a single one.
  */
-@Api.Stable
+@Api.Internal
 public interface TypeMapper {
     /**
      * Check if the type is supported.

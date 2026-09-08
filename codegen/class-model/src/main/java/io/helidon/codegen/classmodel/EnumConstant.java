@@ -29,7 +29,7 @@ import io.helidon.common.types.TypeNames;
 /**
  * Field model representation.
  */
-@Api.Stable
+@Api.Internal
 public final class EnumConstant extends AnnotatedComponent {
     private final Content content;
 

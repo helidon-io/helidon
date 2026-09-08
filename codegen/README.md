@@ -25,6 +25,9 @@ This top level module contains the following modules:
 - `compiler` - wrapper around Java compiler that is running within the current VM
 - `helidon-copyright` - Helidon specific implementation of copyright handler, used by Helidon project itself to generate sources
 
+> **Note:** The Codegen SPI and class-model APIs are internal. We plan to redesign this area before exposing it as a
+> supported extension API.
+
 ## Codegen abstraction (module `helidon-codegen`)
 
 Codegen provides types that each code generation implementation can code against, without the need to hard code against

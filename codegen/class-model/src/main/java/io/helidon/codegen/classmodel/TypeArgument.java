@@ -30,7 +30,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Generic type argument model.
  */
-@Api.Stable
+@Api.Internal
 public final class TypeArgument extends Type implements TypeName {
 
     private final TypeName token;

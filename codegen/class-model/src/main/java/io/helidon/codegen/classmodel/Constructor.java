@@ -24,7 +24,7 @@ import io.helidon.common.types.ElementKind;
 /**
  * Constructor model.
  */
-@Api.Stable
+@Api.Internal
 public final class Constructor extends Executable {
 
     private Constructor(Builder builder) {
