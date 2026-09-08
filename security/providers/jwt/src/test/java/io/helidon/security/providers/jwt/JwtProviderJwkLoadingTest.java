@@ -52,6 +52,7 @@ import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkRSA;
+import io.helidon.security.util.TokenHandler;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -85,6 +86,20 @@ class JwtProviderJwkLoadingTest {
                    is("JWT verification keys are temporarily unavailable"));
         assertThat(response.responseHeaders().get("WWW-Authenticate"),
                    is(List.of("Bearer")));
+    }
+
+    @Test
+    void customTokenHandlerUsesServiceUnavailableForMissingDynamicPath() {
+        Path keysPath = tempDir.resolve("missing-jwk.json");
+        JwtProvider provider = providerBuilder(keysPath, false, defaultCircuitBreaker())
+                .atnTokenHandler(TokenHandler.forHeader("X-JWT"))
+                .build();
+
+        AuthenticationResponse response = provider.authenticate(request("X-JWT", validToken()));
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElseThrow(), is(503));
+        assertThat(response.responseHeaders().isEmpty(), is(true));
     }
 
     @Test
@@ -632,9 +647,13 @@ class JwtProviderJwkLoadingTest {
     }
 
     private static ProviderRequest request(String token) {
+        return request("Authorization", "bearer " + token);
+    }
+
+    private static ProviderRequest request(String header, String token) {
         ProviderRequest request = mock(ProviderRequest.class);
         SecurityEnvironment environment = SecurityEnvironment.builder()
-                .header("Authorization", "bearer " + token)
+                .header(header, token)
                 .build();
         when(request.env()).thenReturn(environment);
         return request;

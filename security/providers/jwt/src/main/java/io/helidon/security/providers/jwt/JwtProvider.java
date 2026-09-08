@@ -97,6 +97,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
     private final boolean propagate;
     private final boolean allowImpersonation;
     private final boolean verifySignature;
+    private final boolean useBearerChallenge;
     private final SubjectType subjectType;
     private final TokenHandler atnTokenHandler;
     private final TokenHandler defaultTokenHandler;
@@ -118,6 +119,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         this.authenticate = builder.authenticate;
         this.propagate = builder.propagate && builder.outboundConfig.targets().size() > 0;
         this.allowImpersonation = builder.allowImpersonation;
+        this.useBearerChallenge = builder.useBearerChallenge;
         this.subjectType = builder.subjectType;
         this.atnTokenHandler = builder.atnTokenHandler;
         this.outboundConfig = builder.outboundConfig;
@@ -393,10 +395,15 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                     .description(message)
                     .build();
         }
-        return AuthenticationResponse.builder()
+        var builder = AuthenticationResponse.builder()
                 .status(AuthenticationResponse.SecurityStatus.FAILURE)
-                .responseHeader("WWW-Authenticate", "Bearer")
-                .description(message)
+                .description(message);
+        if (useBearerChallenge) {
+            return builder.statusCode(401)
+                    .responseHeader("WWW-Authenticate", "Bearer")
+                    .build();
+        }
+        return builder.statusCode(503)
                 .build();
     }
 
@@ -741,6 +748,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         private boolean propagate = true;
         private boolean allowImpersonation = false;
         private boolean allowUnsigned = false;
+        private boolean useBearerChallenge = true;
         private SubjectType subjectType = SubjectType.USER;
         private TokenHandler atnTokenHandler = TokenHandler.builder()
                 .tokenHeader("Authorization")
@@ -905,6 +913,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         @ConfiguredOption(key = "atn-token.handler")
         public Builder atnTokenHandler(TokenHandler tokenHandler) {
             this.atnTokenHandler = tokenHandler;
+            this.useBearerChallenge = false;
             return this;
         }
 

@@ -172,8 +172,9 @@ class HostHeaderTenantDiscoveryTest {
     void unavailableTenantFailsRequiredAuthenticationAndOpensCircuit() {
         try (MockIdpServer idp = new MockIdpServer()) {
             idp.metadataAvailable(false);
-            OidcProvider provider = oidcProvider(oidcProviderConfig(idp.identityUri(),
-                                                                    oneAttemptLoaderConfig()));
+            Map<String, String> config = new HashMap<>(oneAttemptLoaderConfig());
+            config.put("header-use", "true");
+            OidcProvider provider = oidcProvider(oidcProviderConfig(idp.identityUri(), config));
 
             AuthenticationResponse first = provider.authenticate(providerRequest("default.example.test"));
             AuthenticationResponse second = provider.authenticate(providerRequest("default.example.test"));
@@ -201,11 +202,9 @@ class HostHeaderTenantDiscoveryTest {
             AuthenticationResponse first = requiredProvider.authenticate(providerRequest("default.example.test"));
             AuthenticationResponse second = requiredProvider.authenticate(providerRequest("default.example.test"));
 
-            assertUnauthorized(first, "first unavailable JWK request");
-            assertUnauthorized(second, "open JWK circuit request");
-            assertThat("unavailable JWK response challenge",
-                       first.responseHeaders().get(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
-                       is(List.of("Bearer")));
+            assertServiceUnavailable(first, "first unavailable JWK request");
+            assertServiceUnavailable(second, "open JWK circuit request");
+            assertThat("unavailable JWK response headers", first.responseHeaders().isEmpty(), is(true));
             assertThat("only the first required request should fetch JWK", idp.jwkHits(), is(1));
 
             Map<String, String> optionalConfig = new HashMap<>(requiredConfig);
@@ -308,7 +307,7 @@ class HostHeaderTenantDiscoveryTest {
             AuthenticationResponse recovered = provider.authenticate(providerRequest("default.example.test"));
             provider.authenticate(providerRequest("default.example.test"));
 
-            assertUnauthorized(unavailable, "unavailable tenant request");
+            assertServiceUnavailable(unavailable, "unavailable tenant request");
             assertUnauthorized(recovered, "recovered tenant request without credentials");
             assertThat("successful tenant load should be cached", idp.wellKnownHits(), is(2));
         }
@@ -730,6 +729,11 @@ class HostHeaderTenantDiscoveryTest {
     private static void assertUnauthorized(AuthenticationResponse response, String label) {
         assertThat(label + " status", response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(label + " status code", response.statusCode().orElseThrow(), is(401));
+    }
+
+    private static void assertServiceUnavailable(AuthenticationResponse response, String label) {
+        assertThat(label + " status", response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(label + " status code", response.statusCode().orElseThrow(), is(503));
     }
 
     private static Config oidcProviderConfig(URI identityUri) {

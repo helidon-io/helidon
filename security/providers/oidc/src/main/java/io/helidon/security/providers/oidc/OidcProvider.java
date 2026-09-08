@@ -267,11 +267,15 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                     .description("Tenant configuration is temporarily unavailable")
                     .build();
         }
-        return AuthenticationResponse.builder()
+        var builder = AuthenticationResponse.builder()
                 .status(SecurityResponse.SecurityStatus.FAILURE)
-                .statusCode(Status.UNAUTHORIZED_401.code())
-                .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), "Bearer")
-                .description("Tenant configuration is temporarily unavailable")
+                .description("Tenant configuration is temporarily unavailable");
+        if (oidcConfig.useHeader()) {
+            return builder.statusCode(Status.UNAUTHORIZED_401.code())
+                    .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), "Bearer")
+                    .build();
+        }
+        return builder.statusCode(Status.SERVICE_UNAVAILABLE_503.code())
                 .build();
     }
 
