@@ -243,8 +243,9 @@ Annotations:
 
 `Prototype.Sealed` is an explicit opt-in on each blueprint and is not inherited. A sealed prototype must be a leaf
 prototype; code generation rejects a child that extends it. Adding `Prototype.Sealed` to an existing blueprint is a source
-compatibility change for consumers that implement the generated prototype interface, so it should normally be used only for
-new APIs or during a major-version change.
+and binary compatibility change for consumers that implement the generated prototype interface. A previously compiled
+implementation may fail to load with `IncompatibleClassChangeError`, so sealing should normally be used only for new APIs or
+during a major-version change.
 
 Interfaces:
 

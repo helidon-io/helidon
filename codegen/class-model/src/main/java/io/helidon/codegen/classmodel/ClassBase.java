@@ -740,7 +740,7 @@ public abstract class ClassBase extends AnnotatedComponent {
          * @return updated builder instance
          */
         public B addPermittedSubclass(TypeName permittedSubclass) {
-            permittedSubclasses.add(Type.fromTypeName(permittedSubclass));
+            permittedSubclasses.add(Type.fromTypeName(permittedSubclass.genericTypeName()));
             return identity();
         }
 

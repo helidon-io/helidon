@@ -92,11 +92,14 @@ class ClassModelTest {
         var sw = new StringWriter();
         TypeName shadeType = TypeName.create("com.acme.Shade");
         TypeName darkType = TypeName.create("com.acme.Shade.Dark");
+        TypeName parameterizedDarkType = TypeName.builder(darkType)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
         ClassModel model = ClassModel.builder()
                 .type(shadeType)
                 .classType(ElementKind.INTERFACE)
                 .isSealed(true)
-                .addPermittedSubclass(darkType)
+                .addPermittedSubclass(parameterizedDarkType)
                 .addInnerClass(builder -> builder
                         .name("Dark")
                         .isFinal(true)
