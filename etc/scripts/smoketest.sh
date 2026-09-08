@@ -220,7 +220,7 @@ test_archetype(){
   printf "\nINFO: %s %s - Generating project" "${application}" "${flavor}"
   printf "\n*******************************************\n\n"
 
-  ${HCMD} init --batch --version "${VERSION}" --flavor "${flavor}" --archetype "${application}"
+  ${HCMD} init --reset --url "file:///${WS_DIR}/archetypes/archetypes/target/cli-data/" --batch --version "${VERSION}" --flavor "${flavor}" --archetype "${application}"
 
   printf "\n*******************************************"
   printf "\nINFO: %s - Building jar" "${ARCHETYPE}"
