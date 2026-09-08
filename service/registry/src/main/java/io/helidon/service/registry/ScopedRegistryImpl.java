@@ -73,7 +73,12 @@ class ScopedRegistryImpl implements ScopedRegistry {
      * at the time the scope is active and instances can be created within it.
      */
     public void activate() {
-        state = RegistryState.ACTIVE;
+        try {
+            serviceProvidersLock.writeLock().lock();
+            state = RegistryState.ACTIVE;
+        } finally {
+            serviceProvidersLock.writeLock().unlock();
+        }
     }
 
     @Override
