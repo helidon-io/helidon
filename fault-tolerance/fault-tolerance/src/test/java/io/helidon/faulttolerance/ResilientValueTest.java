@@ -437,6 +437,7 @@ class ResilientValueTest {
                                                                      release.await();
                                                                      return "loaded";
                                                                  } catch (InterruptedException e) {
+                                                                     Thread.currentThread().interrupt();
                                                                      throw new SupplierException(e);
                                                                  }
                                                              },

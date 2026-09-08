@@ -363,6 +363,38 @@ class RetryContextTest {
     }
 
     @Test
+    void testWorkerInterruptionThroughTimeoutDoesNotInterruptInvokingThread() {
+        InterruptedException interrupted = new InterruptedException("worker interrupted");
+        AtomicInteger calls = new AtomicInteger();
+        var syncSupplier = SupplierHelper.toSyncSupplier(() -> {
+            calls.incrementAndGet();
+            return CompletableFuture.<Integer>failedFuture(interrupted);
+        }, 1, TimeUnit.SECONDS);
+        Timeout timeout = Timeout.builder()
+                .timeout(Duration.ofSeconds(1))
+                .currentThread(true)
+                .build();
+        Retry retry = Retry.builder()
+                .retryPolicy(Retry.DelayingRetryPolicy.noDelay(3))
+                .overallTimeout(Duration.ofSeconds(10))
+                .build();
+
+        try {
+            RetryException exception = assertThrows(RetryException.class,
+                                                    () -> retry.invoke(_ -> timeout.invoke(syncSupplier)));
+
+            assertThat(exception.outcome().termination(), is(RetryOutcome.Termination.RETRIES_EXHAUSTED));
+            assertThat(exception.outcome().attempts(), is(3));
+            assertThat(calls.get(), is(3));
+            assertThat("An interruption reported by another thread must not interrupt the caller",
+                       Thread.currentThread().isInterrupted(),
+                       is(false));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
     void testLegacyFailuresAreBounded() {
         int calls = 100;
         Retry retry = Retry.builder()
