@@ -283,6 +283,24 @@ class Http2HeadersTest {
     }
 
     @Test
+    void testRejectsPseudoHeaderAddedAfterCreation() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        Http2Headers http2Headers = Http2Headers.create(headers)
+                .method(Method.GET)
+                .scheme("https")
+                .path("/")
+                .authority("example.com");
+        headers.add(Http2Headers.METHOD_NAME, Method.GET.text());
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        BufferData buffer = BufferData.growing(32);
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> http2Headers.write(dynamicTable, Http2HuffmanEncoder.create(), buffer));
+        assertThat(dynamicTable.currentTableSize(), is(0));
+        assertThat(buffer.available(), is(0));
+    }
+
+    @Test
     void testFailedHeaderEncodingDoesNotPoisonNextHeaderBlock() {
         DynamicTable outboundTable = DynamicTable.create(Http2Settings.create());
         Http2HuffmanEncoder encoder = Http2HuffmanEncoder.create();

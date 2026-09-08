@@ -953,7 +953,7 @@ public class Http2Headers {
         int index = table.findIndex(name, value);
         HeaderApproach approach;
 
-        if ((flags & VALIDATE_NAME) != 0 && index <= 0) {
+        if ((flags & VALIDATE_NAME) != 0) {
             String lowerCaseName = name.lowerCase();
             if (name.index() < 0 || lowerCaseName.isEmpty() || lowerCaseName.charAt(0) == ':') {
                 HttpToken.validate(lowerCaseName);
