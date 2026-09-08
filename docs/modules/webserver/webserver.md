@@ -443,10 +443,41 @@ example:
 | **DELETE**         | `.delete(handler)`                                                 |
 | **TRACE**          | `.trace(handler)`                                                  |
 | **OPTIONS**        | `.options(handler)`                                                |
+| **QUERY**          | `.route(Method.QUERY, handler)`                                    |
 | *any method*       | `.any(handler)`                                                    |
 | *multiple methods* | `.route(Method.predicate(Method.GET, Method.POST), path, handler)` |
 | *custom method*    | `.route(Method.create("CUSTOM"), handler)`                         |
 <!--@mdc :: -->
+
+#### QUERY Requests
+
+The [QUERY method](https://www.rfc-editor.org/rfc/rfc10008.html) is safe and
+idempotent. Its request content and `Content-Type` together define the query,
+so a QUERY request must include a `Content-Type`. Helidon transports the method,
+content, and metadata and routes the request. The application remains
+responsible for ensuring the operation is actually safe and idempotent, checking
+that the content is consistent with its declared type, and selecting responses
+such as `415 Unsupported Media Type`, `422 Unprocessable Content`, or
+`406 Not Acceptable` when appropriate.
+
+An application can advertise the query formats supported by a resource using
+`res.headers().addAcceptQueries(...)`. A WebClient can read the advertised media
+types using `response.headers().acceptQueries()`. `Accept-Query` is an
+[RFC 9651 Structured Field](https://www.rfc-editor.org/rfc/rfc9651.html) List,
+not an `Accept`-style field. Each list member is a Token or String containing a
+media range without parameters; media type parameters are Structured Field
+parameters with Token or String values. Those two parameter value forms have
+the same semantics. Only `*/*` and `type/*` wildcards are supported, member
+order is insignificant, and the advertised value applies to the resource path
+regardless of the URI query component. Applications which parse or produce the
+field must use RFC 9651's strict syntax.
+
+QUERY responses are cacheable, but a cache which reuses them for later QUERY
+requests must include the request content and related metadata in its cache key.
+Cache normalization must preserve the resource's query semantics. Helidon does
+not construct that application-specific key. Browser clients use a CORS
+preflight for QUERY because it is not a CORS-safelisted method, so applications
+must allow QUERY explicitly when cross-origin access is intended.
 
 ### Path Matcher Routing
 

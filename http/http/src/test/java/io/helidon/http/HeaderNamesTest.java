@@ -42,6 +42,7 @@ class HeaderNamesTest {
     private static final Class<HeaderNames> clazz = HeaderNames.class;
     @SuppressWarnings("removal")
     private static final List<HeaderName> NON_INDEXED_HEADERS = List.of(HeaderNames.ACCEPT_CHARSET,
+                                                                        HeaderNames.ACCEPT_QUERY,
                                                                         HeaderNames.ALT_USED,
                                                                         HeaderNames.PUBLIC_KEY_PINS,
                                                                         HeaderNames.SET_COOKIE2,
@@ -171,6 +172,19 @@ class HeaderNamesTest {
                 () -> assertThat(contentLocation.defaultCase(), is("Content-Location")),
                 () -> assertThat(contentLocation.lowerCase(), is("content-location")),
                 () -> assertThat(HeaderNames.create("Content-Location"), equalTo(contentLocation))
+        );
+    }
+
+    @Test
+    void testAcceptQueryHeaderName() {
+        HeaderName acceptQuery = HeaderNames.ACCEPT_QUERY;
+
+        assertAll(
+                () -> assertThat(HeaderNames.ACCEPT_QUERY_NAME, is("Accept-Query")),
+                () -> assertThat(acceptQuery.defaultCase(), is("Accept-Query")),
+                () -> assertThat(acceptQuery.lowerCase(), is("accept-query")),
+                () -> assertThat(acceptQuery.index(), is(-1)),
+                () -> assertThat(HeaderNames.create("ACCEPT-QUERY"), equalTo(acceptQuery))
         );
     }
 

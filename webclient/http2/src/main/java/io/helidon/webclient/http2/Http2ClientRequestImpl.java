@@ -37,9 +37,14 @@ import io.helidon.webclient.http1.Http1Client;
 
 class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse>
         implements Http2ClientRequest, Http2StreamConfig, FullClientRequest<Http2ClientRequest> {
-    // RFC 9110, section 8.1: these define the replayed representation data's format and encoding.
-    private static final Set<HeaderName> REPRESENTATION_HEADERS = Set.of(HeaderNames.CONTENT_TYPE,
-                                                                         HeaderNames.CONTENT_ENCODING);
+    private static final Set<HeaderName> REPLAYABLE_HEADERS = Set.of(HeaderNames.ACCEPT,
+                                                                     HeaderNames.ACCEPT_CHARSET,
+                                                                     HeaderNames.ACCEPT_ENCODING,
+                                                                     HeaderNames.ACCEPT_LANGUAGE,
+                                                                     HeaderNames.CONTENT_ENCODING,
+                                                                     HeaderNames.CONTENT_LANGUAGE,
+                                                                     HeaderNames.CONTENT_LOCATION,
+                                                                     HeaderNames.CONTENT_TYPE);
 
     private final Http2ClientImpl http2Client;
     private int priority = 16;
@@ -125,7 +130,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         this.outputStreamRedirect(request.outputStreamRedirect);
         if (preserveEntity) {
-            REPRESENTATION_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
+            REPLAYABLE_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
         }
     }
 
@@ -300,7 +305,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         }
 
         boolean retainRequestEntity = followRedirects()
-                && RedirectionProcessor.keepsMethodAndEntity(serviceResponse.status());
+                && RedirectionProcessor.keepsMethodAndEntity(serviceResponse.serviceRequest().method(),
+                                                             serviceResponse.status());
         boolean hasRequestEntity = retainRequestEntity && callChain.hasRequestEntity();
         Object requestEntity = retainRequestEntity ? callChain.requestEntity() : null;
         long maxBufferedEntitySize = http2Client.protocolConfig().maxBufferedEntitySize().toBytes();
@@ -323,4 +329,5 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         return response;
 
     }
+
 }

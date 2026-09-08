@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Optional;
 import io.helidon.common.media.type.ParserMode;
 
 import static io.helidon.http.HeaderNames.ACCEPT_PATCH;
+import static io.helidon.http.HeaderNames.ACCEPT_QUERY;
 import static io.helidon.http.HeaderNames.EXPIRES;
 import static io.helidon.http.HeaderNames.LAST_MODIFIED;
 import static io.helidon.http.HeaderNames.LOCATION;
@@ -67,6 +68,24 @@ public interface ClientResponseHeaders extends Headers {
             mediaTypes.add(HttpMediaType.create(value));
         }
         return mediaTypes;
+    }
+
+    /**
+     * Media types supported by the resource for {@link Method#QUERY} request content.
+     *
+     * @return list of accepted QUERY media types, or an empty list if the header is absent or invalid
+     */
+    default List<HttpMediaType> acceptQueries() {
+        Optional<String> value = value(ACCEPT_QUERY);
+        if (value.isEmpty()) {
+            return List.of();
+        }
+        try {
+            return AcceptQuery.parse(value.get());
+        } catch (IllegalArgumentException _) {
+            // RFC 9651 requires the entire field to be ignored if parsing fails.
+            return List.of();
+        }
     }
 
     /**

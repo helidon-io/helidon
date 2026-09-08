@@ -24,6 +24,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.webclient.api.ClientUri;
@@ -72,7 +73,13 @@ class Http2CallEntityChain extends Http2CallChainBase {
         } else {
             entityBytes = entityBytes(entity, headers);
         }
-        // Keep the serialized request body available for a possible 307/308 replay decision.
+        if (clientRequest().method() == Method.QUERY) {
+            if (!headers.contains(HeaderNames.CONTENT_TYPE)) {
+                throw new IllegalArgumentException("Content-Type header is required for method '" + Method.QUERY + "'");
+            }
+            clientRequest().headers().set(headers.get(HeaderNames.CONTENT_TYPE));
+        }
+        // Keep the serialized request body available for a possible method-preserving redirect decision.
         requestEntity = entityBytes;
 
         if (!clientRequest().outputStreamRedirect()) {
@@ -101,7 +108,7 @@ class Http2CallEntityChain extends Http2CallChainBase {
 
     @Override
     protected WebClientServiceResponse doProceed(WebClientServiceRequest serviceRequest, HttpClientResponse response) {
-        if (RedirectionProcessor.keepsMethodAndEntity(response.status())) {
+        if (RedirectionProcessor.keepsMethodAndEntity(clientRequest().method(), response.status())) {
             // HTTP/1 fallback can receive a redirect before an HTTP/2 stream exists. Do not serialize the body here;
             // redirect policy must be able to reject cross-origin replay before invoking media writers.
             hasRequestEntity = mayHaveEntity(entityHolder.entity());

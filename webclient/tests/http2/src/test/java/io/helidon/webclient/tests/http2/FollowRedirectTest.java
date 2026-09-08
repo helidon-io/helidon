@@ -23,6 +23,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.HeaderName;
@@ -35,6 +36,8 @@ import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
@@ -52,12 +55,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class FollowRedirectTest {
     private static final StringBuilder BUFFER = new StringBuilder();
     private static final String PATH_COOKIE = "pathOnly=redirect-secret";
+    private static final String QUERY_ACCEPT = "application/json";
+    private static final String QUERY_CONTENT_TYPE = "application/sql";
+    private static final String QUERY_ENTITY = "select * from example";
+    private static final String QUERY_LANGUAGE = "en";
     private static final HeaderName REDIRECT_HEADER = HeaderNames.create("X-Redirect-Test");
     private static final AtomicReference<String> REDIRECT_SOURCE_COOKIE = new AtomicReference<>();
     private static final AtomicReference<String> REDIRECT_TARGET_COOKIE = new AtomicReference<>();
+    private final URI baseUri;
     private final Http2Client webClient;
 
     FollowRedirectTest(URI uri) {
+        this.baseUri = uri;
         this.webClient = Http2Client.builder()
                 .baseUri(uri)
                 .cookieManager(WebClientCookieManager.builder().automaticStoreEnabled(true).build())
@@ -66,7 +75,25 @@ class FollowRedirectTest {
 
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
-        router.route(Method.PUT, "/infiniteRedirect", (req, res) -> {
+        router.route(Method.QUERY,
+                     "/queryRedirect301",
+                     (_, res) -> queryRedirect(res, Status.MOVED_PERMANENTLY_301, "/queryRedirectTarget"))
+                .route(Method.QUERY,
+                       "/queryRedirect302",
+                       (_, res) -> queryRedirect(res, Status.FOUND_302, "/queryRedirectTarget"))
+                .route(Method.QUERY,
+                       "/queryRedirect303",
+                       (_, res) -> queryRedirect(res, Status.SEE_OTHER_303, "/queryRedirectGetTarget"))
+                .route(Method.QUERY,
+                       "/queryRedirectHeaders301",
+                       (_, res) -> queryRedirect(res, Status.MOVED_PERMANENTLY_301, "/queryRedirectHeadersTarget"))
+                .route(Method.QUERY,
+                       "/queryRedirectHeaders302",
+                       (_, res) -> queryRedirect(res, Status.FOUND_302, "/queryRedirectHeadersTarget"))
+                .route(Method.QUERY, "/queryRedirectTarget", FollowRedirectTest::queryRedirectTarget)
+                .route(Method.QUERY, "/queryRedirectHeadersTarget", FollowRedirectTest::queryRedirectHeadersTarget)
+                .get("/queryRedirectGetTarget", FollowRedirectTest::queryRedirectGetTarget)
+                .route(Method.PUT, "/infiniteRedirect", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/infiniteRedirect2")
                     .send();
@@ -239,6 +266,110 @@ class FollowRedirectTest {
     }
 
     @Test
+    void queryRedirectPreservesBufferedEntity() {
+        for (int redirectStatus : new int[] {301, 302}) {
+            try (Http2ClientResponse response = webClient.method(Method.QUERY)
+                    .uri("/queryRedirect" + redirectStatus)
+                    .header(HeaderNames.CONTENT_TYPE, QUERY_CONTENT_TYPE)
+                    .submit(QUERY_ENTITY)) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class), is(Method.QUERY + ":" + QUERY_CONTENT_TYPE + ":" + QUERY_ENTITY));
+            }
+        }
+    }
+
+    @Test
+    void queryRedirectPreservesRequestHeaders() {
+        for (int redirectStatus : new int[] {301, 302}) {
+            try (Http2ClientResponse response = webClient.method(Method.QUERY)
+                    .uri("/queryRedirectHeaders" + redirectStatus)
+                    .header(HeaderNames.ACCEPT, QUERY_ACCEPT)
+                    .header(HeaderNames.CONTENT_LANGUAGE, QUERY_LANGUAGE)
+                    .header(HeaderNames.CONTENT_TYPE, QUERY_CONTENT_TYPE)
+                    .submit(QUERY_ENTITY)) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class),
+                           is(Method.QUERY + ":" + QUERY_ACCEPT + ":" + QUERY_LANGUAGE + ":" + QUERY_ENTITY));
+            }
+        }
+    }
+
+    @Test
+    void querySubmitUsesMediaWriterContentType() {
+        try (Http2ClientResponse response = webClient.method(Method.QUERY)
+                .uri("/queryRedirectTarget")
+                .submit(QUERY_ENTITY)) {
+            String result = response.as(String.class);
+            assertThat(result, containsString(Method.QUERY + ":text/plain"));
+            assertThat(result, containsString(":" + QUERY_ENTITY));
+        }
+    }
+
+    @Test
+    void querySubmitRejectsMissingContentType() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                           () -> webClient.method(Method.QUERY)
+                                                                   .uri("/queryRedirectTarget")
+                                                                   .submit(QUERY_ENTITY.getBytes(StandardCharsets.UTF_8)));
+
+        assertThat(exception.getMessage(), containsString("Content-Type header is required"));
+    }
+
+    @Test
+    void queryRedirectPreservesOutputStreamEntity() {
+        for (int redirectStatus : new int[] {301, 302}) {
+            try (Http2ClientResponse response = webClient.method(Method.QUERY)
+                    .uri("/queryRedirect" + redirectStatus)
+                    .header(HeaderNames.CONTENT_TYPE, QUERY_CONTENT_TYPE)
+                    .outputStream(output -> {
+                        output.write(QUERY_ENTITY.getBytes(StandardCharsets.UTF_8));
+                        output.close();
+                    })) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class), is(Method.QUERY + ":" + QUERY_CONTENT_TYPE + ":" + QUERY_ENTITY));
+            }
+        }
+    }
+
+    @Test
+    void querySeeOtherRedirectChangesToGetAndDropsEntity() {
+        try (Http2ClientResponse response = webClient.method(Method.QUERY)
+                .uri("/queryRedirect303")
+                .header(HeaderNames.CONTENT_TYPE, QUERY_CONTENT_TYPE)
+                .submit(QUERY_ENTITY)) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("GET without entity metadata"));
+        }
+    }
+
+    @Test
+    void queryRedirectCompletesEveryServiceRequest() {
+        AtomicInteger requests = new AtomicInteger();
+        AtomicInteger completions = new AtomicInteger();
+        Http2Client client = Http2Client.builder()
+                .baseUri(baseUri)
+                .servicesDiscoverServices(false)
+                .addService((chain, request) -> {
+                    requests.incrementAndGet();
+                    request.whenComplete().thenRun(completions::incrementAndGet);
+                    return chain.proceed(request);
+                })
+                .build();
+        try {
+            Http2ClientResponse response = client.method(Method.QUERY)
+                    .uri("/queryRedirect302")
+                    .header(HeaderNames.CONTENT_TYPE, QUERY_CONTENT_TYPE)
+                    .submit(QUERY_ENTITY);
+            assertThat(requests.get(), is(2));
+            assertThat(completions.get(), is(1));
+            response.close();
+            assertThat(completions.get(), is(2));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
     void testReadTimeoutPreservedAcrossMixedRedirects() {
         String expected = "GET delayed endpoint reached";
         try (Http2ClientResponse response = webClient.put()
@@ -318,33 +449,6 @@ class FollowRedirectTest {
         assertEntityOutputStreamWithRedirectAfter();
     }
 
-    private void assertEmptyOutputStreamWithRedirectAfter() {
-        String expected = "Upload completed!";
-        try (Http2ClientResponse response = webClient.put()
-                .path("/redirectAfterUpload")
-                .outputStream(OutputStream::close)) {
-            assertThat(response.entity().as(String.class), is(expected));
-        }
-    }
-
-    private void assertEntityOutputStreamWithRedirectAfter() {
-        String expected = """
-                Upload completed!
-                0123456789
-                0123456789
-                0123456789""";
-        try (Http2ClientResponse response = webClient.put()
-                .path("/redirectAfterUpload")
-                .outputStream(it -> {
-                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
-                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
-                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
-                    it.close();
-                })) {
-            assertThat(response.entity().as(String.class), is(expected));
-        }
-    }
-
     @Test
     void testOutputStreamEntityNotKeptIntercepted() {
         String expected = "GET plain endpoint reached";
@@ -388,6 +492,61 @@ class FollowRedirectTest {
                 }, String.class);
 
         assertThat(http2ClientResponse.entity(), is("Request did not timeout"));
+    }
+
+    private static void queryRedirect(ServerResponse response, Status status, String target) {
+        response.status(status)
+                .header(HeaderNames.LOCATION, target)
+                .send();
+    }
+
+    private static void queryRedirectTarget(ServerRequest request, ServerResponse response) {
+        String contentType = request.headers().get(HeaderNames.CONTENT_TYPE).get();
+        response.send(request.prologue().method() + ":" + contentType + ":" + request.content().as(String.class));
+    }
+
+    private static void queryRedirectHeadersTarget(ServerRequest request, ServerResponse response) {
+        String accept = request.headers().get(HeaderNames.ACCEPT).get();
+        String contentLanguage = request.headers().get(HeaderNames.CONTENT_LANGUAGE).get();
+        response.send(request.prologue().method()
+                              + ":" + accept
+                              + ":" + contentLanguage
+                              + ":" + request.content().as(String.class));
+    }
+
+    private static void queryRedirectGetTarget(ServerRequest request, ServerResponse response) {
+        if (request.content().hasEntity() || request.headers().contains(HeaderNames.CONTENT_TYPE)) {
+            response.status(Status.BAD_REQUEST_400).send("Entity metadata was preserved");
+            return;
+        }
+        response.send("GET without entity metadata");
+    }
+
+    private void assertEmptyOutputStreamWithRedirectAfter() {
+        String expected = "Upload completed!";
+        try (Http2ClientResponse response = webClient.put()
+                .path("/redirectAfterUpload")
+                .outputStream(OutputStream::close)) {
+            assertThat(response.entity().as(String.class), is(expected));
+        }
+    }
+
+    private void assertEntityOutputStreamWithRedirectAfter() {
+        String expected = """
+                Upload completed!
+                0123456789
+                0123456789
+                0123456789""";
+        try (Http2ClientResponse response = webClient.put()
+                .path("/redirectAfterUpload")
+                .outputStream(it -> {
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.close();
+                })) {
+            assertThat(response.entity().as(String.class), is(expected));
+        }
     }
 
 }

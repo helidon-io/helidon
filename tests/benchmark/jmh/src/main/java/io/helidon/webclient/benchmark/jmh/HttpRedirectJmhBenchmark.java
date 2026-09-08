@@ -63,14 +63,47 @@ public class HttpRedirectJmhBenchmark {
         invokeRedirectOutputStream(state.http2Client, blackhole);
     }
 
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1QueryEntityRedirect(NetworkState state, Blackhole blackhole) {
+        invokeQueryRedirect(state.http1Client, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2QueryEntityRedirect(NetworkState state, Blackhole blackhole) {
+        invokeQueryRedirect(state.http2Client, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1QueryOutputStreamRedirect(NetworkState state, Blackhole blackhole) {
+        invokeQueryRedirectOutputStream(state.http1Client, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2QueryOutputStreamRedirect(NetworkState state, Blackhole blackhole) {
+        invokeQueryRedirectOutputStream(state.http2Client, blackhole);
+    }
+
     private static void configureRouting(HttpRouting.Builder routing) {
         routing.put(REDIRECT_PATH, HttpRedirectJmhBenchmark::redirect)
-                .put(TARGET_PATH, HttpRedirectJmhBenchmark::handle);
+                .put(TARGET_PATH, HttpRedirectJmhBenchmark::handle)
+                .route(Method.QUERY, REDIRECT_PATH, HttpRedirectJmhBenchmark::queryRedirect)
+                .route(Method.QUERY, TARGET_PATH, HttpRedirectJmhBenchmark::handle);
     }
 
     private static void redirect(ServerRequest request, ServerResponse response) {
         request.content().as(byte[].class);
         response.status(Status.TEMPORARY_REDIRECT_307)
+                .header(HeaderNames.LOCATION, TARGET_PATH)
+                .send();
+    }
+
+    private static void queryRedirect(ServerRequest request, ServerResponse response) {
+        request.content().as(byte[].class);
+        response.status(Status.FOUND_302)
                 .header(HeaderNames.LOCATION, TARGET_PATH)
                 .send();
     }
@@ -83,6 +116,33 @@ public class HttpRedirectJmhBenchmark {
     private static void invokeRedirectOutputStream(HttpClient<?> client, Blackhole blackhole) {
         for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
             ClientRequest<?> request = client.method(Method.PUT)
+                    .uri(REDIRECT_PATH)
+                    .header(HeaderNames.CONTENT_TYPE, "application/octet-stream")
+                    .followRedirects(true);
+            try (HttpClientResponse response = request.outputStream(output -> {
+                output.write(REQUEST_ENTITY);
+                output.close();
+            })) {
+                consume(response, blackhole);
+            }
+        }
+    }
+
+    private static void invokeQueryRedirect(HttpClient<?> client, Blackhole blackhole) {
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            try (HttpClientResponse response = client.method(Method.QUERY)
+                    .uri(REDIRECT_PATH)
+                    .header(HeaderNames.CONTENT_TYPE, "application/octet-stream")
+                    .followRedirects(true)
+                    .submit(REQUEST_ENTITY)) {
+                consume(response, blackhole);
+            }
+        }
+    }
+
+    private static void invokeQueryRedirectOutputStream(HttpClient<?> client, Blackhole blackhole) {
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            ClientRequest<?> request = client.method(Method.QUERY)
                     .uri(REDIRECT_PATH)
                     .header(HeaderNames.CONTENT_TYPE, "application/octet-stream")
                     .followRedirects(true);

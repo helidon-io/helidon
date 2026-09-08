@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -89,6 +90,66 @@ class Http1CrossOriginRedirectEntityTest {
                 assertThat(originRequest.path(), is("/token"));
                 assertThat(originRequest.body(), is(REQUEST_BODY));
                 secondHop.assertNoRequest();
+            } finally {
+                client.closeResource();
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {301, 302})
+    @Timeout(20)
+    void doesNotReplayBufferedQueryAcrossCrossOriginRedirect(int redirectStatus) throws Exception {
+        try (SecondHopServer secondHop = new SecondHopServer(InetAddress.getByName(SECOND_HOP_HOST));
+             FirstHopServer firstHop = new FirstHopServer(InetAddress.getByName(FIRST_HOP_HOST),
+                                                          secondHop.port(),
+                                                          true,
+                                                          redirectStatus)) {
+            Http1Client client = newClient(firstHop.port());
+            try {
+                IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                               () -> client.method(Method.QUERY)
+                                                                       .uri("/token")
+                                                                       .readTimeout(REQUEST_TIMEOUT)
+                                                                       .header(HeaderNames.CONTENT_TYPE,
+                                                                               "application/x-www-form-urlencoded")
+                                                                       .submit(requestBodyBytes()));
+                assertThat(exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
+
+                CapturedRequest originRequest = firstHop.awaitRequest();
+                assertThat(originRequest.method(), is(Method.QUERY.text()));
+                assertThat(originRequest.body(), is(REQUEST_BODY));
+                secondHop.assertNoRequest();
+            } finally {
+                client.closeResource();
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {301, 302})
+    @Timeout(20)
+    void followsCrossOriginQueryWithEntityWhenEnabled(int redirectStatus) throws Exception {
+        try (SecondHopServer secondHop = new SecondHopServer(InetAddress.getByName(SECOND_HOP_HOST));
+             FirstHopServer firstHop = new FirstHopServer(InetAddress.getByName(FIRST_HOP_HOST),
+                                                          secondHop.port(),
+                                                          true,
+                                                          redirectStatus)) {
+            Http1Client client = newClient(firstHop.port(), true);
+            try {
+                try (Http1ClientResponse response = client.method(Method.QUERY)
+                        .uri("/token")
+                        .readTimeout(REQUEST_TIMEOUT)
+                        .header(HeaderNames.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .submit(requestBodyBytes())) {
+                    assertThat(response.status().code(), is(200));
+                }
+
+                CapturedRequest redirectRequest = secondHop.awaitRequest();
+                assertThat(redirectRequest.method(), is(Method.QUERY.text()));
+                assertThat(redirectRequest.header("authorization"), is((String) null));
+                assertThat(redirectRequest.header("content-type"), is("application/x-www-form-urlencoded"));
+                assertThat(redirectRequest.body(), is(REQUEST_BODY));
             } finally {
                 client.closeResource();
             }
@@ -713,6 +774,7 @@ class Http1CrossOriginRedirectEntityTest {
 
     private static String redirectReasonPhrase(int status) {
         return switch (status) {
+            case 301 -> "Moved Permanently";
             case 302 -> "Found";
             case 307 -> "Temporary Redirect";
             case 308 -> "Permanent Redirect";
@@ -1070,6 +1132,11 @@ class Http1CrossOriginRedirectEntityTest {
         private String path() {
             String[] parts = requestLine.split(" ");
             return parts.length > 1 ? parts[1] : requestLine;
+        }
+
+        private String method() {
+            String[] parts = requestLine.split(" ");
+            return parts.length > 0 ? parts[0] : requestLine;
         }
 
         private String header(String name) {

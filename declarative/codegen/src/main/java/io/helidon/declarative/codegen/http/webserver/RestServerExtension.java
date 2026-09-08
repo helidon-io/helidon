@@ -142,6 +142,16 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                 .addContentLine("\", this::routing);"));
     }
 
+    private static boolean hasServerShortcut(HttpMethod httpMethod) {
+        if (!httpMethod.builtIn()) {
+            return false;
+        }
+        return switch (httpMethod.name()) {
+            case "GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE" -> true;
+            default -> false;
+        };
+    }
+
     private Constructor.Builder constructor(TypeName endpoint,
                                             boolean singleton) {
         var constructor = Constructor.builder();
@@ -633,9 +643,15 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         routing.addContent("rules.");
 
         HttpMethod httpMethod = restMethod.httpMethod();
-        if (httpMethod.builtIn()) {
+        if (hasServerShortcut(httpMethod)) {
             routing.addContent(httpMethod.name().toLowerCase(Locale.ROOT))
                     .addContent("(");
+        } else if (httpMethod.builtIn()) {
+            routing.addContent("route(")
+                    .addContent(HTTP_METHOD)
+                    .addContent(".")
+                    .addContent(httpMethod.name())
+                    .addContent(", ");
         } else {
             routing.addContent("route(" + HttpFields.ensureHttpMethodConstant(fieldHandler, httpMethod.name()) + ", ");
         }

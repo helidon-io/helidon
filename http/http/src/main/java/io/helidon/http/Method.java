@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,10 @@ public final class Method {
     /**
      * {@value} method name.
      */
+    public static final String QUERY_NAME = "QUERY";
+    /**
+     * {@value} method name.
+     */
     public static final String PUT_NAME = "PUT";
     /**
      * {@value} method name.
@@ -85,6 +89,10 @@ public final class Method {
      * to a database.
      */
     public static final Method POST = new Method(POST_NAME, true);
+    /**
+     * The QUERY method requests that the target resource process the enclosed content in a safe and idempotent manner.
+     */
+    public static final Method QUERY = new Method(QUERY_NAME, true);
     /**
      * The PUT method requests that the enclosed entity be stored under the supplied Request-URI. If the Request-URI refers
      * to an already existing resource, the enclosed entity SHOULD be considered as a modified version of the one residing

@@ -131,6 +131,21 @@ These methods will create a new instance of
 [HttpClientRequest][httpclientreques] which can then be configured to add
 optional settings that will customize the behavior of the request.
 
+Use the generic method API for a QUERY request and submit the query as request
+content with its media type:
+
+```java
+var response = client.method(Method.QUERY)
+        .uri("http://example.com/search")
+        .contentType(MediaTypes.APPLICATION_JSON)
+        .submit(query);
+```
+
+When redirects are enabled, WebClient preserves the QUERY method and its
+content for `301`, `302`, `307`, and `308` responses. A `303` response changes
+the redirected request to GET without the original query content, as required
+by [RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html#section-2.5).
+
 ### Customizing the Request
 
 Configuration can be set for every request type before it is sent.

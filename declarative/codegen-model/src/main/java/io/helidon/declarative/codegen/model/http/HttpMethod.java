@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package io.helidon.declarative.codegen.model.http;
  * HTTP Method definition.
  *
  * @param name    method name (such as {@code GET, POST, LIST})
- * @param builtIn whether this is a recognized method we have constants and methods for in Helidon, or a custom method
+ * @param builtIn whether this is a recognized method with a predefined Helidon HTTP method constant, or a custom method
  */
 public record HttpMethod(String name, boolean builtIn) {
 }

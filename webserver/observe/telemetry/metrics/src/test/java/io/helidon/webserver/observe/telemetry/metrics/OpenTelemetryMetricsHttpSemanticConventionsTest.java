@@ -83,6 +83,18 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     @Test
+    void queryHttpMethodUsesMethodMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set)
+                .filter(mock(FilterChain.class), request(Method.QUERY), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(methodAttribute(recordedAttributes.get()), is("QUERY"));
+    }
+
+    @Test
     void knownExtensionHttpMethodUsesMethodMetricAttribute() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         AtomicReference<Runnable> whenSent = new AtomicReference<>();

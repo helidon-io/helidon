@@ -397,6 +397,18 @@ public final class HeaderNames {
     public static final HeaderName ACCEPT_PATCH = HeaderNameEnum.ACCEPT_PATCH;
     /**
      * The {@value} header name.
+     * Specifies the media types this resource supports for {@link Method#QUERY} request content.
+     */
+    public static final String ACCEPT_QUERY_NAME = Strings.ACCEPT_QUERY_NAME;
+    /**
+     * The {@value #ACCEPT_QUERY_NAME} header name.
+     * Specifies the media types this resource supports for {@link Method#QUERY} request content.
+     * <p>
+     * This specialized response header is not part of the indexed known-header set.
+     */
+    public static final HeaderName ACCEPT_QUERY = createNonIndexed(ACCEPT_QUERY_NAME);
+    /**
+     * The {@value} header name.
      * What partial content range types this server supports via byte serving.
      */
     public static final String ACCEPT_RANGES_NAME = Strings.ACCEPT_RANGES_NAME;

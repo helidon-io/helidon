@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,22 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
         }
         return add(HeaderValues.create(HeaderNames.ACCEPT_PATCH,
                                        values));
+    }
+
+    /**
+     * Adds one or more media types supported by this resource for {@link Method#QUERY} request content
+     * (header {@link HeaderNames#ACCEPT_QUERY}).
+     * {@link HttpMediaType} may be used to add media type parameters.
+     *
+     * @param acceptableMediaTypes media types to add
+     * @return this instance
+     */
+    default ServerResponseHeaders addAcceptQueries(MediaType... acceptableMediaTypes) {
+        String value = AcceptQuery.serialize(acceptableMediaTypes);
+        if (value.isEmpty()) {
+            return this;
+        }
+        return add(HeaderValues.create(HeaderNames.ACCEPT_QUERY, value));
     }
 
     /**

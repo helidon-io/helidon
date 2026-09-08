@@ -77,9 +77,9 @@ interface AutoHttpMetricsConfigBlueprint {
      * {@code LIST}; assigning this value fully replaces the set of method names.
      * <p>
      * Default known HTTP methods: {@code CONNECT}, {@code DELETE}, {@code GET}, {@code HEAD}, {@code LIST},
-     * {@code OPTIONS}, {@code PATCH}, {@code POST}, {@code PUT}, and {@code TRACE}. Unlisted methods are reported as
-     * {@code _OTHER}, so configurations that add additional method names must also include default methods they intend
-     * to retain.
+     * {@code OPTIONS}, {@code PATCH}, {@code POST}, {@code PUT}, {@code QUERY}, and {@code TRACE}. Unlisted methods are
+     * reported as {@code _OTHER}, so configurations that add additional method names must also include default methods
+     * they intend to retain.
      * <p>
      * Method names are canonicalized using Helidon's HTTP method model.
      * See the <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/http/#http-request-method">

@@ -69,6 +69,7 @@ import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATI
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_FORM_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_NAMES;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PRODUCES_ANNOTATION;
@@ -107,6 +108,16 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         for (ClientEndpoint endpoint : endpoints) {
             process(roundContext, endpoint);
         }
+    }
+
+    private static boolean hasClientShortcut(RestMethod restMethod) {
+        if (!restMethod.httpMethod().builtIn()) {
+            return false;
+        }
+        return switch (restMethod.httpMethod().name()) {
+            case "GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE" -> true;
+            default -> false;
+        };
     }
 
     private ClientEndpoint toEndpoint(TypeInfo typeInfo) {
@@ -437,9 +448,15 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         }
 
         it.addContent("var declarative__builder = client.");
-        if (method.httpMethod().builtIn()) {
+        if (hasClientShortcut(method)) {
             it.addContent(method.httpMethod().name().toLowerCase(Locale.ROOT))
                     .addContentLine("(declarative__uri);");
+        } else if (method.httpMethod().builtIn()) {
+            it.addContent("method(")
+                    .addContent(HTTP_METHOD)
+                    .addContent(".")
+                    .addContent(method.httpMethod().name())
+                    .addContentLine(").uri(declarative__uri);");
         } else {
             it.addContent("method(")
                     .addContent(HttpFields.ensureHttpMethodConstant(fieldHandler, method.httpMethod().name()))

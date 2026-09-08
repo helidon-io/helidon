@@ -33,16 +33,29 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class RedirectionProcessorTest {
+    private static final Header TEST_ACCEPT = HeaderValues.createCached(HeaderNames.ACCEPT, "application/json");
     private static final Header TEST_CONTENT_ENCODING = HeaderValues.createCached(HeaderNames.CONTENT_ENCODING,
                                                                                    "test-encoding");
+    private static final Header TEST_CONTENT_LANGUAGE = HeaderValues.createCached(HeaderNames.CONTENT_LANGUAGE, "en");
 
     @Test
     void methodAndEntityPreservationUsesStatusCode() {
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.TEMPORARY_REDIRECT_307), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.PERMANENT_REDIRECT_308), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.create(307, "Custom")), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.create(308, "Custom")), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Status.FOUND_302), is(false));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.TEMPORARY_REDIRECT_307), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.PERMANENT_REDIRECT_308), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.create(307, "Custom")), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.create(308, "Custom")), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.FOUND_302), is(false));
+    }
+
+    @Test
+    void queryPreservationUsesStatusCode() {
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.MOVED_PERMANENTLY_301), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.FOUND_302), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.TEMPORARY_REDIRECT_307), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.PERMANENT_REDIRECT_308), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.create(301, "Custom")), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.create(302, "Custom")), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.QUERY, Status.SEE_OTHER_303), is(false));
     }
 
     @Test
@@ -51,10 +64,12 @@ class RedirectionProcessorTest {
     }
 
     @Test
-    void entityPreservingRedirectPreservesContentEncoding() {
+    void entityPreservingRedirectPreservesReplayableHeaders() {
         Http2ClientRequestImpl request = (Http2ClientRequestImpl) Http2Client.create()
                 .put("http://localhost/source")
-                .header(TEST_CONTENT_ENCODING);
+                .header(TEST_ACCEPT)
+                .header(TEST_CONTENT_ENCODING)
+                .header(TEST_CONTENT_LANGUAGE);
 
         Http2ClientRequestImpl redirect = new Http2ClientRequestImpl(request,
                                                                      Method.PUT,
@@ -62,6 +77,8 @@ class RedirectionProcessorTest {
                                                                      Map.of(),
                                                                      true);
 
+        assertThat(redirect.headers(), hasHeader(TEST_ACCEPT));
         assertThat(redirect.headers(), hasHeader(TEST_CONTENT_ENCODING));
+        assertThat(redirect.headers(), hasHeader(TEST_CONTENT_LANGUAGE));
     }
 }

@@ -25,10 +25,13 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import io.helidon.common.Weights;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.LogFormatter;
+import io.helidon.http.Method;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
@@ -192,6 +195,22 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
 
         private RoutingResult doRoute(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) throws Exception {
             HttpPrologue prologue = request.prologue();
+            if (prologue.method() == Method.QUERY) {
+                if (!request.headers().contains(HeaderNames.CONTENT_TYPE)
+                        || request.headers().get(HeaderNames.CONTENT_TYPE).valueCount() != 1) {
+                    throw new HttpException("QUERY requests require exactly one Content-Type header",
+                                            Status.BAD_REQUEST_400,
+                                            true);
+                }
+                try {
+                    request.headers().contentType();
+                } catch (BadRequestException e) {
+                    throw new HttpException("Invalid Content-Type header for QUERY request",
+                                            Status.BAD_REQUEST_400,
+                                            e,
+                                            true);
+                }
+            }
             RouteCrawler crawler = rootRoute.crawler(ctx, request);
 
             while (crawler.hasNext()) {
