@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
+import java.net.UnixDomainSocketAddress;
 import java.util.Collections;
 import java.util.List;
 
@@ -68,6 +69,15 @@ class ClientRequestBaseTest {
         assertThat(uri.port(), is(80));
         assertThat(uri.scheme(), is("http"));
         assertThat(uri.query().get("k"), is("v"));
+    }
+
+    @Test
+    void unixDomainSocketUsesDefaultPort() {
+        ClientUri uri = new FakeClientRequest()
+                .address(UnixDomainSocketAddress.of("helidon.sock"))
+                .resolvedUri();
+
+        assertThat(uri.authority(), is("localhost:80"));
     }
 
     @Test

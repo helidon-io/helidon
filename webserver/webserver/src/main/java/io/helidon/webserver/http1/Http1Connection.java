@@ -51,6 +51,7 @@ import io.helidon.http.HtmlEncoder;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
+import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
@@ -109,6 +110,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private int requestId;
     private long currentEntitySize;
     private long currentEntitySizeRead;
+    private HttpPrologue currentPrologue;
+    private WritableHeaders<?> currentHeaders;
 
     private volatile Thread myThread;
     private volatile boolean canRun = true;
@@ -164,9 +167,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             ProxyProtocolData proxyProtocolData = ctx.proxyProtocolData().orElse(null);
             // handle connection until an exception (or explicit connection close)
             while (canRun) {
+                clearCurrentRequest();
                 // prologue (first line of request)
                 currentlyReadingPrologue = true;
                 HttpPrologue prologue = http1prologue.readPrologue();
+                currentPrologue = prologue;
                 currentlyReadingPrologue = false;
                 lastRequestTimestamp = DateTime.timestamp();
                 recvListener.prologue(ctx, prologue);
@@ -178,6 +183,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 }
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
+                currentHeaders = headers;
                 if (http1Config.validateRequestHeaders()) {
                     validateHostHeader(prologue, headers, http1Config.validateRequestHostHeader());
                 }
@@ -199,6 +205,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         headers.set(X_FORWARDED_PORT, destPort);
                     }
                 }
+                validateRequestTarget(prologue, headers);
                 recvListener.headers(ctx, headers);
                 if (canUpgrade && headers.contains(HeaderNames.UPGRADE)) {
                     if (upgradeHasEntity(headers)) {
@@ -215,7 +222,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                     }
                                     LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
                                     if (outcome.disposition() != LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
-                                        throw tooManyConcurrentRequests();
+                                        throw tooManyConcurrentRequests(prologue, headers);
                                     }
                                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                                     LimitAlgorithm.Token permit = accepted.token();
@@ -282,7 +289,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         return;
                     }
                 } else {
-                    throw tooManyConcurrentRequests();
+                    throw tooManyConcurrentRequests(prologue, headers);
                 }
             }
         } catch (DataReader.InsufficientDataAvailableException e) {
@@ -290,12 +297,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         } catch (CloseConnectionException e) {
             throw e;
         } catch (BadRequestException e) {
-            handleRequestException(RequestException.builder()
-                                           .message(e.getMessage())
-                                           .cause(e)
-                                           .type(EventType.BAD_REQUEST)
-                                           .status(e.status())
-                                           .build());
+            handleRequestException(toRequestException(e, currentPrologue, currentHeaders));
         } catch (RequestException e) {
             handleRequestException(e);
         } catch (Throwable e) {
@@ -361,7 +363,22 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
+    private static RequestException toRequestException(BadRequestException exception,
+                                                       HttpPrologue prologue,
+                                                       WritableHeaders<?> headers) {
+        var builder = RequestException.builder()
+                .message(exception.getMessage())
+                .cause(exception)
+                .type(EventType.BAD_REQUEST)
+                .status(exception.status());
+        if (prologue != null && headers != null) {
+            builder.request(DirectTransportRequest.create(prologue, headers));
+        }
+        return builder.build();
+    }
+
     private void handleUpgradeConnection(Limit limit, ServerConnection upgradeConnection) throws InterruptedException {
+        clearCurrentRequest();
         if (LOGGER.isLoggable(TRACE)) {
             LOGGER.log(TRACE, "Connection upgrade using " + upgradeConnection);
         }
@@ -374,12 +391,13 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         upgradeConnection.handle(limit);
     }
 
-    private RequestException tooManyConcurrentRequests() {
+    private RequestException tooManyConcurrentRequests(HttpPrologue prologue, WritableHeaders<?> headers) {
         ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
         return RequestException.builder()
                 .setKeepAlive(false)
                 .status(Status.SERVICE_UNAVAILABLE_503)
                 .type(EventType.OTHER)
+                .request(DirectTransportRequest.create(prologue, headers))
                 .message("Too Many Concurrent Requests")
                 .build();
     }
@@ -439,6 +457,73 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     .safeMessage(true)
                     .cause(e)
                     .build();
+        }
+    }
+
+    private void validateRequestTarget(HttpPrologue prologue, WritableHeaders<?> headers) {
+        if (!(prologue.uriPath() instanceof Http1RequestTarget requestTarget)) {
+            return;
+        }
+        if (requestTarget.httpScheme() && requestTarget.hasUserInfo()) {
+            throw Http1RequestTarget.invalid(prologue,
+                                             headers,
+                                             "HTTP(S) request target userinfo is not allowed",
+                                             null);
+        }
+        String targetAuthority;
+        try {
+            targetAuthority = requestTarget.authority();
+        } catch (IllegalArgumentException e) {
+            throw Http1RequestTarget.invalid(prologue,
+                                             headers,
+                                             "Invalid absolute request-target authority: " + e.getMessage(),
+                                             e);
+        }
+        if (targetAuthority == null) {
+            if (requestTarget.httpScheme()) {
+                throw Http1RequestTarget.invalid(prologue,
+                                                 headers,
+                                                 "HTTP(S) request target authority is required",
+                                                 null);
+            }
+            return;
+        }
+        headers.set(HeaderNames.HOST, targetAuthority);
+        if (ctx.isSecure()
+                || !requestTarget.httpsScheme()
+                || isTrustedSecureGateway(requestTarget.path(), prologue, headers)) {
+            return;
+        }
+        throw RequestException.builder()
+                .type(EventType.BAD_REQUEST)
+                .status(Status.BAD_REQUEST_400)
+                .request(DirectTransportRequest.create(prologue, headers))
+                .setKeepAlive(false)
+                .message("HTTPS request target requires a secure connection")
+                .safeMessage(true)
+                .build();
+    }
+
+    private boolean isTrustedSecureGateway(String targetPath, HttpPrologue prologue, WritableHeaders<?> headers) {
+        Optional<RequestedUriDiscoveryContext> discoveryContext =
+                ctx.listenerContext().config().requestedUriDiscoveryContext();
+        if (discoveryContext.isEmpty()) {
+            return false;
+        }
+        try {
+            return "https".equalsIgnoreCase(discoveryContext.get()
+                                                    .uriInfo(ctx.remotePeer().address(),
+                                                             ctx.localPeer().address(),
+                                                             targetPath,
+                                                             ServerRequestHeaders.create(headers),
+                                                             prologue.query(),
+                                                             false)
+                                                    .scheme());
+        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+            throw Http1RequestTarget.invalid(prologue,
+                                             headers,
+                                             "Invalid requested URI discovery metadata",
+                                             e);
         }
     }
 
@@ -543,6 +628,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         }
 
         UriValidator.validateNonIpLiteral(hostString);
+    }
+
+    private void clearCurrentRequest() {
+        currentPrologue = null;
+        currentHeaders = null;
     }
 
     private boolean routeWithPermit(HttpPrologue prologue,

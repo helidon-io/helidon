@@ -21,10 +21,10 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.function.LongConsumer;
 
@@ -144,7 +144,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     };
     private final Http2ConnectionStreams streams = new Http2ConnectionStreams();
-    private final Set<Integer> locallyResetStreams = new HashSet<>();
+    private final LocallyResetStreams locallyResetStreams = new LocallyResetStreams();
     private final List<Http2FrameData> locallyResetContinuationData = new ArrayList<>();
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
@@ -180,6 +180,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private boolean locallyResetContinuationEndOfStream;
     private long locallyResetContinuationHeaderBlockSize;
     private int lastStreamId;
+    private int lastProcessedStreamId;
     private boolean initConnectionHeaders;
     private volatile ZonedDateTime lastRequestTimestamp;
     private volatile Thread myThread;
@@ -256,7 +257,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
             ctx.log(LOGGER, TRACE, "Stacktrace of HTTP/2 exception", e);
 
-            Http2GoAway frame = new Http2GoAway(0,
+            Http2GoAway frame = new Http2GoAway(lastProcessedStreamId,
                                                 e.code(),
                                                 sendErrorDetails ? e.getMessage() : "");
             try {
@@ -285,7 +286,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 // we have already finished this
                 return;
             }
-            Http2GoAway frame = new Http2GoAway(0,
+            Http2GoAway frame = new Http2GoAway(lastProcessedStreamId,
                                                 Http2ErrorCode.INTERNAL,
                                                 sendErrorDetails ? e.getClass().getName() + ": " + e.getMessage() : "");
             try {
@@ -449,6 +450,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private void doHandle(Limit limit) throws InterruptedException {
         myThread = Thread.currentThread();
         while (canRun && state != State.FINISHED) {
+            locallyResetStreams.checkOverflow();
             if (expectPreface && state != State.WRITE_SERVER_SETTINGS) {
                 readPreface();
                 expectPreface = false;
@@ -462,6 +464,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     throw new CloseConnectionException("Connection closed by client", e);
                 }
             }
+            locallyResetStreams.checkOverflow();
 
             dispatchHandler(limit);
         }
@@ -704,6 +707,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             upgradeHeaders = null;
             ctx.executor()
                     .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+            lastProcessedStreamId = Math.max(1, lastProcessedStreamId);
         }
     }
 
@@ -971,6 +975,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // we now have all information needed to execute
         ctx.executor()
                 .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+        lastProcessedStreamId = Math.max(streamId, lastProcessedStreamId);
     }
 
     private boolean validateRequestTarget(Method method, String requestTarget) {
@@ -1184,7 +1189,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                               maxHeaderBlockSize,
                                               new Http2ServerStream(ctx,
                                                                     streams,
-                                                                    this::locallyResetStream,
+                                                                    locallyResetStreams,
                                                                     routing,
                                                                     http2Config,
                                                                     subProviders,
@@ -1201,13 +1206,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // on stream 0)
         this.lastRequestTimestamp = DateTime.timestamp();
         return streamContext;
-    }
-
-    private void locallyResetStream(int streamId) {
-        locallyResetStreams.add(streamId);
-        if (locallyResetStreams.size() > maxClientConcurrentStreams) {
-            throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Too many locally reset streams.");
-        }
     }
 
     private BufferData inProgressFrame() {
@@ -1337,6 +1335,42 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         private void clearContinuations() {
             continuationData.clear();
             headerBlockSize = 0;
+        }
+    }
+
+    private final class LocallyResetStreams implements Http2ServerStream.LocallyResetStreamTracker {
+        private final Set<Integer> streamIds = ConcurrentHashMap.newKeySet();
+        private volatile boolean overflow;
+
+        @Override
+        public void add(int streamId) {
+            streamIds.add(streamId);
+        }
+
+        @Override
+        public void remoteComplete(int streamId) {
+            streamIds.remove(streamId);
+        }
+
+        @Override
+        public void resetSent() {
+            if (streamIds.size() > maxClientConcurrentStreams) {
+                overflow = true;
+            }
+        }
+
+        private boolean contains(int streamId) {
+            return streamIds.contains(streamId);
+        }
+
+        private boolean remove(int streamId) {
+            return streamIds.remove(streamId);
+        }
+
+        private void checkOverflow() {
+            if (overflow) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Too many locally reset streams.");
+            }
         }
     }
 }

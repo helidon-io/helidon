@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.uri.UriInfo;
@@ -80,10 +81,10 @@ public interface RequestedUriDiscoveryContext {
      *
      * @param remoteAddress remote address from the request
      * @param localAddress  local address from the request
-     * @param requestPath   path from the request
-     * @param headers       request headers
-     * @param query         query information from the request
-     * @param isSecure      whether the request is secure
+     * @param requestPath decoded path from the request
+     * @param headers     request headers
+     * @param query       query information from the request
+     * @param isSecure    whether the request is secure
      * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
      * @deprecated Use
      *         {@link RequestedUriDiscoveryContext#uriInfo(java.net.SocketAddress, java.net.SocketAddress, String,
@@ -117,6 +118,45 @@ public interface RequestedUriDiscoveryContext {
                     ServerRequestHeaders headers,
                     UriQuery query,
                     boolean isSecure);
+
+    /**
+     * Creates a {@link io.helidon.common.uri.UriInfo} object for a request with an explicit request-target scheme based on
+     * the discovery settings and the specified request-related information.
+     * <p>
+     * The default implementation preserves binary compatibility for existing custom implementations by validating the
+     * supplied arguments and delegating without the explicit scheme to
+     * {@link #uriInfo(SocketAddress, SocketAddress, String, ServerRequestHeaders, UriQuery, boolean)}. Custom
+     * implementations must override this method to use the request-target scheme.
+     *
+     * @param remoteAddress remote address from the request
+     * @param localAddress  local address from the request
+     * @param requestPath   decoded path from the request
+     * @param requestScheme scheme from the request target
+     * @param headers       request headers
+     * @param query         query information from the request
+     * @param isSecure      whether the request is secure
+     * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
+     */
+    default UriInfo uriInfo(SocketAddress remoteAddress,
+                            SocketAddress localAddress,
+                            String requestPath,
+                            String requestScheme,
+                            ServerRequestHeaders headers,
+                            UriQuery query,
+                            boolean isSecure) {
+        Objects.requireNonNull(remoteAddress, "remoteAddress");
+        Objects.requireNonNull(localAddress, "localAddress");
+        Objects.requireNonNull(requestPath, "requestPath");
+        Objects.requireNonNull(requestScheme, "requestScheme");
+        Objects.requireNonNull(headers, "headers");
+        Objects.requireNonNull(query, "query");
+        return uriInfo(remoteAddress,
+                       localAddress,
+                       requestPath,
+                       headers,
+                       query,
+                       isSecure);
+    }
 
     /**
      * Builder for {@link RequestedUriDiscoveryContext}.
@@ -261,8 +301,8 @@ public interface RequestedUriDiscoveryContext {
          *     <li>The `requested-uri-discovery` settings are optional.</li>
          *     <li>If `requested-uri-discovery` is absent or is present with `enabled` explicitly set to `false`, Helidon
          *     ignores any {@code Forwarded} or {@code X-Forwarded-*} headers and adopts the
-         *     {@code HOST} discovery type. That is, Helidon uses the {@code Host} header for the host
-         *     and the request's scheme and port.</li>
+         *     {@code HOST} discovery type. Helidon uses the HTTP/1 absolute-form request-target authority when present,
+         *     otherwise the {@code Host} header, together with the request's scheme, port, and path.</li>
          *     <li>If `requested-uri-discovery` is present and enabled, either because {@code enabled} is set to {@code true}
          *     or {@code discoveryTypes} or {@code trusted-proxies} has been set, then Helidon performs a simple validity
          *     check before adopting the selected discovery behavior: If {@code discoveryTypes} is specified and includes
@@ -335,6 +375,85 @@ public interface RequestedUriDiscoveryContext {
                                    ServerRequestHeaders headers,
                                    UriQuery query,
                                    boolean isSecure) {
+                return doUriInfo(remoteAddress, localAddress, requestPath, null, headers, query, isSecure);
+            }
+
+            @Override
+            public UriInfo uriInfo(SocketAddress remoteAddress,
+                                   SocketAddress localAddress,
+                                   String requestPath,
+                                   String requestScheme,
+                                   ServerRequestHeaders headers,
+                                   UriQuery query,
+                                   boolean isSecure) {
+                Objects.requireNonNull(remoteAddress, "remoteAddress");
+                Objects.requireNonNull(localAddress, "localAddress");
+                Objects.requireNonNull(requestPath, "requestPath");
+                Objects.requireNonNull(requestScheme, "requestScheme");
+                Objects.requireNonNull(headers, "headers");
+                Objects.requireNonNull(query, "query");
+                return doUriInfo(remoteAddress,
+                                 localAddress,
+                                 requestPath,
+                                 requestScheme,
+                                 headers,
+                                 query,
+                                 isSecure);
+            }
+
+            private static boolean isValidScheme(String scheme) {
+                int length = scheme.length();
+                if (length == 0) {
+                    return false;
+                }
+
+                char first = scheme.charAt(0);
+                if (!(first >= 'A' && first <= 'Z') && !(first >= 'a' && first <= 'z')) {
+                    return false;
+                }
+
+                for (int i = 1; i < length; i++) {
+                    char c = scheme.charAt(i);
+                    if (c >= 'A' && c <= 'Z'
+                            || c >= 'a' && c <= 'z'
+                            || c >= '0' && c <= '9'
+                            || c == '+'
+                            || c == '-'
+                            || c == '.') {
+                        continue;
+                    }
+                    return false;
+                }
+                return true;
+            }
+
+            private static String normalizeForwardedAuthority(String authority) {
+                int portDelimiter = Forwarded.hostPortDelimiter(authority);
+                if (portDelimiter < 0) {
+                    return authority;
+                }
+                int portStart = portDelimiter + 1;
+                if (portStart == authority.length()) {
+                    return authority.substring(0, portDelimiter);
+                }
+                int port = 0;
+                for (int i = portStart; i < authority.length(); i++) {
+                    port = port * 10 + authority.charAt(i) - '0';
+                    if (port > 65535) {
+                        throw new BadRequestException("Invalid requested URI discovery metadata");
+                    }
+                }
+                return authority;
+            }
+
+            @SuppressWarnings("checkstyle:ParameterNumber")
+            private UriInfo doUriInfo(SocketAddress remoteAddress,
+                                      SocketAddress localAddress,
+                                      String requestPath,
+                                      String requestScheme,
+                                      ServerRequestHeaders headers,
+                                      UriQuery query,
+                                      boolean isSecure) {
                 String scheme = null;
                 String authority = null;
                 String host = null;
@@ -424,6 +543,8 @@ public interface RequestedUriDiscoveryContext {
                         scheme = "http";
                     } else if (port == 443) {
                         scheme = "https";
+                    } else if (requestScheme != null) {
+                        scheme = requestScheme;
                     } else {
                         scheme = isSecure ? "https" : "http";
                     }
@@ -437,17 +558,25 @@ public interface RequestedUriDiscoveryContext {
             private ForwardedDiscovery discoverUsingForwarded(ServerRequestHeaders headers) {
                 String scheme = null;
                 String authority = null;
-                List<Forwarded> forwardedList = Forwarded.create(headers);
+                List<Forwarded> forwardedList;
+                try {
+                    forwardedList = Forwarded.create(headers);
+                } catch (IllegalArgumentException e) {
+                    throw new BadRequestException("Invalid requested URI discovery metadata", e);
+                }
                 if (!forwardedList.isEmpty()) {
                     for (int i = forwardedList.size() - 1; i >= 0; i--) {
                         Forwarded f = forwardedList.get(i);
 
                         // Because we remained in the loop, the Forwarded entry we are looking at is trustworthy.
                         if (scheme == null && f.proto().isPresent()) {
-                            scheme = f.proto().get();
+                            String candidate = f.proto().get();
+                            if (isValidScheme(candidate)) {
+                                scheme = candidate;
+                            }
                         }
                         if (authority == null && f.host().isPresent()) {
-                            authority = f.host().get();
+                            authority = normalizeForwardedAuthority(f.host().get());
                         }
                         if (f.forClient().isPresent() && !trustedProxies.test(f.forClient().get())
                                 || scheme != null && authority != null) {
@@ -460,7 +589,7 @@ public interface RequestedUriDiscoveryContext {
                         }
                     }
                 }
-                return authority != null ? new ForwardedDiscovery(authority, scheme) : null;
+                return scheme != null || authority != null ? new ForwardedDiscovery(authority, scheme) : null;
             }
 
             private XForwardedDiscovery discoverUsingXForwarded(ServerRequestHeaders headers,
@@ -486,8 +615,15 @@ public interface RequestedUriDiscoveryContext {
                 }
                 if (areProxiesTrusted) {
                     scheme = headers.first(HeaderNames.X_FORWARDED_PROTO).orElse(null);
+                    if (scheme != null && !isValidScheme(scheme)) {
+                        throw new BadRequestException("Invalid requested URI discovery metadata");
+                    }
                     host = headers.first(HeaderNames.X_FORWARDED_HOST).orElse(null);
-                    port = headers.first(HeaderNames.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
+                    try {
+                        port = headers.first(HeaderNames.X_FORWARDED_PORT).map(Integer::parseInt).orElse(-1);
+                    } catch (NumberFormatException e) {
+                        throw new BadRequestException("Invalid requested URI discovery metadata", e);
+                    }
                     path = headers.first(HeaderNames.X_FORWARDED_PREFIX)
                             .map(prefix -> {
                                 String absolute = requestPath;
@@ -507,8 +643,8 @@ public interface RequestedUriDiscoveryContext {
     }
 
     /**
-     * Types of discovery of frontend URI. Defaults to {@link #HOST} when frontend URI discovery is disabled (uses only Host
-     * header and information about current request to determine scheme, host, port, and path).
+     * Types of discovery of frontend URI. Defaults to {@link #HOST} when frontend URI discovery is disabled (uses the
+     * effective request authority and information about the current request to determine scheme, host, port, and path).
      * Defaults to {@link #FORWARDED} when discovery is enabled. Can be explicitly configured on socket configuration builder.
      */
     enum RequestedUriDiscoveryType {
@@ -526,8 +662,8 @@ public interface RequestedUriDiscoveryContext {
          */
         X_FORWARDED,
         /**
-         * This is the default, only the {@code io.helidon.http.Header#HOST} header is used to discover
-         * requested URI.
+         * This is the default; an HTTP/1 absolute-form request-target supplies the authority, otherwise the
+         * {@code io.helidon.http.Header#HOST} header is used to discover the requested URI.
          */
         HOST
     }

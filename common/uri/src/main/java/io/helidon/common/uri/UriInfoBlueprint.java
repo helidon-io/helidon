@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,13 +47,15 @@ interface UriInfoBlueprint {
 
     /**
      * Port part of authority of the request.
-     * If port is not defined (e.g. authority without a port is used, or none is configured), the default
+     * In a builder, {@code -1} represents an undefined port. If port is not defined (e.g. authority without a port is used,
+     * or none is configured), the default
      * port is used based on the defined {@link #scheme()} - for {@code http} the port would be {@code 80},
      * and for {@code https} the port would be {@code 443}. If the scheme is different, if it ends with {@code s},
-     * port would be {@code 443}, otherwise {@code 80}.
+     * port would be {@code 443}, otherwise {@code 80}. An explicitly configured port {@code 0} is preserved.
      *
      * @return port
      */
+    @Option.DefaultInt(-1)
     int port();
 
     /**
@@ -62,7 +64,11 @@ interface UriInfoBlueprint {
      * @return authority
      */
     default String authority() {
-        return host() + ":" + port();
+        String host = host();
+        String encodedHost = host.startsWith("[") && host.endsWith("]")
+                ? host
+                : UriEncoding.encodeHost(host);
+        return encodedHost + ":" + port();
     }
 
     /**
@@ -97,11 +103,18 @@ interface UriInfoBlueprint {
      */
     default URI toUri() {
         try {
-            return new URI(scheme(),
-                           authority(),
-                           path().path(),
-                           query().isEmpty() ? null : query().value(),
-                           fragment().hasValue() ? fragment().value() : null);
+            String authority = authority();
+            URI uri = new URI(scheme(),
+                              authority,
+                              path().path(),
+                              query().isEmpty() ? null : query().value(),
+                              fragment().hasValue() ? fragment().value() : null);
+            String uriString = uri.toString();
+            int authorityStart = scheme().length() + 3;
+            int authorityEnd = authorityStart + uri.getRawAuthority().length();
+            return new URI(uriString.substring(0, authorityStart)
+                                   + authority
+                                   + uriString.substring(authorityEnd));
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("UriInfo cannot be used to create a URI: " + this, e);
         }

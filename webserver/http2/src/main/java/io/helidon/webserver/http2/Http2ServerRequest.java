@@ -95,15 +95,8 @@ class Http2ServerRequest implements RoutingRequest {
         this.originalPrologue = prologue;
         this.http2Headers = headers;
         this.requestId = requestId;
-        WritableHeaders<?> requestHeaders = WritableHeaders.create(headers.httpHeaders());
-        String authority = headers.authority();
-        if (authority == null || authority.isEmpty()) {
-            authority = requestHeaders.first(HeaderNames.HOST).orElse(null);
-        }
-        if (authority != null && !authority.isEmpty()) {
-            requestHeaders.set(HeaderValues.create(HeaderNames.HOST, authority));
-        }
-        this.authority = authority;
+        WritableHeaders<?> requestHeaders = requestHeaders(headers);
+        this.authority = requestHeaders.first(HeaderNames.HOST).orElse(null);
         this.headers = ServerRequestHeaders.create(requestHeaders);
         this.limitOutcome = limitOutcome;
 
@@ -120,6 +113,15 @@ class Http2ServerRequest implements RoutingRequest {
             this.entity = LazyValue.create(ReadableEntityBase.empty());
         }
 
+    }
+
+    static WritableHeaders<?> requestHeaders(Http2Headers headers) {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create(headers.httpHeaders());
+        String authority = headers.authority();
+        if (authority != null && !authority.isEmpty()) {
+            requestHeaders.set(HeaderValues.create(HeaderNames.HOST, authority));
+        }
+        return requestHeaders;
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
