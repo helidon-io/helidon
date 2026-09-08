@@ -91,9 +91,10 @@ class ScopedRegistryImpl implements ScopedRegistry {
             }
 
             state = RegistryState.DEACTIVATING;
+            // Include INIT activators that may already have been handed to a lookup before this snapshot.
             toShutdown = activators.values()
                     .stream()
-                    .filter(it -> it.phase().eligibleForDeactivation())
+                    .filter(it -> it.phase() != ActivationPhase.DESTROYED)
                     .sorted(shutdownComparator())
                     .toList();
         } finally {
@@ -151,7 +152,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
         try {
             serviceProvidersLock.readLock().lock();
             Activator<?> activator = activators.get(descriptor);
-            if (activator != null && state != RegistryState.INACTIVE) {
+            if (activator != null && availableForLookup(activator)) {
                 return (Activator<T>) activator;
             }
             checkActive();
@@ -175,7 +176,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
         try {
             serviceProvidersLock.readLock().lock();
             Activator<?> activator = activators.get(descriptor);
-            if (activator != null && state != RegistryState.INACTIVE) {
+            if (activator != null && availableForLookup(activator)) {
                 return Optional.of((Activator<T>) activator);
             }
             checkActive();
@@ -196,6 +197,11 @@ class ScopedRegistryImpl implements ScopedRegistry {
         if (state != RegistryState.ACTIVE) {
             throw new ScopeNotActiveException("Injection scope " + scope.fqName() + "[" + id + "] is not active.", scope);
         }
+    }
+
+    private boolean availableForLookup(Activator<?> activator) {
+        return state == RegistryState.ACTIVE
+                || (state == RegistryState.DEACTIVATING && activator.phase() == ActivationPhase.ACTIVE);
     }
 
     private enum RegistryState {
