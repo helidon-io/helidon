@@ -428,19 +428,20 @@ class ResilientValueTest {
         AtomicInteger calls = new AtomicInteger();
         AtomicReference<Throwable> failure = new AtomicReference<>();
         AtomicBoolean interrupted = new AtomicBoolean();
+        CircuitBreaker circuitBreaker = circuitBreaker();
         ResilientValue<String> value = ResilientValue.create("test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
                                                                  loading.countDown();
                                                                  try {
                                                                      release.await();
-                                                                     return "unexpected";
+                                                                     return "loaded";
                                                                  } catch (InterruptedException e) {
                                                                      throw new SupplierException(e);
                                                                  }
                                                              },
                                                              retry(2),
-                                                             circuitBreaker(),
+                                                             circuitBreaker,
                                                              timeout(Duration.ofSeconds(1)));
 
         Thread loaderThread = Thread.ofVirtual().start(() -> {
@@ -464,6 +465,10 @@ class ResilientValueTest {
         assertThat(failure.get(), instanceOf(ResilientValue.UnavailableException.class));
         assertThat(calls.get(), is(1));
         assertThat(interrupted.get(), is(true));
+        assertThat(circuitBreaker.state(), is(CircuitBreaker.State.CLOSED));
+        assertThat(value.get(), is("loaded"));
+        assertThat(calls.get(), is(2));
+        assertThat(circuitBreaker.state(), is(CircuitBreaker.State.CLOSED));
     }
 
     @Test

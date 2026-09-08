@@ -150,6 +150,12 @@ class CircuitBreakerImpl implements CircuitBreaker {
         return schedule.get();
     }
 
+    private static boolean callerCancelled(Throwable throwable) {
+        return !(throwable instanceof Error)
+                && Thread.currentThread().isInterrupted()
+                && SupplierHelper.interrupted(throwable) != null;
+    }
+
     private <U> U executeTask(Supplier<? extends U> supplier) {
         try {
             U result = supplier.get();
@@ -157,6 +163,9 @@ class CircuitBreakerImpl implements CircuitBreaker {
             return result;
         } catch (Throwable t) {
             Throwable throwable = SupplierHelper.unwrapThrowable(t);
+            if (callerCancelled(t)) {
+                throw SupplierHelper.toRuntimeException(throwable);
+            }
             if (errorChecker.shouldSkip(throwable)) {
                 results.update(ResultWindow.Result.SUCCESS);
             } else {
@@ -191,6 +200,9 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 return result;
             } catch (Throwable t) {
                 Throwable throwable = SupplierHelper.unwrapThrowable(t);
+                if (callerCancelled(t)) {
+                    throw SupplierHelper.toRuntimeException(throwable);
+                }
                 if (errorChecker.shouldSkip(throwable)) {
                     // success
                     int successes = successCounter.incrementAndGet();

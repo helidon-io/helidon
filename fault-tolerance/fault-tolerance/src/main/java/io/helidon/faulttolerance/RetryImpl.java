@@ -139,21 +139,6 @@ class RetryImpl implements Retry {
         return unwrapped == null ? throwable : unwrapped;
     }
 
-    private static Throwable interrupted(Throwable throwable) {
-        Throwable current = throwable;
-        for (int i = 0; current != null && i < 64; i++) {
-            if (current instanceof InterruptedException) {
-                return current;
-            }
-            Throwable cause = current.getCause();
-            if (cause == current) {
-                return null;
-            }
-            current = cause;
-        }
-        return null;
-    }
-
     private static <T> T throwLegacy(Throwable throwable) {
         if (throwable instanceof RuntimeException runtimeException) {
             throw runtimeException;
@@ -179,7 +164,7 @@ class RetryImpl implements Retry {
             } catch (Throwable t) {
                 Throwable throwable = unwrap(t);
                 state.failure(throwable);
-                Throwable interrupted = throwable instanceof Error ? null : interrupted(t);
+                Throwable interrupted = throwable instanceof Error ? null : SupplierHelper.interrupted(t);
                 if (interrupted != null && Thread.currentThread().isInterrupted()) {
                     return terminateAfterInvocation(legacy,
                                                     RetryOutcome.Termination.INTERRUPTED,
@@ -233,7 +218,7 @@ class RetryImpl implements Retry {
             try {
                 continueRetries = waitStrategy.await(Duration.ofMillis(delayMillis));
             } catch (RuntimeException t) {
-                Throwable interrupted = interrupted(t);
+                Throwable interrupted = SupplierHelper.interrupted(t);
                 if (Thread.currentThread().isInterrupted()) {
                     return terminateWait(legacy,
                                          RetryOutcome.Termination.INTERRUPTED,
