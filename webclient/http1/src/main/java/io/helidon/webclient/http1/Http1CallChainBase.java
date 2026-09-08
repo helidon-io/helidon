@@ -256,24 +256,27 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                           DataReader reader) {
 
         Status responseStatus;
-        try {
-            responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-        } catch (UncheckedIOException e) {
-            // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
-            // data of this request on the next use of this connection
+        ClientResponseHeaders responseHeaders;
+        do {
             try {
-                connection.closeResource();
-            } catch (Exception ex) {
-                e.addSuppressed(ex);
+                responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+            } catch (UncheckedIOException e) {
+                // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
+                // data of this request on the next use of this connection
+                try {
+                    connection.closeResource();
+                } catch (Exception ex) {
+                    e.addSuppressed(ex);
+                }
+                throw e;
             }
-            throw e;
-        }
 
-        recvListener.status(connection.helidonSocket(), responseStatus);
+            recvListener.status(connection.helidonSocket(), responseStatus);
 
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
+            responseHeaders = readHeaders(reader);
 
-        recvListener.headers(connection.helidonSocket(), responseHeaders);
+            recvListener.headers(connection.helidonSocket(), responseHeaders);
+        } while (originalRequest.outputStreamRedirect() && isPreContinueInterimResponse(responseStatus));
 
         return createServiceResponse(http1Client,
                                      serviceRequest,
@@ -290,6 +293,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
     Http1ConnectionListener recvListener() {
         return recvListener;
+    }
+
+    private static boolean isPreContinueInterimResponse(Status responseStatus) {
+        return responseStatus.family() == Status.Family.INFORMATIONAL
+                && responseStatus.code() != Status.CONTINUE_100.code()
+                && responseStatus.code() != Status.SWITCHING_PROTOCOLS_101.code();
     }
 
     private static String requestTarget(ClientUri uri) {

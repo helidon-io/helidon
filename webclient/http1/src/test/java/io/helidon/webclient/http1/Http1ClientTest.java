@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -425,6 +426,33 @@ class Http1ClientTest {
         })) {
             assertThat(response.status(), is(Status.EXPECTATION_FAILED_417));
             assertThat(response.headers().contentType().orElseThrow().text(), is("text/plain"));
+        }
+    }
+
+    @Test
+    void testRedirectProbeSkipsEarlyHintsBeforeContinue() throws Exception {
+        String requestBody = "redirect-body";
+        try (EarlyHintsRedirectServer redirectTarget = EarlyHintsRedirectServer.start()) {
+            String redirectResponse = "HTTP/1.1 307 Temporary Redirect\r\n"
+                    + "Location: " + redirectTarget.uri() + "\r\n"
+                    + "Content-Length: 0\r\n\r\n";
+            Http1Client redirectClient = Http1Client.builder()
+                    .sendExpectContinue(true)
+                    .build();
+            try {
+                Http1ClientRequest request = redirectClient.put(redirectTarget.redirectUri());
+                request.connection(new FakeHttp1ClientConnection(redirectResponse));
+
+                try (Http1ClientResponse response = request.outputStream(output -> {
+                    output.write(requestBody.getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+                    assertThat(response.status(), is(Status.OK_200));
+                }
+                assertThat(redirectTarget.awaitBody(), is(requestBody));
+            } finally {
+                redirectClient.closeResource();
+            }
         }
     }
 
@@ -1230,6 +1258,117 @@ class Http1ClientTest {
                 case 1, 3 -> next == '\n' ? matched + 1 : next == '\r' ? 1 : 0;
                 default -> throw new IllegalStateException("Unexpected header parser state");
                 };
+            }
+        }
+    }
+
+    private record EarlyHintsRedirectServer(ServerSocket server,
+                                            CompletableFuture<String> receivedBody,
+                                            CompletableFuture<Void> completion) implements AutoCloseable {
+        private static final byte[] CONTINUE_RESPONSE = ("HTTP/1.1 103 Early Hints\r\n"
+                + "Link: </style.css>; rel=preload\r\n"
+                + "\r\n"
+                + "HTTP/1.1 100 Continue\r\n"
+                + "\r\n").getBytes(StandardCharsets.US_ASCII);
+        private static final byte[] FINAL_RESPONSE = ("HTTP/1.1 200 OK\r\n"
+                + "Connection: close\r\n"
+                + "Content-Length: 0\r\n"
+                + "\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        static EarlyHintsRedirectServer start() throws IOException {
+            ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
+            server.setSoTimeout(5_000);
+            CompletableFuture<String> receivedBody = new CompletableFuture<>();
+            CompletableFuture<Void> completion = CompletableFuture.runAsync(() -> {
+                try (Socket socket = server.accept()) {
+                    socket.setSoTimeout(5_000);
+                    InputStream inputStream = socket.getInputStream();
+                    readHeaders(inputStream);
+                    socket.getOutputStream().write(CONTINUE_RESPONSE);
+                    socket.getOutputStream().flush();
+                    receivedBody.complete(readChunkedBody(inputStream));
+                    socket.getOutputStream().write(FINAL_RESPONSE);
+                    socket.getOutputStream().flush();
+                } catch (IOException e) {
+                    receivedBody.completeExceptionally(e);
+                    throw new UncheckedIOException(e);
+                }
+            });
+            return new EarlyHintsRedirectServer(server, receivedBody, completion);
+        }
+
+        String uri() {
+            return "http://127.0.0.1:" + server.getLocalPort() + "/target";
+        }
+
+        String redirectUri() {
+            return "http://127.0.0.1:" + server.getLocalPort() + "/redirect";
+        }
+
+        String awaitBody() throws Exception {
+            completion.get(5, TimeUnit.SECONDS);
+            return receivedBody.get(5, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() {
+            try {
+                server.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        private static void readHeaders(InputStream inputStream) throws IOException {
+            int matched = 0;
+            while (matched < 4) {
+                int next = inputStream.read();
+                if (next == -1) {
+                    throw new IllegalStateException("HTTP/1 request headers were not complete");
+                }
+                matched = switch (matched) {
+                case 0, 2 -> next == '\r' ? matched + 1 : 0;
+                case 1, 3 -> next == '\n' ? matched + 1 : next == '\r' ? 1 : 0;
+                default -> throw new IllegalStateException("Unexpected header parser state");
+                };
+            }
+        }
+
+        private static String readChunkedBody(InputStream inputStream) throws IOException {
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            while (true) {
+                int chunkLength = Integer.parseUnsignedInt(readLine(inputStream), 16);
+                if (chunkLength == 0) {
+                    if (!readLine(inputStream).isEmpty()) {
+                        throw new IllegalStateException("Unexpected HTTP/1 chunk trailer");
+                    }
+                    return body.toString(StandardCharsets.UTF_8);
+                }
+                byte[] chunk = inputStream.readNBytes(chunkLength);
+                if (chunk.length != chunkLength) {
+                    throw new IllegalStateException("HTTP/1 request chunk was incomplete");
+                }
+                body.write(chunk);
+                if (!readLine(inputStream).isEmpty()) {
+                    throw new IllegalStateException("HTTP/1 request chunk was not terminated");
+                }
+            }
+        }
+
+        private static String readLine(InputStream inputStream) throws IOException {
+            StringBuilder line = new StringBuilder();
+            while (true) {
+                int next = inputStream.read();
+                if (next == -1) {
+                    throw new IllegalStateException("HTTP/1 line was incomplete");
+                }
+                if (next == '\r') {
+                    if (inputStream.read() != '\n') {
+                        throw new IllegalStateException("HTTP/1 line had an invalid delimiter");
+                    }
+                    return line.toString();
+                }
+                line.append((char) next);
             }
         }
     }
