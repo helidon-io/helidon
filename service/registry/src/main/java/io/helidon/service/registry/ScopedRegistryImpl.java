@@ -44,7 +44,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     private final TypeName scope;
     private final String id;
-    private boolean active = false;
+    private RegistryState state = RegistryState.INACTIVE;
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     ScopedRegistryImpl(CoreServiceRegistry registry,
@@ -73,7 +73,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
      * at the time the scope is active and instances can be created within it.
      */
     public void activate() {
-        active = true;
+        state = RegistryState.ACTIVE;
     }
 
     @Override
@@ -81,11 +81,11 @@ class ScopedRegistryImpl implements ScopedRegistry {
         List<Activator<?>> toShutdown;
         try {
             serviceProvidersLock.writeLock().lock();
-            if (!active) {
+            if (state != RegistryState.ACTIVE) {
                 return;
             }
 
-            active = false;
+            state = RegistryState.DEACTIVATING;
             toShutdown = activators.values()
                     .stream()
                     .filter(it -> it.phase().eligibleForDeactivation())
@@ -95,31 +95,40 @@ class ScopedRegistryImpl implements ScopedRegistry {
             serviceProvidersLock.writeLock().unlock();
         }
 
-        // Deactivation may invoke user lifecycle code and wait for activator instance locks. The scope must already be
-        // inactive, and its lock must not be held while that code runs.
+        // Deactivation may invoke user lifecycle code and wait for activator instance locks. The scope must already
+        // reject new activators, and its lock must not be held while that code runs.
         List<Throwable> exceptions = new ArrayList<>();
 
-        for (Activator<?> managedService : toShutdown) {
-            try {
-                ActivationResult activationResult = managedService.deactivate();
-                if (activationResult.failure() && LOGGER.isLoggable(Level.DEBUG)) {
-                    if (activationResult.error().isPresent()) {
-                        LOGGER.log(Level.DEBUG,
-                                   "[" + id + "] Failed to deactivate " + managedService.description(),
-                                   activationResult.error().get());
-                        exceptions.add(activationResult.error().get());
-                    } else {
-                        LOGGER.log(Level.DEBUG,
-                                   "[" + id + "] Failed to deactivate " + managedService.description());
-                        exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description()
-                                                                            + ", no exception received."));
+        try {
+            for (Activator<?> managedService : toShutdown) {
+                try {
+                    ActivationResult activationResult = managedService.deactivate();
+                    if (activationResult.failure() && LOGGER.isLoggable(Level.DEBUG)) {
+                        if (activationResult.error().isPresent()) {
+                            LOGGER.log(Level.DEBUG,
+                                       "[" + id + "] Failed to deactivate " + managedService.description(),
+                                       activationResult.error().get());
+                            exceptions.add(activationResult.error().get());
+                        } else {
+                            LOGGER.log(Level.DEBUG,
+                                       "[" + id + "] Failed to deactivate " + managedService.description());
+                            exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description()
+                                                                                + ", no exception received."));
+                        }
                     }
+                } catch (Exception e) {
+                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG, "[" + id + "] Failed to deactivate service provider: " + managedService, e);
+                    }
+                    exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description(), e));
                 }
-            } catch (Exception e) {
-                if (LOGGER.isLoggable(Level.DEBUG)) {
-                    LOGGER.log(Level.DEBUG, "[" + id + "] Failed to deactivate service provider: " + managedService, e);
-                }
-                exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description(), e));
+            }
+        } finally {
+            try {
+                serviceProvidersLock.writeLock().lock();
+                state = RegistryState.INACTIVE;
+            } finally {
+                serviceProvidersLock.writeLock().unlock();
             }
         }
 
@@ -136,11 +145,11 @@ class ScopedRegistryImpl implements ScopedRegistry {
     public <T> Activator<T> activator(ServiceInfo descriptor, Supplier<Activator<T>> activatorSupplier) {
         try {
             serviceProvidersLock.readLock().lock();
-            checkActive();
             Activator<?> activator = activators.get(descriptor);
-            if (activator != null) {
+            if (activator != null && state != RegistryState.INACTIVE) {
                 return (Activator<T>) activator;
             }
+            checkActive();
         } finally {
             serviceProvidersLock.readLock().unlock();
         }
@@ -160,8 +169,12 @@ class ScopedRegistryImpl implements ScopedRegistry {
     <T> Optional<Activator<T>> existingActivator(ServiceInfo descriptor) {
         try {
             serviceProvidersLock.readLock().lock();
+            Activator<?> activator = activators.get(descriptor);
+            if (activator != null && state != RegistryState.INACTIVE) {
+                return Optional.of((Activator<T>) activator);
+            }
             checkActive();
-            return Optional.ofNullable((Activator<T>) activators.get(descriptor));
+            return Optional.empty();
         } finally {
             serviceProvidersLock.readLock().unlock();
         }
@@ -175,8 +188,14 @@ class ScopedRegistryImpl implements ScopedRegistry {
     }
 
     private void checkActive() {
-        if (!active) {
+        if (state != RegistryState.ACTIVE) {
             throw new ScopeNotActiveException("Injection scope " + scope.fqName() + "[" + id + "] is not active.", scope);
         }
+    }
+
+    private enum RegistryState {
+        ACTIVE,
+        DEACTIVATING,
+        INACTIVE
     }
 }

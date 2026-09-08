@@ -26,12 +26,14 @@ import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.ScopeNotActiveException;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ShutdownLockingTest {
     private static final long TIMEOUT_SECONDS = 5;
@@ -49,6 +51,7 @@ class ShutdownLockingTest {
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
                 .addServiceDescriptor(ShutdownLockingTest_LookupServicesFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ShutdownLockingTest_NotYetActive__ServiceDescriptor.INSTANCE)
                 .addServiceDescriptor(ShutdownLockingTest_ShutdownSignal__ServiceDescriptor.INSTANCE)
                 .build();
         ServiceRegistryManager manager = ServiceRegistryManager.create(config);
@@ -116,11 +119,14 @@ class ShutdownLockingTest {
                 throw new AssertionError(e);
             }
 
-            assertThat("registry inactive during shutdown",
-                       registry.firstActive(ServiceRegistry.class).isEmpty(),
-                       is(true));
+            registry.firstActive(ServiceRegistry.class);
+            assertThrows(ScopeNotActiveException.class, () -> registry.get(NotYetActive.class));
             return List.of(Service.QualifiedInstance.create(new FactoryProduct() { }, Set.of()));
         }
+    }
+
+    @Service.Singleton
+    static class NotYetActive {
     }
 
     @Service.Singleton
