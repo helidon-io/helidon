@@ -311,7 +311,14 @@ public final class OidcFeature implements HttpFeature {
             stateQuery = "&" + STATE_PARAM_NAME + "=" + encode(stateValue);
         }
 
-        Optional<Tenant> tenant = obtainCurrentTenant(tenantName);
+        Optional<Tenant> tenant;
+        try {
+            tenant = obtainCurrentTenant(tenantName);
+        } catch (ResilientValue.UnavailableException _) {
+            clearLocalOidcCookies(res.headers());
+            sendUnavailableTenantResponse(res);
+            return;
+        }
         if (tenant.isEmpty()) {
             clearLocalOidcCookies(res.headers());
             sendUnknownTenantResponse(res);
@@ -322,12 +329,8 @@ public final class OidcFeature implements HttpFeature {
     }
 
     private Optional<Tenant> obtainCurrentTenant(String tenantName) {
-        try {
-            return cachedTenant(tenantName)
-                    .map(Supplier::get);
-        } catch (ResilientValue.UnavailableException e) {
-            return Optional.empty();
-        }
+        return cachedTenant(tenantName)
+                .map(Supplier::get);
     }
 
     private Optional<Supplier<Tenant>> cachedTenant(String tenantName) {
@@ -457,7 +460,13 @@ public final class OidcFeature implements HttpFeature {
         JsonObject stateCookie = JsonParser.create(stateCookieJson).readJsonObject();
         res.headers().addCookie(stateCookieHandler.removeCookie().build());
 
-        Optional<Tenant> tenant = obtainCurrentTenant(tenantName);
+        Optional<Tenant> tenant;
+        try {
+            tenant = obtainCurrentTenant(tenantName);
+        } catch (ResilientValue.UnavailableException _) {
+            sendUnavailableTenantResponse(res);
+            return;
+        }
         if (tenant.isEmpty()) {
             processError(res, Status.UNAUTHORIZED_401, "Not a valid authorization code");
             return;
@@ -782,6 +791,11 @@ public final class OidcFeature implements HttpFeature {
 
         res.status(Status.BAD_REQUEST_400);
         res.send("{\"error\": \"" + error + "\", \"error_description\": \"" + errorDescription + "\"}");
+    }
+
+    private void sendUnavailableTenantResponse(ServerResponse serverResponse) {
+        serverResponse.status(Status.SERVICE_UNAVAILABLE_503);
+        serverResponse.send();
     }
 
     private Optional<JsonObject> stateCookie(ServerRequest req) {

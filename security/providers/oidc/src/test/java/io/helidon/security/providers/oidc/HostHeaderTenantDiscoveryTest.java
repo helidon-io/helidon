@@ -475,7 +475,7 @@ class HostHeaderTenantDiscoveryTest {
     }
 
     @Test
-    void unavailableRedirectTenantReturnsUnauthorized() {
+    void unavailableRedirectTenantReturnsServiceUnavailable() {
         try (MockIdpServer idp = new MockIdpServer()) {
             idp.metadataAvailable(false);
             Map<String, String> config = new HashMap<>(oneAttemptLoaderConfig());
@@ -488,7 +488,7 @@ class HostHeaderTenantDiscoveryTest {
                          .queryParam("state", "test-state")
                          .header(HeaderNames.COOKIE, stateCookie("test-state"))
                          .request()) {
-                assertThat("unavailable redirect tenant status", response.status(), is(Status.UNAUTHORIZED_401));
+                assertThat("unavailable redirect tenant status", response.status(), is(Status.SERVICE_UNAVAILABLE_503));
                 assertThat("unavailable tenant must not redirect",
                            response.headers().contains(HeaderNames.LOCATION),
                            is(false));
@@ -684,6 +684,40 @@ class HostHeaderTenantDiscoveryTest {
             }
 
             assertThat("unknown logout tenant should not resolve OIDC metadata", idp.wellKnownHits(), is(0));
+        }
+    }
+
+    @Test
+    void unavailableLogoutTenantReturnsServiceUnavailable() {
+        try (MockIdpServer idp = new MockIdpServer()) {
+            idp.metadataAvailable(false);
+            Map<String, String> config = new HashMap<>(oneAttemptLoaderConfig());
+            config.put("logout-enabled", "true");
+            config.put("cookie-use", "true");
+            config.put("cookie-encryption-tenant-enabled", "false");
+            config.put("post-logout-uri", "/logged-out");
+            try (FeatureServer server = new FeatureServer(oidcProviderConfig(idp.identityUri(), config));
+                 HttpClientResponse response = server.client()
+                         .get()
+                         .path("/oidc/logout")
+                         .header(HeaderNames.COOKIE,
+                                 OidcConfig.DEFAULT_COOKIE_NAME + "=bogus; "
+                                         + OidcConfig.DEFAULT_ID_COOKIE_NAME + "=bogus; "
+                                         + OidcConfig.DEFAULT_TENANT_COOKIE_NAME + "=default; "
+                                         + OidcConfig.DEFAULT_REFRESH_COOKIE_NAME + "=bogus")
+                         .request()) {
+                assertThat("unavailable logout tenant status", response.status(), is(Status.SERVICE_UNAVAILABLE_503));
+                assertThat("unavailable logout tenant must not redirect",
+                           response.headers().contains(HeaderNames.LOCATION),
+                           is(false));
+                List<String> cookies = response.headers().get(HeaderNames.SET_COOKIE).allValues();
+                assertRemoveCookie(cookies, OidcConfig.DEFAULT_COOKIE_NAME);
+                assertRemoveCookie(cookies, OidcConfig.DEFAULT_ID_COOKIE_NAME);
+                assertRemoveCookie(cookies, OidcConfig.DEFAULT_TENANT_COOKIE_NAME);
+                assertRemoveCookie(cookies, OidcConfig.DEFAULT_REFRESH_COOKIE_NAME);
+            }
+
+            assertThat("unavailable logout tenant should attempt discovery once", idp.wellKnownHits(), is(1));
         }
     }
 
