@@ -26,7 +26,7 @@ import io.helidon.common.Api;
  * {@code ResumableSupport.get().register(resumableResource)} are notified
  * before suspend and after resume by underlying resumable implementation.
  */
-@Api.Internal
+@Api.Preview
 public interface ResumableSupport {
 
     /**
