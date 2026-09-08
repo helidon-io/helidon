@@ -32,20 +32,24 @@ class ResilientValueJmhRunnerTest {
     void runExactBenchmark() throws RunnerException {
         String result = System.getProperty("resilient.value.jmh.result",
                                            "./target/resilient-value-jmh-result.json");
-        Options options = new OptionsBuilder()
-                .include("^" + Pattern.quote(ResilientValueJmhBenchmark.class.getName())
-                                 + "\\.(directFieldRead|cachedValueRead|openBreakerRejection)$")
+        OptionsBuilder optionsBuilder = new OptionsBuilder();
+        optionsBuilder.include("^" + Pattern.quote(ResilientValueJmhBenchmark.class.getName())
+                                       + "\\.(directFieldRead|cachedValueRead|openBreakerRejection|firstLoad|"
+                                       + "contendedFirstLoad|halfOpenRecovery)$")
                 .forks(Integer.getInteger("resilient.value.jmh.forks", 3))
-                .threads(Integer.getInteger("resilient.value.jmh.threads", 4))
                 .resultFormat(ResultFormatType.JSON)
                 .result(result)
-                .warmupIterations(Integer.getInteger("resilient.value.jmh.warmupIterations", 5))
-                .warmupTime(TimeValue.milliseconds(Long.getLong("resilient.value.jmh.warmupMillis", 500)))
-                .measurementIterations(Integer.getInteger("resilient.value.jmh.measurementIterations", 8))
-                .measurementTime(TimeValue.milliseconds(Long.getLong("resilient.value.jmh.measurementMillis", 1_000)))
+                .warmupIterations(Integer.getInteger("resilient.value.jmh.warmupIterations", 20))
+                .warmupTime(TimeValue.milliseconds(Long.getLong("resilient.value.jmh.warmupMillis", 100)))
+                .measurementIterations(Integer.getInteger("resilient.value.jmh.measurementIterations", 50))
+                .measurementTime(TimeValue.milliseconds(Long.getLong("resilient.value.jmh.measurementMillis", 200)))
                 .addProfiler(GCProfiler.class)
-                .shouldFailOnError(true)
-                .build();
+                .shouldFailOnError(true);
+        Integer threads = Integer.getInteger("resilient.value.jmh.threads");
+        if (threads != null) {
+            optionsBuilder.threads(threads);
+        }
+        Options options = optionsBuilder.build();
 
         new Runner(options).run();
     }
