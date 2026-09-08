@@ -31,7 +31,7 @@ import io.helidon.common.Api;
 /**
  * Bytes commonly used in HTTP.
  */
-@Api.Internal
+@Api.Preview
 public final class Bytes {
     /**
      * {@code :} byte.
