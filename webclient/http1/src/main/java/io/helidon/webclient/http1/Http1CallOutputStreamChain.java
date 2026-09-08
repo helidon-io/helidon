@@ -352,13 +352,15 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 return serviceResponse;
             }
 
-            return createServiceResponse(http1Client,
-                                         request,
-                                         response.connection(),
-                                         response.connection().reader(),
-                                         response.status(),
-                                         response.headers(),
-                                         whenComplete);
+            WebClientServiceResponse result = createServiceResponse(http1Client,
+                                                                    request,
+                                                                    response.connection(),
+                                                                    response.connection().reader(),
+                                                                    response.status(),
+                                                                    response.headers(),
+                                                                    whenComplete);
+            response.closeIfNoEntity();
+            return result;
         }
 
         boolean closed() {

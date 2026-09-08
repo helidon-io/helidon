@@ -586,6 +586,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                         //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
                         this.interrupted = true;
                         this.response = response;
+                        response.closeIfNoEntity();
                         //we are not sending anything by this OS, we need to interrupt it.
                         throw new OutputStreamInterruptedException();
                     }

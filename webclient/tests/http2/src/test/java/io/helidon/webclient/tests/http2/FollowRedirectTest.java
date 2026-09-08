@@ -34,9 +34,12 @@ import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +56,7 @@ class FollowRedirectTest {
     private static final StringBuilder BUFFER = new StringBuilder();
     private static final String PATH_COOKIE = "pathOnly=redirect-secret";
     private static final HeaderName REDIRECT_HEADER = HeaderNames.create("X-Redirect-Test");
+    private static final HeaderName PEER_PORT_HEADER = HeaderNames.create("X-Peer-Port");
     private static final AtomicReference<String> REDIRECT_SOURCE_COOKIE = new AtomicReference<>();
     private static final AtomicReference<String> REDIRECT_TARGET_COOKIE = new AtomicReference<>();
     private final Http2Client webClient;
@@ -62,6 +66,13 @@ class FollowRedirectTest {
                 .baseUri(uri)
                 .cookieManager(WebClientCookieManager.builder().automaticStoreEnabled(true).build())
                 .build();
+    }
+
+    @SetUpServer
+    static void setUpServer(WebServerConfig.Builder server) {
+        server.addProtocol(Http2Config.builder()
+                                   .maxConcurrentStreams(1)
+                                   .build());
     }
 
     @SetUpRoute
@@ -78,6 +89,16 @@ class FollowRedirectTest {
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/plain")
                     .send();
+        }).route(Method.PUT, "/redirectNoContent", (req, res) -> {
+            res.status(Status.TEMPORARY_REDIRECT_307)
+                    .header(HeaderNames.LOCATION, "/noContent")
+                    .send();
+        }).route(Method.PUT, "/noContent", (req, res) -> {
+            res.status(Status.NO_CONTENT_204)
+                    .header(PEER_PORT_HEADER, String.valueOf(req.remotePeer().port()))
+                    .send();
+        }).route(Method.GET, "/peerPort", (req, res) -> {
+            res.send(String.valueOf(req.remotePeer().port()));
         }).route(Method.PUT, "/redirectKeepMethodThenGet", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/redirectNoEntityAfterKeepMethod")
@@ -220,6 +241,24 @@ class FollowRedirectTest {
                     it.close();
                 })) {
             assertThat(response.entity().as(String.class), is(expected));
+        }
+    }
+
+    @Test
+    void noContentRedirectProbeReleasesStreamCapacity() throws IOException {
+        Http2ClientResponse response = webClient.put()
+                .path("/redirectNoContent")
+                .sendExpectContinue(true)
+                .outputStream(output -> output.write("entity".getBytes(StandardCharsets.UTF_8)));
+
+        assertThat(response.status(), is(Status.NO_CONTENT_204));
+        String peerPort = response.headers().get(PEER_PORT_HEADER).get();
+        assertThat(response.inputStream().readAllBytes().length, is(0));
+
+        try (Http2ClientResponse followUp = webClient.get()
+                .path("/peerPort")
+                .request()) {
+            assertThat(followUp.entity().as(String.class), is(peerPort));
         }
     }
 

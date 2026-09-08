@@ -456,6 +456,35 @@ class Http1ClientTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"307 Temporary Redirect", "308 Permanent Redirect"})
+    void testTerminalNoContentRedirectClosesIncompleteUploadConnection(String redirectStatus) throws Exception {
+        String requestBody = "redirect-body";
+        try (NoContentRedirectServer redirectTarget = NoContentRedirectServer.start()) {
+            String redirectResponse = "HTTP/1.1 " + redirectStatus + "\r\n"
+                    + "Location: " + redirectTarget.uri() + "\r\n"
+                    + "Content-Length: 0\r\n\r\n";
+            Http1Client redirectClient = Http1Client.builder()
+                    .sendExpectContinue(true)
+                    .build();
+            try {
+                Http1ClientRequest request = redirectClient.put(redirectTarget.redirectUri());
+                request.connection(new FakeHttp1ClientConnection(redirectResponse));
+
+                Http1ClientResponse response = request.outputStream(output -> {
+                    output.write(requestBody.getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                });
+
+                assertThat(response.status(), is(Status.NO_CONTENT_204));
+                assertThat(response.entity().inputStream().readAllBytes().length, is(0));
+                assertThat(redirectTarget.awaitConnectionClose(), is(true));
+            } finally {
+                redirectClient.closeResource();
+            }
+        }
+    }
+
     // validates that HEAD is not allowed with entity payload
     @Test
     void testHeadMethod() {
@@ -1369,6 +1398,66 @@ class Http1ClientTest {
                     return line.toString();
                 }
                 line.append((char) next);
+            }
+        }
+    }
+
+    private record NoContentRedirectServer(ServerSocket server,
+                                           CompletableFuture<Boolean> connectionClosed) implements AutoCloseable {
+        private static final byte[] RESPONSE = ("HTTP/1.1 204 No Content\r\n"
+                + "\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        static NoContentRedirectServer start() throws IOException {
+            ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
+            server.setSoTimeout(5_000);
+            CompletableFuture<Boolean> connectionClosed = CompletableFuture.supplyAsync(() -> {
+                try (Socket socket = server.accept()) {
+                    socket.setSoTimeout(5_000);
+                    InputStream inputStream = socket.getInputStream();
+                    readHeaders(inputStream);
+                    socket.getOutputStream().write(RESPONSE);
+                    socket.getOutputStream().flush();
+                    return inputStream.read() == -1;
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            return new NoContentRedirectServer(server, connectionClosed);
+        }
+
+        String uri() {
+            return "http://127.0.0.1:" + server.getLocalPort() + "/target";
+        }
+
+        String redirectUri() {
+            return "http://127.0.0.1:" + server.getLocalPort() + "/redirect";
+        }
+
+        boolean awaitConnectionClose() throws Exception {
+            return connectionClosed.get(5, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() {
+            try {
+                server.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        private static void readHeaders(InputStream inputStream) throws IOException {
+            int matched = 0;
+            while (matched < 4) {
+                int next = inputStream.read();
+                if (next == -1) {
+                    throw new IllegalStateException("HTTP/1 request headers were not complete");
+                }
+                matched = switch (matched) {
+                case 0, 2 -> next == '\r' ? matched + 1 : 0;
+                case 1, 3 -> next == '\n' ? matched + 1 : next == '\r' ? 1 : 0;
+                default -> throw new IllegalStateException("Unexpected header parser state");
+                };
             }
         }
     }

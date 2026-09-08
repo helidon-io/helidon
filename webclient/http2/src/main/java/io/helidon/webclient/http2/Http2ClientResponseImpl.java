@@ -140,6 +140,12 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                 maxBufferedEntitySize);
     }
 
+    void closeIfNoEntity() {
+        if (inputStream == null) {
+            close();
+        }
+    }
+
     ReleasableResource resource() {
         return stream;
     }

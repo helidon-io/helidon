@@ -197,6 +197,12 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         closeConnectionOnClose = true;
     }
 
+    void closeIfNoEntity() {
+        if (inputStream == null) {
+            close();
+        }
+    }
+
     /**
      * Attempts to consume an unread entity for the purpose of re-using a cached
      * connection. Only works for length-prefixed responses and when the entity
