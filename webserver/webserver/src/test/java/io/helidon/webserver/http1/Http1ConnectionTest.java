@@ -118,6 +118,43 @@ class Http1ConnectionTest {
     }
 
     @Test
+    void directErrorResponseFlushesBeforeConnectionReturns() throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        BlockingDataWriter writer = new BlockingDataWriter();
+        DirectHandlers directHandlers = DirectHandlers.builder()
+                .addHandler(DirectHandler.EventType.OTHER,
+                            (_, _, _, _, _) -> DirectHandler.TransportResponse.builder()
+                                    .status(Status.SERVICE_UNAVAILABLE_503)
+                                    .entity("error")
+                                    .build())
+                .build();
+        Limit limit = mock(Limit.class);
+        when(limit.tryAcquireOutcome(true)).thenReturn(LimitAlgorithm.Outcome.immediateRejection("test", "test"));
+        Http1Connection connection = createConnection(DataReader.create(() -> CONNECTION_CLOSE_REQUEST),
+                                                      writer,
+                                                      directHandlers,
+                                                      Router.empty());
+        try {
+            Future<?> connectionTask = executor.submit(() -> {
+                connection.handle(limit);
+                return null;
+            });
+
+            assertThat("Direct error response did not reach the final flush",
+                       writer.flushStarted.await(10, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("Connection returned before the direct error response was flushed",
+                       connectionTask.isDone(),
+                       is(false));
+            writer.releaseFlush.countDown();
+            connectionTask.get(2, TimeUnit.SECONDS);
+        } finally {
+            writer.releaseFlush.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
     void continueImmediatelyWrapsSocketWriterExceptionFromSmartWriter() {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         SocketWriter writer = smartFailingWriter(executor);
