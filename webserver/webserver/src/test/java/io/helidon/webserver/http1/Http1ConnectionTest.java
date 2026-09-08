@@ -143,6 +143,9 @@ class Http1ConnectionTest {
             assertThat("Direct error response did not reach the final flush",
                        writer.flushStarted.await(10, TimeUnit.SECONDS),
                        is(true));
+            assertThat("Direct error response was not queued before the final flush",
+                       writer.writeCalled.getCount(),
+                       is(0L));
             assertThat("Connection returned before the direct error response was flushed",
                        connectionTask.isDone(),
                        is(false));
@@ -267,6 +270,7 @@ class Http1ConnectionTest {
     }
 
     private static final class BlockingDataWriter implements DataWriter {
+        private final CountDownLatch writeCalled = new CountDownLatch(1);
         private final CountDownLatch flushStarted = new CountDownLatch(1);
         private final CountDownLatch releaseFlush = new CountDownLatch(1);
         private volatile boolean interrupted;
@@ -277,6 +281,7 @@ class Http1ConnectionTest {
 
         @Override
         public void write(BufferData buffer) {
+            writeCalled.countDown();
         }
 
         @Override
