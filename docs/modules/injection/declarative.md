@@ -19,8 +19,9 @@ Our declarative approach has the following advantages:
   not require additional dependencies)
 
 > [!NOTE]
-> Helidon Declarative is an incubating feature. The APIs shown here are subject
-> to change. These APIs will be finalized in a future release of Helidon.
+> Helidon Declarative is a preview feature. It is ready for production use. Its
+> APIs will remain backward compatible within a major version, but may change
+> without the usual deprecation process in a new major version.
 
 ## Usage
 

@@ -127,7 +127,7 @@ public interface GrpcServiceClient {
      * @return response stream
      * @throws UnsupportedOperationException if this implementation does not support resource-owning streams
      */
-    @Api.Incubating
+    @Api.Preview
     default <ReqT, ResT> Stream<ResT> serverStreaming(String methodName, ReqT request) {
         Objects.requireNonNull(methodName, "methodName");
         Objects.requireNonNull(request, "request");
@@ -149,7 +149,7 @@ public interface GrpcServiceClient {
      * @return response
      * @throws UnsupportedOperationException if this implementation does not support resource-owning streams
      */
-    @Api.Incubating
+    @Api.Preview
     default <ReqT, ResT> ResT clientStreaming(String methodName, Stream<ReqT> requests) {
         Objects.requireNonNull(methodName, "methodName");
         Objects.requireNonNull(requests, "requests");
@@ -169,7 +169,7 @@ public interface GrpcServiceClient {
      * @return response stream
      * @throws UnsupportedOperationException if this implementation does not support resource-owning streams
      */
-    @Api.Incubating
+    @Api.Preview
     default <ReqT, ResT> Stream<ResT> bidirectional(String methodName, Stream<ReqT> requests) {
         Objects.requireNonNull(methodName, "methodName");
         Objects.requireNonNull(requests, "requests");

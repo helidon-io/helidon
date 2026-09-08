@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@ package io.helidon.data;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * A {@link RuntimeException} that indicates an operation on a data repository has failed.
  */
+@Api.Preview
 public class DataException extends RuntimeException {
 
     /**

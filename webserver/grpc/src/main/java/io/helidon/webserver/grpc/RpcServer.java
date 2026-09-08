@@ -28,7 +28,7 @@ import io.helidon.common.Api;
 /**
  * Declarative gRPC server annotations.
  */
-@Api.Incubating
+@Api.Preview
 public final class RpcServer {
     private RpcServer() {
     }
