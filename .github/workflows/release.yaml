@@ -175,6 +175,7 @@ jobs:
           build-cache-id: resolve-all
           maven-cache: read-only
           run: |
+            mvn ${MVN_ARGS} -f archetypes/archetypes/pom.xml install -DskipTests
             ./etc/scripts/smoketest.sh \
               --staged \
               --version=${{ needs.create-tag.outputs.version }} \
