@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CircuitBreakerTest extends CircuitBreakerBaseTest {
 
@@ -95,5 +96,58 @@ class CircuitBreakerTest extends CircuitBreakerBaseTest {
         good(breaker);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
+    }
+
+    @Test
+    void callerCancellationDoesNotChangeHalfOpenState()
+            throws ExecutionException, InterruptedException, TimeoutException {
+        CircuitBreaker applyOnBreaker = CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .delay(Duration.ofMillis(200))
+                .successThreshold(1)
+                .addApplyOn(IllegalStateException.class)
+                .addApplyOn(InterruptedException.class)
+                .build();
+        CircuitBreaker skipOnBreaker = CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .delay(Duration.ofMillis(200))
+                .successThreshold(1)
+                .addApplyOn(IllegalStateException.class)
+                .addSkipOn(InterruptedException.class)
+                .build();
+
+        moveToHalfOpen(applyOnBreaker);
+        assertCallerCancellationDoesNotChangeHalfOpenState(applyOnBreaker);
+        moveToHalfOpen(skipOnBreaker);
+        assertCallerCancellationDoesNotChangeHalfOpenState(skipOnBreaker);
+    }
+
+    private static void assertCallerCancellationDoesNotChangeHalfOpenState(CircuitBreaker breaker) {
+        Thread.currentThread().interrupt();
+        try {
+            assertThrows(SupplierException.class,
+                         () -> breaker.invoke(() -> {
+                             throw new SupplierException(new InterruptedException("cancelled"));
+                         }));
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+            assertThat(breaker.state(), is(CircuitBreaker.State.HALF_OPEN));
+        } finally {
+            Thread.interrupted();
+        }
+        breaker.invoke(() -> "success");
+        assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
+    }
+
+    private static void moveToHalfOpen(CircuitBreaker breaker)
+            throws InterruptedException, ExecutionException, TimeoutException {
+        assertThrows(IllegalStateException.class,
+                     () -> breaker.invoke(() -> {
+                         throw new IllegalStateException("failure");
+                     }));
+        Future<Boolean> schedule = ((CircuitBreakerImpl) breaker).schedule();
+        schedule.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        assertThat(breaker.state(), is(CircuitBreaker.State.HALF_OPEN));
     }
 }
