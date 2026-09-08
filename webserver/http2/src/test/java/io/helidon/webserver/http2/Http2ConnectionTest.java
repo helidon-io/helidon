@@ -218,6 +218,60 @@ class Http2ConnectionTest {
         goAwayData.read(payloadBytes);
         Http2GoAway goAway = Http2GoAway.create(BufferData.create(payloadBytes));
         assertThat(goAway.errorCode(), is(Http2ErrorCode.REFUSED_STREAM));
+        assertThat(goAway.lastStreamId(), is(0));
+    }
+
+    @Test
+    void h2cUpgradeReportsAcceptedStreamInGoAway() throws InterruptedException {
+        List<BufferData> writtenFrames = new ArrayList<>();
+        DataWriter writer = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            writtenFrames.add(data.copy());
+            return null;
+        }).when(writer).writeNow(any(BufferData.class));
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(frameBytes(Http2Settings.builder()
+                                   .build()
+                                   .toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))));
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(1,
+                                                                       Http2FrameTypes.SETTINGS,
+                                                                       Http2Flag.SettingsFlags.create(Http2Flag.ACK),
+                                                                       0),
+                                                    BufferData.create(new byte[1]))));
+        ExecutorService executor = mock(ExecutorService.class);
+        doAnswer(invocation -> mock(Future.class)).when(executor).submit(any(Runnable.class));
+        DataReader reader = DataReader.create(input::poll);
+        ConnectionContext ctx = http2Context(writer, reader);
+        when(ctx.executor()).thenReturn(executor);
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+        Http2Headers headers = Http2Headers.create(WritableHeaders.create());
+        headers.method(Method.POST);
+        headers.path("/upgrade");
+        headers.scheme("http");
+        headers.authority("localhost");
+        connection.upgradeConnectionData(HttpPrologue.create("HTTP/1.1",
+                                                             "HTTP",
+                                                             "1.1",
+                                                             Method.POST,
+                                                             "/upgrade",
+                                                             false),
+                                         headers);
+
+        connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
+
+        verify(executor).submit(any(Runnable.class));
+        BufferData goAwayData = writtenFrames.get(writtenFrames.size() - 1);
+        byte[] headerBytes = new byte[Http2FrameHeader.LENGTH];
+        goAwayData.read(headerBytes);
+        Http2FrameHeader frameHeader = Http2FrameHeader.create(BufferData.create(headerBytes));
+        assertThat(frameHeader.type(), is(Http2FrameType.GO_AWAY));
+
+        byte[] payloadBytes = new byte[frameHeader.length()];
+        goAwayData.read(payloadBytes);
+        Http2GoAway goAway = Http2GoAway.create(BufferData.create(payloadBytes));
+        assertThat(goAway.errorCode(), is(Http2ErrorCode.FRAME_SIZE));
+        assertThat(goAway.lastStreamId(), is(1));
     }
 
     @Test

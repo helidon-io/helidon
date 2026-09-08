@@ -203,7 +203,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             this.socketAddress = null;
         } else if (socketAddress instanceof UnixDomainSocketAddress) {
             this.clientUri.host("localhost")
-                    .port(0);
+                    .port(-1);
             this.socketAddress = socketAddress;
         } else {
             throw new IllegalArgumentException("Unsupported socket address type: " + socketAddress.getClass().getName());

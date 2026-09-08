@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,8 +72,9 @@ public interface HttpRequest {
     PeerInfo localPeer();
 
     /**
-     * The content of the {@link io.helidon.http.HeaderNames#HOST} header
-     * or {@code authority} pseudo header (HTTP/2).
+     * Authority exposed for this request. An HTTP/1 absolute-form request-target supplies the normalized
+     * {@link io.helidon.http.HeaderNames#HOST} value; other HTTP/1 request forms expose that header as received. HTTP/2
+     * uses the {@code :authority} pseudo-header when present and otherwise uses {@code Host}; a conflict is rejected.
      *
      * @return authority of this request
      */
@@ -100,9 +101,10 @@ public interface HttpRequest {
 
     /**
      * URI as requested by the originating client (to the best of our ability to compute it).
-     * By default, the URI is from the {@link io.helidon.http.HeaderNames#HOST} header on the current request.
-     * If requested URI discovery is enabled by configuration, additional headers (such as {@link io.helidon.http.HeaderNames#FORWARDED})
-     * may be used to derive the originally-requested URI.
+     * By default, Helidon reconstructs the URI using the effective request authority, request path, and connection scheme.
+     * For an HTTP/1 absolute-form request-target, its scheme and authority take precedence over the {@code Host} header.
+     * If requested URI discovery is enabled by configuration, headers from trusted proxies (such as
+     * {@link io.helidon.http.HeaderNames#FORWARDED}) may override the corresponding URI components.
      *
      * @return uri info that can be used for redirects
      */

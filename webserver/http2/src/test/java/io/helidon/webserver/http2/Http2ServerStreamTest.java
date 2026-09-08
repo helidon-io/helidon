@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
@@ -196,7 +197,9 @@ class Http2ServerStreamTest {
     @Test
     void testClosedSubProtocolInitCreditsBlockedProducerData() throws InterruptedException {
         ClosingHandler handler = new ClosingHandler();
-        Http2ServerStream stream = stream(handler);
+        Http2ServerStream.LocallyResetStreamTracker resetStreams =
+                mock(Http2ServerStream.LocallyResetStreamTracker.class);
+        Http2ServerStream stream = stream(handler, resetStreams);
         FlowControl.Inbound flowControl = stream.flowControl().inbound();
         int initialWindowSize = flowControl.getRemainingWindowSize();
         byte[] payload = new byte[] {1};
@@ -230,6 +233,7 @@ class Http2ServerStreamTest {
             assertThat(handler.dataCalls(), is(0));
             assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
             assertThat(flowControl.getRemainingWindowSize(), is(initialWindowSize));
+            verify(resetStreams).remoteComplete(STREAM_ID);
         } finally {
             blockedProducer.interrupt();
             blockedProducer.join(10_000);
@@ -304,12 +308,47 @@ class Http2ServerStreamTest {
         assertThat(exception.getCause(), sameInstance(writeFailure));
     }
 
+    @Test
+    void oversizedFinalDataCompletesResetTracking() {
+        assertFinalContentLengthFailureCompletesResetTracking(1, 2);
+    }
+
+    @Test
+    void undersizedFinalDataCompletesResetTracking() {
+        assertFinalContentLengthFailureCompletesResetTracking(2, 1);
+    }
+
+    private static void assertFinalContentLengthFailureCompletesResetTracking(int contentLength, int dataLength) {
+        Http2ServerStream.LocallyResetStreamTracker resetStreams =
+                mock(Http2ServerStream.LocallyResetStreamTracker.class);
+        Http2ServerStream stream = stream(mock(Http2SubProtocolSelector.SubProtocolHandler.class), resetStreams);
+        byte[] payload = new byte[dataLength];
+        FlowControl.Inbound flowControl = stream.flowControl().inbound();
+
+        stream.headers(headers(contentLength), false);
+        flowControl.decrementWindowSize(dataLength);
+        stream.data(dataHeader(dataLength, Http2Flag.END_OF_STREAM), BufferData.create(payload), true);
+
+        verify(resetStreams).remoteComplete(STREAM_ID);
+    }
+
     private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler) {
-        return stream(handler, noOpWriter());
+        return stream(handler, noOpWriter(), mock(Http2ServerStream.LocallyResetStreamTracker.class));
     }
 
     private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler,
                                             Http2StreamWriter writer) {
+        return stream(handler, writer, mock(Http2ServerStream.LocallyResetStreamTracker.class));
+    }
+
+    private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler,
+                                            Http2ServerStream.LocallyResetStreamTracker resetStreams) {
+        return stream(handler, noOpWriter(), resetStreams);
+    }
+
+    private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler,
+                                            Http2StreamWriter writer,
+                                            Http2ServerStream.LocallyResetStreamTracker resetStreams) {
         Http2SubProtocolSelector selector = (connectionContext,
                                              prologue,
                                              headers,
@@ -320,10 +359,16 @@ class Http2ServerStreamTest {
                                              streamFlowControl,
                                              currentStreamState,
                                              router) -> new SubProtocolResult(true, handler);
-        return stream(selector, writer);
+        return stream(selector, writer, resetStreams);
     }
 
     private static Http2ServerStream stream(Http2SubProtocolSelector selector, Http2StreamWriter writer) {
+        return stream(selector, writer, mock(Http2ServerStream.LocallyResetStreamTracker.class));
+    }
+
+    private static Http2ServerStream stream(Http2SubProtocolSelector selector,
+                                            Http2StreamWriter writer,
+                                            Http2ServerStream.LocallyResetStreamTracker resetStreams) {
         ConnectionContext ctx = mock(ConnectionContext.class);
         when(ctx.router()).thenReturn(Router.empty());
         when(ctx.socketId()).thenReturn("socket");
@@ -331,7 +376,7 @@ class Http2ServerStreamTest {
         ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder((streamId, update) -> { }).build();
         return new Http2ServerStream(ctx,
                                      new Http2ConnectionStreams(),
-                                     ignored -> { },
+                                     resetStreams,
                                      mock(HttpRouting.class),
                                      Http2Config.create(),
                                      List.of(selector),
@@ -344,7 +389,15 @@ class Http2ServerStreamTest {
     }
 
     private static Http2Headers headers() {
-        Http2Headers headers = Http2Headers.create(WritableHeaders.create());
+        return headers(-1);
+    }
+
+    private static Http2Headers headers(int contentLength) {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        if (contentLength >= 0) {
+            requestHeaders.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
+        }
+        Http2Headers headers = Http2Headers.create(requestHeaders);
         headers.method(Method.POST);
         headers.path("/service/method");
         headers.scheme("http");

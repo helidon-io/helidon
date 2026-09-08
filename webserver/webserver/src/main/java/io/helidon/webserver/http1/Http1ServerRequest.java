@@ -265,15 +265,30 @@ abstract class Http1ServerRequest implements RoutingRequest {
         return prologue.rawProtocol() + " " + prologue.method() + " " + path().rawPathNoParams();
     }
 
+    private static String normalizedConnectAuthority(String authority, int port) {
+        return authority.substring(0, authority.lastIndexOf(':') + 1) + port;
+    }
+
     private UriInfo createUriInfo() {
-        UriInfo requestedUri = ctx.listenerContext().config().requestedUriDiscoveryContext()
-                .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
-                .uriInfo(remotePeer().address(),
-                         localPeer().address(),
-                         path.absolute().path(),
-                         headers,
-                         query(),
-                         isSecure());
+        RequestedUriDiscoveryContext discoveryContext = ctx.listenerContext().config().requestedUriDiscoveryContext()
+                .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT);
+        UriInfo requestedUri;
+        if (prologue.uriPath() instanceof Http1RequestTarget requestTarget && requestTarget.hasAuthority()) {
+            requestedUri = discoveryContext.uriInfo(remotePeer().address(),
+                                                    localPeer().address(),
+                                                    requestTarget.path(),
+                                                    requestTarget.scheme(),
+                                                    headers,
+                                                    query(),
+                                                    isSecure());
+        } else {
+            requestedUri = discoveryContext.uriInfo(remotePeer().address(),
+                                                    localPeer().address(),
+                                                    path.absolute().path(),
+                                                    headers,
+                                                    query(),
+                                                    isSecure());
+        }
         if (!Method.CONNECT.equals(prologue.method())) {
             return requestedUri;
         }
@@ -283,7 +298,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                 .authority(authority)
                 .path("")
                 .build();
-        return new ConnectUriInfo(connectUri, connectUri.authority());
+        return new ConnectUriInfo(connectUri, normalizedConnectAuthority(authority, connectUri.port()));
     }
 
     private static final class ConnectUriInfo implements UriInfo {

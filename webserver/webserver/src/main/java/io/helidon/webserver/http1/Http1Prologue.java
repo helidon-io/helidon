@@ -180,7 +180,7 @@ public final class Http1Prologue {
             }
         } else {
             if (!requestTarget.isEmpty()
-                    && (requestTarget.charAt(0) == '/' || isAbsoluteForm(requestTarget))) {
+                    && (requestTarget.charAt(0) == '/' || Http1RequestTarget.isAbsoluteForm(requestTarget))) {
                 return false;
             }
             throw new IllegalArgumentException("Relative path in HTTP request-target");
@@ -233,28 +233,6 @@ public final class Http1Prologue {
         } catch (IllegalArgumentException e) {
             return false;
         }
-    }
-
-    private static boolean isAbsoluteForm(String requestTarget) {
-        int colon = requestTarget.indexOf(':');
-        if (colon <= 0) {
-            return false;
-        }
-        char first = requestTarget.charAt(0);
-        if ((first < 'a' || first > 'z') && (first < 'A' || first > 'Z')) {
-            return false;
-        }
-        for (int i = 1; i < colon; i++) {
-            char c = requestTarget.charAt(i);
-            if ((c >= 'a' && c <= 'z')
-                    || (c >= 'A' && c <= 'Z')
-                    || (c >= '0' && c <= '9')
-                    || c == '+' || c == '-' || c == '.') {
-                continue;
-            }
-            return false;
-        }
-        return true;
     }
 
     private static UriPath authorityPath(String requestTarget) {
@@ -361,13 +339,17 @@ public final class Http1Prologue {
         }
 
         try {
-            HttpPrologue prologue = HttpPrologue.create(protocol,
-                                                        "HTTP",
-                                                        "1.1",
-                                                        method,
-                                                        path,
-                                                        validatePath && !Method.CONNECT.equals(method));
+            HttpPrologue prologue = HttpPrologue.create(protocol, "HTTP", "1.1", method, path, false);
             String requestTarget = prologue.uriPath().rawPath();
+            if (!Method.CONNECT.equals(method) && Http1RequestTarget.isAbsoluteForm(requestTarget)) {
+                Http1RequestTarget absoluteRequestTarget = Http1RequestTarget.create(requestTarget);
+                if (validatePath) {
+                    absoluteRequestTarget.validate();
+                }
+                prologue = prologue.withUriPath(absoluteRequestTarget);
+            } else if (validatePath && !Method.CONNECT.equals(method)) {
+                prologue.uriPath().validate();
+            }
             boolean specialRequestTarget;
             if (validatePath) {
                 specialRequestTarget = validateRequestTarget(method,

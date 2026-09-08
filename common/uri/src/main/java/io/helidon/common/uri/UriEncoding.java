@@ -68,6 +68,61 @@ public final class UriEncoding {
         return decodeUri(uriQuery, false);
     }
 
+    static String decodeHost(String host) {
+        int firstPercent = host.indexOf('%');
+        if (host.isEmpty() || firstPercent == -1) {
+            return host;
+        }
+        StringBuilder result = new StringBuilder(host.length());
+        result.append(host, 0, firstPercent);
+        for (int i = firstPercent; i < host.length(); i++) {
+            char c = host.charAt(i);
+            if (c == '%' && isPercentEncoded(host, i, host.length())) {
+                int decoded = decode(host.charAt(i + 1), host.charAt(i + 2)) & 0xff;
+                if (isUnreserved(decoded)) {
+                    result.append((char) decoded);
+                } else {
+                    result.append('%')
+                            .append(HEX_DIGITS[decoded >> 4])
+                            .append(HEX_DIGITS[decoded & 0x0f]);
+                }
+                i += 2;
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
+    }
+
+    static String encodeHost(String host) {
+        if (host.isEmpty()) {
+            return host;
+        }
+        StringBuilder result = new StringBuilder(host.length());
+        boolean[] table = ENCODING_TABLES[Type.HOST.ordinal()];
+        for (int offset = 0; offset < host.length();) {
+            char c = host.charAt(offset);
+            if (c == '%' && isPercentEncoded(host, offset, host.length())) {
+                int encoded = decode(host.charAt(offset + 1), host.charAt(offset + 2)) & 0xff;
+                result.append('%')
+                        .append(HEX_DIGITS[encoded >> 4])
+                        .append(HEX_DIGITS[encoded & 0x0f]);
+                offset += 3;
+                continue;
+            }
+            int codePoint = host.codePointAt(offset);
+            if (codePoint < 0x80 && table[codePoint]) {
+                result.append((char) codePoint);
+            } else if (codePoint < 0x80) {
+                appendEscape(result, codePoint);
+            } else {
+                appendUTF8EncodedCharacter(result, codePoint);
+            }
+            offset += Character.charCount(codePoint);
+        }
+        return result.toString();
+    }
+
     /**
      * Encode a URI segment.
      *
@@ -354,6 +409,16 @@ public final class UriEncoding {
      */
     private static boolean isHexCharacter(char c) {
         return c < 128 && HEX_TABLE[c] != -1;
+    }
+
+    private static boolean isUnreserved(int c) {
+        return c >= 'a' && c <= 'z'
+                || c >= 'A' && c <= 'Z'
+                || c >= '0' && c <= '9'
+                || c == '-'
+                || c == '.'
+                || c == '_'
+                || c == '~';
     }
 
     /**
