@@ -964,23 +964,20 @@ public class Http2Headers {
         boolean neverIndex = (flags & NEVER_INDEX) != 0;
         if (index == 0) {
             // neither name nor value exists in an index
-            if (shouldIndex) {
-                table.add(name, value);
-            }
             approach = new HeaderApproach(shouldIndex, neverIndex, true, true, 0);
         } else if (index > 0) {
             // this is the exact same name and value
             approach = new HeaderApproach(false, neverIndex, false, false, index);
         } else {
             // same name
-            if (shouldIndex) {
-                table.add(name, value);
-            }
             // in both cases, we use index to record name
             approach = new HeaderApproach(shouldIndex, neverIndex, false, true, -index);
         }
 
         approach.write(huffman, buffer, name, value);
+        if (shouldIndex && index <= 0) {
+            table.add(name, value);
+        }
     }
 
     private void writeHeader(BufferData buffer,
