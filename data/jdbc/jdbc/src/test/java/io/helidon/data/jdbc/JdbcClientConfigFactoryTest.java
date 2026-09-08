@@ -63,6 +63,40 @@ class JdbcClientConfigFactoryTest {
     }
 
     /**
+     * Verifies a singleton mapping at the list key reports the required shape
+     * before its fields can be interpreted as separate client definitions.
+     */
+    @Test
+    void rejectsSingletonClientMapping() {
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.clients.jdbc.name", "inventory",
+                "data.clients.jdbc.data-source", "inventory-source")));
+
+        DataException failure = assertThrows(
+                DataException.class,
+                () -> new JdbcClientConfigFactory(() -> config).services());
+
+        assertThat(failure.getMessage(),
+                   is("Configuration data.clients.jdbc must be a list of JDBC client configurations."));
+    }
+
+    /**
+     * Verifies a scalar at the list key reports the required configuration
+     * shape instead of a generic configuration parsing failure.
+     */
+    @Test
+    void rejectsScalarClientConfiguration() {
+        Config config = Config.just(ConfigSources.create(Map.of("data.clients.jdbc", "inventory")));
+
+        DataException failure = assertThrows(
+                DataException.class,
+                () -> new JdbcClientConfigFactory(() -> config).services());
+
+        assertThat(failure.getMessage(),
+                   is("Configuration data.clients.jdbc must be a list of JDBC client configurations."));
+    }
+
+    /**
      * Verifies duplicate YAML names fail before client publication.
      */
     @Test
@@ -144,6 +178,8 @@ class JdbcClientConfigFactoryTest {
         Config rootConfig = mock(Config.class);
         Config clientsConfig = mock(Config.class);
         when(rootConfig.get(JdbcClientConfigFactory.CONFIG_KEY)).thenReturn(clientsConfig);
+        when(clientsConfig.exists()).thenReturn(true);
+        when(clientsConfig.isList()).thenReturn(true);
         when(clientsConfig.asNodeList()).thenThrow(
                 new ConfigException(sensitiveDetail, new IllegalStateException("private-configuration-cause")));
 

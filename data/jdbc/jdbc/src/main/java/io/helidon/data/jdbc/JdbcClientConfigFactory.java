@@ -33,6 +33,9 @@ final class JdbcClientConfigFactory implements Service.ServicesFactory<JdbcClien
 
     static final String CONFIG_KEY = "data.clients.jdbc";
 
+    private static final String INVALID_CONFIGURATION_MESSAGE =
+            "Configuration data.clients.jdbc must be a list of JDBC client configurations.";
+
     private final Supplier<Config> config;
 
     /**
@@ -58,10 +61,25 @@ final class JdbcClientConfigFactory implements Service.ServicesFactory<JdbcClien
 
         List<Config> configuredClients;
         try {
-            configuredClients = rootConfig
-                    .get(CONFIG_KEY)
-                    .asNodeList()
-                    .orElse(List.of());
+            Config clientsConfig = rootConfig.get(CONFIG_KEY);
+            if (!clientsConfig.exists()) {
+                configuredClients = List.of();
+            } else if (clientsConfig.isList()) {
+                configuredClients = clientsConfig.asNodeList().orElse(List.of());
+            } else if (clientsConfig.isObject()) {
+                configuredClients = clientsConfig.asNodeList().orElse(List.of());
+                boolean indexedConfiguration = !configuredClients.isEmpty()
+                        && configuredClients.stream().allMatch(configuredClient -> {
+                            String name = configuredClient.name();
+                            return !name.isEmpty()
+                                    && name.chars().allMatch(character -> character >= '0' && character <= '9');
+                        });
+                if (!indexedConfiguration) {
+                    throw new DataException(INVALID_CONFIGURATION_MESSAGE);
+                }
+            } else {
+                throw new DataException(INVALID_CONFIGURATION_MESSAGE);
+            }
         } catch (ConfigException failure) {
             // Configuration diagnostics can contain paths and values that must not escape this boundary.
             throw new DataException("JDBC client configuration could not be read.",
