@@ -91,6 +91,13 @@ attempt runs inside `jwk-loader.timeout`, attempts are grouped by
 `jwk-loader.retry`, and the complete retry batch runs inside
 `jwk-loader.circuit-breaker`.
 
+If metadata or JWK loading remains temporarily unavailable, optional provider
+authentication abstains. Required provider authentication returns `401
+Unauthorized` with a `WWW-Authenticate: Bearer` challenge when header
+authentication is enabled, and `503 Service Unavailable` otherwise. OIDC
+redirect callback and logout requests return `503 Service Unavailable` for the
+same temporary source outage.
+
 By default, an attempt times out after 5 seconds. At most two attempts are made,
 separated by a 200 ms delay, within an 11-second overall retry timeout. The
 11-second budget accommodates both 5-second attempts and the delay. The
@@ -831,6 +838,12 @@ timeout, or does not use current-thread execution. This prevents a retry from
 overlapping a timed-out loader that is still unwinding after interruption. The
 deadline interrupts the loader, so prompt termination also depends on the
 underlying I/O honoring interruption or enforcing its own timeout.
+
+If verification-key loading remains temporarily unavailable, optional
+authentication abstains. Required authentication using the built-in
+Authorization Bearer token handler returns `401 Unauthorized` with a
+`WWW-Authenticate: Bearer` challenge. A provider using a custom token handler
+returns `503 Service Unavailable` instead.
 
 If `allow-unsigned` is explicitly enabled, a token using the `none` algorithm
 without a key ID does not require or trigger loading of verification JWKs.
