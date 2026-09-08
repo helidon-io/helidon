@@ -334,6 +334,21 @@ class JwtProviderJwkLoadingTest {
     }
 
     @Test
+    void disabledProxyIsAllowedForNonUriResource() {
+        String configText = """
+                atn-token:
+                  jwk:
+                    resource:
+                      path: '%s'
+                      use-proxy: false
+                """.formatted(tempDir.resolve("missing.json").toString().replace("'", "''"));
+
+        JwtProvider provider = JwtProvider.create(Config.just(configText, MediaTypes.APPLICATION_YAML));
+
+        assertThat(provider, is(notNullValue()));
+    }
+
+    @Test
     void dynamicUriMustBeAbsoluteAndSupportedByResource() {
         assertThrows(JwtException.class,
                      () -> JwtProvider.builder()
