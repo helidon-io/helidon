@@ -47,6 +47,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.Header;
@@ -404,6 +405,27 @@ class Http1ClientTest {
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
         assertThat(response.headers(), hasHeader(REQ_EXPECT_100_HEADER_NAME));
+    }
+
+    @Test
+    void testEarlyResponseUsesConfiguredMediaTypeParserMode() {
+        String earlyResponse = "HTTP/1.1 417 Expectation Failed\r\n"
+                + "Content-Type: text/plain; charset=\r\n"
+                + "Content-Length: 0\r\n\r\n";
+        Http1Client client = Http1Client.builder()
+                .sendExpectContinue(true)
+                .mediaTypeParserMode(ParserMode.RELAXED)
+                .build();
+        Http1ClientRequest request = client.put("http://localhost:" + dummyPort + "/test");
+        request.connection(new FakeHttp1ClientConnection(earlyResponse));
+
+        try (HttpClientResponse response = request.outputStream(output -> {
+            output.write('x');
+            output.close();
+        })) {
+            assertThat(response.status(), is(Status.EXPECTATION_FAILED_417));
+            assertThat(response.headers().contentType().orElseThrow().text(), is("text/plain"));
+        }
     }
 
     // validates that HEAD is not allowed with entity payload
@@ -891,6 +913,7 @@ class Http1ClientTest {
         private final DataReader serverReader;
         private final DataWriter serverWriter;
         private final boolean includeKeepAliveHeader;
+        private final String expectContinueResponse;
         private Throwable serverException;
         private ExecutorService webServerEmulator;
         private String prologue;
@@ -902,6 +925,14 @@ class Http1ClientTest {
         }
 
         FakeHttp1ClientConnection(boolean includeKeepAliveHeader) {
+            this(includeKeepAliveHeader, "HTTP/1.1 100 Continue\r\n\r\n");
+        }
+
+        FakeHttp1ClientConnection(String expectContinueResponse) {
+            this(true, expectContinueResponse);
+        }
+
+        private FakeHttp1ClientConnection(boolean includeKeepAliveHeader, String expectContinueResponse) {
             ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
             ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
 
@@ -910,6 +941,7 @@ class Http1ClientTest {
             this.serverReader = reader(clientToServer);
             this.serverWriter = writer(serverToClient);
             this.includeKeepAliveHeader = includeKeepAliveHeader;
+            this.expectContinueResponse = expectContinueResponse;
         }
 
         @Override
@@ -1060,7 +1092,10 @@ class Http1ClientTest {
                     // Send 100-Continue if requested
                     if (reqHeaders.contains(HeaderValues.EXPECT_100)) {
                         serverWriter.write(
-                                BufferData.create("HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8)));
+                                BufferData.create(expectContinueResponse.getBytes(StandardCharsets.ISO_8859_1)));
+                        if (!expectContinueResponse.startsWith("HTTP/1.1 100 ")) {
+                            return;
+                        }
                     }
 
                     // Assemble the entity from the chunks

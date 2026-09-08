@@ -504,7 +504,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                      connection,
                                                                      reader,
                                                                      responseStatus,
-                                                                     ClientResponseHeaders.create(responseHeaders),
+                                                                     ClientResponseHeaders.create(
+                                                                             responseHeaders,
+                                                                             clientConfig.mediaTypeParserMode()),
                                                                      whenComplete);
                         //we are not sending anything by this OS, we need to interrupt it.
                         throw new OutputStreamInterruptedException();
