@@ -334,18 +334,20 @@ class JwtProviderJwkLoadingTest {
     }
 
     @Test
-    void disabledProxyIsAllowedForNonUriResource() {
-        String configText = """
-                atn-token:
-                  jwk:
-                    resource:
-                      path: '%s'
-                      use-proxy: false
-                """.formatted(tempDir.resolve("missing.json").toString().replace("'", "''"));
+    void proxyFlagWithoutProxyIsAllowedForNonUriResource() {
+        for (boolean useProxy : List.of(false, true)) {
+            String configText = """
+                    atn-token:
+                      jwk:
+                        resource:
+                          path: '%s'
+                          use-proxy: %s
+                    """.formatted(tempDir.resolve("missing.json").toString().replace("'", "''"), useProxy);
 
-        JwtProvider provider = JwtProvider.create(Config.just(configText, MediaTypes.APPLICATION_YAML));
+            JwtProvider provider = JwtProvider.create(Config.just(configText, MediaTypes.APPLICATION_YAML));
 
-        assertThat(provider, is(notNullValue()));
+            assertThat("use-proxy " + useProxy, provider, is(notNullValue()));
+        }
     }
 
     @Test

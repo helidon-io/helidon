@@ -1393,10 +1393,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                                                + " content-plain, or content");
             }
             boolean uri = resourceConfig.get("uri").exists();
-            boolean useProxy = resourceConfig.get("use-proxy").asBoolean().orElse(false);
             if (!uri && (resourceConfig.get("proxy-host").exists()
-                    || resourceConfig.get("proxy-port").exists()
-                    || useProxy)) {
+                    || resourceConfig.get("proxy-port").exists())) {
                 throw new JwtException("Verification JWK proxy can only be configured with a URI resource");
             }
             if (resourceConfig.get("proxy-port").exists() && !resourceConfig.get("proxy-host").exists()) {
