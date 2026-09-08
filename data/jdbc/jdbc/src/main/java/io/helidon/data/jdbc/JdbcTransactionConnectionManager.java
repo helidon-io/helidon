@@ -48,9 +48,11 @@ import io.helidon.transaction.spi.TxLifeCycle;
  * records such a transaction as foreign and rejects local JDBC acquisition
  * rather than implying that an ordinary connection joined that transaction.
  * <p>
- * Each transaction may use one datasource identity. A confirmed completion
- * restores auto commit before closing the connection. An unknown outcome
- * invalidates the connection instead of returning it for normal reuse.
+ * Each transaction may use one datasource identity. Every transaction-bound
+ * terminal operation verifies that auto-commit remains disabled. A confirmed
+ * completion restores auto-commit before closing the connection, while an
+ * unknown outcome invalidates the connection instead of returning it for
+ * normal reuse.
  */
 @Service.Singleton
 final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnectionLease.Provider {
@@ -119,7 +121,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                 throw JdbcExceptionTranslator.translateFailure("transaction connection setup", reportedFailure);
             }
         }
-        return new TransactionLease(association.connection);
+        return new TransactionLease(state, state.activeJdbc, association);
     }
 
     @Override
@@ -239,6 +241,43 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
+     * Verifies that a transaction connection keeps auto-commit disabled.
+     * A connection whose mode changed, or whose mode cannot be inspected, has
+     * an unknown transaction outcome and cannot safely return to its pool.
+     *
+     * @param association JDBC transaction association
+     * @return observed connection state
+     */
+    private static TransactionConnectionState validateTransactionConnection(Association association) {
+        if (association.outcome == CompletionOutcome.UNKNOWN) {
+            return TransactionConnectionState.UNKNOWN;
+        }
+        Connection connection = association.connection;
+        if (connection == null) {
+            return TransactionConnectionState.AUTO_COMMIT_DISABLED;
+        }
+
+        try {
+            if (!JdbcExceptionTranslator.invoke("inspecting automatic commit mode for a local transaction",
+                                                connection::getAutoCommit)) {
+                return TransactionConnectionState.AUTO_COMMIT_DISABLED;
+            }
+            Throwable failure = JdbcExceptionTranslator.safeException(
+                    "Automatic commit mode was enabled before the local JDBC transaction completed.");
+            failure = JdbcConnectionInvalidator.invalidate(connection, failure);
+            association.compromised(failure);
+            return TransactionConnectionState.AUTO_COMMIT_ENABLED;
+        } catch (SQLException | RuntimeException | Error inspectionFailure) {
+            Throwable failure = JdbcConnectionInvalidator.invalidate(connection, inspectionFailure);
+            if (!(failure instanceof Error)) {
+                failure = JdbcExceptionTranslator.sanitize("validating a local transaction connection", failure);
+            }
+            association.compromised(failure);
+            return TransactionConnectionState.UNREADABLE;
+        }
+    }
+
+    /**
      * Completes and closes a lazily acquired physical connection.
      * <p>
      * A failed commit has an unknown database outcome even when the following
@@ -251,6 +290,16 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      * @param commit whether to commit rather than roll back
      */
     private static void completeConnection(Association association, boolean commit) {
+        TransactionConnectionState connectionState = validateTransactionConnection(association);
+        if (connectionState != TransactionConnectionState.AUTO_COMMIT_DISABLED) {
+            association.failed(CompletionOutcome.UNKNOWN);
+            throwTransactionFailure(
+                    "The provider could not confirm that auto-commit remained disabled for the local JDBC transaction, "
+                            + "and the outcome is unknown.",
+                    association.failure);
+            return;
+        }
+
         Connection connection = association.connection;
         if (connection == null) {
             association.completed(commit ? CompletionOutcome.COMMITTED : CompletionOutcome.ROLLED_BACK);
@@ -608,6 +657,17 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
+     * Observed state of a connection managed by a local JDBC transaction.
+     */
+    private enum TransactionConnectionState {
+
+        AUTO_COMMIT_DISABLED,
+        AUTO_COMMIT_ENABLED,
+        UNREADABLE,
+        UNKNOWN
+    }
+
+    /**
      * Implemented only by internal datasource adapters whose configuration defines a stable transaction identity.
      */
     interface IdentitySource {
@@ -661,6 +721,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
         // Cleanup decisions depend on whether the database outcome is known.
         private CompletionOutcome outcome;
+        private Throwable failure;
 
         /**
          * Creates an active association.
@@ -728,6 +789,21 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             outcome = completionOutcome;
         }
 
+        /**
+         * Records a connection whose transaction outcome can no longer be
+         * established and removes it from ordinary transaction completion.
+         *
+         * @param transactionFailure failure that explains the unknown outcome
+         */
+        private void compromised(Throwable transactionFailure) {
+            if (state != AssociationState.COMPLETING) {
+                state = AssociationState.FAILED;
+            }
+            outcome = CompletionOutcome.UNKNOWN;
+            failure = transactionFailure;
+            connection = null;
+        }
+
         // Completed associations remain terminal, while every other invalid transition fails closed.
         private void failLifecycle() {
             if (state != AssociationState.COMPLETED) {
@@ -737,21 +813,29 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
-     * Logical operation lease.
-     * Its close is a no-op because transaction completion owns the physical connection.
+     * Logical operation lease that leaves physical ownership with transaction
+     * completion and verifies the connection mode after each operation.
      */
     private static final class TransactionLease implements JdbcConnectionLease {
 
+        private final State state;
+        private final String txIdentity;
+        private final Association association;
         private final Connection connection;
         private boolean closed;
 
         /**
          * Creates a logical lease over the transaction connection.
          *
-         * @param connection transaction connection
+         * @param state current thread state
+         * @param txIdentity transaction identity
+         * @param association transaction connection association
          */
-        private TransactionLease(Connection connection) {
-            this.connection = connection;
+        private TransactionLease(State state, String txIdentity, Association association) {
+            this.state = state;
+            this.txIdentity = txIdentity;
+            this.association = association;
+            this.connection = association.connection;
         }
 
         @Override
@@ -764,7 +848,21 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
         @Override
         public void close() {
-            closed = true;
+            if (closed) {
+                return;
+            }
+            try {
+                TransactionConnectionState connectionState = validateTransactionConnection(association);
+                if (connectionState != TransactionConnectionState.AUTO_COMMIT_DISABLED) {
+                    state.failedJdbc = txIdentity;
+                }
+                if (connectionState == TransactionConnectionState.UNREADABLE) {
+                    throw JdbcExceptionTranslator.translateFailure("transaction connection validation",
+                                                                   association.failure);
+                }
+            } finally {
+                closed = true;
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -50,6 +51,18 @@ class MixedProviderCodegenTest {
     void generatesQualifiedJakartaRepositoryOnlyWithJakartaPersistence() throws Exception {
         assertThat(Files.isRegularFile(generatedSource(JakartaRepository.class, "__Jpa")), is(true));
         assertThat(Files.exists(generatedSource(JakartaRepository.class, "__Jdbc")), is(false));
+    }
+
+    /**
+     * Verifies that Jakarta Persistence resolves repository types through a
+     * generic parent without changing an explicitly declared Data query.
+     */
+    @Test
+    void generatesJakartaRepositoryThroughGenericParent() throws Exception {
+        Path generated = generatedSource(GenericJakartaRepository.class, "__Jpa");
+        assertThat(Files.isRegularFile(generated), is(true));
+        assertThat(Files.readString(generated), containsString("SELECT e FROM JakartaEntity e"));
+        assertThat(Files.exists(generatedSource(GenericJakartaRepository.class, "__Jdbc")), is(false));
     }
 
     private static Path generatedSource(Class<?> repositoryType, String suffix) throws Exception {

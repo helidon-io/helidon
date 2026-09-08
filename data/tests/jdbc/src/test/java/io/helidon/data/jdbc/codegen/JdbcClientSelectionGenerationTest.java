@@ -130,8 +130,8 @@ class JdbcClientSelectionGenerationTest {
     }
 
     /**
-     * Proves that direct and indirect GenericRepository inheritance supplies entity metadata without requesting
-     * derived repository operations.
+     * Proves that direct and inherited GenericRepository declarations supply
+     * concrete entity metadata without requesting derived repository operations.
      */
     @Test
     void acceptsGenericRepositoryParent() {
@@ -149,6 +149,9 @@ class JdbcClientSelectionGenerationTest {
                 interface BookRepository extends Data.GenericRepository<Book, Long> {
                 }
 
+                interface GenericBookRepository<E> extends Data.GenericRepository<E, Long> {
+                }
+
                 @Data.Repository
                 @Data.Provider("jdbc")
                 interface Books extends Data.GenericRepository<Book, Long> {
@@ -162,12 +165,53 @@ class JdbcClientSelectionGenerationTest {
                     @Jdbc.Statement("SELECT ID FROM BOOK")
                     List<Book> all();
                 }
+
+                @Data.Repository
+                @Data.Provider("jdbc")
+                interface GenericIndirectBooks extends GenericBookRepository<Book> {
+                    @Jdbc.Statement("SELECT ID FROM BOOK")
+                    List<Book> all();
+                }
                 """);
 
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(true));
         assertThat(Files.exists(result.sourceOutput().resolve("example/Books__Jdbc.java")), is(true));
         assertThat(Files.exists(result.sourceOutput().resolve("example/IndirectBooks__Jdbc.java")), is(true));
+        assertThat(Files.exists(result.sourceOutput().resolve("example/GenericIndirectBooks__Jdbc.java")), is(true));
+    }
+
+    /**
+     * Proves that resolving a generic parent does not allow JDBC repositories
+     * to inherit Data repository operations.
+     */
+    @Test
+    void rejectsGenericOperationBearingDataRepositoryParent() {
+        TestCompiler.Result result = compile("InvalidGenericCrudRepository.java", """
+                package example;
+
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+
+                record Book(long id) {
+                }
+
+                interface BookRepository<E> extends Data.CrudRepository<E, Long> {
+                }
+
+                @Data.Repository
+                @Data.Provider("jdbc")
+                interface InvalidGenericCrudRepository extends BookRepository<Book> {
+                    @Jdbc.Statement("SELECT ID FROM BOOK")
+                    Book find();
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics,
+                   containsString("A JDBC repository may extend Data.GenericRepository, but it must not extend "
+                                          + "a Data repository interface that declares operations."));
     }
 
     /**

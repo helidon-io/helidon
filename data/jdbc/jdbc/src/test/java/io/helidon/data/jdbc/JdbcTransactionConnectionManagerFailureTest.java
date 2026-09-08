@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import io.helidon.data.DataException;
+import io.helidon.transaction.TxException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -36,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -148,7 +150,7 @@ class JdbcTransactionConnectionManagerFailureTest {
         DataSource secondDataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         when(firstDataSource.getConnection()).thenReturn(connection);
-        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.getAutoCommit()).thenReturn(true, false);
         JdbcTransactionConnectionManager manager = activeManager("multiple-data-sources");
         manager.acquire(firstDataSource).close();
 
@@ -158,6 +160,79 @@ class JdbcTransactionConnectionManagerFailureTest {
         assertThat(failure.getMessage(),
                    is("A local JDBC transaction cannot use more than one data source."));
         manager.rollback("multiple-data-sources");
+        manager.end();
+    }
+
+    /**
+     * Verifies that enabling auto-commit makes the transaction outcome unknown,
+     * invalidates the connection, and prevents any later rollback attempt.
+     */
+    @Test
+    void invalidatesTransactionConnectionAfterAutoCommitIsEnabled() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, true);
+        JdbcTransactionConnectionManager manager = activeManager("enabled-auto-commit");
+
+        manager.acquire(dataSource).close();
+
+        verify(connection).abort(any());
+        verify(connection).close();
+        assertThrows(DataException.class, () -> manager.acquire(dataSource));
+        TxException failure = assertThrows(TxException.class, () -> manager.commit("enabled-auto-commit"));
+        assertThat(failure.getMessage(), containsString("outcome is unknown"));
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+        manager.end();
+    }
+
+    /**
+     * Verifies that a failure to inspect auto-commit is reported by the
+     * operation and still leaves the transaction with an unknown outcome.
+     */
+    @Test
+    void invalidatesTransactionConnectionWhenAutoCommitCannotBeInspected() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        SQLException driverFailure = new SQLException("private connection state", "08006", 92);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true).thenThrow(driverFailure);
+        JdbcTransactionConnectionManager manager = activeManager("unreadable-auto-commit");
+
+        DataException operationFailure = assertThrows(DataException.class, () -> manager.acquire(dataSource).close());
+
+        assertThat(operationFailure.getMessage(), containsString("transaction connection validation failed"));
+        assertThat(operationFailure.getMessage(), not(containsString("private connection state")));
+        verify(connection).abort(any());
+        verify(connection).close();
+        TxException completionFailure = assertThrows(
+                TxException.class,
+                () -> manager.rollback("unreadable-auto-commit"));
+        assertThat(completionFailure.getMessage(), containsString("outcome is unknown"));
+        verify(connection, never()).rollback();
+        manager.end();
+    }
+
+    /**
+     * Verifies that transaction completion performs its own auto-commit check
+     * even when the preceding operation observed the expected connection mode.
+     */
+    @Test
+    void validatesAutoCommitAgainBeforeTransactionCompletion() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, false, true);
+        JdbcTransactionConnectionManager manager = activeManager("completion-auto-commit");
+        manager.acquire(dataSource).close();
+
+        TxException failure = assertThrows(TxException.class, () -> manager.rollback("completion-auto-commit"));
+
+        assertThat(failure.getMessage(), containsString("outcome is unknown"));
+        verify(connection).abort(any());
+        verify(connection).close();
+        verify(connection, never()).rollback();
         manager.end();
     }
 

@@ -132,6 +132,31 @@ class JdbcTransactionConnectionManagerTest {
     }
 
     /**
+     * Proves a transaction cannot report a successful rollback after transaction-bound SQL enables auto-commit and
+     * commits pending work.
+     */
+    @Test
+    void doesNotReportRollbackAfterSqlEnablesAutoCommit() throws Exception {
+        JdbcDataSource dataSource = initializedDataSource("tx_sql_enables_auto_commit");
+        JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
+        manager.start("jdbc");
+        manager.begin("auto-commit-enabled");
+        JdbcClient client = transactionAwareClient(dataSource, manager);
+        client.create("INSERT INTO ITEMS VALUES (?)").bind(1, 1).execute();
+        client.create("SET AUTOCOMMIT TRUE").execute();
+
+        TxException failure;
+        try {
+            failure = assertThrows(TxException.class, () -> manager.rollback("auto-commit-enabled"));
+        } finally {
+            manager.end();
+        }
+
+        assertThat(failure.getMessage(), containsString("outcome is unknown"));
+        assertThat(count(dataSource), is(1));
+    }
+
+    /**
      * Proves JDBC fails before acquisition when a foreign transaction support
      * is active instead of claiming participation.
      */
@@ -774,6 +799,14 @@ class JdbcTransactionConnectionManagerTest {
         CLOSE
     }
 
+    // SQLException-capable connection supplier used by {@link TestDataSource}.
+    @FunctionalInterface
+    private interface ConnectionSupplier {
+
+        // Supplies one connection.
+        Connection get() throws SQLException;
+    }
+
     // Test fixture combining one datasource and its instrumented connection.
     private record FaultFixture(TestDataSource dataSource, FaultConnection connection) {
     }
@@ -956,14 +989,6 @@ class JdbcTransactionConnectionManagerTest {
         public TestStableIdentity transactionIdentity() {
             return identity;
         }
-    }
-
-    // SQLException-capable connection supplier used by {@link TestDataSource}.
-    @FunctionalInterface
-    private interface ConnectionSupplier {
-
-        // Supplies one connection.
-        Connection get() throws SQLException;
     }
 
 }

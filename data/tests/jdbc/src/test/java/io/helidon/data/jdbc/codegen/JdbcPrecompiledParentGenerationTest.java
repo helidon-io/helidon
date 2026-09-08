@@ -146,4 +146,68 @@ class JdbcPrecompiledParentGenerationTest {
         assertThat(source, containsString("JdbcClient.RowMapper<Projection<String>>"));
         assertThat(source, containsString("new Projection<String>(row.get(\"value\", String.class))"));
     }
+
+    /**
+     * Proves JDBC generation resolves the entity type supplied by a repository
+     * that specializes a separately compiled generic parent interface.
+     */
+    @Test
+    void resolvesEntityTypeFromPrecompiledGenericParent() {
+        TestCompiler.Result parent = TestCompiler.builder()
+                .currentRelease()
+                .printDiagnostics(false)
+                .addClasspath(List.of(Data.class))
+                .addSource("PrecompiledGenericRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+
+                        public interface PrecompiledGenericRepository<E>
+                                extends Data.GenericRepository<E, Long> {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String parentDiagnostics = String.join("\n", parent.diagnostics());
+        assertThat(parentDiagnostics, parent.success(), is(true));
+
+        TestCompiler.Result child = TestCompiler.builder()
+                .currentRelease()
+                .printDiagnostics(false)
+                .addProcessor(AptProcessor::new)
+                .addClasspath(List.of(RuntimeType.class,
+                                      Data.class,
+                                      JdbcClient.class,
+                                      Service.class,
+                                      Tx.class,
+                                      Generated.class,
+                                      TypeName.class,
+                                      DataGeneratorProvider.class,
+                                      RepositoryCodegenProvider.class,
+                                      JdbcRepositoryGeneratorProvider.class))
+                .addClasspathEntry(parent.classOutput())
+                .addSource("Books.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        record Book(long id, String name) {
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface Books extends PrecompiledGenericRepository<Book> {
+                            @Jdbc.Statement("SELECT NAME FROM BOOK")
+                            String name();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String childDiagnostics = String.join("\n", child.diagnostics());
+        assertThat(childDiagnostics, child.success(), is(true));
+        assertThat(Files.exists(child.sourceOutput().resolve("example/Books__Jdbc.java")), is(true));
+    }
 }
