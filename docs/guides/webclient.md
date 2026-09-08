@@ -57,10 +57,12 @@ WebClient provides the following features:
 - **Following redirects**: The WebClient is able to follow the redirect chain
   and perform requests on the correct endpoint for you. You no longer have to
   point your client to the correct/final endpoint. On a cross-origin redirect,
-  WebClient strips the `Authorization` and `Cookie` headers by default. It also
-  rejects `307` and `308` redirects that would replay a request entity to
-  another origin. Set `follow-cross-origin-entity-redirects` to `true` only when
-  every possible redirect target is trusted.
+  WebClient strips `Authorization`, `Cookie`, `Proxy-Authorization`, and any
+  configured redirect-sensitive headers by default, then selects stored cookies
+  for the target URI. It also rejects redirects that would preserve and replay a
+  non-empty request entity (`307`, `308`, and `301` or `302` for QUERY) unless
+  `follow-cross-origin-entity-redirects` is enabled. Enable it only when every
+  possible redirect target is trusted.
 - **Tracing, metrics and security propagation**: When you configure the Helidon
   WebServer to use tracing, metrics and security, the settings are automatically
   propagated to the WebClient and used during request/response.

@@ -141,10 +141,34 @@ var response = client.method(Method.QUERY)
         .submit(query);
 ```
 
-When redirects are enabled, WebClient preserves the QUERY method and its
-content for `301`, `302`, `307`, and `308` responses. A `303` response changes
-the redirected request to GET without the original query content, as required
-by [RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html#section-2.5).
+When redirects are enabled, WebClient preserves the request method and entity
+for `307` and `308` responses, and for QUERY requests receiving a `301` or
+`302` response. Other followed redirects change the request method to GET and
+discard the entity; a `304` response is not treated as a redirect. In
+particular, a `303` response changes a QUERY request to GET without the
+original query content, as required by
+[RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html#section-2.5).
+
+For a redirect that preserves the method and entity, WebClient copies only the
+`Accept`, `Accept-Charset`, `Accept-Encoding`, `Accept-Language`,
+`Content-Encoding`, `Content-Language`, `Content-Location`, and `Content-Type`
+headers from the preceding request. A redirect that changes the method does
+not copy request-specific headers. Each redirected request still starts with
+the client default headers, invokes the configured client services, and
+selects stored cookies for the target URI.
+
+Two URIs have the same origin when their schemes and hosts match
+case-insensitively and their ports are equal. WebClient follows a same-origin
+redirect that preserves a non-empty entity, but rejects such a redirect across
+origins by default. Set `follow-cross-origin-entity-redirects` to `true` only
+when every possible redirect target is trusted.
+
+With redirect header filtering enabled, a cross-origin redirect removes the
+configured redirect-sensitive headers, including `Authorization`, `Cookie`,
+and `Proxy-Authorization`. This filtering remains active for later hops after
+a redirect chain crosses an origin boundary. Disabling the filtering does not
+change which request-specific headers WebClient copies from the preceding
+request.
 
 ### Customizing the Request
 

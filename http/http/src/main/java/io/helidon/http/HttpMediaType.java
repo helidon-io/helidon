@@ -154,16 +154,18 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
      * Create a new {@link HttpMediaType} instance with the same type, subtype and parameters
      * copied from the original instance and the supplied {@value #CHARSET_PARAMETER} parameter.
      *
-     * @param charset the {@value #CHARSET_PARAMETER} parameter value. If {@code null} or empty
-     *                the {@value #CHARSET_PARAMETER} parameter will not be set or updated.
+     * @param charset the {@value #CHARSET_PARAMETER} parameter value. If empty the
+     *                {@value #CHARSET_PARAMETER} parameter will not be set or updated.
      * @return copy of the current {@code MediaType} instance with the {@value #CHARSET_PARAMETER}
      *         parameter set to the supplied value.
+     * @throws NullPointerException if {@code charset} is {@code null}
      */
     default HttpMediaType withCharset(String charset) {
+        Objects.requireNonNull(charset);
         Builder builder = builder()
                 .mediaType(mediaType())
                 .parameters(parameters());
-        if (charset != null && !charset.isEmpty()) {
+        if (!charset.isEmpty()) {
             builder.charset(charset);
         }
         return builder.build();

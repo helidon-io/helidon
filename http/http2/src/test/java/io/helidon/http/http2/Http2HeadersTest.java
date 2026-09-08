@@ -213,6 +213,28 @@ class Http2HeadersTest {
         assertThat(buffer.available(), is(0));
     }
 
+    @Test
+    void testRejectsNonLatin1ValueWhenHeaderNameIsIndexed() {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2HuffmanEncoder encoder = Http2HuffmanEncoder.create();
+        Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, "valid"))
+                .status(Status.OK_200)
+                .write(dynamicTable, encoder, BufferData.growing(32));
+        int tableSize = dynamicTable.currentTableSize();
+        HeaderRecord indexedHeader = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1);
+
+        BufferData rejectedBlock = BufferData.growing(32).write(42);
+        Http2Headers rejected = Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, "\u0100"))
+                .status(Status.OK_200);
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> rejected.write(dynamicTable, encoder, rejectedBlock));
+        assertThat(dynamicTable.currentTableSize(), is(tableSize));
+        assertThat(dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1), is(indexedHeader));
+        assertThat(rejectedBlock.available(), is(1));
+        assertThat(rejectedBlock.get(0), is(42));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"custom-\u0080", ":custom", ":bad\u0100"})
     void testRejectsInvalidHeaderNameBeforeWritingOrIndexing(String invalidName) {

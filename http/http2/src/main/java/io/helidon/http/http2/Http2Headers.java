@@ -89,6 +89,9 @@ public class Http2Headers {
     private static final String HTTPS = "https";
     private static final String PATH_SLASH = "/";
     private static final String PATH_INDEX = "/index.html";
+    private static final int SHOULD_INDEX = 1;
+    private static final int NEVER_INDEX = 1 << 1;
+    private static final int VALIDATE_NAME = 1 << 2;
 
     private final Headers headers;
     private final PseudoHeaders pseudoHeaders;
@@ -464,95 +467,15 @@ public class Http2Headers {
      * @param growingBuffer buffer to write to
      */
     public void write(DynamicTable table, Http2HuffmanEncoder huffman, BufferData growingBuffer) {
-        // A rejected header block is not sent to the peer, so validate the complete block before changing the
-        // connection-scoped HPACK table.
-        validateEncoding();
-
-        // first write pseudoheaders
-        if (pseudoHeaders.hasStatus()) {
-            StaticHeader indexed = null;
-            Status status = pseudoHeaders.status();
-            if (status == Status.OK_200) {
-                indexed = StaticHeader.STATUS_200;
-            } else if (status == Status.NO_CONTENT_204) {
-                indexed = StaticHeader.STATUS_204;
-            } else if (status == Status.PARTIAL_CONTENT_206) {
-                indexed = StaticHeader.STATUS_206;
-            } else if (status == Status.NOT_MODIFIED_304) {
-                indexed = StaticHeader.STATUS_304;
-            } else if (status == Status.BAD_REQUEST_400) {
-                indexed = StaticHeader.STATUS_400;
-            } else if (status == Status.NOT_FOUND_404) {
-                indexed = StaticHeader.STATUS_404;
-            } else if (status == Status.INTERNAL_SERVER_ERROR_500) {
-                indexed = StaticHeader.STATUS_500;
-            }
-            if (indexed == null) {
-                writeHeader(huffman,
-                            table,
-                            growingBuffer,
-                            STATUS_NAME,
-                            status().codeText(),
-                            true,
-                            false);
-            } else {
-                writeHeader(growingBuffer, indexed);
-            }
-        }
-        if (pseudoHeaders.hasMethod()) {
-            Method method = pseudoHeaders.method();
-            StaticHeader indexed = null;
-            if (method == Method.GET) {
-                indexed = StaticHeader.METHOD_GET;
-            } else if (method == Method.POST) {
-                indexed = StaticHeader.METHOD_POST;
-            }
-            if (indexed == null) {
-                writeHeader(huffman, table, growingBuffer, METHOD_NAME, method.text(), true, false);
-            } else {
-                writeHeader(growingBuffer, indexed);
-            }
-        }
-        if (pseudoHeaders.hasScheme()) {
-            String scheme = pseudoHeaders.scheme();
-            if (scheme.equals(HTTP)) {
-                writeHeader(growingBuffer, StaticHeader.SCHEME_HTTP);
-            } else if (scheme.equals(HTTPS)) {
-                writeHeader(growingBuffer, StaticHeader.SCHEME_HTTPS);
-            } else {
-                writeHeader(huffman, table, growingBuffer, SCHEME_NAME, scheme, true, false);
-            }
-        }
-        if (pseudoHeaders.hasPath()) {
-            String path = pseudoHeaders.path();
-            if (path.equals(PATH_SLASH)) {
-                writeHeader(growingBuffer, StaticHeader.PATH_ROOT);
-            } else if (path.equals(PATH_INDEX)) {
-                writeHeader(growingBuffer, StaticHeader.PATH_INDEX);
-            } else {
-                writeHeader(huffman, table, growingBuffer, PATH_NAME, path, true, false);
-            }
-        }
-        if (pseudoHeaders.hasAuthority()) {
-            writeHeader(huffman, table, growingBuffer, AUTHORITY_NAME, pseudoHeaders.authority, true, false);
-        }
-
-        for (Header header : headers) {
-            HeaderName headerName = header.headerName();
-            boolean shouldIndex = !header.changing();
-            boolean neverIndex = header.sensitive();
-
-            // check count to call header.get() instead of header.allValues()
-            if (header.valueCount() == 1) {
-                writeHeader(huffman, table, growingBuffer, headerName, header.get(), shouldIndex, neverIndex);
-            } else if (headerName == HeaderNames.SET_COOKIE) {      // cannot combine, commas allowed
-                for (String value : header.allValues()) {
-                    writeHeader(huffman, table, growingBuffer, headerName, value, shouldIndex, neverIndex);
-                }
-            } else {
-                String value = header.values();         // send all combined values in single header
-                writeHeader(huffman, table, growingBuffer, headerName, value, shouldIndex, neverIndex);
-            }
+        int initialBufferSize = growingBuffer.available();
+        table.beginEncoding();
+        try {
+            writeHeaders(table, huffman, growingBuffer);
+            table.commitEncoding();
+        } catch (RuntimeException | Error e) {
+            table.rollbackEncoding();
+            growingBuffer.trim(growingBuffer.available() - initialBufferSize);
+            throw e;
         }
     }
 
@@ -929,15 +852,116 @@ public class Http2Headers {
         headers.remove(pseudoHeader, it -> valueConsumer.accept(it.get()));
     }
 
+    private void writeHeaders(DynamicTable table, Http2HuffmanEncoder huffman, BufferData growingBuffer) {
+        // first write pseudoheaders
+        if (pseudoHeaders.hasStatus()) {
+            StaticHeader indexed = null;
+            Status status = pseudoHeaders.status();
+            if (status == Status.OK_200) {
+                indexed = StaticHeader.STATUS_200;
+            } else if (status == Status.NO_CONTENT_204) {
+                indexed = StaticHeader.STATUS_204;
+            } else if (status == Status.PARTIAL_CONTENT_206) {
+                indexed = StaticHeader.STATUS_206;
+            } else if (status == Status.NOT_MODIFIED_304) {
+                indexed = StaticHeader.STATUS_304;
+            } else if (status == Status.BAD_REQUEST_400) {
+                indexed = StaticHeader.STATUS_400;
+            } else if (status == Status.NOT_FOUND_404) {
+                indexed = StaticHeader.STATUS_404;
+            } else if (status == Status.INTERNAL_SERVER_ERROR_500) {
+                indexed = StaticHeader.STATUS_500;
+            }
+            if (indexed == null) {
+                writeHeader(huffman,
+                            table,
+                            growingBuffer,
+                            STATUS_NAME,
+                            status().codeText(),
+                            SHOULD_INDEX);
+            } else {
+                writeHeader(growingBuffer, indexed);
+            }
+        }
+        if (pseudoHeaders.hasMethod()) {
+            Method method = pseudoHeaders.method();
+            StaticHeader indexed = null;
+            if (method == Method.GET) {
+                indexed = StaticHeader.METHOD_GET;
+            } else if (method == Method.POST) {
+                indexed = StaticHeader.METHOD_POST;
+            }
+            if (indexed == null) {
+                writeHeader(huffman, table, growingBuffer, METHOD_NAME, method.text(), SHOULD_INDEX);
+            } else {
+                writeHeader(growingBuffer, indexed);
+            }
+        }
+        if (pseudoHeaders.hasScheme()) {
+            String scheme = pseudoHeaders.scheme();
+            if (scheme.equals(HTTP)) {
+                writeHeader(growingBuffer, StaticHeader.SCHEME_HTTP);
+            } else if (scheme.equals(HTTPS)) {
+                writeHeader(growingBuffer, StaticHeader.SCHEME_HTTPS);
+            } else {
+                writeHeader(huffman, table, growingBuffer, SCHEME_NAME, scheme, SHOULD_INDEX);
+            }
+        }
+        if (pseudoHeaders.hasPath()) {
+            String path = pseudoHeaders.path();
+            if (path.equals(PATH_SLASH)) {
+                writeHeader(growingBuffer, StaticHeader.PATH_ROOT);
+            } else if (path.equals(PATH_INDEX)) {
+                writeHeader(growingBuffer, StaticHeader.PATH_INDEX);
+            } else {
+                writeHeader(huffman, table, growingBuffer, PATH_NAME, path, SHOULD_INDEX);
+            }
+        }
+        if (pseudoHeaders.hasAuthority()) {
+            writeHeader(huffman, table, growingBuffer, AUTHORITY_NAME, pseudoHeaders.authority, SHOULD_INDEX);
+        }
+
+        for (Header header : headers) {
+            HeaderName headerName = header.headerName();
+            int flags = VALIDATE_NAME;
+            if (!header.changing()) {
+                flags |= SHOULD_INDEX;
+            }
+            if (header.sensitive()) {
+                flags |= NEVER_INDEX;
+            }
+
+            // check count to call header.get() instead of header.allValues()
+            if (header.valueCount() == 1) {
+                writeHeader(huffman, table, growingBuffer, headerName, header.get(), flags);
+            } else if (headerName == HeaderNames.SET_COOKIE) {      // cannot combine, commas allowed
+                for (String value : header.allValues()) {
+                    writeHeader(huffman, table, growingBuffer, headerName, value, flags);
+                }
+            } else {
+                String value = header.values();         // send all combined values in single header
+                writeHeader(huffman, table, growingBuffer, headerName, value, flags);
+            }
+        }
+    }
+
     private void writeHeader(Http2HuffmanEncoder huffman, DynamicTable table,
                              BufferData buffer,
                              HeaderName name,
                              String value,
-                             boolean shouldIndex,
-                             boolean neverIndex) {
+                             int flags) {
         int index = table.findIndex(name, value);
         HeaderApproach approach;
 
+        if ((flags & VALIDATE_NAME) != 0 && index <= 0) {
+            String lowerCaseName = name.lowerCase();
+            if (name.index() < 0 || lowerCaseName.isEmpty() || lowerCaseName.charAt(0) == ':') {
+                HttpToken.validate(lowerCaseName);
+            }
+        }
+
+        boolean shouldIndex = (flags & SHOULD_INDEX) != 0;
+        boolean neverIndex = (flags & NEVER_INDEX) != 0;
         if (index == 0) {
             // neither name nor value exists in an index
             if (shouldIndex) {
@@ -957,37 +981,6 @@ public class Http2Headers {
         }
 
         approach.write(huffman, buffer, name, value);
-    }
-
-    private void validateEncoding() {
-        if (pseudoHeaders.hasStatus()) {
-            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.status().codeText());
-        }
-        if (pseudoHeaders.hasMethod()) {
-            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.method().text());
-        }
-        if (pseudoHeaders.hasScheme()) {
-            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.scheme());
-        }
-        if (pseudoHeaders.hasPath()) {
-            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.path());
-        }
-        if (pseudoHeaders.hasAuthority()) {
-            Http2HuffmanEncoder.validateLatin1(pseudoHeaders.authority());
-        }
-
-        for (Header header : headers) {
-            HeaderName headerName = header.headerName();
-            String lowerCaseName = headerName.lowerCase();
-            if (headerName.index() < 0 || lowerCaseName.isEmpty() || lowerCaseName.charAt(0) == ':') {
-                HttpToken.validate(lowerCaseName);
-            }
-            if (header.valueCount() == 1) {
-                Http2HuffmanEncoder.validateLatin1(header.get());
-            } else {
-                header.allValues().forEach(Http2HuffmanEncoder::validateLatin1);
-            }
-        }
     }
 
     private void writeHeader(BufferData buffer,
@@ -1341,7 +1334,7 @@ public class Http2Headers {
             if (hasName) {
                 String name = headerName.lowerCase();
                 if (name.length() > 3) {
-                    huffman.encodeValidated(buffer, name);
+                    huffman.encode(buffer, name);
                 } else {
                     byte[] nameBytes = name.getBytes(StandardCharsets.US_ASCII);
                     buffer.writeHpackInt(nameBytes.length, 0, 7);
@@ -1351,7 +1344,7 @@ public class Http2Headers {
             }
             if (writeValue) {
                 if (value.length() > 3) {
-                    huffman.encodeValidated(buffer, value);
+                    huffman.encode(buffer, value);
                 } else {
                     byte[] valueBytes = Http2HuffmanEncoder.encodeLatin1(value);
                     buffer.writeHpackInt(valueBytes.length, 0, 7);
@@ -1373,6 +1366,9 @@ public class Http2Headers {
         private volatile long protocolMaxTableSize;
         private long maxTableSize;
         private int currentTableSize;
+        private List<DynamicHeader> encodingSnapshot;
+        private int encodingSnapshotSize;
+        private boolean encoding;
 
         private DynamicTable(long protocolMaxTableSize) {
             this.protocolMaxTableSize = protocolMaxTableSize;
@@ -1425,6 +1421,7 @@ public class Http2Headers {
         }
 
         int add(HeaderName headerName, String headerValue) {
+            checkpointEncoding();
             String name = headerName.lowerCase();
             int size = name.length() + headerValue.length() + 32;
 
@@ -1457,6 +1454,35 @@ public class Http2Headers {
 
         int currentTableSize() {
             return currentTableSize;
+        }
+
+        private void beginEncoding() {
+            if (encoding) {
+                throw new IllegalStateException("An HPACK header block is already being encoded");
+            }
+            encoding = true;
+        }
+
+        private void commitEncoding() {
+            encoding = false;
+            encodingSnapshot = null;
+        }
+
+        private void rollbackEncoding() {
+            if (encodingSnapshot != null) {
+                headers.clear();
+                headers.addAll(encodingSnapshot);
+                currentTableSize = encodingSnapshotSize;
+            }
+            encoding = false;
+            encodingSnapshot = null;
+        }
+
+        private void checkpointEncoding() {
+            if (encoding && encodingSnapshot == null) {
+                encodingSnapshot = new ArrayList<>(headers);
+                encodingSnapshotSize = currentTableSize;
+            }
         }
 
         private int findIndex(HeaderName headerName, String headerValue) {
