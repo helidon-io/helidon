@@ -41,7 +41,8 @@ interface PrometheusNamingConventionConfigBlueprint {
      * Prefix to add to metric names and tag keys which do not begin with a letter; configuring this setting enables
      * legacy simpleclient-compatible normalization, with {@code m_} reproducing the naming from earlier Helidon releases,
      * and preserves user-supplied reserved suffixes such as {@code _total}, {@code _created}, {@code _bucket}, and
-     * {@code _info}, whereas leaving it unset uses the new Prometheus client's normalization.
+     * {@code _info}, whereas leaving it unset uses the new Prometheus client's normalization; the prefix must be non-empty
+     * and match {@code [A-Za-z][A-Za-z0-9_]*}, and constructing the publisher fails if the value is invalid.
      *
      * @return non-letter prefix
      */

@@ -76,7 +76,8 @@ provider:
 
 Once you add the appropriate dependencies to your project, exemplar support runs
 automatically as part of the Helidon metrics implementation using Micrometer.
-You do not need to change your application or configuration.
+You do not need to change your application or configuration. Helidon supplies
+exemplars only from the current span when that span is sampled.
 
 ### Interpreting Exemplars
 

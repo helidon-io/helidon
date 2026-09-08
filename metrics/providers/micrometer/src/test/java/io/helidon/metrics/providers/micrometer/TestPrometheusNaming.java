@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Gauge;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -94,7 +96,6 @@ class TestPrometheusNaming {
             Gauge.builder("queue_info", () -> 7).register(registry);
             Gauge.builder("build.info", () -> 4).register(registry);
             registry.counter("requests_created").increment();
-            registry.counter("requests_total").increment();
             Timer timer = registry.timer("latency");
             timer.record(Duration.ofSeconds(1));
             DistributionSummary summary = registry.summary("payload");
@@ -111,12 +112,27 @@ class TestPrometheusNaming {
                              containsString("queue_info 7.0"),
                              containsString("build_info 4.0"),
                              containsString("requests_created_total 1.0"),
-                             containsString("requests_total 1.0"),
-                             not(containsString("requests_total_total")),
                              containsString("latency_seconds_count 1"),
                              containsString("latency_seconds_sum 1.0"),
                              containsString("payload_count 1"),
                              containsString("payload_sum 5.0")));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testLegacyCounterAlreadyEndingInTotalReceivesNoSecondSuffix() {
+        PrometheusPublisher publisher = PrometheusPublisher.builder()
+                .namingConvention(builder -> builder.nonLetterPrefix("m_"))
+                .build();
+        PrometheusMeterRegistry registry = registry(publisher);
+        try {
+            registry.counter("requests_total").increment();
+
+            assertThat(scrape(registry),
+                       allOf(containsString("requests_total 1.0"),
+                             not(containsString("requests_total_total"))));
         } finally {
             registry.close();
         }
@@ -161,7 +177,7 @@ class TestPrometheusNaming {
                 .namingConvention(builder -> builder.nonLetterPrefix("m_"))
                 .build();
 
-        PrometheusMeterRegistry registry = registry(publisher).throwExceptionOnRegistrationFailure();
+        PrometheusMeterRegistry registry = registry(publisher);
         try {
             Gauge.builder("build.info", () -> 1)
                     .tag("source", "dot")
@@ -177,6 +193,48 @@ class TestPrometheusNaming {
     }
 
     @Test
+    void testGeneratedNameCollisionsAreRejectedDuringRegistration() {
+        PrometheusMeterRegistry timerRegistry = registry(PrometheusPublisher.create());
+        try {
+            timerRegistry.timer("request");
+
+            assertThrows(IllegalArgumentException.class,
+                         () -> Gauge.builder("request_seconds_count", () -> 1).register(timerRegistry));
+            assertThat(scrape(timerRegistry), containsString("request_seconds_count 0"));
+        } finally {
+            timerRegistry.close();
+        }
+
+        PrometheusMeterRegistry summaryRegistry = registry(PrometheusPublisher.create());
+        try {
+            Gauge gauge = Gauge.builder("payload_max", () -> 1).register(summaryRegistry);
+
+            assertThrows(IllegalArgumentException.class, () -> summaryRegistry.summary("payload"));
+
+            summaryRegistry.remove(gauge);
+            summaryRegistry.summary("payload").record(1);
+            assertThat(scrape(summaryRegistry), containsString("payload_max 1.0"));
+        } finally {
+            summaryRegistry.close();
+        }
+    }
+
+    @Test
+    void testTagVariantsShareGeneratedNames() {
+        PrometheusMeterRegistry registry = registry(PrometheusPublisher.create());
+        try {
+            registry.counter("requests", "method", "GET").increment();
+            registry.counter("requests", "method", "POST").increment(2);
+
+            assertThat(scrape(registry),
+                       allOf(containsString("requests_total{method=\"GET\"} 1.0"),
+                             containsString("requests_total{method=\"POST\"} 2.0")));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void testLegacySupportedMeterOutputInBothFormats() {
         PrometheusPublisher publisher = PrometheusPublisher.builder()
@@ -184,7 +242,7 @@ class TestPrometheusNaming {
                 .build();
         PrometheusMeterRegistry registry = registry(publisher);
         try {
-            io.micrometer.core.instrument.Counter.builder("jobs")
+            Counter.builder("jobs")
                     .baseUnit("tasks")
                     .description("Completed jobs")
                     .tag("kind", "batch")
@@ -268,7 +326,7 @@ class TestPrometheusNaming {
             assertThat(scrape(registry),
                        allOf(containsString("trace_id=\"0123456789abcdef0123456789abcdef\""),
                              containsString("span_id=\"0123456789abcdef\"")));
-            assertThat("Current span was marked as an exemplar", markedAsExemplar.get());
+            assertThat("Current span was marked as an exemplar", markedAsExemplar.get(), is(true));
         } finally {
             registry.close();
         }

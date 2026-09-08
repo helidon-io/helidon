@@ -38,6 +38,15 @@ class LegacyPrometheusNamingConvention implements NamingConvention {
         this.nonLetterPrefix = validatePrefix(nonLetterPrefix);
     }
 
+    static String validatePrefix(String prefix) {
+        Objects.requireNonNull(prefix);
+        if (!VALID_PREFIX.matcher(prefix).matches()) {
+            throw new IllegalArgumentException("Prometheus non-letter prefix must match " + VALID_PREFIX.pattern()
+                                                       + ", but was: " + prefix);
+        }
+        return prefix;
+    }
+
     @Override
     public String name(String name, Meter.Type type, String baseUnit) {
         if (type == Meter.Type.GAUGE) {
@@ -68,15 +77,6 @@ class LegacyPrometheusNamingConvention implements NamingConvention {
     public String tagKey(String key) {
         String conventionKey = NamingConvention.snakeCase.tagKey(key);
         return addPrefixIfNeeded(TAG_KEY_CHARS.matcher(conventionKey).replaceAll("_"));
-    }
-
-    static String validatePrefix(String prefix) {
-        Objects.requireNonNull(prefix);
-        if (!VALID_PREFIX.matcher(prefix).matches()) {
-            throw new IllegalArgumentException("Prometheus non-letter prefix must match " + VALID_PREFIX.pattern()
-                                                       + ", but was: " + prefix);
-        }
-        return prefix;
     }
 
     private String addPrefixIfNeeded(String value) {

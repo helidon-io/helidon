@@ -52,10 +52,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestPrometheusFormatting {
 
@@ -301,8 +303,8 @@ class TestPrometheusFormatting {
                    OptionalMatcher.optionalEmpty());
         assertThat("Actual meter tag selection retains the complete custom meter family",
                    checkAndCast(realTagFormatter.format()),
-                   allOf(containsString("generatedCommonLabel{real=\"yes\",statistic=\"COUNT\"} 1.0"),
-                         containsString("generatedCommonLabel_sum{real=\"yes\",statistic=\"TOTAL\"} 2.0")));
+                   allOf(containsString("generatedCommonLabel_total{real=\"yes\",statistic=\"COUNT\"} 1.0"),
+                         containsString("generatedCommonLabel_sum_total{real=\"yes\",statistic=\"TOTAL\"} 2.0")));
         assertThat("Actual meter tag which shares a generated label name remains selectable",
                    checkAndCast(actualStatisticTagFormatter.format()),
                    containsString("actualStatisticTag{statistic=\"COUNT\"} 3.0"));
@@ -339,7 +341,7 @@ class TestPrometheusFormatting {
                          containsString("actualTagDistribution_bucket{kind=\"selected\",le=\"+Inf\"} 1"),
                          containsString("actualTagDistribution_count{kind=\"selected\"} 1"),
                          containsString("actualTagDistribution_sum{kind=\"selected\"} 1.0"),
-                         containsString("actualTagDistribution{kind=\"selected\",quantile=\"0.5\"} 1.0"),
+                         containsString("actualTagDistribution_max{kind=\"selected\"} 1.0"),
                          not(containsString("kind=\"other\""))));
     }
 
@@ -623,6 +625,34 @@ class TestPrometheusFormatting {
                              not(containsString("unselected_total"))));
         } finally {
             legacyRegistry.close();
+        }
+    }
+
+    @Test
+    void testRejectedPrometheusMeterIsNotAvailableForSelectiveScrape() {
+        MetricsConfig localConfig = MetricsConfig.builder()
+                .warnOnMultipleRegistries(false)
+                .build();
+        MeterRegistry localRegistry = metricsFactory.createMeterRegistry(localConfig);
+        try {
+            localRegistry.getOrCreate(metricsFactory.timerBuilder("collision"));
+            AtomicLong gaugeValue = new AtomicLong(1);
+            Gauge.Builder<Double> gaugeBuilder = metricsFactory.gaugeBuilder("collision_seconds_count",
+                                                                             gaugeValue,
+                                                                             AtomicLong::doubleValue);
+            gaugeBuilder.unwrap(io.micrometer.core.instrument.Gauge.Builder.class).strongReference(true);
+
+            assertThrows(IllegalArgumentException.class, () -> localRegistry.getOrCreate(gaugeBuilder));
+            assertThat(localRegistry.meters().stream().map(meter -> meter.id().name()).toList(),
+                       not(hasItem("collision_seconds_count")));
+
+            var formatter = MicrometerPrometheusFormatter.builder(localRegistry)
+                    .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                    .meterNameSelection(Set.of("collision_seconds_count"))
+                    .build();
+            assertThat(formatter.format(), OptionalMatcher.optionalEmpty());
+        } finally {
+            localRegistry.close();
         }
     }
 

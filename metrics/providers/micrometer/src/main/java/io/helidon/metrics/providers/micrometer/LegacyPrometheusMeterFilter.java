@@ -27,17 +27,17 @@ import io.micrometer.core.instrument.config.MeterFilter;
 class LegacyPrometheusMeterFilter implements MeterFilter {
     private static final String GAUGE_MARKER = "\uE000helidon-legacy-gauge:";
 
+    static String originalGaugeName(String name) {
+        return name.startsWith(GAUGE_MARKER) && name.endsWith(GAUGE_MARKER)
+                ? name.substring(GAUGE_MARKER.length(), name.length() - GAUGE_MARKER.length())
+                : name;
+    }
+
     @Override
     public Meter.Id map(Meter.Id id) {
         if (id.getType() != Meter.Type.GAUGE) {
             return id;
         }
         return id.withName(GAUGE_MARKER + id.getName() + GAUGE_MARKER);
-    }
-
-    static String originalGaugeName(String name) {
-        return name.startsWith(GAUGE_MARKER) && name.endsWith(GAUGE_MARKER)
-                ? name.substring(GAUGE_MARKER.length(), name.length() - GAUGE_MARKER.length())
-                : name;
     }
 }

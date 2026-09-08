@@ -122,12 +122,13 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
             PrometheusConfig prometheusConfig = prometheusConfig(lookupFunction);
             warnIfLegacyHistogramFlavorConfigured(prometheusConfig);
             PrometheusMeterRegistry registry = spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
-                    ? new PrometheusMeterRegistry(prometheusConfig)
-                    : new PrometheusMeterRegistry(prometheusConfig,
-                                                  new PrometheusRegistry(),
-                                                  io.micrometer.core.instrument.Clock.SYSTEM,
-                                                  spanContextSupplierProvider.get());
+                    ? new CollisionDetectingPrometheusMeterRegistry(prometheusConfig)
+                    : new CollisionDetectingPrometheusMeterRegistry(prometheusConfig,
+                                                                    new PrometheusRegistry(),
+                                                                    io.micrometer.core.instrument.Clock.SYSTEM,
+                                                                    spanContextSupplierProvider.get());
             configureNaming(registry);
+            registry.throwExceptionOnRegistrationFailure();
             return registry;
         };
     }

@@ -694,6 +694,49 @@ The deprecated `metrics.rest-request-enabled` compatibility setting is also
 no longer supported in Helidon 27. Replace it with
 `metrics.rest-request.enabled`.
 
+Helidon 27 uses Prometheus Java Client 1.7.0 through Micrometer instead of the
+legacy Prometheus simpleclient integration. By default, metric and tag names use
+the new client's normalization. In particular, names which do not begin with a
+letter are normalized using the new client's rules, and reserved suffixes such
+as `_total`, `_created`, `_bucket`, and `_info` are removed from base names so
+the writer can add type-appropriate suffixes.
+
+To retain the Prometheus names emitted by earlier Helidon releases for counters,
+functional counters, gauges, timers, and distribution summaries, configure the
+legacy non-letter prefix:
+
+```yaml [application.yaml]
+metrics:
+  publishers:
+    prometheus:
+      naming-convention:
+        non-letter-prefix: "m_"
+```
+
+Setting `non-letter-prefix` selects legacy normalization as a whole, including
+preserving user-supplied reserved suffixes. The value must match
+`[A-Za-z][A-Za-z0-9_]*`; `m_` reproduces the earlier Helidon prefix, while
+another valid value uses the same legacy rules with that prefix. The
+`naming-convention.timer-suffix` setting remains available in both modes. The
+publisher's existing `prefix` setting controls Micrometer property lookup and
+does not prefix metric names.
+
+The former `metrics.prometheus.histogramFlavor` property is accepted so existing
+configuration continues to load, but the new integration ignores it and logs a
+warning.
+
+Code which accesses Prometheus-specific Helidon APIs or implements the exemplar
+SPI needs these type changes:
+
+- `PrometheusPublisher.prometheusRegistry()` now supplies
+  `io.micrometer.prometheusmetrics.PrometheusMeterRegistry` instead of
+  `io.micrometer.prometheus.PrometheusMeterRegistry`.
+- `SpanContextSupplierProvider.get()` now returns
+  `io.prometheus.metrics.tracer.common.SpanContext` instead of
+  `io.prometheus.client.exemplars.tracer.common.SpanContextSupplier`; the new
+  type reports trace ID, span ID, sampled state, and when the current span is
+  selected as an exemplar.
+
 ## Metrics Observer
 
 Helidon can make the registered meters and their current values available
