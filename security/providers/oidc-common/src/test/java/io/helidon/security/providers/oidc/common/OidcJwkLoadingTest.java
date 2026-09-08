@@ -72,16 +72,18 @@ class OidcJwkLoadingTest {
     Path temporaryDirectory;
 
     @Test
-    void nestedFaultToleranceConfigurationUsesFaultToleranceDefaults() {
+    void nestedFaultToleranceConfigurationInheritsBaseValues() {
         Config defaults = config(Map.of("client-id", "client",
                                         "client-secret", "secret",
                                         "identity-uri", "https://identity.example",
                                         "jwk-loader.retry.calls", "5",
                                         "jwk-loader.retry.delay", "PT0.007S",
+                                        "jwk-loader.timeout.timeout", "PT3S",
                                         "jwk-loader.circuit-breaker.volume", "4",
                                         "jwk-loader.circuit-breaker.delay", "PT9S"));
         Config tenant = config(Map.of("name", "tenant",
                                       "jwk-loader.retry.calls", "2",
+                                      "jwk-loader.timeout.enable-metrics", "true",
                                       "jwk-loader.circuit-breaker.success-threshold", "2"));
 
         TenantConfig tenantConfig = TenantConfig.tenantBuilder()
@@ -90,13 +92,14 @@ class OidcJwkLoadingTest {
                 .build();
 
         assertThat(tenantConfig.jwkRetry().prototype().calls(), is(2));
-        assertThat(tenantConfig.jwkRetry().prototype().delay(), is(Duration.ofMillis(200)));
+        assertThat(tenantConfig.jwkRetry().prototype().delay(), is(Duration.ofMillis(7)));
         assertThat(tenantConfig.jwkRetry().prototype().overallTimeout(), is(Duration.ofSeconds(11)));
-        assertThat(tenantConfig.jwkTimeout().prototype().timeout(), is(Duration.ofSeconds(5)));
+        assertThat(tenantConfig.jwkTimeout().prototype().timeout(), is(Duration.ofSeconds(3)));
         assertThat(tenantConfig.jwkTimeout().prototype().currentThread(), is(true));
-        assertThat(tenantConfig.jwkCircuitBreaker().prototype().volume(), is(1));
+        assertThat(tenantConfig.jwkTimeout().prototype().enableMetrics(), is(true));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().volume(), is(4));
         assertThat(tenantConfig.jwkCircuitBreaker().prototype().errorRatio(), is(100));
-        assertThat(tenantConfig.jwkCircuitBreaker().prototype().delay(), is(Duration.ofSeconds(5)));
+        assertThat(tenantConfig.jwkCircuitBreaker().prototype().delay(), is(Duration.ofSeconds(9)));
         assertThat(tenantConfig.jwkCircuitBreaker().prototype().successThreshold(), is(2));
     }
 

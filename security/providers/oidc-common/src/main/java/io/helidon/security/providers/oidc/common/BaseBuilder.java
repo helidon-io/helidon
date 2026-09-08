@@ -184,14 +184,19 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
 
         config.get("sign-jwk.resource").as(ResourceConfig::create).ifPresent(this::signJwk);
+        RetryConfig inheritedRetryConfig = jwkRetryConfig == null ? DEFAULT_JWK_RETRY_CONFIG : jwkRetryConfig;
+        TimeoutConfig inheritedTimeoutConfig = jwkTimeoutConfig == null ? DEFAULT_JWK_TIMEOUT_CONFIG : jwkTimeoutConfig;
+        CircuitBreakerConfig inheritedCircuitBreakerConfig = jwkCircuitBreakerConfig == null
+                ? DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG
+                : jwkCircuitBreakerConfig;
         config.get("jwk-loader.retry")
-                .as(it -> RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG).config(it).buildPrototype())
+                .as(it -> mergeRetryConfig(inheritedRetryConfig, it))
                 .ifPresent(this::jwkRetry);
         config.get("jwk-loader.timeout")
-                .as(it -> TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG).config(it).buildPrototype())
+                .as(it -> TimeoutConfig.builder(inheritedTimeoutConfig).config(it).buildPrototype())
                 .ifPresent(this::jwkTimeout);
         config.get("jwk-loader.circuit-breaker")
-                .as(it -> CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG).config(it).buildPrototype())
+                .as(it -> CircuitBreakerConfig.builder(inheritedCircuitBreakerConfig).config(it).buildPrototype())
                 .ifPresent(this::jwkCircuitBreaker);
         config.get("decryption-keys.resource").as(Resource::create).ifPresent(this::decryptionKeys);
 
@@ -928,6 +933,25 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
 
     JwkKeys contentKeyDecryptionKeys() {
         return contentKeyDecryptionKeys;
+    }
+
+    private static RetryConfig mergeRetryConfig(RetryConfig inheritedConfig, Config config) {
+        var builder = RetryConfig.builder(inheritedConfig);
+        boolean delayFactorConfigured = config.get("delay-factor").exists();
+        boolean jitterConfigured = config.get("jitter").exists();
+        boolean jitterFactorConfigured = config.get("jitter-factor").exists();
+        if (delayFactorConfigured || jitterConfigured || jitterFactorConfigured) {
+            if (!delayFactorConfigured) {
+                builder.delayFactor(-1);
+            }
+            if (!jitterConfigured) {
+                builder.jitter(Duration.ofSeconds(-1));
+            }
+            if (!jitterFactorConfigured) {
+                builder.jitterFactor(-1);
+            }
+        }
+        return builder.config(config).buildPrototype();
     }
 
     private static JwkKeys requireSigningKeys(JwkKeys keys) {
