@@ -161,8 +161,8 @@ class JdbcRunnerFailureTest {
     }
 
     /**
-     * Verifies that an owned connection whose auto-commit state cannot be
-     * inspected is invalidated rather than returned for possible pool reuse.
+     * Verifies that an owned connection whose auto-commit state cannot be inspected during acquisition or release is
+     * invalidated rather than returned for possible pool reuse.
      */
     @Test
     void invalidatesTheOwnedConnectionWhenAutoCommitInspectionFails() throws Exception {
@@ -178,6 +178,94 @@ class JdbcRunnerFailureTest {
         cleanup.verify(connection).close();
         verify(connection, never()).prepareStatement("UPDATE TEST_VALUE SET VALUE = 1");
         verify(statement, never()).execute();
+
+        setUp();
+        SQLException releaseInspectionFailure = new SQLException("release inspection failed", "08000", 97);
+        when(connection.getAutoCommit()).thenReturn(true).thenThrow(releaseInspectionFailure);
+        prepareSuccessfulUpdate();
+
+        DataException releaseFailure = assertThrows(DataException.class,
+                                                    () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+
+        assertSafeSqlCause(releaseFailure.getCause(), releaseInspectionFailure);
+        InOrder releaseCleanup = inOrder(statement, connection);
+        releaseCleanup.verify(statement).close();
+        releaseCleanup.verify(connection).getAutoCommit();
+        releaseCleanup.verify(connection).abort(any());
+        releaseCleanup.verify(connection).close();
+    }
+
+    /**
+     * Verifies that a successful operation cannot return normally after changing its owned connection to manual-commit
+     * mode. The provider rolls back its work, restores auto-commit, and safely closes the connection before reporting
+     * the invariant violation.
+     */
+    @Test
+    void rejectsTheOperationWhenExecutionDisablesAutoCommit() throws Exception {
+        when(connection.getAutoCommit()).thenReturn(true, false);
+        prepareSuccessfulUpdate();
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+
+        assertThat(failure.getCause(), instanceOf(SQLException.class));
+        assertThat(failure.getCause().getMessage(),
+                   is("The JDBC operation must leave its connection with auto-commit enabled."));
+        InOrder cleanup = inOrder(statement, connection);
+        cleanup.verify(statement).close();
+        cleanup.verify(connection).getAutoCommit();
+        cleanup.verify(connection).rollback();
+        cleanup.verify(connection).setAutoCommit(true);
+        cleanup.verify(connection).close();
+        verify(connection, never()).abort(any());
+    }
+
+    /**
+     * Verifies that rollback or auto-commit restoration failure prevents an operation-owned connection from returning
+     * to ordinary pool reuse. The invariant violation remains primary and recovery diagnostics remain sanitized.
+     */
+    @Test
+    void invalidatesTheOwnedConnectionWhenAutoCommitRecoveryFails() throws Exception {
+        SQLException rollbackFailure = new SQLException("private rollback failure", "08007", 98);
+        when(connection.getAutoCommit()).thenReturn(true, false);
+        doThrow(rollbackFailure).when(connection).rollback();
+        prepareSuccessfulUpdate();
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+
+        assertThat(failure.getCause().getMessage(),
+                   is("The JDBC operation must leave its connection with auto-commit enabled."));
+        assertThat(failure.getCause().getSuppressed().length, is(1));
+        assertSafeSqlCause(failure.getCause().getSuppressed()[0], rollbackFailure);
+        InOrder rollbackCleanup = inOrder(statement, connection);
+        rollbackCleanup.verify(statement).close();
+        rollbackCleanup.verify(connection).getAutoCommit();
+        rollbackCleanup.verify(connection).rollback();
+        rollbackCleanup.verify(connection).abort(any());
+        rollbackCleanup.verify(connection).close();
+        verify(connection, never()).setAutoCommit(true);
+
+        setUp();
+        SQLException restorationFailure = new SQLException("private restoration failure", "08006", 99);
+        when(connection.getAutoCommit()).thenReturn(true, false);
+        doThrow(restorationFailure).when(connection).setAutoCommit(true);
+        prepareSuccessfulUpdate();
+
+        failure = assertThrows(DataException.class,
+                               () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+
+        assertThat(failure.getCause().getMessage(),
+                   is("The JDBC operation must leave its connection with auto-commit enabled."));
+        assertThat(failure.getCause().getSuppressed().length, is(1));
+        assertSafeSqlCause(failure.getCause().getSuppressed()[0], restorationFailure);
+        InOrder restorationCleanup = inOrder(statement, connection);
+        restorationCleanup.verify(statement).close();
+        restorationCleanup.verify(connection).getAutoCommit();
+        restorationCleanup.verify(connection).rollback();
+        restorationCleanup.verify(connection).setAutoCommit(true);
+        restorationCleanup.verify(connection).abort(any());
+        restorationCleanup.verify(connection).close();
     }
 
     /**

@@ -120,6 +120,31 @@ class ClassModelFactoryTest {
         assertThat(resolver.resolveSupertype(implementationType, contractType).orElseThrow(), is(contractType));
     }
 
+    /**
+     * Verifies that the hierarchy resolver recognizes the implicit {@link Object} supertype of in-progress types.
+     */
+    @Test
+    void resolvesImplicitObjectSupertypeForInProgressTypes() {
+        TypeName classType = TypeName.create("example.GeneratedClass");
+        TypeName interfaceType = TypeName.create("example.GeneratedInterface");
+        RoundContextImpl roundContext = newRoundContext();
+
+        roundContext.addGeneratedType(classType,
+                                      ClassModel.builder()
+                                              .type(classType)
+                                              .classType(ElementKind.CLASS),
+                                      TypeNames.OBJECT);
+        roundContext.addGeneratedType(interfaceType,
+                                      ClassModel.builder()
+                                              .type(interfaceType)
+                                              .classType(ElementKind.INTERFACE),
+                                      TypeNames.OBJECT);
+
+        TypeHierarchyResolver resolver = roundContext.typeHierarchyResolver();
+        assertThat(resolver.resolveSupertype(classType, TypeNames.OBJECT).orElseThrow(), is(TypeNames.OBJECT));
+        assertThat(resolver.resolveSupertype(interfaceType, TypeNames.OBJECT).orElseThrow(), is(TypeNames.OBJECT));
+    }
+
     @Test
     void exposesInProgressClassFieldsAsFields() {
         TypeName classType = TypeName.create("example.GeneratedClass");

@@ -100,6 +100,28 @@ class JdbcResourceOwnershipTest {
     }
 
     /**
+     * Proves that a single SQL statement which disables auto-commit is rejected. The connection state is restored and
+     * the single-connection pool remains usable.
+     */
+    @Test
+    void rejectsStatementWhichDisablesAutoCommit() throws SQLException {
+        try (HikariDataSource dataSource = dataSource()) {
+            JdbcClient client = initializedClient(dataSource);
+
+            DataException failure = assertThrows(DataException.class,
+                                                 () -> client.create("SET AUTOCOMMIT FALSE").execute());
+
+            assertThat(failure.getCause(), instanceOf(SQLException.class));
+            assertThat(failure.getCause().getMessage(),
+                       is("The JDBC operation must leave its connection with auto-commit enabled."));
+            try (Connection connection = dataSource.getConnection()) {
+                assertThat(connection.getAutoCommit(), is(true));
+            }
+            assertPoolReusable(dataSource, client, 0L);
+        }
+    }
+
+    /**
      * Proves H2 constraint, truncation, and conversion failures neither leak
      * bind values nor retain the sole pool lease.
      */

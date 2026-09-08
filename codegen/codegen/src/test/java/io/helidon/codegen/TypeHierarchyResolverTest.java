@@ -187,19 +187,25 @@ class TypeHierarchyResolverTest {
     }
 
     /**
-     * Verifies implicit Java supertypes for round visible records, enums, and annotations.
+     * Verifies implicit Java supertypes for round-visible classes, interfaces, records, enums, and annotations.
      */
     @Test
     void recognizesImplicitSupertypesOfRoundVisibleTypes() {
+        TypeName classType = TypeName.create("example.RoundClass");
+        TypeName interfaceType = TypeName.create("example.RoundInterface");
         TypeName recordType = TypeName.create("example.RoundRecord");
         TypeName enumType = TypeName.create("example.RoundEnum");
         TypeName annotationType = TypeName.create("example.RoundAnnotation");
-        Map<TypeName, TypeInfo> types = Map.of(recordType, typeInfo(recordType, ElementKind.RECORD),
+        Map<TypeName, TypeInfo> types = Map.of(classType, typeInfo(classType, ElementKind.CLASS),
+                                               interfaceType, typeInfo(interfaceType, ElementKind.INTERFACE),
+                                               recordType, typeInfo(recordType, ElementKind.RECORD),
                                                enumType, typeInfo(enumType, ElementKind.ENUM),
                                                annotationType,
                                                typeInfo(annotationType, ElementKind.ANNOTATION_TYPE));
         TypeHierarchyResolver resolver = TypeHierarchyResolver.create(type -> Optional.ofNullable(types.get(type)));
 
+        assertThat(resolver.resolveSupertype(classType, TypeNames.OBJECT).orElseThrow(), is(TypeNames.OBJECT));
+        assertThat(resolver.resolveSupertype(interfaceType, TypeNames.OBJECT).orElseThrow(), is(TypeNames.OBJECT));
         assertThat(resolver.resolveSupertype(recordType, TypeName.create(Record.class)).isPresent(), is(true));
         assertThat(resolver.resolveSupertype(enumType, TypeName.create(Enum.class)).isPresent(), is(true));
         assertThat(resolver.resolveSupertype(annotationType,

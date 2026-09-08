@@ -50,7 +50,7 @@ interface JdbcConnectionLease extends AutoCloseable {
     /**
      * Releases the logical lease.
      *
-     * @throws io.helidon.data.DataException when JDBC reports an SQL failure
+     * @throws io.helidon.data.DataException when validation or release fails
      * @throws IllegalStateException when the driver reports an unchecked failure
      */
     @Override
@@ -73,13 +73,15 @@ interface JdbcConnectionLease extends AutoCloseable {
     }
 
     /**
-     * Lease that closes its physical connection when the operation ends and invalidates it when close cannot confirm
-     * release.
+     * Lease that validates auto-commit before closing its physical connection and invalidates the connection when
+     * validation or close cannot confirm safe release.
      */
     final class Owned implements JdbcConnectionLease {
 
         private static final String AUTO_COMMIT_REQUIRED =
                 "Data sources used for JDBC operations must provide connections with auto-commit enabled.";
+        private static final String AUTO_COMMIT_MUST_REMAIN_ENABLED =
+                "The JDBC operation must leave its connection with auto-commit enabled.";
 
         private final Connection connection;
         private boolean closed;
@@ -143,10 +145,11 @@ interface JdbcConnectionLease extends AutoCloseable {
         }
 
         /**
-         * Closes the owned connection, or invalidates it when ordinary close cannot confirm release.
-         * The first close failure remains the reported failure even when best-effort invalidation succeeds.
+         * Validates and closes the owned connection, or invalidates it when the connection is no longer safe for
+         * ordinary release. The first validation or close failure remains the reported failure even when best-effort
+         * invalidation succeeds.
          *
-         * @throws io.helidon.data.DataException when JDBC reports an SQL failure
+         * @throws io.helidon.data.DataException when validation or release fails
          * @throws IllegalStateException when the driver reports an unchecked failure
          */
         @Override
@@ -156,12 +159,49 @@ interface JdbcConnectionLease extends AutoCloseable {
             }
 
             Throwable failure = null;
+            boolean safeForOrdinaryClose = false;
             try {
-                JdbcExceptionTranslator.invokeVoid("closing a connection", connection::close);
-            } catch (SQLException | RuntimeException | Error closeFailure) {
-                // Connection.close may fail before a pool return or physical release. Invalidate immediately rather
-                // than leaving the runner with a terminal lease whose connection has no remaining cleanup path.
-                failure = JdbcConnectionInvalidator.invalidate(connection, closeFailure);
+                try {
+                    if (JdbcExceptionTranslator.invoke("inspecting automatic commit mode before releasing a connection",
+                                                       connection::getAutoCommit)) {
+                        safeForOrdinaryClose = true;
+                    } else {
+                        failure = JdbcExceptionTranslator.safeException(AUTO_COMMIT_MUST_REMAIN_ENABLED);
+                        try {
+                            JdbcExceptionTranslator.invokeVoid("rolling back after automatic commit mode changed",
+                                                               connection::rollback);
+                            JdbcExceptionTranslator.invokeVoid("restoring automatic commit mode after an operation",
+                                                               () -> connection.setAutoCommit(true));
+                            safeForOrdinaryClose = true;
+                        } catch (SQLException | RuntimeException | Error recoveryFailure) {
+                            failure = JdbcExceptionTranslator.suppress(failure,
+                                                                       "recovering automatic commit mode",
+                                                                       recoveryFailure);
+                        }
+                    }
+                } catch (SQLException | RuntimeException | Error inspectionFailure) {
+                    failure = inspectionFailure;
+                }
+
+                if (safeForOrdinaryClose) {
+                    try {
+                        JdbcExceptionTranslator.invokeVoid("closing a connection", connection::close);
+                    } catch (SQLException | RuntimeException | Error closeFailure) {
+                        // Connection.close may fail before a pool return or physical release. Invalidate immediately
+                        // rather than leaving the runner with a terminal lease whose connection has no cleanup path.
+                        Throwable releaseFailure = closeFailure;
+                        if (failure != null) {
+                            releaseFailure = JdbcExceptionTranslator.suppress(failure,
+                                                                              "closing a connection",
+                                                                              closeFailure);
+                        }
+                        failure = JdbcConnectionInvalidator.invalidate(connection, releaseFailure);
+                    }
+                } else {
+                    // An unreadable mode or failed recovery cannot use ordinary close because JDBC does not define the
+                    // outcome of closing a connection while a transaction is active.
+                    failure = JdbcConnectionInvalidator.invalidate(connection, failure);
+                }
             } finally {
                 // Success and completed invalidation are both terminal. A later close must not reuse or retry an
                 // unsafe connection after this method has exhausted the provider's cleanup sequence.

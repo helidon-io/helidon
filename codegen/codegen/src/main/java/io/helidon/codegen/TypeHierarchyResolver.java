@@ -313,6 +313,13 @@ public class TypeHierarchyResolver {
 
     private static List<TypeName> implicitSupertypes(TypeInfo typeInfo, TypeName resolvedType) {
         return switch (typeInfo.kind()) {
+            case CLASS -> typeInfo.superTypeInfo().isEmpty()
+                    && !sameErasure(resolvedType, TypeNames.OBJECT)
+                    ? List.of(TypeNames.OBJECT)
+                    : List.of();
+            case INTERFACE -> typeInfo.interfaceTypeInfo().isEmpty()
+                    ? List.of(TypeNames.OBJECT)
+                    : List.of();
             case RECORD -> List.of(RECORD);
             case ENUM -> List.of(TypeName.builder(ENUM)
                                          .addTypeArgument(resolvedType)
