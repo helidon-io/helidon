@@ -110,6 +110,7 @@ class TimeoutImpl implements Timeout {
             ReentrantLock interruptLock = new ReentrantLock();
             AtomicBoolean callReturned = new AtomicBoolean(false);
             AtomicBoolean interrupted = new AtomicBoolean(false);
+            boolean restoreInterrupt = false;
 
             Future<?> monitor = executor.submit(FaultTolerance.delayedRunnable(() -> {
                 interruptLock.lock();
@@ -130,6 +131,7 @@ class TimeoutImpl implements Timeout {
                 }
                 return result;
             } catch (Throwable t) {
+                restoreInterrupt = !interrupted.get() && hasInterruptedCause(t);
                 throw mapThrowable(t, interrupted);
             } finally {
                 if (metricsEnabled) {
@@ -145,8 +147,13 @@ class TimeoutImpl implements Timeout {
 
                     callReturned.set(true);
                     // Run invocation in current thread
-                    // Clear interrupted flag here -- required for uninterruptible busy loops
-                    if (Thread.interrupted()) {
+                    // Clear an interrupt raised by the timeout monitor, including for uninterruptible busy loops.
+                    // Preserve caller cancellation so an outer retry can terminate.
+                    boolean interruptedStatus = Thread.interrupted();
+                    if (restoreInterrupt || (interruptedStatus && !interrupted.get())) {
+                        thisThread.interrupt();
+                        LOGGER.log(System.Logger.Level.DEBUG, "Current thread interrupted, preserving status");
+                    } else if (interruptedStatus) {
                         LOGGER.log(System.Logger.Level.DEBUG, "Current thread interrupted, clearing status");
                     }
                 } finally {
@@ -154,6 +161,21 @@ class TimeoutImpl implements Timeout {
                 }
             }
         }
+    }
+
+    private static boolean hasInterruptedCause(Throwable throwable) {
+        Throwable current = throwable;
+        for (int i = 0; current != null && i < 64; i++) {
+            if (current instanceof InterruptedException) {
+                return true;
+            }
+            Throwable cause = current.getCause();
+            if (cause == current) {
+                return false;
+            }
+            current = cause;
+        }
+        return false;
     }
 
     private static RuntimeException mapThrowable(Throwable t, AtomicBoolean interrupted) {

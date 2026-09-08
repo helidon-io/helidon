@@ -25,6 +25,7 @@ import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -360,6 +361,51 @@ class ResilientValueTest {
         assertThat(failure.get(), is((Throwable) null));
         assertThat(calls.get(), is(2));
         assertThat(maximumActive.get(), is(1));
+    }
+
+    @Test
+    void callerInterruptStopsRetries() throws InterruptedException {
+        CountDownLatch loading = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicBoolean interrupted = new AtomicBoolean();
+        ResilientValue<String> value = ResilientValue.create("test value",
+                                                             () -> {
+                                                                 calls.incrementAndGet();
+                                                                 loading.countDown();
+                                                                 try {
+                                                                     release.await();
+                                                                     return "unexpected";
+                                                                 } catch (InterruptedException e) {
+                                                                     throw new SupplierException(e);
+                                                                 }
+                                                             },
+                                                             retry(2),
+                                                             circuitBreaker(),
+                                                             timeout(Duration.ofSeconds(1)));
+
+        Thread loaderThread = Thread.ofVirtual().start(() -> {
+            try {
+                value.get();
+            } catch (Throwable t) {
+                failure.set(t);
+            } finally {
+                interrupted.set(Thread.currentThread().isInterrupted());
+            }
+        });
+        try {
+            assertThat(loading.await(10, TimeUnit.SECONDS), is(true));
+            loaderThread.interrupt();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+        } finally {
+            release.countDown();
+        }
+
+        assertThat(loaderThread.isAlive(), is(false));
+        assertThat(failure.get(), instanceOf(ResilientValue.UnavailableException.class));
+        assertThat(calls.get(), is(1));
+        assertThat(interrupted.get(), is(true));
     }
 
     @Test
