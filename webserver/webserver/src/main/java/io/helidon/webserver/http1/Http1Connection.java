@@ -727,12 +727,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             entityReadLatch.await();
         } catch (InterruptedException e) {
-            throw RequestException.builder()
-                    .type(EventType.INTERNAL_ERROR)
-                    .request(DirectTransportRequest.create(prologue, headers))
-                    .message("Failed to wait for pipeline")
-                    .cause(e)
-                    .build();
+            Thread.currentThread().interrupt();
+            throw new CloseConnectionException("Interrupted while waiting for request entity", e);
         }
         return response.keepConnectionOpen();
     }
@@ -912,9 +908,12 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         } catch (SocketWriterException | UncheckedIOException writeException) {
             throw new ServerConnectionException("Failed to write request exception", writeException);
         }
-
-        if (status == Status.INTERNAL_SERVER_ERROR_500) {
-            LOGGER.log(WARNING, "Internal server error", e);
+        try {
+            if (status == Status.INTERNAL_SERVER_ERROR_500) {
+                LOGGER.log(WARNING, "Internal server error", e);
+            }
+        } finally {
+            flushBeforeClose();
         }
     }
 }
