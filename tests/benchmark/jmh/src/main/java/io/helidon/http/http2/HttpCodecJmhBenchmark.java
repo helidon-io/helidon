@@ -27,13 +27,16 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
 public class HttpCodecJmhBenchmark {
     private static final String SIMPLE_CONTENT_TYPE = "application/json";
     private static final String QUOTED_CONTENT_TYPE = "text/plain; profile=\"a\u0080\u00ff\"";
     private static final String ASCII_VALUE = "0123456789";
+    private static final String OTHER_ASCII_VALUE = "abcdefghij";
     private static final String LATIN1_VALUE = "\u008012345678\u00ff";
     private static final HeaderName CUSTOM_HEADER_NAME = HeaderNames.create("x-jmh-custom-header");
     private static final HeaderName MULTI_VALUE_HEADER_NAME = HeaderNames.create("x-jmh-multi-value");
@@ -109,6 +112,16 @@ public class HttpCodecJmhBenchmark {
         return state.responseLatin1.write();
     }
 
+    @Benchmark
+    public int writeHpackEmptyTableInsert(EmptyTableInsertionState state) {
+        return state.write();
+    }
+
+    @Benchmark
+    public int writeHpackPopulatedTableInsert(PopulatedTableInsertionState state) {
+        return state.write();
+    }
+
     private static Http2Headers requestHeaders(String value) {
         return Http2Headers.create(headers(value))
                 .method(CUSTOM_METHOD)
@@ -131,6 +144,16 @@ public class HttpCodecJmhBenchmark {
         return headers;
     }
 
+    private static Http2Headers indexedHeaders(String value) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.create(CUSTOM_HEADER_NAME, value));
+        return Http2Headers.create(headers)
+                .method(Method.GET)
+                .scheme("https")
+                .path("/")
+                .authority("example.com");
+    }
+
     @State(Scope.Thread)
     public static class EncodingState {
         private final Header asciiHeader = HeaderValues.create("X-JMH", ASCII_VALUE);
@@ -142,6 +165,47 @@ public class HttpCodecJmhBenchmark {
         private final HeaderBlockState requestLatin1 = new HeaderBlockState(requestHeaders(LATIN1_VALUE));
         private final HeaderBlockState responseAscii = new HeaderBlockState(responseHeaders(ASCII_VALUE));
         private final HeaderBlockState responseLatin1 = new HeaderBlockState(responseHeaders(LATIN1_VALUE));
+    }
+
+    @State(Scope.Thread)
+    public static class EmptyTableInsertionState {
+        private final Http2Headers headers = indexedHeaders(ASCII_VALUE);
+        private final Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+        private final BufferData buffer = BufferData.growing(64);
+        private Http2Headers.DynamicTable table;
+
+        @Setup(Level.Invocation)
+        public void setup() {
+            table = Http2Headers.DynamicTable.create(Http2Settings.create());
+            buffer.clear();
+        }
+
+        private int write() {
+            headers.write(table, huffman, buffer);
+            return buffer.available();
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class PopulatedTableInsertionState {
+        private final Http2Headers existingHeaders = indexedHeaders(ASCII_VALUE);
+        private final Http2Headers newHeaders = indexedHeaders(OTHER_ASCII_VALUE);
+        private final Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+        private final BufferData buffer = BufferData.growing(64);
+        private Http2Headers.DynamicTable table;
+
+        @Setup(Level.Invocation)
+        public void setup() {
+            table = Http2Headers.DynamicTable.create(Http2Settings.create());
+            buffer.clear();
+            existingHeaders.write(table, huffman, buffer);
+            buffer.clear();
+        }
+
+        private int write() {
+            newHeaders.write(table, huffman, buffer);
+            return buffer.available();
+        }
     }
 
     private static class HeaderBlockState {
