@@ -728,12 +728,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             entityReadLatch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw RequestException.builder()
-                    .type(EventType.INTERNAL_ERROR)
-                    .request(DirectTransportRequest.create(prologue, headers))
-                    .message("Failed to wait for pipeline")
-                    .cause(e)
-                    .build();
+            throw new CloseConnectionException("Interrupted while waiting for request entity", e);
         }
         return response.keepConnectionOpen();
     }

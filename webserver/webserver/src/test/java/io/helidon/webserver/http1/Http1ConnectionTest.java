@@ -43,6 +43,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -159,7 +160,7 @@ class Http1ConnectionTest {
     }
 
     @Test
-    void forcedCloseInterruptReachesDirectErrorFlush() throws InterruptedException {
+    void forcedCloseInterruptSkipsDirectErrorFlush() {
         byte[] requestBytes = ("""
                 POST / HTTP/1.1\r
                 Host: localhost\r
@@ -183,11 +184,18 @@ class Http1ConnectionTest {
         connectionRef.set(connection);
         writer.releaseFlush.countDown();
         try {
-            connection.handle(FixedLimit.create());
+            CloseConnectionException exception = assertThrows(CloseConnectionException.class,
+                                                              () -> connection.handle(FixedLimit.create()));
 
-            assertThat("Forced close interrupt was cleared before the direct error response flush",
-                       writer.interrupted,
-                       is(true));
+            assertAll(
+                    () -> assertThat(exception.getCause(), instanceOf(InterruptedException.class)),
+                    () -> assertThat("Forced close interrupt was cleared",
+                                     Thread.currentThread().isInterrupted(),
+                                     is(true)),
+                    () -> assertThat("Forced close reached the direct error response flush",
+                                     writer.flushStarted.getCount(),
+                                     is(1L))
+            );
         } finally {
             Thread.interrupted();
         }
