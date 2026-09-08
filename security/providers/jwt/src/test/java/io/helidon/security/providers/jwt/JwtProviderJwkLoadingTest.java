@@ -482,6 +482,20 @@ class JwtProviderJwkLoadingTest {
     }
 
     @Test
+    void consumerTimeoutUsesJwkDefaults() {
+        ResourceConfig reloadableJwk = ResourceConfig.builder()
+                .path(tempDir.resolve("missing.json"))
+                .buildPrototype();
+
+        JwtProvider provider = JwtProvider.builder()
+                .verifyJwk(reloadableJwk)
+                .jwkTimeout(it -> it.timeout(Duration.ofSeconds(1)))
+                .build();
+
+        assertThat(provider, is(notNullValue()));
+    }
+
+    @Test
     void warningsDescribeSafeFailureCategories() throws IOException {
         Logger logger = Logger.getLogger(ResilientValue.class.getName());
         CapturingHandler handler = new CapturingHandler();

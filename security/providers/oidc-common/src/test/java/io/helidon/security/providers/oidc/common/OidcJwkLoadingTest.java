@@ -201,6 +201,20 @@ class OidcJwkLoadingTest {
     }
 
     @Test
+    void consumerTimeoutUsesJwkDefaults() {
+        ResourceConfig reloadableJwk = ResourceConfig.builder()
+                .path(temporaryDirectory.resolve("keys.json"))
+                .buildPrototype();
+
+        OidcConfig config = baseBuilder()
+                .signJwk(reloadableJwk)
+                .jwkTimeout(it -> it.timeout(Duration.ofSeconds(1)))
+                .build();
+
+        assertThat(config.jwkTimeout().prototype().currentThread(), is(true));
+    }
+
+    @Test
     void generatedMetadataContainsFaultToleranceOptions() throws IOException {
         String metadata;
         try (var stream = BaseBuilder.class.getResourceAsStream("/META-INF/helidon/config-metadata.json")) {

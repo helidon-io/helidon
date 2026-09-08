@@ -467,7 +467,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      */
     public B jwkTimeout(Consumer<TimeoutConfig.Builder> consumer) {
         Objects.requireNonNull(consumer);
-        var builder = TimeoutConfig.builder();
+        var builder = TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG);
         consumer.accept(builder);
         return jwkTimeout(builder.buildPrototype());
     }

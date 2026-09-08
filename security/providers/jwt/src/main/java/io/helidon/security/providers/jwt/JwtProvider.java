@@ -1096,7 +1096,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          */
         public Builder jwkTimeout(Consumer<TimeoutConfig.Builder> consumer) {
             Objects.requireNonNull(consumer);
-            var builder = TimeoutConfig.builder();
+            var builder = TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG);
             consumer.accept(builder);
             return jwkTimeout(builder.buildPrototype());
         }
