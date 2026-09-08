@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -79,7 +80,10 @@ class ScopedRegistryImplTest {
             assertThrows(ScopeNotActiveException.class,
                          () -> registry.activator(pending.descriptor(), () -> pending));
             assertThrows(ScopeNotActiveException.class,
+                         () -> registry.activator(blocker.descriptor(), () -> blocker));
+            assertThrows(ScopeNotActiveException.class,
                          () -> registry.existingActivator(pending.descriptor()));
+            assertThat(registry.existingActivator(blocker.descriptor()).orElseThrow(), sameInstance(blocker));
         } finally {
             continueDeactivation.countDown();
             shutdownThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));

@@ -151,11 +151,11 @@ class ScopedRegistryImpl implements ScopedRegistry {
     public <T> Activator<T> activator(ServiceInfo descriptor, Supplier<Activator<T>> activatorSupplier) {
         try {
             serviceProvidersLock.readLock().lock();
+            checkActive();
             Activator<?> activator = activators.get(descriptor);
-            if (activator != null && availableForLookup(activator)) {
+            if (activator != null) {
                 return (Activator<T>) activator;
             }
-            checkActive();
         } finally {
             serviceProvidersLock.readLock().unlock();
         }
@@ -176,7 +176,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
         try {
             serviceProvidersLock.readLock().lock();
             Activator<?> activator = activators.get(descriptor);
-            if (activator != null && availableForLookup(activator)) {
+            if (activator != null && availableForActiveLookup(activator)) {
                 return Optional.of((Activator<T>) activator);
             }
             checkActive();
@@ -199,7 +199,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
         }
     }
 
-    private boolean availableForLookup(Activator<?> activator) {
+    private boolean availableForActiveLookup(Activator<?> activator) {
         return state == RegistryState.ACTIVE
                 || (state == RegistryState.DEACTIVATING && activator.phase() == ActivationPhase.ACTIVE);
     }
