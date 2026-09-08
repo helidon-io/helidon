@@ -1214,6 +1214,7 @@ final class GenerateAbstractBuilder {
 
         TypeName prototype = prototypeInfo.prototypeType();
         String ifaceName = prototype.className();
+        boolean sealedPrototype = prototypeInfo.blueprint().hasAnnotation(Types.PROTOTYPE_SEALED);
         // inner class of the builder
         String implName = ifaceName + "Impl";
 
@@ -1223,8 +1224,10 @@ final class GenerateAbstractBuilder {
             builder.name(implName)
                     .accessModifier(AccessModifier.PROTECTED)
                     .isStatic(true)
-                    .description("Generated implementation of the prototype, "
-                                         + "can be extended by descendant prototype implementations.");
+                    .description(sealedPrototype
+                                         ? "Generated final implementation of the sealed prototype."
+                                         : "Generated implementation of the prototype, "
+                                                 + "can be extended by descendant prototype implementations.");
             superPrototype.ifPresent(it -> {
                 builder.superType(TypeName.create(it.className() + "Impl"));
             });
@@ -1290,6 +1293,7 @@ final class GenerateAbstractBuilder {
             hashCodeAndEquals(builder, options, ifaceName, superPrototype.isPresent());
 
             extensions.forEach(it -> it.updateImplementation(prototypeInfo, Utils.options(options), builder));
+            builder.isFinal(sealedPrototype);
         });
     }
 

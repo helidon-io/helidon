@@ -97,6 +97,7 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "GLOBAL_SERVICE_REGISTRY", GlobalServiceRegistry.class);
         checkField(toCheck, checked, fields, "BUILDER_DESCRIPTION", Description.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BLUEPRINT", Prototype.Blueprint.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_SEALED", Prototype.Sealed.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_IMPLEMENT", Prototype.Implement.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_API", Prototype.Api.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_ANNOTATED", Prototype.Annotated.class);

@@ -173,6 +173,16 @@ public final class Prototype {
     }
 
     /**
+     * Generate the prototype API as a sealed interface.
+     * <p>
+     * This annotation must be used together with {@link Prototype.Blueprint}.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Sealed {
+    }
+
+    /**
      * A blueprint annotated with this annotation will create a prototype that can be created from a
      * {@code io.helidon.config.Config} instance. The builder will also have a method {@code config(Config)} that
      * reads all options annotated with {@link io.helidon.builder.api.Option.Configured} from the config.

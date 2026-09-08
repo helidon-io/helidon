@@ -657,6 +657,11 @@ class BuilderCodegen implements CodegenExtension {
                                                  prototype))
                 .accessModifier(prototypeInfo.accessModifier());
 
+        if (blueprint.hasAnnotation(Types.PROTOTYPE_SEALED)) {
+            classModel.isSealed(true)
+                    .addPermittedSubclass(prototype.fqName() + ".BuilderBase." + ifaceName + "Impl");
+        }
+
         typeArguments.forEach(classModel::addGenericArgument);
 
         if (prototypeInfo.configured().isPresent()) {

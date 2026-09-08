@@ -75,6 +75,7 @@ final class FactoryPrototypeInfo {
         Javadoc blueprintJavadoc = Javadoc.parse(blueprint.description().orElse(""));
         Predicate<String> defaultMethodsPredicate = defaultMethodsPredicate(blueprint);
         Optional<TypeName> superPrototype = superPrototype(blueprint);
+        validateSealedSuperPrototype(ctx, blueprint);
 
         PrototypeInfo.Builder prototype = PrototypeInfo.builder()
                 .blueprint(blueprint)
@@ -627,6 +628,19 @@ final class FactoryPrototypeInfo {
 
     private static Optional<TypeInfo> superBlueprintDefinition(RoundContext ctx, TypeInfo blueprint) {
         return superBlueprintDefinition(ctx, blueprint, new HashSet<>());
+    }
+
+    private static void validateSealedSuperPrototype(RoundContext ctx, TypeInfo blueprint) {
+        superBlueprintDefinition(ctx, blueprint)
+                .filter(it -> it.hasAnnotation(Types.PROTOTYPE_SEALED))
+                .ifPresent(superBlueprint -> {
+                    TypeName prototype = generatedTypeName(blueprint);
+                    TypeName superPrototype = generatedTypeName(superBlueprint);
+                    throw new CodegenException("Prototype " + prototype.className()
+                                                       + " cannot extend sealed prototype " + superPrototype.className()
+                                                       + ". Sealed prototypes must be leaf prototypes.",
+                                               blueprint);
+                });
     }
 
     private static Optional<TypeInfo> superBlueprintDefinition(RoundContext ctx,

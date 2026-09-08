@@ -88,6 +88,40 @@ class ClassModelTest {
     }
 
     @Test
+    void testSealedInterfaceType() throws IOException {
+        var sw = new StringWriter();
+        TypeName shadeType = TypeName.create("com.acme.Shade");
+        TypeName darkType = TypeName.create("com.acme.Shade.Dark");
+        ClassModel model = ClassModel.builder()
+                .type(shadeType)
+                .classType(ElementKind.INTERFACE)
+                .isSealed(true)
+                .addPermittedSubclass(darkType)
+                .addInnerClass(builder -> builder
+                        .name("Dark")
+                        .isFinal(true)
+                        .addInterface(shadeType))
+                .build();
+
+        assertThat(model.isSealed(), is(true));
+        assertThat(model.permittedSubclassTypeNames(), is(List.of(darkType)));
+
+        model.write(sw);
+
+        assertThat(sw.toString(), isSource("""
+                package com.acme;
+
+                public sealed interface Shade permits Shade.Dark {
+
+                    public final class Dark implements Shade {
+
+                    }
+
+                }
+                """));
+    }
+
+    @Test
     void testAtSignInText() throws IOException {
         var sw = new StringWriter();
         ClassModel.builder()
