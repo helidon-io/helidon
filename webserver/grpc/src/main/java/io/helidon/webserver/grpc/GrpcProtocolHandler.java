@@ -392,7 +392,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
             }
             closeOnException(e, header);
-            LOGGER.log(ERROR, "Failed to process grpc request, data bytes: " + data.available(), e);
+            Status status = Status.fromThrowable(e);
+            String description = status.getDescription();
+            if (description == null) {
+                description = e.getMessage() == null ? "Failed to process gRPC request" : e.getMessage();
+            }
+            if (status.getCode() == Status.Code.RESOURCE_EXHAUSTED) {
+                description += ", data bytes: " + data.available();
+            }
+            LOGGER.log(ERROR, description, e);
         }
     }
 
@@ -401,7 +409,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         int capacity = readBufferData.capacity();
         if (length > capacity) {
             if (length > grpcConfig.maxReadBufferSize()) {
-                throw new IllegalStateException("gRPC message size exceeds max read buffer size");
+                throw Status.RESOURCE_EXHAUSTED
+                        .withDescription("gRPC message exceeds maximum configured size")
+                        .asRuntimeException();
             }
             readBufferData = BufferData.create(length);
         }
