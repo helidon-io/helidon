@@ -41,8 +41,10 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -611,7 +613,7 @@ class ResilientValueTest {
                    is(List.of("logged test value is unavailable; retries are exhausted: safe failure detail")));
         assertThat(handler.messages(Level.INFO), is(List.of("logged test value is available again")));
         assertThat(String.join("\n", handler.messages()),
-                   org.hamcrest.CoreMatchers.not(org.hamcrest.CoreMatchers.containsString("raw cause")));
+                   not(containsString("raw cause")));
         assertThat(handler.hasThrown(), is(false));
     }
 
