@@ -173,6 +173,22 @@ class ResourceTest {
     }
 
     @Test
+    void testConfigUriUsesConfiguredTimeout() {
+        TestUrlStreamHandlerProvider.reset();
+        URI uri = URI.create(TestUrlStreamHandlerProvider.PROTOCOL + "://resource");
+        ResourceConfig resourceConfig = ResourceConfig.builder()
+                .uri(uri)
+                .buildPrototype();
+
+        Resource.create(resourceConfig, Duration.ofMillis(50)).bytes();
+
+        TestUrlStreamHandlerProvider.RecordingUrlConnection connection = TestUrlStreamHandlerProvider.connection();
+        assertThat(connection.getConnectTimeout(), is(50));
+        assertThat(connection.getReadTimeout(), is(50));
+        assertThat(connection.getUseCaches(), is(false));
+    }
+
+    @Test
     void testConfigTimeoutWithNonUriResource() {
         ResourceConfig resourceConfig = ResourceConfig.builder()
                 .contentPlain(STRING_CONTENT)
