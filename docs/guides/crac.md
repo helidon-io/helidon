@@ -50,7 +50,7 @@ Generate the project using the Helidon Quickstart Maven archetype.
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
-    -DarchetypeVersion=27.0.0-M1-SNAPSHOT \
+    -DarchetypeVersion=27.0.0-M1 \
     -DgroupId=io.helidon.examples \
     -DartifactId=helidon-quickstart-se \
     -Dpackage=io.helidon.examples.quickstart.se
@@ -92,7 +92,7 @@ You should see in the output that Helidon has started with the CRaC feature
 enabled.
 
 ```shell [Terminal]
-Helidon SE 27.0.0-M1-SNAPSHOT features: [CRaC, Config, Encoding, Health, Media, Metrics, Observe, Registry, WebServer]
+Helidon SE 27.0.0-M1 features: [CRaC, Config, Encoding, Health, Media, Metrics, Observe, Registry, WebServer]
 [0x3f87bd99] http://0.0.0.0:8080 bound for socket '@default'
 Started all channels in 9 milliseconds. 521 milliseconds since JVM startup. Java 23.0.1
 WEB server is up! http://localhost:8080/simple-greet

@@ -19,7 +19,7 @@ For this 15 minute tutorial, you will need the following:
 | [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
 | [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
-Prerequisite product versions for Helidon 27.0.0-M1-SNAPSHOT
+Prerequisite product versions for Helidon 27.0.0-M1
 
 Verify Prerequisites:
 
@@ -81,7 +81,7 @@ Run the Maven archetype:
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
-    -DarchetypeVersion=27.0.0-M1-SNAPSHOT \
+    -DarchetypeVersion=27.0.0-M1 \
     -DgroupId=io.helidon.examples \
     -DartifactId=helidon-quickstart-se \
     -Dpackage=io.helidon.examples.quickstart.se
