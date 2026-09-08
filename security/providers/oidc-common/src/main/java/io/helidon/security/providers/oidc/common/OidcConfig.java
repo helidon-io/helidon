@@ -451,16 +451,6 @@ public final class OidcConfig extends TenantConfigImpl {
         LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
 
-    private Supplier<Tenant> tenantSupplier(TenantConfig tenantConfig) {
-        Supplier<Tenant> loader = () -> Tenant.create(this, tenantConfig);
-        return tenantConfig.tenantLoadingLazy()
-                ? ResilientValue.create("OIDC tenant configuration", loader,
-                                        tenantConfig.jwkRetry(),
-                                        tenantConfig.jwkCircuitBreaker(),
-                                        tenantConfig.jwkTimeout())
-                : LazyValue.create(loader);
-    }
-
     /**
      * Create a builder to programmatically construct OIDC configuration.
      *
@@ -892,6 +882,16 @@ public final class OidcConfig extends TenantConfigImpl {
 
     Supplier<WebClientConfig.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
+    }
+
+    private Supplier<Tenant> tenantSupplier(TenantConfig tenantConfig) {
+        Supplier<Tenant> loader = () -> Tenant.create(this, tenantConfig);
+        return tenantConfig.tenantLoadingLazy()
+                ? ResilientValue.create("OIDC tenant configuration", loader,
+                                        tenantConfig.jwkRetry(),
+                                        tenantConfig.jwkCircuitBreaker(),
+                                        tenantConfig.jwkTimeout())
+                : LazyValue.create(loader);
     }
 
     /**
