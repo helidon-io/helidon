@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -154,6 +155,41 @@ class Http1ConnectionTest {
         } finally {
             writer.releaseFlush.countDown();
             executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void forcedCloseInterruptReachesDirectErrorFlush() throws InterruptedException {
+        byte[] requestBytes = ("""
+                POST / HTTP/1.1\r
+                Host: localhost\r
+                Connection: close\r
+                Content-Length: 1\r
+                \r
+                """).getBytes(StandardCharsets.US_ASCII);
+        AtomicReference<Http1Connection> connectionRef = new AtomicReference<>();
+        BlockingDataWriter writer = new BlockingDataWriter();
+        Router router = Router.builder()
+                .addRouting(HttpRouting.builder()
+                                    .post("/", (_, res) -> {
+                                        connectionRef.get().close(true);
+                                        res.send("done");
+                                    }))
+                .build();
+        Http1Connection connection = createConnection(DataReader.create(() -> requestBytes),
+                                                      writer,
+                                                      DirectHandlers.create(),
+                                                      router);
+        connectionRef.set(connection);
+        writer.releaseFlush.countDown();
+        try {
+            connection.handle(FixedLimit.create());
+
+            assertThat("Forced close interrupt was cleared before the direct error response flush",
+                       writer.interrupted,
+                       is(true));
+        } finally {
+            Thread.interrupted();
         }
     }
 

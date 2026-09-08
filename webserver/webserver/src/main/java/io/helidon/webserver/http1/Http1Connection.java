@@ -727,6 +727,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             entityReadLatch.await();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw RequestException.builder()
                     .type(EventType.INTERNAL_ERROR)
                     .request(DirectTransportRequest.create(prologue, headers))
