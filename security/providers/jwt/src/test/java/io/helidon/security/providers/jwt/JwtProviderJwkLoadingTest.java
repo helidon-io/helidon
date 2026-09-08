@@ -83,6 +83,8 @@ class JwtProviderJwkLoadingTest {
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.description().orElseThrow(),
                    is("JWT verification keys are temporarily unavailable"));
+        assertThat(response.responseHeaders().get("WWW-Authenticate"),
+                   is(List.of("Bearer")));
     }
 
     @Test
@@ -93,6 +95,7 @@ class JwtProviderJwkLoadingTest {
         AuthenticationResponse response = provider.authenticate(request(validToken()));
 
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        assertThat(response.responseHeaders().isEmpty(), is(true));
     }
 
     @Test

@@ -203,7 +203,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             try {
                 keys = verificationKeys(jwt);
             } catch (ResilientValue.UnavailableException e) {
-                return failOrAbstain("JWT verification keys are temporarily unavailable");
+                return unavailableOrAbstain("JWT verification keys are temporarily unavailable");
             }
             Jwk fallbackJwk = jwt.keyId().isEmpty() ? defaultJwk : null;
             Errors errors = signedJwt.verifySignature(keys, fallbackJwk);
@@ -263,6 +263,20 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                     .description(message)
                     .build();
         }
+    }
+
+    private AuthenticationResponse unavailableOrAbstain(String message) {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build();
+        }
+        return AuthenticationResponse.builder()
+                .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                .responseHeader("WWW-Authenticate", "Bearer")
+                .description(message)
+                .build();
     }
 
     Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {

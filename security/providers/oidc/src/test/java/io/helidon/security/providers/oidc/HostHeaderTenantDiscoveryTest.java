@@ -184,7 +184,9 @@ class HostHeaderTenantDiscoveryTest {
                        first.description().orElseThrow(),
                        is("Tenant configuration is temporarily unavailable"));
             assertThat("only the first request should attempt discovery", idp.wellKnownHits(), is(1));
-            assertThat("unavailable response must not redirect", first.responseHeaders().isEmpty(), is(true));
+            assertThat("unavailable response challenge",
+                       first.responseHeaders().get(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
+                       is(List.of("Bearer")));
         }
     }
 
@@ -201,6 +203,9 @@ class HostHeaderTenantDiscoveryTest {
 
             assertUnauthorized(first, "first unavailable JWK request");
             assertUnauthorized(second, "open JWK circuit request");
+            assertThat("unavailable JWK response challenge",
+                       first.responseHeaders().get(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
+                       is(List.of("Bearer")));
             assertThat("only the first required request should fetch JWK", idp.jwkHits(), is(1));
 
             Map<String, String> optionalConfig = new HashMap<>(requiredConfig);
@@ -212,6 +217,7 @@ class HostHeaderTenantDiscoveryTest {
                        optional.status(),
                        is(SecurityResponse.SecurityStatus.ABSTAIN));
             assertThat("optional unavailable JWK status code", optional.statusCode().isEmpty(), is(true));
+            assertThat("optional unavailable JWK headers", optional.responseHeaders().isEmpty(), is(true));
             assertThat("optional provider should have its own JWK circuit", idp.jwkHits(), is(2));
         }
     }

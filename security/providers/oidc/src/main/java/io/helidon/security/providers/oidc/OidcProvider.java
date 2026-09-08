@@ -38,6 +38,7 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
@@ -216,6 +217,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return AuthenticationResponse.builder()
                 .status(SecurityResponse.SecurityStatus.FAILURE)
                 .statusCode(Status.UNAUTHORIZED_401.code())
+                .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), "Bearer")
                 .description("Tenant configuration is temporarily unavailable")
                 .build();
     }
