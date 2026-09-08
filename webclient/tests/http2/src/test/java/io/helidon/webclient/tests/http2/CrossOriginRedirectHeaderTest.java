@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.tests.http2;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -23,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +43,10 @@ import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.ServerRequest;
 
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2Headers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -453,6 +459,92 @@ class CrossOriginRedirectHeaderTest {
     @Test
     void h2cFallbackOutputStreamRedirectHonorsRequestExpectContinueOverride() throws Exception {
         followsH2cFallbackOutputStreamRedirectWithEntityWhenEnabled(307, true, false, false);
+    }
+
+    @Test
+    void doesNotSendOutputStreamBodyAfterRedirectTargetFinalResponse() {
+        doesNotSendOutputStreamBodyAfterRedirectTargetFinalResponse(307);
+        doesNotSendOutputStreamBodyAfterRedirectTargetFinalResponse(308);
+    }
+
+    private static void doesNotSendOutputStreamBodyAfterRedirectTargetFinalResponse(int redirectStatus) {
+        AtomicInteger dataFrames = new AtomicInteger();
+        MockHttp2Server finalResponseServer = MockHttp2Server.builder()
+                .onHeaders((ctx, streamId, headers, unused, encoder) -> {
+                    Http2Headers responseHeaders =
+                            new DefaultHttp2Headers().status(HttpResponseStatus.OK.codeAsText())
+                                    .add("content-length", "2");
+                    encoder.writeHeaders(ctx, streamId, responseHeaders, 0, false, ctx.newPromise());
+                    encoder.writeData(ctx,
+                                      streamId,
+                                      Unpooled.wrappedBuffer("OK".getBytes(StandardCharsets.UTF_8)),
+                                      0,
+                                      true,
+                                      ctx.newPromise());
+                    ctx.flush();
+                })
+                .onData((ctx, streamId, data, padding, endOfStream, encoder) -> {
+                    dataFrames.incrementAndGet();
+                    return data.readableBytes() + padding;
+                })
+                .build();
+        WebServer firstHop = WebServer.builder()
+                .host("127.0.0.1")
+                .port(-1)
+                .routing(rules -> rules.put("/redirect/final-response", (req, res) -> {
+                    res.status(Status.create(redirectStatus))
+                            .header(HeaderNames.LOCATION,
+                                    "http://localhost:" + finalResponseServer.port() + "/final-response")
+                            .send();
+                }))
+                .build()
+                .start();
+        Http2Client client = newClient(firstHop.port(), true, true, true, true, true);
+        try (Http2ClientResponse response = client.put("/redirect/final-response")
+                .maxRedirects(1)
+                .outputStream(it -> {
+                    it.write(requestBodyBytes());
+                    it.close();
+                })) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().as(String.class), is("OK"));
+        } finally {
+            client.closeResource();
+            firstHop.stop();
+            finalResponseServer.shutdown();
+        }
+
+        assertThat(dataFrames.get(), is(0));
+    }
+
+    @Test
+    void followsOutputStreamRedirectThroughHttp1Fallback() throws Exception {
+        try (Http1FallbackRedirectServer finalResponseServer = new Http1FallbackRedirectServer()) {
+            WebServer firstHop = WebServer.builder()
+                    .host("127.0.0.1")
+                    .port(-1)
+                    .routing(rules -> rules.put("/redirect/http1-fallback", (req, res) -> {
+                        res.status(Status.TEMPORARY_REDIRECT_307)
+                                .header(HeaderNames.LOCATION, finalResponseServer.redirectUri())
+                                .send();
+                    }))
+                    .build()
+                    .start();
+            Http2Client client = newClient(firstHop.port(), true, true, true, false, true);
+            try (Http2ClientResponse response = client.put("/redirect/http1-fallback")
+                    .maxRedirects(2)
+                    .outputStream(output -> {
+                        output.write(requestBodyBytes());
+                        output.close();
+                    })) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.entity().as(String.class), is("OK"));
+            } finally {
+                client.closeResource();
+                firstHop.stop();
+            }
+            assertThat(finalResponseServer.closedWithoutBody(), is(true));
+        }
     }
 
     private static void rejectOutputStreamEntityWhenH2cUpgradeRedirectsCrossOrigin(String redirectPath) {
@@ -899,6 +991,72 @@ class CrossOriginRedirectHeaderTest {
     }
 
     private record CapturedHeaders(String authorization, String apiKey) {
+    }
+
+    private static final class Http1FallbackRedirectServer implements AutoCloseable {
+        private final ServerSocket serverSocket;
+        private final Thread thread;
+        private final CompletableFuture<Boolean> closedWithoutBody = new CompletableFuture<>();
+
+        private Http1FallbackRedirectServer() throws IOException {
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
+            thread = new Thread(this::serve, "h2c-fallback-final-" + serverSocket.getLocalPort());
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+        @Override
+        public void close() throws Exception {
+            serverSocket.close();
+            thread.join(TimeUnit.SECONDS.toMillis(2));
+        }
+
+        private String redirectUri() {
+            return "http://localhost:" + serverSocket.getLocalPort() + "/redirect";
+        }
+
+        private boolean closedWithoutBody() throws Exception {
+            return closedWithoutBody.get(5, TimeUnit.SECONDS);
+        }
+
+        private void serve() {
+            try {
+                try (Socket socket = serverSocket.accept()) {
+                    String requestHeaders = RedirectingHttp1Server.readHeaders(socket.getInputStream())
+                            .toLowerCase(Locale.ROOT);
+                    assertThat(requestHeaders.contains("\r\nupgrade: h2c\r\n"), is(true));
+                    socket.getOutputStream().write(("HTTP/1.1 307 Temporary Redirect\r\n"
+                                                            + "Location: /final\r\n"
+                                                            + "Content-Length: 0\r\n"
+                                                            + "Connection: close\r\n"
+                                                            + "\r\n")
+                                                           .getBytes(StandardCharsets.US_ASCII));
+                }
+
+                try (Socket socket = serverSocket.accept()) {
+                    RedirectingHttp1Server.readHeaders(socket.getInputStream());
+                    socket.getOutputStream().write(("HTTP/1.1 200 OK\r\n"
+                                                            + "Content-Length: 2\r\n"
+                                                            + "Connection: close\r\n"
+                                                            + "\r\n"
+                                                            + "OK")
+                                                           .getBytes(StandardCharsets.US_ASCII));
+                    socket.setSoTimeout(2_000);
+                    try {
+                        closedWithoutBody.complete(socket.getInputStream().read() == -1);
+                    } catch (SocketTimeoutException e) {
+                        closedWithoutBody.complete(false);
+                    }
+                }
+            } catch (SocketException e) {
+                if (!serverSocket.isClosed()) {
+                    closedWithoutBody.completeExceptionally(e);
+                }
+            } catch (Throwable t) {
+                closedWithoutBody.completeExceptionally(t);
+            }
+        }
     }
 
     private static final class RedirectingHttp1Server implements AutoCloseable {

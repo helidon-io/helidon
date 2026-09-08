@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
+import java.time.Duration;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.ServiceLoader;
@@ -30,7 +31,9 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.ParserMode;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
@@ -77,6 +80,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private boolean entityRequested;
     private long entityLength;
     private boolean entityFullyRead = false;
+    private boolean closeConnectionOnClose;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
                             Http1ClientProtocolConfig protocolConfig,
@@ -153,7 +157,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
+                if (closeConnectionOnClose || headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
                     if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {
@@ -186,7 +190,11 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     ClientConnection connection() {
-        return connection;
+        return closeConnectionOnClose ? new CloseOnReleaseClientConnection(connection) : connection;
+    }
+
+    void closeConnectionOnClose() {
+        closeConnectionOnClose = true;
     }
 
     /**
@@ -246,5 +254,63 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             return null;
         }
         return bufferData;
+    }
+
+    private record CloseOnReleaseClientConnection(ClientConnection delegate) implements ClientConnection {
+        @Override
+        public DataReader reader() {
+            return delegate.reader();
+        }
+
+        @Override
+        public DataWriter writer() {
+            return delegate.writer();
+        }
+
+        @Override
+        public String channelId() {
+            return delegate.channelId();
+        }
+
+        @Override
+        public HelidonSocket helidonSocket() {
+            return delegate.helidonSocket();
+        }
+
+        @Override
+        public void readTimeout(Duration readTimeout) {
+            delegate.readTimeout(readTimeout);
+        }
+
+        @Override
+        public boolean allowExpectContinue() {
+            return delegate.allowExpectContinue();
+        }
+
+        @Override
+        public void allowExpectContinue(boolean allowExpectContinue) {
+            delegate.allowExpectContinue(allowExpectContinue);
+        }
+
+        @Override
+        public boolean isConnected() {
+            return delegate.isConnected();
+        }
+
+        @Override
+        public ClientConnection connect() {
+            delegate.connect();
+            return this;
+        }
+
+        @Override
+        public void releaseResource() {
+            delegate.closeResource();
+        }
+
+        @Override
+        public void closeResource() {
+            delegate.closeResource();
+        }
     }
 }

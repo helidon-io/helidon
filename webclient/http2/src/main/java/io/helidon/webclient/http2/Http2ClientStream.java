@@ -684,7 +684,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private boolean expectsEntityData() {
         inboundStateLock.lock();
         try {
-            return state == Http2StreamState.HALF_CLOSED_LOCAL && readState != ReadState.END && hasEntity;
+            return (state == Http2StreamState.OPEN || state == Http2StreamState.HALF_CLOSED_LOCAL)
+                    && readState != ReadState.END
+                    && hasEntity;
         } finally {
             inboundStateLock.unlock();
         }

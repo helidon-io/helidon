@@ -106,6 +106,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             //If cos is marked as interrupted, we know that our interrupted exception has been thrown, but
             //it was intercepted by the user OutputStreamHandler and not rethrown.
             //This is a fallback mechanism to correctly handle such a situations.
+            redirectedResponse = outputStream.response;
             stream(outputStream.stream);
             return outputStream.serviceResponse();
         } else if (!outputStream.closed()) {
@@ -438,16 +439,10 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         }
 
         WebClientServiceResponse serviceResponse() {
-            if (serviceResponse != null) {
-                return serviceResponse;
+            if (response != null) {
+                return response.toServiceResponse(request, whenComplete);
             }
-
-            return createServiceResponse(request,
-                                         clientConfig,
-                                         stream,
-                                         whenComplete,
-                                         response.status(),
-                                         response.headers());
+            return serviceResponse;
         }
 
         boolean closed() {
@@ -574,7 +569,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                     }
                     lastRequest = clientRequest;
 
-                    stream = response.stream();
+                    if (response.resource() instanceof Http2ClientStream responseStream) {
+                        stream = responseStream;
+                    }
 
                     if (RedirectionProcessor.redirectionStatusCode(response.status())) {
                         try (response) {
@@ -586,14 +583,11 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                             redirectedUri = response.headers().get(HeaderNames.LOCATION).get();
                         }
                     } else {
-                        if (!sendEntity || sendEmptyEntity) {
-                            //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
-                            this.interrupted = true;
-                            this.response = response;
-                            //we are not sending anything by this OS, we need to interrupt it.
-                            throw new OutputStreamInterruptedException();
-                        }
-                        return;
+                        //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
+                        this.interrupted = true;
+                        this.response = response;
+                        //we are not sending anything by this OS, we need to interrupt it.
+                        throw new OutputStreamInterruptedException();
                     }
                 } catch (StreamTimeoutException ignored) {
                     // We assume this is a timeout exception; if the socket got closed, the next read will throw the

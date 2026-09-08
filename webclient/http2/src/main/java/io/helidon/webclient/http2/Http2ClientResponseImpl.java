@@ -140,8 +140,8 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                 maxBufferedEntitySize);
     }
 
-    Http2ClientStream stream() {
-        return (Http2ClientStream) stream;
+    ReleasableResource resource() {
+        return stream;
     }
 
     boolean hasRequestEntity() {

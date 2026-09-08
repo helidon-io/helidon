@@ -589,16 +589,20 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                         response.close();
                     }
                 } else {
-                    if (!sendEntity || sendEmptyEntity) {
-                        //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
-                        this.interrupted = true;
-                        this.response = response;
-                        //we are not sending anything by this OS, we need to interrupt it.
-                        throw new OutputStreamInterruptedException();
-                    } else {
+                    if (sendEntity
+                            && !sendEmptyEntity
+                            && response.status().code() == Status.CONTINUE_100.code()) {
                         reader.skip(reader.available());
+                        return;
                     }
-                    return;
+                    if (sendEntity && !sendEmptyEntity) {
+                        response.closeConnectionOnClose();
+                    }
+                    //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
+                    this.interrupted = true;
+                    this.response = response;
+                    //we are not sending anything by this OS, we need to interrupt it.
+                    throw new OutputStreamInterruptedException();
                 }
 
             }
