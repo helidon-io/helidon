@@ -224,19 +224,6 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
     }
 
-    private JwkKeys verificationKeys(Jwt jwt) {
-        if (jwt.keyId().isEmpty()) {
-            return EMPTY_JWK_KEYS;
-        }
-        if (verifyKeys != null) {
-            return verifyKeys;
-        }
-        if (verifyKeysLoader != null) {
-            return verifyKeysLoader.get();
-        }
-        return EMPTY_JWK_KEYS;
-    }
-
     private Errors validateJwt(Jwt jwt) {
         JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
                 .addDefaultTimeValidators()
@@ -264,20 +251,6 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                     .description(message)
                     .build();
         }
-    }
-
-    private AuthenticationResponse unavailableOrAbstain(String message) {
-        if (optional) {
-            return AuthenticationResponse.builder()
-                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                    .description(message)
-                    .build();
-        }
-        return AuthenticationResponse.builder()
-                .status(AuthenticationResponse.SecurityStatus.FAILURE)
-                .responseHeader("WWW-Authenticate", "Bearer")
-                .description(message)
-                .build();
     }
 
     Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
@@ -398,6 +371,33 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 .map(String::valueOf)
                 .flatMap(username -> attemptImpersonation(outboundEnv, username))
                 .orElseGet(() -> attemptPropagation(providerRequest, outboundEnv));
+    }
+
+    private JwkKeys verificationKeys(Jwt jwt) {
+        if (jwt.keyId().isEmpty()) {
+            return EMPTY_JWK_KEYS;
+        }
+        if (verifyKeys != null) {
+            return verifyKeys;
+        }
+        if (verifyKeysLoader != null) {
+            return verifyKeysLoader.get();
+        }
+        return EMPTY_JWK_KEYS;
+    }
+
+    private AuthenticationResponse unavailableOrAbstain(String message) {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build();
+        }
+        return AuthenticationResponse.builder()
+                .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                .responseHeader("WWW-Authenticate", "Bearer")
+                .description(message)
+                .build();
     }
 
     private OutboundSecurityResponse attemptPropagation(ProviderRequest providerRequest, SecurityEnvironment outboundEnv) {

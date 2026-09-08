@@ -207,21 +207,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 .build();
     }
 
-    private AuthenticationResponse unavailableTenantResponse() {
-        if (optional) {
-            return AuthenticationResponse.builder()
-                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                    .description("Tenant configuration is temporarily unavailable")
-                    .build();
-        }
-        return AuthenticationResponse.builder()
-                .status(SecurityResponse.SecurityStatus.FAILURE)
-                .statusCode(Status.UNAUTHORIZED_401.code())
-                .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), "Bearer")
-                .description("Tenant configuration is temporarily unavailable")
-                .build();
-    }
-
     private String findTenantIdFromRedirects(ProviderRequest providerRequest) {
         List<String> missingLocations = new LinkedList<>();
         Optional<String> tenantId = Optional.empty();
@@ -273,6 +258,21 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             case USER_JWT -> propagateAccessToken(providerRequest, outboundEnv);
             case CLIENT_CREDENTIALS -> clientCredentials(providerRequest, outboundEnv);
         };
+    }
+
+    private AuthenticationResponse unavailableTenantResponse() {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description("Tenant configuration is temporarily unavailable")
+                    .build();
+        }
+        return AuthenticationResponse.builder()
+                .status(SecurityResponse.SecurityStatus.FAILURE)
+                .statusCode(Status.UNAUTHORIZED_401.code())
+                .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), "Bearer")
+                .description("Tenant configuration is temporarily unavailable")
+                .build();
     }
 
     private OutboundSecurityResponse propagateAccessToken(ProviderRequest providerRequest,
