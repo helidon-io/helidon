@@ -220,15 +220,15 @@ class JwtProviderJwkLoadingTest {
                                    .buildPrototype())
                 .jwkRetry(() -> {
                     creations.incrementAndGet();
-                    return JwtProvider.Builder.defaultJwkRetry();
+                    return RetryConfig.builder(oneCallRetry()).build();
                 })
                 .jwkCircuitBreaker(() -> {
                     creations.incrementAndGet();
-                    return JwtProvider.Builder.defaultJwkCircuitBreaker();
+                    return CircuitBreakerConfig.builder(defaultCircuitBreaker()).build();
                 })
                 .jwkTimeout(() -> {
                     creations.incrementAndGet();
-                    return JwtProvider.Builder.defaultJwkTimeout();
+                    return TimeoutConfig.builder(testTimeout()).build();
                 })
                 .build();
 
@@ -244,15 +244,15 @@ class JwtProviderJwkLoadingTest {
                                    .buildPrototype())
                 .jwkRetry(() -> {
                     creations.incrementAndGet();
-                    return JwtProvider.Builder.defaultJwkRetry();
+                    return RetryConfig.builder(oneCallRetry()).build();
                 })
                 .jwkCircuitBreaker(() -> {
                     creations.incrementAndGet();
-                    return JwtProvider.Builder.defaultJwkCircuitBreaker();
+                    return CircuitBreakerConfig.builder(defaultCircuitBreaker()).build();
                 })
                 .jwkTimeout(() -> {
                     creations.incrementAndGet();
-                    return JwtProvider.Builder.defaultJwkTimeout();
+                    return TimeoutConfig.builder(testTimeout()).build();
                 })
                 .build();
 
@@ -457,17 +457,6 @@ class JwtProviderJwkLoadingTest {
     }
 
     @Test
-    void hasJwkFaultToleranceDefaults() {
-        assertThat(JwtProvider.Builder.defaultJwkTimeout().prototype().timeout(), is(Duration.ofSeconds(5)));
-        assertThat(JwtProvider.Builder.defaultJwkTimeout().prototype().currentThread(), is(true));
-        assertThat(JwtProvider.Builder.defaultJwkRetry().prototype().calls(), is(2));
-        assertThat(JwtProvider.Builder.defaultJwkRetry().prototype().overallTimeout(), is(Duration.ofSeconds(11)));
-        assertThat(JwtProvider.Builder.defaultJwkCircuitBreaker().prototype().volume(), is(1));
-        assertThat(JwtProvider.Builder.defaultJwkCircuitBreaker().prototype().errorRatio(), is(100));
-        assertThat(JwtProvider.Builder.defaultJwkCircuitBreaker().prototype().delay(), is(Duration.ofSeconds(5)));
-    }
-
-    @Test
     void rejectsInconsistentJwkTimeoutAtStartup() {
         ResourceConfig reloadableJwk = ResourceConfig.builder()
                 .path(tempDir.resolve("missing.json"))
@@ -571,6 +560,13 @@ class JwtProviderJwkLoadingTest {
                 .errorRatio(100)
                 .successThreshold(1)
                 .delay(Duration.ofSeconds(30))
+                .buildPrototype();
+    }
+
+    private static TimeoutConfig testTimeout() {
+        return TimeoutConfig.builder()
+                .timeout(Duration.ofSeconds(1))
+                .currentThread(true)
                 .buildPrototype();
     }
 

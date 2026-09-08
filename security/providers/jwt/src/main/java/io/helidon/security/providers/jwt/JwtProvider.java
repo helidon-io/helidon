@@ -770,18 +770,6 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         private Builder() {
         }
 
-        static Retry defaultJwkRetry() {
-            return RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG).build();
-        }
-
-        static CircuitBreaker defaultJwkCircuitBreaker() {
-            return CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG).build();
-        }
-
-        static Timeout defaultJwkTimeout() {
-            return TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG).build();
-        }
-
         @Override
         public JwtProvider build() {
             if (verifyKeysResource != null) {
