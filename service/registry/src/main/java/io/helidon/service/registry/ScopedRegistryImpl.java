@@ -78,55 +78,57 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     @Override
     public void deactivate() {
+        List<Activator<?>> toShutdown;
         try {
             serviceProvidersLock.writeLock().lock();
             if (!active) {
                 return;
             }
 
-            List<Activator<?>> toShutdown = activators.values()
+            active = false;
+            toShutdown = activators.values()
                     .stream()
                     .filter(it -> it.phase().eligibleForDeactivation())
                     .sorted(shutdownComparator())
                     .toList();
-
-            List<Throwable> exceptions = new ArrayList<>();
-
-            for (Activator<?> managedService : toShutdown) {
-                try {
-                    ActivationResult activationResult = managedService.deactivate();
-                    if (activationResult.failure() && LOGGER.isLoggable(Level.DEBUG)) {
-                        if (activationResult.error().isPresent()) {
-                            LOGGER.log(Level.DEBUG,
-                                       "[" + id + "] Failed to deactivate " + managedService.description(),
-                                       activationResult.error().get());
-                            exceptions.add(activationResult.error().get());
-                        } else {
-                            LOGGER.log(Level.DEBUG,
-                                       "[" + id + "] Failed to deactivate " + managedService.description());
-                            exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description()
-                                                                                + ", no exception received."));
-                        }
-                    }
-                } catch (Exception e) {
-                    if (LOGGER.isLoggable(Level.DEBUG)) {
-                        LOGGER.log(Level.DEBUG, "[" + id + "] Failed to deactivate service provider: " + managedService, e);
-                    }
-                    exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description(), e));
-                }
-            }
-
-            active = false;
-
-            if (exceptions.isEmpty()) {
-                return;
-            }
-            ServiceRegistryException failure = new ServiceRegistryException("Deactivation failed");
-            exceptions.forEach(failure::addSuppressed);
-            throw failure;
         } finally {
             serviceProvidersLock.writeLock().unlock();
         }
+
+        // Deactivation may invoke user lifecycle code and wait for activator instance locks. The scope must already be
+        // inactive, and its lock must not be held while that code runs.
+        List<Throwable> exceptions = new ArrayList<>();
+
+        for (Activator<?> managedService : toShutdown) {
+            try {
+                ActivationResult activationResult = managedService.deactivate();
+                if (activationResult.failure() && LOGGER.isLoggable(Level.DEBUG)) {
+                    if (activationResult.error().isPresent()) {
+                        LOGGER.log(Level.DEBUG,
+                                   "[" + id + "] Failed to deactivate " + managedService.description(),
+                                   activationResult.error().get());
+                        exceptions.add(activationResult.error().get());
+                    } else {
+                        LOGGER.log(Level.DEBUG,
+                                   "[" + id + "] Failed to deactivate " + managedService.description());
+                        exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description()
+                                                                            + ", no exception received."));
+                    }
+                }
+            } catch (Exception e) {
+                if (LOGGER.isLoggable(Level.DEBUG)) {
+                    LOGGER.log(Level.DEBUG, "[" + id + "] Failed to deactivate service provider: " + managedService, e);
+                }
+                exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description(), e));
+            }
+        }
+
+        if (exceptions.isEmpty()) {
+            return;
+        }
+        ServiceRegistryException failure = new ServiceRegistryException("Deactivation failed");
+        exceptions.forEach(failure::addSuppressed);
+        throw failure;
     }
 
     @SuppressWarnings("unchecked")
