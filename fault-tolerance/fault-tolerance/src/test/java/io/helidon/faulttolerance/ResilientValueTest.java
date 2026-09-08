@@ -640,6 +640,7 @@ class ResilientValueTest {
         try {
             assertFailureAndRecoveryLogs(handler);
             assertFollowerDoesNotLog(handler);
+            assertCallerCancellationDoesNotLog(handler);
         } finally {
             logger.removeHandler(handler);
             logger.setUseParentHandlers(originalUseParentHandlers);
@@ -782,6 +783,35 @@ class ResilientValueTest {
         assertThat(followerFailure.get(), is((Throwable) null));
         assertThat(handler.messages(Level.WARNING).size(), is(1));
         assertThat(handler.messages(Level.INFO).size(), is(1));
+    }
+
+    private static void assertCallerCancellationDoesNotLog(CapturingHandler handler) {
+        int warningCount = handler.messages(Level.WARNING).size();
+        int infoCount = handler.messages(Level.INFO).size();
+        AtomicInteger calls = new AtomicInteger();
+        ResilientValue<String> value = ResilientValue.create("cancelled value",
+                                                             () -> {
+                                                                 if (calls.incrementAndGet() == 1) {
+                                                                     throw new SupplierException(
+                                                                             new InterruptedException("cancelled"));
+                                                                 }
+                                                                 return "loaded";
+                                                             },
+                                                             retry(2),
+                                                             circuitBreaker(),
+                                                             timeout());
+
+        Thread.currentThread().interrupt();
+        try {
+            assertThrows(ResilientValue.UnavailableException.class, value::get);
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+        } finally {
+            Thread.interrupted();
+        }
+        assertThat(value.get(), is("loaded"));
+        assertThat(calls.get(), is(2));
+        assertThat(handler.messages(Level.WARNING).size(), is(warningCount));
+        assertThat(handler.messages(Level.INFO).size(), is(infoCount));
     }
 
     private static void assertInvalidRetry(String message, Consumer<RetryConfig.Builder> configurer) {

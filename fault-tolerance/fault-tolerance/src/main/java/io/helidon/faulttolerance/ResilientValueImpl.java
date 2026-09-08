@@ -127,6 +127,9 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         } catch (CircuitBreakerOpenException e) {
             throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
         } catch (UnavailableException e) {
+            if (Thread.currentThread().isInterrupted() && SupplierHelper.interrupted(e) != null) {
+                throw e;
+            }
             failed.set(true);
             LOGGER.log(Level.WARNING, "{0} is unavailable; retries are exhausted: {1}", description, e.getMessage());
             throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
