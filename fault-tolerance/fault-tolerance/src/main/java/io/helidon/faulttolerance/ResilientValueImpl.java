@@ -19,11 +19,11 @@ package io.helidon.faulttolerance;
 import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-
-import io.helidon.common.LazyValue;
 
 final class ResilientValueImpl<T> implements ResilientValue<T> {
     private static final System.Logger LOGGER = System.getLogger(ResilientValue.class.getName());
@@ -34,7 +34,7 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     private final CircuitBreaker circuitBreaker;
     private final Timeout timeout;
     private final AtomicBoolean failed = new AtomicBoolean();
-    private final AtomicReference<LazyValue<Outcome<T>>> attempt;
+    private final AtomicReference<FutureTask<Outcome<T>>> attempt;
 
     private volatile T value;
     private volatile boolean loaded;
@@ -62,8 +62,17 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
             return value;
         }
 
-        LazyValue<Outcome<T>> currentAttempt = attempt.get();
-        Outcome<T> outcome = currentAttempt.get();
+        FutureTask<Outcome<T>> currentAttempt = attempt.get();
+        currentAttempt.run();
+        Outcome<T> outcome;
+        try {
+            outcome = currentAttempt.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SupplierException(e);
+        } catch (ExecutionException e) {
+            throw new IllegalStateException("Unexpected failure loading " + description, e.getCause());
+        }
         Throwable failure = outcome.failure();
         if (failure == null) {
             return outcome.value();
@@ -101,8 +110,8 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         }
     }
 
-    private LazyValue<Outcome<T>> newAttempt() {
-        return LazyValue.create(() -> {
+    private FutureTask<Outcome<T>> newAttempt() {
+        return new FutureTask<>(() -> {
             try {
                 return new Outcome<>(load(), null);
             } catch (RuntimeException | Error e) {

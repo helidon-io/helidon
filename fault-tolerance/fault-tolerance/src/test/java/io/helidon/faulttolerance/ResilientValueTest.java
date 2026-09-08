@@ -276,6 +276,65 @@ class ResilientValueTest {
     }
 
     @Test
+    void interruptedConcurrentFollowerStopsWaiting() throws InterruptedException {
+        CountDownLatch loading = new CountDownLatch(1);
+        CountDownLatch continueLoading = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<String> loaderResult = new AtomicReference<>();
+        AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
+        AtomicReference<Throwable> followerFailure = new AtomicReference<>();
+        AtomicBoolean followerInterrupted = new AtomicBoolean();
+        ResilientValue<String> value = ResilientValue.create("test value",
+                                                             () -> {
+                                                                 calls.incrementAndGet();
+                                                                 loading.countDown();
+                                                                 await(continueLoading);
+                                                                 return "loaded";
+                                                             },
+                                                             retry(1),
+                                                             circuitBreaker(),
+                                                             timeout());
+
+        Thread loaderThread = Thread.ofVirtual().start(() -> {
+            try {
+                loaderResult.set(value.get());
+            } catch (Throwable t) {
+                loaderFailure.set(t);
+            }
+        });
+        Thread followerThread = Thread.ofVirtual().unstarted(() -> {
+            try {
+                value.get();
+            } catch (Throwable t) {
+                followerFailure.set(t);
+            } finally {
+                followerInterrupted.set(Thread.currentThread().isInterrupted());
+            }
+        });
+        try {
+            assertThat(loading.await(10, TimeUnit.SECONDS), is(true));
+            followerThread.start();
+            awaitWaiting(followerThread);
+            followerThread.interrupt();
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+            assertThat(followerThread.isAlive(), is(false));
+        } finally {
+            continueLoading.countDown();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+
+        assertThat(loaderThread.isAlive(), is(false));
+        assertThat(loaderResult.get(), is("loaded"));
+        assertThat(loaderFailure.get(), is((Throwable) null));
+        assertThat(followerFailure.get(), instanceOf(SupplierException.class));
+        assertThat(followerFailure.get().getCause(), instanceOf(InterruptedException.class));
+        assertThat(followerInterrupted.get(), is(true));
+        assertThat(value.isLoaded(), is(true));
+        assertThat(calls.get(), is(1));
+    }
+
+    @Test
     void concurrentFollowerReceivesLoadFailure() throws InterruptedException {
         CountDownLatch loading = new CountDownLatch(1);
         CountDownLatch continueLoading = new CountDownLatch(1);
