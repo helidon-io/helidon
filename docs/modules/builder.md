@@ -380,7 +380,7 @@ Annotations:
 | `Prototype.BuilderMethod`                                  | No       | Annotation to be placed on factory methods that are to be added to builder, first parameter is the `BuilderBase<?, ?>` of the prototype                                                                                       |
 | `Prototype.PrototypeMethod`                                | No       | Annotation to be placed on factory methods that are to be added to prototype, first parameter is the prototype instance                                                                                                       |
 | `Prototype.IncludeDefaultMethods`                          | No       | Add default methods on the blueprint (or a super interface) as option methods, allows list of method names to include (if annotation is present and the list is empty, all default getter methods will be considered options) |
-| `Prototype.Extension`                                      | No       | Allows registering of extensions to enhance the generated type (such as for JSON serialization and deserialization)                                                                                                           |
+| `Prototype.Extension`                                      | No       | Incubating API. Allows registering of extensions to enhance the generated type (such as for JSON serialization and deserialization)                                                                                           |
 <!--@mdc :: -->
 
 Interfaces:
