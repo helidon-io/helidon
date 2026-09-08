@@ -267,7 +267,7 @@ class ConfigurationValueFactoryTest {
         ConfigurationValueFactory factory = factory(Map.of());
 
         List<Service.QualifiedInstance<Object>> values = factory.list(Qualifier.create(Configuration.Value.class,
-                                                                                      "${declarative.ignore-incubating:false}"),
+                                                                                      "${app.enabled:false}"),
                                                                       Lookup.create(boolean.class),
                                                                       asObjectType(GenericType.create(boolean.class)));
 
