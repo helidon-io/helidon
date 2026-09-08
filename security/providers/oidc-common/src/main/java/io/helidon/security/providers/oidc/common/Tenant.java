@@ -282,8 +282,7 @@ public class Tenant {
             String description = resourceDescription("OIDC signing JWK", configuredResource);
             try {
                 JwkKeys keys = JwkKeys.builder()
-                        .resource(Resource.create(configuredResource,
-                                                  readTimeout))
+                        .resource(createResource(configuredResource, readTimeout))
                         .build();
                 return requireSigningKeys(keys, true);
             } catch (ResilientValue.UnavailableException e) {
@@ -384,7 +383,7 @@ public class Tenant {
             return configuredMetadata;
         }
         String description = resourceDescription("OIDC metadata", resourceConfig);
-        try (var stream = Resource.create(resourceConfig, ioTimeout).stream()) {
+        try (var stream = createResource(resourceConfig, ioTimeout).stream()) {
             return JsonParser.create(stream).readJsonObject();
         } catch (ResourceException e) {
             throw new ResilientValue.UnavailableException(description + " could not be read", e);
@@ -396,6 +395,10 @@ public class Tenant {
         } catch (IOException e) {
             throw new ResilientValue.UnavailableException(description + " could not be closed", e);
         }
+    }
+
+    private static Resource createResource(ResourceConfig resourceConfig, Duration ioTimeout) {
+        return ioTimeout == null ? Resource.create(resourceConfig) : Resource.create(resourceConfig, ioTimeout);
     }
 
     private static String resourceDescription(String valueDescription, ResourceConfig resourceConfig) {

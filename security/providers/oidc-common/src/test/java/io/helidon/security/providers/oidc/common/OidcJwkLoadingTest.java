@@ -57,6 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
+import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -392,6 +393,26 @@ class OidcJwkLoadingTest {
                                                 .path(temporaryDirectory.resolve("keys.json"))
                                                 .buildPrototype()));
         assertThat(pathSigningJwk.tenantLoadingLazy(), is(true));
+    }
+
+    @Test
+    void customTenantConfigLoadsFixedResourcesWithoutJwkTimeout() {
+        OidcConfig oidcConfig = baseBuilder()
+                .signJwk(fixedJwkResource())
+                .build();
+        TenantConfig tenantConfig = mock(TenantConfig.class, delegatesTo(oidcConfig));
+        when(tenantConfig.tenantLoadingLazy()).thenCallRealMethod();
+        when(tenantConfig.oidcMetadataResource())
+                .thenReturn(Optional.of(ResourceConfig.builder()
+                                                .contentPlain("{\"token_endpoint\":\"https://metadata.example/token\"}")
+                                                .buildPrototype()));
+        when(tenantConfig.tenantSignJwkResource()).thenReturn(Optional.of(fixedJwkResource()));
+        when(tenantConfig.tenantSignJwk()).thenReturn(Optional.empty());
+
+        Tenant tenant = Tenant.create(oidcConfig, tenantConfig);
+
+        assertThat(tenant.tokenEndpointUri(), is(URI.create("https://metadata.example/token")));
+        assertThat(tenant.signJwk().keys().size(), is(1));
     }
 
     @Test
