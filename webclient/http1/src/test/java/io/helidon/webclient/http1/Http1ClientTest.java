@@ -547,6 +547,26 @@ class Http1ClientTest {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("notModifiedMetadata")
+    void testNotModifiedMetadataDoesNotCloseConnection(Header responseMetadata) throws IOException {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection("304 Not Modified", responseMetadata);
+        try {
+            try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/not-modified")
+                    .connection(connection)
+                    .request()) {
+                assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+                assertThat(response.entity().inputStream().readAllBytes().length, is(0));
+                assertThat(connection.releaseCount(), is(0));
+                assertThat(connection.closeCount(), is(0));
+            }
+            assertThat(connection.closeCount(), is(0));
+            assertThat(connection.releaseCount(), is(1));
+        } finally {
+            connection.closeResource();
+        }
+    }
+
     // validates that HEAD is not allowed with entity payload
     @Test
     void testHeadMethod() {
@@ -945,6 +965,13 @@ class Http1ClientTest {
         );
     }
 
+    private static Stream<Header> notModifiedMetadata() {
+        return Stream.of(
+                HeaderValues.create(HeaderNames.CONTENT_LENGTH, "123"),
+                HeaderValues.TRANSFER_ENCODING_CHUNKED
+        );
+    }
+
     private static Stream<Arguments> headers() {
         return Stream.of(
                 // Valid headers
@@ -1042,6 +1069,8 @@ class Http1ClientTest {
         private final DataWriter serverWriter;
         private final boolean includeKeepAliveHeader;
         private final String expectContinueResponse;
+        private final String responseStatus;
+        private final Header responseMetadata;
         private Throwable serverException;
         private ExecutorService webServerEmulator;
         private String prologue;
@@ -1053,14 +1082,21 @@ class Http1ClientTest {
         }
 
         FakeHttp1ClientConnection(boolean includeKeepAliveHeader) {
-            this(includeKeepAliveHeader, "HTTP/1.1 100 Continue\r\n\r\n");
+            this(includeKeepAliveHeader, "HTTP/1.1 100 Continue\r\n\r\n", "200 OK", null);
         }
 
         FakeHttp1ClientConnection(String expectContinueResponse) {
-            this(true, expectContinueResponse);
+            this(true, expectContinueResponse, "200 OK", null);
         }
 
-        private FakeHttp1ClientConnection(boolean includeKeepAliveHeader, String expectContinueResponse) {
+        FakeHttp1ClientConnection(String responseStatus, Header responseMetadata) {
+            this(true, "HTTP/1.1 100 Continue\r\n\r\n", responseStatus, responseMetadata);
+        }
+
+        private FakeHttp1ClientConnection(boolean includeKeepAliveHeader,
+                                          String expectContinueResponse,
+                                          String responseStatus,
+                                          Header responseMetadata) {
             ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
             ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
 
@@ -1070,6 +1106,8 @@ class Http1ClientTest {
             this.serverWriter = writer(serverToClient);
             this.includeKeepAliveHeader = includeKeepAliveHeader;
             this.expectContinueResponse = expectContinueResponse;
+            this.responseStatus = responseStatus;
+            this.responseMetadata = responseMetadata;
         }
 
         @Override
@@ -1251,6 +1289,9 @@ class Http1ClientTest {
             if (includeKeepAliveHeader) {
                 resHeaders.add(HeaderValues.CONNECTION_KEEP_ALIVE);
             }
+            if (responseMetadata != null) {
+                resHeaders.set(responseMetadata);
+            }
 
             if (reqHeaders != null) {
                 // Send headers that can be validated if Expect-100-Continue, Content_Length, and Chunked request headers exist
@@ -1271,11 +1312,15 @@ class Http1ClientTest {
                 resHeaders.add(HeaderValues.create(header[0], header[1]));
             }
 
-            String responseMessage = !requestFailed ? "HTTP/1.1 200 OK\r\n" : "HTTP/1.1 400 Bad Request\r\n";
+            String responseMessage = !requestFailed ? "HTTP/1.1 " + responseStatus + "\r\n"
+                    : "HTTP/1.1 400 Bad Request\r\n";
             serverWriter.write(BufferData.create(responseMessage.getBytes(StandardCharsets.UTF_8)));
 
             // Send the headers
-            resHeaders.add(HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
+            if (!resHeaders.contains(HeaderNames.CONTENT_LENGTH)
+                    && !resHeaders.contains(HeaderNames.TRANSFER_ENCODING)) {
+                resHeaders.add(HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
+            }
             BufferData entityBuffer = BufferData.growing(128);
             for (Header header : resHeaders) {
                 header.writeHttp1Header(entityBuffer);
