@@ -205,7 +205,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             JwkKeys keys;
             try {
                 keys = verificationKeys(jwt);
-            } catch (ResilientValue.UnavailableException e) {
+            } catch (ResilientValue.UnavailableException _) {
                 return unavailableOrAbstain("JWT verification keys are temporarily unavailable");
             }
             Jwk fallbackJwk = jwt.keyId().isEmpty() ? defaultJwk : null;

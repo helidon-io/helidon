@@ -620,6 +620,7 @@ class OidcJwkLoadingTest {
         AtomicInteger jwkRequests = new AtomicInteger();
         AtomicInteger serverPort = new AtomicInteger();
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(routing -> routing
                         .get("/identity/.well-known/openid-configuration", (req, res) -> {
                             int request = metadataRequests.incrementAndGet();
@@ -642,11 +643,14 @@ class OidcJwkLoadingTest {
                     .jwkRetry(singleCallRetry())
                     .jwkCircuitBreaker(twoFailureCircuitBreaker())
                     .build();
-
-            assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
-            assertThat(config.signJwk().keys().size(), is(1));
-            assertThat(metadataRequests.get(), is(2));
-            assertThat(jwkRequests.get(), is(1));
+            try {
+                assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
+                assertThat(config.signJwk().keys().size(), is(1));
+                assertThat(metadataRequests.get(), is(2));
+                assertThat(jwkRequests.get(), is(1));
+            } finally {
+                config.generalWebClient().closeResource();
+            }
         } finally {
             server.stop();
         }
@@ -658,6 +662,7 @@ class OidcJwkLoadingTest {
         AtomicInteger jwkRequests = new AtomicInteger();
         AtomicInteger serverPort = new AtomicInteger();
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(routing -> routing
                         .get("/identity/.well-known/openid-configuration", (req, res) -> {
                             metadataRequests.incrementAndGet();
@@ -678,12 +683,15 @@ class OidcJwkLoadingTest {
                     .jwkTimeout(shortJwkTimeout())
                     .jwkCircuitBreaker(twoFailureCircuitBreaker())
                     .build();
-
-            long started = System.nanoTime();
-            assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
-            assertThat(Duration.ofNanos(System.nanoTime() - started), lessThan(Duration.ofMillis(750)));
-            assertThat(metadataRequests.get(), is(1));
-            assertThat(jwkRequests.get(), is(0));
+            try {
+                long started = System.nanoTime();
+                assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
+                assertThat(Duration.ofNanos(System.nanoTime() - started), lessThan(Duration.ofMillis(750)));
+                assertThat(metadataRequests.get(), is(1));
+                assertThat(jwkRequests.get(), is(0));
+            } finally {
+                config.generalWebClient().closeResource();
+            }
         } finally {
             server.stop();
         }
@@ -695,6 +703,7 @@ class OidcJwkLoadingTest {
         AtomicInteger jwkRequests = new AtomicInteger();
         AtomicInteger serverPort = new AtomicInteger();
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(routing -> routing
                         .get("/identity/.well-known/openid-configuration", (req, res) -> {
                             metadataRequests.incrementAndGet();
@@ -715,12 +724,15 @@ class OidcJwkLoadingTest {
                     .jwkTimeout(shortJwkTimeout())
                     .jwkCircuitBreaker(twoFailureCircuitBreaker())
                     .build();
-
-            long started = System.nanoTime();
-            assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
-            assertThat(Duration.ofNanos(System.nanoTime() - started), lessThan(Duration.ofMillis(750)));
-            assertThat(metadataRequests.get(), is(1));
-            assertThat(jwkRequests.get(), is(1));
+            try {
+                long started = System.nanoTime();
+                assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
+                assertThat(Duration.ofNanos(System.nanoTime() - started), lessThan(Duration.ofMillis(750)));
+                assertThat(metadataRequests.get(), is(1));
+                assertThat(jwkRequests.get(), is(1));
+            } finally {
+                config.generalWebClient().closeResource();
+            }
         } finally {
             server.stop();
         }
@@ -732,6 +744,7 @@ class OidcJwkLoadingTest {
         AtomicInteger serverPort = new AtomicInteger();
         AtomicReference<String> jwkAuthorization = new AtomicReference<>();
         WebServer server = WebServer.builder()
+                .host("localhost")
                 .routing(routing -> routing
                         .get("/identity/.well-known/openid-configuration", (req, res) -> {
                             res.header(HeaderValues.CONTENT_TYPE_JSON)
@@ -759,11 +772,14 @@ class OidcJwkLoadingTest {
                     .jwkRetry(singleCallRetry())
                     .jwkCircuitBreaker(twoFailureCircuitBreaker())
                     .build();
-
-            assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
-            assertThat(config.signJwk().keys().size(), is(1));
-            assertThat(tokenRequests.get(), is(2));
-            assertThat(jwkAuthorization.get(), is("Bearer fresh-token"));
+            try {
+                assertThrows(ResilientValue.UnavailableException.class, config::signJwk);
+                assertThat(config.signJwk().keys().size(), is(1));
+                assertThat(tokenRequests.get(), is(2));
+                assertThat(jwkAuthorization.get(), is("Bearer fresh-token"));
+            } finally {
+                config.generalWebClient().closeResource();
+            }
         } finally {
             server.stop();
         }

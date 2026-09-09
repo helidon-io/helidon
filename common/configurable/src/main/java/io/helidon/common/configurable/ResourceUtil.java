@@ -156,7 +156,7 @@ final class ResourceUtil {
         long timeoutMillis;
         try {
             timeoutMillis = timeout.toMillis();
-        } catch (ArithmeticException e) {
+        } catch (ArithmeticException _) {
             return Integer.MAX_VALUE;
         }
         return (int) Math.min(Integer.MAX_VALUE, Math.max(1, timeoutMillis));

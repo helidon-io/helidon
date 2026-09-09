@@ -1089,7 +1089,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
                 } else if (uri.getHost() == null) {
                     collector.fatal("OIDC metadata field \"" + key + "\" HTTP URI must include a host");
                 }
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException _) {
                 collector.fatal("OIDC metadata field \"" + key + "\" must be a valid URI");
             }
         });

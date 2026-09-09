@@ -163,7 +163,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                     .map(Supplier::get)
                     .map(handler -> handler.authenticate(tenantId, providerRequest))
                     .orElseGet(this::unknownTenantResponse);
-        } catch (ResilientValue.UnavailableException e) {
+        } catch (ResilientValue.UnavailableException _) {
             return unavailableTenantResponse();
         }
     }
