@@ -118,8 +118,18 @@ public class HttpCodecJmhBenchmark {
     }
 
     @Benchmark
+    public int writeHpackEmptyTableInsertControl(EmptyTableInsertionState state) {
+        return state.table.currentTableSize() + state.buffer.available();
+    }
+
+    @Benchmark
     public int writeHpackPopulatedTableInsert(PopulatedTableInsertionState state) {
         return state.write();
+    }
+
+    @Benchmark
+    public int writeHpackPopulatedTableInsertControl(PopulatedTableInsertionState state) {
+        return state.table.currentTableSize() + state.buffer.available();
     }
 
     private static Http2Headers requestHeaders(String value) {
