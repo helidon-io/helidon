@@ -67,8 +67,14 @@ class LraAnnotationHandler implements AnnotationHandler {
         Optional<URI> existingLraId = getLraContext(reqCtx);
         long timeLimit = Duration.of(annotation.timeLimit(), annotation.timeUnit()).toMillis();
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
-
-
+        boolean participantRequired = switch (annotation.value()) {
+            case NESTED, REQUIRED, REQUIRES_NEW -> true;
+            case MANDATORY, SUPPORTS -> existingLraId.isPresent();
+            default -> false;
+        };
+        ParticipantFactory participantFactory = participantRequired
+                ? participantService.participantFactory(resourceInfo.getResourceClass())
+                : null;
 
         final URI lraId;
         try {
@@ -81,7 +87,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                     } else {
                         lraId = start(clientId, propagatedHeaders, timeLimit);
                     }
-                    join(reqCtx, lraId, propagatedHeaders, timeLimit, resourceInfo);
+                    join(reqCtx, lraId, propagatedHeaders, timeLimit, participantFactory);
                     setLraContext(reqCtx, lraId);
                     break;
                 case NEVER:
@@ -98,7 +104,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                 case SUPPORTS:
                     if (existingLraId.isPresent()) {
                         lraId = existingLraId.get();
-                        join(reqCtx, lraId, propagatedHeaders, timeLimit, resourceInfo);
+                        join(reqCtx, lraId, propagatedHeaders, timeLimit, participantFactory);
                         setLraContext(reqCtx, lraId);
                     }
                     break;
@@ -113,14 +119,14 @@ class LraAnnotationHandler implements AnnotationHandler {
                 case REQUIRED:
                     if (existingLraId.isPresent()) {
                         lraId = existingLraId.get();
-                        join(reqCtx, lraId, propagatedHeaders, timeLimit, resourceInfo);
+                        join(reqCtx, lraId, propagatedHeaders, timeLimit, participantFactory);
                         setLraContext(reqCtx, lraId);
                         break;
                     }
                     // non-existing lra, fall through to requires_new
                 case REQUIRES_NEW:
                     lraId = start(clientId, propagatedHeaders, timeLimit);
-                    join(reqCtx, lraId, propagatedHeaders, timeLimit, resourceInfo);
+                    join(reqCtx, lraId, propagatedHeaders, timeLimit, participantFactory);
                     setLraContext(reqCtx, lraId);
                     break;
                 default:
@@ -179,10 +185,8 @@ class LraAnnotationHandler implements AnnotationHandler {
                       URI lraId,
                       PropagatedHeaders propagatedHeaders,
                       long timeLimit,
-                      ResourceInfo resourceInfo) {
-        var participant = participantService.participant(reqCtx.getUriInfo().getBaseUri(),
-                                                         resourceInfo.getResourceClass(),
-                                                         lraId);
+                      ParticipantFactory participantFactory) {
+        var participant = participantService.participant(participantFactory, lraId);
         callCoordinator(() -> coordinatorClient.join(lraId, propagatedHeaders, timeLimit, participant))
                 .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri.toASCIIString()));
     }

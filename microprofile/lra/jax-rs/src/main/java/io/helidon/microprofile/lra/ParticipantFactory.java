@@ -40,10 +40,11 @@ final class ParticipantFactory {
     private final ParticipantImpl fixedParticipant;
 
     ParticipantFactory(URI baseUri, String contextPath, Class<?> resourceClass) {
-        this(baseUri, contextPath, resourceClass, methods(resourceClass));
+        this(baseUri, baseUri, contextPath, resourceClass, methods(resourceClass));
     }
 
-    ParticipantFactory(URI baseUri,
+    ParticipantFactory(URI jaxRsBaseUri,
+                       URI nonJaxRsBaseUri,
                        String contextPath,
                        Class<?> resourceClass,
                        Map<Class<? extends Annotation>, Set<Method>> methodMap) {
@@ -66,7 +67,7 @@ final class ParticipantFactory {
                     Optional<AnnotatedMethod> jaxRsMethod = ParticipantImpl.jaxRsMethod(resourceClass, method);
                     if (jaxRsMethod.isEmpty()) {
                         String callbackType = ParticipantImpl.callbackPath(entry.getKey());
-                        URI callbackUri = UriBuilder.fromUri(baseUri)
+                        URI callbackUri = UriBuilder.fromUri(nonJaxRsBaseUri)
                                 .path(contextPath)
                                 .path(callbackType)
                                 .path(resourceClass.getName())
@@ -80,7 +81,7 @@ final class ParticipantFactory {
                         return;
                     }
 
-                    UriBuilder builder = UriBuilder.fromUri(baseUri)
+                    UriBuilder builder = UriBuilder.fromUri(jaxRsBaseUri)
                             .path(resourceClass);
                     Optional.ofNullable(jaxRsMethod.get().getAnnotation(Path.class))
                             .map(Path::value)

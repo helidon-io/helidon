@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URL;
@@ -100,12 +101,12 @@ public class LraCdiExtension implements Extension {
     );
 
     private final Set<Class<?>> beanTypesWithCdiLRAMethods = new HashSet<>();
+    private final Set<Class<?>> beanTypesWithoutCdiLRAMethods = new HashSet<>();
     private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
     private final Indexer indexer;
     private final ClassLoader classLoader;
     private final Config config;
     private boolean hasNonJaxRsParticipantMethods;
-    private boolean hasLeaveParticipantMethods;
     private IndexView index;
 
 
@@ -205,38 +206,53 @@ public class LraCdiExtension implements Extension {
     }
 
     private void cdiLRABeanReferences(@Observes ProcessManagedBean<?> event) {
-        AnnotatedType<?> annotatedType = event.getAnnotatedBeanClass();
         Class<?> beanClass = event.getBean().getBeanClass();
-        if (beanTypesWithCdiLRAMethods.contains(beanClass)) {
-            lraCdiBeanReferences.put(beanClass, event.getBean());
-            if (!hasLeaveParticipantMethods) {
-                List<Class<?>> participantTypes = new ArrayList<>();
-                Set<Class<?>> inspectedTypes = new HashSet<>();
-                participantTypes.add(beanClass);
-                for (int i = 0; i < participantTypes.size() && !hasLeaveParticipantMethods; i++) {
-                    Class<?> participantType = participantTypes.get(i);
-                    if (!inspectedTypes.add(participantType)) {
-                        continue;
-                    }
-                    hasLeaveParticipantMethods = Stream.of(participantType.getDeclaredMethods())
-                            .filter(method -> method.isAnnotationPresent(Leave.class))
-                            .anyMatch(method -> ParticipantImpl.jaxRsMethod(beanClass, method).isPresent());
-                    Class<?> superClass = participantType.getSuperclass();
-                    if (superClass != null) {
-                        participantTypes.add(superClass);
-                    }
-                    participantTypes.addAll(List.of(participantType.getInterfaces()));
+        if (!hasCdiLraMethods(beanClass)) {
+            return;
+        }
+
+        lraCdiBeanReferences.put(beanClass, event.getBean());
+        if (!hasNonJaxRsParticipantMethods && containsNonJaxRsParticipantMethod(beanClass)) {
+            hasNonJaxRsParticipantMethods = true;
+        }
+    }
+
+    private boolean containsNonJaxRsParticipantMethod(Class<?> beanClass) {
+        Map<Class<? extends Annotation>, Set<Method>> methods = ParticipantFactory.methods(beanClass);
+        for (Map.Entry<Class<? extends Annotation>, Set<Method>> entry : methods.entrySet()) {
+            if (!ParticipantImpl.NON_JAX_RS_PARTICIPANT_CALLBACK_ANNOTATIONS.contains(entry.getKey())) {
+                continue;
+            }
+            for (Method method : entry.getValue()) {
+                if (ParticipantImpl.isNonJaxRsParticipantMethod(beanClass, method)) {
+                    return true;
                 }
             }
         }
-        if (!hasNonJaxRsParticipantMethods) {
-            hasNonJaxRsParticipantMethods = annotatedType.getMethods().stream()
-                    .filter(m -> m.getAnnotations().stream()
-                            .map(Annotation::annotationType)
-                            .anyMatch(EXPECTED_ANNOTATIONS::contains))
-                    .anyMatch(m -> ParticipantImpl.isNonJaxRsParticipantMethod(annotatedType.getJavaClass(),
-                                                                               m.getJavaMember()));
+        return false;
+    }
+
+    private boolean hasCdiLraMethods(Class<?> beanClass) {
+        if (beanTypesWithCdiLRAMethods.contains(beanClass)) {
+            return true;
         }
+        if (beanTypesWithoutCdiLRAMethods.contains(beanClass)) {
+            return false;
+        }
+
+        Class<?> superClass = beanClass.getSuperclass();
+        if (superClass != null && hasCdiLraMethods(superClass)) {
+            beanTypesWithCdiLRAMethods.add(beanClass);
+            return true;
+        }
+        for (Class<?> interfaceClass : beanClass.getInterfaces()) {
+            if (hasCdiLraMethods(interfaceClass)) {
+                beanTypesWithCdiLRAMethods.add(beanClass);
+                return true;
+            }
+        }
+        beanTypesWithoutCdiLRAMethods.add(beanClass);
+        return false;
     }
 
     private void beforeServerStart(
@@ -252,9 +268,7 @@ public class LraCdiExtension implements Extension {
         if (hasNonJaxRsParticipantMethods) {
             resolve(NonJaxRsCallbackAuthenticator.class, beanManager).validateConfiguration();
         }
-        if (hasNonJaxRsParticipantMethods || hasLeaveParticipantMethods) {
-            resolve(ParticipantService.class, beanManager).validateConfiguration();
-        }
+        resolve(ParticipantService.class, beanManager).validateConfiguration();
         if (!hasNonJaxRsParticipantMethods) {
             return;
         }

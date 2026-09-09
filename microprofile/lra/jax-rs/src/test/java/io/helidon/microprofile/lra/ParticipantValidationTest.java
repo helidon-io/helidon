@@ -17,10 +17,10 @@
 package io.helidon.microprofile.lra;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -46,8 +46,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ParticipantValidationTest {
@@ -92,9 +90,8 @@ class ParticipantValidationTest {
                     .addExtensions(LraCdiExtension.class)
                     .addBeanClasses(AbstractStatusResource.class);
 
-            try (SeContainer ignored = assertDoesNotThrow(initializer::initialize)) {
-                // Container started without configuring a callback secret.
-            }
+            SeContainer container = initializer.initialize();
+            container.close();
         } finally {
             configResolver.releaseConfig(config);
         }
@@ -128,6 +125,33 @@ class ParticipantValidationTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void interfaceDeclaredNonJaxRsParticipantRequiresSecret() {
+        ConfigProviderResolver configResolver = ConfigProviderResolver.instance();
+        Config config = ConfigProviderResolver.instance().getBuilder()
+                .withSources(MpConfigSources.create(Map.of(
+                        "mp.initializer.allow", "true",
+                        ParticipantService.CONFIG_PARTICIPANT_URL_KEY, "http://localhost")))
+                .build();
+        configResolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
+
+        try {
+            SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+                    .disableDiscovery()
+                    .addExtensions(ConfigCdiExtension.class)
+                    .addExtensions(LraCdiExtension.class)
+                    .addBeanClasses(InterfaceOnlyNonJaxRsParticipant.class,
+                                    InterfaceOnlyNonJaxRsResource.class);
+
+            DeploymentException e = assertThrows(DeploymentException.class, initializer::initialize);
+
+            assertThat(e.getMessage(), containsString(NonJaxRsCallbackAuthenticator.CONFIG_SECRET_KEY));
+        } finally {
+            configResolver.releaseConfig(config);
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void concreteNonJaxRsParticipantRequiresCanonicalUri() {
         ConfigProviderResolver configResolver = ConfigProviderResolver.instance();
         Config config = ConfigProviderResolver.instance().getBuilder()
@@ -149,9 +173,8 @@ class ParticipantValidationTest {
                     .addBeanClasses(ValidStatusResource.class);
 
             DeploymentException e = assertThrows(DeploymentException.class, () -> {
-                try (SeContainer ignored = initializer.initialize()) {
-                    // Unexpected successful startup is closed before the assertion fails.
-                }
+                SeContainer container = initializer.initialize();
+                container.close();
             });
 
             assertThat(e.getMessage(), containsString(ParticipantService.CONFIG_PARTICIPANT_URL_KEY));
@@ -167,6 +190,48 @@ class ParticipantValidationTest {
         assertInvalidCanonicalUri("http://user@participant.example");
         assertInvalidCanonicalUri("http://participant.example?query=value");
         assertInvalidCanonicalUri("http://participant.example#fragment");
+    }
+
+    @Test
+    void jaxRsParticipantRejectsInvalidEndpointConfiguration() {
+        String endpointKey = ParticipantService.CONFIG_PARTICIPANT_ENDPOINTS_KEY + ".test";
+        String firstEndpointKey = ParticipantService.CONFIG_PARTICIPANT_ENDPOINTS_KEY + ".first";
+        String secondEndpointKey = ParticipantService.CONFIG_PARTICIPANT_ENDPOINTS_KEY + ".second";
+        assertInvalidEndpointConfiguration(
+                Map.of(endpointKey + ".application-path", "/application",
+                       endpointKey + ".url", "https://participant.example/application"),
+                endpointKey + ".listener is required");
+        assertInvalidEndpointConfiguration(
+                Map.of(endpointKey + ".listener", "@default",
+                       endpointKey + ".application-path", "application",
+                       endpointKey + ".url", "https://participant.example/application"),
+                "application-path must start with '/'");
+        assertInvalidEndpointConfiguration(
+                Map.of(endpointKey + ".listener", "@default",
+                       endpointKey + ".application-path", "/application",
+                       endpointKey + ".url", "https://participant.example/application",
+                       endpointKey + ".unknown", "value"),
+                "Unknown configuration property");
+        assertInvalidEndpointConfiguration(
+                Map.of(firstEndpointKey + ".listener", "@default",
+                       firstEndpointKey + ".application-path", "/application",
+                       firstEndpointKey + ".url",
+                       "https://participant.example/application",
+                       secondEndpointKey + ".listener", "@default",
+                       secondEndpointKey + ".application-path", "/application/",
+                       secondEndpointKey + ".url",
+                       "https://participant.example/application"),
+                "Duplicate LRA participant endpoint");
+        assertInvalidEndpointConfiguration(
+                Map.of(firstEndpointKey + ".listener", "@default",
+                       firstEndpointKey + ".application-path", "/encoded%21",
+                       firstEndpointKey + ".url",
+                       "https://participant.example/encoded",
+                       secondEndpointKey + ".listener", "@default",
+                       secondEndpointKey + ".application-path", "/encoded!",
+                       secondEndpointKey + ".url",
+                       "https://participant.example/encoded"),
+                "Duplicate LRA participant endpoint");
     }
 
     @SuppressWarnings("unchecked")
@@ -192,9 +257,8 @@ class ParticipantValidationTest {
                     .addBeanClasses(ValidStatusResource.class);
 
             DeploymentException e = assertThrows(DeploymentException.class, () -> {
-                try (SeContainer ignored = initializer.initialize()) {
-                    // Unexpected successful startup is closed before the assertion fails.
-                }
+                SeContainer container = initializer.initialize();
+                container.close();
             });
 
             assertThat("Unexpected message for " + invalidUri,
@@ -205,9 +269,55 @@ class ParticipantValidationTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void assertInvalidEndpointConfiguration(Map<String, String> endpointProperties, String expectedMessage) {
+        Map<String, String> properties = new HashMap<>(endpointProperties);
+        properties.put("mp.initializer.allow", "true");
+        properties.put("server.port", "0");
+        properties.put(ParticipantService.CONFIG_PARTICIPANT_URL_KEY, "https://participant.example/application");
+
+        ConfigProviderResolver configResolver = ConfigProviderResolver.instance();
+        Config config = ConfigProviderResolver.instance().getBuilder()
+                .withSources(MpConfigSources.create(properties))
+                .build();
+        configResolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
+
+        try {
+            SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+                    .disableDiscovery()
+                    .addExtensions(ConfigCdiExtension.class)
+                    .addExtensions(LraCdiExtension.class)
+                    .addExtensions(ServerCdiExtension.class)
+                    .addExtensions(JaxRsCdiExtension.class)
+                    .addExtensions(CdiComponentProvider.class)
+                    .addBeanClasses(ValidJaxRsResource.class);
+
+            DeploymentException e = assertThrows(DeploymentException.class, initializer::initialize);
+
+            assertThat(e.getMessage(), containsString(expectedMessage));
+        } finally {
+            configResolver.releaseConfig(config);
+        }
+    }
+
+    @Test
+    void jaxRsParticipantRequiresCanonicalUri() {
+        assertJaxRsParticipantRequiresCanonicalUri(ValidJaxRsResource.class);
+    }
+
+    @Test
+    void inheritedJaxRsParticipantRequiresCanonicalUri() {
+        assertJaxRsParticipantRequiresCanonicalUri(InheritedJaxRsResource.class);
+    }
+
+    @Test
+    void diamondInheritedJaxRsParticipantRequiresCanonicalUri() {
+        assertJaxRsParticipantRequiresCanonicalUri(DiamondInheritedJaxRsResource.class, DiamondParticipant.class);
+    }
+
     @Test
     @SuppressWarnings("unchecked")
-    void jaxRsParticipantDoesNotCacheRequestDerivedBaseUri() {
+    void jaxRsResourceWithoutParticipantCallbacksDoesNotRequireCanonicalUri() {
         ConfigProviderResolver configResolver = ConfigProviderResolver.instance();
         Config config = ConfigProviderResolver.instance().getBuilder()
                 .withSources(MpConfigSources.create(Map.of(
@@ -224,24 +334,10 @@ class ParticipantValidationTest {
                     .addExtensions(ServerCdiExtension.class)
                     .addExtensions(JaxRsCdiExtension.class)
                     .addExtensions(CdiComponentProvider.class)
-                    .addBeanClasses(ValidJaxRsResource.class);
+                    .addBeanClasses(NonParticipantResource.class);
 
-            try (SeContainer container = assertDoesNotThrow(initializer::initialize)) {
-                ParticipantService participantService = container.select(ParticipantService.class).get();
-                URI firstLraId = URI.create("https://coordinator.example/lra/first");
-                URI secondLraId = URI.create("https://coordinator.example/lra/second");
-                Participant first = participantService.participant(URI.create("https://first.example"),
-                                                                   ValidJaxRsResource.class,
-                                                                   firstLraId);
-                Participant second = participantService.participant(URI.create("https://second.example"),
-                                                                    ValidJaxRsResource.class,
-                                                                    secondLraId);
-
-                assertAll(
-                        () -> assertThat(first.compensate().orElseThrow().getHost(), is("first.example")),
-                        () -> assertThat(second.compensate().orElseThrow().getHost(), is("second.example"))
-                );
-            }
+            SeContainer container = initializer.initialize();
+            container.close();
         } finally {
             configResolver.releaseConfig(config);
         }
@@ -249,7 +345,7 @@ class ParticipantValidationTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void ordinaryJaxRsParticipantRetainsConfiguredUriCompatibility() {
+    void ordinaryJaxRsParticipantRejectsInvalidCanonicalUri() {
         ConfigProviderResolver configResolver = ConfigProviderResolver.instance();
         Config config = ConfigProviderResolver.instance().getBuilder()
                 .withSources(MpConfigSources.create(Map.of(
@@ -269,9 +365,12 @@ class ParticipantValidationTest {
                     .addExtensions(CdiComponentProvider.class)
                     .addBeanClasses(ValidJaxRsResource.class);
 
-            try (SeContainer ignored = assertDoesNotThrow(initializer::initialize)) {
-                // Existing JAX-RS-only configuration remains accepted when canonical identity is not required.
-            }
+            DeploymentException e = assertThrows(DeploymentException.class, () -> {
+                SeContainer container = initializer.initialize();
+                container.close();
+            });
+
+            assertThat(e.getMessage(), containsString("absolute HTTP or HTTPS URI"));
         } finally {
             configResolver.releaseConfig(config);
         }
@@ -279,21 +378,21 @@ class ParticipantValidationTest {
 
     @Test
     void jaxRsLeaveParticipantRequiresCanonicalUri() {
-        assertJaxRsLeaveParticipantRequiresCanonicalUri(ValidJaxRsLeaveResource.class);
+        assertJaxRsParticipantRequiresCanonicalUri(ValidJaxRsLeaveResource.class);
     }
 
     @Test
     void interfaceInheritedJaxRsLeaveParticipantRequiresCanonicalUri() {
-        assertJaxRsLeaveParticipantRequiresCanonicalUri(InterfaceInheritedJaxRsLeaveResource.class);
+        assertJaxRsParticipantRequiresCanonicalUri(InterfaceInheritedJaxRsLeaveResource.class);
     }
 
     @Test
     void superclassInheritedJaxRsLeaveParticipantRequiresCanonicalUri() {
-        assertJaxRsLeaveParticipantRequiresCanonicalUri(SuperclassInheritedJaxRsLeaveResource.class);
+        assertJaxRsParticipantRequiresCanonicalUri(SuperclassInheritedJaxRsLeaveResource.class);
     }
 
     @SuppressWarnings("unchecked")
-    private void assertJaxRsLeaveParticipantRequiresCanonicalUri(Class<?> beanClass) {
+    private void assertJaxRsParticipantRequiresCanonicalUri(Class<?>... beanClasses) {
         ConfigProviderResolver configResolver = ConfigProviderResolver.instance();
         Config config = ConfigProviderResolver.instance().getBuilder()
                 .withSources(MpConfigSources.create(Map.of(
@@ -310,18 +409,41 @@ class ParticipantValidationTest {
                     .addExtensions(ServerCdiExtension.class)
                     .addExtensions(JaxRsCdiExtension.class)
                     .addExtensions(CdiComponentProvider.class)
-                    .addBeanClasses(beanClass);
+                    .addBeanClasses(beanClasses);
 
             DeploymentException e = assertThrows(DeploymentException.class, () -> {
-                try (SeContainer ignored = initializer.initialize()) {
-                    // Unexpected successful startup is closed before the assertion fails.
-                }
+                SeContainer container = initializer.initialize();
+                container.close();
             });
 
             assertThat(e.getMessage(), containsString(ParticipantService.CONFIG_PARTICIPANT_URL_KEY));
         } finally {
             configResolver.releaseConfig(config);
         }
+    }
+
+    interface DiamondParticipant {
+
+        @Compensate
+        Response compensate(URI lraId);
+    }
+
+    interface LeftDiamondParticipant extends DiamondParticipant {
+    }
+
+    interface RightDiamondParticipant extends DiamondParticipant {
+    }
+
+    interface LeaveResourceContract {
+
+        @Leave
+        Response leave(URI lraId);
+    }
+
+    interface InterfaceOnlyNonJaxRsParticipant {
+
+        @Compensate
+        Response compensate(URI lraId);
     }
 
     @ApplicationScoped
@@ -354,6 +476,15 @@ class ParticipantValidationTest {
         }
     }
 
+    @ApplicationScoped
+    static class InterfaceOnlyNonJaxRsResource implements InterfaceOnlyNonJaxRsParticipant {
+
+        @Override
+        public Response compensate(URI lraId) {
+            return Response.ok().build();
+        }
+    }
+
     @Path("/valid-jax-rs")
     @ApplicationScoped
     static class ValidJaxRsResource {
@@ -362,6 +493,48 @@ class ParticipantValidationTest {
         @Path("/compensate")
         @Compensate
         Response compensate(URI lraId) {
+            return Response.ok().build();
+        }
+    }
+
+    static class InheritedParticipant {
+
+        @Compensate
+        public Response compensate(URI lraId) {
+            return Response.ok().build();
+        }
+    }
+
+    @Path("/inherited-jax-rs")
+    @ApplicationScoped
+    static class InheritedJaxRsResource extends InheritedParticipant {
+
+        @Override
+        @PUT
+        @Path("/compensate")
+        public Response compensate(URI lraId) {
+            return Response.ok().build();
+        }
+    }
+
+    @Path("/diamond-inherited-jax-rs")
+    @ApplicationScoped
+    static class DiamondInheritedJaxRsResource implements LeftDiamondParticipant, RightDiamondParticipant {
+
+        @Override
+        @PUT
+        @Path("/compensate")
+        public Response compensate(URI lraId) {
+            return Response.ok().build();
+        }
+    }
+
+    @Path("/non-participant")
+    @ApplicationScoped
+    static class NonParticipantResource {
+
+        @PUT
+        Response invoke() {
             return Response.ok().build();
         }
     }
@@ -383,12 +556,6 @@ class ParticipantValidationTest {
         Response leave(URI lraId) {
             return Response.ok().build();
         }
-    }
-
-    interface LeaveResourceContract {
-
-        @Leave
-        Response leave(URI lraId);
     }
 
     @Path("/interface-inherited-jax-rs-leave")

@@ -244,9 +244,12 @@ that current participant is leaving the LRA. Method body is executed after leave
 signal is sent. As a result, participant methods complete and compensate won’t
 be called when the particular LRA ends.
 
-Applications that use `@Leave` must configure `mp.lra.participant.url` so the
-leave request identifies the same participant links that were registered when
-the application joined the LRA.
+Applications that declare LRA participant callbacks must configure
+`mp.lra.participant.url`. This ensures the leave request identifies the same
+participant links that were registered when the application joined the LRA.
+When endpoint mappings are configured, send `@Leave` through a deployment
+identity that resolves to the same canonical callback base used to join the
+participant.
 
 - Header [LRA_HTTP_CONTEXT_HEADER][lra-http-context] - ID of the LRA transaction
 
@@ -357,7 +360,8 @@ Configuration options:
 | `mp.lra.coordinator.url`                               | string  | `http://localhost:8070/lra-coordinator` | Url of coordinator.                                                                                                                                                                                                                                                                                                                 |
 | `mp.lra.coordinator.trusted-urls`                      | string list |                                  | Additional trusted coordinator base URLs accepted from propagated LRA identifiers. An identifier must have the same scheme, host, effective port, and immediate parent path as a configured base. Exact LRA identifiers returned by successful start requests are trusted automatically for the client instance until reinitialization or eviction from the 10,000-entry learned-identifier cache. |
 | `mp.lra.coordinator.propagation.active`                | boolean |                                         | Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints.                                                                                                                                                                                                                     |
-| `mp.lra.participant.url`                               | string  |                                         | Canonical, externally reachable URL of the LRA-enabled service. This property is required when the application declares a non-JAX-RS participant callback or uses `@Leave`. The value must be an absolute HTTP or HTTPS URI with a host and may include a path and port, but not user info, query, or fragment. An explicit port `0` uses the bound default server listener port and is intended for direct-listener tests; configure the actual public port when callbacks pass through a proxy or load balancer. |
+| `mp.lra.participant.url`                               | string  |                                         | Default canonical, externally reachable base URL for participant callbacks. This property is required when the application declares an LRA participant callback, whether JAX-RS or non-JAX-RS. The value must be an absolute HTTP or HTTPS URI with a host and may include a path and port, but not user info, query, or fragment. It is also the base URL for every non-JAX-RS callback. An explicit port `0` uses the bound request listener for JAX-RS callbacks and the default listener for non-JAX-RS callbacks, and is intended for direct-listener tests; configure the actual public port when callbacks pass through a proxy or load balancer. |
+| `mp.lra.participant.endpoints.*`                       | object  |                                         | Exact JAX-RS callback base URLs for applications with distinct deployment identities. Each named entry contains `listener`, `application-path`, and `url`. The listener and route-effective application base path select the entry; the URL is used in full and follows the same URI validation rules as `mp.lra.participant.url`. Configure an entry for each identity when the deployment has multiple JAX-RS application roots or named listeners. |
 | `mp.lra.coordinator.timeout`                           | string  |                                         | Timeout for synchronous communication with coordinator.                                                                                                                                                                                                                                                                             |
 | `mp.lra.coordinator.timeout-unit`                      | string  |                                         | Timeout unit for synchronous communication with coordinator.                                                                                                                                                                                                                                                                        |
 | `lra.participant.non-jax-rs.context-path`              | string  | `/lra-participant`                      | Context path for non-JAX-RS participant callbacks.                                                                                                                                                                                                                                                                                   |
@@ -395,6 +399,91 @@ segments that would change the normalized path. Configured trusted coordinator
 base URLs must not contain a query. Coordinator redirects are not followed;
 configured and trusted URLs must identify the final coordinator endpoints.
 
+### Canonical Participant URL
+
+Helidon uses each configured participant URL as a complete callback base. It
+never uses an incoming request's scheme or authority. The default
+`mp.lra.participant.url` can serve one JAX-RS deployment identity and is always
+the base for non-JAX-RS callbacks. A deployment identity consists of the
+listener name and the route-effective JAX-RS application base path.
+
+Configure exact `mp.lra.participant.endpoints` entries when a deployment has
+multiple application roots or named listeners. Entry names such as `orders` and
+`admin` are descriptive only. The `listener` and `application-path` fields form
+the lookup key, and `url` is the complete external application base. Application
+paths must begin with `/`; trailing slashes are ignored when matching. Percent
+encoding follows WebServer route-pattern semantics for endpoint application
+paths and request-path semantics for the default URL. The resulting paths must
+identify the same route-effective application base. The configured URL path is
+used unchanged, preserving its encoding. The reserved listener name `@default`
+identifies Helidon's default listener. Callback selection for one deployment
+identity does not depend on which configured identity receives the first
+request. If aliases for the same resource class represent one participant,
+configure them with the same resolved canonical callback base.
+
+```yaml
+mp.lra:
+  participant:
+    url: https://public.example/default-app
+    endpoints:
+      orders:
+        listener: "@default"
+        application-path: /orders
+        url: https://public.example/orders
+      admin:
+        listener: admin
+        application-path: /admin
+        url: https://admin.example:8443/admin
+```
+
+If no endpoint entry matches, Helidon uses the default URL only for the default
+listener and only when its route-effective path equals the JAX-RS application
+base path.
+Other unmatched identities fail with HTTP 500 instead of registering callbacks
+to the wrong application. Configure an explicit endpoint when a named listener
+or an external proxy path makes that exact default mapping unsuitable.
+
+Use a fixed public port in production. Port `0` resolves to the listener that
+received a JAX-RS request, including a named listener, and to the default
+listener for non-JAX-RS callbacks. That behavior is intended for tests that
+connect directly to Helidon; it cannot discover a proxy or load balancer's
+public port.
+
+#### Upgrading JAX-RS Participants
+
+For a deployment with one JAX-RS identity, if the full application base
+previously advertised to the coordinator is stable, configure that exact
+`mp.lra.participant.url` on the old version before upgrading. If its external
+path differs from the internal JAX-RS application base path, also preconfigure
+the matching endpoint entry; the old version ignores the entry and upgraded
+nodes use it. Verify that callback links remain unchanged, then upgrade replicas
+one at a time with the same values. JAX-RS-only participants do not need a
+callback-signing secret or compatibility mode.
+
+If the previously advertised origin and path cannot be preserved or proven,
+for example because requests used multiple `Host` aliases or a proxy path is
+changing, use a drain-first upgrade:
+
+1. On the old version, quiesce requests that can start LRAs, join participants,
+   or leave LRAs. Keep completion, compensation, and other callback traffic
+   available.
+2. Wait until every existing participant registration finishes.
+
+For a JAX-RS-only deployment, configure the default URL and every required
+endpoint entry after the registrations have drained, upgrade the replicas, and
+then resume LRA traffic. Endpoint entries are not understood by older releases,
+so do not rely on them to preserve a multi-identity rolling upgrade.
+
+The rolling procedure above applies to JAX-RS-only deployments. If the
+deployment also uses non-JAX-RS callbacks and can preserve its participant
+links, use the authentication-specific rolling procedure below instead; it
+configures the signing secret and compatibility mode before any replica is
+upgraded. If the links cannot be preserved, drain the registrations using the
+two steps above, then configure the default URL, every required endpoint, and
+the signing secret before upgrading.
+Compatibility mode accepts legacy unsigned non-JAX-RS callbacks; it does not
+migrate JAX-RS participant links.
+
 ### Non-JAX-RS Callback Authentication
 
 Helidon authenticates non-JAX-RS participant callbacks with a capability
@@ -405,7 +494,7 @@ origin using `mp.lra.participant.url` and
 `lra.participant.non-jax-rs.callback-auth.secret` with at least 32 bytes of
 Base64 URL-encoded secret material.
 
-Helidon does not derive non-JAX-RS callback URLs from the authority of an
+Helidon does not derive participant callback URLs from the authority of an
 incoming request. Generate the secret with a cryptographically secure random
 number generator and use a separate secret for each application deployment.
 Share the secret only among replicas that serve the same callbacks. Store the
@@ -428,7 +517,7 @@ lra.participant.non-jax-rs.callback-auth:
   compatibility-mode: false
 ```
 
-#### Rolling Upgrade
+#### Rolling Upgrade from Unsigned Non-JAX-RS Callbacks
 
 The compatibility setting supports a rolling upgrade from a version that
 registered unsigned non-JAX-RS callback URLs. Compatibility mode deliberately
@@ -437,16 +526,11 @@ unsigned callback URLs. A request containing an invalid capability is rejected
 even in compatibility mode; only a request without a capability receives legacy
 handling.
 
-If the previous deployment did not configure `mp.lra.participant.url`, or the
-exact origin and path of existing participant links cannot be preserved, use a
-drain-first upgrade:
-
-1. On the old version, quiesce requests that can start LRAs or register
-   participants. Keep completion, compensation, callback, and leave traffic
-   available.
-2. Wait until all existing participant registrations finish.
-3. Configure the canonical participant URL and signing secret, then upgrade the
-   replicas.
+If the canonical participant URL cannot preserve existing participant links,
+first drain the registrations using the two numbered steps in
+[Upgrading JAX-RS Participants](#upgrading-jax-rs-participants). Then configure
+the canonical URL and signing secret before upgrading; compatibility mode is
+unnecessary because no unsigned registrations remain.
 
 When the exact origin and path already registered with the coordinator can be
 preserved, use this rolling procedure:
