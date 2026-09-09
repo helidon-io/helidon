@@ -119,6 +119,10 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         } else if (responseStatus.code() == Status.NO_CONTENT_204_CODE
                 && (contentLength.orElse(0) > 0 || responseHeaders.contains(HeaderNames.TRANSFER_ENCODING))) {
             this.closeConnectionOnClose = true;
+        } else if (responseStatus.code() == Status.RESET_CONTENT_205_CODE
+                && contentLength.isEmpty()
+                && !responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)) {
+            this.closeConnectionOnClose = true;
         }
 
         if (responseHeaders.contains(HeaderNames.TRAILER)) {

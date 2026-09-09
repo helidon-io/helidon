@@ -1003,6 +1003,7 @@ class Http1ClientTest {
                 arguments("307 Temporary Redirect", "204 No Content"),
                 arguments("308 Permanent Redirect", "204 No Content"),
                 arguments("307 Temporary Redirect", "205 Reset Content"),
+                arguments("302 Found", "205 Reset Content"),
                 arguments("307 Temporary Redirect", "304 Not Modified")
         );
     }
