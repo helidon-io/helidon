@@ -48,7 +48,7 @@ final class ClassModelFactory {
                 .kind(requestedType.kind())
                 .accessModifier(requestedType.accessModifier())
                 .update(it -> {
-                    if (requestedType.isSealed()) {
+                    if (requestedType.sealed()) {
                         it.addElementModifier(Modifier.SEALED);
                     }
                 })
@@ -100,7 +100,7 @@ final class ClassModelFactory {
                     if (innerClass.isFinal()) {
                         it.addElementModifier(Modifier.FINAL);
                     }
-                    if (innerClass.isSealed()) {
+                    if (innerClass.sealed()) {
                         it.addElementModifier(Modifier.SEALED);
                     }
                 })

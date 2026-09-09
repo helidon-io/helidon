@@ -41,7 +41,7 @@ public abstract class ClassBase extends AnnotatedComponent {
 
     private final boolean isFinal;
     private final boolean isAbstract;
-    private final boolean isSealed;
+    private final boolean sealed;
     private final boolean isStatic;
     private final List<EnumConstant> enumConstants;
     private final List<Field> fields;
@@ -61,7 +61,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         super(builder);
         this.isFinal = builder.isFinal;
         this.isAbstract = builder.isAbstract;
-        this.isSealed = builder.isSealed;
+        this.sealed = builder.sealed;
         this.isStatic = builder.isStatic;
         if (builder.sortFields) {
             this.fields = builder.fields.values().stream().sorted(ClassBase::fieldComparator).toList();
@@ -180,8 +180,8 @@ public abstract class ClassBase extends AnnotatedComponent {
      *
      * @return whether this class or interface is sealed
      */
-    public boolean isSealed() {
-        return isSealed;
+    public boolean sealed() {
+        return sealed;
     }
 
     /**
@@ -223,7 +223,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         if (isStatic) {
             writer.write("static ");
         }
-        if (isSealed) {
+        if (sealed) {
             if (isFinal) {
                 throw new IllegalStateException("Class cannot be sealed and final");
             }
@@ -511,7 +511,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         private Type superType;
         private boolean isFinal;
         private boolean isAbstract;
-        private boolean isSealed;
+        private boolean sealed;
         private boolean isStatic;
         private boolean sortFields = true;
         private boolean sortStaticFields = true;
@@ -559,11 +559,11 @@ public abstract class ClassBase extends AnnotatedComponent {
         /**
          * Whether this type is sealed.
          *
-         * @param isSealed whether this type is sealed
+         * @param sealed whether this type is sealed
          * @return updated builder instance
          */
-        public B isSealed(boolean isSealed) {
-            this.isSealed = isSealed;
+        public B sealed(boolean sealed) {
+            this.sealed = sealed;
             return identity();
         }
 

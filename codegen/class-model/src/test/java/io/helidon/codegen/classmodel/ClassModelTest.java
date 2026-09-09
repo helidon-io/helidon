@@ -98,7 +98,7 @@ class ClassModelTest {
         ClassModel model = ClassModel.builder()
                 .type(shadeType)
                 .classType(ElementKind.INTERFACE)
-                .isSealed(true)
+                .sealed(true)
                 .addPermittedSubclass(parameterizedDarkType)
                 .addInnerClass(builder -> builder
                         .name("Dark")
@@ -106,7 +106,7 @@ class ClassModelTest {
                         .addInterface(shadeType))
                 .build();
 
-        assertThat(model.isSealed(), is(true));
+        assertThat(model.sealed(), is(true));
         assertThat(model.permittedSubclassTypeNames(), is(List.of(darkType)));
 
         model.write(sw);
