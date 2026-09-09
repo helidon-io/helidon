@@ -25,6 +25,11 @@ This type is an enumeration.
 </tbody>
 </table>
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.ProcessorConfig.md#type"><code>telemetry.<wbr>signals.<wbr>logging.<wbr>processors.<wbr>type</code></a>
+- <a href="io.helidon.telemetry.otelconfig.ProcessorConfig.md#type"><code>telemetry.<wbr>signals.<wbr>tracing.<wbr>processors.<wbr>type</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.
