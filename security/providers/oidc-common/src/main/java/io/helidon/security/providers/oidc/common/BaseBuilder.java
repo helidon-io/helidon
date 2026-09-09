@@ -60,22 +60,25 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     static final String DEFAULT_REALM = "helidon";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
+    private static final String DEFAULT_JWK_RETRY_NAME = "oidc-jwk-retry";
+    private static final String DEFAULT_JWK_CIRCUIT_BREAKER_NAME = "oidc-jwk-circuit-breaker";
+    private static final String DEFAULT_JWK_TIMEOUT_NAME = "oidc-jwk-timeout";
     private static final Duration DEFAULT_JWK_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_JWK_RETRY_OVERALL_TIMEOUT = Duration.ofSeconds(11);
     private static final RetryConfig DEFAULT_JWK_RETRY_CONFIG = RetryConfig.builder()
-            .name("oidc-jwk-retry")
+            .name(DEFAULT_JWK_RETRY_NAME)
             .calls(2)
             .overallTimeout(DEFAULT_JWK_RETRY_OVERALL_TIMEOUT)
             .addApplyOn(ResilientValue.UnavailableException.class)
             .buildPrototype();
     private static final CircuitBreakerConfig DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG = CircuitBreakerConfig.builder()
-            .name("oidc-jwk-circuit-breaker")
+            .name(DEFAULT_JWK_CIRCUIT_BREAKER_NAME)
             .volume(1)
             .errorRatio(100)
             .addApplyOn(ResilientValue.UnavailableException.class)
             .buildPrototype();
     private static final TimeoutConfig DEFAULT_JWK_TIMEOUT_CONFIG = TimeoutConfig.builder()
-            .name("oidc-jwk-timeout")
+            .name(DEFAULT_JWK_TIMEOUT_NAME)
             .timeout(DEFAULT_JWK_TIMEOUT)
             .currentThread(true)
             .buildPrototype();
@@ -397,7 +400,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
 
     /**
      * Retry used while loading OIDC metadata and signing JWK.
-     * The supplier is invoked only when a reloadable tenant source requires the retry.
+     * Each tenant creates its own retry lazily. An unnamed prototype uses the name
+     * {@value #DEFAULT_JWK_RETRY_NAME}, sharing metrics with other retries using that name.
      *
      * @param jwkRetry prototype of retry to use
      * @return updated builder instance
@@ -455,7 +459,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
 
     /**
      * Timeout applied to each attempt to load OIDC metadata and signing JWK.
-     * The supplier is invoked only when a reloadable tenant source requires the timeout.
+     * Each tenant creates its own timeout lazily. An unnamed prototype uses the name
+     * {@value #DEFAULT_JWK_TIMEOUT_NAME}, sharing metrics with other timeouts using that name.
      *
      * @param jwkTimeout prototype of timeout to use
      * @return updated builder instance
@@ -510,7 +515,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
 
     /**
      * Circuit breaker used while loading OIDC metadata and signing JWK.
-     * The supplier is invoked only when a reloadable tenant source requires the circuit breaker.
+     * Each tenant creates its own circuit breaker lazily. An unnamed prototype uses the name
+     * {@value #DEFAULT_JWK_CIRCUIT_BREAKER_NAME}, sharing metrics with other circuit breakers using that name.
      *
      * @param jwkCircuitBreaker prototype of circuit breaker to use
      * @return updated builder instance
@@ -884,7 +890,9 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
             if (supplier != null) {
                 return Objects.requireNonNull(supplier.get());
             }
-            return RetryConfig.builder(prototype).build();
+            return RetryConfig.builder(prototype)
+                    .name(prototype.name().orElse(DEFAULT_JWK_RETRY_NAME))
+                    .build();
         });
     }
 
@@ -899,7 +907,9 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
             if (supplier != null) {
                 return Objects.requireNonNull(supplier.get());
             }
-            return TimeoutConfig.builder(prototype).build();
+            return TimeoutConfig.builder(prototype)
+                    .name(prototype.name().orElse(DEFAULT_JWK_TIMEOUT_NAME))
+                    .build();
         });
     }
 
@@ -914,7 +924,9 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
             if (supplier != null) {
                 return Objects.requireNonNull(supplier.get());
             }
-            return CircuitBreakerConfig.builder(prototype).build();
+            return CircuitBreakerConfig.builder(prototype)
+                    .name(prototype.name().orElse(DEFAULT_JWK_CIRCUIT_BREAKER_NAME))
+                    .build();
         });
     }
 

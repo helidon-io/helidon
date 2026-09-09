@@ -190,13 +190,41 @@ class OidcJwkLoadingTest {
         OidcConfig second = builder.build();
 
         assertThat(first.jwkRetry(), not(sameInstance(second.jwkRetry())));
+        assertThat(first.jwkRetry().name(), is("oidc-jwk-retry"));
+        assertThat(second.jwkRetry().name(), is("oidc-jwk-retry"));
         assertThat(first.jwkCircuitBreaker(), not(sameInstance(second.jwkCircuitBreaker())));
+        assertThat(first.jwkCircuitBreaker().name(), is("oidc-jwk-circuit-breaker"));
+        assertThat(second.jwkCircuitBreaker().name(), is("oidc-jwk-circuit-breaker"));
         assertThat(first.jwkTimeout(), not(sameInstance(second.jwkTimeout())));
+        assertThat(first.jwkTimeout().name(), is("oidc-jwk-timeout"));
+        assertThat(second.jwkTimeout().name(), is("oidc-jwk-timeout"));
         assertThrows(ResilientValue.UnavailableException.class,
                      () -> first.jwkCircuitBreaker().invoke(() -> {
                          throw new ResilientValue.UnavailableException("not ready");
                      }));
         assertThat(second.jwkCircuitBreaker().invoke(() -> "available"), is("available"));
+    }
+
+    @Test
+    void namedFaultTolerancePrototypesPreserveNames() {
+        TenantConfig config = baseBuilder()
+                .jwkRetry(RetryConfig.builder()
+                                  .name("custom-retry")
+                                  .overallTimeout(Duration.ofSeconds(11))
+                                  .buildPrototype())
+                .jwkCircuitBreaker(CircuitBreakerConfig.builder()
+                                           .name("custom-circuit-breaker")
+                                           .buildPrototype())
+                .jwkTimeout(TimeoutConfig.builder()
+                                    .name("custom-timeout")
+                                    .timeout(Duration.ofSeconds(5))
+                                    .currentThread(true)
+                                    .buildPrototype())
+                .build();
+
+        assertThat(config.jwkRetry().name(), is("custom-retry"));
+        assertThat(config.jwkCircuitBreaker().name(), is("custom-circuit-breaker"));
+        assertThat(config.jwkTimeout().name(), is("custom-timeout"));
     }
 
     @Test
