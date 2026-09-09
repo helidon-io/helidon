@@ -200,6 +200,19 @@ class OidcJwkLoadingTest {
     }
 
     @Test
+    void defaultFaultToleranceInstancesUseStableNames() {
+        TenantConfig first = baseBuilder().build();
+        TenantConfig second = baseBuilder().build();
+
+        assertThat(first.jwkRetry(), not(sameInstance(second.jwkRetry())));
+        assertThat(first.jwkRetry().name(), is(second.jwkRetry().name()));
+        assertThat(first.jwkCircuitBreaker(), not(sameInstance(second.jwkCircuitBreaker())));
+        assertThat(first.jwkCircuitBreaker().name(), is(second.jwkCircuitBreaker().name()));
+        assertThat(first.jwkTimeout(), not(sameInstance(second.jwkTimeout())));
+        assertThat(first.jwkTimeout().name(), is(second.jwkTimeout().name()));
+    }
+
+    @Test
     void rejectsInconsistentJwkTimeoutAtStartup() {
         ResourceConfig reloadableJwk = ResourceConfig.builder()
                 .path(temporaryDirectory.resolve("keys.json"))

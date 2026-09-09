@@ -63,16 +63,19 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     private static final Duration DEFAULT_JWK_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_JWK_RETRY_OVERALL_TIMEOUT = Duration.ofSeconds(11);
     private static final RetryConfig DEFAULT_JWK_RETRY_CONFIG = RetryConfig.builder()
+            .name("oidc-jwk-retry")
             .calls(2)
             .overallTimeout(DEFAULT_JWK_RETRY_OVERALL_TIMEOUT)
             .addApplyOn(ResilientValue.UnavailableException.class)
             .buildPrototype();
     private static final CircuitBreakerConfig DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG = CircuitBreakerConfig.builder()
+            .name("oidc-jwk-circuit-breaker")
             .volume(1)
             .errorRatio(100)
             .addApplyOn(ResilientValue.UnavailableException.class)
             .buildPrototype();
     private static final TimeoutConfig DEFAULT_JWK_TIMEOUT_CONFIG = TimeoutConfig.builder()
+            .name("oidc-jwk-timeout")
             .timeout(DEFAULT_JWK_TIMEOUT)
             .currentThread(true)
             .buildPrototype();
