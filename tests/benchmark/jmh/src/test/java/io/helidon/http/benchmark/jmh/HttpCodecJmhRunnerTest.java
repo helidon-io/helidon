@@ -37,7 +37,9 @@ class HttpCodecJmhRunnerTest {
             "(parseSimpleContentType|parseQuotedContentType|serializeSimpleContentType|serializeQuotedContentType|"
                     + "writeHttp1Ascii|writeHttp1Latin1|"
                     + "encodeHpackAscii|encodeHpackLatin1|writeHpackRequestAscii|writeHpackRequestLatin1|"
-                    + "writeHpackResponseAscii|writeHpackResponseLatin1)";
+                    + "writeHpackResponseAscii|writeHpackResponseLatin1|"
+                    + "writeHpackEmptyTableInsert|writeHpackEmptyTableInsertControl|"
+                    + "writeHpackPopulatedTableInsert|writeHpackPopulatedTableInsertControl)";
 
     @Test
     void runExactBenchmarks() throws RunnerException {

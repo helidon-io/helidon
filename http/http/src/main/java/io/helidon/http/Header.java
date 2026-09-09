@@ -107,9 +107,15 @@ public interface Header extends Value<String> {
     boolean changing();
 
     /**
-     * Cached bytes of a single valued header's value.
+     * Bytes of a single-valued header value.
+     * <p>
+     * Each character in the value is mapped to the byte with the same numeric value using
+     * {@link java.nio.charset.StandardCharsets#ISO_8859_1}. Characters from {@code U+0080} through
+     * {@code U+00FF} therefore represent opaque HTTP field-value octets; they are not interpreted
+     * as UTF-8 or as ISO-8859-1 text.
      *
      * @return value bytes
+     * @throws IllegalArgumentException if the value contains a character above {@code U+00FF}
      */
     default byte[] valueBytes() {
         return encodeValue(get());
@@ -132,9 +138,13 @@ public interface Header extends Value<String> {
     }
 
     /**
-     * Check validity of header name and values.
+     * Check validity of the header name and values.
+     * <p>
+     * The name must be a non-empty HTTP token. Values may contain opaque octets represented by
+     * characters from {@code U+0080} through {@code U+00FF}; characters above {@code U+00FF}
+     * cannot be represented in an HTTP field value and are rejected.
      *
-     * @throws IllegalArgumentException in case the HeaderValue is not valid
+     * @throws IllegalArgumentException if the header name or a value is not valid
      */
     default void validate() throws IllegalArgumentException {
         String name = name();

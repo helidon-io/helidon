@@ -68,13 +68,18 @@ class MediaTypeTest {
     }
 
     @Test
-    void nullOrEmptyCharsetDoesNotUpdateParameter() {
+    void nullCharsetIsRejected() {
+        HttpMediaType mediaType = HttpMediaType.create("text/plain");
+
+        assertThrows(NullPointerException.class, () -> mediaType.withCharset((String) null));
+    }
+
+    @Test
+    void emptyCharsetDoesNotUpdateParameter() {
         HttpMediaType withCharset = HttpMediaType.create("text/plain; charset=utf-8");
         HttpMediaType withoutCharset = HttpMediaType.create("text/plain");
 
-        assertThat(withCharset.withCharset((String) null).charset(), is(Optional.of("utf-8")));
         assertThat(withCharset.withCharset("").charset(), is(Optional.of("utf-8")));
-        assertThat(withoutCharset.withCharset((String) null).charset(), is(Optional.empty()));
         assertThat(withoutCharset.withCharset("").charset(), is(Optional.empty()));
     }
 

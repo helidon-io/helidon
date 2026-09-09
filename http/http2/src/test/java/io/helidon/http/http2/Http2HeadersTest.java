@@ -17,7 +17,9 @@
 package io.helidon.http.http2;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.HexFormat;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderName;
@@ -35,6 +37,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -213,6 +216,68 @@ class Http2HeadersTest {
         assertThat(buffer.available(), is(0));
     }
 
+    @Test
+    void testRejectsNonLatin1ValueAfterPopulatedTableMutation() {
+        DynamicTable outboundTable = DynamicTable.create(Http2Settings.create());
+        DynamicTable inboundTable = DynamicTable.create(Http2Settings.create());
+        Http2HuffmanEncoder encoder = Http2HuffmanEncoder.create();
+        BufferData initialBlock = BufferData.growing(32);
+        Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, "valid"))
+                .status(Status.OK_200)
+                .write(outboundTable, encoder, initialBlock);
+        headers(HexFormat.of().formatHex(initialBlock.readBytes()), inboundTable);
+        int tableSize = outboundTable.currentTableSize();
+        HeaderRecord indexedHeader = outboundTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1);
+
+        BufferData rejectedBlock = BufferData.growing(32).write(42);
+        Http2Headers rejected = Http2Headers.create(WritableHeaders.create()
+                                                             .add(HeaderNames.CONTENT_TYPE, "text/plain")
+                                                             .add(CUSTOM_HEADER_NAME, "\u0100"))
+                .status(Status.OK_200);
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> rejected.write(outboundTable, encoder, rejectedBlock));
+        assertThat(outboundTable.currentTableSize(), is(tableSize));
+        assertThat(outboundTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1), is(indexedHeader));
+        assertThat(rejectedBlock.available(), is(1));
+        assertThat(rejectedBlock.get(0), is(42));
+
+        BufferData nextBlock = BufferData.growing(32);
+        Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, "valid"))
+                .status(Status.OK_200)
+                .write(outboundTable, encoder, nextBlock);
+        Headers decoded = headers(HexFormat.of().formatHex(nextBlock.readBytes()), inboundTable).httpHeaders();
+
+        assertThat(decoded.get(CUSTOM_HEADER_NAME).get(), is("valid"));
+        assertThat(inboundTable.currentTableSize(), is(tableSize));
+    }
+
+    @Test
+    void testRejectsNonLatin1ValueBeforeOversizedIndexing() throws InterruptedException {
+        DynamicTable dynamicTable = DynamicTable.create(1);
+        BufferData rejectedBlock = BufferData.growing(32);
+        Http2Headers rejected = Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, "a\u0100"))
+                .status(Status.OK_200);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Thread encoder = Thread.ofVirtual().start(() -> {
+            try {
+                rejected.write(dynamicTable, Http2HuffmanEncoder.create(), rejectedBlock);
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        });
+        boolean completed = encoder.join(Duration.ofSeconds(1));
+        if (!completed) {
+            encoder.interrupt();
+        }
+
+        assertThat("Header encoding did not complete", completed, is(true));
+        assertThat(failure.get(), instanceOf(IllegalArgumentException.class));
+        assertThat(dynamicTable.currentTableSize(), is(0));
+        assertThat(rejectedBlock.available(), is(0));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"custom-\u0080", ":custom", ":bad\u0100"})
     void testRejectsInvalidHeaderNameBeforeWritingOrIndexing(String invalidName) {
@@ -224,6 +289,24 @@ class Http2HeadersTest {
                 .method(CUSTOM_METHOD)
                 .scheme("https")
                 .path("/");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> http2Headers.write(dynamicTable, Http2HuffmanEncoder.create(), buffer));
+        assertThat(dynamicTable.currentTableSize(), is(0));
+        assertThat(buffer.available(), is(0));
+    }
+
+    @Test
+    void testRejectsPseudoHeaderAddedAfterCreation() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        Http2Headers http2Headers = Http2Headers.create(headers)
+                .method(Method.GET)
+                .scheme("https")
+                .path("/")
+                .authority("example.com");
+        headers.add(Http2Headers.METHOD_NAME, Method.GET.text());
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        BufferData buffer = BufferData.growing(32);
 
         assertThrows(IllegalArgumentException.class,
                      () -> http2Headers.write(dynamicTable, Http2HuffmanEncoder.create(), buffer));
