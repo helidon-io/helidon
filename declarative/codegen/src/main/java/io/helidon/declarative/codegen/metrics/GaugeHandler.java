@@ -103,10 +103,8 @@ class GaugeHandler {
                 .name("preDestroy")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
-        preDestroy.addContentLine("var meters = meterRegistrySupplier.get();");
-
         for (int i = 0; i < gaugeCount; i++) {
-            preDestroy.addContent("meters.remove(this.gauge_")
+            preDestroy.addContent("meterRegistry.remove(this.gauge_")
                     .addContent(String.valueOf(i))
                     .addContentLine(");");
         }
@@ -121,7 +119,8 @@ class GaugeHandler {
                 .name("postConstruct")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
-        postConstruct.addContentLine("var meters = meterRegistrySupplier.get();")
+        postConstruct.addContentLine("this.meterRegistry = meterRegistrySupplier.get();")
+                .addContentLine("var meters = this.meterRegistry;")
                 .addContentLine("var metricsFactory = meters.metricsFactory();")
                 .addContentLine();
 
@@ -190,6 +189,12 @@ class GaugeHandler {
                         .isFinal(true)
                         .name("meterRegistrySupplier")
                         .type(meterRegistrySupplierType));
+
+        // PreDestroy must not perform service lookups, so retain the meter registry resolved during PostConstruct.
+        classModel.addField(meterRegistry -> meterRegistry
+                .accessModifier(AccessModifier.PRIVATE)
+                .type(METER_REGISTRY)
+                .name("meterRegistry"));
 
         for (int i = 0; i < gaugesCount; i++) {
             final int index = i;
