@@ -788,14 +788,16 @@ public class AbacResource {
 
 **JAX-RS sub-resource locators**
 
-When using sub-resource locators in JAX-RS, the roles allowed are collected from
-each "level" of execution: - Application class annotations - Resource class
-annotations + resource method annotations - Sub-resource class annotations +
-sub-resource method annotations - Sub-resource class annotations + sub-resource
-method annotations (for every sub-resource on the path)
+When using sub-resource locators in JAX-RS, Jakarta `@RolesAllowed` constraints
+are collected from each resource class and resource method on the path. The
+Helidon-specific `@RoleValidator.Roles` annotation can also be declared on the
+application class and is processed before the resource levels.
 
 The `RolesAllowed` or `Roles` annotation to be used is the last one in the path
 as defined above.
+
+Jakarta annotation ownership and Helidon extension ordering are described in
+[Adding Security](security.md).
 
 *Example 1:* There is a `RolesAllowed("admin")` defined on a sub-resource
 locator resource class. In this case the required role is `admin`.

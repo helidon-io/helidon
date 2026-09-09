@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.security.abac.role;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
@@ -38,6 +39,7 @@ import jakarta.annotation.security.PermitAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -120,6 +122,37 @@ class RoleValidatorTest {
         if (collector.collect().isValid()) {
             fail("User is not in admin role, should have failed");
         }
+    }
+
+    @Test
+    void emptyMethodRolesAllowedDeniesAll() {
+        RoleValidator validator = RoleValidator.create();
+
+        SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
+        SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
+        EndpointConfig ep = mock(EndpointConfig.class);
+        when(ep.securityLevels()).thenReturn(List.of(appSecurityLevel, classSecurityLevel));
+        when(classSecurityLevel.filterAnnotations(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE,
+                                                  EndpointConfig.AnnotationScope.CLASS))
+                .thenReturn(List.of(Annotation.create(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE,
+                                                      Map.of("value", List.of("admin")))));
+        when(classSecurityLevel.filterAnnotations(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE,
+                                                  EndpointConfig.AnnotationScope.METHOD))
+                .thenReturn(List.of(Annotation.create(AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE,
+                                                      Map.of("value", List.of()))));
+
+        RoleValidator.RoleConfig rConfig = validator.fromAnnotations(ep);
+
+        Errors.Collector collector = Errors.collector();
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
+                                                                  .principal(Principal.create("myAdmin"))
+                                                                  .addGrant(Role.create("admin"))
+                                                                  .build()));
+        when(request.service()).thenReturn(Optional.empty());
+        validator.validate(rConfig, collector, request);
+
+        assertThrows(Errors.ErrorMessagesException.class, () -> collector.collect().checkValid());
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.security;
 
-import io.helidon.common.Weight;
-import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+package io.helidon.tests.integration.security.annotation;
+
+import io.helidon.security.annotations.Authenticated;
+
+import jakarta.enterprise.context.RequestScoped;
 
 /**
- * Second annotation analyzer.
+ * Handler whose annotation must not override configured endpoint security.
  */
-@Weight(10)
-public class AnalyzerUnitTwo implements AnnotationAnalyzer {
-
-    @Override
-    public AnalyzerResponse analyze(Class<?> maybeAnnotated) {
-        return AnalyzerResponse.abstain();
-    }
+@RequestScoped
+@Authenticated(false)
+public class ConfiguredDefaultSecurityResourceImpl implements ConfiguredDefaultSecurityResource {
 }

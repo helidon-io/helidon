@@ -28,8 +28,12 @@ server:
           config:
             authenticate: true
             authorize: false
+        - path: "/configured-default-security"
+          config:
+            authenticate: true
 security:
   providers:
+    - class: "io.helidon.tests.integration.security.pathparams.TestAuditProvider"
     - abac:
     - http-basic-auth:
         realm: "helidon"

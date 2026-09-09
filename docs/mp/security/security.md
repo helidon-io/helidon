@@ -37,6 +37,60 @@ public String adminResource(@Context io.helidon.security.SecurityContext securit
 }
 ```
 
+Jersey can obtain JAX-RS routing annotations from a resource interface or an
+overridden superclass method, but Jakarta security annotations follow the
+Jakarta Annotations inheritance rules independently. Security annotations on an
+implemented interface do not contribute to a resource method, and annotations
+on an overridden method are ignored. Security annotations on a JAX-RS
+application class are not inherited as resource class or method access rules,
+but Helidon supplies them to application-level annotation analyzers. An analyzer
+response can therefore initialize security for each resource. For example, the
+built-in role analyzer uses application-level `@RolesAllowed` to require
+authentication without applying the listed roles as the resource method's
+authorization rule. A concrete override uses security from its own class and
+method; an unchanged inherited superclass method uses security from its
+declaring class and method.
+
+For Helidon security annotations and annotation analyzers that opt in through
+`AnnotationAnalyzer.supportsExpandedEndpointAnalysis()`, Helidon extends the
+ordinary resource class-and-method sequence when the JAX-RS resource definition
+and concrete handler differ:
+
+1. The selected resource definition type and the type that declares Jersey's
+   selected definition method, followed by that method unless it is declared
+   by the implementation. Related class levels are ordered from superclass to
+   subclass.
+2. The type that declares the actual handling method and the concrete handling
+   class, followed by the handling method when it differs from the definition
+   method or when the implementation-declared method is also reported as the
+   definition method.
+
+Selected types that do not own the member remain available to Helidon
+annotations and custom analyzers. Unrelated interfaces, other intermediate
+implementation types, and overridden declarations other than Jersey's selected
+definition and handling methods do not participate. If the resource definition
+and handler are the same class and method, Helidon retains the original single
+class-and-method security level.
+
+Java-inherited annotations on a concrete handler are applied before the selected
+definition method. When a concrete handler does not own the inherited handling
+method, its directly declared Jakarta security annotations and Helidon
+`@Authenticated` and `@Authorized` annotations are excluded so they cannot
+override the inherited member security. Other directly declared handler
+annotations retain their later handling-class position, and the concrete
+handling method remains last.
+
+Each security annotation or provider applies its own merge rules to these
+levels. Among `@Authenticated` or `@Authorized` annotations, a value later in
+the sequence replaces an earlier value. `@Audited` on any level enables
+auditing; for each audit metadata field, the first non-default value is retained
+and a later value fills it only while it remains at its default. Metadata-based
+annotation analyzers that opt in receive the levels in the same order and define
+their own conflict behavior. Analyzers that do not opt in retain the application,
+selected resource class, and selected resource method sequence. Deprecated
+reflection-based analyzers receive complete reflective annotation views and
+cannot observe metadata filtering.
+
 Security in Helidon MicroProfile is built on top of Jersey’s and can be
 enabled/disabled using the property `security.jersey.enabled=[true|false]`.
 

@@ -53,6 +53,7 @@ class SecurityDefinition {
     private AuditEvent.AuditSeverity auditOkSeverity;
     private AuditEvent.AuditSeverity auditErrorSeverity;
     private Boolean requiresAuthorization;
+    private AnnotationAnalyzer authorizationAnalyzer;
 
     private SecurityDefinition() {
     }
@@ -80,13 +81,16 @@ class SecurityDefinition {
                 + ", auditOkSeverity=" + auditOkSeverity
                 + ", auditErrorSeverity=" + auditErrorSeverity
                 + ", requiresAuthorization=" + requiresAuthorization
+                + ", authorizationAnalyzer=" + authorizationAnalyzer
                 + '}';
     }
 
     SecurityDefinition copyMe() {
         SecurityDefinition result = new SecurityDefinition();
+        result.analyzerResponses.putAll(this.analyzerResponses);
         result.requiresAuthentication = this.requiresAuthentication;
         result.requiresAuthorization = this.requiresAuthorization;
+        result.authorizationAnalyzer = this.authorizationAnalyzer;
         result.failOnFailureIfOptional = this.failOnFailureIfOptional;
         result.authnOptional = this.authnOptional;
         result.authenticator = this.authenticator;
@@ -94,6 +98,11 @@ class SecurityDefinition {
         result.securityLevels.addAll(this.securityLevels);
         result.authorizeByDefault = this.authorizeByDefault;
         result.atzExplicit = this.atzExplicit;
+        result.audited = this.audited;
+        result.auditEventType = this.auditEventType;
+        result.auditMessageFormat = this.auditMessageFormat;
+        result.auditOkSeverity = this.auditOkSeverity;
+        result.auditErrorSeverity = this.auditErrorSeverity;
 
         return result;
     }
@@ -126,6 +135,7 @@ class SecurityDefinition {
             return;
         }
         this.requiresAuthorization = atz.value();
+        this.authorizationAnalyzer = null;
         this.authorizer = "".equals(atz.provider()) ? null : atz.provider();
         this.atzExplicit = atz.explicit();
     }
@@ -147,6 +157,7 @@ class SecurityDefinition {
 
     void requiresAuthorization(boolean atz) {
         this.requiresAuthorization = atz;
+        this.authorizationAnalyzer = null;
     }
 
     private <T> T checkDefault(T currentValue, T annotValue, T defaultValue) {
@@ -285,12 +296,11 @@ class SecurityDefinition {
             default -> {}
         }
 
-        if (this.requiresAuthorization == null) {
-            this.requiresAuthorization = switch (analyzerResponse.authorizationResponse()) {
-                case REQUIRED, OPTIONAL -> true;
-                case FORBIDDEN -> false;
-                default -> null;
-            };
+        AnnotationAnalyzer.Flag authorizationResponse = analyzerResponse.authorizationResponse();
+        if (authorizationResponse != AnnotationAnalyzer.Flag.ABSTAIN
+                && (this.requiresAuthorization == null || authorizationAnalyzer == analyzer)) {
+            this.requiresAuthorization = authorizationResponse != AnnotationAnalyzer.Flag.FORBIDDEN;
+            this.authorizationAnalyzer = analyzer;
         }
 
         this.authenticator = analyzerResponse.authenticator().orElse(this.authenticator);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,11 @@
  */
 
 package io.helidon.tests.integration.security.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
@@ -55,5 +60,26 @@ public class AdminResource {
     @RolesAllowed("admin")
     public String unauthorizedAdmin() {
         return "unauthorized admin";
+    }
+
+    /**
+     * Resource secured by a metadata-based method annotation analyzer.
+     *
+     * @return typed analyzer response
+     */
+    @GET
+    @Path("/typed-analyzer")
+    @TypedAuthenticationRequired
+    @Authorized(false)
+    public String typedAnalyzer() {
+        return "typed analyzer";
+    }
+
+    /**
+     * Marker interpreted by a metadata-based method annotation analyzer.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface TypedAuthenticationRequired {
     }
 }

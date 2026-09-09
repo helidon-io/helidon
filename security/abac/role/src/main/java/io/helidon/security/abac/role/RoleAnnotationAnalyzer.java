@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,11 @@ import jakarta.annotation.security.PermitAll;
  */
 @Weight(Weighted.DEFAULT_WEIGHT) // Helidon service loader loaded and ordered
 public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
+
+    @Override
+    public boolean supportsExpandedEndpointAnalysis() {
+        return true;
+    }
 
     @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated) {
