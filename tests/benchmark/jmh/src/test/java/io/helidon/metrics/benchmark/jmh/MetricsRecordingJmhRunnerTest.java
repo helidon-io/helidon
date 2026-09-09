@@ -27,24 +27,22 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
-class MetricsFormatterJmhRunnerTest {
+class MetricsRecordingJmhRunnerTest {
     @Test
     void runExactBenchmark() throws RunnerException {
-        String benchmark = Pattern.quote(MetricsFormatterJmhBenchmark.class.getName());
-        String defaultInclude = "^" + benchmark
-                + "\\.format(Json|Prometheus)(Unfiltered|TagSelected(One|All)"
-                + "|DistinctFamilies(NameSelected|NameAndTagSelected|TagSelected(One|All)))$";
-        String include = System.getProperty("metrics.formatter.jmh.include", defaultInclude);
-        String result = System.getProperty("metrics.formatter.jmh.result", "target/metrics-formatter-jmh.json");
+        String benchmark = Pattern.quote(MetricsRecordingJmhBenchmark.class.getName());
+        String defaultInclude = "^" + benchmark + "\\.record(Counter|DistributionSummary|Timer)$";
+        String include = System.getProperty("metrics.recording.jmh.include", defaultInclude);
+        String result = System.getProperty("metrics.recording.jmh.result", "target/metrics-recording-jmh.json");
 
         Options options = new OptionsBuilder()
                 .include(include)
                 .threads(1)
-                .forks(Integer.getInteger("metrics.formatter.jmh.forks", 3))
-                .warmupIterations(Integer.getInteger("metrics.formatter.jmh.warmupIterations", 3))
-                .warmupTime(TimeValue.milliseconds(Long.getLong("metrics.formatter.jmh.warmupMillis", 1000)))
-                .measurementIterations(Integer.getInteger("metrics.formatter.jmh.measurementIterations", 5))
-                .measurementTime(TimeValue.milliseconds(Long.getLong("metrics.formatter.jmh.measurementMillis", 2000)))
+                .forks(Integer.getInteger("metrics.recording.jmh.forks", 3))
+                .warmupIterations(Integer.getInteger("metrics.recording.jmh.warmupIterations", 3))
+                .warmupTime(TimeValue.milliseconds(Long.getLong("metrics.recording.jmh.warmupMillis", 1000)))
+                .measurementIterations(Integer.getInteger("metrics.recording.jmh.measurementIterations", 5))
+                .measurementTime(TimeValue.milliseconds(Long.getLong("metrics.recording.jmh.measurementMillis", 2000)))
                 .addProfiler(GCProfiler.class)
                 .shouldFailOnError(true)
                 .resultFormat(ResultFormatType.JSON)

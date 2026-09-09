@@ -206,11 +206,11 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                 continue;
             }
 
-            String conventionName = prometheusMeterRegistry.config()
-                    .namingConvention()
-                    .name(meterId.getName(), meterId.getType(), meterId.getBaseUnit());
+            String conventionName = PrometheusNameSupport.expositionName(
+                    meterId,
+                    prometheusMeterRegistry.config().namingConvention());
             result.add(conventionName);
-            if (meterId.getType() == Meter.Type.TIMER || meterId.getType() == Meter.Type.DISTRIBUTION_SUMMARY) {
+            if (meter instanceof Timer || meter instanceof DistributionSummary || meter instanceof LongTaskTimer) {
                 result.add(conventionName + "_max");
             }
         }
@@ -239,7 +239,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         var namingConvention = prometheusMeterRegistry.config().namingConvention();
         prometheusMeterRegistry.forEachMeter(meter -> {
             Meter.Id meterId = meter.getId();
-            String conventionName = meterId.getConventionName(namingConvention);
+            String conventionName = PrometheusNameSupport.expositionName(meterId, namingConvention);
             String familyName = meterId.getType() == Meter.Type.COUNTER && conventionName.endsWith("_total")
                     ? conventionName.substring(0, conventionName.length() - "_total".length())
                     : conventionName;

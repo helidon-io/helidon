@@ -65,6 +65,8 @@ public class MetricsFormatterJmhBenchmark {
     private MeterRegistryFormatter prometheusAllSelectedFormatter;
     private MeterRegistryFormatter prometheusDistinctFamiliesOneSelectedFormatter;
     private MeterRegistryFormatter prometheusDistinctFamiliesAllSelectedFormatter;
+    private MeterRegistryFormatter prometheusDistinctFamiliesNameSelectedFormatter;
+    private MeterRegistryFormatter prometheusDistinctFamiliesNameAndTagSelectedFormatter;
     private MeterRegistryFormatter jsonUnfilteredFormatter;
     private MeterRegistryFormatter jsonOneSelectedFormatter;
     private MeterRegistryFormatter jsonAllSelectedFormatter;
@@ -100,6 +102,17 @@ public class MetricsFormatterJmhBenchmark {
                                                                     metricsConfig,
                                                                     distinctFamiliesAllMatchMeterRegistry,
                                                                     selection());
+        Set<String> selectedMeterName = Set.of(METER_NAME + "." + (cardinality - 1));
+        prometheusDistinctFamiliesNameSelectedFormatter = formatter(MediaTypes.TEXT_PLAIN,
+                                                                     metricsConfig,
+                                                                     distinctFamiliesOneMatchMeterRegistry,
+                                                                     Map.of(),
+                                                                     selectedMeterName);
+        prometheusDistinctFamiliesNameAndTagSelectedFormatter = formatter(MediaTypes.TEXT_PLAIN,
+                                                                           metricsConfig,
+                                                                           distinctFamiliesOneMatchMeterRegistry,
+                                                                           selection(),
+                                                                           selectedMeterName);
         jsonUnfilteredFormatter = formatter(MediaTypes.APPLICATION_JSON,
                                             metricsConfig,
                                             oneMatchMeterRegistry,
@@ -148,6 +161,16 @@ public class MetricsFormatterJmhBenchmark {
     }
 
     @Benchmark
+    public Object formatPrometheusDistinctFamiliesNameSelected() {
+        return prometheusDistinctFamiliesNameSelectedFormatter.format().orElseThrow();
+    }
+
+    @Benchmark
+    public Object formatPrometheusDistinctFamiliesNameAndTagSelected() {
+        return prometheusDistinctFamiliesNameAndTagSelectedFormatter.format().orElseThrow();
+    }
+
+    @Benchmark
     public Object formatJsonUnfiltered() {
         return jsonUnfilteredFormatter.format().orElseThrow();
     }
@@ -187,12 +210,20 @@ public class MetricsFormatterJmhBenchmark {
                                               MetricsConfig metricsConfig,
                                               MeterRegistry meterRegistry,
                                               Map<String, Collection<String>> tagSelection) {
+        return formatter(mediaType, metricsConfig, meterRegistry, tagSelection, List.of());
+    }
+
+    private MeterRegistryFormatter formatter(MediaType mediaType,
+                                              MetricsConfig metricsConfig,
+                                              MeterRegistry meterRegistry,
+                                              Map<String, Collection<String>> tagSelection,
+                                              Collection<String> meterNameSelection) {
         return Services.all(MeterRegistryFormatterProvider.class).stream()
                 .map(provider -> provider.formatter(mediaType,
                                                     metricsConfig,
                                                     meterRegistry,
                                                     tagSelection,
-                                                    List.of()))
+                                                    meterNameSelection))
                 .flatMap(Optional::stream)
                 .findFirst()
                 .orElseThrow();

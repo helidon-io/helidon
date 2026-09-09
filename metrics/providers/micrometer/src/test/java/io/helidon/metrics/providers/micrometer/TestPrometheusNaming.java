@@ -17,6 +17,7 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -25,7 +26,9 @@ import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.FunctionTimer;
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.prometheus.metrics.expositionformats.OpenMetricsTextFormatWriter;
@@ -216,6 +219,60 @@ class TestPrometheusNaming {
             assertThat(scrape(summaryRegistry), containsString("payload_max 1.0"));
         } finally {
             summaryRegistry.close();
+        }
+    }
+
+    @Test
+    void testExpositionNameCollisionsAreRejectedDuringRegistration() {
+        PrometheusMeterRegistry registry = registry(PrometheusPublisher.create());
+        try {
+            Gauge.builder("payload", () -> 1)
+                    .baseUnit("bytes/second")
+                    .register(registry);
+
+            assertThrows(IllegalArgumentException.class,
+                         () -> Gauge.builder("payload_bytes_second", () -> 2).register(registry));
+            assertThat(scrape(registry), containsString("payload_bytes_second 1.0"));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testFunctionTimerGeneratedNameCollisionsAreRejectedDuringRegistration() {
+        PrometheusMeterRegistry registry = registry(PrometheusPublisher.create());
+        try {
+            AtomicLong count = new AtomicLong(1);
+            AtomicLong totalTime = new AtomicLong(2);
+            FunctionTimer.builder("operation", count,
+                                  AtomicLong::get,
+                                  _ -> totalTime.get(),
+                                  TimeUnit.SECONDS)
+                    .register(registry);
+            Gauge.builder("operation_seconds_max", () -> 3).register(registry);
+
+            assertThrows(IllegalArgumentException.class,
+                         () -> Gauge.builder("operation_seconds_count", () -> 4).register(registry));
+            assertThat(scrape(registry),
+                       allOf(containsString("operation_seconds_count 1"),
+                             containsString("operation_seconds_sum 2.0"),
+                             containsString("operation_seconds_max 3.0")));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testLongTaskTimerGeneratedNameCollisionsAreRejectedDuringRegistration() {
+        PrometheusMeterRegistry registry = registry(PrometheusPublisher.create());
+        try {
+            LongTaskTimer.builder("operation").register(registry);
+
+            assertThrows(IllegalArgumentException.class,
+                         () -> Gauge.builder("operation_seconds_max", () -> 1).register(registry));
+            assertThat(scrape(registry), containsString("operation_seconds_max 0.0"));
+        } finally {
+            registry.close();
         }
     }
 

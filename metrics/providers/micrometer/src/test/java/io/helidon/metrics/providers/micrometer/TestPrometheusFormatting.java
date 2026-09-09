@@ -36,6 +36,8 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 
+import io.micrometer.core.instrument.FunctionTimer;
+import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Metrics;
@@ -651,6 +653,101 @@ class TestPrometheusFormatting {
                     .meterNameSelection(Set.of("collision_seconds_count"))
                     .build();
             assertThat(formatter.format(), OptionalMatcher.optionalEmpty());
+        } finally {
+            localRegistry.close();
+        }
+    }
+
+    @Test
+    void testSelectiveScrapeUsesExpositionName() {
+        MetricsConfig localConfig = MetricsConfig.builder()
+                .warnOnMultipleRegistries(false)
+                .build();
+        MeterRegistry localRegistry = metricsFactory.createMeterRegistry(localConfig);
+        try {
+            PrometheusMeterRegistry prometheusRegistry = MicrometerPrometheusFormatter
+                    .prometheusMeterRegistry(localRegistry)
+                    .orElseThrow();
+            io.micrometer.core.instrument.Gauge.builder("payload", () -> 1)
+                    .baseUnit("bytes/second")
+                    .tag("le", "actual")
+                    .register(prometheusRegistry);
+
+            var formatter = MicrometerPrometheusFormatter.builder(localRegistry)
+                    .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                    .meterNameSelection(Set.of("payload"))
+                    .tagSelection(Map.of("le", Set.of("actual")))
+                    .build();
+
+            assertThat(checkAndCast(formatter.format()),
+                       containsString("payload_bytes_second{le=\"actual\"} 1.0"));
+        } finally {
+            localRegistry.close();
+        }
+    }
+
+    @Test
+    void testFunctionTimerSelectiveScrapeDoesNotIncludeUnrelatedMaxFamily() {
+        MetricsConfig localConfig = MetricsConfig.builder()
+                .warnOnMultipleRegistries(false)
+                .build();
+        MeterRegistry localRegistry = metricsFactory.createMeterRegistry(localConfig);
+        try {
+            PrometheusMeterRegistry prometheusRegistry = MicrometerPrometheusFormatter
+                    .prometheusMeterRegistry(localRegistry)
+                    .orElseThrow();
+            AtomicLong count = new AtomicLong(1);
+            AtomicLong totalTime = new AtomicLong(2);
+            FunctionTimer.builder("operation", count,
+                                  AtomicLong::get,
+                                  _ -> totalTime.get(),
+                                  TimeUnit.SECONDS)
+                    .register(prometheusRegistry);
+            io.micrometer.core.instrument.Gauge.builder("operation_seconds_max", () -> 3)
+                    .register(prometheusRegistry);
+
+            var formatter = MicrometerPrometheusFormatter.builder(localRegistry)
+                    .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                    .meterNameSelection(Set.of("operation"))
+                    .build();
+            String output = checkAndCast(formatter.format());
+
+            assertThat(output,
+                       allOf(containsString("operation_seconds_count 1"),
+                             containsString("operation_seconds_sum 2.0"),
+                             not(containsString("operation_seconds_max"))));
+        } finally {
+            localRegistry.close();
+        }
+    }
+
+    @Test
+    void testLongTaskTimerSelectiveScrapeIncludesMaxFamily() {
+        MetricsConfig localConfig = MetricsConfig.builder()
+                .warnOnMultipleRegistries(false)
+                .build();
+        MeterRegistry localRegistry = metricsFactory.createMeterRegistry(localConfig);
+        try {
+            PrometheusMeterRegistry prometheusRegistry = MicrometerPrometheusFormatter
+                    .prometheusMeterRegistry(localRegistry)
+                    .orElseThrow();
+            LongTaskTimer longTaskTimer = LongTaskTimer.builder("operation")
+                    .register(prometheusRegistry);
+            LongTaskTimer.Sample sample = longTaskTimer.start();
+            try {
+                var formatter = MicrometerPrometheusFormatter.builder(localRegistry)
+                        .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                        .meterNameSelection(Set.of("operation"))
+                        .build();
+                String output = checkAndCast(formatter.format());
+
+                assertThat(output,
+                           allOf(containsString("operation_seconds_count 1"),
+                                 containsString("operation_seconds_sum"),
+                                 containsString("operation_seconds_max")));
+            } finally {
+                sample.stop();
+            }
         } finally {
             localRegistry.close();
         }

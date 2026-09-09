@@ -21,16 +21,20 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
+import java.util.function.ToLongFunction;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.FunctionTimer;
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.LongTaskTimer;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
@@ -102,27 +106,50 @@ class CollisionDetectingPrometheusMeterRegistry extends PrometheusMeterRegistry 
         return register(id, counterNames(id), () -> super.newFunctionCounter(id, obj, countFunction));
     }
 
+    @Override
+    protected <T> FunctionTimer newFunctionTimer(Meter.Id id,
+                                                 T obj,
+                                                 ToLongFunction<T> countFunction,
+                                                 ToDoubleFunction<T> totalTimeFunction,
+                                                 TimeUnit totalTimeFunctionUnit) {
+        return register(id,
+                        functionTimerNames(id),
+                        () -> super.newFunctionTimer(id,
+                                                     obj,
+                                                     countFunction,
+                                                     totalTimeFunction,
+                                                     totalTimeFunctionUnit));
+    }
+
+    @Override
+    protected LongTaskTimer newLongTaskTimer(Meter.Id id,
+                                             DistributionStatisticConfig distributionStatisticConfig) {
+        return register(id,
+                        distributionNames(id, distributionStatisticConfig),
+                        () -> super.newLongTaskTimer(id, distributionStatisticConfig));
+    }
+
     private static String owner(Meter.Id id) {
         return "'" + LegacyPrometheusMeterFilter.originalGaugeName(id.getName()) + "' (type=" + id.getType()
                 + ", baseUnit=" + Objects.toString(id.getBaseUnit(), "<none>") + ")";
     }
 
     private Set<String> counterNames(Meter.Id id) {
-        String conventionName = getConventionName(id);
+        String conventionName = expositionName(id);
         String counterName = conventionName.endsWith(TOTAL_SUFFIX) ? conventionName : conventionName + TOTAL_SUFFIX;
         String baseName = counterName.substring(0, counterName.length() - TOTAL_SUFFIX.length());
         return Set.of(baseName, counterName, baseName + CREATED_SUFFIX);
     }
 
     private Set<String> gaugeNames(Meter.Id id) {
-        String conventionName = getConventionName(id);
+        String conventionName = expositionName(id);
         return id.getName().endsWith(".info")
                 ? Set.of(conventionName, conventionName + "_info")
                 : Set.of(conventionName);
     }
 
     private Set<String> distributionNames(Meter.Id id, DistributionStatisticConfig distributionStatisticConfig) {
-        String conventionName = getConventionName(id);
+        String conventionName = expositionName(id);
         Set<String> result = new LinkedHashSet<>();
         result.add(conventionName);
         result.add(conventionName + "_count");
@@ -133,6 +160,18 @@ class CollisionDetectingPrometheusMeterRegistry extends PrometheusMeterRegistry 
         }
         result.add(conventionName + "_max");
         return Set.copyOf(result);
+    }
+
+    private Set<String> functionTimerNames(Meter.Id id) {
+        String conventionName = expositionName(id);
+        return Set.of(conventionName,
+                      conventionName + "_count",
+                      conventionName + "_sum",
+                      conventionName + CREATED_SUFFIX);
+    }
+
+    private String expositionName(Meter.Id id) {
+        return PrometheusNameSupport.expositionName(id, config().namingConvention());
     }
 
     private <M extends Meter> M register(Meter.Id id, Set<String> names, Supplier<M> registration) {
