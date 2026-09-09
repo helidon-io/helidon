@@ -211,6 +211,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     public void handle(Limit limit) throws InterruptedException {
         try {
             doHandle(limit);
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            throw new CloseConnectionException("Connection closed by client", e);
         } catch (Http2Exception e) {
             if (closing || state == State.FINISHED) {
                 // already handled

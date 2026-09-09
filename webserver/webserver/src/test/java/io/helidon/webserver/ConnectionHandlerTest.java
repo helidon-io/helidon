@@ -15,9 +15,12 @@
  */
 package io.helidon.webserver;
 
-import java.nio.charset.StandardCharsets;
+import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,10 +29,14 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.tls.Tls;
+import io.helidon.webserver.spi.ServerConnection;
+import io.helidon.webserver.spi.ServerConnectionSelector;
 
 import org.junit.jupiter.api.Test;
 
@@ -82,29 +89,130 @@ class ConnectionHandlerTest {
         }
     }
 
+    @Test
+    void socketWriterFailureIsTrace() throws Exception {
+        assertConnectionFailureLevel(new SocketWriterException(), Level.FINER);
+    }
+
+    @Test
+    void connectionInterruptionIsTrace() throws Exception {
+        assertConnectionFailureLevel(new InterruptedException("test interruption"), Level.FINER);
+    }
+
+    @Test
+    void unexpectedConnectionFailureRemainsWarning() throws Exception {
+        assertConnectionFailureLevel(new IllegalStateException("unexpected"), Level.WARNING);
+    }
+
+    private static void assertConnectionFailureLevel(Exception failure, Level expectedLevel) throws Exception {
+        ListenerConfig listenerConfig = mock(ListenerConfig.class);
+        when(listenerConfig.useNio()).thenReturn(true);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        when(listenerContext.config()).thenReturn(listenerConfig);
+        SocketChannel socket = mock(SocketChannel.class);
+        when(socket.getRemoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 12345));
+        when(socket.getLocalAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 80));
+        ListenerConfig virtualHostConfig = mock(ListenerConfig.class);
+        when(virtualHostConfig.sni()).thenReturn(SniConfig.create());
+        when(virtualHostConfig.virtualHosts()).thenReturn(List.of());
+        Tls tls = mock(Tls.class);
+        VirtualHostRegistry virtualHosts = VirtualHostRegistry.create("server", virtualHostConfig, tls);
+        ConnectionProviders connectionProviders =
+                ConnectionProviders.create(List.of(new TestConnectionSelector(failure)));
+        ConnectionHandler handler = new ConnectionHandler(listenerContext,
+                                                          mock(LimitAlgorithm.Token.class),
+                                                          mock(Limit.class),
+                                                          connectionProviders,
+                                                          socket,
+                                                          "server",
+                                                          Router.empty(),
+                                                          tls,
+                                                          virtualHosts,
+                                                          _ -> { });
+
+        try (TestLogHandler logHandler = TestLogHandler.install(failure)) {
+            Thread thread = Thread.ofVirtual().start(handler::run);
+            LogRecord record = logHandler.await();
+            thread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(thread.isAlive(), is(false));
+            assertThat(record.getThrown(), sameInstance(failure));
+            assertThat(record.getLevel(), is(expectedLevel));
+        }
+    }
+
+    private record TestConnectionSelector(Exception failure) implements ServerConnectionSelector {
+        @Override
+        public int bytesToIdentifyConnection() {
+            return 0;
+        }
+
+        @Override
+        public Support supports(BufferData data) {
+            return Support.SUPPORTED;
+        }
+
+        @Override
+        public Set<String> supportedApplicationProtocols() {
+            return Set.of();
+        }
+
+        @Override
+        public ServerConnection connection(ConnectionContext ctx) {
+            return new ServerConnection() {
+                @Override
+                public void handle(Limit limit) throws InterruptedException {
+                    if (failure instanceof RuntimeException runtimeException) {
+                        throw runtimeException;
+                    }
+                    throw (InterruptedException) failure;
+                }
+
+                @Override
+                public Duration idleTime() {
+                    return Duration.ZERO;
+                }
+
+                @Override
+                public void close(boolean interrupt) {
+                }
+            };
+        }
+    }
+
     private static final class TestLogHandler extends Handler implements AutoCloseable {
         private final Logger logger;
         private final Level previousLevel;
+        private final boolean previousUseParentHandlers;
+        private final Throwable failure;
         private final CountDownLatch latch = new CountDownLatch(1);
         private final AtomicReference<LogRecord> record = new AtomicReference<>();
 
-        private TestLogHandler(Logger logger) {
+        private TestLogHandler(Logger logger, Throwable failure) {
             this.logger = logger;
             this.previousLevel = logger.getLevel();
+            this.previousUseParentHandlers = logger.getUseParentHandlers();
+            this.failure = failure;
             setLevel(Level.ALL);
         }
 
         static TestLogHandler install() {
+            return install(null);
+        }
+
+        static TestLogHandler install(Throwable failure) {
             Logger logger = Logger.getLogger(ConnectionHandler.class.getName());
-            TestLogHandler handler = new TestLogHandler(logger);
+            TestLogHandler handler = new TestLogHandler(logger, failure);
             logger.setLevel(Level.ALL);
+            logger.setUseParentHandlers(false);
             logger.addHandler(handler);
             return handler;
         }
 
         @Override
         public void publish(LogRecord record) {
-            if (this.record.compareAndSet(null, record)) {
+            if ((failure == null || record.getThrown() == failure)
+                    && this.record.compareAndSet(null, record)) {
                 latch.countDown();
             }
         }
@@ -117,6 +225,7 @@ class ConnectionHandlerTest {
         public void close() {
             logger.removeHandler(this);
             logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
         }
 
         private LogRecord await() throws InterruptedException {
