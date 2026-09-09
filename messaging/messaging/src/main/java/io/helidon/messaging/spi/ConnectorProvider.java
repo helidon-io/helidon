@@ -17,6 +17,7 @@
 package io.helidon.messaging.spi;
 
 import io.helidon.common.Api;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
 
 /**
@@ -39,4 +40,12 @@ public interface ConnectorProvider {
      * @return connector type
      */
     String connectorType();
+
+    /**
+     * Create a channel connector from its effective configuration.
+     *
+     * @param config effective channel configuration
+     * @return channel connector
+     */
+    Connector connector(Config config);
 }

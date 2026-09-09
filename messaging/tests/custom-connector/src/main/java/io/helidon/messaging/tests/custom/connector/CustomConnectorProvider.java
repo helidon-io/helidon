@@ -18,14 +18,18 @@ package io.helidon.messaging.tests.custom.connector;
 
 import io.helidon.config.Config;
 import io.helidon.messaging.ConnectorDirection;
+import io.helidon.messaging.spi.Connector;
 import io.helidon.messaging.spi.IncomingConnector;
 import io.helidon.messaging.spi.IncomingConnectorProvider;
+import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingConnectorProvider;
 import io.helidon.messaging.spi.OutgoingConnector;
 import io.helidon.messaging.spi.OutgoingConnectorProvider;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
 final class CustomConnectorProvider implements IncomingConnectorProvider,
+                                               MessagingConnectorProvider,
                                                OutgoingConnectorProvider {
     static final String CONNECTOR_TYPE = "test-custom";
 
@@ -39,8 +43,22 @@ final class CustomConnectorProvider implements IncomingConnectorProvider,
     }
 
     @Override
+    public String configKey() {
+        return CONNECTOR_TYPE;
+    }
+
+    @Override
     public String connectorType() {
         return CONNECTOR_TYPE;
+    }
+
+    @Override
+    public Connector connector(Config config) {
+        CustomConnector connector = createConnector(config);
+        return switch (direction(config)) {
+        case INCOMING -> connector.incoming(config).orElseThrow();
+        case OUTGOING -> connector.outgoing(config).orElseThrow();
+        };
     }
 
     @Override
@@ -51,6 +69,16 @@ final class CustomConnectorProvider implements IncomingConnectorProvider,
     @Override
     public OutgoingConnector createOutgoingConnector(Config config) {
         return createConnector(config).outgoing(config).orElseThrow();
+    }
+
+    @Override
+    public MessagingConnector create(Config config, String name) {
+        return CustomConnector.builder()
+                .name(name)
+                .broker(broker)
+                .probe(probe)
+                .config(config)
+                .build();
     }
 
     private static ConnectorDirection direction(Config config) {

@@ -38,4 +38,6 @@ module io.helidon.messaging {
 
     exports io.helidon.messaging;
     exports io.helidon.messaging.spi;
+
+    uses io.helidon.messaging.spi.MessagingConnectorProvider;
 }

@@ -18,20 +18,16 @@ package io.helidon.messaging.tests.custom.connector;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.messaging.spi.MessagingConnectorProvider;
+import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
 
 /**
  * Custom connector configuration.
  */
 @Prototype.Blueprint(isPublic = false)
 @Prototype.Configured(value = CustomConnectorProvider.CONNECTOR_TYPE, root = false)
-interface CustomConnectorConfigBlueprint extends Prototype.Factory<CustomConnector> {
-    /**
-     * Configured connector instance name.
-     *
-     * @return connector name
-     */
-    @Option.Required
-    String name();
+@Prototype.Provides(MessagingConnectorProvider.class)
+interface CustomConnectorConfigBlueprint extends MessagingConnectorProviderConfig, Prototype.Factory<CustomConnector> {
 
     /**
      * In-memory transport endpoint.
