@@ -18,10 +18,13 @@ OpenTelemetry metrics settings
 <tbody>
 <tr>
 <td>
+<a id="readers"></a>
+<a href="io.helidon.telemetry.otelconfig.MetricReaderConfig.md">
 <code>readers</code>
+</a>
 </td>
 <td>
-<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>Metric<wbr>Reader<wbr>Config&gt;</code>
 </td>
 <td>Settings for metric readers</td>
 </tr>
