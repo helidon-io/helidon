@@ -62,15 +62,23 @@ final class GenerateAbstractBuilder {
     private GenerateAbstractBuilder() {
     }
 
-    static void generate(RoundContext ctx,
-                         List<BuilderCodegenExtension> extensions,
-                         ClassModel.Builder classModel,
-                         PrototypeInfo prototypeInfo,
-                         TypeArguments genericArguments,
-                         List<OptionHandler> options,
-                         List<BuilderCodegen.NewDefault> newDefaults) {
+    static TypeName generate(RoundContext ctx,
+                             List<BuilderCodegenExtension> extensions,
+                             ClassModel.Builder classModel,
+                             PrototypeInfo prototypeInfo,
+                             TypeArguments genericArguments,
+                             List<OptionHandler> options,
+                             List<BuilderCodegen.NewDefault> newDefaults) {
         Optional<TypeName> superType = prototypeInfo.superPrototype();
         TypeName prototype = prototypeInfo.prototypeType();
+        String ifaceName = prototype.className();
+        TypeName implementationType = TypeName.builder()
+                .packageName(prototype.packageName())
+                .addEnclosingName(ifaceName)
+                .addEnclosingName("BuilderBase")
+                .className(ifaceName + "Impl")
+                .build();
+        boolean sealedPrototype = prototypeInfo.blueprint().hasAnnotation(Types.PROTOTYPE_SEALED);
         List<TypeArgument> typeArguments = genericArguments.arguments();
         List<TypeName> typeArgumentNames = genericArguments.names();
 
@@ -122,6 +130,29 @@ final class GenerateAbstractBuilder {
             // method preBuildPrototype() - handles providers, decorator
             preBuildPrototypeMethod(ctx, extensions, builder, prototypeInfo, options);
             validatePrototypeMethod(extensions, builder, prototypeInfo, options);
+            if (sealedPrototype) {
+                builder.addMethod(method -> {
+                    method.name("buildPrototype")
+                            .description("Create a new prototype instance from a builder.")
+                            .accessModifier(AccessModifier.PROTECTED)
+                            .isFinal(true)
+                            .returnType(prototype, "new prototype instance")
+                            .addParameter(param -> param.name("builder")
+                                    .type(TypeName.builder()
+                                                  .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
+                                                  .addTypeArguments(typeArgumentNames)
+                                                  .addTypeArgument(TypeArgument.create("?"))
+                                                  .addTypeArgument(TypeArgument.create("?"))
+                                                  .build())
+                                    .description("builder used to create the prototype"))
+                            .addContent("return new ")
+                            .addContent(implementationType);
+                    if (!typeArguments.isEmpty()) {
+                        method.addContent("<>");
+                    }
+                    method.addContentLine("(builder);");
+                });
+            }
 
             //custom method adding
             addCustomBuilderMethods(builder, prototypeInfo);
@@ -140,13 +171,20 @@ final class GenerateAbstractBuilder {
                 isAllowedValueMethod(builder);
             }
 
-            // before the builder class is finished, we also generate a protected implementation
-            generatePrototypeImpl(extensions, builder, prototypeInfo, options, typeArguments, typeArgumentNames);
+            // before the builder class is finished, we also generate an implementation
+            generatePrototypeImpl(extensions,
+                                  builder,
+                                  prototypeInfo,
+                                  implementationType,
+                                  sealedPrototype,
+                                  options,
+                                  genericArguments);
 
             extensions.forEach(it -> it.updateBuilderBase(prototypeInfo,
                                                           Utils.options(options),
                                                           builder));
         });
+        return implementationType;
     }
 
     static void buildRuntimeObjectMethod(InnerClass.Builder classBuilder,
@@ -1207,24 +1245,29 @@ final class GenerateAbstractBuilder {
     private static void generatePrototypeImpl(List<BuilderCodegenExtension> extensions,
                                               InnerClass.Builder classBuilder,
                                               PrototypeInfo prototypeInfo,
+                                              TypeName implementationType,
+                                              boolean sealedPrototype,
                                               List<OptionHandler> options,
-                                              List<TypeArgument> typeArguments,
-                                              List<TypeName> typeArgumentNames) {
+                                              TypeArguments genericArguments) {
         Optional<TypeName> superPrototype = prototypeInfo.superPrototype();
 
         TypeName prototype = prototypeInfo.prototypeType();
+        List<TypeArgument> typeArguments = genericArguments.arguments();
+        List<TypeName> typeArgumentNames = genericArguments.names();
         String ifaceName = prototype.className();
         // inner class of the builder
-        String implName = ifaceName + "Impl";
+        String implName = implementationType.className();
 
         // inner class of builder base
         classBuilder.addInnerClass(builder -> {
             typeArguments.forEach(builder::addGenericArgument);
             builder.name(implName)
-                    .accessModifier(AccessModifier.PROTECTED)
+                    .accessModifier(sealedPrototype ? AccessModifier.PRIVATE : AccessModifier.PROTECTED)
                     .isStatic(true)
-                    .description("Generated implementation of the prototype, "
-                                         + "can be extended by descendant prototype implementations.");
+                    .description(sealedPrototype
+                                         ? "Generated final implementation of the sealed prototype."
+                                         : "Generated implementation of the prototype, "
+                                                 + "can be extended by descendant prototype implementations.");
             superPrototype.ifPresent(it -> {
                 builder.superType(TypeName.create(it.className() + "Impl"));
             });
@@ -1245,7 +1288,7 @@ final class GenerateAbstractBuilder {
              */
             builder.addConstructor(constructor -> {
                 constructor.description("Create an instance providing a builder.")
-                        .accessModifier(AccessModifier.PROTECTED)
+                        .accessModifier(sealedPrototype ? AccessModifier.PRIVATE : AccessModifier.PROTECTED)
                         .addParameter(param -> param.name("builder")
                                 .type(TypeName.builder()
                                               .from(TypeName.create(ifaceName + ".BuilderBase"))
@@ -1290,6 +1333,7 @@ final class GenerateAbstractBuilder {
             hashCodeAndEquals(builder, options, ifaceName, superPrototype.isPresent());
 
             extensions.forEach(it -> it.updateImplementation(prototypeInfo, Utils.options(options), builder));
+            builder.isFinal(sealedPrototype);
         });
     }
 

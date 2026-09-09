@@ -40,6 +40,7 @@ final class GenerateBuilder {
     public static void generate(List<BuilderCodegenExtension> extensions,
                                 ClassModel.Builder classBuilder,
                                 PrototypeInfo prototypeInfo,
+                                TypeName implementationType,
                                 List<TypeArgument> typeArguments,
                                 List<TypeName> typeArgumentNames, List<OptionHandler> options) {
 
@@ -82,14 +83,17 @@ final class GenerateBuilder {
                                 .returnType(prototype)
                                 .addAnnotation(Annotations.OVERRIDE)
                                 .addContentLine("preBuildPrototype();")
-                                .addContentLine("validatePrototype();")
-                                .addContent("return new ")
-                                .addContent(prototype.genericTypeName())
-                                .addContent("Impl");
-                        if (!typeArguments.isEmpty()) {
-                            method.addContent("<>");
+                                .addContentLine("validatePrototype();");
+                        if (prototypeInfo.blueprint().hasAnnotation(Types.PROTOTYPE_SEALED)) {
+                            method.addContentLine("return buildPrototype(this);");
+                        } else {
+                            method.addContent("return new ")
+                                    .addContent(implementationType);
+                            if (!typeArguments.isEmpty()) {
+                                method.addContent("<>");
+                            }
+                            method.addContentLine("(this);");
                         }
-                        method.addContentLine("(this);");
                     });
             if (isFactory) {
                 GenerateAbstractBuilder.buildRuntimeObjectMethod(builder, prototypeInfo, runtimeType, true);

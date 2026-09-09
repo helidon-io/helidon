@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,11 @@ final class ClassModelFactory {
                 .typeName(requestedTypeName)
                 .kind(requestedType.kind())
                 .accessModifier(requestedType.accessModifier())
+                .update(it -> {
+                    if (requestedType.sealed()) {
+                        it.addElementModifier(Modifier.SEALED);
+                    }
+                })
                 .description(String.join("\n", requestedType.description()));
 
         for (Annotation annotation : requestedType.annotations()) {
@@ -94,6 +99,9 @@ final class ClassModelFactory {
                     }
                     if (innerClass.isFinal()) {
                         it.addElementModifier(Modifier.FINAL);
+                    }
+                    if (innerClass.sealed()) {
+                        it.addElementModifier(Modifier.SEALED);
                     }
                 })
                 .description(String.join("\n", innerClass.description()))

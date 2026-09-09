@@ -367,6 +367,7 @@ Annotations:
 | Annotation                                                 | Required | Description                                                                                                                                                                                                                   |
 |------------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Prototype.Blueprint`                                      | Yes      | Annotation on the blueprint interface is required to trigger annotation processing                                                                                                                                            |
+| `Prototype.Sealed`                                         | No       | Generate a sealed prototype interface whose only permitted implementation is the private, final generated implementation                                                                                                      |
 | `Prototype.Implement`                                      | No       | Add additional implemented types to the generated prototype                                                                                                                                                                   |
 | `Prototype.Annotated`                                      | No       | Allows adding an annotation (or annotations) to the generated class or methods                                                                                                                                                |
 | `Prototype.PrototypeFactoryMethod`                         | No       | Annotates a method in a `CustomMethods` type to be added as a static method to the prototype                                                                                                                                  |
@@ -382,6 +383,12 @@ Annotations:
 | `Prototype.IncludeDefaultMethods`                          | No       | Add default methods on the blueprint (or a super interface) as option methods, allows list of method names to include (if annotation is present and the list is empty, all default getter methods will be considered options) |
 | `Prototype.Extension`                                      | No       | Allows registering of extensions to enhance the generated type (such as for JSON serialization and deserialization)                                                                                                           |
 <!--@mdc :: -->
+
+`Prototype.Sealed` is an explicit opt-in on each blueprint and is not inherited. A sealed prototype must be a leaf
+prototype; code generation rejects a child that extends it. Adding `Prototype.Sealed` to an existing blueprint is a source
+and binary compatibility change for consumers that implement the generated prototype interface. A previously compiled
+implementation may fail to load with `IncompatibleClassChangeError`, so sealing should normally be used only for new APIs or
+during a major-version change.
 
 Interfaces:
 

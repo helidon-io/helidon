@@ -42,6 +42,7 @@ final class Types {
     static final TypeName BUILDER_DESCRIPTION = TypeName.create("io.helidon.builder.api.Description");
 
     static final TypeName PROTOTYPE_BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");
+    static final TypeName PROTOTYPE_SEALED = TypeName.create("io.helidon.builder.api.Prototype.Sealed");
     static final TypeName PROTOTYPE_IMPLEMENT = TypeName.create("io.helidon.builder.api.Prototype.Implement");
     static final TypeName PROTOTYPE_API = TypeName.create("io.helidon.builder.api.Prototype.Api");
     static final TypeName PROTOTYPE_ANNOTATED = TypeName.create("io.helidon.builder.api.Prototype.Annotated");
