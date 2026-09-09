@@ -19,8 +19,9 @@ Our declarative approach has the following advantages:
   not require additional dependencies)
 
 > [!NOTE]
-> Helidon Declarative is an incubating feature. The APIs shown here are subject
-> to change. These APIs will be finalized in a future release of Helidon.
+> Helidon Declarative is a preview feature. It is ready for production use. Its
+> APIs will remain backward compatible within a major version, but may change
+> without the usual deprecation process in a new major version.
 
 ## Usage
 
@@ -1066,8 +1067,7 @@ on all metrics on the method, and tags in the metric annotation will only be
 used by that metric.
 
 The example below shows additional tags. The counter on method `counted` will
-have the following tags: `service=Metered;method=counted` (and of course the
-scope tag that is always added).
+have the following tags: `service=Metered;method=counted`.
 
 Example of a counted method with type tags and counter tags
 

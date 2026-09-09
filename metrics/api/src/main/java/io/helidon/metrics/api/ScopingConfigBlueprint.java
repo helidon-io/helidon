@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,39 +21,54 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-@Prototype.Configured
+/**
+ * Scoping configuration retained for compatibility; core metrics ignores its settings.
+ *
+ * @deprecated Core metrics ignores these settings, and this type will be removed.
+ */
+@Deprecated(forRemoval = true, since = "27.0.0")
+@Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
+@Prototype.Configured(metadata = false)
 @Prototype.Blueprint
 interface ScopingConfigBlueprint {
 
     /**
-     * Default tag name for recording a meter's scope as a tag.
+     * Legacy scope tag name retained for compatibility.
+     *
+     * @deprecated Core metrics ignores scope tag names, and this constant will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     String SCOPE_TAG_NAME_DEFAULT = "scope";
 
     /**
-     * Default scope value to associate with meters that are registered without an explicit setting; no setting means meters
-     * are assigned scope {@value io.helidon.metrics.api.Meter.Scope#DEFAULT}.
+     * Returns the configured default scope value.
      *
-     * @return default scope value
+     * @return configured default scope value
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured("default")
-    @Option.Default(Meter.Scope.DEFAULT)
+    @Option.Default("application")
     Optional<String> defaultValue();
 
     /**
-     * Tag name for storing meter scope values in the underlying implementation meter registry.
+     * Returns the configured scope tag name.
      *
-     * @return tag name for storing scope values
+     * @return configured scope tag name
+     * @deprecated Core metrics ignores this value, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
     @Option.Default(SCOPE_TAG_NAME_DEFAULT)
     Optional<String> tagName();
 
     /**
-     * Settings for individual scopes.
+     * Returns the configured settings for individual scopes.
      *
-     * @return scope settings
+     * @return configured scope settings
+     * @deprecated Core metrics ignores these settings, and this method will be removed.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     @Option.Configured
     @Option.Singular
     Map<String, ScopeConfig> scopes();

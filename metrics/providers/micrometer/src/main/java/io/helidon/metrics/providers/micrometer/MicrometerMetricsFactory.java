@@ -43,6 +43,7 @@ import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 
@@ -59,6 +60,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private static final System.Logger MMETER_REGISTRY_LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
     private final Collection<MetersProvider> metersProviders;
+    private final Collection<MeterBuilderCustomizer> meterBuilderCustomizers;
     private final Collection<MeterRegistryLifeCycleListener> meterRegistryLifeCycleListeners;
     private final SpanContextSupplierProvider spanContextSupplierProvider;
 
@@ -80,10 +82,12 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
                                      Collection<MetersProvider> metersProviders,
+                                     Collection<MeterBuilderCustomizer> meterBuilderCustomizers,
                                      Collection<MeterRegistryLifeCycleListener> meterRegistryLifeCycleListeners,
                                      SpanContextSupplierProvider spanContextSupplierProvider) {
         this.metricsConfig = metricsConfig;
         this.metersProviders = metersProviders;
+        this.meterBuilderCustomizers = meterBuilderCustomizers;
         this.meterRegistryLifeCycleListeners = meterRegistryLifeCycleListeners;
         this.spanContextSupplierProvider = spanContextSupplierProvider;
     }
@@ -93,6 +97,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return create(metricsConfig,
                       metersProviders,
                       List.of(),
+                      List.of(),
                       new NoOpSpanContextSupplierProvider());
     }
 
@@ -100,8 +105,21 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                            Collection<MetersProvider> metersProviders,
                                            Collection<MeterRegistryLifeCycleListener> meterRegistryLifeCycleListeners,
                                            SpanContextSupplierProvider spanContextSupplierProvider) {
+        return create(metricsConfig,
+                      metersProviders,
+                      List.of(),
+                      meterRegistryLifeCycleListeners,
+                      spanContextSupplierProvider);
+    }
+
+    static MicrometerMetricsFactory create(MetricsConfig metricsConfig,
+                                           Collection<MetersProvider> metersProviders,
+                                           Collection<MeterBuilderCustomizer> meterBuilderCustomizers,
+                                           Collection<MeterRegistryLifeCycleListener> meterRegistryLifeCycleListeners,
+                                           SpanContextSupplierProvider spanContextSupplierProvider) {
         return new MicrometerMetricsFactory(metricsConfig,
                                             metersProviders,
+                                            meterBuilderCustomizers,
                                             meterRegistryLifeCycleListeners,
                                             spanContextSupplierProvider);
     }
@@ -371,6 +389,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     }
 
+    void customize(Meter.Builder<?, ?> builder) {
+        meterBuilderCustomizers.forEach(customizer -> customizer.customize(builder));
+    }
+
     private void notifyListenersOfCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
         meterRegistryLifeCycleListeners.forEach(listener -> listener.onCreate(meterRegistry, metricsConfig));
     }
@@ -378,11 +400,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @SuppressWarnings("unchecked")
     private <B extends Meter.Builder<B, M>, M extends Meter> MeterRegistry applyMetersProvidersToRegistry(
             MetricsFactory factory,
-            MeterRegistry registry,
+            MMeterRegistry registry,
             Collection<MetersProvider> metersProviders) {
-        metersProviders.stream()
-                .flatMap(mp -> mp.meterBuilders(factory, registry).stream())
-                .forEach(b -> registry.getOrCreate((B) b));
+        metersProviders.forEach(metersProvider -> metersProvider.meterBuilders(factory, registry)
+                .forEach(builder -> registry.getOrCreate((B) builder.origin(metersProvider.getClass().getName()))));
 
         return registry;
     }

@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 
@@ -32,6 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 
 public class SimpleApiTest {
 
@@ -72,14 +74,60 @@ public class SimpleApiTest {
     }
 
     @Test
+    @SuppressWarnings("removal")
     void testConfig() {
         MetricsConfig metricsConfig = MetricsConfig.builder()
-                .scoping(ScopingConfig.builder())
+                .scoping(ScopingConfig.builder()
+                                 .defaultValue("legacy-default")
+                                 .tagName("legacy-scope"))
                 .build();
         ScopingConfig scopingConfig = metricsConfig.scoping();
-        assertThat("Scope tag name",
-                   scopingConfig.tagName(),
-                   OptionalMatcher.optionalValue(is(ScopingConfig.SCOPE_TAG_NAME_DEFAULT)));
+        assertThat(scopingConfig.tagName(), OptionalMatcher.optionalValue(is("legacy-scope")));
+        assertThat(scopingConfig.defaultValue(), OptionalMatcher.optionalValue(is("legacy-default")));
+        assertThat("Legacy scope does not affect enablement",
+                   metricsConfig.isMeterEnabled("counter", "legacy-default"),
+                   is(true));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testMeterScopeIsIgnored() {
+        Counter.Builder builder = metricsFactory.counterBuilder("scope-ignored");
+
+        assertThat(builder.scope("legacy-scope"), sameInstance(builder));
+        assertThat(builder.scope(), OptionalMatcher.optionalEmpty());
+        assertThat(registry.getOrCreate(builder).scope(), OptionalMatcher.optionalEmpty());
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void programmaticScopeOverridesAreIgnored() {
+        MetricsProgrammaticConfig programmaticConfig = new MetricsProgrammaticConfig() {
+            @Override
+            public Optional<String> scopeDefaultValue() {
+                return Optional.of("overridden-default");
+            }
+
+            @Override
+            public Optional<String> scopeTagName() {
+                return Optional.of("overridden-scope-tag");
+            }
+
+            @Override
+            public Optional<String> appTagName() {
+                return Optional.of("app-tag");
+            }
+        };
+        MetricsConfig result = programmaticConfig.apply(MetricsConfig.builder()
+                                                                  .scoping(ScopingConfig.builder()
+                                                                                   .defaultValue("legacy-default")
+                                                                                   .tagName("legacy-scope-tag")))
+                .build();
+
+        assertThat(result.scoping().defaultValue(), OptionalMatcher.optionalValue(is("legacy-default")));
+        assertThat(result.scoping().tagName(), OptionalMatcher.optionalValue(is("legacy-scope-tag")));
+        assertThat(result.appTagName(), OptionalMatcher.optionalValue(is("app-tag")));
+        assertThat(programmaticConfig.reservedTagNames(), is(Set.of("app-tag")));
     }
 
     @Test

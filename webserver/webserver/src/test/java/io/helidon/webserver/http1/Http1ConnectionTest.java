@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -42,6 +43,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -115,6 +117,88 @@ class Http1ConnectionTest {
                 () -> assertThat(response, containsString("Content-Length: 5\r\n")),
                 () -> assertThat(response, endsWith("\r\n\r\nerror"))
         );
+    }
+
+    @Test
+    void directErrorResponseFlushesBeforeConnectionReturns() throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        BlockingDataWriter writer = new BlockingDataWriter();
+        DirectHandlers directHandlers = DirectHandlers.builder()
+                .addHandler(DirectHandler.EventType.OTHER,
+                            (_, _, _, _, _) -> DirectHandler.TransportResponse.builder()
+                                    .status(Status.SERVICE_UNAVAILABLE_503)
+                                    .entity("error")
+                                    .build())
+                .build();
+        Limit limit = mock(Limit.class);
+        when(limit.tryAcquireOutcome(true)).thenReturn(LimitAlgorithm.Outcome.immediateRejection("test", "test"));
+        Http1Connection connection = createConnection(DataReader.create(() -> CONNECTION_CLOSE_REQUEST),
+                                                      writer,
+                                                      directHandlers,
+                                                      Router.empty());
+        try {
+            Future<?> connectionTask = executor.submit(() -> {
+                connection.handle(limit);
+                return null;
+            });
+
+            assertThat("Direct error response did not reach the final flush",
+                       writer.flushStarted.await(10, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("Direct error response was not queued before the final flush",
+                       writer.writeCalled.getCount(),
+                       is(0L));
+            assertThat("Connection returned before the direct error response was flushed",
+                       connectionTask.isDone(),
+                       is(false));
+            writer.releaseFlush.countDown();
+            connectionTask.get(2, TimeUnit.SECONDS);
+        } finally {
+            writer.releaseFlush.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void forcedCloseInterruptSkipsDirectErrorFlush() {
+        byte[] requestBytes = ("""
+                POST / HTTP/1.1\r
+                Host: localhost\r
+                Connection: close\r
+                Content-Length: 1\r
+                \r
+                """).getBytes(StandardCharsets.US_ASCII);
+        AtomicReference<Http1Connection> connectionRef = new AtomicReference<>();
+        BlockingDataWriter writer = new BlockingDataWriter();
+        Router router = Router.builder()
+                .addRouting(HttpRouting.builder()
+                                    .post("/", (_, res) -> {
+                                        connectionRef.get().close(true);
+                                        res.send("done");
+                                    }))
+                .build();
+        Http1Connection connection = createConnection(DataReader.create(() -> requestBytes),
+                                                      writer,
+                                                      DirectHandlers.create(),
+                                                      router);
+        connectionRef.set(connection);
+        writer.releaseFlush.countDown();
+        try {
+            CloseConnectionException exception = assertThrows(CloseConnectionException.class,
+                                                              () -> connection.handle(FixedLimit.create()));
+
+            assertAll(
+                    () -> assertThat(exception.getCause(), instanceOf(InterruptedException.class)),
+                    () -> assertThat("Forced close interrupt was cleared",
+                                     Thread.currentThread().isInterrupted(),
+                                     is(true)),
+                    () -> assertThat("Forced close reached the direct error response flush",
+                                     writer.flushStarted.getCount(),
+                                     is(1L))
+            );
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     @Test
@@ -230,6 +314,7 @@ class Http1ConnectionTest {
     }
 
     private static final class BlockingDataWriter implements DataWriter {
+        private final CountDownLatch writeCalled = new CountDownLatch(1);
         private final CountDownLatch flushStarted = new CountDownLatch(1);
         private final CountDownLatch releaseFlush = new CountDownLatch(1);
         private volatile boolean interrupted;
@@ -240,6 +325,7 @@ class Http1ConnectionTest {
 
         @Override
         public void write(BufferData buffer) {
+            writeCalled.countDown();
         }
 
         @Override

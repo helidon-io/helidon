@@ -81,7 +81,6 @@ import static io.helidon.http.http2.Http2Flag.END_OF_STREAM;
 import static io.helidon.http.http2.Http2Flag.HeaderFlags;
 import static io.helidon.http.http2.Http2StreamState.CLOSED;
 import static io.helidon.http.http2.Http2StreamState.HALF_CLOSED_LOCAL;
-import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 
@@ -306,7 +305,19 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     if (newData.available() >= GRPC_HEADER_SIZE) {
                         isCompressed = (newData.read() == 1);
                         entityBytesLeft = newData.readUnsignedInt32();
-                        entityBytes = allocateReadBuffer(entityBytesLeft);
+                        int maxReadBufferSize = grpcConfig.maxReadBufferSize();
+                        if (entityBytesLeft > maxReadBufferSize) {
+                            var exception = Status.RESOURCE_EXHAUSTED
+                                    .withDescription(MAX_MESSAGE_SIZE_EXCEEDED)
+                                    .asRuntimeException();
+                            LOGGER.log(DEBUG, MAX_MESSAGE_SIZE_EXCEEDED
+                                    + ", maximum bytes: " + maxReadBufferSize
+                                    + ", declared message bytes: " + entityBytesLeft
+                                    + ", data bytes: " + data.available());
+                            closeOnException(exception, header);
+                            return;
+                        }
+                        entityBytes = allocateReadBuffer((int) entityBytesLeft);
                     } else {
                         unreadBufferData = newData;
                         return;     // need more for gRPC header
@@ -394,35 +405,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
             }
             closeOnException(e, header);
-            Status status = Status.fromThrowable(e);
-            String description = status.getDescription();
-            if (description == null) {
-                description = e.getMessage() == null ? "Failed to process gRPC request" : e.getMessage();
-            }
-            if (status.getCode() == Status.Code.RESOURCE_EXHAUSTED) {
-                LOGGER.log(DEBUG, description
-                        + ", maximum bytes: " + grpcConfig.maxReadBufferSize()
-                        + ", declared message bytes: " + entityBytesLeft
-                        + ", data bytes: " + data.available());
-            } else {
-                LOGGER.log(ERROR, description, e);
-            }
+            LOGGER.log(ERROR, "Failed to process grpc request, data bytes: " + data.available(), e);
         }
     }
 
-    BufferData allocateReadBuffer(long length) {
-        int maxReadBufferSize = grpcConfig.maxReadBufferSize();
-        if (length > maxReadBufferSize) {
-            throw Status.RESOURCE_EXHAUSTED
-                    .withDescription(MAX_MESSAGE_SIZE_EXCEEDED)
-                    .asRuntimeException();
-        }
-
+    BufferData allocateReadBuffer(int length) {
         readBufferData.reset();
-        int bufferLength = (int) length;
         int capacity = readBufferData.capacity();
-        if (bufferLength > capacity) {
-            readBufferData = BufferData.create(bufferLength);
+        if (length > capacity) {
+            readBufferData = BufferData.create(length);
         }
         return readBufferData;
     }
@@ -807,30 +798,30 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             Tag okTag = metricsFactory.tagCreate("grpc.status", "OK");
             Tag grpcMethod = metricsFactory.tagCreate("grpc.method", name);
 
-            Counter.Builder callStartedBuilder = metricsFactory.counterBuilder("grpc.server.call.started")
-                    .scope(VENDOR)
-                    .tags(List.of(grpcMethod));
-            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
+            Counter callStarted = meterRegistry.getOrCreate(
+                    metricsFactory.counterBuilder("grpc.server.call.started")
+                            .tags(List.of(grpcMethod))
+                            .origin(GrpcRouting.class.getName()));
 
-            Timer.Builder callDurationOkBuilder = metricsFactory.timerBuilder("grpc.server.call.duration")
-                    .scope(VENDOR)
-                    .baseUnit(Timer.BaseUnits.MILLISECONDS)
-                    .tags(List.of(grpcMethod, okTag));
-            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
+            Timer callDuration = meterRegistry.getOrCreate(
+                    metricsFactory.timerBuilder("grpc.server.call.duration")
+                            .baseUnit(Timer.BaseUnits.MILLISECONDS)
+                            .tags(List.of(grpcMethod, okTag))
+                            .origin(GrpcRouting.class.getName()));
 
-            DistributionSummary.Builder sendMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
-                            "grpc.server.call.sent_total_compressed_message_size",
-                            metricsFactory.distributionStatisticsConfigBuilder())
-                    .scope(VENDOR)
-                    .tags(List.of(grpcMethod, okTag));
-            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
+            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(
+                    metricsFactory.distributionSummaryBuilder(
+                                    "grpc.server.call.sent_total_compressed_message_size",
+                                    metricsFactory.distributionStatisticsConfigBuilder())
+                            .tags(List.of(grpcMethod, okTag))
+                            .origin(GrpcRouting.class.getName()));
 
-            DistributionSummary.Builder recvMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
-                            "grpc.server.call.rcvd_total_compressed_message_size",
-                            metricsFactory.distributionStatisticsConfigBuilder())
-                    .scope(VENDOR)
-                    .tags(List.of(grpcMethod, okTag));
-            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
+            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(
+                    metricsFactory.distributionSummaryBuilder(
+                                    "grpc.server.call.rcvd_total_compressed_message_size",
+                                    metricsFactory.distributionStatisticsConfigBuilder())
+                            .tags(List.of(grpcMethod, okTag))
+                            .origin(GrpcRouting.class.getName()));
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });

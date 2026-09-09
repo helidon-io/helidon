@@ -62,7 +62,7 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.asm>9.9.1</version.lib.asm>
+        <version.lib.asm>9.10.1</version.lib.asm>
         <version.lib.checkstyle>14.1.0</version.lib.checkstyle>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.mockito>2.23.4</version.lib.mockito>
@@ -79,7 +79,6 @@
         <version.lib.maven.plugin.annotations>3.15.1</version.lib.maven.plugin.annotations>
         <version.lib.maven.plugin.api>3.9.15</version.lib.maven.plugin.api>
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
-        <version.lib.groovy>2.5.23</version.lib.groovy>
         <version.lib.nimbus.jose.jwt>10.4</version.lib.nimbus.jose.jwt>
         <!--
         !Version statement! - end
@@ -626,13 +625,6 @@
                             <goal>install</goal>
                         </goals>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.codehaus.groovy</groupId>
-                            <artifactId>groovy</artifactId>
-                            <version>${version.lib.groovy}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.antlr</groupId>
@@ -894,6 +886,31 @@
             <modules>
                 <module>tests</module>
             </modules>
+        </profile>
+        <profile>
+            <id>invoker-split-repository</id>
+            <activation>
+                <property>
+                    <name>aether.enhancedLocalRepository.split</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-invoker-plugin</artifactId>
+                            <configuration>
+                                <properties>
+                                    <aether.enhancedLocalRepository.split>true</aether.enhancedLocalRepository.split>
+                                    <aether.enhancedLocalRepository.localPrefix>${aether.enhancedLocalRepository.localPrefix}</aether.enhancedLocalRepository.localPrefix>
+                                </properties>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
         <profile>
             <id>javadoc</id>

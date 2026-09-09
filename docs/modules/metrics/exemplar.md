@@ -117,7 +117,7 @@ output.
 ```log [Output]
 ## TYPE counterForPersonalizedGreetings counter
 # HELP counterForPersonalizedGreetings
-counterForPersonalizedGreetings_total{scope="application"} 4.0 # {span_id="6b1fc9f9fd42fb0c",trace_id="6b1fc9f9fd42fb0c"} 1.0 1696889651.779
+counterForPersonalizedGreetings_total 4.0 # {span_id="6b1fc9f9fd42fb0c",trace_id="6b1fc9f9fd42fb0c"} 1.0 1696889651.779
 ```
 
 The exemplar (the portion following the `#`) is a sample corresponding to an

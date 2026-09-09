@@ -90,7 +90,7 @@ public interface Grpc {
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
-    @Api.Incubating
+    @Api.Preview
     @interface ProtoDescriptor {
         /**
          * The generated protocol buffer class.

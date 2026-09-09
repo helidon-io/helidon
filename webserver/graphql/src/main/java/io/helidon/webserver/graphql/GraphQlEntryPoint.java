@@ -34,8 +34,8 @@ import graphql.schema.DataFetchingEnvironment;
 /**
  * Container class for types related to GraphQL resolver entry points.
  * <p>
- * NOTE: this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- * and full removal. We welcome feedback for incubating features.
+ * This API is part of Helidon Declarative preview. It is intended for supported external use and will remain backward
+ * compatible within a major version. It may change without deprecation in a new major version.
  */
 @Api.Preview
 @Api.Since("27.0.0")

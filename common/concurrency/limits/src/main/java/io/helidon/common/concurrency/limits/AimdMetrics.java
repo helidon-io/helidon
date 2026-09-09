@@ -20,12 +20,9 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
-
-import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
 class AimdMetrics extends SemaphoreMetrics {
     private final String name;
@@ -48,10 +45,8 @@ class AimdMetrics extends SemaphoreMetrics {
         super.register(metricsFactory, meterRegistry, tags);
 
         // actual value of limit at this time
-        Gauge.Builder<Integer> limitBuilder = metricsFactory.gaugeBuilder(name + "_limit", limit::get)
-                .scope(VENDOR);
-
-        limitBuilder.tags(tags);
-        meterRegistry.getOrCreate(limitBuilder);
+        meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(name + "_limit", limit::get)
+                                          .tags(tags)
+                                          .origin(AimdMetrics.class.getName()));
     }
 }

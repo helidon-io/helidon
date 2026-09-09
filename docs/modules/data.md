@@ -18,8 +18,9 @@ The Helidon Data Repository supports Jakarta Persistence and major providers
 such as EclipseLink and Hibernate.
 
 > [!NOTE]
-> Helidon Data Repository is an incubating feature. Its APIs are subject to
-> change and will be finalized in a future release of Helidon.
+> Helidon Data Repository is a preview feature. It is ready for production use,
+> but its APIs may change without the usual deprecation process. This feature
+> will be backward compatible within a major version of Helidon.
 
 ## Maven Coordinates
 

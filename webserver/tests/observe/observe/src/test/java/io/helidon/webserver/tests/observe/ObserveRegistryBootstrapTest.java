@@ -204,7 +204,6 @@ class ObserveRegistryBootstrapTest {
                 .addObserver(observer)
                 .build();
         Config config = Config.just(ConfigSources.create(Map.of(
-                "declarative.ignore-incubating", "true",
                 "server.port", "0")));
         ServiceRegistryConfig registryConfig = ServiceRegistryConfig.builder()
                 .putContractInstance(Config.class, config)
@@ -258,7 +257,6 @@ class ObserveRegistryBootstrapTest {
                 .addObserver(observer)
                 .build();
         Config config = Config.just(ConfigSources.create(Map.of(
-                "declarative.ignore-incubating", "true",
                 "server.port", "0")));
         ServiceRegistryConfig registryConfig = ServiceRegistryConfig.builder()
                 .putContractInstance(Config.class, config)
@@ -306,7 +304,6 @@ class ObserveRegistryBootstrapTest {
 
     private static Config automaticConfig(String marker) {
         return Config.just(ConfigSources.create(Map.ofEntries(
-                entry("declarative.ignore-incubating", "true"),
                 entry("server.port", "0"),
                 entry("server.features.observe.endpoint", ENDPOINT),
                 entry("server.features.observe.observers.config.permit-all", "true"),
@@ -317,7 +314,6 @@ class ObserveRegistryBootstrapTest {
 
     private static Config isolatedConfig(String marker) {
         return Config.just(ConfigSources.create(Map.ofEntries(
-                entry("declarative.ignore-incubating", "true"),
                 entry("server.port", "0"),
                 entry("server.features.observe.endpoint", ENDPOINT),
                 entry("server.features.observe.observers-discover-services", "false"),
@@ -328,7 +324,6 @@ class ObserveRegistryBootstrapTest {
 
     private static Config manualConfig() {
         return Config.just(ConfigSources.create(Map.of(
-                "declarative.ignore-incubating", "true",
                 "server.port", "0",
                 "server.features-discover-services", "false")));
     }

@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 /**
  * A container class for default values related types for Helidon declarative.
  */
-@Api.Incubating
+@Api.Preview
 public final class Default {
     private Default() {
     }
@@ -35,7 +35,7 @@ public final class Default {
      * <p>
      * Depending on the usage, this may be mapped to other types as needed.
      */
-    @Api.Incubating
+    @Api.Preview
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Retention(RetentionPolicy.CLASS)
     @Documented
@@ -52,7 +52,7 @@ public final class Default {
      * A default value specified as an integer.
      * This can only be used on element of the correct type.
      */
-    @Api.Incubating
+    @Api.Preview
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Retention(RetentionPolicy.CLASS)
     @Documented
@@ -69,7 +69,7 @@ public final class Default {
      * A default value specified as a long.
      * This can only be used on element of the correct type.
      */
-    @Api.Incubating
+    @Api.Preview
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Retention(RetentionPolicy.CLASS)
     @Documented
@@ -86,7 +86,7 @@ public final class Default {
      * A default value specified as a double.
      * This can only be used on element of the correct type.
      */
-    @Api.Incubating
+    @Api.Preview
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Retention(RetentionPolicy.CLASS)
     @Documented
@@ -103,7 +103,7 @@ public final class Default {
      * A default value specified as a boolean.
      * This can only be used on element of the correct type.
      */
-    @Api.Incubating
+    @Api.Preview
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Retention(RetentionPolicy.CLASS)
     @Documented

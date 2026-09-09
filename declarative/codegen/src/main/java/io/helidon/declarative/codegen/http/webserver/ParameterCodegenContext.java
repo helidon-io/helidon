@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.FieldHandler;
@@ -27,6 +28,7 @@ import io.helidon.service.codegen.FieldHandler;
 /**
  * Information related to parameter processing.
  */
+@Api.Preview
 public interface ParameterCodegenContext {
     /**
      * Constant handler for the type being created.

@@ -171,20 +171,6 @@ Metrics Observer configuration
 </tr>
 <tr>
 <td>
-<a id="scoping"></a>
-<a href="io.helidon.metrics.api.ScopingConfig.md">
-<code>scoping</code>
-</a>
-</td>
-<td>
-<code>Scoping<wbr>Config</code>
-</td>
-<td>
-</td>
-<td>Settings related to scoping management</td>
-</tr>
-<tr>
-<td>
 <code>tags</code>
 </td>
 <td>

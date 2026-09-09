@@ -33,6 +33,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -75,7 +79,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -106,7 +113,14 @@ class GrpcProtocolHandlerTest {
 
     @Test
     void testOversizedMessageSendsResourceExhausted() {
-        assertOversizedMessage(16 * 1024 + 1L, 16 * 1024);
+        List<LogRecord> records = captureLogRecords(() -> assertOversizedMessage(16 * 1024 + 1L, 16 * 1024));
+
+        assertThat(records, hasSize(1));
+        LogRecord record = records.getFirst();
+        assertAll(
+                () -> assertThat(record.getLevel(), is(Level.FINE)),
+                () -> assertThat(record.getThrown(), is(nullValue()))
+        );
     }
 
     @Test
@@ -698,6 +712,54 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void testUnrelatedResourceExhaustedLogsErrorWithThrowable() {
+        var failure = Status.RESOURCE_EXHAUSTED
+                .withDescription("listener resource exhausted")
+                .asRuntimeException();
+        AtomicReference<Http2Headers> trailers = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onHalfClose() {
+                throw failure;
+            }
+        };
+        ServerCallHandler<String, String> callHandler = new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                call.request(1);
+                return listener;
+            }
+        };
+        BufferData data = grpcData("bad");
+        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                                Http2Headers.create(WritableHeaders.create()),
+                                                                                headersCapturingWriter(trailers),
+                                                                                1,
+                                                                                null,
+                                                                                Http2StreamState.OPEN,
+                                                                                route(callHandler),
+                                                                                GrpcConfig.create(),
+                                                                                metrics);
+        handler.init();
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                          1);
+
+        List<LogRecord> records = captureLogRecords(() -> handler.data(header, data));
+
+        assertThat(records, hasSize(1));
+        LogRecord record = records.getFirst();
+        assertAll(
+                () -> assertThat(handler.streamState(), is(Http2StreamState.CLOSED)),
+                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.STATUS_NAME),
+                                 is(Optional.of(String.valueOf(Status.Code.RESOURCE_EXHAUSTED.value())))),
+                () -> assertThat(record.getLevel(), is(Level.SEVERE)),
+                () -> assertThat(record.getThrown(), is(sameInstance(failure)))
+        );
+    }
+
+    @Test
     void testCloseBeforeListenerAssignmentClosesStream() {
         ServerMethodDefinition<String, String> definition =
                 ServerMethodDefinition.create(stringMethodDescriptor(), new ServerCallHandler<>() {
@@ -792,57 +854,6 @@ class GrpcProtocolHandlerTest {
 
         assertThat(grpcConnectionContext.get().sniRequestedHost(), is(Optional.of("api.example.com")));
         assertThat(grpcConnectionContext.get().sniMatchedHost(), is(Optional.of("*.example.com")));
-    }
-
-    private void assertOversizedMessage(long messageSize, int maxReadBufferSize) {
-        AtomicReference<Http2Headers> trailers = new AtomicReference<>();
-        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
-                                                                                Http2Headers.create(WritableHeaders.create()),
-                                                                                headersCapturingWriter(trailers),
-                                                                                1,
-                                                                                null,
-                                                                                Http2StreamState.OPEN,
-                                                                                route(new ServerCall.Listener<>() {
-                                                                                }),
-                                                                                GrpcConfig.builder()
-                                                                                        .maxReadBufferSize(maxReadBufferSize)
-                                                                                        .build(),
-                                                                                metrics);
-        handler.init();
-        BufferData data = BufferData.create(5);
-        data.write(0);
-        data.writeUnsignedInt32(messageSize);
-        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
-                                                          Http2FrameTypes.DATA,
-                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                          1);
-
-        handler.data(header, data);
-
-        assertAll(
-                () -> assertThat(handler.streamState(), is(Http2StreamState.CLOSED)),
-                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.STATUS_NAME),
-                                 is(Optional.of(String.valueOf(Status.Code.RESOURCE_EXHAUSTED.value())))),
-                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.MESSAGE_NAME),
-                                 is(Optional.of("gRPC message exceeds maximum configured size")))
-        );
-    }
-
-    private ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
-        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
-                                                                                Http2Headers.create(WritableHeaders.create()),
-                                                                                streamWriter,
-                                                                                1,
-                                                                                null,
-                                                                                Http2StreamState.OPEN,
-                                                                                route(new ServerCall.Listener<>() {
-                                                                                }),
-                                                                                GrpcConfig.create(),
-                                                                                metrics);
-        WritableHeaders<?> headers = WritableHeaders.create();
-        headers.add(GRPC_ACCEPT_ENCODING, "identity");
-        handler.initCompression(null, headers);
-        return handler.createServerCall();
     }
 
     private static GrpcRouteHandler<String, String> route(ServerCall.Listener<String> listener) {
@@ -1076,6 +1087,92 @@ class GrpcProtocolHandlerTest {
                 return 0;
             }
         };
+    }
+
+    private static List<LogRecord> captureLogRecords(Runnable task) {
+        Logger logger = Logger.getLogger(GrpcProtocolHandler.class.getName());
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<LogRecord> records = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                records.add(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.ALL);
+        try {
+            task.run();
+            return records;
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
+    }
+
+    private ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
+        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                                Http2Headers.create(WritableHeaders.create()),
+                                                                                streamWriter,
+                                                                                1,
+                                                                                null,
+                                                                                Http2StreamState.OPEN,
+                                                                                route(new ServerCall.Listener<>() {
+                                                                                }),
+                                                                                GrpcConfig.create(),
+                                                                                metrics);
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(GRPC_ACCEPT_ENCODING, "identity");
+        handler.initCompression(null, headers);
+        return handler.createServerCall();
+    }
+
+    private void assertOversizedMessage(long messageSize, int maxReadBufferSize) {
+        AtomicReference<Http2Headers> trailers = new AtomicReference<>();
+        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                                Http2Headers.create(WritableHeaders.create()),
+                                                                                headersCapturingWriter(trailers),
+                                                                                1,
+                                                                                null,
+                                                                                Http2StreamState.OPEN,
+                                                                                route(new ServerCall.Listener<>() {
+                                                                                }),
+                                                                                GrpcConfig.builder()
+                                                                                        .maxReadBufferSize(maxReadBufferSize)
+                                                                                        .build(),
+                                                                                metrics);
+        handler.init();
+        BufferData data = BufferData.create(5);
+        data.write(0);
+        data.writeUnsignedInt32(messageSize);
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                          1);
+
+        handler.data(header, data);
+
+        assertAll(
+                () -> assertThat(handler.streamState(), is(Http2StreamState.CLOSED)),
+                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.STATUS_NAME),
+                                 is(Optional.of(String.valueOf(Status.Code.RESOURCE_EXHAUSTED.value())))),
+                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.MESSAGE_NAME),
+                                 is(Optional.of("gRPC message exceeds maximum configured size")))
+        );
     }
 
     @Nested

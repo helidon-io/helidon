@@ -22,6 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
+import io.helidon.metrics.spi.MeterBuilderCustomizer;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
@@ -52,11 +53,13 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
                                  ServiceRegistry serviceRegistry) {
         Collection<MeterRegistryLifeCycleListener> lifeCycleListeners =
                 serviceRegistry.all(MeterRegistryLifeCycleListener.class);
+        Collection<MeterBuilderCustomizer> meterBuilderCustomizers = serviceRegistry.all(MeterBuilderCustomizer.class);
         SpanContextSupplierProvider spanContextSupplierProvider =
                 serviceRegistry.first(SpanContextSupplierProvider.class)
                         .orElseGet(NoOpSpanContextSupplierProvider::new);
         return MicrometerMetricsFactory.create(metricsConfig,
                                                metersProviders,
+                                               meterBuilderCustomizers,
                                                lifeCycleListeners,
                                                spanContextSupplierProvider);
     }

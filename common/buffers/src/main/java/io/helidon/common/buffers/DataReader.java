@@ -80,11 +80,7 @@ public class DataReader {
      * Pull next data.
      */
     public void pullData() {
-        byte[] bytes = bytesSupplier.get();
-        if (bytes == null) {
-            throw new InsufficientDataAvailableException();
-        }
-        Node n = new Node(bytes);
+        Node n = new Node(pullBytes());
         tail.next = n;
         tail = n;
     }
@@ -110,9 +106,11 @@ public class DataReader {
     public void ensureAvailable() {
         while (!head.hasAvailable()) {
             if (head.next == null) {
-                pullData();
+                head.reuse(pullBytes());
+                tail = head;
+            } else {
+                head = head.next;
             }
-            head = head.next;
         }
     }
 
@@ -466,6 +464,14 @@ public class DataReader {
         this.context = context;
     }
 
+    private byte[] pullBytes() {
+        byte[] bytes = bytesSupplier.get();
+        if (bytes == null) {
+            throw new InsufficientDataAvailableException();
+        }
+        return bytes;
+    }
+
     /**
      * New line not valid.
      */
@@ -492,7 +498,7 @@ public class DataReader {
     }
 
     private class Node {
-        private final byte[] bytes;
+        private byte[] bytes;
         private int position;
         private Node next;
 
@@ -511,6 +517,11 @@ public class DataReader {
 
         boolean hasAvailable() {
             return position < bytes.length;
+        }
+
+        void reuse(byte[] bytes) {
+            this.bytes = bytes;
+            this.position = 0;
         }
 
         /*

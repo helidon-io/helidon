@@ -26,8 +26,8 @@ import io.helidon.webserver.http.ErrorHandler;
  * Instances of this service discovered by service registry are only used when the whole server is started using it
  * (i.e. Helidon Declarative approach).
  * <p>
- * NOTE: this API is part of preview features of Helidon. This API may still change between minor releases,
- * but it is intended for supported external use.
+ * This API is part of Helidon Declarative preview. It is intended for supported external use and will remain
+ * backward compatible within a major version. It may change without deprecation in a new major version.
  * <p>
  * To manually register an error handler, please use
  * {@link io.helidon.webserver.http.HttpRouting.Builder#error(Class, io.helidon.webserver.http.ErrorHandler)}.

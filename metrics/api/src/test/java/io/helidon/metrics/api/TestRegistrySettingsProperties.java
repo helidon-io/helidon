@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@SuppressWarnings("removal")
 public class TestRegistrySettingsProperties {
 
     private static Config metricsConfigNode;
@@ -46,9 +47,9 @@ public class TestRegistrySettingsProperties {
     @Test
     void testExclude() {
         MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
-        assertThat("'ignore.me' metric is enabled",
+        assertThat("Deprecated scope exclusion is ignored",
                    metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("ignore.me"),
-                   is(false));
+                   is(true));
     }
 
     @Test
@@ -62,8 +63,8 @@ public class TestRegistrySettingsProperties {
     @Test
     void testExcludeYaml() {
         MetricsConfig metricsConfig = MetricsConfig.create(fromYaml);
-        assertThat("'ignore.me' metric is enabled",
+        assertThat("Deprecated YAML scope exclusion is ignored",
                    metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("ignore.me"),
-                   is(false));
+                   is(true));
     }
 }

@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Map;
+
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
@@ -27,9 +29,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test(perMethod = true)
 class TestIntegration {
+
+    @Test
+    void rejectsNullMeterEnablementArguments() {
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled(null, Map.of()));
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", null));
+    }
 
     @Test
     void testHelidonRegistrationViaMicrometer() {
@@ -49,7 +60,7 @@ class TestIntegration {
 
         io.micrometer.core.instrument.MeterRegistry mMeterRegistry =
                 hMeterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
-        io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("hCounter1", "scope", "application");
+        io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("hCounter1");
         assertThat("hCounter via Micrometer meter registry", mCounter.count(), equalTo(5D));
     }
 
@@ -59,7 +70,7 @@ class TestIntegration {
         MeterRegistry hMeterRegistry = Services.get(MeterRegistry.class);
         io.micrometer.core.instrument.MeterRegistry mMeterRegistry =
                 hMeterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
-        io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("mCounter1", "scope", "application");
+        io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("mCounter1");
         mCounter.increment(2);
 
         // Should find the previously-registered counter.

@@ -117,6 +117,10 @@ class UriPathNoParam implements UriPath {
 
          we use decoded and normalized path to match routing, so we need to resolve all of that
          */
+        if (isSimplePath(rawPath)) {
+            return rawPath;
+        }
+
         int percent = rawPath.indexOf('%');
         int dot = rawPath.indexOf(".");
         int doubleSlash = rawPath.indexOf("//");
@@ -140,4 +144,33 @@ class UriPathNoParam implements UriPath {
         String path = URI.create(rawPath).normalize().getPath();
         return path == null ? "" : path;
     }
+
+    private static boolean isSimplePath(String rawPath) {
+        int length = rawPath.length();
+        if (length == 0 || rawPath.charAt(0) != '/') {
+            return false;
+        }
+
+        boolean slash = true;
+        for (int i = 1; i < length; i++) {
+            char c = rawPath.charAt(i);
+            if (c == '/') {
+                if (slash) {
+                    return false;
+                }
+                slash = true;
+            } else if ((c >= 'a' && c <= 'z')
+                    || (c >= 'A' && c <= 'Z')
+                    || (c >= '0' && c <= '9')
+                    || c == '-'
+                    || c == '_'
+                    || c == '~') {
+                slash = false;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

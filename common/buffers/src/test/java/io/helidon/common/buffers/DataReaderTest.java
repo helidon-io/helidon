@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.common.buffers;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 class DataReaderTest {
+
+    @Test
+    void reusedNodeDoesNotInvalidateLazyString() {
+        Iterator<byte[]> chunks = List.of("first".getBytes(StandardCharsets.US_ASCII),
+                                          "second".getBytes(StandardCharsets.US_ASCII))
+                .iterator();
+        DataReader reader = DataReader.create(() -> chunks.hasNext() ? chunks.next() : null);
+
+        LazyString first = reader.readLazyString(StandardCharsets.US_ASCII, 5);
+        assertThat(reader.readAsciiString(6), is("second"));
+        assertThat(first.toString(), is("first"));
+    }
 
     @Test
     void testFindNewLineWithLoneCR() {

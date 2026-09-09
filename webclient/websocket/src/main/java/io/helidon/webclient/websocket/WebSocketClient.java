@@ -31,7 +31,8 @@ import io.helidon.service.registry.Service;
  * <p>
  * The type safe WebSocket client is backed by Helidon {@link io.helidon.webclient.websocket.WsClient}.
  * <p>
- * This API is preview and may change between minor releases.
+ * This API is part of Helidon Declarative preview. It is intended for supported external use and will remain backward
+ * compatible within a major version. It may change without deprecation in a new major version.
  */
 @Api.Preview
 public final class WebSocketClient {
