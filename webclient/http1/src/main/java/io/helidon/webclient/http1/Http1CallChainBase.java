@@ -327,9 +327,9 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             // Preserve header-terminated 205 compatibility, but honor declared framing so it is consumed before reuse.
             return false;
         }
-        if ((
-                responseHeaders.contains(HeaderNames.UPGRADE)
-                        && !responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+        if (statusCode == Status.SWITCHING_PROTOCOLS_101_CODE
+                && responseHeaders.contains(HeaderNames.UPGRADE)
+                && !responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             // this is an upgrade response and there is no entity
             return false;
         }

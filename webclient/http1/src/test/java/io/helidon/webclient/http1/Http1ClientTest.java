@@ -609,6 +609,29 @@ class Http1ClientTest {
         }
     }
 
+    @Test
+    void testUpgradeRequiredEntityDoesNotContaminateConnection() throws Exception {
+        try (UpgradeRequiredServer server = UpgradeRequiredServer.start()) {
+            Http1Client testClient = Http1Client.builder()
+                    .baseUri(server.uri())
+                    .build();
+            try {
+                try (Http1ClientResponse response = testClient.get("/upgrade").request()) {
+                    assertThat(response.status(), is(Status.UPGRADE_REQUIRED_426));
+                    assertThat(response.entity().inputStream().readAllBytes(),
+                               is("upgrade".getBytes(StandardCharsets.UTF_8)));
+                }
+                try (Http1ClientResponse response = testClient.get("/next").request()) {
+                    assertThat(response.status(), is(Status.OK_200));
+                    assertThat(response.entity().inputStream().readAllBytes(), is("ok".getBytes(StandardCharsets.UTF_8)));
+                }
+                server.awaitCompletion();
+            } finally {
+                testClient.closeResource();
+            }
+        }
+    }
+
     // validates that HEAD is not allowed with entity payload
     @Test
     void testHeadMethod() {
@@ -1650,6 +1673,72 @@ class Http1ClientTest {
                 }
             });
             return new ChunkedResetContentServer(server, completion);
+        }
+
+        String uri() {
+            return "http://127.0.0.1:" + server.getLocalPort();
+        }
+
+        void awaitCompletion() throws Exception {
+            completion.get(5, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() {
+            try {
+                server.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        private static void readHeaders(InputStream inputStream) throws IOException {
+            int matched = 0;
+            while (matched < 4) {
+                int next = inputStream.read();
+                if (next == -1) {
+                    throw new IllegalStateException("HTTP/1 request headers were not complete");
+                }
+                matched = switch (matched) {
+                case 0, 2 -> next == '\r' ? matched + 1 : 0;
+                case 1, 3 -> next == '\n' ? matched + 1 : next == '\r' ? 1 : 0;
+                default -> throw new IllegalStateException("Unexpected header parser state");
+                };
+            }
+        }
+    }
+
+    private record UpgradeRequiredServer(ServerSocket server,
+                                         CompletableFuture<Void> completion) implements AutoCloseable {
+        private static final byte[] UPGRADE_RESPONSE = ("HTTP/1.1 426 Upgrade Required\r\n"
+                + "Upgrade: h2c\r\n"
+                + "Content-Length: 7\r\n"
+                + "\r\n"
+                + "upgrade").getBytes(StandardCharsets.US_ASCII);
+        private static final byte[] NEXT_RESPONSE = ("HTTP/1.1 200 OK\r\n"
+                + "Content-Length: 2\r\n"
+                + "\r\n"
+                + "ok").getBytes(StandardCharsets.US_ASCII);
+
+        static UpgradeRequiredServer start() throws IOException {
+            ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
+            server.setSoTimeout(5_000);
+            CompletableFuture<Void> completion = CompletableFuture.runAsync(() -> {
+                try (Socket socket = server.accept()) {
+                    socket.setSoTimeout(5_000);
+                    InputStream inputStream = socket.getInputStream();
+                    OutputStream outputStream = socket.getOutputStream();
+                    readHeaders(inputStream);
+                    outputStream.write(UPGRADE_RESPONSE);
+                    outputStream.flush();
+                    readHeaders(inputStream);
+                    outputStream.write(NEXT_RESPONSE);
+                    outputStream.flush();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            return new UpgradeRequiredServer(server, completion);
         }
 
         String uri() {
