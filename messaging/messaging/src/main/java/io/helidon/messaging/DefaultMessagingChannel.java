@@ -32,8 +32,8 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.messaging.spi.Connector;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.ChannelConnection;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 /**
  * Internal in-memory messaging channel runtime.
@@ -89,7 +89,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         outputs.add(batch -> output.accept(castBatch(batch)));
     }
 
-    void addOutgoingConnector(OutgoingConnector output) {
+    void addOutgoingConnector(OutgoingChannel output) {
         outputs.add(messages -> send(output, messages));
     }
 
@@ -123,7 +123,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         }
     }
 
-    private static void send(OutgoingConnector output, MessageBatch<?> messages) {
+    private static void send(OutgoingChannel output, MessageBatch<?> messages) {
         output.sendBatch(messages);
     }
 
@@ -219,7 +219,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     static final class Builder<T> {
         private final List<Consumer<MessageBatch<?>>> validators = new ArrayList<>();
         private final List<Consumer<MessageBatch<?>>> outputs = new ArrayList<>();
-        private final List<OutgoingConnector> connectorOutputs = new ArrayList<>();
+        private final List<OutgoingChannel> connectorOutputs = new ArrayList<>();
         private GenericType<T> payloadType;
         private MessagingExecutionConfig executionConfig;
         private DefaultMessagingGraph messagingGraph;
@@ -244,8 +244,8 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
             return this;
         }
 
-        Builder<T> addOutgoingConnector(OutgoingConnector output) {
-            OutgoingConnector connector = Objects.requireNonNull(output);
+        Builder<T> addOutgoingConnector(OutgoingChannel output) {
+            OutgoingChannel connector = Objects.requireNonNull(output);
             connectorOutputs.add(connector);
             outputs.add(messages -> DefaultMessagingChannel.send(connector, messages));
             return this;
@@ -287,7 +287,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
 
     }
 
-    private static final class StreamSource implements Runnable, Connector, DefaultMessagingGraph.DrainableSource {
+    private static final class StreamSource implements Runnable, ChannelConnection, DefaultMessagingGraph.DrainableSource {
         private final Stream<?> stream;
         private final Consumer<Object> consumer;
         private final ReentrantLock lifecycleLock = new ReentrantLock();

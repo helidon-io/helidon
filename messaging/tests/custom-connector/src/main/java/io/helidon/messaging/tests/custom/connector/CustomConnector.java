@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.config.Config;
@@ -29,9 +28,9 @@ import io.helidon.messaging.IncomingConnectorContext;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessagingException;
-import io.helidon.messaging.spi.IncomingConnector;
+import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.MessagingConnector;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 final class CustomConnector implements MessagingConnector, RuntimeType.Api<CustomConnectorConfig> {
     private final CustomConnectorConfig config;
@@ -71,22 +70,31 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
     }
 
     @Override
-    public Optional<IncomingConnector> incoming(Config channelConfig) {
+    public Optional<IncomingChannel> incoming(Config channelConfig) {
         Objects.requireNonNull(channelConfig);
-        return Optional.of(new Incoming(config));
+        return Optional.of(incoming(CustomChannelConfig.create(channelConfig)));
     }
 
-    Stream<Message<String>> incomingStream(Config channelConfig) {
+    IncomingChannel incoming(CustomChannelConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
-        return Stream.generate(this::receive);
+        String endpoint = channelConfig.endpoint().orElse(config.endpoint());
+        String prefix = channelConfig.prefix().orElse(config.prefix());
+        config.probe().configured("incoming", channelConfig.channelName(), name(), endpoint, prefix);
+        return new Incoming(config, channelConfig.channelName(), endpoint);
     }
 
     @Override
-    public Optional<OutgoingConnector> outgoing(Config channelConfig) {
+    public Optional<OutgoingChannel> outgoing(Config channelConfig) {
         Objects.requireNonNull(channelConfig);
-        String channelName = channelConfig.get("channel-name").asString().orElseThrow();
-        String prefix = channelConfig.get("prefix").asString().orElse(config.prefix());
-        return Optional.of(new Outgoing(config, channelName, prefix));
+        return Optional.of(outgoing(CustomChannelConfig.create(channelConfig)));
+    }
+
+    OutgoingChannel outgoing(CustomChannelConfig channelConfig) {
+        Objects.requireNonNull(channelConfig);
+        String endpoint = channelConfig.endpoint().orElse(config.endpoint());
+        String prefix = channelConfig.prefix().orElse(config.prefix());
+        config.probe().configured("outgoing", channelConfig.channelName(), name(), endpoint, prefix);
+        return new Outgoing(config, channelConfig.channelName(), endpoint, prefix);
     }
 
     private static Message<String> stringMessage(Message<?> message) {
@@ -101,26 +109,17 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
         return (Message<String>) message;
     }
 
-    private Message<String> receive() {
-        try {
-            CustomConnectorBroker.Item item = config.broker().receive(config.endpoint());
-            if (item instanceof CustomConnectorBroker.MessageItem messageItem) {
-                return messageItem.message();
-            }
-            throw new MessagingException("Custom connector stream stopped");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new MessagingException("Custom connector stream was interrupted", e);
-        }
-    }
-
-    private static final class Incoming implements IncomingConnector {
+    private static final class Incoming implements IncomingChannel {
         private final CustomConnectorConfig config;
+        private final String channelName;
+        private final String endpoint;
         private final AtomicReference<Thread> owner = new AtomicReference<>();
         private final AtomicBoolean closed = new AtomicBoolean();
 
-        private Incoming(CustomConnectorConfig config) {
+        private Incoming(CustomConnectorConfig config, String channelName, String endpoint) {
             this.config = config;
+            this.channelName = channelName;
+            this.endpoint = endpoint;
         }
 
         @Override
@@ -133,9 +132,10 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
                 if (closed.get() || !context.awaitRunning()) {
                     return;
                 }
+                config.probe().started(channelName);
                 while (!closed.get()) {
                     try (var reservation = context.reserveDelivery()) {
-                        CustomConnectorBroker.Item item = config.broker().receive(config.endpoint());
+                        CustomConnectorBroker.Item item = config.broker().receive(endpoint);
                         if (item == CustomConnectorBroker.StopItem.INSTANCE) {
                             return;
                         }
@@ -169,11 +169,12 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
         @Override
         public void close() {
             stop(true);
+            config.probe().closed(channelName);
         }
 
         private void stop(boolean interrupt) {
             if (closed.compareAndSet(false, true)) {
-                config.broker().stop(config.endpoint());
+                config.broker().stop(endpoint);
             }
             if (interrupt) {
                 Thread thread = owner.get();
@@ -184,16 +185,18 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
         }
     }
 
-    private static final class Outgoing implements OutgoingConnector {
+    private static final class Outgoing implements OutgoingChannel {
         private final CustomConnectorConfig config;
         private final String channelName;
+        private final String endpoint;
         private final String prefix;
         private final AtomicBoolean started = new AtomicBoolean();
         private final AtomicBoolean closed = new AtomicBoolean();
 
-        private Outgoing(CustomConnectorConfig config, String channelName, String prefix) {
+        private Outgoing(CustomConnectorConfig config, String channelName, String endpoint, String prefix) {
             this.config = config;
             this.channelName = channelName;
+            this.endpoint = endpoint;
             this.prefix = prefix;
         }
 
@@ -202,6 +205,7 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
             if (!started.compareAndSet(false, true)) {
                 throw new IllegalStateException("Custom outgoing connector already started");
             }
+            config.probe().started(channelName);
         }
 
         @Override
@@ -212,7 +216,7 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
             for (Message<?> message : batch) {
                 Message<String> stringMessage = stringMessage(message);
                 config.probe().sent(channelName, prefix, stringMessage);
-                config.broker().send(config.endpoint(), stringMessage);
+                config.broker().send(endpoint, stringMessage);
             }
         }
 
@@ -223,7 +227,9 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
 
         @Override
         public void close() {
-            closed.set(true);
+            if (closed.compareAndSet(false, true)) {
+                config.probe().closed(channelName);
+            }
         }
     }
 }

@@ -25,7 +25,7 @@ import io.helidon.common.Api;
  * restarted or reused by another binding.
  */
 @Api.Preview
-public interface Connector extends AutoCloseable {
+public interface ChannelConnection extends AutoCloseable {
     /**
      * Force prompt shutdown without waiting for normal delivery settlement.
      * <p>

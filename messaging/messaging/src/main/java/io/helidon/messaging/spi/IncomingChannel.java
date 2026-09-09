@@ -27,7 +27,7 @@ import io.helidon.messaging.IncomingConnectorContext;
  * deliveries only when that method returns {@code true}.
  */
 @Api.Preview
-public interface IncomingConnector extends Connector {
+public interface IncomingChannel extends ChannelConnection {
     /**
      * Run this connector until it is drained or closed.
      * <p>

@@ -22,7 +22,8 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Api;
 import io.helidon.common.GenericType;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 /**
  * One imperative messaging topology and lifecycle.
@@ -44,7 +45,7 @@ public interface MessagingGraph extends AutoCloseable {
     /**
      * Validate and start the complete graph, waiting for outgoing connector startup and incoming connector readiness.
      * <p>
-     * The core runtime does not impose a startup deadline. Connector transport configuration may define its own
+     * The core runtime does not impose a startup deadline. ChannelConnection transport configuration may define its own
      * connection or readiness limits. Waiting in this method is interruptible; concurrent {@link #close()} cancels
      * startup.
      */
@@ -223,17 +224,30 @@ public interface MessagingGraph extends AutoCloseable {
         <T> Builder batchSink(MessagingChannel<T> source, Consumer<MessageBatch<T>> sink);
 
         /**
-         * Add an outgoing connector as a required channel output.
+         * Add an incoming channel connection as a source.
          * <p>
-         * The builder owns the connector after this method returns. Closing the builder or the built graph closes
-         * the connector.
+         * The builder owns the connection after this method returns. The graph manages its startup, delivery
+         * admission, draining, and shutdown. Closing the builder or the built graph closes the connection.
          *
-         * @param source source channel
-         * @param connector outgoing connector
+         * @param target target channel
+         * @param connection incoming channel connection
          * @param <T> payload type
          * @return updated builder
          */
-        <T> Builder outgoingConnector(MessagingChannel<T> source, OutgoingConnector connector);
+        <T> Builder incomingChannel(MessagingChannel<T> target, IncomingChannel connection);
+
+        /**
+         * Add an outgoing channel connection as a required channel output.
+         * <p>
+         * The builder owns the connection after this method returns. Closing the builder or the built graph closes
+         * the connection.
+         *
+         * @param source source channel
+         * @param connection outgoing channel connection
+         * @param <T> payload type
+         * @return updated builder
+         */
+        <T> Builder outgoingChannel(MessagingChannel<T> source, OutgoingChannel connection);
 
         /**
          * Freeze and build the graph.

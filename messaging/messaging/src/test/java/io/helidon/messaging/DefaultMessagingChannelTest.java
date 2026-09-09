@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
-import io.helidon.messaging.spi.Connector;
+import io.helidon.messaging.spi.ChannelConnection;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -447,7 +447,7 @@ class DefaultMessagingChannelTest {
         });
         assertThat(ownerStarted.await(1, TimeUnit.SECONDS), is(true));
 
-        Connector connector = (Connector) source;
+        ChannelConnection connector = (ChannelConnection) source;
         connector.forceClose();
         assertThat(closeStarted.getCount(), is(1L));
         assertThat(ownerInterrupted.await(1, TimeUnit.SECONDS), is(true));

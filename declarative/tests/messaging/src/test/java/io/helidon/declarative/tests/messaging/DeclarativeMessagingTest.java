@@ -49,7 +49,7 @@ import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.MessagingRuntime;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.OutgoingChannel;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.AnnotatedFailureConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.AnnotatedFailureDeadLetterConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ArrayPayloadConsumer;
@@ -77,7 +77,7 @@ import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.Producer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.RequiredHeaderConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.SecondChannelOneConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownConsumer;
-import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownIncomingConnectorProvider;
+import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownMessagingConnectorProvider;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownSingletonConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownSingletonProbe;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.TestConnectorObserver;
@@ -179,7 +179,7 @@ class DeclarativeMessagingTest {
 
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<String> channel = builder.channel("imperative-connector", String.class);
-        builder.outgoingConnector(channel, sink(sentMessages));
+        builder.outgoingChannel(channel, sink(sentMessages));
 
         try (MessagingGraph graph = builder.build()) {
             graph.start();
@@ -202,7 +202,7 @@ class DeclarativeMessagingTest {
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<String> channel = builder.channel("imperative-batch", String.class);
         builder.batchSink(channel, batches::add)
-                .outgoingConnector(channel, new NoOpOutgoingConnector() {
+                .outgoingChannel(channel, new NoOpOutgoingChannel() {
                     @Override
                     public void sendBatch(MessageBatch<?> messages) {
                         List<String> entities = new ArrayList<>();
@@ -234,7 +234,7 @@ class DeclarativeMessagingTest {
         MessagingException expectedFailure = new MessagingException("connector failed", new IOException("I/O failed"));
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<String> channel = builder.channel("imperative-connector-failure", String.class);
-        builder.outgoingConnector(channel, new NoOpOutgoingConnector() {
+        builder.outgoingChannel(channel, new NoOpOutgoingChannel() {
             @Override
             public void sendBatch(MessageBatch<?> batch) {
                 throw expectedFailure;
@@ -540,6 +540,7 @@ class DeclarativeMessagingTest {
     void testIncomingConnectorRetriesRuntimeHandlerFailure() throws InterruptedException {
         String channelConfig = "messaging.incoming." + ChannelMessagingTypes.FAILING_CHANNEL;
         useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR,
+                         "messaging.connector.test.type", ChannelMessagingTypes.TEST_CONNECTOR,
                          channelConfig + ".failure.retry.calls", "3",
                          channelConfig + ".failure.retry.delay", "PT0S"));
         registry.get(MessagingRuntime.class);
@@ -558,6 +559,7 @@ class DeclarativeMessagingTest {
     void testIncomingConnectorDoesNotRetryCheckedHandlerFailureByDefault() throws InterruptedException {
         String channelConfig = "messaging.incoming." + ChannelMessagingTypes.CHECKED_FAILING_CHANNEL;
         useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR,
+                         "messaging.connector.test.type", ChannelMessagingTypes.TEST_CONNECTOR,
                          channelConfig + ".failure.retry.calls", "3",
                          channelConfig + ".failure.retry.delay", "PT0S"));
         registry.get(MessagingRuntime.class);
@@ -575,7 +577,8 @@ class DeclarativeMessagingTest {
     @Test
     void testGeneratedOnFailureRetriesThenDeadLetters() throws InterruptedException {
         String channelConfig = "messaging.incoming." + ChannelMessagingTypes.ANNOTATED_FAILURE_CHANNEL;
-        useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR));
+        useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR,
+                         "messaging.connector.test.type", ChannelMessagingTypes.TEST_CONNECTOR));
         registry.get(MessagingRuntime.class);
         var observer = registry.get(TestConnectorObserver.class);
         var consumer = registry.get(AnnotatedFailureConsumer.class);
@@ -597,6 +600,7 @@ class DeclarativeMessagingTest {
     void testFailureConfigOverridesGeneratedOnFailureWithDrop() throws InterruptedException {
         String channelConfig = "messaging.incoming." + ChannelMessagingTypes.ANNOTATED_FAILURE_CHANNEL;
         useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR,
+                         "messaging.connector.test.type", ChannelMessagingTypes.TEST_CONNECTOR,
                          channelConfig + ".failure.retry.calls", "1",
                          channelConfig + ".failure.on-exhausted", "DROP"));
         registry.get(MessagingRuntime.class);
@@ -875,7 +879,8 @@ class DeclarativeMessagingTest {
     @Test
     void testIncomingConnectorEmitsIntoNamedChannel() throws InterruptedException {
         useConfig(Map.of("messaging.incoming." + ChannelMessagingTypes.CHANNEL_ONE + ".connector",
-                         ChannelMessagingTypes.TEST_CONNECTOR));
+                         ChannelMessagingTypes.TEST_CONNECTOR,
+                         "messaging.connector.test.type", ChannelMessagingTypes.TEST_CONNECTOR));
         registry.get(MessagingRuntime.class);
         var observer = registry.get(TestConnectorObserver.class);
 
@@ -899,12 +904,13 @@ class DeclarativeMessagingTest {
     @Test
     void testMessagingStopsBeforeConsumerServiceIsDestroyed() throws InterruptedException {
         ShutdownConsumer.events().clear();
-        ShutdownIncomingConnectorProvider.reset();
+        ShutdownMessagingConnectorProvider.reset();
         useConfig(Map.of("messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector",
-                         ChannelMessagingTypes.SHUTDOWN_CONNECTOR));
+                         ChannelMessagingTypes.SHUTDOWN_CONNECTOR,
+                         "messaging.connector.shutdown-test.type", ChannelMessagingTypes.SHUTDOWN_CONNECTOR));
         registry.get(MessagingRuntime.class);
         registry.get(ShutdownConsumer.class);
-        assertThat(ShutdownIncomingConnectorProvider.awaitSourceStarted(), is(true));
+        assertThat(ShutdownMessagingConnectorProvider.awaitSourceStarted(), is(true));
 
         registryManager.shutdown();
 
@@ -940,11 +946,12 @@ class DeclarativeMessagingTest {
     @Test
     void testMessagingStartsEagerlyAtItsRunLevel() throws InterruptedException {
         ShutdownConsumer.events().clear();
-        ShutdownIncomingConnectorProvider.reset();
+        ShutdownMessagingConnectorProvider.reset();
 
         startWithConfig(Map.of("messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector",
-                               ChannelMessagingTypes.SHUTDOWN_CONNECTOR));
-        assertThat(ShutdownIncomingConnectorProvider.awaitSourceStarted(), is(true));
+                               ChannelMessagingTypes.SHUTDOWN_CONNECTOR,
+                               "messaging.connector.shutdown-test.type", ChannelMessagingTypes.SHUTDOWN_CONNECTOR));
+        assertThat(ShutdownMessagingConnectorProvider.awaitSourceStarted(), is(true));
 
         assertThat(registry.get(Config.class)
                            .get("messaging.incoming." + ChannelMessagingTypes.SHUTDOWN_CHANNEL + ".connector")
@@ -1002,8 +1009,8 @@ class DeclarativeMessagingTest {
         registry = registryManager.registry();
     }
 
-    private static OutgoingConnector sink(List<Message<?>> messages) {
-        return new NoOpOutgoingConnector() {
+    private static OutgoingChannel sink(List<Message<?>> messages) {
+        return new NoOpOutgoingChannel() {
             @Override
             public void sendBatch(MessageBatch<?> batch) {
                 messages.addAll(batch.messages());
@@ -1011,7 +1018,7 @@ class DeclarativeMessagingTest {
         };
     }
 
-    private abstract static class NoOpOutgoingConnector implements OutgoingConnector {
+    private abstract static class NoOpOutgoingChannel implements OutgoingChannel {
         @Override
         public void start() {
         }
