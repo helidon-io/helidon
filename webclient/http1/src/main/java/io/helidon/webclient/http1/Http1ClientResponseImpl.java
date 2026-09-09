@@ -41,6 +41,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
@@ -64,6 +65,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
     private final Status responseStatus;
+    private final boolean headResponse;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
     private final InputStream inputStream;
@@ -85,6 +87,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
                             Http1ClientProtocolConfig protocolConfig,
                             Status responseStatus,
+                            Method requestMethod,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
                             ClientConnection connection,
@@ -95,6 +98,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;
         this.responseStatus = responseStatus;
+        this.headResponse = requestMethod == Method.HEAD;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.connection = connection;
@@ -119,7 +123,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         } else if (responseStatus.code() == Status.NO_CONTENT_204_CODE
                 && (contentLength.orElse(0) > 0 || responseHeaders.contains(HeaderNames.TRANSFER_ENCODING))) {
             this.closeConnectionOnClose = true;
-        } else if (responseStatus.code() == Status.RESET_CONTENT_205_CODE
+        } else if (!headResponse
+                && responseStatus.code() == Status.RESET_CONTENT_205_CODE
                 && contentLength.isEmpty()
                 && !responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)) {
             this.closeConnectionOnClose = true;
@@ -150,6 +155,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             if (!this.entityRequested) {
                 throw new IllegalStateException("Trailers requested before reading entity.");
             }
+            if (headResponse) {
+                return ClientResponseTrailers.create();
+            }
             return ClientResponseTrailers.create(this.trailers.get());
         } else {
             return ClientResponseTrailers.create();
@@ -171,9 +179,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                         || headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else if (inputStream == null
-                        && responseStatus.code() == Status.NOT_MODIFIED_304_CODE
+                        && (headResponse || responseStatus.code() == Status.NOT_MODIFIED_304_CODE)
                         && connection.reader().available() > 0) {
-                    // A 304 ends at its headers; buffered bytes must not become the next response.
+                    // HEAD and 304 responses end at their headers; buffered bytes must not become the next response.
                     connection.closeResource();
                 } else {
                     if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {

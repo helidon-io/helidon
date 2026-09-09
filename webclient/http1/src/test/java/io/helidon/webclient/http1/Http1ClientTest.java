@@ -647,6 +647,68 @@ class Http1ClientTest {
     }
 
     @ParameterizedTest
+    @MethodSource("headResponseMetadata")
+    void testHeadResponseMetadataDoesNotCloseConnection(String responseStatus, String responseMetadata) throws IOException {
+        String upgradeHeaders = responseStatus.startsWith("426") ? "Connection: Upgrade\r\nUpgrade: h2c\r\n" : "";
+        var connection = new FakeHttp1ClientConnection(("HTTP/1.1 " + responseStatus + "\r\n"
+                + upgradeHeaders + responseMetadata + "\r\n").getBytes(StandardCharsets.US_ASCII));
+        try {
+            try (Http1ClientResponse response = client.head("http://localhost:" + dummyPort + "/head")
+                    .connection(connection)
+                    .request()) {
+                assertThat(response.status().code(), is(Integer.parseInt(responseStatus.substring(0, 3))));
+                assertThat(response.entity().hasEntity(), is(false));
+                assertThat(response.entity().inputStream().readAllBytes().length, is(0));
+                assertThat(response.trailers().size(), is(0));
+                if (responseMetadata.startsWith("Content-Length: 7")) {
+                    assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, "7"));
+                }
+                if (!upgradeHeaders.isEmpty()) {
+                    assertThat(response.headers(), hasHeader(HeaderNames.UPGRADE, "h2c"));
+                }
+                assertThat(connection.releaseCount(), is(0));
+            }
+            assertThat(connection.closeCount(), is(0));
+            assertThat(connection.releaseCount(), is(1));
+        } finally {
+            connection.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"200 OK", "426 Upgrade Required"})
+    void testBufferedHeadResponseDoesNotContaminateNextRequest(String responseStatus) {
+        String upgradeHeaders = responseStatus.startsWith("426") ? "Connection: Upgrade\r\nUpgrade: h2c\r\n" : "";
+        var connection = new FakeHttp1ClientConnection(("HTTP/1.1 " + responseStatus + "\r\n"
+                + upgradeHeaders + "Content-Length: 42\r\n\r\n"
+                + "HTTP/1.1 200 OK\r\nContent-Length:4\r\n\r\nevil").getBytes(StandardCharsets.US_ASCII));
+        var replacementConnection = new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length:2\r\n\r\nok".getBytes(StandardCharsets.US_ASCII));
+        var connectionCache = new ReconnectingConnectionCache(connection, replacementConnection);
+        var configuredClient = (Http1ClientImpl) Http1Client.builder().shareConnectionCache(false).build();
+        var testClient = new FixedConnectionHttp1Client(configuredClient, connectionCache);
+        configuredClient.closeResource();
+
+        try {
+            try (Http1ClientResponse response = testClient.head("http://localhost:" + dummyPort + "/head").request()) {
+                assertThat(response.entity().hasEntity(), is(false));
+            }
+            try (Http1ClientResponse response = testClient.get("http://localhost:" + dummyPort + "/next").request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.entity().as(String.class), is("ok"));
+            }
+            assertThat(connection.closeCount(), is(1));
+            assertThat(connection.releaseCount(), is(0));
+            assertThat(replacementConnection.releaseCount(), is(1));
+        } finally {
+            testClient.closeResource();
+            connectionCache.closeResource();
+            connection.closeResource();
+            replacementConnection.closeResource();
+        }
+    }
+
+    @ParameterizedTest
     @MethodSource("notModifiedMetadata")
     void testMalformedNoContentFramingClosesConnection(Header responseFraming) throws IOException {
         FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection("204 No Content", responseFraming);
@@ -1121,6 +1183,20 @@ class Http1ClientTest {
         return Stream.of("301 Moved Permanently", "302 Found", "303 See Other")
                 .flatMap(status -> Stream.of("Content-Length:42", "Transfer-Encoding:chunked")
                         .map(metadata -> arguments(status, metadata)));
+    }
+
+    private static Stream<Arguments> headResponseMetadata() {
+        return Stream.of(
+                arguments("200 OK", ""),
+                arguments("200 OK", "Content-Length: 0\r\n"),
+                arguments("200 OK", "Content-Length: 7\r\n"),
+                arguments("200 OK", "Transfer-Encoding: chunked\r\n"),
+                arguments("200 OK", "Transfer-Encoding: chunked\r\nTrailer: X-Test\r\n"),
+                arguments("426 Upgrade Required", "Content-Length: 7\r\n"),
+                arguments("205 Reset Content", ""),
+                arguments("205 Reset Content", "Content-Length: 7\r\n"),
+                arguments("205 Reset Content", "Transfer-Encoding: chunked\r\n")
+        );
     }
 
     private static Stream<Arguments> headers() {

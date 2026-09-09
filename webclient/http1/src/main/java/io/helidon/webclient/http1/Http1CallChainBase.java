@@ -105,7 +105,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
 
-        if (mayHaveEntity(responseStatus, responseHeaders)) {
+        if (mayHaveEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
             builder.inputStream(inputStream(clientConfig,
                                             recvListener,
@@ -312,7 +312,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
     }
 
-    private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {
+    private static boolean mayHaveEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
+        if (requestMethod == Method.HEAD) {
+            return false;
+        }
         if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
