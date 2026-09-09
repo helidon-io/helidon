@@ -18,6 +18,21 @@ Add the module to the application:
 </dependency>
 ```
 
+The OCI SDK also requires an HTTP client provider in the application. For example, add the Jersey 3 provider:
+
+```xml
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+</dependency>
+```
+
+A named application module using this provider must also declare:
+
+```java
+requires oci.java.sdk.common.httpclient.jersey3;
+```
+
 ## OCI-managed certificate bundle
 
 Use an OCI-issued certificate whose private key is stored by OCI Certificates. An imported or externally managed

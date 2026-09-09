@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -33,6 +34,7 @@ import io.helidon.common.Weighted;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.pki.PemKeys;
+import io.helidon.common.pki.PemReader;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.service.registry.Service;
 
@@ -41,7 +43,8 @@ import io.helidon.service.registry.Service;
 class TestOciCertificatesDownloader implements OciCertificatesDownloader {
     private static final Queue<Supplier<String>> SCRIPTED_CA_OUTCOMES = new ConcurrentLinkedQueue<>();
 
-    static String version = "1";
+    static volatile String version = "1";
+    static volatile String privateVersion;
     static volatile String caCertificateResource = "test-keys/ca.pem";
 
     static volatile int callCount_loadCertificates;
@@ -50,6 +53,19 @@ class TestOciCertificatesDownloader implements OciCertificatesDownloader {
     static volatile long managedDelayMillis;
     static volatile RuntimeException managedFailure;
     static volatile RuntimeException caFailure;
+
+    static void reset() {
+        version = "1";
+        privateVersion = null;
+        caCertificateResource = "test-keys/ca.pem";
+        callCount_loadCertificates = 0;
+        callCount_loadCertificatesWithPrivateKey = 0;
+        callCount_loadCACertificate = 0;
+        managedDelayMillis = 0;
+        managedFailure = null;
+        caFailure = null;
+        clearCaScript();
+    }
 
     static void scriptCaCertificate(String resource) {
         SCRIPTED_CA_OUTCOMES.add(() -> Objects.requireNonNull(resource));
@@ -75,7 +91,7 @@ class TestOciCertificatesDownloader implements OciCertificatesDownloader {
             Objects.requireNonNull(certOcid);
             try (InputStream certIs =
                     TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/serverCert.pem")) {
-                X509Certificate certificate = DefaultOciCertificatesDownloader.toCertificate(certIs);
+                X509Certificate certificate = toCertificate(certIs);
                 return OciCertificatesDownloader.create(version, new X509Certificate[] {certificate});
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -102,7 +118,7 @@ class TestOciCertificatesDownloader implements OciCertificatesDownloader {
             String keyResource = "2".equals(version) ? "test-keys/ecKey.pem" : "test-keys/serverKey.pem";
             try (InputStream certIs = classLoader.getResourceAsStream(certificateResource);
                     InputStream keyIs = classLoader.getResourceAsStream(keyResource)) {
-                X509Certificate certificate = DefaultOciCertificatesDownloader.toCertificate(certIs);
+                X509Certificate certificate = toCertificate(certIs);
                 String keyPem = new String(Objects.requireNonNull(keyIs).readAllBytes(), StandardCharsets.US_ASCII);
                 PemKeys pemKeys = PemKeys.builder()
                         .key(Resource.create("test private key", keyPem))
@@ -112,7 +128,7 @@ class TestOciCertificatesDownloader implements OciCertificatesDownloader {
                         .build()
                         .privateKey()
                         .orElseThrow();
-                return OciCertificatesDownloader.create(version,
+                return OciCertificatesDownloader.create(privateVersion == null ? version : privateVersion,
                                                         new X509Certificate[] {certificate},
                                                         privateKey);
             } catch (IOException e) {
@@ -138,7 +154,7 @@ class TestOciCertificatesDownloader implements OciCertificatesDownloader {
             Objects.requireNonNull(caCertOcid);
             try (InputStream caCertIs =
                     TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream(certificateResource)) {
-                return DefaultOciCertificatesDownloader.toCertificate(caCertIs);
+                return toCertificate(caCertIs);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -146,6 +162,14 @@ class TestOciCertificatesDownloader implements OciCertificatesDownloader {
             System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, e.getMessage(), e);
             throw new IllegalStateException(e);
         }
+    }
+
+    private static X509Certificate toCertificate(InputStream inputStream) {
+        List<X509Certificate> certificates = PemReader.readCertificates(Objects.requireNonNull(inputStream));
+        if (certificates.size() != 1) {
+            throw new IllegalStateException("Expected one test certificate, got: " + certificates.size());
+        }
+        return certificates.getFirst();
     }
 
 }

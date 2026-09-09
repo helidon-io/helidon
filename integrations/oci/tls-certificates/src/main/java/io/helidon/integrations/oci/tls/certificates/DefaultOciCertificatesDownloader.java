@@ -19,10 +19,7 @@ package io.helidon.integrations.oci.tls.certificates;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -54,8 +51,6 @@ import static io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDo
 @Service.Provider
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
-    private static final SecureRandom RANDOM = new SecureRandom();
-
     private final AbstractAuthenticationDetailsProvider authProvider;
 
     DefaultOciCertificatesDownloader(AbstractAuthenticationDetailsProvider authProvider) {
@@ -93,24 +88,28 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
     }
 
-    Certificates loadCerts(String certOcid) {
+    private Certificates loadCerts(String certOcid) {
         try (CertificatesClient client = CertificatesClient.builder()
                 .build(authProvider)) {
             GetCertificateBundleResponse res =
                     client.getCertificateBundle(GetCertificateBundleRequest.builder()
                                                         .certificateId(certOcid)
+                                                        .stage(GetCertificateBundleRequest.Stage.Current)
+                                                        .certificateBundleType(
+                                                                GetCertificateBundleRequest.CertificateBundleType
+                                                                        .CertificateContentPublicOnly)
                                                         .build());
             ByteArrayInputStream chainIs = new ByteArrayInputStream(res.getCertificateBundle().getCertChainPem()
                                                                             .getBytes(StandardCharsets.US_ASCII));
             ByteArrayInputStream certIs = new ByteArrayInputStream(res.getCertificateBundle().getCertificatePem()
                                                                            .getBytes(StandardCharsets.US_ASCII));
             X509Certificate[] certs = toCertificates(chainIs, certIs);
-            String version = toVersion(res.getEtag(), certs);
+            String version = toVersion(res.getCertificateBundle().getVersionNumber(), res.getEtag(), certs);
             return create(version, certs);
         }
     }
 
-    CertificatesWithPrivateKey loadCertsWithPrivateKey(String certOcid) {
+    private CertificatesWithPrivateKey loadCertsWithPrivateKey(String certOcid) {
         try (CertificatesClient client = CertificatesClient.builder()
                 .build(authProvider)) {
             GetCertificateBundleResponse response =
@@ -125,7 +124,7 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
     }
 
-    X509Certificate loadCACert(String caCertOcid) {
+    private X509Certificate loadCACert(String caCertOcid) {
         GetCertificateAuthorityBundleResponse res;
         try (CertificatesClient client = CertificatesClient.builder()
                 .build(authProvider)) {
@@ -139,15 +138,15 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
     }
 
-    static X509Certificate[] toCertificates(InputStream chainIs,
-                                            InputStream certIs) {
+    private static X509Certificate[] toCertificates(InputStream chainIs,
+                                                    InputStream certIs) {
         ArrayList<X509Certificate> chain = new ArrayList<>();
         chain.addAll(PemReader.readCertificates(certIs));
         chain.addAll(PemReader.readCertificates(chainIs));
         return chain.toArray(new X509Certificate[0]);
     }
 
-    static X509Certificate toCertificate(InputStream certIs) {
+    private static X509Certificate toCertificate(InputStream certIs) {
         List<X509Certificate> certs = PemReader.readCertificates(certIs);
         if (certs.size() != 1) {
             throw new IllegalStateException("Expected a single certificate in stream but found: " + certs.size());
@@ -155,7 +154,7 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         return certs.getFirst();
     }
 
-    static CertificatesWithPrivateKey toCertificatesWithPrivateKey(GetCertificateBundleResponse response) {
+    private static CertificatesWithPrivateKey toCertificatesWithPrivateKey(GetCertificateBundleResponse response) {
         Objects.requireNonNull(response);
         if (!(response.getCertificateBundle() instanceof CertificateBundleWithPrivateKey bundle)) {
             throw invalidBundle("the response does not contain a private key");
@@ -180,12 +179,11 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
             }
         }
 
-        validatePrivateKey(certificates[0], privateKey);
         String version = toVersion(bundle.getVersionNumber(), response.getEtag(), certificates);
         return create(version, certificates, privateKey);
     }
 
-    static PrivateKey parsePrivateKey(String privateKeyPem, char[] passphrase) {
+    private static PrivateKey parsePrivateKey(String privateKeyPem, char[] passphrase) {
         try {
             Keys.Builder builder = Keys.builder()
                     .pem(pem -> {
@@ -202,35 +200,9 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
     }
 
-    static void validatePrivateKey(X509Certificate certificate, PrivateKey privateKey) {
-        String signatureAlgorithm = switch (privateKey.getAlgorithm()) {
-            case "RSA" -> "SHA256withRSA";
-            case "EC" -> "SHA256withECDSA";
-            default -> throw invalidBundle("the private key algorithm is not supported");
-        };
-
-        try {
-            byte[] challenge = new byte[32];
-            RANDOM.nextBytes(challenge);
-
-            Signature signer = Signature.getInstance(signatureAlgorithm);
-            signer.initSign(privateKey);
-            signer.update(challenge);
-
-            Signature verifier = Signature.getInstance(signatureAlgorithm);
-            verifier.initVerify(certificate.getPublicKey());
-            verifier.update(challenge);
-            if (!verifier.verify(signer.sign())) {
-                throw invalidBundle("the private key does not match the leaf certificate");
-            }
-        } catch (GeneralSecurityException e) {
-            throw invalidBundle("the private key does not match the leaf certificate");
-        }
-    }
-
-    static String toVersion(Long versionNumber,
-                            String eTag,
-                            Certificate[] certs) {
+    private static String toVersion(Long versionNumber,
+                                    String eTag,
+                                    Certificate[] certs) {
         if (versionNumber != null) {
             return versionNumber.toString();
         }
@@ -238,8 +210,8 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
     }
 
     // use the eTag, defaulting to the hash of the certs if not present
-    static String toVersion(String eTag,
-                            Certificate[] certs) {
+    private static String toVersion(String eTag,
+                                    Certificate[] certs) {
         if (eTag != null && !eTag.isBlank()) {
             return eTag;
         }

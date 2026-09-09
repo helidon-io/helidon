@@ -18,12 +18,14 @@ package io.helidon.integrations.oci.tls.certificates;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.tls.spi.TlsManagerProvider;
 
 /**
  * Blueprint configuration for {@link OciCertificateBundleTlsManager}.
  */
 @Prototype.Blueprint
-@Prototype.Configured
+@Prototype.Configured(value = "oci-certificate-bundle-tls-manager", root = false)
+@Prototype.Provides(TlsManagerProvider.class)
 interface OciCertificateBundleTlsManagerConfigBlueprint extends Prototype.Factory<OciCertificateBundleTlsManager> {
 
     /**

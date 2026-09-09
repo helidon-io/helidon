@@ -67,6 +67,16 @@ Blueprint configuration for <code>Oci<wbr>Certificate<wbr>Bundle<wbr>TlsManager<
 
 
 
+## Usages
+
+- <a href="io.helidon.common.tls.TlsManager.md#oci-certificate-bundle-tls-manager"><code>clients.<wbr>tls.<wbr>manager.<wbr>oci-<wbr>certificate-<wbr>bundle-<wbr>tls-<wbr>manager</code></a>
+- <a href="io.helidon.common.tls.TlsManager.md#oci-certificate-bundle-tls-manager"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>manager.<wbr>oci-<wbr>certificate-<wbr>bundle-<wbr>tls-<wbr>manager</code></a>
+- <a href="io.helidon.common.tls.TlsManager.md#oci-certificate-bundle-tls-manager"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>manager.<wbr>oci-<wbr>certificate-<wbr>bundle-<wbr>tls-<wbr>manager</code></a>
+- <a href="io.helidon.common.tls.TlsManager.md#oci-certificate-bundle-tls-manager"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>manager.<wbr>oci-<wbr>certificate-<wbr>bundle-<wbr>tls-<wbr>manager</code></a>
+- <a href="io.helidon.common.tls.TlsManager.md#oci-certificate-bundle-tls-manager"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>manager.<wbr>oci-<wbr>certificate-<wbr>bundle-<wbr>tls-<wbr>manager</code></a>
+- <a href="io.helidon.common.tls.TlsManager.md#oci-certificate-bundle-tls-manager"><code>server.<wbr>sockets.<wbr>tls.<wbr>manager.<wbr>oci-<wbr>certificate-<wbr>bundle-<wbr>tls-<wbr>manager</code></a>
+- <a href="io.helidon.common.tls.TlsManager.md#oci-certificate-bundle-tls-manager"><code>server.<wbr>tls.<wbr>manager.<wbr>oci-<wbr>certificate-<wbr>bundle-<wbr>tls-<wbr>manager</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

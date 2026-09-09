@@ -39,8 +39,8 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("deprecation")
@@ -135,7 +135,7 @@ class OciCertificateBundleTlsManagerConfigTest {
     void generatedMetadataKeepsVaultSchemaAndAddsBundleSchema() throws IOException {
         try (InputStream input = OciCertificateBundleTlsManagerConfig.class.getResourceAsStream(
                 "/META-INF/helidon/config-metadata.json")) {
-            assertNotNull(input);
+            assertThat(input, notNullValue());
             String metadata = new String(input.readAllBytes(), StandardCharsets.UTF_8);
 
             String vault = metadataType(metadata, OciCertificatesTlsManager.class.getName());
@@ -145,6 +145,8 @@ class OciCertificateBundleTlsManagerConfigTest {
             assertThat(vault, not(containsString("\"key\":\"private-key-source\"")));
 
             String bundle = metadataType(metadata, OciCertificateBundleTlsManager.class.getName());
+            assertThat(bundle, containsString("\"prefix\":\"oci-certificate-bundle-tls-manager\""));
+            assertThat(bundle, containsString("\"provides\":[\"" + TlsManager.class.getName() + "\"]"));
             assertThat(metadataOption(bundle, "schedule"), containsString("\"required\":true"));
             assertThat(metadataOption(bundle, "ca-ocid"), containsString("\"required\":true"));
             assertThat(metadataOption(bundle, "cert-ocid"), containsString("\"required\":true"));

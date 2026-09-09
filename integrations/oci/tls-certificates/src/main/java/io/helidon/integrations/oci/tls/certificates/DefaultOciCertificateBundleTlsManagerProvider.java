@@ -42,6 +42,6 @@ public class DefaultOciCertificateBundleTlsManagerProvider implements TlsManager
     public TlsManager create(Config config, String name) {
         OciCertificateBundleTlsManagerConfig cfg = OciCertificateBundleTlsManagerConfig.create(config);
         return TlsManagerProvider.getOrCreate(cfg,
-                                              c -> new DefaultOciCertificateBundleTlsManager(cfg, name, config));
+                                              c -> new DefaultOciCertificateBundleTlsManager(cfg, name));
     }
 }

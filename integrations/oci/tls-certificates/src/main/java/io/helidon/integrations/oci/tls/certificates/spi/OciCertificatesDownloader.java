@@ -16,7 +16,10 @@
 
 package io.helidon.integrations.oci.tls.certificates.spi;
 
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
+import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Objects;
@@ -105,9 +108,35 @@ public interface OciCertificatesDownloader {
             throw new NullPointerException("Certificates must not contain null elements");
         }
 
-        return new CertificatesWithPrivateKey(version,
-                                              certificateCopy,
-                                              Objects.requireNonNull(privateKey, "Private key is required"));
+        PrivateKey requiredPrivateKey = Objects.requireNonNull(privateKey, "Private key is required");
+        validatePrivateKey(certificateCopy[0], requiredPrivateKey);
+
+        return new CertificatesWithPrivateKey(version, certificateCopy, requiredPrivateKey);
+    }
+
+    private static void validatePrivateKey(X509Certificate certificate, PrivateKey privateKey) {
+        String signatureAlgorithm = switch (privateKey.getAlgorithm()) {
+            case "RSA" -> "SHA256withRSA";
+            case "EC" -> "SHA256withECDSA";
+            default -> throw new IllegalArgumentException("Private key algorithm is not supported: "
+                                                                   + privateKey.getAlgorithm());
+        };
+
+        byte[] challenge = "Helidon OCI certificate key-pair validation".getBytes(StandardCharsets.US_ASCII);
+        try {
+            Signature signer = Signature.getInstance(signatureAlgorithm);
+            signer.initSign(privateKey);
+            signer.update(challenge);
+
+            Signature verifier = Signature.getInstance(signatureAlgorithm);
+            verifier.initVerify(certificate.getPublicKey());
+            verifier.update(challenge);
+            if (!verifier.verify(signer.sign())) {
+                throw new IllegalArgumentException("Private key does not match the leaf certificate");
+            }
+        } catch (GeneralSecurityException e) {
+            throw new IllegalArgumentException("Private key does not match the leaf certificate", e);
+        }
     }
 
     /**

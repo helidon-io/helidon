@@ -20,12 +20,12 @@
 module io.helidon.integrations.oci.tls.certificates {
     requires static io.helidon.config.metadata;
 
-    requires io.helidon.builder.api;
-    requires io.helidon.common;
-    requires io.helidon.common.config;
+    requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.common.config;
     requires io.helidon.common.pki;
-    requires io.helidon.common.tls;
-    requires io.helidon.config;
+    requires transitive io.helidon.common.tls;
+    requires transitive io.helidon.config;
     requires io.helidon.faulttolerance;
     requires io.helidon.scheduling;
     requires io.helidon.service.registry;

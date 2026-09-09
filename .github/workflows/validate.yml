@@ -365,6 +365,7 @@ jobs:
           - { os: ubuntu-22.04, platform: linux }
           - { os: macos-14, platform: macos }
           - { os: windows-2022, platform: windows }
+          - { os: ubuntu-22.04, platform: linux, module: mp-3 }
     runs-on: ${{ matrix.os }}
     name: tests/native-image-${{ matrix.module }}-${{ matrix.platform }}
     steps:
