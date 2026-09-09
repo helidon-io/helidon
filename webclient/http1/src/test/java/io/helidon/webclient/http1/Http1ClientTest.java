@@ -568,6 +568,85 @@ class Http1ClientTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"Content-Length:42", "Transfer-Encoding:chunked"})
+    void testBufferedNotModifiedResponseDoesNotContaminateNextRequest(String responseMetadata) {
+        var connection = new FakeHttp1ClientConnection(("HTTP/1.1 304 Not Modified\r\n"
+                + responseMetadata + "\r\n\r\n"
+                + "HTTP/1.1 200 OK\r\nContent-Length:4\r\n\r\nevil").getBytes(StandardCharsets.US_ASCII));
+        var replacementConnection = new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length:2\r\n\r\nok".getBytes(StandardCharsets.US_ASCII));
+        var connectionCache = new ReconnectingConnectionCache(connection, replacementConnection);
+        var configuredClient = (Http1ClientImpl) Http1Client.builder().shareConnectionCache(false).build();
+        var testClient = new FixedConnectionHttp1Client(configuredClient, connectionCache);
+        configuredClient.closeResource();
+
+        try {
+            try (Http1ClientResponse response = testClient.get("http://localhost:" + dummyPort + "/not-modified")
+                    .request()) {
+                assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+            }
+            try (Http1ClientResponse response = testClient.get("http://localhost:" + dummyPort + "/next").request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.entity().as(String.class), is("ok"));
+            }
+            assertThat(connection.closeCount(), is(1));
+            assertThat(connection.releaseCount(), is(0));
+            assertThat(replacementConnection.releaseCount(), is(1));
+        } finally {
+            testClient.closeResource();
+            connectionCache.closeResource();
+            connection.closeResource();
+            replacementConnection.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("bufferedNotModifiedGetRedirects")
+    void testBufferedNotModifiedGetRedirectDoesNotContaminateNextRequest(String redirectStatus,
+                                                                        String responseMetadata) {
+        var targetConnection = new FakeHttp1ClientConnection(("HTTP/1.1 304 Not Modified\r\n"
+                + responseMetadata + "\r\n\r\n"
+                + "HTTP/1.1 200 OK\r\nContent-Length:4\r\n\r\nevil").getBytes(StandardCharsets.US_ASCII));
+        var replacementConnection = new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length:2\r\n\r\nok".getBytes(StandardCharsets.US_ASCII));
+        var connectionCache = new ReconnectingConnectionCache(targetConnection, replacementConnection);
+        var configuredClient = (Http1ClientImpl) Http1Client.builder()
+                .sendExpectContinue(true)
+                .shareConnectionCache(false)
+                .build();
+        var testClient = new FixedConnectionHttp1Client(configuredClient, connectionCache);
+        configuredClient.closeResource();
+        var redirectConnection = new FakeHttp1ClientConnection("HTTP/1.1 " + redirectStatus + "\r\n"
+                + "Location: http://localhost:" + dummyPort + "/target\r\n"
+                + "Content-Length: 0\r\n\r\n");
+
+        try {
+            Http1ClientRequest request = testClient.put("http://localhost:" + dummyPort + "/redirect")
+                    .connection(redirectConnection);
+            try (Http1ClientResponse response = request.outputStream(output -> {
+                output.write('x');
+                output.close();
+            })) {
+                assertThat(targetConnection.getPrologue(), startsWith("GET "));
+                assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+            }
+            try (Http1ClientResponse response = testClient.get("http://localhost:" + dummyPort + "/next").request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.entity().as(String.class), is("ok"));
+            }
+            assertThat(targetConnection.closeCount(), is(1));
+            assertThat(targetConnection.releaseCount(), is(0));
+            assertThat(replacementConnection.releaseCount(), is(1));
+        } finally {
+            testClient.closeResource();
+            connectionCache.closeResource();
+            redirectConnection.closeResource();
+            targetConnection.closeResource();
+            replacementConnection.closeResource();
+        }
+    }
+
+    @ParameterizedTest
     @MethodSource("notModifiedMetadata")
     void testMalformedNoContentFramingClosesConnection(Header responseFraming) throws IOException {
         FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection("204 No Content", responseFraming);
@@ -1038,6 +1117,12 @@ class Http1ClientTest {
         );
     }
 
+    private static Stream<Arguments> bufferedNotModifiedGetRedirects() {
+        return Stream.of("301 Moved Permanently", "302 Found", "303 See Other")
+                .flatMap(status -> Stream.of("Content-Length:42", "Transfer-Encoding:chunked")
+                        .map(metadata -> arguments(status, metadata)));
+    }
+
     private static Stream<Arguments> headers() {
         return Stream.of(
                 // Valid headers
@@ -1137,6 +1222,7 @@ class Http1ClientTest {
         private final String expectContinueResponse;
         private final String responseStatus;
         private final Header responseMetadata;
+        private final byte[] fixedResponse;
         private Throwable serverException;
         private ExecutorService webServerEmulator;
         private String prologue;
@@ -1159,10 +1245,22 @@ class Http1ClientTest {
             this(true, "HTTP/1.1 100 Continue\r\n\r\n", responseStatus, responseMetadata);
         }
 
+        FakeHttp1ClientConnection(byte[] fixedResponse) {
+            this(false, "HTTP/1.1 100 Continue\r\n\r\n", "200 OK", null, fixedResponse);
+        }
+
         private FakeHttp1ClientConnection(boolean includeKeepAliveHeader,
                                           String expectContinueResponse,
                                           String responseStatus,
                                           Header responseMetadata) {
+            this(includeKeepAliveHeader, expectContinueResponse, responseStatus, responseMetadata, null);
+        }
+
+        private FakeHttp1ClientConnection(boolean includeKeepAliveHeader,
+                                          String expectContinueResponse,
+                                          String responseStatus,
+                                          Header responseMetadata,
+                                          byte[] fixedResponse) {
             ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
             ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
 
@@ -1174,6 +1272,7 @@ class Http1ClientTest {
             this.expectContinueResponse = expectContinueResponse;
             this.responseStatus = responseStatus;
             this.responseMetadata = responseMetadata;
+            this.fixedResponse = fixedResponse;
         }
 
         @Override
@@ -1316,6 +1415,12 @@ class Http1ClientTest {
                 }
             } catch (IllegalArgumentException e) {
                 requestFailed = true;
+            }
+
+            if (fixedResponse != null) {
+                // Deliver the complete response and any unexpected bytes in one reader chunk.
+                serverWriter.write(BufferData.create(fixedResponse));
+                return;
             }
 
             int entitySize = 0;
@@ -1803,6 +1908,38 @@ class Http1ClientTest {
                                     ClientUri uri,
                                     ClientRequestHeaders headers,
                                     boolean defaultKeepAlive) {
+            return connection;
+        }
+    }
+
+    private static class ReconnectingConnectionCache extends Http1ConnectionCache {
+        private final FakeHttp1ClientConnection connection;
+        private final FakeHttp1ClientConnection replacementConnection;
+        private boolean firstRequest = true;
+
+        private ReconnectingConnectionCache(FakeHttp1ClientConnection connection,
+                                             FakeHttp1ClientConnection replacementConnection) {
+            super(false);
+            this.connection = connection;
+            this.replacementConnection = replacementConnection;
+        }
+
+        @Override
+        ClientConnection connection(Http1ClientImpl http1Client,
+                                    Tls tls,
+                                    Proxy proxy,
+                                    ClientUri uri,
+                                    ClientRequestHeaders headers,
+                                    boolean defaultKeepAlive) {
+            if (firstRequest) {
+                firstRequest = false;
+                return connection;
+            }
+            if (connection.closeCount() > 0) {
+                return replacementConnection;
+            }
+            assertThat("The previous response must release the connection before it can be reused",
+                       connection.releaseCount(), is(1));
             return connection;
         }
     }

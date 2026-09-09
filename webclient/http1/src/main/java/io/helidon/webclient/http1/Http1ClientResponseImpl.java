@@ -166,7 +166,14 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (closeConnectionOnClose || headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
+                if (closeConnectionOnClose
+                        || connection instanceof CloseOnReleaseClientConnection
+                        || headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
+                    connection.closeResource();
+                } else if (inputStream == null
+                        && responseStatus.code() == Status.NOT_MODIFIED_304_CODE
+                        && connection.reader().available() > 0) {
+                    // A 304 ends at its headers; buffered bytes must not become the next response.
                     connection.closeResource();
                 } else {
                     if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {
