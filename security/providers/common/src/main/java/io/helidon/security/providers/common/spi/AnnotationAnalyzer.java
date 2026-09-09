@@ -69,6 +69,19 @@ public interface AnnotationAnalyzer {
     }
 
     /**
+     * Whether this analyzer supports expanded callbacks for separate resource definition, declaring, and handling stages.
+     * <p>
+     * The default preserves the original application, resource-class, and resource-method callback topology. The returned
+     * value must remain stable after initialization.
+     *
+     * @return {@code true} to opt in to expanded endpoint analysis
+     * @since 4.5.4
+     */
+    default boolean supportsExpandedEndpointAnalysis() {
+        return false;
+    }
+
+    /**
      * Analyze an application class.
      *
      * @param maybeAnnotated class of the JAX-RS application
@@ -99,11 +112,20 @@ public interface AnnotationAnalyzer {
 
     /**
      * Analyze a resource class.
-     * By default returns an abstain response.
+     * <p>
+     * An analyzer that opts in through {@link #supportsExpandedEndpointAnalysis()} may receive several ordered class and
+     * method stages for resource definitions, declaring types, and concrete handlers. In that case,
+     * {@code previousResponse} is the response returned by this analyzer for the immediately preceding stage and may be a
+     * method-stage response.
+     * <p>
+     * This legacy reflection callback receives the complete reflective class view and cannot represent a scoped or
+     * filtered annotation list. When called through the metadata callback's default implementation, filtering performed
+     * by the integration is therefore not visible. Integrations may omit legacy callbacks for stages that cannot be
+     * represented faithfully.
      *
-     * @param maybeAnnotated   class of the JAX-RS resource
-     * @param previousResponse response from parent of this class (e.g. from application analysis)
-     * @return response with information whether to (and how) authenticate and authorize
+     * @param maybeAnnotated class analyzed at this stage
+     * @param previousResponse response from the preceding analyzer stage
+     * @return response describing authentication and authorization requirements
      * @deprecated going away from reflection, use
      *         {@link #analyze(io.helidon.common.types.TypeName, java.util.List,
      *         io.helidon.security.providers.common.spi.AnnotationAnalyzer.AnalyzerResponse)}
@@ -115,12 +137,17 @@ public interface AnnotationAnalyzer {
     }
 
     /**
-     * Analyze an endpoint class.
+     * Analyze a resource type.
+     * <p>
+     * By default, the supplied annotations are the complete annotation view of the selected resource class. An analyzer
+     * that opts in through {@link #supportsExpandedEndpointAnalysis()} may receive several ordered callbacks for a
+     * resource's selected definition, method-declaring type, and concrete handling type. The supplied annotations are then
+     * exactly those selected for that stage and may be a declared, inherited, or filtered subset.
      *
-     * @param endpointType     type of the endpoint (such as JAX-RS resource)
-     * @param annotations      annotations on the type
-     * @param previousResponse response from parent of this class (e.g. from application analysis)
-     * @return response with information whether to (and how) authenticate and authorize
+     * @param endpointType type analyzed at this stage
+     * @param annotations annotations selected for this stage
+     * @param previousResponse response returned by this analyzer for the preceding class or method stage
+     * @return response describing authentication and authorization requirements
      */
     default AnalyzerResponse analyze(TypeName endpointType, List<Annotation> annotations, AnalyzerResponse previousResponse) {
         // the default must fallback to reflection, as only this method is going to be called now
@@ -133,11 +160,17 @@ public interface AnnotationAnalyzer {
 
     /**
      * Analyze a resource method.
-     * By default returns an abstain response.
+     * <p>
+     * An analyzer that opts in through {@link #supportsExpandedEndpointAnalysis()} may receive both Jersey's selected
+     * resource-definition method and the actual handling method. {@code previousResponse} is the response returned by this
+     * analyzer for the immediately preceding stage, normally the last applicable class stage.
+     * <p>
+     * This legacy callback receives the complete reflective method view. The metadata callback's default implementation
+     * delegates here using its originating {@link Method}, when available, or a reflectively resolved matching method.
      *
-     * @param maybeAnnotated   JAX-RS resource method
-     * @param previousResponse response from parent of this class (e.g. from resource class analysis)
-     * @return response with information whether to (and how) authenticate and authorize
+     * @param maybeAnnotated method analyzed at this stage
+     * @param previousResponse response from the preceding analyzer stage
+     * @return response describing authentication and authorization requirements
      * @deprecated going away from reflection, use
      *         {@link #analyze(io.helidon.common.types.TypeName, io.helidon.common.types.TypedElementInfo,
      *         io.helidon.security.providers.common.spi.AnnotationAnalyzer.AnalyzerResponse)}
@@ -150,17 +183,26 @@ public interface AnnotationAnalyzer {
 
     /**
      * Analyze a resource method.
-     * By default returns an abstain response.
+     * <p>
+     * An analyzer that opts in through {@link #supportsExpandedEndpointAnalysis()} may receive separate callbacks for a
+     * resource's selected definition method and actual handling method. The supplied metadata is the method view selected
+     * for this stage, and {@code previousResponse} is the response returned by this analyzer for the immediately preceding
+     * class or method stage.
      *
-     * @param typeName         type that contains the method
-     * @param method           endpoint method (such as JAX-RS method)
-     * @param previousResponse response from parent of this class (e.g. from resource class analysis)
-     * @return response with information whether to (and how) authenticate and authorize
+     * @param typeName declaring type of the method analyzed at this stage
+     * @param method method metadata selected for this stage
+     * @param previousResponse response from the preceding analyzer stage
+     * @return response describing authentication and authorization requirements
      */
     default AnalyzerResponse analyze(TypeName typeName, TypedElementInfo method, AnalyzerResponse previousResponse) {
         // the default must fallback to reflection, as only this method is going to be called now
+        Object originatingElement = method.originatingElement().orElse(null);
+        if (originatingElement instanceof Method originatingMethod) {
+            return analyze(originatingMethod, previousResponse);
+        }
         try {
             Class<?> aClass = Class.forName(typeName.name());
+            Method matchingBridgeMethod = null;
             for (Method declaredMethod : aClass.getDeclaredMethods()) {
                 // find the right method
                 if (!declaredMethod.getName().equals(method.elementName())) {
@@ -170,8 +212,17 @@ public interface AnnotationAnalyzer {
                 List<TypedElementInfo> expectedArguments = method.parameterArguments();
 
                 if (matchesMethod(declaredMethod, expectedArguments)) {
+                    if (declaredMethod.isBridge()) {
+                        if (matchingBridgeMethod == null) {
+                            matchingBridgeMethod = declaredMethod;
+                        }
+                        continue;
+                    }
                     return analyze(declaredMethod, previousResponse);
                 }
+            }
+            if (matchingBridgeMethod != null) {
+                return analyze(matchingBridgeMethod, previousResponse);
             }
             throw new SecurityException("Cannot analyze endpoint method, as the signature could not be found on declaring "
                                                 + "type: " + aClass.getName()
@@ -193,8 +244,12 @@ public interface AnnotationAnalyzer {
         }
         // same number of parameters, same name, let's go through parameters
         for (int i = 0; i < declaredMethod.getParameterTypes().length; i++) {
-            Class<?> parameterType = declaredMethod.getParameterTypes()[i];
-            if (!expectedArguments.get(i).typeName().equals(TypeName.create(parameterType))) {
+            TypeName expectedType = expectedArguments.get(i).typeName();
+            if (expectedType.equals(TypeName.create(declaredMethod.getParameterTypes()[i]))) {
+                continue;
+            }
+            TypeName genericType = TypeName.create(declaredMethod.getGenericParameterTypes()[i]);
+            if (!expectedType.resolvedName().equals(genericType.resolvedName())) {
                 return false;
             }
         }
@@ -293,13 +348,19 @@ public interface AnnotationAnalyzer {
         }
 
         /**
-         * Parent of this analysis.
+         * Response explicitly supplied as this response's parent.
+         * <p>
+         * Security integrations pass the response returned by the preceding analyzer callback as
+         * {@code previousResponse}. An analyzer that creates a new response normally preserves that relationship with
+         * {@link #builder(AnalyzerResponse)}. The framework does not infer or create the parent relationship, and an
+         * analyzer may return the preceding response unchanged.
+         * <p>
+         * Analysis begins with the application. An analyzer that opts in through
+         * {@link AnnotationAnalyzer#supportsExpandedEndpointAnalysis()} may then receive multiple definition,
+         * declaring-class, definition-method, handling-class, and handling-method stages, repeated for each level of a
+         * sub-resource path. Consequently, a class response may have a method response as its parent, and vice versa.
          *
-         * For application class analysis, the parent is empty.
-         * For resource class analysis, the parent is application class analysis result.
-         * For resource method analysis, the parent is resource class analysis result.
-         *
-         * @return parent if exists, or empty
+         * @return explicitly configured parent, or empty
          */
         public Optional<AnalyzerResponse> parent() {
             return Optional.ofNullable(parent);
@@ -455,5 +516,3 @@ public interface AnnotationAnalyzer {
         }
     }
 }
-
-

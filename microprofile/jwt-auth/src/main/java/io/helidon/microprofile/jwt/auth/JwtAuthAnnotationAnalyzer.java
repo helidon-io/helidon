@@ -54,6 +54,11 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
     }
 
     @Override
+    public boolean supportsExpandedEndpointAnalysis() {
+        return true;
+    }
+
+    @Override
     public void init(Config config) {
         config.get(PROVIDER_NAME + ".auth-method-mapping")
                 .asNodeList()

@@ -18,10 +18,13 @@ package io.helidon.microprofile.security;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
@@ -29,7 +32,9 @@ import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
+import io.helidon.security.annotations.Authorized;
 import io.helidon.security.integration.common.SecurityTracing;
+import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -43,6 +48,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -69,8 +75,8 @@ class SecurityFilterTest {
 
         SecurityContext securityContext = security.createContext("testAbortWith");
 
-        SecurityFilter sf = new SecurityFilter(feature.featureConfig(),
-                                               security,
+        SecurityFilter sf = new SecurityFilter(security,
+                                               feature.featureConfig(),
                                                securityContext);
 
         ContainerRequest request = mock(ContainerRequest.class);
@@ -97,8 +103,8 @@ class SecurityFilterTest {
 
         SecurityContext securityContext = security.createContext("testNotAbortWith");
 
-        SecurityFilter sf = new SecurityFilter(feature.featureConfig(),
-                                               security,
+        SecurityFilter sf = new SecurityFilter(security,
+                                               feature.featureConfig(),
                                                securityContext);
 
         ContainerRequest request = mock(ContainerRequest.class);
@@ -128,8 +134,8 @@ class SecurityFilterTest {
 
         SecurityContext securityContext = security.createContext("testAbortWith");
 
-        SecurityFilter sf = new SecurityFilter(feature.featureConfig(),
-                                               security,
+        SecurityFilter sf = new SecurityFilter(security,
+                                               feature.featureConfig(),
                                                securityContext);
 
         ContainerRequest request = mock(ContainerRequest.class);
@@ -157,8 +163,8 @@ class SecurityFilterTest {
 
         SecurityContext securityContext = security.createContext("testNotAbortWith");
 
-        SecurityFilter sf = new SecurityFilter(feature.featureConfig(),
-                                               security,
+        SecurityFilter sf = new SecurityFilter(security,
+                                               feature.featureConfig(),
                                                securityContext);
 
         ContainerRequest request = mock(ContainerRequest.class);
@@ -180,6 +186,174 @@ class SecurityFilterTest {
 
         assertThat(response.getStatus(), is(403));
         assertThat(message, is("Unit-test"));
+    }
+
+    @Test
+    void testAnalyzerAuthorizationRequiredOverridesOwnForbidden() {
+        AnnotationAnalyzer analyzer = mock(AnnotationAnalyzer.class);
+        SecurityDefinition definition = new SecurityDefinition(false, false);
+        AnnotationAnalyzer.AnalyzerResponse classResponse = AnnotationAnalyzer.AnalyzerResponse.builder()
+                .authorizeResponse(AnnotationAnalyzer.Flag.FORBIDDEN)
+                .authorizer("class-authorizer")
+                .build();
+        definition.analyzerResponse(analyzer, classResponse);
+        SecurityDefinition methodDefinition = definition.copyMe();
+        AnnotationAnalyzer.AnalyzerResponse methodResponse = AnnotationAnalyzer.AnalyzerResponse.builder(classResponse)
+                .authorizeResponse(AnnotationAnalyzer.Flag.REQUIRED)
+                .authorizer("method-authorizer")
+                .build();
+
+        methodDefinition.analyzerResponse(analyzer, methodResponse);
+
+        assertThat(methodDefinition.requiresAuthorization(), is(true));
+        assertThat(methodDefinition.authorizer(), is("method-authorizer"));
+        assertThat(methodDefinition.analyzerResponse(analyzer), sameInstance(methodResponse));
+    }
+
+    @Test
+    void testAnalyzerAuthorizationForbiddenOverridesOwnRequired() {
+        AnnotationAnalyzer analyzer = mock(AnnotationAnalyzer.class);
+        SecurityDefinition definition = new SecurityDefinition(false, false);
+        AnnotationAnalyzer.AnalyzerResponse classResponse = AnnotationAnalyzer.AnalyzerResponse.builder()
+                .authorizeResponse(AnnotationAnalyzer.Flag.REQUIRED)
+                .authorizer("class-authorizer")
+                .build();
+        definition.analyzerResponse(analyzer, classResponse);
+        SecurityDefinition methodDefinition = definition.copyMe();
+        AnnotationAnalyzer.AnalyzerResponse methodResponse = AnnotationAnalyzer.AnalyzerResponse.builder(classResponse)
+                .authorizeResponse(AnnotationAnalyzer.Flag.FORBIDDEN)
+                .authorizer("method-authorizer")
+                .build();
+
+        methodDefinition.analyzerResponse(analyzer, methodResponse);
+
+        assertThat(methodDefinition.requiresAuthorization(), is(false));
+        assertThat(methodDefinition.authorizer(), is("method-authorizer"));
+        assertThat(methodDefinition.analyzerResponse(analyzer), sameInstance(methodResponse));
+    }
+
+    @Test
+    void testDifferentAnalyzerCannotOverrideAuthorizationDecision() {
+        AnnotationAnalyzer firstAnalyzer = mock(AnnotationAnalyzer.class);
+        AnnotationAnalyzer secondAnalyzer = mock(AnnotationAnalyzer.class);
+        SecurityDefinition definition = new SecurityDefinition(false, false);
+        definition.analyzerResponse(firstAnalyzer,
+                                    AnnotationAnalyzer.AnalyzerResponse.builder()
+                                            .authorizeResponse(AnnotationAnalyzer.Flag.REQUIRED)
+                                            .authorizer("first-authorizer")
+                                            .build());
+
+        definition.analyzerResponse(secondAnalyzer,
+                                    AnnotationAnalyzer.AnalyzerResponse.builder()
+                                            .authorizeResponse(AnnotationAnalyzer.Flag.FORBIDDEN)
+                                            .authorizer("second-authorizer")
+                                            .build());
+
+        assertThat(definition.requiresAuthorization(), is(true));
+        assertThat(definition.authorizer(), is("second-authorizer"));
+    }
+
+    @Test
+    void testAbstainingAnalyzerCanSelectAuthorizer() {
+        AnnotationAnalyzer analyzer = mock(AnnotationAnalyzer.class);
+        SecurityDefinition definition = new SecurityDefinition(true, false);
+
+        definition.analyzerResponse(analyzer,
+                                    AnnotationAnalyzer.AnalyzerResponse.builder()
+                                            .authorizer("analyzer-authorizer")
+                                            .build());
+
+        assertThat(definition.requiresAuthorization(), is(false));
+        assertThat(definition.authorizer(), is("analyzer-authorizer"));
+    }
+
+    @Test
+    void testExplicitAuthorizationCannotBeOverriddenByAnalyzer() {
+        AnnotationAnalyzer analyzer = mock(AnnotationAnalyzer.class);
+        SecurityDefinition definition = new SecurityDefinition(false, false);
+        definition.analyzerResponse(analyzer,
+                                    AnnotationAnalyzer.AnalyzerResponse.builder()
+                                            .authorizeResponse(AnnotationAnalyzer.Flag.FORBIDDEN)
+                                            .build());
+        SecurityDefinition methodDefinition = definition.copyMe();
+        methodDefinition.requiresAuthorization(false);
+
+        methodDefinition.analyzerResponse(analyzer,
+                                          AnnotationAnalyzer.AnalyzerResponse.builder()
+                                                  .authorizeResponse(AnnotationAnalyzer.Flag.REQUIRED)
+                                                  .build());
+
+        assertThat(methodDefinition.requiresAuthorization(), is(false));
+    }
+
+    @Test
+    void testAuthorizedAnnotationDecisionCannotBeOverriddenByAnalyzer() {
+        AnnotationAnalyzer analyzer = mock(AnnotationAnalyzer.class);
+        SecurityDefinition definition = new SecurityDefinition(false, false);
+        definition.analyzerResponse(analyzer,
+                                    AnnotationAnalyzer.AnalyzerResponse.builder()
+                                            .authorizeResponse(AnnotationAnalyzer.Flag.FORBIDDEN)
+                                            .build());
+        SecurityDefinition methodDefinition = definition.copyMe();
+        Authorized authorized = mock(Authorized.class);
+        when(authorized.provider()).thenReturn("annotation-authorizer");
+        methodDefinition.add(authorized);
+
+        methodDefinition.analyzerResponse(analyzer,
+                                          AnnotationAnalyzer.AnalyzerResponse.builder()
+                                                  .authorizeResponse(AnnotationAnalyzer.Flag.REQUIRED)
+                                                  .authorizer("analyzer-authorizer")
+                                                  .build());
+
+        assertThat(methodDefinition.requiresAuthorization(), is(false));
+        assertThat(methodDefinition.authorizer(), is("analyzer-authorizer"));
+    }
+
+    @Test
+    void testAbstainPreservesAuthorizationAnalyzerOwnership() {
+        AnnotationAnalyzer analyzer = mock(AnnotationAnalyzer.class);
+        SecurityDefinition definition = new SecurityDefinition(false, false);
+        AnnotationAnalyzer.AnalyzerResponse classResponse = AnnotationAnalyzer.AnalyzerResponse.builder()
+                .authorizeResponse(AnnotationAnalyzer.Flag.FORBIDDEN)
+                .build();
+        definition.analyzerResponse(analyzer, classResponse);
+        SecurityDefinition intermediateDefinition = definition.copyMe();
+        AnnotationAnalyzer.AnalyzerResponse intermediateResponse = AnnotationAnalyzer.AnalyzerResponse.builder(classResponse)
+                .authorizer("method-authorizer")
+                .build();
+        intermediateDefinition.analyzerResponse(analyzer, intermediateResponse);
+        SecurityDefinition methodDefinition = intermediateDefinition.copyMe();
+
+        methodDefinition.analyzerResponse(analyzer,
+                                          AnnotationAnalyzer.AnalyzerResponse.builder(intermediateResponse)
+                                                  .authorizeResponse(AnnotationAnalyzer.Flag.REQUIRED)
+                                                  .build());
+
+        assertThat(methodDefinition.requiresAuthorization(), is(true));
+        assertThat(methodDefinition.authorizer(), is("method-authorizer"));
+    }
+
+    @Test
+    void testAnalyzerAuthorizerOverridesConfiguredAuthorizer() {
+        AnnotationAnalyzer analyzer = mock(AnnotationAnalyzer.class);
+        SecurityDefinition definition = new SecurityDefinition(false, false);
+        definition.analyzerResponse(analyzer,
+                                    AnnotationAnalyzer.AnalyzerResponse.builder()
+                                            .authorizeResponse(AnnotationAnalyzer.Flag.REQUIRED)
+                                            .authorizer("class-authorizer")
+                                            .build());
+        SecurityDefinition methodDefinition = definition.copyMe();
+        methodDefinition.fromConfig(Config.create(ConfigSources.create(Map.of("authorizer",
+                                                                               "configured-authorizer"))));
+
+        methodDefinition.analyzerResponse(analyzer,
+                                          AnnotationAnalyzer.AnalyzerResponse.builder()
+                                                  .authorizeResponse(AnnotationAnalyzer.Flag.FORBIDDEN)
+                                                  .authorizer("method-authorizer")
+                                                  .build());
+
+        assertThat(methodDefinition.requiresAuthorization(), is(false));
+        assertThat(methodDefinition.authorizer(), is("method-authorizer"));
     }
 
     @Test
