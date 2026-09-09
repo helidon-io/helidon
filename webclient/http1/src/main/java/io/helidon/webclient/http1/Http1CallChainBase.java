@@ -523,12 +523,6 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
-        if ((
-                responseHeaders.contains(HeaderNames.UPGRADE)
-                        && !responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
-            // this is an upgrade response and there is no entity
-            return false;
-        }
         // if we decide to support HTTP/1.0, we may have an entity without any headers
         // in HTTP/1.1, we should have a content encoding
         return true;
