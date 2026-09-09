@@ -31,6 +31,7 @@ module io.helidon.microprofile.lra {
     exports io.helidon.microprofile.lra;
 
     requires io.helidon.common.reactive;
+    requires io.helidon.common.uri;
     requires io.helidon.config;
     requires io.helidon.lra.coordinator.client;
     requires io.helidon.microprofile.config;

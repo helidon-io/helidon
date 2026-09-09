@@ -19,6 +19,7 @@ package io.helidon.microprofile.lra;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -93,6 +94,9 @@ class ParticipantImpl implements Participant {
                     callbackPath(Status.class), Status.class,
                     callbackPath(AfterLRA.class), AfterLRA.class
             );
+
+    static final Set<Class<? extends Annotation>> NON_JAX_RS_PARTICIPANT_CALLBACK_ANNOTATIONS =
+            Set.copyOf(NON_JAX_RS_PARTICIPANT_CALLBACKS.values());
 
     private final Map<Class<? extends Annotation>, URI> compensatorLinks;
     private final Map<Class<? extends Annotation>, Set<Method>> methodMap;
@@ -197,8 +201,15 @@ class ParticipantImpl implements Participant {
 
     static Map<Class<? extends Annotation>, Set<Method>> scanForLRAMethods(Class<?> clazz) {
         Map<Class<? extends Annotation>, Set<Method>> methods = new HashMap<>();
-        do {
-            for (Method m : clazz.getDeclaredMethods()) {
+        List<Class<?>> participantTypes = new ArrayList<>();
+        Set<Class<?>> inspectedTypes = new HashSet<>();
+        participantTypes.add(clazz);
+        for (int i = 0; i < participantTypes.size(); i++) {
+            Class<?> participantType = participantTypes.get(i);
+            if (!inspectedTypes.add(participantType)) {
+                continue;
+            }
+            for (Method m : participantType.getDeclaredMethods()) {
                 Optional<Annotation> annotation = getLRAAnnotation(m);
                 if (annotation.isPresent()) {
                     var annotationType = annotation.get().annotationType();
@@ -206,8 +217,12 @@ class ParticipantImpl implements Participant {
                     methods.get(annotationType).add(m);
                 }
             }
-            clazz = clazz.getSuperclass();
-        } while (clazz != null);
+            Class<?> superClass = participantType.getSuperclass();
+            if (superClass != null) {
+                participantTypes.add(superClass);
+            }
+            participantTypes.addAll(List.of(participantType.getInterfaces()));
+        }
         return methods;
     }
 

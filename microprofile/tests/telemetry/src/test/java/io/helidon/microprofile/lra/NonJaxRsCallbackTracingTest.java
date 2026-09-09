@@ -20,6 +20,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -86,7 +87,7 @@ class NonJaxRsCallbackTracingTest {
         NonJaxRsCallbackAuthenticator callbackAuthenticator =
                 new NonJaxRsCallbackAuthenticator(Optional.of(TEST_SECRET), false);
         ParticipantService participantService =
-                new ParticipantService(null, null, CONTEXT_PATH, Optional.empty(), Set.of(), callbackAuthenticator);
+                new ParticipantService(null, null, CONTEXT_PATH, Optional.empty(), Map.of(), Set.of(), callbackAuthenticator);
         String capability = callbackAuthenticator.capability(LRA_ID, CALLBACK_TYPE, CLASS_NAME, METHOD_NAME);
         String callbackPath = "/" + CONTEXT_PATH + "/" + CALLBACK_TYPE + "/" + CLASS_NAME + "/" + METHOD_NAME;
         NonJaxRsResource resource =

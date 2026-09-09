@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.lra;
 
-import java.net.URI;
-
 import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
@@ -45,8 +43,7 @@ class LeaveAnnotationHandler implements AnnotationHandler {
     public void handleJaxRsBefore(ContainerRequestContext reqCtx, ResourceInfo resourceInfo) {
         getLraContext(reqCtx)
                 .ifPresent(lraId -> {
-                    URI baseUri = reqCtx.getUriInfo().getBaseUri();
-                    Participant p = participantService.participant(baseUri, resourceInfo.getResourceClass(), lraId);
+                    Participant p = participantService.participant(resourceInfo.getResourceClass(), lraId);
                     try {
                         coordinatorClient.leave(lraId, PropagatedHeaders.noop(), p);
                     } catch (CoordinatorConnectionException e) {

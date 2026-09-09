@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
-import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.lra.resources.DontEnd;
 import io.helidon.microprofile.lra.resources.Work;
@@ -80,9 +79,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 @HelidonTest
 @DisableDiscovery
@@ -108,6 +104,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 @AddBean(ParticipantTest.ConsumesOverrideJaxRsParticipantResource.class)
 @AddBean(ParticipantTest.HeaderParamOverrideJaxRsParticipantResource.class)
 @AddBean(ParticipantTest.SuperclassConsumesInterfaceJaxRsParticipantResource.class)
+@AddBean(ParticipantTest.InterfaceCallbackJaxRsParticipant.class)
+@AddBean(ParticipantTest.InterfaceCallbackNonJaxRsParticipant.class)
+@AddBean(ParticipantTest.InterfaceCallbackJaxRsParticipantResource.class)
+@AddBean(ParticipantTest.InterfaceCallbackNonJaxRsParticipantResource.class)
 // Override context
 @AddConfig(key = NonJaxRsResource.CONFIG_CONTEXT_PATH_KEY, value = ParticipantTest.CUSTOM_CONTEXT)
 @AddConfig(key = NonJaxRsCallbackAuthenticator.CONFIG_SECRET_KEY, value = ParticipantTest.TEST_CALLBACK_SECRET)
@@ -127,6 +127,8 @@ class ParticipantTest {
     private static final AtomicBoolean INHERITED_JAX_RS_COMPENSATE_CALLED = new AtomicBoolean();
     private static final AtomicBoolean TRANSITIVE_INTERFACE_JAX_RS_COMPENSATE_CALLED = new AtomicBoolean();
     private static final AtomicBoolean GENERIC_INTERFACE_JAX_RS_COMPENSATE_CALLED = new AtomicBoolean();
+    private static final AtomicBoolean INTERFACE_CALLBACK_JAX_RS_COMPENSATE_CALLED = new AtomicBoolean();
+    private static final AtomicBoolean INTERFACE_CALLBACK_NON_JAX_RS_COMPENSATE_CALLED = new AtomicBoolean();
     private static final AtomicBoolean SUPERCLASS_JAX_RS_COMPENSATE_CALLED = new AtomicBoolean();
     private static final AtomicBoolean OVERRIDING_JAX_RS_COMPENSATE_CALLED = new AtomicBoolean();
     private static final AtomicBoolean CUSTOM_HTTP_METHOD_COMPENSATE_CALLED = new AtomicBoolean();
@@ -361,10 +363,24 @@ class ParticipantTest {
     }
 
     @Test
+    void invokeInterfaceDeclaredNonJaxRsParticipantMethod(WebTarget target) throws Exception {
+        INTERFACE_CALLBACK_NON_JAX_RS_COMPENSATE_CALLED.set(false);
+
+        Response response = participantCallback(target,
+                                                "compensate",
+                                                InterfaceCallbackNonJaxRsParticipantResource.class,
+                                                "compensate");
+
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+        assertThat(INTERFACE_CALLBACK_NON_JAX_RS_COMPENSATE_CALLED.get(), is(true));
+    }
+
+    @Test
     void invokeInheritedJaxRsParticipantMethods(WebTarget target) throws Exception {
         INHERITED_JAX_RS_COMPENSATE_CALLED.set(false);
         TRANSITIVE_INTERFACE_JAX_RS_COMPENSATE_CALLED.set(false);
         GENERIC_INTERFACE_JAX_RS_COMPENSATE_CALLED.set(false);
+        INTERFACE_CALLBACK_JAX_RS_COMPENSATE_CALLED.set(false);
         SUPERCLASS_JAX_RS_COMPENSATE_CALLED.set(false);
         OVERRIDING_JAX_RS_COMPENSATE_CALLED.set(false);
         PARTIAL_OVERRIDE_JAX_RS_COMPENSATE_CALLED.set(false);
@@ -375,6 +391,8 @@ class ParticipantTest {
                                                      "transitive-interface-compensate");
         Response genericInterface = jaxRsCallback(target, "generic-interface-jax-rs-participant-test",
                                                   "generic-interface-compensate");
+        Response interfaceCallback = jaxRsCallback(target, "interface-callback-jax-rs-participant-test",
+                                                   "compensate");
         Response superclass = jaxRsCallback(target, "superclass-jax-rs-participant-test",
                                             "superclass-compensate");
         Response overriding = jaxRsCallback(target, "overriding-jax-rs-participant-test",
@@ -384,12 +402,14 @@ class ParticipantTest {
         assertThat(inherited.getStatus(), is(Response.Status.OK.getStatusCode()));
         assertThat(transitiveInterface.getStatus(), is(Response.Status.OK.getStatusCode()));
         assertThat(genericInterface.getStatus(), is(Response.Status.OK.getStatusCode()));
+        assertThat(interfaceCallback.getStatus(), is(Response.Status.OK.getStatusCode()));
         assertThat(superclass.getStatus(), is(Response.Status.OK.getStatusCode()));
         assertThat(overriding.getStatus(), is(Response.Status.OK.getStatusCode()));
         assertThat(partialOverride.getStatus(), is(Response.Status.OK.getStatusCode()));
         assertThat(INHERITED_JAX_RS_COMPENSATE_CALLED.get(), is(true));
         assertThat(TRANSITIVE_INTERFACE_JAX_RS_COMPENSATE_CALLED.get(), is(true));
         assertThat(GENERIC_INTERFACE_JAX_RS_COMPENSATE_CALLED.get(), is(true));
+        assertThat(INTERFACE_CALLBACK_JAX_RS_COMPENSATE_CALLED.get(), is(true));
         assertThat(SUPERCLASS_JAX_RS_COMPENSATE_CALLED.get(), is(true));
         assertThat(OVERRIDING_JAX_RS_COMPENSATE_CALLED.get(), is(true));
         assertThat(PARTIAL_OVERRIDE_JAX_RS_COMPENSATE_CALLED.get(), is(true));
@@ -470,6 +490,9 @@ class ParticipantTest {
         ParticipantImpl superclassParticipant = participant(SuperclassJaxRsParticipantResource.class);
         ParticipantImpl transitiveInterfaceParticipant = participant(TransitiveInterfaceJaxRsParticipantResource.class);
         ParticipantImpl genericInterfaceParticipant = participant(GenericInterfaceJaxRsParticipantResource.class);
+        ParticipantImpl interfaceCallbackParticipant = participant(InterfaceCallbackJaxRsParticipantResource.class);
+        ParticipantImpl interfaceCallbackNonJaxRsParticipant =
+                participant(InterfaceCallbackNonJaxRsParticipantResource.class);
         ParticipantImpl overridingParticipant = participant(OverridingJaxRsParticipantResource.class);
         ParticipantImpl superclassCallbackInterfaceParticipant =
                 participant(SuperclassCallbackInterfaceJaxRsParticipantResource.class);
@@ -485,6 +508,13 @@ class ParticipantTest {
                    is("/transitive-interface-jax-rs-participant-test/transitive-interface-compensate"));
         assertThat(genericInterfaceParticipant.compensate().orElseThrow().getPath(),
                    is("/generic-interface-jax-rs-participant-test/generic-interface-compensate"));
+        assertThat(interfaceCallbackParticipant.compensate().orElseThrow().getPath(),
+                   is("/interface-callback-jax-rs-participant-test/compensate"));
+        assertThat(interfaceCallbackNonJaxRsParticipant.compensate().orElseThrow().getPath(),
+                   is(NonJaxRsResource.CONTEXT_PATH_DEFAULT
+                              + "/compensate/"
+                              + InterfaceCallbackNonJaxRsParticipantResource.class.getName()
+                              + "/compensate"));
         assertThat(superclassParticipant.compensate().orElseThrow().getPath(),
                    is("/superclass-jax-rs-participant-test/superclass-compensate"));
         assertThat(overridingParticipant.compensate().orElseThrow().getPath(),
@@ -513,33 +543,6 @@ class ParticipantTest {
                               + "/superclassConsumesInterfaceCompensate"));
         assertThat(superclassConsumesInterfaceParticipant.compensate().orElseThrow().getQuery(),
                    startsWith(NonJaxRsCallbackAuthenticator.CAPABILITY_QUERY_PARAMETER + "=v1."));
-    }
-
-    @Test
-    void participantMetadataAndBaseUriRemainStable() {
-        URI joinBaseUri = URI.create("https://attacker.example");
-        URI leaveBaseUri = URI.create("https://later.example");
-        URI firstLraId = URI.create("https://coordinator.example/lra/first");
-        URI secondLraId = URI.create("https://coordinator.example/lra/second");
-
-        Participant firstJaxRs = participantService.participant(joinBaseUri, CachedJaxRsParticipant.class, firstLraId);
-        Participant leaveJaxRs = participantService.participant(leaveBaseUri, CachedJaxRsParticipant.class, firstLraId);
-        Participant firstNonJaxRs = participantService.participant(joinBaseUri, CachedNonJaxRsParticipant.class, firstLraId);
-        Participant secondNonJaxRs = participantService.participant(leaveBaseUri, CachedNonJaxRsParticipant.class, secondLraId);
-
-        assertAll(
-                () -> assertSame(firstJaxRs, leaveJaxRs),
-                () -> assertThat(leaveJaxRs.compensate().orElseThrow().getScheme(), is("http")),
-                () -> assertThat(leaveJaxRs.compensate().orElseThrow().getHost(), is("localhost")),
-                () -> assertThat(leaveJaxRs.compensate().orElseThrow().getPort(), is(port)),
-                () -> assertThat(leaveJaxRs.leave().orElseThrow().getHost(), is("localhost")),
-                () -> assertThat(leaveJaxRs.leave().orElseThrow().getPort(), is(port)),
-                () -> assertNotSame(firstNonJaxRs, secondNonJaxRs),
-                () -> assertThat(secondNonJaxRs.compensate().orElseThrow().getScheme(), is("http")),
-                () -> assertThat(secondNonJaxRs.compensate().orElseThrow().getHost(), is("localhost")),
-                () -> assertThat(secondNonJaxRs.compensate().orElseThrow().getPort(), is(port)),
-                () -> assertNotEquals(firstNonJaxRs.compensate(), secondNonJaxRs.compensate())
-        );
     }
 
     @Test
@@ -598,6 +601,18 @@ class ParticipantTest {
                 .async()
                 .put(Entity.text(""))
                 .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+    }
+
+    interface InterfaceCallbackJaxRsParticipant {
+
+        @Compensate
+        Response compensate();
+    }
+
+    interface InterfaceCallbackNonJaxRsParticipant {
+
+        @Compensate
+        Response compensate();
     }
 
     @ApplicationScoped
@@ -678,30 +693,6 @@ class ParticipantTest {
         }
     }
 
-    @Path("/cached-jax-rs-participant")
-    static class CachedJaxRsParticipant {
-        @PUT
-        @Path("/compensate")
-        @Compensate
-        Response compensate(URI lraId) {
-            return Response.ok().build();
-        }
-
-        @PUT
-        @Path("/leave")
-        @Leave
-        Response leave(URI lraId) {
-            return Response.ok().build();
-        }
-    }
-
-    static class CachedNonJaxRsParticipant {
-        @Compensate
-        Response compensate(URI lraId) {
-            return Response.ok().build();
-        }
-    }
-
     @ApplicationScoped
     @Path("/custom-http-method-participant-test")
     public static class CustomHttpMethodParticipantResource {
@@ -770,6 +761,29 @@ class ParticipantTest {
         @Compensate
         public Response genericInterfaceCompensate(URI lraId) {
             GENERIC_INTERFACE_JAX_RS_COMPENSATE_CALLED.set(true);
+            return Response.ok(ParticipantStatus.Compensated.name()).build();
+        }
+    }
+
+    @ApplicationScoped
+    @Path("/interface-callback-jax-rs-participant-test")
+    public static class InterfaceCallbackJaxRsParticipantResource implements InterfaceCallbackJaxRsParticipant {
+
+        @Override
+        @PUT
+        @Path("/compensate")
+        public Response compensate() {
+            INTERFACE_CALLBACK_JAX_RS_COMPENSATE_CALLED.set(true);
+            return Response.ok(ParticipantStatus.Compensated.name()).build();
+        }
+    }
+
+    @ApplicationScoped
+    public static class InterfaceCallbackNonJaxRsParticipantResource implements InterfaceCallbackNonJaxRsParticipant {
+
+        @Override
+        public Response compensate() {
+            INTERFACE_CALLBACK_NON_JAX_RS_COMPENSATE_CALLED.set(true);
             return Response.ok(ParticipantStatus.Compensated.name()).build();
         }
     }
