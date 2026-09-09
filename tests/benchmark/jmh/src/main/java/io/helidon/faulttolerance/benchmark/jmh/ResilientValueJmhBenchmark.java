@@ -254,7 +254,7 @@ public class ResilientValueJmhBenchmark {
 
         @TearDown(Level.Iteration)
         public void verifyValue() {
-            if (!value.isLoaded() || loads.get() != 1) {
+            if (!value.loaded() || loads.get() != 1) {
                 throw new IllegalStateException("First-load benchmark did not load exactly once");
             }
         }
@@ -297,7 +297,7 @@ public class ResilientValueJmhBenchmark {
 
         @TearDown(Level.Iteration)
         public void verifyValue() {
-            if (!value.isLoaded() || loads.get() != 1) {
+            if (!value.loaded() || loads.get() != 1) {
                 throw new IllegalStateException("Contended benchmark did not share one load");
             }
         }
@@ -362,7 +362,7 @@ public class ResilientValueJmhBenchmark {
 
         @TearDown(Level.Iteration)
         public void verifyValue() {
-            if (!value.isLoaded()
+            if (!value.loaded()
                     || loads.get() != 2
                     || circuitBreaker.state() != CircuitBreaker.State.CLOSED) {
                 throw new IllegalStateException("Half-open benchmark did not recover on the second load");

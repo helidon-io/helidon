@@ -63,7 +63,7 @@ public interface ResilientValue<T> extends Supplier<T> {
      *
      * @return {@code true} if the value is loaded
      */
-    boolean isLoaded();
+    boolean loaded();
 
     /**
      * Exception indicating that a source may become available later.

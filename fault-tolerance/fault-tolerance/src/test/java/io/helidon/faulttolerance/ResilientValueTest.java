@@ -63,9 +63,9 @@ class ResilientValueTest {
                                                              circuitBreaker(),
                                                              timeout());
 
-        assertThat(value.isLoaded(), is(false));
+        assertThat(value.loaded(), is(false));
         assertThat(value.get(), is("loaded"));
-        assertThat(value.isLoaded(), is(true));
+        assertThat(value.loaded(), is(true));
         assertThat(value.get(), is("loaded"));
         assertThat(calls.get(), is(3));
     }
@@ -330,7 +330,7 @@ class ResilientValueTest {
         assertThat(followerFailure.get(), instanceOf(SupplierException.class));
         assertThat(followerFailure.get().getCause(), instanceOf(InterruptedException.class));
         assertThat(followerInterrupted.get(), is(true));
-        assertThat(value.isLoaded(), is(true));
+        assertThat(value.loaded(), is(true));
         assertThat(calls.get(), is(1));
     }
 

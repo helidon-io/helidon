@@ -89,7 +89,7 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     }
 
     @Override
-    public boolean isLoaded() {
+    public boolean loaded() {
         return loaded;
     }
 
