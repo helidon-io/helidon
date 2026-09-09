@@ -22,10 +22,13 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigNode;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessagingChannel;
+import io.helidon.messaging.MessagingConfig;
 import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.MessagingRuntime;
+import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -33,6 +36,7 @@ import io.helidon.service.registry.ServiceRegistryManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -118,8 +122,116 @@ class CustomConnectorTest {
         }
     }
 
+    @Test
+    void createsConnectorFromObjectConfiguration() {
+        ConfigNode.ObjectNode connectorConfig = ConfigNode.ObjectNode.builder()
+                .addObject("object-connector", ConfigNode.ObjectNode.builder()
+                        .addValue("type", CustomConnectorProvider.CONNECTOR_TYPE)
+                        .addValue("endpoint", "object-endpoint")
+                        .addValue("prefix", "object-prefix")
+                        .build())
+                .build();
+
+        assertConfiguredConnector(connectorConfig,
+                                  "object-connector",
+                                  "object-endpoint",
+                                  "object-prefix");
+    }
+
+    @Test
+    void createsConnectorFromListConfiguration() {
+        ConfigNode.ListNode connectorConfig = ConfigNode.ListNode.builder()
+                .addObject(ConfigNode.ObjectNode.builder()
+                        .addValue("type", CustomConnectorProvider.CONNECTOR_TYPE)
+                        .addValue("name", "list-connector")
+                        .addValue("endpoint", "list-endpoint")
+                        .addValue("prefix", "list-prefix")
+                        .build())
+                .build();
+
+        assertConfiguredConnector(connectorConfig,
+                                  "list-connector",
+                                  "list-endpoint",
+                                  "list-prefix");
+    }
+
+    @Test
+    void preservesChannelConfigurationSubtrees() {
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "execution.queue-capacity", "0",
+                "incoming.received.connector", "custom-connector",
+                "incoming.received.prefix", "incoming-prefix",
+                "incoming.received.custom.delivery.mode", "ordered",
+                "outgoing.configured-channel.name", "sent",
+                "outgoing.configured-channel.connector", "custom-connector",
+                "outgoing.configured-channel.prefix", "outgoing-prefix",
+                "outgoing.configured-channel.custom.retry.max-attempts", "3")));
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        try {
+            MessagingConfig messaging = MessagingConfig.builder()
+                    .serviceRegistry(manager.registry())
+                    .config(config)
+                    .build();
+
+            assertThat(messaging.incoming().keySet(), containsInAnyOrder("received"));
+            Config incoming = messaging.incoming().get("received");
+            assertThat(incoming.get("connector").asString().get(), is("custom-connector"));
+            assertThat(incoming.get("prefix").asString().get(), is("incoming-prefix"));
+            assertThat(incoming.get("custom.delivery.mode").asString().get(), is("ordered"));
+
+            assertThat(messaging.outgoing().keySet(), containsInAnyOrder("sent"));
+            Config outgoing = messaging.outgoing().get("sent");
+            assertThat(outgoing.get("name").asString().get(), is("sent"));
+            assertThat(outgoing.get("connector").asString().get(), is("custom-connector"));
+            assertThat(outgoing.get("prefix").asString().get(), is("outgoing-prefix"));
+            assertThat(outgoing.get("custom.retry.max-attempts").asInt().get(), is(3));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
     private static Config channelConfig(String channel, String prefix) {
         return Config.just(ConfigSources.create(Map.of("channel-name", channel,
                                                        "prefix", prefix)));
+    }
+
+    private static void assertConfiguredConnector(ConfigNode connectorConfig,
+                                                  String name,
+                                                  String endpoint,
+                                                  String prefix) {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        try {
+            MessagingConfig config = MessagingConfig.builder()
+                    .serviceRegistry(manager.registry())
+                    .config(messagingConfig(connectorConfig))
+                    .build();
+
+            assertThat(config.connector().size(), is(1));
+            MessagingConnector connector = config.connector().getFirst();
+            assertThat(connector, instanceOf(CustomConnector.class));
+            assertThat(connector.name(), is(name));
+            assertThat(connector.type(), is(CustomConnectorProvider.CONNECTOR_TYPE));
+            CustomConnector customConnector = (CustomConnector) connector;
+            assertThat(customConnector.endpoint(), is(endpoint));
+            assertThat(customConnector.prefix(), is(prefix));
+            assertThat(config.incoming(), is(Map.of()));
+            assertThat(config.outgoing(), is(Map.of()));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    private static Config messagingConfig(ConfigNode connectorConfig) {
+        ConfigNode.ObjectNode empty = ConfigNode.ObjectNode.empty();
+        ConfigNode.ObjectNode messaging = ConfigNode.ObjectNode.builder()
+                .addObject("execution", empty)
+                .addNode("connector", connectorConfig)
+                .addObject("incoming", empty)
+                .addObject("outgoing", empty)
+                .build();
+        ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
+                .addObject("messaging", messaging)
+                .build();
+        return Config.just(ConfigSources.create(root)).get("messaging");
     }
 }
