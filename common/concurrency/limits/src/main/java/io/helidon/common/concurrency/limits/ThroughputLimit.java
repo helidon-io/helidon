@@ -18,6 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -220,6 +221,7 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
 
     private static class TokenBucketPermitStrategy implements PermitStrategy {
         private final long nanosPerToken;
+        private final AtomicBoolean refillInProgress = new AtomicBoolean();
         private final AtomicLong lastRefillTimeNanos = new AtomicLong();
         private final int amount;
         private final Supplier<Long> clock;
@@ -246,14 +248,31 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
         @Override
         public void refillPermits() {
             long lastRefillTime = lastRefillTimeNanos.get();
-            int newTokens = (int) ((clock.get() - lastRefillTime) / nanosPerToken);
-            if (newTokens > 0) {
-                int permitsToRefill = Math.min(newTokens, amount - semaphore.availablePermits());
-                if (permitsToRefill > 0 && lastRefillTimeNanos.compareAndSet(
-                        lastRefillTime, lastRefillTime + (permitsToRefill * nanosPerToken))) {
-                    // Last refill time has been set to time when most recent token was generated
-                    semaphore.release(permitsToRefill);
+            if ((clock.get() - lastRefillTime) < nanosPerToken) {
+                return;
+            }
+
+            if (!refillInProgress.compareAndSet(false, true)) {
+                return;
+            }
+            try {
+                lastRefillTime = lastRefillTimeNanos.get();
+                long now = clock.get();
+                long elapsedNanos = now - lastRefillTime;
+                long newTokens = elapsedNanos / nanosPerToken;
+                if (newTokens > 0) {
+                    long headroom = Math.max(0L, (long) amount - semaphore.availablePermits());
+                    int permitsToRefill = (int) Math.min(newTokens, headroom);
+                    if (permitsToRefill > 0) {
+                        semaphore.release(permitsToRefill);
+                    }
+                    // Publish the refill time after the permits so fast-path readers cannot miss a pending release.
+                    long refilledAt = clock.get();
+                    long elapsedAtRefill = refilledAt - lastRefillTime;
+                    lastRefillTimeNanos.set(refilledAt - elapsedAtRefill % nanosPerToken);
                 }
+            } finally {
+                refillInProgress.set(false);
             }
         }
 
