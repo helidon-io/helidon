@@ -567,6 +567,26 @@ class Http1ClientTest {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("notModifiedMetadata")
+    void testMalformedNoContentFramingClosesConnection(Header responseFraming) throws IOException {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection("204 No Content", responseFraming);
+        try {
+            try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/no-content")
+                    .connection(connection)
+                    .request()) {
+                assertThat(response.status(), is(Status.NO_CONTENT_204));
+                assertThat(response.entity().inputStream().readAllBytes().length, is(0));
+                assertThat(connection.releaseCount(), is(0));
+                assertThat(connection.closeCount(), is(0));
+            }
+            assertThat(connection.releaseCount(), is(0));
+            assertThat(connection.closeCount(), is(1));
+        } finally {
+            connection.closeResource();
+        }
+    }
+
     @Test
     void testChunkedResetContentDoesNotContaminateConnection() throws Exception {
         try (ChunkedResetContentServer server = ChunkedResetContentServer.start()) {

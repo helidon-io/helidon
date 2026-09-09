@@ -109,13 +109,16 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 protocolConfig.validateResponseHeaders()
         ));
 
+        OptionalLong contentLength = responseHeaders.contentLength();
         if (inputStream != null) {
-            OptionalLong contentLength = responseHeaders.contentLength();
             if (contentLength.isPresent()) {
                 this.entityLength = contentLength.getAsLong();
             } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                 this.entityLength = ENTITY_LENGTH_CHUNKED;
             }
+        } else if (responseStatus.code() == Status.NO_CONTENT_204_CODE
+                && (contentLength.orElse(0) > 0 || responseHeaders.contains(HeaderNames.TRANSFER_ENCODING))) {
+            this.closeConnectionOnClose = true;
         }
 
         if (responseHeaders.contains(HeaderNames.TRAILER)) {
