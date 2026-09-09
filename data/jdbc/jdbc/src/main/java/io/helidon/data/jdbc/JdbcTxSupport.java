@@ -530,11 +530,7 @@ final class JdbcTxSupport implements TxSupport {
             try {
                 action.accept(listener);
             } catch (RuntimeException | Error listenerFailure) {
-                if (failure == null) {
-                    failure = listenerFailure;
-                } else {
-                    failure.addSuppressed(listenerFailure);
-                }
+                failure = merge(failure, listenerFailure);
             }
         }
         if (failure instanceof Error error) {

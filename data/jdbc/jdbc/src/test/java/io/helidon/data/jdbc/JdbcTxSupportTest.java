@@ -489,6 +489,38 @@ class JdbcTxSupportTest {
     }
 
     /**
+     * Proves two listeners returning the same failure instance cannot stop a
+     * lifecycle event from reaching a later listener or poison the thread.
+     */
+    @Test
+    void sharedListenerFailureDoesNotStopLifecycleDispatch() {
+        for (String event : List.of("start", "begin", "suspend", "resume", "commit", "rollback", "end")) {
+            IllegalStateException sharedFailure = new IllegalStateException(event + " failed");
+            RecordingLifeCycle first = new OneShotFailingLifeCycle(event, sharedFailure);
+            RecordingLifeCycle second = new OneShotFailingLifeCycle(event, sharedFailure);
+            RecordingLifeCycle following = new RecordingLifeCycle();
+            JdbcTxSupport support = new JdbcTxSupport(List.of(first, second, following));
+
+            RuntimeException reportedFailure =
+                    assertThrows(RuntimeException.class, () -> exerciseLifecycleFailure(support, event));
+
+            assertThat(following.count(event.equals("start") ? "start:jdbc" : event), is(1L));
+            assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+            assertThat(reportedFailure, instanceOf(TxException.class));
+            TxException failure = (TxException) reportedFailure;
+
+            Throwable lifecycleFailure;
+            if (event.equals("rollback")) {
+                assertThat(failure.getSuppressed().length, is(1));
+                lifecycleFailure = failure.getSuppressed()[0];
+            } else {
+                lifecycleFailure = failure;
+            }
+            assertThat(lifecycleFailure.getCause(), sameInstance(sharedFailure));
+        }
+    }
+
+    /**
      * Drives the transaction shape which delivers one selected lifecycle event.
      *
      * @param support transaction support
@@ -584,13 +616,24 @@ class JdbcTxSupportTest {
          * Event which fails on its first delivery.
          */
         private final String failingEvent;
+
+        /**
+         * Failure thrown for the configured event.
+         */
+        private final RuntimeException failure;
+
         /**
          * Whether the configured failure has already occurred.
          */
         private boolean failed;
 
         private OneShotFailingLifeCycle(String failingEvent) {
+            this(failingEvent, new IllegalStateException(failingEvent + " failed"));
+        }
+
+        private OneShotFailingLifeCycle(String failingEvent, RuntimeException failure) {
             this.failingEvent = failingEvent;
+            this.failure = failure;
         }
 
         @Override
@@ -643,7 +686,7 @@ class JdbcTxSupportTest {
         private void fail(String event) {
             if (!failed && failingEvent.equals(event)) {
                 failed = true;
-                throw new IllegalStateException(event + " failed");
+                throw failure;
             }
         }
     }

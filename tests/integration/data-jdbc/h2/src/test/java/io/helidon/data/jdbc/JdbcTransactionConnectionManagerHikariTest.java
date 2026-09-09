@@ -17,6 +17,8 @@ package io.helidon.data.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
@@ -24,13 +26,16 @@ import javax.sql.DataSource;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
+import io.helidon.transaction.spi.TxLifeCycle;
 import io.helidon.transaction.spi.TxSupport;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
@@ -76,6 +81,24 @@ class JdbcTransactionConnectionManagerHikariTest {
                 registryManager.shutdown();
             }
         }
+    }
+
+    /**
+     * Proves repeated references to one commit-listener failure do not prevent
+     * the JDBC manager from committing and releasing its pooled connection.
+     */
+    @Test
+    void sharedCommitListenerFailureDoesNotRetainTheConnection() {
+        assertSharedCompletionFailureReleasesConnection("tx_shared_commit_failure", true);
+    }
+
+    /**
+     * Proves repeated references to one rollback-listener failure do not
+     * prevent the JDBC manager from rolling back and releasing its connection.
+     */
+    @Test
+    void sharedRollbackListenerFailureDoesNotRetainTheConnection() {
+        assertSharedCompletionFailureReleasesConnection("tx_shared_rollback_failure", false);
     }
 
     /**
@@ -152,6 +175,60 @@ class JdbcTransactionConnectionManagerHikariTest {
     }
 
     /**
+     * Exercises two listeners which throw one shared failure before the JDBC
+     * connection manager, then proves completion and same-thread reuse.
+     *
+     * @param databaseName isolated H2 database name
+     * @param commit whether to exercise commit rather than rollback
+     */
+    private static void assertSharedCompletionFailureReleasesConnection(String databaseName, boolean commit) {
+        try (HikariDataSource dataSource = dataSource(databaseName)) {
+            JdbcTestClients.create(dataSource)
+                    .create("CREATE TABLE ITEMS (ID INT PRIMARY KEY)")
+                    .execute();
+            JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
+            IllegalStateException sharedFailure = new IllegalStateException("completion listener failed");
+            JdbcTxSupport support = new JdbcTxSupport(List.of(
+                    new OneShotCompletionFailure(commit, sharedFailure),
+                    new OneShotCompletionFailure(commit, sharedFailure),
+                    manager));
+            JdbcClient client = transactionAwareClient(dataSource, manager);
+
+            RuntimeException reportedFailure;
+            long expectedRows;
+            if (commit) {
+                reportedFailure = assertThrows(RuntimeException.class,
+                                               () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                   client.create("INSERT INTO ITEMS VALUES (1)").execute();
+                                                   return null;
+                                               }));
+                expectedRows = 1;
+            } else {
+                reportedFailure = assertThrows(RuntimeException.class,
+                                               () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                   client.create("INSERT INTO ITEMS VALUES (1)").execute();
+                                                   throw new IllegalStateException("force rollback");
+                                               }));
+                expectedRows = 0;
+            }
+
+            assertPoolReusable(dataSource);
+            assertThat(reportedFailure, instanceOf(TxException.class));
+            TxException failure = (TxException) reportedFailure;
+            if (commit) {
+                assertThat(failure.getCause(), sameInstance(sharedFailure));
+            } else {
+                assertThat(failure.getSuppressed().length, is(1));
+                assertThat(failure.getSuppressed()[0].getCause(), sameInstance(sharedFailure));
+            }
+            assertThat(support.transaction(Tx.Type.REQUIRED,
+                                           () -> client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one()),
+                       is(expectedRows));
+            assertPoolReusable(dataSource);
+        }
+    }
+
+    /**
      * Creates a client with the configuration retained by the runtime and the
      * transaction connection manager exercised by these tests.
      *
@@ -187,5 +264,72 @@ class JdbcTransactionConnectionManagerHikariTest {
     private static void assertPoolReusable(HikariDataSource pool) {
         assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
         assertThat(pool.getHikariPoolMXBean().getTotalConnections(), is(1));
+    }
+
+    /**
+     * Listener which fails one selected completion event exactly once.
+     */
+    private static final class OneShotCompletionFailure implements TxLifeCycle {
+        private final boolean failCommit;
+        private final RuntimeException failure;
+        private boolean failed;
+
+        /**
+         * Creates a listener for one completion event.
+         *
+         * @param failCommit whether commit rather than rollback fails
+         * @param failure shared failure to throw
+         */
+        private OneShotCompletionFailure(boolean failCommit, RuntimeException failure) {
+            this.failCommit = failCommit;
+            this.failure = failure;
+        }
+
+        @Override
+        public void start(String type) {
+            Objects.requireNonNull(type, "The transaction type must not be null.");
+        }
+
+        @Override
+        public void end() {
+        }
+
+        @Override
+        public void begin(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        }
+
+        @Override
+        public void commit(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+            if (failCommit) {
+                fail();
+            }
+        }
+
+        @Override
+        public void rollback(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+            if (!failCommit) {
+                fail();
+            }
+        }
+
+        @Override
+        public void suspend(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        }
+
+        @Override
+        public void resume(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        }
+
+        private void fail() {
+            if (!failed) {
+                failed = true;
+                throw failure;
+            }
+        }
     }
 }

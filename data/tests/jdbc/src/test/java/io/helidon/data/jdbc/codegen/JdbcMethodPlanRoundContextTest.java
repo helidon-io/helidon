@@ -48,7 +48,7 @@ class JdbcMethodPlanRoundContextTest {
                 .kind(ElementKind.RECORD)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addElementInfo(component -> component.kind(ElementKind.RECORD_COMPONENT)
-                        .elementName("value")
+                        .elementName("VaLuE")
                         .typeName(TypeNames.STRING))
                 .build();
 
@@ -57,6 +57,33 @@ class JdbcMethodPlanRoundContextTest {
 
         assertThat(plan.mappingKind(), is(JdbcMethodPlan.MappingKind.RECORD));
         assertThat(plan.recordComponents().size(), is(1));
+        assertThat(plan.recordComponents().getFirst().elementName(), is("VaLuE"));
+    }
+
+    @Test
+    void rejectsRecordComponentNamesWhichCollideIgnoringCase() {
+        TypeName recordType = TypeName.create("example.GeneratedRecord");
+        TypeInfo recordInfo = TypeInfo.builder()
+                .typeName(recordType)
+                .kind(ElementKind.RECORD)
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addElementInfo(component -> component.kind(ElementKind.RECORD_COMPONENT)
+                        .elementName("code")
+                        .typeName(TypeNames.STRING))
+                .addElementInfo(component -> component.kind(ElementKind.RECORD_COMPONENT)
+                        .elementName("CODE")
+                        .typeName(TypeNames.STRING))
+                .build();
+
+        CodegenException failure = assertThrows(
+                CodegenException.class,
+                () -> JdbcMethodPlan.create(repositoryMethod("recordValue", recordType, null),
+                                            new TypesRoundContext(Map.of(recordType, recordInfo))));
+
+        assertThat(failure.getMessage(),
+                   is("Case-insensitive record component names are not supported because components are matched "
+                              + "to column labels case-insensitively. Rename component 'CODE' so that every component "
+                              + "name is unique ignoring case."));
     }
 
     /**

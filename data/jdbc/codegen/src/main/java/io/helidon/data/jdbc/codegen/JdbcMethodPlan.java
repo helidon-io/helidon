@@ -17,6 +17,7 @@ package io.helidon.data.jdbc.codegen;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -496,13 +497,22 @@ final class JdbcMethodPlan {
     }
 
     /**
-     * Restricts record components to scalars and explicit Optional scalars.
+     * Restricts record components to unambiguous labels, scalars, and explicit
+     * Optional scalars.
      *
      * @param method repository method
      * @param components canonical record components
      */
     private static void validateRecordComponents(TypedElementInfo method, List<TypedElementInfo> components) {
+        Set<String> componentNames = new HashSet<>(components.size());
         for (TypedElementInfo component : components) {
+            if (!componentNames.add(component.elementName().toLowerCase(Locale.ROOT))) {
+                throw failure(method,
+                              "Case-insensitive record component names are not supported because components are matched "
+                                      + "to column labels case-insensitively. Rename component '"
+                                      + component.elementName()
+                                      + "' so that every component name is unique ignoring case.");
+            }
             if (!JdbcScalarTypes.isScalar(component.typeName())
                     && JdbcScalarTypes.optionalScalarType(component.typeName()).isEmpty()) {
                 throw failure(method,
