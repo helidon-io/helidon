@@ -99,7 +99,7 @@ class CircuitBreakerTest extends CircuitBreakerBaseTest {
     }
 
     @Test
-    void callerCancellationDoesNotChangeHalfOpenState()
+    void callerCancellationFollowsConfigurationInHalfOpenState()
             throws ExecutionException, InterruptedException, TimeoutException {
         CircuitBreaker applyOnBreaker = CircuitBreaker.builder()
                 .volume(1)
@@ -119,12 +119,26 @@ class CircuitBreakerTest extends CircuitBreakerBaseTest {
                 .build();
 
         moveToHalfOpen(applyOnBreaker);
-        assertCallerCancellationDoesNotChangeHalfOpenState(applyOnBreaker);
+        assertCallerCancellationState(applyOnBreaker, CircuitBreaker.State.OPEN);
         moveToHalfOpen(skipOnBreaker);
-        assertCallerCancellationDoesNotChangeHalfOpenState(skipOnBreaker);
+        assertCallerCancellationState(skipOnBreaker, CircuitBreaker.State.HALF_OPEN);
+        skipOnBreaker.invoke(() -> "success");
+        assertThat(skipOnBreaker.state(), is(CircuitBreaker.State.CLOSED));
     }
 
-    private static void assertCallerCancellationDoesNotChangeHalfOpenState(CircuitBreaker breaker) {
+    @Test
+    void callerCancellationUsesApplyOnInClosedState() {
+        CircuitBreaker breaker = CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .delay(Duration.ofDays(1))
+                .addApplyOn(InterruptedException.class)
+                .build();
+
+        assertCallerCancellationState(breaker, CircuitBreaker.State.OPEN);
+    }
+
+    private static void assertCallerCancellationState(CircuitBreaker breaker, CircuitBreaker.State expectedState) {
         Thread.currentThread().interrupt();
         try {
             assertThrows(SupplierException.class,
@@ -132,12 +146,10 @@ class CircuitBreakerTest extends CircuitBreakerBaseTest {
                              throw new SupplierException(new InterruptedException("cancelled"));
                          }));
             assertThat(Thread.currentThread().isInterrupted(), is(true));
-            assertThat(breaker.state(), is(CircuitBreaker.State.HALF_OPEN));
+            assertThat(breaker.state(), is(expectedState));
         } finally {
             Thread.interrupted();
         }
-        breaker.invoke(() -> "success");
-        assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
     }
 
     private static void moveToHalfOpen(CircuitBreaker breaker)
