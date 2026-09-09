@@ -25,7 +25,7 @@ gRPC protocol configuration
 <code>Integer</code>
 </td>
 <td>
-<code>2097152</code>
+<code>4194304</code>
 </td>
 <td>Max size of gRPC reading buffer</td>
 </tr>

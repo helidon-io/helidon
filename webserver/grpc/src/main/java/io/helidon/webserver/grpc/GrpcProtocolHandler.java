@@ -81,10 +81,12 @@ import static io.helidon.http.http2.Http2Flag.END_OF_STREAM;
 import static io.helidon.http.http2.Http2Flag.HeaderFlags;
 import static io.helidon.http.http2.Http2StreamState.CLOSED;
 import static io.helidon.http.http2.Http2StreamState.HALF_CLOSED_LOCAL;
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 
 class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(GrpcProtocolHandler.class.getName());
+    private static final String MAX_MESSAGE_SIZE_EXCEEDED = "gRPC message exceeds maximum configured size";
 
     private static final HeaderName GRPC_ENCODING = HeaderNames.create("grpc-encoding");
     private static final HeaderName GRPC_ACCEPT_ENCODING = HeaderNames.create("grpc-accept-encoding");
@@ -303,6 +305,18 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     if (newData.available() >= GRPC_HEADER_SIZE) {
                         isCompressed = (newData.read() == 1);
                         entityBytesLeft = newData.readUnsignedInt32();
+                        int maxReadBufferSize = grpcConfig.maxReadBufferSize();
+                        if (entityBytesLeft > maxReadBufferSize) {
+                            var exception = Status.RESOURCE_EXHAUSTED
+                                    .withDescription(MAX_MESSAGE_SIZE_EXCEEDED)
+                                    .asRuntimeException();
+                            LOGGER.log(DEBUG, MAX_MESSAGE_SIZE_EXCEEDED
+                                    + ", maximum bytes: " + maxReadBufferSize
+                                    + ", declared message bytes: " + entityBytesLeft
+                                    + ", data bytes: " + data.available());
+                            closeOnException(exception, header);
+                            return;
+                        }
                         entityBytes = allocateReadBuffer((int) entityBytesLeft);
                     } else {
                         unreadBufferData = newData;
@@ -399,9 +413,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         readBufferData.reset();
         int capacity = readBufferData.capacity();
         if (length > capacity) {
-            if (length > grpcConfig.maxReadBufferSize()) {
-                throw new IllegalStateException("gRPC message size exceeds max read buffer size");
-            }
             readBufferData = BufferData.create(length);
         }
         return readBufferData;
