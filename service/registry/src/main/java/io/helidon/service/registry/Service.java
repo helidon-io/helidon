@@ -688,6 +688,8 @@ public final class Service {
 
         /**
          * De-activate the given scope.
+         * <p>
+         * This method must not be invoked concurrently for the same scope instance.
          *
          * @param scope scope to de-activate
          */
