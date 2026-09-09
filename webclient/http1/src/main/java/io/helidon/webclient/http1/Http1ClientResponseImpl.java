@@ -197,9 +197,14 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         closeConnectionOnClose = true;
     }
 
-    void closeIfNoEntity() {
-        if (inputStream == null) {
+    void completeIfNoEntityAfterConnectionTransfer() {
+        if (inputStream != null) {
+            return;
+        }
+        if (closeConnectionOnClose || headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
             close();
+        } else if (closed.compareAndSet(false, true)) {
+            whenComplete.complete(null);
         }
     }
 

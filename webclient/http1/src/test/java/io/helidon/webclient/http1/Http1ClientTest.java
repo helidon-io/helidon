@@ -51,6 +51,8 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.tls.Tls;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -68,6 +70,7 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
 
@@ -486,6 +489,47 @@ class Http1ClientTest {
             } finally {
                 redirectClient.closeResource();
             }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"301 Moved Permanently", "302 Found", "303 See Other"})
+    void testNoContentGetRedirectTransfersConnectionOwnership(String redirectStatus) {
+        FakeHttp1ClientConnection targetConnection = new FakeHttp1ClientConnection();
+        Http1ConnectionCache connectionCache = new FixedConnectionCache(targetConnection);
+        Http1ClientImpl configuredClient = (Http1ClientImpl) Http1Client.builder()
+                .sendExpectContinue(true)
+                .shareConnectionCache(false)
+                .build();
+        Http1ClientImpl redirectClient = new FixedConnectionHttp1Client(configuredClient, connectionCache);
+        configuredClient.closeResource();
+
+        String redirectResponse = "HTTP/1.1 " + redirectStatus + "\r\n"
+                + "Location: http://localhost:" + dummyPort + "/target\r\n"
+                + "Content-Length: 0\r\n\r\n";
+        FakeHttp1ClientConnection redirectConnection = new FakeHttp1ClientConnection(redirectResponse);
+        Http1ClientRequest request = redirectClient.put("http://localhost:" + dummyPort + "/redirect");
+        request.connection(redirectConnection);
+
+        try (Http1ClientResponse response = request.outputStream(output -> {
+                output.write('x');
+                output.close();
+            })) {
+            assertThat(targetConnection.getPrologue(), startsWith("GET "));
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(targetConnection.releaseCount(), is(0));
+
+            response.close();
+            assertThat(targetConnection.releaseCount(), is(1));
+            assertThat(targetConnection.closeCount(), is(0));
+
+            response.close();
+            assertThat(targetConnection.releaseCount(), is(1));
+        } finally {
+            redirectClient.closeResource();
+            connectionCache.closeResource();
+            redirectConnection.closeResource();
+            targetConnection.closeResource();
         }
     }
 
@@ -1463,6 +1507,39 @@ class Http1ClientTest {
                 default -> throw new IllegalStateException("Unexpected header parser state");
                 };
             }
+        }
+    }
+
+    private static class FixedConnectionHttp1Client extends Http1ClientImpl {
+        private final Http1ConnectionCache connectionCache;
+
+        private FixedConnectionHttp1Client(Http1ClientImpl configuredClient, Http1ConnectionCache connectionCache) {
+            super(configuredClient.webClient(), configuredClient.clientConfig());
+            this.connectionCache = connectionCache;
+        }
+
+        @Override
+        Http1ConnectionCache connectionCache() {
+            return connectionCache;
+        }
+    }
+
+    private static class FixedConnectionCache extends Http1ConnectionCache {
+        private final ClientConnection connection;
+
+        private FixedConnectionCache(ClientConnection connection) {
+            super(false);
+            this.connection = connection;
+        }
+
+        @Override
+        ClientConnection connection(Http1ClientImpl http1Client,
+                                    Tls tls,
+                                    Proxy proxy,
+                                    ClientUri uri,
+                                    ClientRequestHeaders headers,
+                                    boolean defaultKeepAlive) {
+            return connection;
         }
     }
 
