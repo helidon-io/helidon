@@ -217,25 +217,39 @@ class Http2HeadersTest {
     }
 
     @Test
-    void testRejectsNonLatin1ValueWhenHeaderNameIsIndexed() {
-        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+    void testRejectsNonLatin1ValueAfterPopulatedTableMutation() {
+        DynamicTable outboundTable = DynamicTable.create(Http2Settings.create());
+        DynamicTable inboundTable = DynamicTable.create(Http2Settings.create());
         Http2HuffmanEncoder encoder = Http2HuffmanEncoder.create();
+        BufferData initialBlock = BufferData.growing(32);
         Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, "valid"))
                 .status(Status.OK_200)
-                .write(dynamicTable, encoder, BufferData.growing(32));
-        int tableSize = dynamicTable.currentTableSize();
-        HeaderRecord indexedHeader = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1);
+                .write(outboundTable, encoder, initialBlock);
+        headers(HexFormat.of().formatHex(initialBlock.readBytes()), inboundTable);
+        int tableSize = outboundTable.currentTableSize();
+        HeaderRecord indexedHeader = outboundTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1);
 
         BufferData rejectedBlock = BufferData.growing(32).write(42);
-        Http2Headers rejected = Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, "\u0100"))
+        Http2Headers rejected = Http2Headers.create(WritableHeaders.create()
+                                                             .add(HeaderNames.CONTENT_TYPE, "text/plain")
+                                                             .add(CUSTOM_HEADER_NAME, "\u0100"))
                 .status(Status.OK_200);
 
         assertThrows(IllegalArgumentException.class,
-                     () -> rejected.write(dynamicTable, encoder, rejectedBlock));
-        assertThat(dynamicTable.currentTableSize(), is(tableSize));
-        assertThat(dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1), is(indexedHeader));
+                     () -> rejected.write(outboundTable, encoder, rejectedBlock));
+        assertThat(outboundTable.currentTableSize(), is(tableSize));
+        assertThat(outboundTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1), is(indexedHeader));
         assertThat(rejectedBlock.available(), is(1));
         assertThat(rejectedBlock.get(0), is(42));
+
+        BufferData nextBlock = BufferData.growing(32);
+        Http2Headers.create(WritableHeaders.create().add(CUSTOM_HEADER_NAME, "valid"))
+                .status(Status.OK_200)
+                .write(outboundTable, encoder, nextBlock);
+        Headers decoded = headers(HexFormat.of().formatHex(nextBlock.readBytes()), inboundTable).httpHeaders();
+
+        assertThat(decoded.get(CUSTOM_HEADER_NAME).get(), is("valid"));
+        assertThat(inboundTable.currentTableSize(), is(tableSize));
     }
 
     @Test
