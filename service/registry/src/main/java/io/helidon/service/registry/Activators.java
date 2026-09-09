@@ -164,12 +164,19 @@ final class Activators {
         final DependencyContext dependencyContext;
 
         private final ReadWriteLock instanceLock = new ReentrantReadWriteLock();
+        private final ReentrantLock phaseLock = new ReentrantLock();
 
         volatile ActivationPhase currentPhase = ActivationPhase.INIT;
+        private boolean deactivationRequested;
+        private ScopedRegistryImpl scopedRegistry;
 
         BaseActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
             this.provider = provider;
             this.dependencyContext = dependencyContext;
+        }
+
+        void scopedRegistry(ScopedRegistryImpl scopedRegistry) {
+            this.scopedRegistry = scopedRegistry;
         }
 
         // three states
@@ -248,25 +255,32 @@ final class Activators {
 
         @Override
         public ActivationResult deactivate() {
-            if (currentPhase == ActivationPhase.CONSTRUCTING
-                    || currentPhase == ActivationPhase.INJECTING
-                    || currentPhase == ActivationPhase.POST_CONSTRUCTING) {
-                // shutdown/deactivation was called as part of (while) activating this instance
-                // we must resolve this gracefully (as the next lock would end up in a deadlock)
+            phaseLock.lock();
+            try {
+                ActivationPhase phase = currentPhase;
+                if (phase.ordinal() < ActivationPhase.ACTIVATION_FINISHING.ordinal()) {
+                    deactivationRequested = true;
+                }
+                if (phase == ActivationPhase.CONSTRUCTING
+                        || phase == ActivationPhase.INJECTING
+                        || phase == ActivationPhase.POST_CONSTRUCTING) {
+                    // A JVM shutdown hook can run while the activating thread waits for shutdown to complete. Taking the
+                    // instance lock here would deadlock, so interrupt activation and let the activating thread terminate.
+                    var response = ActivationResult.builder()
+                            .success(false)
+                            .startingActivationPhase(phase)
+                            .finishingActivationPhase(ActivationPhase.DESTROYED)
+                            .targetActivationPhase(ActivationPhase.DESTROYED)
+                            .error(new IllegalStateException("Deactivation request received while constructing an instance"))
+                            .build();
 
-                var response = ActivationResult.builder()
-                        .success(false)
-                        .startingActivationPhase(currentPhase)
-                        .finishingActivationPhase(ActivationPhase.DESTROYED)
-                        .targetActivationPhase(ActivationPhase.DESTROYED)
-                        .error(new IllegalStateException("Deactivation request received while constructing an instance"))
-                        .build();
+                    currentPhase = ActivationPhase.DESTROYED;
 
-                currentPhase = ActivationPhase.DESTROYED;
-
-                return response;
+                    return response;
+                }
+            } finally {
+                phaseLock.unlock();
             }
-            // probably re-entering the same lock
             instanceLock.writeLock().lock();
             try {
                 ActivationResult.Builder response = ActivationResult.builder()
@@ -354,11 +368,46 @@ final class Activators {
             this.currentPhase = phase;
         }
 
+        private boolean activationStateTransitionStart(ActivationResult.Builder response, ActivationPhase phase) {
+            phaseLock.lock();
+            try {
+                if (activationInterruptedLocked(response)) {
+                    return false;
+                }
+                stateTransitionStart(response, phase);
+                return true;
+            } finally {
+                phaseLock.unlock();
+            }
+        }
+
+        private boolean activationInterrupted(ActivationResult.Builder response) {
+            phaseLock.lock();
+            try {
+                return activationInterruptedLocked(response);
+            } finally {
+                phaseLock.unlock();
+            }
+        }
+
+        private boolean activationInterruptedLocked(ActivationResult.Builder response) {
+            if (currentPhase == ActivationPhase.ACTIVE) {
+                return false;
+            }
+            if (!deactivationRequested && (scopedRegistry == null || scopedRegistry.activationAllowed())) {
+                return false;
+            }
+            currentPhase = ActivationPhase.DESTROYED;
+            response.finishingActivationPhase(ActivationPhase.DESTROYED)
+                    .success(false)
+                    .error(new IllegalStateException("Activation interrupted by deactivation request"));
+            return true;
+        }
+
         private ActivationResult doActivate(ActivationRequest request) {
             ActivationPhase initialPhase = this.currentPhase;
             ActivationPhase startingPhase = request.startingPhase().orElse(initialPhase);
             ActivationPhase targetPhase = request.targetPhase();
-            this.currentPhase = startingPhase;
             ActivationPhase finishingPhase = startingPhase;
 
             ActivationResult.Builder response = ActivationResult.builder()
@@ -367,46 +416,74 @@ final class Activators {
                     .targetActivationPhase(targetPhase)
                     .success(true);
 
+            if (!activationStateTransitionStart(response, startingPhase)) {
+                return response.build();
+            }
+
             if (targetPhase.ordinal() > ActivationPhase.ACTIVATION_STARTING.ordinal()
                     && initialPhase == ActivationPhase.INIT) {
                 if (ActivationPhase.INIT == startingPhase
                         || ActivationPhase.ACTIVATION_STARTING == startingPhase
                         || ActivationPhase.DESTROYED == startingPhase) {
-                    stateTransitionStart(response, ActivationPhase.ACTIVATION_STARTING);
+                    if (!activationStateTransitionStart(response, ActivationPhase.ACTIVATION_STARTING)) {
+                        return response.build();
+                    }
                 }
             }
 
             finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
             if (response.targetActivationPhase().ordinal() >= ActivationPhase.CONSTRUCTING.ordinal()) {
-                stateTransitionStart(response, ActivationPhase.CONSTRUCTING);
+                if (!activationStateTransitionStart(response, ActivationPhase.CONSTRUCTING)) {
+                    return response.build();
+                }
                 construct(response);
+                if (activationInterrupted(response)) {
+                    return response.build();
+                }
             }
 
             finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
             if (response.targetActivationPhase().ordinal() >= ActivationPhase.INJECTING.ordinal()
                     && (ActivationPhase.CONSTRUCTING == finishingPhase)) {
-                stateTransitionStart(response, ActivationPhase.INJECTING);
+                if (!activationStateTransitionStart(response, ActivationPhase.INJECTING)) {
+                    return response.build();
+                }
                 inject(response);
+                if (activationInterrupted(response)) {
+                    return response.build();
+                }
             }
 
             finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
             if (response.targetActivationPhase().ordinal() >= ActivationPhase.POST_CONSTRUCTING.ordinal()
                     && (ActivationPhase.INJECTING == finishingPhase)) {
-                stateTransitionStart(response, ActivationPhase.POST_CONSTRUCTING);
+                if (!activationStateTransitionStart(response, ActivationPhase.POST_CONSTRUCTING)) {
+                    return response.build();
+                }
                 postConstruct(response);
+                if (activationInterrupted(response)) {
+                    return response.build();
+                }
             }
             finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
             if (response.targetActivationPhase().ordinal() >= ActivationPhase.ACTIVATION_FINISHING.ordinal()
                     && (ActivationPhase.POST_CONSTRUCTING == finishingPhase)) {
-                stateTransitionStart(response, ActivationPhase.ACTIVATION_FINISHING);
+                if (!activationStateTransitionStart(response, ActivationPhase.ACTIVATION_FINISHING)) {
+                    return response.build();
+                }
                 finishActivation(response);
             }
             finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
             if (response.targetActivationPhase().ordinal() >= ActivationPhase.ACTIVE.ordinal()
                     && (ActivationPhase.ACTIVATION_FINISHING == finishingPhase)) {
-                stateTransitionStart(response, ActivationPhase.ACTIVE);
+                if (!activationStateTransitionStart(response, ActivationPhase.ACTIVE)) {
+                    return response.build();
+                }
             }
 
+            if (activationInterrupted(response)) {
+                return response.build();
+            }
             if (startingPhase.ordinal() < ActivationPhase.CONSTRUCTING.ordinal()
                     && currentPhase.ordinal() >= ActivationPhase.CONSTRUCTING.ordinal()) {
                 setTargetInstances();

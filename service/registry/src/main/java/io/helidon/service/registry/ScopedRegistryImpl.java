@@ -44,6 +44,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     private final TypeName scope;
     private final String id;
+    private volatile boolean activationAllowed;
     private RegistryState state = RegistryState.INACTIVE;
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -62,7 +63,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
             Object value = entry.getValue();
             Activator<?> fixedService;
 
-            fixedService = Activators.createActive(provider, value);
+            fixedService = scopedActivator(Activators.createActive(provider, value));
 
             activators.put(key, fixedService);
         }
@@ -76,6 +77,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
         try {
             serviceProvidersLock.writeLock().lock();
             state = RegistryState.ACTIVE;
+            activationAllowed = true;
         } finally {
             serviceProvidersLock.writeLock().unlock();
         }
@@ -90,6 +92,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
                 return;
             }
 
+            activationAllowed = false;
             state = RegistryState.DEACTIVATING;
             // Include INIT activators that may already have been handed to a lookup before this snapshot.
             toShutdown = activators.values()
@@ -165,7 +168,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
             serviceProvidersLock.writeLock().lock();
             checkActive();
             return (Activator<T>) activators.computeIfAbsent(descriptor,
-                                                             desc -> activatorSupplier.get());
+                                                             _ -> scopedActivator(activatorSupplier.get()));
         } finally {
             serviceProvidersLock.writeLock().unlock();
         }
@@ -197,6 +200,17 @@ class ScopedRegistryImpl implements ScopedRegistry {
         if (state != RegistryState.ACTIVE) {
             throw new ScopeNotActiveException("Injection scope " + scope.fqName() + "[" + id + "] is not active.", scope);
         }
+    }
+
+    private Activator<?> scopedActivator(Activator<?> activator) {
+        if (activator instanceof Activators.BaseActivator<?> baseActivator) {
+            baseActivator.scopedRegistry(this);
+        }
+        return activator;
+    }
+
+    boolean activationAllowed() {
+        return activationAllowed;
     }
 
     private boolean availableForActiveLookup(Activator<?> activator) {
