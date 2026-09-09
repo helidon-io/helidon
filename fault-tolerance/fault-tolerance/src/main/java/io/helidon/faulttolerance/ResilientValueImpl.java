@@ -55,34 +55,39 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
 
     @Override
     public T get() {
-        if (loaded) {
-            return value;
-        }
+        while (true) {
+            if (loaded) {
+                return value;
+            }
 
-        FutureTask<Outcome<T>> currentAttempt = attempt.get();
-        currentAttempt.run();
-        Outcome<T> outcome;
-        try {
-            outcome = currentAttempt.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new SupplierException(e);
-        } catch (ExecutionException e) {
-            throw new IllegalStateException("Unexpected failure loading " + description, e.getCause());
-        }
-        Throwable failure = outcome.failure();
-        if (failure == null) {
-            return outcome.value();
-        }
+            FutureTask<Outcome<T>> currentAttempt = attempt.get();
+            currentAttempt.run();
+            Outcome<T> outcome;
+            try {
+                outcome = currentAttempt.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new SupplierException(e);
+            } catch (ExecutionException e) {
+                throw new IllegalStateException("Unexpected failure loading " + description, e.getCause());
+            }
+            Throwable failure = outcome.failure();
+            if (failure == null) {
+                return outcome.value();
+            }
 
-        attempt.compareAndSet(currentAttempt, newAttempt());
-        if (failure instanceof RuntimeException runtimeException) {
-            throw runtimeException;
+            attempt.compareAndSet(currentAttempt, newAttempt());
+            if (outcome.callerInterrupted() && !Thread.currentThread().isInterrupted()) {
+                continue;
+            }
+            if (failure instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (failure instanceof Error error) {
+                throw error;
+            }
+            throw new IllegalStateException("Unexpected checked failure loading " + description, failure);
         }
-        if (failure instanceof Error error) {
-            throw error;
-        }
-        throw new IllegalStateException("Unexpected checked failure loading " + description, failure);
     }
 
     @Override
@@ -110,9 +115,11 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     private FutureTask<Outcome<T>> newAttempt() {
         return new FutureTask<>(() -> {
             try {
-                return new Outcome<>(load(), null);
+                return new Outcome<>(load(), null, false);
             } catch (RuntimeException | Error e) {
-                return new Outcome<>(null, e);
+                boolean callerInterrupted = Thread.currentThread().isInterrupted()
+                        && SupplierHelper.interrupted(e) != null;
+                return new Outcome<>(null, e, callerInterrupted);
             }
         });
     }
@@ -155,6 +162,6 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
         }
     }
 
-    private record Outcome<T>(T value, Throwable failure) {
+    private record Outcome<T>(T value, Throwable failure, boolean callerInterrupted) {
     }
 }

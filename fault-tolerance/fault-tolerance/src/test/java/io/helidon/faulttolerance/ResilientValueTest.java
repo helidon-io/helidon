@@ -335,6 +335,71 @@ class ResilientValueTest {
     }
 
     @Test
+    void interruptedLoadLeaderDoesNotFailFollower() throws InterruptedException {
+        CountDownLatch loading = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
+        AtomicBoolean loaderInterrupted = new AtomicBoolean();
+        AtomicReference<String> followerResult = new AtomicReference<>();
+        AtomicReference<Throwable> followerFailure = new AtomicReference<>();
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
+                                                             () -> {
+                                                                 if (calls.incrementAndGet() == 1) {
+                                                                     loading.countDown();
+                                                                     try {
+                                                                         release.await();
+                                                                     } catch (InterruptedException e) {
+                                                                         Thread.currentThread().interrupt();
+                                                                         throw new SupplierException(e);
+                                                                     }
+                                                                 }
+                                                                 return "loaded";
+                                                             },
+                                                             retry(2),
+                                                             circuitBreaker(),
+                                                             timeout()));
+
+        Thread loaderThread = Thread.ofVirtual().start(() -> {
+            try {
+                value.get();
+            } catch (Throwable t) {
+                loaderFailure.set(t);
+            } finally {
+                loaderInterrupted.set(Thread.currentThread().isInterrupted());
+            }
+        });
+        Thread followerThread = Thread.ofVirtual().unstarted(() -> {
+            try {
+                followerResult.set(value.get());
+            } catch (Throwable t) {
+                followerFailure.set(t);
+            }
+        });
+        try {
+            assertThat(loading.await(10, TimeUnit.SECONDS), is(true));
+            followerThread.start();
+            awaitWaiting(followerThread);
+            loaderThread.interrupt();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+        } finally {
+            release.countDown();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+
+        assertThat(loaderThread.isAlive(), is(false));
+        assertThat(followerThread.isAlive(), is(false));
+        assertThat(loaderFailure.get(), instanceOf(ResilientValue.UnavailableException.class));
+        assertThat(loaderInterrupted.get(), is(true));
+        assertThat(followerResult.get(), is("loaded"));
+        assertThat(followerFailure.get(), is((Throwable) null));
+        assertThat(value.loaded(), is(true));
+        assertThat(calls.get(), is(2));
+    }
+
+    @Test
     void concurrentFollowerReceivesLoadFailure() throws InterruptedException {
         CountDownLatch loading = new CountDownLatch(1);
         CountDownLatch continueLoading = new CountDownLatch(1);
