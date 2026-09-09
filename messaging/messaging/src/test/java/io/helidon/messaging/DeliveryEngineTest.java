@@ -47,7 +47,7 @@ class DeliveryEngineTest {
 
     @Test
     void dispatchUsesNamedRuntimeVirtualThreadAndCompletesSynchronously() throws Exception {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch entered = new CountDownLatch(1);
             CountDownLatch release = new CountDownLatch(1);
@@ -79,10 +79,10 @@ class DeliveryEngineTest {
 
     @Test
     void serializesDeliveriesPerChannelWhileIndependentChannelsOverlap() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .queueCapacity(1)
                 .maxInFlightMessages(2)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders", "payments")) {
             CountDownLatch firstOrderStarted = new CountDownLatch(1);
             CountDownLatch secondOrderStarted = new CountDownLatch(1);
@@ -134,9 +134,9 @@ class DeliveryEngineTest {
 
     @Test
     void admitsExactMessageLimitAndRejectsOversizedBatchAtomically() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxInFlightMessages(2)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             AtomicInteger invocations = new AtomicInteger();
             List<Message<?>> exact = List.of(message(4), message(6));
@@ -158,10 +158,10 @@ class DeliveryEngineTest {
 
     @Test
     void zeroQueueCapacityBlocksAdmissionAndHonorsAdmissionTimeout() throws Exception {
-        MessagingExecutionConfig blockingConfig = configBuilder()
+        MessagingConfig blockingConfig = configBuilder()
                 .queueCapacity(0)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(blockingConfig, "orders")) {
             CountDownLatch firstStarted = new CountDownLatch(1);
             CountDownLatch releaseFirst = new CountDownLatch(1);
@@ -187,11 +187,11 @@ class DeliveryEngineTest {
             assertThat(secondStarted.getCount(), is(0L));
         }
 
-        MessagingExecutionConfig timeoutConfig = configBuilder()
+        MessagingConfig timeoutConfig = configBuilder()
                 .queueCapacity(0)
                 .maxInFlightMessages(1)
                 .admissionTimeout(Duration.ofMillis(50))
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(timeoutConfig, "orders")) {
             CountDownLatch firstStarted = new CountDownLatch(1);
             CountDownLatch releaseFirst = new CountDownLatch(1);
@@ -216,11 +216,11 @@ class DeliveryEngineTest {
 
     @Test
     void boundsAggregatePendingMessageRetention() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(3)
                 .maxPendingMessages(2)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -252,11 +252,11 @@ class DeliveryEngineTest {
 
     @Test
     void immediateAdmissionDoesNotConsumeOrRequirePendingCapacity() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(2)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders");
              ConnectorDeliveryReservation _ = engine.reserveConnectorDelivery("orders", 1)) {
             AtomicBoolean delivered = new AtomicBoolean();
@@ -267,11 +267,11 @@ class DeliveryEngineTest {
 
     @Test
     void directAdmissionRejectsDispatcherContentionWithoutLeakingPendingBudget() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch lockHeld = new CountDownLatch(1);
             CountDownLatch releaseLock = new CountDownLatch(1);
@@ -298,11 +298,11 @@ class DeliveryEngineTest {
 
     @Test
     void drainWinsOverDispatcherContention() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch lockHeld = new CountDownLatch(1);
             CountDownLatch releaseLock = new CountDownLatch(1);
@@ -333,10 +333,10 @@ class DeliveryEngineTest {
 
     @Test
     void tryConnectorReservationReportsShutdownBeforePendingSaturation() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders");
              ConnectorDeliveryReservation _ = engine.reserveConnectorDelivery("orders", 1)) {
             engine.beginDrain();
@@ -352,7 +352,7 @@ class DeliveryEngineTest {
 
     @Test
     void tryConnectorReservationReportsShutdownBeforeDispatcherContention() throws Exception {
-        try (DeliveryEngine engine = engine(configBuilder().build(), "orders")) {
+        try (DeliveryEngine engine = engine(configBuilder().buildPrototype(), "orders")) {
             engine.beginDrain();
             CountDownLatch lockHeld = new CountDownLatch(1);
             CountDownLatch releaseLock = new CountDownLatch(1);
@@ -377,7 +377,7 @@ class DeliveryEngineTest {
 
     @Test
     void tryConnectorReservationRejectsDispatchReentrancy() {
-        try (DeliveryEngine engine = engine(configBuilder().build(), "orders")) {
+        try (DeliveryEngine engine = engine(configBuilder().buildPrototype(), "orders")) {
             MessagingException rejection = assertThrows(
                     MessagingException.class,
                     () -> dispatch(engine,
@@ -391,8 +391,8 @@ class DeliveryEngineTest {
 
     @Test
     void finalizedTryConnectorReservationPrecedesDispatchReentrancy() {
-        try (DeliveryEngine finalized = engine(configBuilder().build(), "orders");
-             DeliveryEngine dispatching = engine(configBuilder().build(), "source")) {
+        try (DeliveryEngine finalized = engine(configBuilder().buildPrototype(), "orders");
+             DeliveryEngine dispatching = engine(configBuilder().buildPrototype(), "source")) {
             finalized.beginDrain();
             assertThat(finalized.awaitDrained(WAIT), is(true));
 
@@ -419,7 +419,7 @@ class DeliveryEngineTest {
         AtomicBoolean drained = new AtomicBoolean();
         AtomicReference<Thread> childThread = new AtomicReference<>();
         AtomicReference<Throwable> childFailure = new AtomicReference<>();
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         Runnable admissionHook = () -> {
             if (Thread.currentThread().getName().equals("delayed-descendant-admission")) {
                 ancestryCaptured.countDown();
@@ -427,8 +427,8 @@ class DeliveryEngineTest {
             }
         };
         try (DeliveryEngine engine = new DeliveryEngine(config, admissionHook)) {
-            engine.registerChannel("a", config);
-            engine.registerChannel("b", config);
+            engine.registerChannel("a", MessagingExecutionConfig.create());
+            engine.registerChannel("b", MessagingExecutionConfig.create());
             AsyncTask parent = async(() -> dispatch(engine, "b", List.of(message(1)), () -> {
                 Thread child = Thread.ofPlatform().name("delayed-descendant-admission").start(() -> {
                     try {
@@ -478,11 +478,11 @@ class DeliveryEngineTest {
 
     @Test
     void reservationRejectsDispatcherContentionWithoutLeakingPendingBudget() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch lockHeld = new CountDownLatch(1);
             CountDownLatch releaseLock = new CountDownLatch(1);
@@ -509,10 +509,10 @@ class DeliveryEngineTest {
 
     @Test
     void connectorReservationsBoundPreAcquisitionRetention() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(2)
                 .maxPendingMessages(2)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation full = engine.reserveConnectorDelivery("orders", 2);
             assertThat(engine.tryReserveConnectorDelivery("orders", 1).isEmpty(), is(true));
@@ -526,10 +526,10 @@ class DeliveryEngineTest {
 
     @Test
     void blockingReservationWaitsWithoutRetainingTransportData() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(2)
                 .maxPendingMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation first = engine.reserveConnectorDelivery("orders", 1);
             AtomicReference<ConnectorDeliveryReservation> second = new AtomicReference<>();
@@ -544,11 +544,11 @@ class DeliveryEngineTest {
 
     @Test
     void blockingReservationTimeoutDoesNotLeakPendingCapacity() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(2)
                 .maxPendingMessages(1)
                 .admissionTimeout(Duration.ofMillis(50))
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation first = engine.reserveConnectorDelivery("orders", 1);
             MessagingRejectedException timeout = assertThrows(
@@ -565,9 +565,9 @@ class DeliveryEngineTest {
 
     @Test
     void runtimeReservationRejectsActualMessageCountBeyondReservationAndCloses() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(2)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 1);
             MessagingRejectedException oversized = assertThrows(
@@ -587,10 +587,10 @@ class DeliveryEngineTest {
 
     @Test
     void reservationStartAtomicallyShrinksAndTransfersToSettlementLease() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(2)
                 .maxInFlightMessages(2)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 2);
             ConnectorDelivery delivery = start(reservation, List.of(message(1)), () -> { });
@@ -614,12 +614,12 @@ class DeliveryEngineTest {
 
     @Test
     void reservationStartLockContentionConsumesAdmissionTimeout() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
                 .admissionTimeout(Duration.ofMillis(50))
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 1);
             CountDownLatch lockHeld = new CountDownLatch(1);
@@ -661,7 +661,7 @@ class DeliveryEngineTest {
 
     @Test
     void shutdownSerializesDeferredCleanupThreadRegistration() throws Exception {
-        DeliveryEngine engine = engine(configBuilder().build(), "orders");
+        DeliveryEngine engine = engine(configBuilder().buildPrototype(), "orders");
         CountDownLatch registryHeld = new CountDownLatch(1);
         CountDownLatch releaseRegistry = new CountDownLatch(1);
         AsyncTask registryHolder = async(() -> engine.runWithDispatchThreadRegistryLock(() -> {
@@ -700,12 +700,12 @@ class DeliveryEngineTest {
 
     @Test
     void reservationStartTimeoutReleasesPendingCapacity() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
                 .admissionTimeout(Duration.ofMillis(50))
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -734,10 +734,10 @@ class DeliveryEngineTest {
 
     @Test
     void reservationTryStartRetainsPendingCapacityUntilInFlightIsAvailable() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 1);
             CountDownLatch activeStarted = new CountDownLatch(1);
@@ -764,10 +764,10 @@ class DeliveryEngineTest {
 
     @Test
     void reservationTryStartFailedRetainsPendingCapacityUntilInFlightIsAvailable() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 1);
             CountDownLatch activeStarted = new CountDownLatch(1);
@@ -797,10 +797,10 @@ class DeliveryEngineTest {
 
     @Test
     void reservationTryStartFailedNullFailureReleasesPendingCapacity() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 1);
             MessageBatch<Object> batch = batch(List.of(message(1)));
@@ -818,10 +818,10 @@ class DeliveryEngineTest {
 
     @Test
     void reservationTryStartFailedNullFailureCannotCancelConcurrentStart() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -851,11 +851,11 @@ class DeliveryEngineTest {
 
     @Test
     void repeatedTryStartCallsShareReservationAdmissionTimeoutBudget() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
                 .admissionTimeout(Duration.ofMillis(100))
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -884,11 +884,11 @@ class DeliveryEngineTest {
 
     @Test
     void interruptedReservationStartReleasesPendingCapacity() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -920,10 +920,10 @@ class DeliveryEngineTest {
 
     @Test
     void reservationAllowsOnlyOneConcurrentStartAttempt() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -954,10 +954,10 @@ class DeliveryEngineTest {
 
     @Test
     void invalidSecondConcurrentStartCannotCancelFirstStart() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -987,11 +987,11 @@ class DeliveryEngineTest {
 
     @Test
     void reservationAcquisitionTimeDoesNotConsumeCapacityWaitBudget() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
                 .admissionTimeout(Duration.ofMillis(20))
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 1);
             Thread.sleep(50);
@@ -1003,12 +1003,12 @@ class DeliveryEngineTest {
     @Test
     void reservationAndStartShareOneCapacityWaitBudget() throws Exception {
         Duration timeout = Duration.ofMillis(500);
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(2)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
                 .admissionTimeout(timeout)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -1045,10 +1045,10 @@ class DeliveryEngineTest {
 
     @Test
     void closingOrShuttingDownReservationReleasesCapacityExactlyOnce() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
-                .build();
+                .buildPrototype();
         DeliveryEngine engine = engine(config, "orders");
         ConnectorDeliveryReservation closedReservation = engine.reserveConnectorDelivery("orders", 1);
         closedReservation.close();
@@ -1068,10 +1068,10 @@ class DeliveryEngineTest {
 
     @Test
     void runtimeDeliveryLimitFitsBothMessageBudgets() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingMessages(3)
                 .maxInFlightMessages(5)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             assertThat(engine.maxDeliveryMessages("orders"), is(3));
         }
@@ -1080,38 +1080,38 @@ class DeliveryEngineTest {
     @Test
     void validatesExecutionLimitsAndDefaults() {
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder().queueCapacity(-1).build());
+                     () -> MessagingConfig.builder().queueCapacity(-1).buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder().maxPendingAdmissions(0).build());
+                     () -> MessagingConfig.builder().maxPendingAdmissions(0).buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder().maxPendingMessages(0).build());
+                     () -> MessagingConfig.builder().maxPendingMessages(0).buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder().maxInFlightMessages(0).build());
+                     () -> MessagingConfig.builder().maxInFlightMessages(0).buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder().admissionTimeout(Duration.ZERO).build());
+                     () -> MessagingConfig.builder().admissionTimeout(Duration.ZERO).buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder().admissionTimeout(Duration.ofNanos(-1)).build());
+                     () -> MessagingConfig.builder().admissionTimeout(Duration.ofNanos(-1)).buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder()
+                     () -> MessagingConfig.builder()
                              .admissionTimeout(Duration.ofSeconds(Long.MAX_VALUE))
-                             .build());
+                             .buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder().shutdownTimeout(Duration.ZERO).build());
+                     () -> MessagingConfig.builder().shutdownTimeout(Duration.ZERO).buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder().shutdownTimeout(Duration.ofNanos(-1)).build());
+                     () -> MessagingConfig.builder().shutdownTimeout(Duration.ofNanos(-1)).buildPrototype());
         assertThrows(IllegalArgumentException.class,
-                     () -> MessagingExecutionConfig.builder()
+                     () -> MessagingConfig.builder()
                              .shutdownTimeout(Duration.ofSeconds(Long.MAX_VALUE))
-                             .build());
+                             .buildPrototype());
 
-        MessagingExecutionConfig minimums = MessagingExecutionConfig.builder()
+        MessagingConfig minimums = MessagingConfig.builder()
                 .queueCapacity(0)
                 .maxPendingAdmissions(1)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
                 .admissionTimeout(Duration.ofNanos(1))
                 .shutdownTimeout(Duration.ofNanos(1))
-                .build();
+                .buildPrototype();
         assertThat(minimums.queueCapacity(), is(0));
         assertThat(minimums.maxPendingAdmissions(), is(1));
         assertThat(minimums.maxPendingMessages(), is(1));
@@ -1119,7 +1119,7 @@ class DeliveryEngineTest {
         assertThat(minimums.admissionTimeout().orElseThrow(), is(Duration.ofNanos(1)));
         assertThat(minimums.shutdownTimeout(), is(Duration.ofNanos(1)));
 
-        MessagingExecutionConfig defaults = MessagingExecutionConfig.builder().build();
+        MessagingConfig defaults = MessagingConfig.builder().buildPrototype();
         assertThat(defaults.queueCapacity(), is(0));
         assertThat(defaults.maxPendingAdmissions(), is(64));
         assertThat(defaults.maxPendingMessages(), is(1024));
@@ -1129,11 +1129,38 @@ class DeliveryEngineTest {
     }
 
     @Test
+    void executionOverridesAreSparseAndPreserveRootDefaults() {
+        MessagingExecutionConfig empty = MessagingExecutionConfig.create();
+        assertThat(empty.queueCapacity().isEmpty(), is(true));
+        assertThat(empty.maxPendingAdmissions().isEmpty(), is(true));
+        assertThat(empty.maxPendingMessages().isEmpty(), is(true));
+        assertThat(empty.maxInFlightMessages().isEmpty(), is(true));
+        assertThat(empty.admissionTimeout().isEmpty(), is(true));
+
+        MessagingConfig defaults = MessagingConfig.builder()
+                .maxPendingMessages(3)
+                .maxInFlightMessages(7)
+                .admissionTimeout(Duration.ofMillis(100))
+                .buildPrototype();
+        MessagingExecutionConfig overrides = MessagingExecutionConfig.builder().maxInFlightMessages(5).build();
+        try (DeliveryEngine engine = new DeliveryEngine(defaults)) {
+            engine.registerChannel("inherited", empty);
+            engine.registerChannel("overridden", overrides);
+            assertThat(engine.maxInFlightMessages("inherited"), is(7));
+            assertThat(engine.maxInFlightMessages("overridden"), is(5));
+            assertThat(engine.maxDeliveryMessages("overridden"), is(3));
+            assertThat(engine.admissionTimeout("overridden").orElseThrow(), is(Duration.ofMillis(100)));
+        }
+        assertThrows(IllegalArgumentException.class,
+                     () -> MessagingExecutionConfig.builder().maxInFlightMessages(0).build());
+    }
+
+    @Test
     void dispatchesQueuedTasksInFifoOrder() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .queueCapacity(2)
                 .maxInFlightMessages(3)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch firstStarted = new CountDownLatch(1);
             CountDownLatch releaseFirst = new CountDownLatch(1);
@@ -1165,10 +1192,10 @@ class DeliveryEngineTest {
 
     @Test
     void interruptionCancelsAdmissionAndActiveConnectorDelivery() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .queueCapacity(0)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch firstStarted = new CountDownLatch(1);
             CountDownLatch releaseFirst = new CountDownLatch(1);
@@ -1229,10 +1256,10 @@ class DeliveryEngineTest {
 
     @Test
     void releasesPermitsWhenDeliveryFails() {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .queueCapacity(0)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             IllegalStateException expected = new IllegalStateException("failed");
 
@@ -1251,10 +1278,10 @@ class DeliveryEngineTest {
 
     @Test
     void connectorDeliveryRetainsLeaseAcrossRetryStyleDispatch() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .queueCapacity(0)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch firstAttemptStarted = new CountDownLatch(1);
             CountDownLatch allowRetry = new CountDownLatch(1);
@@ -1292,9 +1319,9 @@ class DeliveryEngineTest {
 
     @Test
     void connectorLeaseAcceptsLineageSubsetAndRejectsReplacementEnvelopes() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxInFlightMessages(3)
-                .build();
+                .buildPrototype();
         MessageBatch<String> retainedBatch = MessageBatch.<String>builder()
                 .id("retained-batch")
                 .messages(List.of(message(1), message(1), message(1)))
@@ -1330,9 +1357,9 @@ class DeliveryEngineTest {
 
     @Test
     void connectorDeliveryRetainsAdmissionThroughSettlementLease() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDelivery delivery = submitConnectorDelivery(engine, "orders",
                                                                          List.of(message(1)),
@@ -1364,10 +1391,10 @@ class DeliveryEngineTest {
 
     @Test
     void boundsPendingAdmissionCallersAndSupportsNonBlockingConnectorAdmission() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(1)
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
             CountDownLatch releaseActive = new CountDownLatch(1);
@@ -1398,7 +1425,7 @@ class DeliveryEngineTest {
 
     @Test
     void concurrentCrossChannelCycleRejectsInsteadOfWaitingForCapacity() throws Exception {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         try (DeliveryEngine engine = engine(config, "a", "b")) {
             CountDownLatch rootsStarted = new CountDownLatch(2);
             CountDownLatch nestedRejected = new CountDownLatch(2);
@@ -1441,7 +1468,7 @@ class DeliveryEngineTest {
 
     @Test
     void nestedCycleAcrossIndependentChannelEnginesAlsoRejects() {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         try (DeliveryEngine firstEngine = engine(config, "a");
              DeliveryEngine secondEngine = engine(config, "b")) {
             CountDownLatch rootsStarted = new CountDownLatch(2);
@@ -1467,7 +1494,7 @@ class DeliveryEngineTest {
 
     @Test
     void connectorLeaseRejectsDifferentMessageWithinItsReservation() throws Exception {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDelivery delivery = submitConnectorDelivery(engine,
                     "orders",
@@ -1486,7 +1513,7 @@ class DeliveryEngineTest {
 
     @Test
     void connectorLeaseAcceptsItsRetainedEnvelope() throws Exception {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         List<Message<String>> retained = List.of(message(1));
         MessageBatch<?> retainedBatch = batch(retained);
         try (DeliveryEngine engine = engine(config, "orders")) {
@@ -1502,11 +1529,11 @@ class DeliveryEngineTest {
 
     @Test
     void shutdownRejectsQueuedAndNewWorkAndInterruptsActiveAndSourceTasks() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .queueCapacity(1)
                 .maxInFlightMessages(2)
                 .shutdownTimeout(WAIT)
-                .build();
+                .buildPrototype();
         DeliveryEngine engine = engine(config, "orders");
         CountDownLatch activeStarted = new CountDownLatch(1);
         CountDownLatch activeInterrupted = new CountDownLatch(1);
@@ -1563,7 +1590,7 @@ class DeliveryEngineTest {
         CountDownLatch completionObserved = new CountDownLatch(1);
         AtomicReference<Throwable> observedFailure = new AtomicReference<>();
         AtomicBoolean trackedDuringCompletion = new AtomicBoolean();
-        try (DeliveryEngine engine = engine(configBuilder().build())) {
+        try (DeliveryEngine engine = engine(configBuilder().buildPrototype())) {
             DeliveryEngine.SourceTask sourceTask = engine.startSource("source", () -> {
                 sourceStarted.countDown();
                 await(releaseSource);
@@ -1589,7 +1616,7 @@ class DeliveryEngineTest {
 
     @Test
     void nestedChannelDispatchWorksAndSameChannelRecursionIsRejected() {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         try (DeliveryEngine engine = engine(config, "a", "b")) {
             AtomicBoolean nestedRan = new AtomicBoolean();
             dispatch(engine, "a",
@@ -1613,10 +1640,10 @@ class DeliveryEngineTest {
     @Test
     void joinedChildSameChannelEmissionIsRejected() {
         for (ThreadFactory threadFactory : List.of(Thread.ofVirtual().factory(), Thread.ofPlatform().factory())) {
-            MessagingExecutionConfig config = configBuilder()
+            MessagingConfig config = configBuilder()
                     .maxInFlightMessages(1)
                     .admissionTimeout(Duration.ofMillis(100))
-                    .build();
+                    .buildPrototype();
             try (DeliveryEngine engine = engine(config, "orders")) {
                 AtomicReference<Throwable> childFailure = new AtomicReference<>();
                 AtomicBoolean childActionRan = new AtomicBoolean();
@@ -1643,10 +1670,10 @@ class DeliveryEngineTest {
     @Test
     void joinedChildCrossChannelCycleIsRejected() {
         for (ThreadFactory threadFactory : List.of(Thread.ofVirtual().factory(), Thread.ofPlatform().factory())) {
-            MessagingExecutionConfig config = configBuilder()
+            MessagingConfig config = configBuilder()
                     .maxInFlightMessages(1)
                     .admissionTimeout(Duration.ofMillis(100))
-                    .build();
+                    .buildPrototype();
             try (DeliveryEngine engine = engine(config, "a", "b")) {
                 AtomicReference<Throwable> childFailure = new AtomicReference<>();
                 AtomicBoolean recursiveActionRan = new AtomicBoolean();
@@ -1679,10 +1706,10 @@ class DeliveryEngineTest {
     @Test
     void joinedChildDifferentChannelEmissionCompletes() {
         for (ThreadFactory threadFactory : List.of(Thread.ofVirtual().factory(), Thread.ofPlatform().factory())) {
-            MessagingExecutionConfig config = configBuilder()
+            MessagingConfig config = configBuilder()
                     .maxInFlightMessages(1)
                     .admissionTimeout(Duration.ofMillis(100))
-                    .build();
+                    .buildPrototype();
             try (DeliveryEngine engine = engine(config, "a", "b")) {
                 AtomicReference<Throwable> childFailure = new AtomicReference<>();
                 AtomicBoolean childActionRan = new AtomicBoolean();
@@ -1708,10 +1735,10 @@ class DeliveryEngineTest {
     @Test
     void childCreatedDuringDeliveryUsesTopLevelAdmissionAfterParentCompletes() {
         for (ThreadFactory threadFactory : List.of(Thread.ofVirtual().factory(), Thread.ofPlatform().factory())) {
-            MessagingExecutionConfig config = configBuilder()
+            MessagingConfig config = configBuilder()
                     .maxInFlightMessages(1)
                     .admissionTimeout(Duration.ofMillis(100))
-                    .build();
+                    .buildPrototype();
             try (DeliveryEngine engine = engine(config, "orders")) {
                 AtomicReference<Throwable> childFailure = new AtomicReference<>();
                 AtomicReference<Thread> childThread = new AtomicReference<>();
@@ -1736,7 +1763,7 @@ class DeliveryEngineTest {
 
     @Test
     void joinedChildCannotSubmitConnectorDelivery() {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         try (DeliveryEngine engine = engine(config, "a", "b")) {
             AtomicReference<Throwable> childFailure = new AtomicReference<>();
             AtomicBoolean connectorActionRan = new AtomicBoolean();
@@ -1763,10 +1790,10 @@ class DeliveryEngineTest {
 
     @Test
     void joinedChildCannotBorrowConnectorDeliveryLease() throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxInFlightMessages(1)
                 .admissionTimeout(Duration.ofMillis(100))
-                .build();
+                .buildPrototype();
         MessageBatch<?> retainedBatch = batch(List.of(message(1)));
         try (DeliveryEngine engine = engine(config, "orders");
              ConnectorDelivery delivery = engine.submitConnectorDelivery("orders", retainedBatch, () -> {
@@ -1790,7 +1817,7 @@ class DeliveryEngineTest {
 
     @Test
     void connectorDeliveryCannotBeSubmittedFromMessagingDispatch() {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         try (DeliveryEngine engine = engine(config, "a", "b")) {
             MessagingException failure = assertThrows(
                     MessagingException.class,
@@ -1806,7 +1833,7 @@ class DeliveryEngineTest {
 
     @Test
     void sameNamedChannelsInDifferentEnginesAreDistinctCycleNodes() {
-        MessagingExecutionConfig config = configBuilder().build();
+        MessagingConfig config = configBuilder().buildPrototype();
         try (DeliveryEngine firstEngine = engine(config, "orders");
              DeliveryEngine secondEngine = engine(config, "orders")) {
             AtomicBoolean nestedRan = new AtomicBoolean();
@@ -1832,17 +1859,17 @@ class DeliveryEngineTest {
         }
     }
 
-    private static MessagingExecutionConfig.Builder configBuilder() {
-        return MessagingExecutionConfig.builder()
+    private static MessagingConfig.Builder configBuilder() {
+        return MessagingConfig.builder()
                 .queueCapacity(0)
                 .maxInFlightMessages(10)
                 .shutdownTimeout(WAIT);
     }
 
-    private static DeliveryEngine engine(MessagingExecutionConfig config, String... channels) {
+    private static DeliveryEngine engine(MessagingConfig config, String... channels) {
         DeliveryEngine engine = new DeliveryEngine(config);
         for (String channel : channels) {
-            engine.registerChannel(channel, config);
+            engine.registerChannel(channel, MessagingExecutionConfig.create());
         }
         return engine;
     }
@@ -1941,9 +1968,9 @@ class DeliveryEngineTest {
     }
 
     private static void assertConnectorWaitTranslatesInterruption(Consumer<ConnectorDelivery> wait) throws Exception {
-        MessagingExecutionConfig config = configBuilder()
+        MessagingConfig config = configBuilder()
                 .maxInFlightMessages(1)
-                .build();
+                .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch deliveryPublished = new CountDownLatch(1);
             CountDownLatch deliveryEntered = new CountDownLatch(1);

@@ -24,11 +24,11 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
 
 /**
- * Messaging admission and shutdown configuration.
+ * Optional messaging execution overrides. Unconfigured values inherit the messaging defaults.
  */
 @Api.Preview
-@Prototype.Blueprint(decorator = MessagingExecutionConfigBuilderDecorator.class)
-@Prototype.Configured(MessagingConfigSupport.EXECUTION)
+@Prototype.Blueprint(decorator = MessagingConfigSupport.ExecutionBuilderDecorator.class)
+@Prototype.Configured
 interface MessagingExecutionConfigBlueprint {
     /**
      * Maximum number of admitted tasks that may wait for an execution slot; must be zero or greater.
@@ -39,8 +39,7 @@ interface MessagingExecutionConfigBlueprint {
      * @return queue capacity
      */
     @Option.Configured
-    @Option.DefaultInt(0)
-    int queueCapacity();
+    Optional<Integer> queueCapacity();
 
     /**
      * Positive maximum number of callers waiting for blocking admission and open connector reservations.
@@ -52,8 +51,7 @@ interface MessagingExecutionConfigBlueprint {
      * @return maximum pending admissions
      */
     @Option.Configured
-    @Option.DefaultInt(64)
-    int maxPendingAdmissions();
+    Optional<Integer> maxPendingAdmissions();
 
     /**
      * Positive maximum total messages retained by waiting callers and open connector reservations.
@@ -65,8 +63,7 @@ interface MessagingExecutionConfigBlueprint {
      * @return maximum pending messages
      */
     @Option.Configured
-    @Option.DefaultInt(1024)
-    int maxPendingMessages();
+    Optional<Integer> maxPendingMessages();
 
     /**
      * Positive maximum number of admitted messages.
@@ -77,8 +74,7 @@ interface MessagingExecutionConfigBlueprint {
      * @return maximum in-flight message count
      */
     @Option.Configured
-    @Option.DefaultInt(1024)
-    int maxInFlightMessages();
+    Optional<Integer> maxInFlightMessages();
 
     /**
      * Optional positive maximum time to wait for capacity, representable in nanoseconds.
@@ -90,18 +86,5 @@ interface MessagingExecutionConfigBlueprint {
      */
     @Option.Configured
     Optional<Duration> admissionTimeout();
-
-    /**
-     * Positive global maximum time, representable in nanoseconds, to wait for admitted messaging work to finish and
-     * graph-owned resources to close during shutdown or failed-startup rollback.
-     * <p>
-     * This does not bound connector startup or readiness. It is a runtime-wide setting and cannot be overridden per
-     * channel.
-     *
-     * @return shutdown timeout
-     */
-    @Option.Configured
-    @Option.Default("PT10S")
-    Duration shutdownTimeout();
 
 }

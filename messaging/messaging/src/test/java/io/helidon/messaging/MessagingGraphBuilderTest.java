@@ -52,14 +52,13 @@ class MessagingGraphBuilderTest {
 
     @Test
     void exposesCommonBuilderContract() {
-        try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
-            MessagingChannel<String> channel = builder.channel("events", String.class);
-            io.helidon.common.Builder<MessagingGraph.Builder, MessagingGraph> commonBuilder = builder;
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("events", String.class);
+        io.helidon.common.Builder<MessagingGraph.Builder, MessagingGraph> commonBuilder = builder;
 
-            assertThat(commonBuilder.update(it -> it.payloadSink(channel, _ -> { })), sameInstance(builder));
-            try (MessagingGraph graph = commonBuilder.get()) {
-                assertThat(graph, notNullValue());
-            }
+        assertThat(commonBuilder.update(it -> it.payloadSink(channel, _ -> { })), sameInstance(builder));
+        try (MessagingGraph graph = commonBuilder.get()) {
+            assertThat(graph, notNullValue());
         }
     }
 
@@ -77,6 +76,31 @@ class MessagingGraphBuilderTest {
             graph.start();
             emitter.emit("started");
         }
+    }
+
+    @Test
+    void configurationPrototypeBuildsTheProgrammaticGraph() {
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("configured", String.class);
+        List<String> received = new ArrayList<>();
+        builder.payloadSink(channel, received::add);
+
+        MessagingConfig prototype = builder.buildPrototype();
+        builder.payloadSink(channel, _ -> {
+            throw new AssertionError("A frozen prototype must not include later registrations");
+        });
+
+        MessagingConfig config = MessagingConfig.builder(prototype)
+                .maxInFlightMessages(3)
+                .maxPendingMessages(2)
+                .buildPrototype();
+        try (MessagingGraph graph = config.build()) {
+            assertThat(graph.prototype(), sameInstance(config));
+            graph.start();
+            graph.emitter(channel).emit("shared graph");
+            assertThat(((DefaultMessagingGraph) graph).maxDeliveryMessages(channel.name()), is(2));
+        }
+        assertThat(received, is(List.of("shared graph")));
     }
 
     @Test
@@ -120,42 +144,42 @@ class MessagingGraphBuilderTest {
             }
         });
 
-        try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
-            MessagingChannel<String> source = builder.channel("incoming", String.class);
-            MessagingChannel<String> target = builder.channel("processed", GenericType.create(String.class),
-                                                              MessagingExecutionConfig.builder()
-                                                                      .maxInFlightMessages(1)
-                                                                      .build());
-            builder.incomingChannel(source, connection)
-                    .route(source, target)
-                    .messageSink(target, received::set);
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> source = builder.channel("incoming", String.class);
+        MessagingChannel<String> target = builder.channel("processed", GenericType.create(String.class),
+                                                          MessagingExecutionConfig.builder()
+                                                                  .maxInFlightMessages(1)
+                                                                  .build());
+        builder.incomingChannel(source, connection)
+                .route(source, target)
+                .messageSink(target, received::set);
 
-            try (MessagingGraph graph = builder.build()) {
-                assertThat(channelName.get(), nullValue());
-                graph.start();
-                assertThat("Incoming delivery did not complete", delivered.await(5, TimeUnit.SECONDS), is(true));
-                assertThat(channelName.get(), is("incoming"));
-                assertThat(deliveryLimit.get(), is(1));
-                assertThat(received.get(), sameInstance(message));
-            }
+        try (MessagingGraph graph = builder.build()) {
+            assertThat(channelName.get(), nullValue());
+            graph.start();
+            assertThat("Incoming delivery did not complete", delivered.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(channelName.get(), is("incoming"));
+            assertThat(deliveryLimit.get(), is(1));
+            assertThat(received.get(), sameInstance(message));
         }
         assertThat(connection.closed.get(), is(true));
     }
 
     @Test
-    void incomingChannelOwnershipRejectsReuseAndClosesAbandonedConnections() {
+    void incomingChannelOwnershipRejectsReuseAndClosesUnstartedConnections() {
         TestIncomingChannel connection = new TestIncomingChannel(_ -> { });
-        try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
-            MessagingChannel<String> first = builder.channel("first", String.class);
-            MessagingChannel<String> second = builder.channel("second", String.class);
-            builder.incomingChannel(first, connection);
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> first = builder.channel("first", String.class);
+        MessagingChannel<String> second = builder.channel("second", String.class);
+        builder.incomingChannel(first, connection);
 
-            IllegalArgumentException duplicate = assertThrows(IllegalArgumentException.class,
-                                                              () -> builder.incomingChannel(second, connection));
-            assertThat(duplicate.getMessage(), containsString("already owned"));
-            assertThrows(IllegalArgumentException.class, () -> builder.payloadSource(first, Stream.empty()));
-            assertThat(connection.closed.get(), is(false));
-        }
+        IllegalArgumentException duplicate = assertThrows(IllegalArgumentException.class,
+                                                          () -> builder.incomingChannel(second, connection));
+        assertThat(duplicate.getMessage(), containsString("already owned"));
+        assertThrows(IllegalArgumentException.class, () -> builder.payloadSource(first, Stream.empty()));
+        assertThat(connection.closed.get(), is(false));
+        builder.payloadSink(first, _ -> { }).payloadSink(second, _ -> { });
+        builder.build().close();
         assertThat(connection.closed.get(), is(true));
     }
 
@@ -444,8 +468,6 @@ class MessagingGraphBuilderTest {
             assertThrows(IllegalStateException.class, builder::build);
             assertThrows(IllegalStateException.class, () -> builder.payloadSink(channel, _ -> { }));
 
-            builder.close();
-
             assertThat(streamCloses.get(), is(0));
             assertThat(connectorReleased.get(), is(false));
         } finally {
@@ -459,7 +481,7 @@ class MessagingGraphBuilderTest {
     }
 
     @Test
-    void closingUnbuiltBuilderClosesRegisteredResources() {
+    void closingUnstartedGraphClosesRegisteredResources() {
         AtomicBoolean streamClosed = new AtomicBoolean();
         TestConnector connector = new TestConnector();
         MessagingGraph.Builder builder = MessagingGraph.builder();
@@ -467,7 +489,8 @@ class MessagingGraphBuilderTest {
         builder.payloadSource(channel, Stream.<String>empty().onClose(() -> streamClosed.set(true)))
                 .outgoingChannel(channel, connector);
 
-        builder.close();
+        MessagingGraph graph = builder.build();
+        graph.close();
 
         assertThat(streamClosed.get(), is(true));
         assertThat(connector.closed.get(), is(true));
@@ -475,7 +498,7 @@ class MessagingGraphBuilderTest {
     }
 
     @Test
-    void closingUnbuiltBuilderContinuesAfterResourceError() {
+    void closingUnstartedGraphContinuesAfterResourceError() {
         AssertionError closeError = new AssertionError("first close failed");
         AtomicBoolean secondStreamClosed = new AtomicBoolean();
         MessagingGraph.Builder builder = MessagingGraph.builder();
@@ -485,25 +508,26 @@ class MessagingGraphBuilderTest {
                     throw closeError;
                 }))
                 .payloadSource(secondChannel,
-                               Stream.<String>empty().onClose(() -> secondStreamClosed.set(true)));
+                               Stream.<String>empty().onClose(() -> secondStreamClosed.set(true)))
+                .payloadSink(firstChannel, _ -> { })
+                .payloadSink(secondChannel, _ -> { });
 
-        MessagingException failure = assertThrows(MessagingException.class, builder::close);
+        MessagingGraph graph = builder.build();
+        MessagingException failure = assertThrows(MessagingException.class, graph::close);
 
         assertThat(failure.getCause(), sameInstance(closeError));
         assertThat(secondStreamClosed.get(), is(true));
     }
 
     @Test
-    void closingUnbuiltBuilderBoundsBlockingStreamCloseAndAttemptsLaterCleanup() throws InterruptedException {
+    void closingUnstartedGraphBoundsBlockingStreamCloseAndAttemptsLaterCleanup() throws InterruptedException {
         CountDownLatch closeEntered = new CountDownLatch(1);
         CountDownLatch releaseClose = new CountDownLatch(1);
         CountDownLatch closeExited = new CountDownLatch(1);
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
         OrderedConnector connector = new OrderedConnector(new CopyOnWriteArrayList<>());
         MessagingGraph.Builder builder = MessagingGraph.builder()
-                .executionConfig(MessagingExecutionConfig.builder()
-                                         .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT)
-                                         .build());
+                .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT);
         MessagingChannel<String> channel = builder.channel("blocking-stream-cleanup", String.class);
         builder.payloadSource(channel, Stream.<String>empty().onClose(() -> {
                     closeEntered.countDown();
@@ -513,12 +537,13 @@ class MessagingGraphBuilderTest {
                 .outgoingChannel(channel, connector)
                 .payloadSink(channel, _ -> { });
 
-        Thread closeThread = Thread.ofVirtual().start(() -> runCapturing(builder::close, closeFailure));
+        MessagingGraph graph = builder.build();
+        Thread closeThread = Thread.ofVirtual().start(() -> runCapturing(graph::close, closeFailure));
         try {
             assertThat(closeEntered.await(5, TimeUnit.SECONDS), is(true));
             closeThread.join(TimeUnit.SECONDS.toMillis(2));
 
-            assertThat("Builder close exceeded its shutdown timeout", closeThread.isAlive(), is(false));
+            assertThat("Graph close exceeded its shutdown timeout", closeThread.isAlive(), is(false));
             assertThat(String.valueOf(closeFailure.get()), closeFailure.get(), instanceOf(MessagingException.class));
             assertThat(closeFailure.get().getMessage(),
                        closeFailure.get().getMessage(),
@@ -541,14 +566,15 @@ class MessagingGraphBuilderTest {
     }
 
     @Test
-    void closingUnbuiltBuilderForceClosesConnectorBeforeNormalClose() {
+    void closingUnstartedGraphForceClosesConnectorBeforeNormalClose() {
         List<String> lifecycle = new CopyOnWriteArrayList<>();
         OrderedConnector connector = new OrderedConnector(lifecycle);
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<String> channel = builder.channel("abandoned-connector", String.class);
         builder.outgoingChannel(channel, connector);
 
-        builder.close();
+        MessagingGraph graph = builder.build();
+        graph.close();
 
         assertThat(lifecycle, is(List.of("force", "close")));
     }
@@ -560,9 +586,7 @@ class MessagingGraphBuilderTest {
         CountDownLatch closeExited = new CountDownLatch(1);
         AtomicReference<Throwable> buildFailure = new AtomicReference<>();
         MessagingGraph.Builder builder = MessagingGraph.builder()
-                .executionConfig(MessagingExecutionConfig.builder()
-                                         .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT)
-                                         .build());
+                .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT);
         MessagingChannel<String> channel = builder.channel("outputless-blocking-cleanup", String.class);
         builder.payloadSource(channel, Stream.<String>empty().onClose(() -> {
             closeEntered.countDown();
@@ -604,7 +628,7 @@ class MessagingGraphBuilderTest {
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
                                                          () -> builder.payloadSource(channel, Stream.of("second")));
 
-        assertThat(failure.getMessage(), containsString("merged already has a stream source"));
+        assertThat(failure.getMessage(), containsString("merged already has a source"));
         try (MessagingGraph graph = builder.build()) {
             graph.start();
         }
@@ -906,9 +930,7 @@ class MessagingGraphBuilderTest {
                     streamClosed.set(true);
                 });
         MessagingGraph.Builder builder = MessagingGraph.builder()
-                .executionConfig(MessagingExecutionConfig.builder()
-                                         .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT)
-                                         .build());
+                .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT);
         MessagingChannel<String> channel = builder.channel("blocked-stream-iteration", String.class);
         builder.payloadSource(channel, source)
                 .payloadSink(channel, _ -> { });
@@ -1144,12 +1166,11 @@ class MessagingGraphBuilderTest {
 
     @Test
     void primitiveChannelPayloadTypesAreRejected() {
-        try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
-            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-                                                             () -> builder.channel("primitive", int.class));
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                         () -> builder.channel("primitive", int.class));
 
-            assertThat(failure.getMessage(), containsString("must not be primitive"));
-        }
+        assertThat(failure.getMessage(), containsString("must not be primitive"));
     }
 
     @Test

@@ -90,7 +90,7 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
      * @return immutable batch
      */
     public static <T> MessageBatch<T> create(List<? extends Message<? extends T>> messages) {
-        return createRoot(MessageBatchConfigSupport.defaultId(), messages);
+        return createRoot(MessagingConfigSupport.MessageBatchCustomMethods.defaultId(), messages);
     }
 
     /**
@@ -101,7 +101,7 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
      * @return singleton batch
      */
     public static <T> MessageBatch<T> create(Message<? extends T> message) {
-        return createRoot(MessageBatchConfigSupport.defaultId(), List.of(Objects.requireNonNull(message)));
+        return createRoot(MessagingConfigSupport.MessageBatchCustomMethods.defaultId(), List.of(Objects.requireNonNull(message)));
     }
 
     /**

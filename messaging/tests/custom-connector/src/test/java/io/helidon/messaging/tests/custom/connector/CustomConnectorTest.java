@@ -18,11 +18,9 @@ package io.helidon.messaging.tests.custom.connector;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.config.spi.ConfigNode;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingConfig;
@@ -66,19 +64,18 @@ class CustomConnectorTest {
                 .header("trace", "imperative")
                 .build();
 
-        try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
-            MessagingChannel<String> sent = builder.channel("sent", String.class);
-            MessagingChannel<String> received = builder.channel("received", String.class);
-            builder.outgoingChannel(sent, connector.outgoing(sentConfig))
-                    .incomingChannel(received, connector.incoming(receivedConfig))
-                    .messageSink(received, incoming -> probe.received(received.name(), incoming));
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> sent = builder.channel("sent", String.class);
+        MessagingChannel<String> received = builder.channel("received", String.class);
+        builder.outgoingChannel(sent, connector.outgoing(sentConfig))
+                .incomingChannel(received, connector.incoming(receivedConfig))
+                .messageSink(received, incoming -> probe.received(received.name(), incoming));
 
-            try (MessagingGraph graph = builder.build()) {
-                graph.start();
-                graph.emitter(sent).emit(message);
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+            graph.emitter(sent).emit(message);
 
-                assertThat("message was not received", probe.awaitSettled(WAIT), is(true));
-            }
+            assertThat("message was not received", probe.awaitSettled(WAIT), is(true));
         }
 
         assertThat(probe.sent(), is(List.of("sent:outgoing-prefix:hello:imperative")));
@@ -91,45 +88,84 @@ class CustomConnectorTest {
 
     @Test
     void roundTripsMessageThroughConnectorObjectConfiguration() throws InterruptedException {
-        ConfigNode.ObjectNode connectors = ConfigNode.ObjectNode.builder()
-                .addObject("sender", connectorConfig("unused-endpoint", "sender-prefix").build())
-                .addObject("receiver", connectorConfig("loopback", "receiver-prefix").build())
-                .build();
+        Config config = Config.just("""
+                messaging:
+                  connector:
+                    sender:
+                      type: test-custom
+                      endpoint: unused-endpoint
+                      prefix: sender-prefix
+                    receiver:
+                      type: test-custom
+                      endpoint: loopback
+                      prefix: receiver-prefix
+                  incoming:
+                    received:
+                      connector: receiver
+                  outgoing:
+                    configured-channel:
+                      name: sent
+                      connector: sender
+                      endpoint: loopback
+                      prefix: outgoing-prefix
+                """, MediaTypes.APPLICATION_YAML);
 
-        assertConfiguredRoundTrip(connectors);
+        assertConfiguredRoundTrip(config);
     }
 
     @Test
     void roundTripsMessageThroughConnectorListConfiguration() throws InterruptedException {
-        ConfigNode.ListNode connectors = ConfigNode.ListNode.builder()
-                .addObject(connectorConfig("unused-endpoint", "sender-prefix")
-                        .addValue("name", "sender")
-                        .build())
-                .addObject(connectorConfig("loopback", "receiver-prefix")
-                        .addValue("name", "receiver")
-                        .build())
-                .build();
+        Config config = Config.just("""
+                messaging:
+                  connector:
+                    - type: test-custom
+                      name: sender
+                      endpoint: unused-endpoint
+                      prefix: sender-prefix
+                    - type: test-custom
+                      name: receiver
+                      endpoint: loopback
+                      prefix: receiver-prefix
+                  incoming:
+                    received:
+                      connector: receiver
+                  outgoing:
+                    configured-channel:
+                      name: sent
+                      connector: sender
+                      endpoint: loopback
+                      prefix: outgoing-prefix
+                """, MediaTypes.APPLICATION_YAML);
 
-        assertConfiguredRoundTrip(connectors);
+        assertConfiguredRoundTrip(config);
     }
 
     @Test
     void preservesChannelConfigurationSubtrees() {
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "execution.queue-capacity", "0",
-                "incoming.received.connector", "custom-connector",
-                "incoming.received.prefix", "incoming-prefix",
-                "incoming.received.custom.delivery.mode", "ordered",
-                "outgoing.configured-channel.name", "sent",
-                "outgoing.configured-channel.connector", "custom-connector",
-                "outgoing.configured-channel.prefix", "outgoing-prefix",
-                "outgoing.configured-channel.custom.retry.max-attempts", "3")));
+        Config config = Config.just("""
+                queue-capacity: 0
+                incoming:
+                  received:
+                    connector: custom-connector
+                    prefix: incoming-prefix
+                    custom:
+                      delivery:
+                        mode: ordered
+                outgoing:
+                  configured-channel:
+                    name: sent
+                    connector: custom-connector
+                    prefix: outgoing-prefix
+                    custom:
+                      retry:
+                        max-attempts: 3
+                """, MediaTypes.APPLICATION_YAML);
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         try {
             MessagingConfig messaging = MessagingConfig.builder()
                     .serviceRegistry(manager.registry())
                     .config(config)
-                    .build();
+                    .buildPrototype();
 
             assertThat(messaging.incoming().keySet(), containsInAnyOrder("received"));
             Config incoming = messaging.incoming().get("received");
@@ -148,8 +184,7 @@ class CustomConnectorTest {
         }
     }
 
-    private static void assertConfiguredRoundTrip(ConfigNode connectors) throws InterruptedException {
-        Config config = messagingConfig(connectors);
+    private static void assertConfiguredRoundTrip(Config config) throws InterruptedException {
         ServiceRegistryConfig registryConfig = ServiceRegistryConfig.builder()
                 .putContractInstance(Config.class, config)
                 .build();
@@ -175,35 +210,5 @@ class CustomConnectorTest {
             manager.shutdown();
         }
         assertThat(probe.lifecycle(), hasItems("started:sent", "started:received", "closed:sent", "closed:received"));
-    }
-
-    private static ConfigNode.ObjectNode.Builder connectorConfig(String endpoint, String prefix) {
-        return ConfigNode.ObjectNode.builder()
-                .addValue("type", CustomConnectorProvider.CONNECTOR_TYPE)
-                .addValue("endpoint", endpoint)
-                .addValue("prefix", prefix);
-    }
-
-    private static Config messagingConfig(ConfigNode connectors) {
-        ConfigNode.ObjectNode messaging = ConfigNode.ObjectNode.builder()
-                .addNode("connector", connectors)
-                .addObject("incoming", ConfigNode.ObjectNode.builder()
-                        .addObject("received", ConfigNode.ObjectNode.builder()
-                                .addValue("connector", "receiver")
-                                .build())
-                        .build())
-                .addObject("outgoing", ConfigNode.ObjectNode.builder()
-                        .addObject("configured-channel", ConfigNode.ObjectNode.builder()
-                                .addValue("name", "sent")
-                                .addValue("connector", "sender")
-                                .addValue("endpoint", "loopback")
-                                .addValue("prefix", "outgoing-prefix")
-                                .build())
-                        .build())
-                .build();
-        ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
-                .addObject("messaging", messaging)
-                .build();
-        return Config.just(ConfigSources.create(root));
     }
 }

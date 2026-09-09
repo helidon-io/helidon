@@ -50,6 +50,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final ThreadLocal<Boolean> lifecycleCallback = new ThreadLocal<>();
     private final DeliveryEngine deliveryEngine;
+    private final MessagingConfig config;
     private final Map<String, MessagingChannel<?>> channels = new LinkedHashMap<>();
     private final Map<MessagingChannel<?>, Emitter<?>> emitters = new IdentityHashMap<>();
     private final Map<String, Set<String>> routes = new LinkedHashMap<>();
@@ -72,6 +73,12 @@ final class DefaultMessagingGraph implements MessagingGraph {
 
     DefaultMessagingGraph(DeliveryEngine deliveryEngine) {
         this.deliveryEngine = Objects.requireNonNull(deliveryEngine);
+        this.config = deliveryEngine.configuration();
+    }
+
+    @Override
+    public MessagingConfig prototype() {
+        return config;
     }
 
     DeliveryEngine deliveryEngine() {
@@ -202,6 +209,18 @@ final class DefaultMessagingGraph implements MessagingGraph {
         } finally {
             lifecycleLock.unlock();
         }
+    }
+
+    <T> void emitBatch(String channel, MessageBatch<? extends T> messages) {
+        Objects.requireNonNull(messages);
+        DefaultMessagingChannel<?> target = runtimeChannel(channel);
+        ensureRunning();
+        target.emitBatchObject(messages);
+    }
+
+    <T> void emitRoutedBatch(String channel, MessageBatch<? extends T> messages) {
+        Objects.requireNonNull(messages);
+        runtimeChannel(channel).emitRoutedBatchObject(messages);
     }
 
     void addRoute(String source, String target) {
@@ -455,6 +474,15 @@ final class DefaultMessagingGraph implements MessagingGraph {
             return Long.MAX_VALUE;
         }
         return result;
+    }
+
+    private DefaultMessagingChannel<?> runtimeChannel(String name) {
+        Objects.requireNonNull(name);
+        MessagingChannel<?> channel = channels.get(name);
+        if (channel instanceof DefaultMessagingChannel<?> target) {
+            return target;
+        }
+        throw new MessagingException("Unknown messaging channel " + name);
     }
 
     private void prepareIfNeeded(boolean rejectIfNotNeeded) {

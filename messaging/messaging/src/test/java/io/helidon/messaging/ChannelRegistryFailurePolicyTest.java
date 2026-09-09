@@ -94,13 +94,12 @@ class ChannelRegistryFailurePolicyTest {
     void testGlobalAndChannelExecutionConfigurationMerge() {
         Config config = yaml("""
                 messaging:
-                  execution:
-                    queue-capacity: 3
-                    max-pending-admissions: 4
-                    max-pending-messages: 5
-                    max-in-flight-messages: 7
-                    admission-timeout: PT0.009S
-                    shutdown-timeout: PT0.01S
+                  queue-capacity: 3
+                  max-pending-admissions: 4
+                  max-pending-messages: 5
+                  max-in-flight-messages: 7
+                  admission-timeout: PT0.009S
+                  shutdown-timeout: PT0.01S
                   channel:
                     orders:
                       execution:
@@ -109,7 +108,7 @@ class ChannelRegistryFailurePolicyTest {
                         admission-timeout: PT0.018S
                 """);
 
-        MessagingExecutionConfig global = ChannelRegistry.executionConfig(config, null);
+        MessagingConfig global = MessagingConfig.builder().config(config.get("messaging")).buildPrototype();
         assertThat(global.queueCapacity(), is(3));
         assertThat(global.maxPendingAdmissions(), is(4));
         assertThat(global.maxPendingMessages(), is(5));
@@ -117,22 +116,21 @@ class ChannelRegistryFailurePolicyTest {
         assertThat(global.admissionTimeout(), is(Optional.of(Duration.ofMillis(9))));
         assertThat(global.shutdownTimeout(), is(Duration.ofMillis(10)));
 
-        MessagingExecutionConfig orders = ChannelRegistry.executionConfig(config, "orders");
+        MessagingExecutionConfig overrides = MessagingConfigSupport.channelExecution(global, "orders");
+        MessagingConfigSupport.Execution orders = MessagingConfigSupport.execution(global, overrides);
         assertThat(orders.queueCapacity(), is(12));
         assertThat(orders.maxPendingAdmissions(), is(4));
         assertThat(orders.maxPendingMessages(), is(14));
         assertThat(orders.maxInFlightMessages(), is(7));
         assertThat(orders.admissionTimeout(), is(Optional.of(Duration.ofMillis(18))));
-        assertThat(orders.shutdownTimeout(), is(Duration.ofMillis(10)));
     }
 
     @Test
     void testLiteralDottedChannelExecutionConfigurationMerge() {
         Config config = yaml("""
                 messaging:
-                  execution:
-                    queue-capacity: 3
-                    max-pending-messages: 5
+                  queue-capacity: 3
+                  max-pending-messages: 5
                   channel:
                     orders~1v1:
                       execution:
@@ -140,7 +138,9 @@ class ChannelRegistryFailurePolicyTest {
                         max-pending-messages: 14
                 """);
 
-        MessagingExecutionConfig orders = ChannelRegistry.executionConfig(config, "orders.v1");
+        MessagingConfig global = MessagingConfig.builder().config(config.get("messaging")).buildPrototype();
+        MessagingConfigSupport.Execution orders = MessagingConfigSupport.execution(
+                global, MessagingConfigSupport.channelExecution(global, "orders.v1"));
 
         assertThat(orders.queueCapacity(), is(12));
         assertThat(orders.maxPendingMessages(), is(14));
