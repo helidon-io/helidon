@@ -43,7 +43,7 @@ final class SealedConfigSupport {
         public SealedConfig<T> buildPrototype() {
             preBuildPrototype();
             validatePrototype();
-            return new SealedConfigImpl<>(this);
+            return buildPrototype(this);
         }
     }
 }

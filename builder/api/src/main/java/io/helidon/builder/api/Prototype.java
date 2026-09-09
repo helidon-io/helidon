@@ -175,6 +175,9 @@ public final class Prototype {
     /**
      * Generate the prototype API as a sealed interface.
      * <p>
+     * The generated prototype cannot be extended and must be a leaf in a prototype hierarchy. Its generated
+     * implementation is private and final.
+     * <p>
      * This annotation must be used together with {@link Prototype.Blueprint}.
      */
     @Target(ElementType.TYPE)

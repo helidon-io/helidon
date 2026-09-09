@@ -83,13 +83,17 @@ final class GenerateBuilder {
                                 .returnType(prototype)
                                 .addAnnotation(Annotations.OVERRIDE)
                                 .addContentLine("preBuildPrototype();")
-                                .addContentLine("validatePrototype();")
-                                .addContent("return new ")
-                                .addContent(implementationType);
-                        if (!typeArguments.isEmpty()) {
-                            method.addContent("<>");
+                                .addContentLine("validatePrototype();");
+                        if (prototypeInfo.blueprint().hasAnnotation(Types.PROTOTYPE_SEALED)) {
+                            method.addContentLine("return buildPrototype(this);");
+                        } else {
+                            method.addContent("return new ")
+                                    .addContent(implementationType);
+                            if (!typeArguments.isEmpty()) {
+                                method.addContent("<>");
+                            }
+                            method.addContentLine("(this);");
                         }
-                        method.addContentLine("(this);");
                     });
             if (isFactory) {
                 GenerateAbstractBuilder.buildRuntimeObjectMethod(builder, prototypeInfo, runtimeType, true);

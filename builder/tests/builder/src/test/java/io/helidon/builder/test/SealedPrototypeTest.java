@@ -36,6 +36,7 @@ class SealedPrototypeTest {
         Class<?>[] permittedSubclasses = SealedConfig.class.getPermittedSubclasses();
         assertThat(SealedConfig.class.isSealed(), is(true));
         assertThat(permittedSubclasses.length, is(1));
+        assertThat(Modifier.isPrivate(permittedSubclasses[0].getModifiers()), is(true));
         assertThat(Modifier.isFinal(permittedSubclasses[0].getModifiers()), is(true));
 
         SealedConfig<String> generatedFactory = SealedConfig.create("factory");

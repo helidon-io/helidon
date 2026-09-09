@@ -130,6 +130,29 @@ final class GenerateAbstractBuilder {
             // method preBuildPrototype() - handles providers, decorator
             preBuildPrototypeMethod(ctx, extensions, builder, prototypeInfo, options);
             validatePrototypeMethod(extensions, builder, prototypeInfo, options);
+            if (sealedPrototype) {
+                builder.addMethod(method -> {
+                    method.name("buildPrototype")
+                            .description("Create a new prototype instance from a builder.")
+                            .accessModifier(AccessModifier.PROTECTED)
+                            .isFinal(true)
+                            .returnType(prototype, "new prototype instance")
+                            .addParameter(param -> param.name("builder")
+                                    .type(TypeName.builder()
+                                                  .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
+                                                  .addTypeArguments(typeArgumentNames)
+                                                  .addTypeArgument(TypeArgument.create("?"))
+                                                  .addTypeArgument(TypeArgument.create("?"))
+                                                  .build())
+                                    .description("builder used to create the prototype"))
+                            .addContent("return new ")
+                            .addContent(implementationType);
+                    if (!typeArguments.isEmpty()) {
+                        method.addContent("<>");
+                    }
+                    method.addContentLine("(builder);");
+                });
+            }
 
             //custom method adding
             addCustomBuilderMethods(builder, prototypeInfo);
@@ -148,7 +171,7 @@ final class GenerateAbstractBuilder {
                 isAllowedValueMethod(builder);
             }
 
-            // before the builder class is finished, we also generate a protected implementation
+            // before the builder class is finished, we also generate an implementation
             generatePrototypeImpl(extensions,
                                   builder,
                                   prototypeInfo,
@@ -1239,7 +1262,7 @@ final class GenerateAbstractBuilder {
         classBuilder.addInnerClass(builder -> {
             typeArguments.forEach(builder::addGenericArgument);
             builder.name(implName)
-                    .accessModifier(AccessModifier.PROTECTED)
+                    .accessModifier(sealedPrototype ? AccessModifier.PRIVATE : AccessModifier.PROTECTED)
                     .isStatic(true)
                     .description(sealedPrototype
                                          ? "Generated final implementation of the sealed prototype."
@@ -1265,7 +1288,7 @@ final class GenerateAbstractBuilder {
              */
             builder.addConstructor(constructor -> {
                 constructor.description("Create an instance providing a builder.")
-                        .accessModifier(AccessModifier.PROTECTED)
+                        .accessModifier(sealedPrototype ? AccessModifier.PRIVATE : AccessModifier.PROTECTED)
                         .addParameter(param -> param.name("builder")
                                 .type(TypeName.builder()
                                               .from(TypeName.create(ifaceName + ".BuilderBase"))
