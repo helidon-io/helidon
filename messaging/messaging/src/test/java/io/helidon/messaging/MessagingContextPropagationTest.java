@@ -299,10 +299,10 @@ class MessagingContextPropagationTest {
     }
 
     private static DeliveryEngine engine(String... channels) {
-        MessagingExecutionConfig config = MessagingExecutionConfig.builder().build();
+        MessagingConfig config = MessagingConfig.builder().buildPrototype();
         DeliveryEngine engine = new DeliveryEngine(config);
         for (String channel : channels) {
-            engine.registerChannel(channel, config);
+            engine.registerChannel(channel, MessagingExecutionConfig.create());
         }
         return engine;
     }

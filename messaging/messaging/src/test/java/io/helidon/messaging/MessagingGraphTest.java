@@ -148,7 +148,7 @@ class MessagingGraphTest {
                 stopIncoming.countDown();
             }
         };
-        MessagingExecutionConfig config = config(SHUTDOWN_TIMEOUT);
+        MessagingConfig config = config(SHUTDOWN_TIMEOUT);
         DeliveryEngine engine = engine(config, "orders");
         DefaultMessagingGraph graph = new DefaultMessagingGraph(engine);
         graph.addBinding(outgoing);
@@ -625,7 +625,7 @@ class MessagingGraphTest {
 
     @Test
     void gracefulDrainAllowsAdmittedNestedDispatchAndRejectsNewTopLevelWork() throws Exception {
-        MessagingExecutionConfig config = config(SHUTDOWN_TIMEOUT);
+        MessagingConfig config = config(SHUTDOWN_TIMEOUT);
         DeliveryEngine engine = engine(config, "upstream", "downstream");
         DefaultMessagingGraph graph = new DefaultMessagingGraph(engine);
         graph.start();
@@ -661,7 +661,7 @@ class MessagingGraphTest {
         CountDownLatch releaseSink = new CountDownLatch(1);
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
         AtomicReference<MessagingGraph> graphReference = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder().executionConfig(config(SHUTDOWN_TIMEOUT));
+        MessagingGraph.Builder builder = MessagingGraph.builder().from(config(SHUTDOWN_TIMEOUT));
         MessagingChannel<String> channel = builder.channel("orders", String.class);
         builder.payloadSink(channel, _ -> {
             try {
@@ -698,7 +698,7 @@ class MessagingGraphTest {
 
     @Test
     void closeHandsShutdownOffFromAChildDeliveryInAnotherEngine() throws Exception {
-        MessagingExecutionConfig config = config(SHUTDOWN_TIMEOUT);
+        MessagingConfig config = config(SHUTDOWN_TIMEOUT);
         DeliveryEngine parentEngine = engine(config, "parent");
         DeliveryEngine childEngine = engine(config, "child");
         DefaultMessagingGraph parentGraph = new DefaultMessagingGraph(parentEngine);
@@ -811,7 +811,7 @@ class MessagingGraphTest {
         CountDownLatch releaseLock = new CountDownLatch(1);
         AtomicInteger produced = new AtomicInteger();
         AtomicInteger delivered = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder().executionConfig(config(SHUTDOWN_TIMEOUT));
+        MessagingGraph.Builder builder = MessagingGraph.builder().from(config(SHUTDOWN_TIMEOUT));
         MessagingChannel<Integer> channel = builder.channel("stream", Integer.class);
         DefaultMessagingGraph graph = (DefaultMessagingGraph) builder.payloadSource(
                         channel,
@@ -885,7 +885,7 @@ class MessagingGraphTest {
     @Test
     void drainTimeoutForcesInterruptionAndClosesBindingsInReverseOrder() throws Exception {
         Duration timeout = Duration.ofMillis(100);
-        MessagingExecutionConfig config = config(timeout);
+        MessagingConfig config = config(timeout);
         DeliveryEngine engine = engine(config, "orders");
         DefaultMessagingGraph graph = new DefaultMessagingGraph(engine);
         List<String> events = new CopyOnWriteArrayList<>();
@@ -1227,9 +1227,9 @@ class MessagingGraphTest {
     void rejectsUnknownRouteBeforePreparingSources() {
         List<String> events = new CopyOnWriteArrayList<>();
         ManagedSource source = ManagedSource.running("source", events, new AtomicBoolean(), () -> true);
-        MessagingExecutionConfig config = config(SHUTDOWN_TIMEOUT);
+        MessagingConfig config = config(SHUTDOWN_TIMEOUT);
         DefaultMessagingGraph graph = graph(config);
-        graph.addChannel("known", new NoOpChannel(), config);
+        graph.addChannel("known", new NoOpChannel(), MessagingExecutionConfig.create());
         graph.addIncomingConnector("source", source, testIncomingContext("source"));
         graph.addRoute("known", "missing");
 
@@ -1313,10 +1313,10 @@ class MessagingGraphTest {
     void rejectsCycleBeforePreparingSources() {
         List<String> events = new CopyOnWriteArrayList<>();
         ManagedSource source = ManagedSource.running("source", events, new AtomicBoolean(), () -> true);
-        MessagingExecutionConfig config = config(SHUTDOWN_TIMEOUT);
+        MessagingConfig config = config(SHUTDOWN_TIMEOUT);
         DefaultMessagingGraph graph = graph(config);
-        graph.addChannel("first", new NoOpChannel(), config);
-        graph.addChannel("second", new NoOpChannel(), config);
+        graph.addChannel("first", new NoOpChannel(), MessagingExecutionConfig.create());
+        graph.addChannel("second", new NoOpChannel(), MessagingExecutionConfig.create());
         graph.addIncomingConnector("source", source, testIncomingContext("source"));
         graph.addRoute("first", "second");
         graph.addRoute("second", "first");
@@ -1329,7 +1329,7 @@ class MessagingGraphTest {
         assertThat(lifecycleEvents(events), is(List.of("force-source", "close-source")));
     }
 
-    private static DefaultMessagingGraph graph(MessagingExecutionConfig config) {
+    private static DefaultMessagingGraph graph(MessagingConfig config) {
         return new DefaultMessagingGraph(new DeliveryEngine(config));
     }
 
@@ -1360,25 +1360,24 @@ class MessagingGraphTest {
                 .queueCapacity(0)
                 .maxPendingMessages(maxPendingMessages)
                 .maxInFlightMessages(maxInFlightMessages)
-                .shutdownTimeout(SHUTDOWN_TIMEOUT)
                 .build();
         graph.addChannel(channel, new NoOpChannel(), config);
     }
 
-    private static DeliveryEngine engine(MessagingExecutionConfig config, String... channels) {
+    private static DeliveryEngine engine(MessagingConfig config, String... channels) {
         DeliveryEngine engine = new DeliveryEngine(config);
         for (String channel : channels) {
-            engine.registerChannel(channel, config);
+            engine.registerChannel(channel, MessagingExecutionConfig.create());
         }
         return engine;
     }
 
-    private static MessagingExecutionConfig config(Duration shutdownTimeout) {
-        return MessagingExecutionConfig.builder()
+    private static MessagingConfig config(Duration shutdownTimeout) {
+        return MessagingConfig.builder()
                 .queueCapacity(0)
                 .maxInFlightMessages(10)
                 .shutdownTimeout(shutdownTimeout)
-                .build();
+                .buildPrototype();
     }
 
     private static Message<String> message(String value) {

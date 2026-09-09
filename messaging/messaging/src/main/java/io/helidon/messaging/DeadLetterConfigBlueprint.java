@@ -24,7 +24,7 @@ import io.helidon.common.Api;
  * Dead-letter delivery configuration.
  */
 @Api.Preview
-@Prototype.Blueprint(decorator = DeadLetterConfigBuilderDecorator.class)
+@Prototype.Blueprint(decorator = MessagingConfigSupport.DeadLetterBuilderDecorator.class)
 @Prototype.Configured
 interface DeadLetterConfigBlueprint {
     /**

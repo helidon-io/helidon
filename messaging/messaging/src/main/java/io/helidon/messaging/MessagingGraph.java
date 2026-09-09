@@ -20,19 +20,21 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
 import io.helidon.common.GenericType;
+import io.helidon.config.Config;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.OutgoingChannel;
 
 /**
- * One imperative messaging topology and lifecycle.
+ * One messaging topology and lifecycle.
  * <p>
  * A graph owns all channels, sources, routes, connectors, and their lifecycle. The topology is mutable only
  * through its builder and is frozen by {@link Builder#build()}.
  */
 @Api.Preview
-public interface MessagingGraph extends AutoCloseable {
+public interface MessagingGraph extends RuntimeType.Api<MessagingConfig>, AutoCloseable {
     /**
      * Create a graph builder.
      *
@@ -40,6 +42,26 @@ public interface MessagingGraph extends AutoCloseable {
      */
     static Builder builder() {
         return new DefaultMessagingGraphBuilder();
+    }
+
+    /**
+     * Create a graph from its immutable configuration.
+     *
+     * @param config messaging configuration
+     * @return messaging graph
+     */
+    static MessagingGraph create(MessagingConfig config) {
+        return new MessagingGraphAssembler(config).graph();
+    }
+
+    /**
+     * Create a graph from the messaging configuration node.
+     *
+     * @param config messaging configuration node
+     * @return messaging graph
+     */
+    static MessagingGraph create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -76,18 +98,15 @@ public interface MessagingGraph extends AutoCloseable {
     void close();
 
     /**
-     * Builder of an imperative messaging graph.
+     * Builder of a messaging graph, combining blueprint options with typed programmatic registrations.
      */
-    interface Builder extends io.helidon.common.Builder<Builder, MessagingGraph>, AutoCloseable {
+    abstract class Builder extends MessagingConfig.BuilderBase<Builder, MessagingConfig>
+            implements io.helidon.common.Builder<Builder, MessagingGraph> {
         /**
-         * Configure default channel execution and graph shutdown behavior.
-         * <p>
-         * This must be configured before the first channel is declared.
-         *
-         * @param config execution configuration
-         * @return updated builder
+         * Create a graph builder.
          */
-        Builder executionConfig(MessagingExecutionConfig config);
+        protected Builder() {
+        }
 
         /**
          * Declare a channel.
@@ -97,7 +116,7 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <T> payload type
          * @return typed channel handle
          */
-        <T> MessagingChannel<T> channel(String name, Class<T> payloadType);
+        public abstract <T> MessagingChannel<T> channel(String name, Class<T> payloadType);
 
         /**
          * Declare a channel while preserving parameterized payload type information.
@@ -107,7 +126,7 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <T> payload type
          * @return typed channel handle
          */
-        <T> MessagingChannel<T> channel(String name, GenericType<T> payloadType);
+        public abstract <T> MessagingChannel<T> channel(String name, GenericType<T> payloadType);
 
         /**
          * Declare a channel with channel-specific execution limits.
@@ -118,14 +137,14 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <T> payload type
          * @return typed channel handle
          */
-        <T> MessagingChannel<T> channel(String name,
-                                        GenericType<T> payloadType,
-                                        MessagingExecutionConfig executionConfig);
+        public abstract <T> MessagingChannel<T> channel(String name,
+                                                       GenericType<T> payloadType,
+                                                       MessagingExecutionConfig executionConfig);
 
         /**
          * Add a payload stream source.
          * <p>
-         * The builder owns the stream after this method returns. Closing the builder or the built graph closes it.
+         * The built graph owns the stream and closes it on shutdown. A failed build also closes registered streams.
          * A channel can have at most one stream source; explicit multi-source fan-in is not part of this API version.
          * Downstream paths of distinct stream sources must not converge on the same channel.
          *
@@ -135,12 +154,12 @@ public interface MessagingGraph extends AutoCloseable {
          * @return updated builder
          * @throws IllegalArgumentException if the channel already has a stream source
          */
-        <T> Builder payloadSource(MessagingChannel<T> channel, Stream<? extends T> source);
+        public abstract <T> Builder payloadSource(MessagingChannel<T> channel, Stream<? extends T> source);
 
         /**
          * Add a message stream source.
          * <p>
-         * The builder owns the stream after this method returns. Closing the builder or the built graph closes it.
+         * The built graph owns the stream and closes it on shutdown. A failed build also closes registered streams.
          * A channel can have at most one stream source; explicit multi-source fan-in is not part of this API version.
          * Downstream paths of distinct stream sources must not converge on the same channel.
          *
@@ -150,8 +169,8 @@ public interface MessagingGraph extends AutoCloseable {
          * @return updated builder
          * @throws IllegalArgumentException if the channel already has a stream source
          */
-        <T> Builder messageSource(MessagingChannel<T> channel,
-                                    Stream<? extends Message<? extends T>> source);
+        public abstract <T> Builder messageSource(MessagingChannel<T> channel,
+                                                 Stream<? extends Message<? extends T>> source);
 
         /**
          * Route each delivery batch unchanged from one channel to another channel of the same type.
@@ -161,7 +180,7 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <T> payload type
          * @return updated builder
          */
-        <T> Builder route(MessagingChannel<T> source, MessagingChannel<T> target);
+        public abstract <T> Builder route(MessagingChannel<T> source, MessagingChannel<T> target);
 
         /**
          * Add a payload processor. The processor is invoked once per batch item in order and its results form one
@@ -174,9 +193,9 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <O> output payload type
          * @return updated builder
          */
-        <I, O> Builder payloadProcessor(MessagingChannel<I> source,
-                                          MessagingChannel<O> target,
-                                          Function<? super I, ? extends O> processor);
+        public abstract <I, O> Builder payloadProcessor(MessagingChannel<I> source,
+                                                       MessagingChannel<O> target,
+                                                       Function<? super I, ? extends O> processor);
 
         /**
          * Add a message processor. The processor is invoked once per batch item in order and its results form one
@@ -189,9 +208,9 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <O> output payload type
          * @return updated builder
          */
-        <I, O> Builder messageProcessor(MessagingChannel<I> source,
-                                          MessagingChannel<O> target,
-                                          Function<? super Message<I>, ? extends Message<? extends O>> processor);
+        public abstract <I, O> Builder messageProcessor(MessagingChannel<I> source,
+                                                       MessagingChannel<O> target,
+                                                       Function<? super Message<I>, ? extends Message<? extends O>> processor);
 
         /**
          * Add a payload sink.
@@ -201,7 +220,7 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <T> payload type
          * @return updated builder
          */
-        <T> Builder payloadSink(MessagingChannel<T> source, Consumer<? super T> sink);
+        public abstract <T> Builder payloadSink(MessagingChannel<T> source, Consumer<? super T> sink);
 
         /**
          * Add a message sink.
@@ -211,7 +230,7 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <T> payload type
          * @return updated builder
          */
-        <T> Builder messageSink(MessagingChannel<T> source, Consumer<? super Message<T>> sink);
+        public abstract <T> Builder messageSink(MessagingChannel<T> source, Consumer<? super Message<T>> sink);
 
         /**
          * Add a message batch sink.
@@ -221,33 +240,32 @@ public interface MessagingGraph extends AutoCloseable {
          * @param <T> payload type
          * @return updated builder
          */
-        <T> Builder batchSink(MessagingChannel<T> source, Consumer<MessageBatch<T>> sink);
+        public abstract <T> Builder batchSink(MessagingChannel<T> source, Consumer<MessageBatch<T>> sink);
 
         /**
          * Add an incoming channel connection as a source.
          * <p>
-         * The builder owns the connection after this method returns. The graph manages its startup, delivery
-         * admission, draining, and shutdown. Closing the builder or the built graph closes the connection.
+         * The built graph owns the connection and manages its startup, delivery admission, draining, and shutdown.
+         * A failed build also closes registered connections.
          *
          * @param target target channel
          * @param connection incoming channel connection
          * @param <T> payload type
          * @return updated builder
          */
-        <T> Builder incomingChannel(MessagingChannel<T> target, IncomingChannel connection);
+        public abstract <T> Builder incomingChannel(MessagingChannel<T> target, IncomingChannel connection);
 
         /**
          * Add an outgoing channel connection as a required channel output.
          * <p>
-         * The builder owns the connection after this method returns. Closing the builder or the built graph closes
-         * the connection.
+         * The built graph owns the connection and closes it on shutdown. A failed build also closes it.
          *
          * @param source source channel
          * @param connection outgoing channel connection
          * @param <T> payload type
          * @return updated builder
          */
-        <T> Builder outgoingChannel(MessagingChannel<T> source, OutgoingChannel connection);
+        public abstract <T> Builder outgoingChannel(MessagingChannel<T> source, OutgoingChannel connection);
 
         /**
          * Freeze and build the graph.
@@ -256,15 +274,6 @@ public interface MessagingGraph extends AutoCloseable {
          * @throws IllegalArgumentException if any channel has no required output or the topology is invalid
          */
         @Override
-        MessagingGraph build();
-
-        /**
-         * Abandon this builder and close every stream and connector already registered with it.
-         * <p>
-         * After a successful {@link #build()}, resource ownership belongs to the returned graph and this method does
-         * nothing.
-         */
-        @Override
-        void close();
+        public abstract MessagingGraph build();
     }
 }

@@ -27,9 +27,9 @@ import io.helidon.faulttolerance.RetryConfig;
  * Portable incoming delivery failure policy.
  */
 @Api.Preview
-@Prototype.Blueprint(decorator = FailurePolicyBuilderDecorator.class)
+@Prototype.Blueprint(decorator = MessagingConfigSupport.FailurePolicyBuilderDecorator.class)
 @Prototype.Configured
-@Prototype.CustomMethods(FailurePolicyBuilderDecorator.class)
+@Prototype.CustomMethods(MessagingConfigSupport.FailurePolicyBuilderDecorator.class)
 interface FailurePolicyBlueprint {
     /**
      * Fault tolerance retry configuration under {@code failure.retry}, with {@code calls}, {@code delay},
@@ -44,7 +44,7 @@ interface FailurePolicyBlueprint {
      * @return retry configuration
      */
     @Option.Configured
-    @Option.DefaultMethod(type = FailurePolicyBuilderDecorator.class, value = "defaultRetry")
+    @Option.DefaultMethod(type = MessagingConfigSupport.FailurePolicyBuilderDecorator.class, value = "defaultRetry")
     RetryConfig retry();
 
     /**
