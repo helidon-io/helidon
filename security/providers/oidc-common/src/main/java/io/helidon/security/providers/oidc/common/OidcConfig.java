@@ -36,6 +36,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.ResilientValueConfig;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 import io.helidon.http.SetCookie;
@@ -884,13 +885,11 @@ public final class OidcConfig extends TenantConfigImpl {
         return webClientBuilderSupplier;
     }
 
-    private Supplier<Tenant> tenantSupplier(TenantConfig tenantConfig) {
-        Supplier<Tenant> loader = () -> Tenant.create(this, tenantConfig);
-        return tenantConfig.tenantLoadingLazy()
-                ? ResilientValue.create("OIDC tenant configuration", loader,
-                                        tenantConfig.jwkRetry(),
-                                        tenantConfig.jwkCircuitBreaker(),
-                                        tenantConfig.jwkTimeout())
+    private Supplier<Tenant> tenantSupplier(TenantConfig config) {
+        Supplier<Tenant> loader = () -> Tenant.create(this, config);
+        return config.tenantLoadingLazy()
+                ? ResilientValue.create(new ResilientConfig<>("OIDC tenant configuration", loader, config.jwkRetry(),
+                                                              config.jwkCircuitBreaker(), config.jwkTimeout()))
                 : LazyValue.create(loader);
     }
 
@@ -974,7 +973,8 @@ public final class OidcConfig extends TenantConfigImpl {
          */
         ID_AND_SECRET_TO_TOKEN;
     }
-
+    private record ResilientConfig<T>(String description, Supplier<T> loader, Retry retry,
+            CircuitBreaker circuitBreaker, Timeout timeout) implements ResilientValueConfig<T> {}
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */

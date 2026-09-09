@@ -37,7 +37,11 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.ResilientValueConfig;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
@@ -186,11 +190,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         if (!tenantConfig.tenantLoadingLazy()) {
             return LazyValue.create(loader);
         }
-        return ResilientValue.create("OIDC tenant authentication",
-                                     loader,
-                                     tenantConfig.jwkRetry(),
-                                     tenantConfig.jwkCircuitBreaker(),
-                                     tenantConfig.jwkTimeout());
+        return ResilientValue.create(new ResilientConfig<>("OIDC tenant authentication",
+                                                           loader,
+                                                           tenantConfig.jwkRetry(),
+                                                           tenantConfig.jwkCircuitBreaker(),
+                                                           tenantConfig.jwkTimeout()));
     }
 
     private AuthenticationResponse unknownTenantResponse() {
@@ -648,6 +652,13 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             return this;
         }
 
+    }
+
+    private record ResilientConfig<T>(String description,
+                                      Supplier<T> loader,
+                                      Retry retry,
+                                      CircuitBreaker circuitBreaker,
+                                      Timeout timeout) implements ResilientValueConfig<T> {
     }
 
     private static final class OidcOutboundConfig {

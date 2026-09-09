@@ -36,26 +36,18 @@ import io.helidon.common.Api;
 @Api.Internal
 public interface ResilientValue<T> extends Supplier<T> {
     /**
-     * Create a resilient value using the provided fault tolerance handlers.
-     * Fault tolerance state belongs to the supplied handlers; callers should supply dedicated instances when state
+     * Create a resilient value using the provided configuration.
+     * Fault tolerance state belongs to the configured handlers; callers should supply dedicated instances when state
      * must not be shared with other operations.
      *
-     * @param description safe description of the value, used in messages and logs
-     * @param loader supplier that loads the value
-     * @param retry retry handler
-     * @param circuitBreaker circuit breaker handler
-     * @param timeout timeout handler applied to each load attempt
+     * @param config resilient value configuration
      * @param <T> type of the loaded value
      * @return a new resilient value
      * @throws IllegalArgumentException if the timeout is not positive, exceeds the retry overall timeout, or does not
      *                                  execute on the current thread
      */
-    static <T> ResilientValue<T> create(String description,
-                                        Supplier<T> loader,
-                                        Retry retry,
-                                        CircuitBreaker circuitBreaker,
-                                        Timeout timeout) {
-        return new ResilientValueImpl<>(description, loader, retry, circuitBreaker, timeout);
+    static <T> ResilientValue<T> create(ResilientValueConfig<T> config) {
+        return new ResilientValueImpl<>(config);
     }
 
     /**

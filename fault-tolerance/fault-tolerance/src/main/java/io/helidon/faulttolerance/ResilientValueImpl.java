@@ -39,16 +39,13 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     private volatile T value;
     private volatile boolean loaded;
 
-    ResilientValueImpl(String description,
-                       Supplier<T> loader,
-                       Retry retry,
-                       CircuitBreaker circuitBreaker,
-                       Timeout timeout) {
-        this.description = requireDescription(description);
-        this.loader = Objects.requireNonNull(loader);
-        this.retry = Objects.requireNonNull(retry);
-        this.circuitBreaker = Objects.requireNonNull(circuitBreaker);
-        this.timeout = Objects.requireNonNull(timeout);
+    ResilientValueImpl(ResilientValueConfig<T> config) {
+        Objects.requireNonNull(config);
+        this.description = requireDescription(config.description());
+        this.loader = Objects.requireNonNull(config.loader());
+        this.retry = Objects.requireNonNull(config.retry());
+        this.circuitBreaker = Objects.requireNonNull(config.circuitBreaker());
+        this.timeout = Objects.requireNonNull(config.timeout());
         validateTimeout(retry.prototype().overallTimeout(), timeout.prototype().timeout());
         if (!timeout.prototype().currentThread()) {
             throw new IllegalArgumentException("Timeout must execute on the current thread");

@@ -44,6 +44,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.CircuitBreakerConfig;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.ResilientValueConfig;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
 import io.helidon.faulttolerance.Timeout;
@@ -1484,11 +1485,12 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 validateJwkFaultTolerance(retry, timeout);
                 String description = sourceDescription(resourceConfig);
                 Duration ioTimeout = timeout.prototype().timeout();
-                verifyKeysLoader = ResilientValue.create(description,
-                                                         () -> loadDynamicKeys(resourceConfig, description, ioTimeout),
-                                                         retry,
-                                                         circuitBreaker,
-                                                         timeout);
+                verifyKeysLoader = ResilientValue.create(new ResilientConfig<>(
+                        description,
+                        () -> loadDynamicKeys(resourceConfig, description, ioTimeout),
+                        retry,
+                        circuitBreaker,
+                        timeout));
             } else {
                 verifyKeys = JwkKeys.builder()
                         .resource(Resource.create(resourceConfig))
@@ -1515,6 +1517,13 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
             // jwk is optional, we may be propagating existing token
             config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+        }
+
+        private record ResilientConfig<T>(String description,
+                                          Supplier<T> loader,
+                                          Retry retry,
+                                          CircuitBreaker circuitBreaker,
+                                          Timeout timeout) implements ResilientValueConfig<T> {
         }
     }
 }

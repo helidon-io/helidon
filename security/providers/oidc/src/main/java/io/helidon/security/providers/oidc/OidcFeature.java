@@ -42,7 +42,11 @@ import io.helidon.common.crypto.CryptoException;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
+import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.ResilientValueConfig;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
@@ -343,11 +347,11 @@ public final class OidcFeature implements HttpFeature {
         if (!tenantConfig.tenantLoadingLazy()) {
             return LazyValue.create(loader);
         }
-        return ResilientValue.create("OIDC web feature tenant",
-                                     loader,
-                                     tenantConfig.jwkRetry(),
-                                     tenantConfig.jwkCircuitBreaker(),
-                                     tenantConfig.jwkTimeout());
+        return ResilientValue.create(new ResilientConfig<>("OIDC web feature tenant",
+                                                           loader,
+                                                           tenantConfig.jwkRetry(),
+                                                           tenantConfig.jwkCircuitBreaker(),
+                                                           tenantConfig.jwkTimeout()));
     }
 
     private void logoutWithTenant(ServerRequest req,
@@ -821,6 +825,13 @@ public final class OidcFeature implements HttpFeature {
                 .ifPresent(originalUri -> headers.addCookie(RedirectAttemptCookie.remove(oidcConfig,
                                                                                          tenantName,
                                                                                          originalUri)));
+    }
+
+    private record ResilientConfig<T>(String description,
+                                      Supplier<T> loader,
+                                      Retry retry,
+                                      CircuitBreaker circuitBreaker,
+                                      Timeout timeout) implements ResilientValueConfig<T> {
     }
 
     /**

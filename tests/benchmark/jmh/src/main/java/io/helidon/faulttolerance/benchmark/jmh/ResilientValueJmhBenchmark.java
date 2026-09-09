@@ -25,12 +25,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.CircuitBreakerConfig;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
 import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.ResilientValueConfig;
 import io.helidon.faulttolerance.Timeout;
 import io.helidon.faulttolerance.TimeoutConfig;
 
@@ -77,10 +79,10 @@ public class ResilientValueJmhBenchmark {
                 .currentThread(true)
                 .enableMetrics(false)
                 .build();
-        cachedValue = ResilientValue.create("jmh-cached", () -> {
+        cachedValue = ResilientValue.create(new ResilientConfig<>("jmh-cached", () -> {
             cachedLoads.incrementAndGet();
             return VALUE;
-        }, cachedRetry, cachedCircuitBreaker, cachedTimeout);
+        }, cachedRetry, cachedCircuitBreaker, cachedTimeout));
         cachedValue.get();
 
         var retry = RetryConfig.builder()
@@ -103,10 +105,10 @@ public class ResilientValueJmhBenchmark {
                 .currentThread(true)
                 .enableMetrics(false)
                 .build();
-        openValue = ResilientValue.create("jmh-open", () -> {
+        openValue = ResilientValue.create(new ResilientConfig<>("jmh-open", () -> {
             unavailableLoads.incrementAndGet();
             throw new ResilientValue.UnavailableException("Expected benchmark failure");
-        }, retry, circuitBreaker, timeout);
+        }, retry, circuitBreaker, timeout));
 
         try {
             openValue.get();
@@ -246,10 +248,10 @@ public class ResilientValueJmhBenchmark {
         @Setup(Level.Iteration)
         public void setupValue() {
             loads.set(0);
-            value = ResilientValue.create("jmh-first-load", () -> {
+            value = ResilientValue.create(new ResilientConfig<>("jmh-first-load", () -> {
                 loads.incrementAndGet();
                 return VALUE;
-            }, retry, circuitBreaker, timeout);
+            }, retry, circuitBreaker, timeout));
         }
 
         @TearDown(Level.Iteration)
@@ -286,13 +288,13 @@ public class ResilientValueJmhBenchmark {
             followerEntering = new CountDownLatch(1);
             loads.set(0);
             followerThread.set(null);
-            value = ResilientValue.create("jmh-contended-load", () -> {
+            value = ResilientValue.create(new ResilientConfig<>("jmh-contended-load", () -> {
                 loads.incrementAndGet();
                 loaderStarted.countDown();
                 await(followerEntering);
                 awaitWaiting(followerThread.get());
                 return VALUE;
-            }, retry, circuitBreaker, timeout);
+            }, retry, circuitBreaker, timeout));
         }
 
         @TearDown(Level.Iteration)
@@ -343,12 +345,12 @@ public class ResilientValueJmhBenchmark {
                     .enableMetrics(false)
                     .addApplyOn(ResilientValue.UnavailableException.class)
                     .build();
-            value = ResilientValue.create("jmh-half-open-recovery", () -> {
+            value = ResilientValue.create(new ResilientConfig<>("jmh-half-open-recovery", () -> {
                 if (loads.incrementAndGet() == 1) {
                     throw new ResilientValue.UnavailableException("Expected benchmark failure");
                 }
                 return VALUE;
-            }, retry, circuitBreaker, timeout);
+            }, retry, circuitBreaker, timeout));
             try {
                 value.get();
                 throw new IllegalStateException("Expected the initial load to fail");
@@ -368,6 +370,13 @@ public class ResilientValueJmhBenchmark {
                 throw new IllegalStateException("Half-open benchmark did not recover on the second load");
             }
         }
+    }
+
+    private record ResilientConfig<T>(String description,
+                                      Supplier<T> loader,
+                                      Retry retry,
+                                      CircuitBreaker circuitBreaker,
+                                      Timeout timeout) implements ResilientValueConfig<T> {
     }
 
     private static final class QueuedExecutor extends AbstractExecutorService {

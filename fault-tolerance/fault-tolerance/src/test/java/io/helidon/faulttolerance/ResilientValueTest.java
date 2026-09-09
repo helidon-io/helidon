@@ -52,7 +52,7 @@ class ResilientValueTest {
     @Test
     void retriesAndCachesSuccessfulValue() {
         AtomicInteger calls = new AtomicInteger();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() < 3) {
                                                                      throw new ResilientValue.UnavailableException("not ready");
@@ -61,7 +61,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(3),
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
 
         assertThat(value.loaded(), is(false));
         assertThat(value.get(), is("loaded"));
@@ -74,7 +74,7 @@ class ResilientValueTest {
     void circuitBreakerSuppressesLoadsAndAllowsRecovery() {
         TestExecutor executor = new TestExecutor();
         AtomicInteger calls = new AtomicInteger();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() <= 3) {
                                                                      throw new ResilientValue.UnavailableException("not ready");
@@ -83,7 +83,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(3),
                                                              circuitBreaker(executor),
-                                                             timeout());
+                                                             timeout()));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(3));
@@ -106,14 +106,14 @@ class ResilientValueTest {
                 .delayFactor(2)
                 .overallTimeout(Duration.ofNanos(1))
                 .buildPrototype();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
                                                                  throw new ResilientValue.UnavailableException("not ready");
                                                              },
                                                              retry(retry),
                                                              circuitBreaker(executor),
-                                                             timeout(Duration.ofNanos(1)));
+                                                             timeout(Duration.ofNanos(1))));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(1));
@@ -125,11 +125,11 @@ class ResilientValueTest {
     void timeoutIsRetriedInsideCircuitBreaker() {
         TestExecutor executor = new TestExecutor();
         FailingTimeout timeout = new FailingTimeout();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> "unreachable",
                                                              retry(2),
                                                              circuitBreaker(executor),
-                                                             timeout);
+                                                             timeout));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(timeout.calls(), is(2));
@@ -140,32 +140,32 @@ class ResilientValueTest {
     @Test
     void validatesTimeoutAgainstRetry() {
         assertThrows(IllegalArgumentException.class,
-                     () -> ResilientValue.create("test value",
+                     () -> ResilientValue.create(new ResilientConfig<>("test value",
                                                  () -> "value",
                                                  retry(1),
                                                  circuitBreaker(),
-                                                 timeout(Duration.ZERO)));
+                                                 timeout(Duration.ZERO))));
         assertThrows(IllegalArgumentException.class,
-                     () -> ResilientValue.create("test value",
+                     () -> ResilientValue.create(new ResilientConfig<>("test value",
                                                  () -> "value",
                                                  retry(1),
                                                  circuitBreaker(),
-                                                 timeout(Duration.ofSeconds(2))));
+                                                 timeout(Duration.ofSeconds(2)))));
         assertThrows(IllegalArgumentException.class,
-                     () -> ResilientValue.create("test value",
+                     () -> ResilientValue.create(new ResilientConfig<>("test value",
                                                  () -> "value",
                                                  retry(1),
                                                  circuitBreaker(),
                                                  TimeoutConfig.builder()
                                                          .timeout(Duration.ofSeconds(1))
                                                          .currentThread(false)
-                                                         .build()));
+                                                         .build())));
     }
 
     @Test
     void unexpectedExceptionBypassesRetryAndBreaker() {
         AtomicInteger calls = new AtomicInteger();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() == 1) {
                                                                      throw new IllegalStateException("unexpected");
@@ -174,7 +174,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(3),
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
 
         assertThrows(IllegalStateException.class, value::get);
         assertThat(calls.get(), is(1));
@@ -192,7 +192,7 @@ class ResilientValueTest {
                 .overallTimeout(Duration.ofSeconds(1))
                 .addApplyOn(IllegalStateException.class)
                 .build();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() == 1) {
                                                                      throw new IllegalStateException("retry this");
@@ -201,7 +201,7 @@ class ResilientValueTest {
                                                              },
                                                              retry,
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
 
         assertThat(value.get(), is("loaded"));
         assertThat(calls.get(), is(2));
@@ -210,11 +210,11 @@ class ResilientValueTest {
     @Test
     void nullResultIsNotCachedOrRetried() {
         AtomicInteger calls = new AtomicInteger();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> calls.incrementAndGet() == 1 ? null : "loaded",
                                                              retry(3),
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
 
         assertThrows(NullPointerException.class, value::get);
         assertThat(calls.get(), is(1));
@@ -231,7 +231,7 @@ class ResilientValueTest {
         AtomicReference<String> followerResult = new AtomicReference<>();
         AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
         AtomicReference<Throwable> followerFailure = new AtomicReference<>();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
                                                                  loading.countDown();
@@ -240,7 +240,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(1),
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
 
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
@@ -284,7 +284,7 @@ class ResilientValueTest {
         AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
         AtomicReference<Throwable> followerFailure = new AtomicReference<>();
         AtomicBoolean followerInterrupted = new AtomicBoolean();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
                                                                  loading.countDown();
@@ -293,7 +293,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(1),
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
 
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
@@ -341,7 +341,7 @@ class ResilientValueTest {
         AtomicInteger calls = new AtomicInteger();
         AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
         AtomicReference<Throwable> followerFailure = new AtomicReference<>();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
                                                                  loading.countDown();
@@ -350,7 +350,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(1),
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
 
         Thread loaderThread = Thread.ofVirtual().start(() -> captureFailure(value, loaderFailure));
         Thread followerThread = Thread.ofVirtual().unstarted(() -> captureFailure(value, followerFailure));
@@ -381,7 +381,7 @@ class ResilientValueTest {
         AtomicInteger maximumActive = new AtomicInteger();
         AtomicReference<String> result = new AtomicReference<>();
         AtomicReference<Throwable> failure = new AtomicReference<>();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  int call = calls.incrementAndGet();
                                                                  int currentActive = active.incrementAndGet();
@@ -399,7 +399,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(2),
                                                              circuitBreaker(),
-                                                             timeout(Duration.ofMillis(20)));
+                                                             timeout(Duration.ofMillis(20))));
 
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
@@ -435,7 +435,7 @@ class ResilientValueTest {
         AtomicReference<String> result = new AtomicReference<>();
         AtomicReference<Throwable> failure = new AtomicReference<>();
         AtomicBoolean interrupted = new AtomicBoolean();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() == 1) {
                                                                      firstAttemptStarted.countDown();
@@ -450,7 +450,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(2),
                                                              circuitBreaker(),
-                                                             timeout(Duration.ofMillis(20)));
+                                                             timeout(Duration.ofMillis(20))));
 
         Thread loaderThread = new CoordinatedInterruptThread(() -> {
             try {
@@ -488,7 +488,7 @@ class ResilientValueTest {
         AtomicReference<Throwable> failure = new AtomicReference<>();
         AtomicBoolean interrupted = new AtomicBoolean();
         CircuitBreaker circuitBreaker = circuitBreaker();
-        ResilientValue<String> value = ResilientValue.create("test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
                                                                  loading.countDown();
@@ -502,7 +502,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(2),
                                                              circuitBreaker,
-                                                             timeout(Duration.ofSeconds(1)));
+                                                             timeout(Duration.ofSeconds(1))));
 
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
@@ -611,14 +611,14 @@ class ResilientValueTest {
                 .delay(Duration.ZERO)
                 .executor(executor)
                 .buildPrototype();
-        ResilientValue<String> value = ResilientValue.create("configured test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("configured test value",
                                                              () -> {
                                                                  calls.incrementAndGet();
                                                                  throw new ResilientValue.UnavailableException("safe failure");
                                                              },
                                                              retry(testRetry),
                                                              circuitBreaker(testBreaker),
-                                                             timeout());
+                                                             timeout()));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThat(calls.get(), is(5));
@@ -713,7 +713,7 @@ class ResilientValueTest {
     private static void assertFailureAndRecoveryLogs(CapturingHandler handler) {
         TestExecutor executor = new TestExecutor();
         AtomicInteger calls = new AtomicInteger();
-        ResilientValue<String> value = ResilientValue.create("logged test value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("logged test value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() == 1) {
                                                                     throw new ResilientValue.UnavailableException(
@@ -724,7 +724,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(1),
                                                              circuitBreaker(executor),
-                                                             timeout());
+                                                             timeout()));
 
         assertThrows(ResilientValue.UnavailableException.class, value::get);
         assertThrows(ResilientValue.UnavailableException.class, value::get);
@@ -744,7 +744,7 @@ class ResilientValueTest {
         CountDownLatch continueLoading = new CountDownLatch(1);
         AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
         AtomicReference<Throwable> followerFailure = new AtomicReference<>();
-        ResilientValue<String> value = ResilientValue.create("concurrent logged value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("concurrent logged value",
                                                              () -> {
                                                                  loading.countDown();
                                                                  await(continueLoading);
@@ -752,7 +752,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(1),
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
         Thread loaderThread = Thread.ofVirtual().start(() -> {
             try {
                 value.get();
@@ -789,7 +789,7 @@ class ResilientValueTest {
         int warningCount = handler.messages(Level.WARNING).size();
         int infoCount = handler.messages(Level.INFO).size();
         AtomicInteger calls = new AtomicInteger();
-        ResilientValue<String> value = ResilientValue.create("cancelled value",
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("cancelled value",
                                                              () -> {
                                                                  if (calls.incrementAndGet() == 1) {
                                                                      throw new SupplierException(
@@ -799,7 +799,7 @@ class ResilientValueTest {
                                                              },
                                                              retry(2),
                                                              circuitBreaker(),
-                                                             timeout());
+                                                             timeout()));
 
         Thread.currentThread().interrupt();
         try {
@@ -861,6 +861,13 @@ class ResilientValueTest {
             Thread.sleep(1);
         }
         assertThat(thread.getState(), is(Thread.State.WAITING));
+    }
+
+    private record ResilientConfig<T>(String description,
+                                      Supplier<T> loader,
+                                      Retry retry,
+                                      CircuitBreaker circuitBreaker,
+                                      Timeout timeout) implements ResilientValueConfig<T> {
     }
 
     private static final class CoordinatedInterruptThread extends Thread {
