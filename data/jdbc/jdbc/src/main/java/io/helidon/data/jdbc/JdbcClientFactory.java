@@ -95,14 +95,14 @@ final class JdbcClientFactory implements Service.ServicesFactory<JdbcClient> {
                 dataSource = null;
                 String dataSourceName = config.dataSourceName().get();
                 Qualifier named = Qualifier.createNamed(dataSourceName);
-                List<ServiceInstance<DataSource>> matches = availableDataSources.stream()
+                // Service Registry supplies instances in preference order. Selecting the first match therefore honors
+                // its weight and deterministic tie breaking without duplicating those rules here.
+                dataSourceService = availableDataSources.stream()
                         .filter(instance -> instance.qualifiers().contains(named))
-                        .toList();
-                if (matches.size() != 1) {
-                    throw new DataException(JdbcClientConfigSupport.clientDescription(config.name())
-                                                    + " could not resolve SQL data source '" + dataSourceName + "'.");
-                }
-                dataSourceService = matches.getFirst();
+                        .findFirst()
+                        .orElseThrow(() -> new DataException(
+                                JdbcClientConfigSupport.clientDescription(config.name())
+                                        + " could not resolve SQL data source '" + dataSourceName + "'."));
             } else {
                 dataSource = JdbcConnectionSourceSupport.directDataSource(
                         JdbcClientConfigSupport.clientDescription(config.name()),

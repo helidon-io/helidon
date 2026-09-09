@@ -91,7 +91,20 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     }
 
     /**
-     * Creates a statement description from positional JDBC SQL.
+     * Creates a description of one JDBC statement from positional SQL.
+     * <p>
+     * A terminal operation supplies the complete SQL string to the driver as
+     * one {@link java.sql.PreparedStatement}. Helidon does not parse database
+     * grammar, split scripts, or validate database specific statement
+     * boundaries. The supported contract therefore requires exactly one SQL
+     * statement. SQL scripts, batches, driver specific compound or
+     * multiple statement strings, stored procedure calls, and transaction-control
+     * SQL, including commands that change auto-commit mode, are not supported.
+     * <p>
+     * A driver may accept such unsupported SQL and commit work before Helidon
+     * detects an invalid connection state or reports a failure. A terminal
+     * operation failure in that case does not establish that the database made
+     * no changes; applications must not retry it automatically.
      * <p>
      * The SQL is trusted executable application input. This method does not
      * sanitize data concatenated into the SQL text. Represent untrusted values
@@ -110,7 +123,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * or end-of-input; other double-dash sequences are rejected as
      * dialect-ambiguous. Nested block comments are rejected.
      *
-     * @param sql SQL containing zero or more {@code ?} markers
+     * @param sql one SQL statement containing zero or more {@code ?} markers
      * @return statement description
      * @throws NullPointerException if the SQL is {@code null}
      * @throws IllegalArgumentException if the SQL is blank, malformed, or contains named markers

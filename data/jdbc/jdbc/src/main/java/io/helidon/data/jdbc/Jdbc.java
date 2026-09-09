@@ -84,11 +84,25 @@ public final class Jdbc {
     }
 
     /**
-     * Declares the SQL statement executed by a repository method.
+     * Declares one SQL statement executed by a repository method.
      * <p>
      * Every abstract JDBC repository method must declare this annotation.
      * The SQL statement may use named markers matching Java parameter names or
      * positional JDBC markers. A statement must use one style consistently.
+     * <p>
+     * A repository invocation supplies the SQL, after rewriting any named bind
+     * markers, to the driver as one {@link java.sql.PreparedStatement}. Helidon
+     * validates the repository method and bind markers but does not parse
+     * database grammar, split scripts, or validate database-specific statement
+     * boundaries. The value must therefore describe exactly one SQL statement.
+     * SQL scripts, batches, driver specific compound or multiple statement strings, stored
+     * procedure calls, and transaction-control SQL, including commands that
+     * change auto-commit mode, are not supported.
+     * <p>
+     * A driver may accept such unsupported SQL and commit work before Helidon
+     * detects an invalid connection state or reports a failure. A repository
+     * operation failure in that case does not establish that the database made
+     * no changes, the applications must not retry it automatically.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
@@ -97,7 +111,7 @@ public final class Jdbc {
         /**
          * Returns the SQL statement.
          *
-         * @return SQL statement
+         * @return one SQL statement
          */
         String value();
     }

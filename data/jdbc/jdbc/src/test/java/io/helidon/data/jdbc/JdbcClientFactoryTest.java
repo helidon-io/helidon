@@ -105,6 +105,34 @@ class JdbcClientFactoryTest {
     }
 
     /**
+     * Verifies that a named data source uses the first matching service in
+     * Service Registry preference order without activating a lower priority
+     * match.
+     */
+    @Test
+    void selectsFirstRegistryOrderedNamedDataSource() {
+        DataSource preferredDataSource = mock(DataSource.class);
+        DataSource fallbackDataSource = mock(DataSource.class);
+        ServiceInstance<DataSource> preferred = serviceInstance("inventory-source", preferredDataSource);
+        ServiceInstance<DataSource> fallback = serviceInstance("inventory-source", fallbackDataSource);
+        JdbcClientConfig config = JdbcClientConfig.builder()
+                .name("inventory")
+                .dataSourceName("inventory-source")
+                .buildPrototype();
+
+        Service.QualifiedInstance<JdbcClient> client = factory(
+                List.of(config),
+                () -> List.of(preferred, fallback))
+                .services()
+                .getFirst();
+
+        assertQualifiedClient(client, "inventory", config);
+        verify(preferred).get();
+        verify(fallback, never()).get();
+        verifyZeroInteractions(preferredDataSource, fallbackDataSource);
+    }
+
+    /**
      * Verifies direct connection definitions resolve their driver without
      * opening a connection while the factory publishes the client.
      *
