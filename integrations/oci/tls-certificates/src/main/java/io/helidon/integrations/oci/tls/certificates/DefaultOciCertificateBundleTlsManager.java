@@ -56,8 +56,11 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsConfig;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.scheduling.Cron;
+import io.helidon.scheduling.TaskManager;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
+
+import com.oracle.bmc.model.BmcException;
 
 /**
  * Default implementation of {@link OciCertificateBundleTlsManager}.
@@ -77,8 +80,10 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
     private Supplier<OciCertificatesDownloader> certDownloader;
     private ContextConfiguration contextConfiguration;
     private SSLContext sslContext;
+    private ServiceRegistry serviceRegistry;
     private TlsConfig tlsConfig;
     private Cron reloadTask;
+    private TaskManager taskManager;
     private boolean initialized;
 
     DefaultOciCertificateBundleTlsManager(OciCertificateBundleTlsManagerConfig cfg) {
@@ -101,11 +106,28 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
                     throw new IllegalArgumentException("A shared OCI certificate-bundle TLS manager requires matching "
                                                                + "TLS context configuration");
                 }
+                ServiceRegistry registry = GlobalServiceRegistry.registry();
+                TaskManager requestedTaskManager = registry.get(TaskManager.class);
+                if (!reloadTaskActive(registry, requestedTaskManager)) {
+                    Supplier<OciCertificatesDownloader> requestedDownloader =
+                            registry.supply(OciCertificatesDownloader.class);
+                    if (reloadTask != null) {
+                        reloadTask.close();
+                        reloadTask = null;
+                    }
+                    certDownloader = requestedDownloader;
+                    serviceRegistry = registry;
+                    taskManager = requestedTaskManager;
+                    maybeReload();
+                    scheduleReloadTask();
+                }
                 return;
             }
 
             ServiceRegistry registry = GlobalServiceRegistry.registry();
             certDownloader = registry.supply(OciCertificatesDownloader.class);
+            serviceRegistry = registry;
+            taskManager = registry.get(TaskManager.class);
             tlsConfig = Objects.requireNonNull(tls);
             contextConfiguration = requestedContext;
 
@@ -114,23 +136,21 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
             sslContext = new SwitchingSslContext(installedMaterial);
 
             try {
-                reloadTask = Cron.builder()
-                        .expression(cfg.schedule())
-                        .concurrentExecution(false)
-                        .task(inv -> maybeReload())
-                        .build();
+                scheduleReloadTask();
                 initialized = true;
             } catch (RuntimeException e) {
+                if (reloadTask != null) {
+                    reloadTask.close();
+                    reloadTask = null;
+                }
                 installedMaterial.set(null);
                 certDownloader = null;
                 contextConfiguration = null;
                 sslContext = null;
+                serviceRegistry = null;
+                taskManager = null;
                 tlsConfig = null;
                 throw e;
-            }
-
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                LOGGER.log(System.Logger.Level.DEBUG, "Scheduled: " + reloadTask.description());
             }
         } finally {
             lifecycleLock.unlock();
@@ -179,6 +199,100 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
                 .findFirst();
     }
 
+    private static String failureDetails(RuntimeException exception) {
+        Optional<MaterialLoadException> materialLoadFailure = findCause(exception, MaterialLoadException.class);
+        String phase = materialLoadFailure.map(failure -> failure.phase().description())
+                .orElse(MaterialLoadPhase.UNKNOWN.description());
+        Optional<BmcException> bmcFailure = findCause(exception, BmcException.class);
+        if (bmcFailure.isPresent()) {
+            BmcException failure = bmcFailure.get();
+            String category;
+            if (failure.isTimeout()) {
+                category = "oci-timeout";
+            } else if (failure.isClientSide()) {
+                category = "oci-client-failure";
+            } else {
+                category = "oci-service-failure";
+            }
+            return "phase: " + phase
+                    + ", failure category: " + category
+                    + ", status code: " + failure.getStatusCode()
+                    + ", service code: " + safeOciDiagnostic(failure.getServiceCode())
+                    + ", opc request id: " + safeOciDiagnostic(failure.getOpcRequestId())
+                    + ", client side: " + failure.isClientSide()
+                    + ", timeout: " + failure.isTimeout();
+        }
+
+        Throwable failure = materialLoadFailure.map(Throwable::getCause).orElse(exception);
+        String category;
+        if (failure instanceof UnsupportedOperationException) {
+            category = "unsupported-operation";
+        } else if (failure instanceof IllegalArgumentException) {
+            category = "invalid-tls-material";
+        } else if (failure instanceof IllegalStateException) {
+            category = "oci-download-or-tls-state";
+        } else {
+            category = "runtime-failure";
+        }
+        return "phase: " + phase + ", failure category: " + category;
+    }
+
+    private static String safeOciDiagnostic(String value) {
+        if (value == null || value.isBlank()) {
+            return "unavailable";
+        }
+        int length = Math.min(value.length(), 256);
+        StringBuilder result = new StringBuilder(length + 3);
+        for (int i = 0; i < length; i++) {
+            char character = value.charAt(i);
+            result.append(Character.isISOControl(character) ? '?' : character);
+        }
+        if (value.length() > length) {
+            result.append("...");
+        }
+        return result.toString();
+    }
+
+    private static <T extends Throwable> Optional<T> findCause(Throwable throwable, Class<T> type) {
+        Throwable current = throwable;
+        for (int i = 0; current != null && i < 32; i++) {
+            if (type.isInstance(current)) {
+                return Optional.of(type.cast(current));
+            }
+            current = current.getCause();
+        }
+        return Optional.empty();
+    }
+
+    private static <T> T load(MaterialLoadPhase phase, Supplier<T> loader) {
+        try {
+            return loader.get();
+        } catch (MaterialLoadException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new MaterialLoadException(phase, e);
+        }
+    }
+
+    private boolean reloadTaskActive(ServiceRegistry requestedRegistry, TaskManager requestedTaskManager) {
+        return serviceRegistry == requestedRegistry
+                && taskManager == requestedTaskManager
+                && reloadTask != null
+                && requestedTaskManager.tasks().contains(reloadTask);
+    }
+
+    private void scheduleReloadTask() {
+        reloadTask = Cron.builder()
+                .expression(cfg.schedule())
+                .concurrentExecution(false)
+                .taskManager(taskManager)
+                .task(inv -> maybeReload())
+                .build();
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            LOGGER.log(System.Logger.Level.DEBUG, "Scheduled: " + reloadTask.description());
+        }
+    }
+
     private void maybeReload() {
         try {
             lifecycleLock.lock();
@@ -195,27 +309,20 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
                 lifecycleLock.unlock();
             }
         } catch (RuntimeException e) {
-            String failureCategory;
-            if (e instanceof UnsupportedOperationException) {
-                failureCategory = "unsupported-operation";
-            } else if (e instanceof IllegalArgumentException) {
-                failureCategory = "invalid-tls-material";
-            } else if (e instanceof IllegalStateException) {
-                failureCategory = "oci-download-or-tls-state";
-            } else {
-                failureCategory = "runtime-failure";
-            }
             LOGGER.log(System.Logger.Level.WARNING,
                        "Failed to refresh OCI certificate " + cfg.certOcid()
-                               + " (failure category: " + failureCategory + ")"
+                               + " (" + failureDetails(e) + ")"
                                + "; the previously installed TLS identity remains active and the refresh will be retried");
         }
     }
 
     private TlsMaterial loadMaterial() {
-        OciCertificatesDownloader downloader = certDownloader.get();
-        OciCertificatesDownloader.Certificates publicIdentity = downloader.loadCertificates(cfg.certOcid());
-        X509Certificate ca = downloader.loadCACertificate(cfg.caOcid());
+        OciCertificatesDownloader downloader = load(MaterialLoadPhase.DOWNLOADER_RESOLUTION, certDownloader::get);
+        OciCertificatesDownloader.Certificates publicIdentity =
+                load(MaterialLoadPhase.PUBLIC_CERTIFICATE_BUNDLE,
+                     () -> downloader.loadCertificates(cfg.certOcid()));
+        X509Certificate ca = load(MaterialLoadPhase.CA_CERTIFICATE_BUNDLE,
+                                  () -> downloader.loadCACertificate(cfg.caOcid()));
 
         TlsMaterial current = installedMaterial.get();
         ReloadToken candidateToken = new ReloadToken(publicIdentity.version(), ca);
@@ -225,16 +332,21 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
 
         OciCertificatesDownloader.CertificatesWithPrivateKey identity;
         if (current == null || !publicIdentity.version().equals(current.identity().version())) {
-            identity = downloader.loadCertificatesWithPrivateKey(cfg.certOcid());
+            identity = load(MaterialLoadPhase.PRIVATE_KEY_CERTIFICATE_BUNDLE,
+                            () -> downloader.loadCertificatesWithPrivateKey(cfg.certOcid()));
             if (!publicIdentity.version().equals(identity.version())) {
-                throw new IllegalStateException("OCI certificate version changed while the private-key bundle was downloaded: "
-                                                        + publicIdentity.version() + " -> " + identity.version());
+                throw new MaterialLoadException(
+                        MaterialLoadPhase.IDENTITY_VERSION_VALIDATION,
+                        new IllegalStateException("OCI certificate version changed while the private-key bundle was downloaded: "
+                                                          + publicIdentity.version() + " -> " + identity.version()));
             }
         } else {
             identity = current.identity();
         }
 
-        return createMaterial(identity, ca, candidateToken);
+        OciCertificatesDownloader.CertificatesWithPrivateKey candidateIdentity = identity;
+        return load(MaterialLoadPhase.TLS_CONTEXT_BUILD,
+                    () -> createMaterial(candidateIdentity, ca, candidateToken));
     }
 
     private TlsMaterial createMaterial(OciCertificatesDownloader.CertificatesWithPrivateKey identity,
@@ -317,6 +429,41 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
                                X509TrustManager trustManager,
                                OciCertificatesDownloader.CertificatesWithPrivateKey identity,
                                ReloadToken reloadToken) {
+    }
+
+    private enum MaterialLoadPhase {
+        DOWNLOADER_RESOLUTION("downloader-resolution"),
+        PUBLIC_CERTIFICATE_BUNDLE("public-certificate-bundle"),
+        CA_CERTIFICATE_BUNDLE("ca-certificate-bundle"),
+        PRIVATE_KEY_CERTIFICATE_BUNDLE("private-key-certificate-bundle"),
+        IDENTITY_VERSION_VALIDATION("identity-version-validation"),
+        TLS_CONTEXT_BUILD("tls-context-build"),
+        UNKNOWN("unknown");
+
+        private final String description;
+
+        MaterialLoadPhase(String description) {
+            this.description = description;
+        }
+
+        private String description() {
+            return description;
+        }
+    }
+
+    private static final class MaterialLoadException extends IllegalStateException {
+        private static final long serialVersionUID = 1L;
+
+        private final MaterialLoadPhase phase;
+
+        private MaterialLoadException(MaterialLoadPhase phase, RuntimeException cause) {
+            super("Failed to load OCI-managed TLS material during phase: " + phase.description(), cause);
+            this.phase = phase;
+        }
+
+        private MaterialLoadPhase phase() {
+            return phase;
+        }
     }
 
     private static final class SwitchingSslContext extends SSLContext {

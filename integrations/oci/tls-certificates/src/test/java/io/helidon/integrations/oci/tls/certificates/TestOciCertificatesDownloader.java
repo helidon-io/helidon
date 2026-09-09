@@ -23,10 +23,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
@@ -42,6 +45,7 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
 class TestOciCertificatesDownloader implements OciCertificatesDownloader {
     private static final Queue<Supplier<String>> SCRIPTED_CA_OUTCOMES = new ConcurrentLinkedQueue<>();
+    private static final Map<String, AtomicInteger> PUBLIC_LOADS_BY_OCID = new ConcurrentHashMap<>();
 
     static volatile String version = "1";
     static volatile String privateVersion;
@@ -64,7 +68,13 @@ class TestOciCertificatesDownloader implements OciCertificatesDownloader {
         managedDelayMillis = 0;
         managedFailure = null;
         caFailure = null;
+        PUBLIC_LOADS_BY_OCID.clear();
         clearCaScript();
+    }
+
+    static int publicLoadCount(String certOcid) {
+        AtomicInteger counter = PUBLIC_LOADS_BY_OCID.get(certOcid);
+        return counter == null ? 0 : counter.get();
     }
 
     static void scriptCaCertificate(String resource) {
@@ -85,6 +95,7 @@ class TestOciCertificatesDownloader implements OciCertificatesDownloader {
     @Override
     public Certificates loadCertificates(String certOcid) {
         callCount_loadCertificates++;
+        PUBLIC_LOADS_BY_OCID.computeIfAbsent(certOcid, key -> new AtomicInteger()).incrementAndGet();
 
         try {
             TimeUnit.MILLISECONDS.sleep(1); // make sure metrics timestamp changes

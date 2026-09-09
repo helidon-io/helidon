@@ -51,9 +51,10 @@ server:
             cert-ocid: ${SERVER_CERT_OCID}
 ```
 
-The manager requests the `CURRENT` bundle as `CERTIFICATE_CONTENT_WITH_PRIVATE_KEY`. It verifies that the returned
-private key matches the leaf certificate before installing the identity. Both RSA and EC PKCS#8 keys are supported,
-including passphrase-protected keys; an OCI-provided passphrase is used only while decoding that bundle.
+The manager first requests the `CURRENT` bundle as `CERTIFICATE_CONTENT_PUBLIC_ONLY` to check its version. When it needs
+to build or rebuild the TLS material, it requests the same bundle as `CERTIFICATE_CONTENT_WITH_PRIVATE_KEY`. It verifies
+that the returned private key matches the leaf certificate before installing the identity. Both RSA and EC PKCS#8 keys
+are supported, including passphrase-protected keys; an OCI-provided passphrase is used only while decoding that bundle.
 
 By default, polling does not reload TLS when both the certificate version and CA certificate are unchanged. A newer
 identity version or independently rotated CA is installed as one complete TLS update. If download, parsing, validation,
@@ -63,10 +64,14 @@ later poll. Set `always-reload: true` to rebuild TLS even when both values are u
 The leaf private key is materialized in application JVM memory. This manager does not provide non-exportable HSM-backed
 TLS signing; the CA signing key can remain separately HSM protected.
 
-The workload needs permission to read the configured private leaf bundle and CA bundle. Restrict private-bundle access
-to the intended leaf certificate where practical, for example:
+The workload needs permission to read both leaf bundle types requested by the manager and the configured CA bundle.
+The public-only permission is required for the version probe, and the private-key permission is required when loading
+the TLS identity. Restrict both permissions to the intended leaf certificate where practical, for example:
 
 ```text
+Allow dynamic-group <dynamic-group> to read leaf-certificate-bundles in compartment <compartment>
+  where all {target.leaf-certificate.id = '<leaf-certificate-ocid>',
+             target.leaf-certificate.bundle-type = 'CERTIFICATE_CONTENT_PUBLIC_ONLY'}
 Allow dynamic-group <dynamic-group> to read leaf-certificate-bundles in compartment <compartment>
   where all {target.leaf-certificate.id = '<leaf-certificate-ocid>',
              target.leaf-certificate.bundle-type = 'CERTIFICATE_CONTENT_WITH_PRIVATE_KEY'}

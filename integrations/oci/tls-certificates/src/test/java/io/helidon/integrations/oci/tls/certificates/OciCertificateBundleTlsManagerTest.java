@@ -33,12 +33,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -63,12 +67,15 @@ import io.helidon.scheduling.TaskManager;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 
+import com.oracle.bmc.model.BmcException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -143,28 +150,80 @@ class OciCertificateBundleTlsManagerTest {
     }
 
     @Test
-    void taskManagerShutdownStopsManagedPolling() throws Exception {
+    void reconstructingSharedManagerRestartsPollingAfterTaskManagerShutdown() throws Exception {
         ServiceRegistry originalRegistry = GlobalServiceRegistry.registry();
         TestTaskManager isolatedTaskManager = new TestTaskManager();
         GlobalServiceRegistry.registry(registryWithTaskManager(originalRegistry, isolatedTaskManager));
         try {
-            OciCertificateBundleTlsManager manager = newManager(false, SECONDLY_SCHEDULE);
-            Tls.create(builder -> builder.manager(manager));
-            await(() -> TestOciCertificatesDownloader.callCount_loadCertificates >= 2,
+            String certificateOcid = "restart-test-" + System.nanoTime();
+            Config config = Config.just(ConfigSources.create(Map.of(
+                    "manager.oci-certificate-bundle-tls-manager.schedule", SECONDLY_SCHEDULE,
+                    "manager.oci-certificate-bundle-tls-manager.ca-ocid", "test-ca",
+                    "manager.oci-certificate-bundle-tls-manager.cert-ocid", certificateOcid)));
+            Tls first = Tls.create(config);
+            assertThat(isolatedTaskManager.tasks().size(), is(1));
+            await(() -> TestOciCertificatesDownloader.publicLoadCount(certificateOcid) >= 2,
                   "managed polling to start");
 
             isolatedTaskManager.shutdown();
-            await(() -> TestOciCertificatesDownloader.callCount_loadCertificates
-                            == TestOciCertificatesDownloader.callCount_loadCACertificate,
-                  "the in-flight poll to finish");
-            int callsAfterShutdown = TestOciCertificatesDownloader.callCount_loadCertificates;
+            TimeUnit.MILLISECONDS.sleep(100);
+            int callsAfterShutdown = TestOciCertificatesDownloader.publicLoadCount(certificateOcid);
             TimeUnit.MILLISECONDS.sleep(1200);
 
             assertThat(isolatedTaskManager.tasks().isEmpty(), is(true));
-            assertThat(TestOciCertificatesDownloader.callCount_loadCertificates, is(callsAfterShutdown));
+            assertThat(TestOciCertificatesDownloader.publicLoadCount(certificateOcid), is(callsAfterShutdown));
+
+            Tls second = Tls.create(config);
+            assertThat(first.prototype().manager(), sameInstance(second.prototype().manager()));
+            assertThat(first.sslContext(), sameInstance(second.sslContext()));
+            assertThat(isolatedTaskManager.tasks().size(), is(1));
+            assertThat(TestOciCertificatesDownloader.publicLoadCount(certificateOcid) > callsAfterShutdown, is(true));
+
+            int callsAfterReconstruction = TestOciCertificatesDownloader.publicLoadCount(certificateOcid);
+            await(() -> TestOciCertificatesDownloader.publicLoadCount(certificateOcid) > callsAfterReconstruction,
+                  "restarted managed polling to run");
         } finally {
             isolatedTaskManager.shutdown();
             GlobalServiceRegistry.registry(originalRegistry);
+        }
+    }
+
+    @Test
+    void refreshFailureLogsSafeOciDiagnosticsAndRetries() throws Exception {
+        OciCertificateBundleTlsManager manager = newManager(false, SECONDLY_SCHEDULE);
+        Tls.create(builder -> builder.manager(manager));
+        Logger logger = Logger.getLogger(DefaultOciCertificateBundleTlsManager.class.getName());
+
+        try (TestLogHandler handler = new TestLogHandler(logger)) {
+            TestOciCertificatesDownloader.version = "2";
+            TestOciCertificatesDownloader.managedFailure =
+                    new IllegalStateException("wrapper-secret",
+                                              new BmcException(404,
+                                                               "NotAuthorizedOrNotFound",
+                                                               "sdk-secret",
+                                                               "opc-test"));
+
+            await(() -> handler.records().stream().anyMatch(record -> record.getMessage()
+                          .contains("phase: private-key-certificate-bundle")),
+                  "an actionable OCI refresh warning");
+            LogRecord warning = handler.records().stream()
+                    .filter(record -> record.getMessage().contains("phase: private-key-certificate-bundle"))
+                    .findFirst()
+                    .orElseThrow();
+
+            assertThat(warning.getMessage(), containsString("failure category: oci-service-failure"));
+            assertThat(warning.getMessage(), containsString("status code: 404"));
+            assertThat(warning.getMessage(), containsString("service code: NotAuthorizedOrNotFound"));
+            assertThat(warning.getMessage(), containsString("opc request id: opc-test"));
+            assertThat(warning.getMessage(), containsString("client side: false"));
+            assertThat(warning.getMessage(), containsString("timeout: false"));
+            assertThat(warning.getMessage(), not(containsString("wrapper-secret")));
+            assertThat(warning.getMessage(), not(containsString("sdk-secret")));
+            assertThat(warning.getThrown(), nullValue());
+            assertThat(privateKeyAlgorithm(manager), is("RSA"));
+
+            TestOciCertificatesDownloader.managedFailure = null;
+            await(() -> "EC".equals(privateKeyAlgorithm(manager)), "the failed refresh to be retried");
         }
     }
 
@@ -270,11 +329,15 @@ class OciCertificateBundleTlsManagerTest {
                 ServiceRegistry.class.getClassLoader(),
                 new Class<?>[] {ServiceRegistry.class},
                 (proxy, method, args) -> {
-                    if (method.getName().equals("first")
-                            && args != null
+                    if (args != null
                             && args.length == 1
-                            && taskManagerType.equals(args[0])) {
-                        return Optional.of(taskManager);
+                            && (taskManagerType.equals(args[0]) || TaskManager.class.equals(args[0]))) {
+                        if (method.getName().equals("first")) {
+                            return Optional.of(taskManager);
+                        }
+                        if (method.getName().equals("get")) {
+                            return taskManager;
+                        }
                     }
                     try {
                         return method.invoke(delegate, args);
@@ -472,6 +535,34 @@ class OciCertificateBundleTlsManagerTest {
         @Override
         public List<Task> tasks() {
             return List.copyOf(tasks.values());
+        }
+    }
+
+    private static final class TestLogHandler extends Handler implements AutoCloseable {
+        private final List<LogRecord> records = new CopyOnWriteArrayList<>();
+        private final Logger logger;
+
+        private TestLogHandler(Logger logger) {
+            this.logger = logger;
+            logger.addHandler(this);
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            records.add(record);
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() {
+            logger.removeHandler(this);
+        }
+
+        private List<LogRecord> records() {
+            return records;
         }
     }
 

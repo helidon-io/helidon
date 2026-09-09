@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -99,6 +100,15 @@ class DefaultOciCertificatesDownloaderTest {
         assertThat(requestUri.getRawPath(), is("/20210224/certificateBundles/certificate-ocid"));
         assertThat(Arrays.asList(requestUri.getRawQuery().split("&")),
                    containsInAnyOrder("stage=CURRENT", "certificateBundleType=CERTIFICATE_CONTENT_PUBLIC_ONLY"));
+    }
+
+    @Test
+    void createsEndpointForIpv6Literal() throws IOException {
+        URI endpoint = BundleResponseServer.endpoint(InetAddress.getByName("::1"), 8443);
+
+        assertThat(endpoint.getScheme(), is("http"));
+        assertThat(endpoint.getHost(), containsString(":"));
+        assertThat(endpoint.getPort(), is(8443));
     }
 
     @Test
@@ -499,7 +509,15 @@ class DefaultOciCertificatesDownloaderTest {
         }
 
         private URI endpoint() {
-            return URI.create("http://" + serverSocket.getInetAddress().getHostAddress() + ':' + serverSocket.getLocalPort());
+            return endpoint(serverSocket.getInetAddress(), serverSocket.getLocalPort());
+        }
+
+        private static URI endpoint(InetAddress address, int port) {
+            try {
+                return new URI("http", null, address.getHostAddress(), port, null, null, null);
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException("Failed to create the test OCI Certificates service endpoint", e);
+            }
         }
 
         private void serve(String body, String etag) {
