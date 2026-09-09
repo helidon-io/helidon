@@ -162,6 +162,80 @@ class ScopedRegistryImplTest {
         assertThat("activation interrupted", activationResult.get().failure(), is(true));
         assertThat("shutdown failure", shutdownFailure.get(), nullValue());
         assertThat("target instances not published", pending.targetInstancesSet(), is(false));
+        assertThat("pre destroy skipped for interrupted callback", pending.preDestroyInvocations(), is(0));
+        assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
+    }
+
+    @Test
+    void completedPostConstructIsPreDestroyedDuringShutdown() throws InterruptedException {
+        CountDownLatch activationStarted = new CountDownLatch(1);
+        CountDownLatch continueActivation = new CountDownLatch(1);
+        CountDownLatch deactivationStarted = new CountDownLatch(1);
+        CountDownLatch continueDeactivation = new CountDownLatch(1);
+        CountDownLatch pendingDeactivationStarted = new CountDownLatch(1);
+        ScopedRegistryImpl registry = registry();
+        TestActivator blocker = TestActivator.active(BLOCKING_DESCRIPTOR,
+                                                      deactivationStarted,
+                                                      continueDeactivation);
+        BlockingActivationActivator pending = new BlockingActivationActivator(PENDING_DESCRIPTOR,
+                                                                                activationStarted,
+                                                                                continueActivation,
+                                                                                pendingDeactivationStarted);
+        registry.activator(blocker.descriptor(), () -> blocker);
+        registry.activator(pending.descriptor(), () -> pending);
+
+        AtomicReference<ActivationResult> activationResult = new AtomicReference<>();
+        AtomicReference<Throwable> activationFailure = new AtomicReference<>();
+        Thread activationThread = Thread.ofVirtual()
+                .name("service-activation")
+                .unstarted(() -> {
+                    try {
+                        activationResult.set(pending.activate(ActivationRequest.builder()
+                                                                        .targetPhase(ActivationPhase.ACTIVE)
+                                                                        .build()));
+                    } catch (Throwable t) {
+                        activationFailure.set(t);
+                    }
+                });
+        AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
+        Thread shutdownThread = Thread.ofVirtual()
+                .name("scoped-registry-shutdown")
+                .unstarted(() -> {
+                    try {
+                        registry.deactivate();
+                    } catch (Throwable t) {
+                        shutdownFailure.set(t);
+                    }
+                });
+
+        activationThread.start();
+        try {
+            assertThat("activation started", activationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
+            shutdownThread.start();
+            assertThat("higher run-level deactivation started",
+                       deactivationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
+                       is(true));
+            continueActivation.countDown();
+            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+            assertThat("activation completed before pending deactivation", activationThread.isAlive(), is(false));
+            assertThat("pending deactivation not started", pendingDeactivationStarted.getCount(), is(1L));
+            assertThat("pre destroy waits for pending deactivation", pending.preDestroyInvocations(), is(0));
+        } finally {
+            continueActivation.countDown();
+            continueDeactivation.countDown();
+            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+            shutdownThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+        }
+
+        assertThat("activation completed", activationThread.isAlive(), is(false));
+        assertThat("shutdown completed", shutdownThread.isAlive(), is(false));
+        assertThat("activation failure", activationFailure.get(), nullValue());
+        assertThat("activation result", activationResult.get(), notNullValue());
+        assertThat("activation interrupted", activationResult.get().failure(), is(true));
+        assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        assertThat("target instances not published", pending.targetInstancesSet(), is(false));
+        assertThat("pending deactivation started", pendingDeactivationStarted.getCount(), is(0L));
+        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(1));
         assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
     }
 
@@ -220,6 +294,7 @@ class ScopedRegistryImplTest {
         private final CountDownLatch activationStarted;
         private final CountDownLatch continueActivation;
         private final CountDownLatch deactivationStarted;
+        private int preDestroyInvocations;
         private boolean targetInstancesSet;
 
         private BlockingActivationActivator(ServiceDescriptor<Object> descriptor,
@@ -263,8 +338,17 @@ class ScopedRegistryImplTest {
         }
 
         @Override
+        void preDestroy(ActivationResult.Builder response) {
+            preDestroyInvocations++;
+        }
+
+        @Override
         void setTargetInstances() {
             targetInstancesSet = true;
+        }
+
+        private int preDestroyInvocations() {
+            return preDestroyInvocations;
         }
 
         private boolean targetInstancesSet() {

@@ -168,6 +168,7 @@ final class Activators {
 
         volatile ActivationPhase currentPhase = ActivationPhase.INIT;
         private boolean deactivationRequested;
+        private boolean activationCleanupPending;
         private ScopedRegistryImpl scopedRegistry;
 
         BaseActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
@@ -261,9 +262,9 @@ final class Activators {
                 if (phase.ordinal() < ActivationPhase.ACTIVATION_FINISHING.ordinal()) {
                     deactivationRequested = true;
                 }
-                if (phase == ActivationPhase.CONSTRUCTING
+                if (!activationCleanupPending && (phase == ActivationPhase.CONSTRUCTING
                         || phase == ActivationPhase.INJECTING
-                        || phase == ActivationPhase.POST_CONSTRUCTING) {
+                        || phase == ActivationPhase.POST_CONSTRUCTING)) {
                     // A JVM shutdown hook can run while the activating thread waits for shutdown to complete. Taking the
                     // instance lock here would deadlock, so interrupt activation and let the activating thread terminate.
                     var response = ActivationResult.builder()
@@ -397,8 +398,14 @@ final class Activators {
             if (!deactivationRequested && (scopedRegistry == null || scopedRegistry.activationAllowed())) {
                 return false;
             }
-            currentPhase = ActivationPhase.DESTROYED;
-            response.finishingActivationPhase(ActivationPhase.DESTROYED)
+            if (currentPhase.eligibleForDeactivation()) {
+                // Activation stopped at a callback boundary. Preserve its phase so queued deactivation can clean up
+                // after the activating thread releases the instance lock, without publishing the instance.
+                activationCleanupPending = true;
+            } else {
+                currentPhase = ActivationPhase.DESTROYED;
+            }
+            response.finishingActivationPhase(currentPhase)
                     .success(false)
                     .error(new IllegalStateException("Activation interrupted by deactivation request"));
             return true;

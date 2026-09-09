@@ -189,6 +189,10 @@ class ScopedRegistryImpl implements ScopedRegistry {
         }
     }
 
+    boolean activationAllowed() {
+        return activationAllowed;
+    }
+
     private static Comparator<? super Activator<?>> shutdownComparator() {
         return Comparator
                 .<Activator<?>>comparingDouble(it -> it.descriptor().runLevel().orElse(Service.RunLevel.NORMAL))
@@ -207,10 +211,6 @@ class ScopedRegistryImpl implements ScopedRegistry {
             baseActivator.scopedRegistry(this);
         }
         return activator;
-    }
-
-    boolean activationAllowed() {
-        return activationAllowed;
     }
 
     private boolean availableForActiveLookup(Activator<?> activator) {
