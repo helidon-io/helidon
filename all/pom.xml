@@ -783,6 +783,10 @@
             <artifactId>helidon-declarative-codegen</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.messaging</groupId>
+            <artifactId>helidon-messaging</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata</artifactId>
         </dependency>
