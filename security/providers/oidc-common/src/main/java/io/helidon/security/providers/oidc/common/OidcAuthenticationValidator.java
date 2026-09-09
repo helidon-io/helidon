@@ -33,10 +33,10 @@ final class OidcAuthenticationValidator {
                          Supplier<Tenant> defaultTenant) {
         TenantConfig configuredDefault = tenantConfigurations.get(TenantConfigFinder.DEFAULT_TENANT_ID);
         if (configuredDefault == null) {
-            validateKnownTenant(oidcConfig, defaultTenant);
+            validateKnownTenant(oidcConfig, defaultTenant, false);
         }
         tenantConfigurations.values().forEach(tenantConfig ->
-                validateKnownTenant(tenantConfig, () -> Tenant.create(oidcConfig, tenantConfig)));
+                validateKnownTenant(tenantConfig, () -> Tenant.create(oidcConfig, tenantConfig), true));
     }
 
     static void validate(TenantConfig tenantConfig) {
@@ -84,10 +84,15 @@ final class OidcAuthenticationValidator {
         }
     }
 
-    private static void validateKnownTenant(TenantConfig tenantConfig, Supplier<Tenant> tenantSupplier) {
+    private static void validateKnownTenant(TenantConfig tenantConfig,
+                                            Supplier<Tenant> tenantSupplier,
+                                            boolean closeTenant) {
         validate(tenantConfig);
         if (!tenantConfig.tenantLoadingLazy()) {
-            tenantSupplier.get();
+            Tenant tenant = tenantSupplier.get();
+            if (closeTenant) {
+                tenant.appWebClient().closeResource();
+            }
         }
     }
 }

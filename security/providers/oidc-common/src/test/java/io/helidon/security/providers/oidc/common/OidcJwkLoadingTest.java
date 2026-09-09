@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +44,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
@@ -416,6 +418,38 @@ class OidcJwkLoadingTest {
 
         assertThat(tenant.tokenEndpointUri(), is(URI.create("https://metadata.example/token")));
         assertThat(tenant.signJwk().keys().size(), is(1));
+    }
+
+    @Test
+    void authenticationValidationClosesConfiguredTenantClient() {
+        CloseTrackingHttpClientSpiProvider.reset();
+        OidcConfig oidcConfig = baseBuilder()
+                .tokenEndpointAuthentication(OidcConfig.ClientAuthentication.NONE)
+                .signJwk(fixedJwkResource())
+                .webclient(it -> it.protocolPreference(List.of(CloseTrackingHttpClientSpiProvider.PROTOCOL_ID)))
+                .build();
+        TenantConfig configuredDefault = TenantConfig.tenantBuilder()
+                .name(TenantConfigFinder.DEFAULT_TENANT_ID)
+                .identityUri(URI.create("https://identity.example"))
+                .clientId("client")
+                .clientSecret("secret")
+                .oidcMetadataWellKnown(false)
+                .tokenEndpointAuthentication(OidcConfig.ClientAuthentication.NONE)
+                .signJwk(fixedJwkResource())
+                .build();
+
+        try {
+            OidcAuthenticationValidator.validate(oidcConfig,
+                                                 Map.of(TenantConfigFinder.DEFAULT_TENANT_ID, configuredDefault),
+                                                 () -> {
+                                                     throw new AssertionError("Default tenant supplier must not be used");
+                                                 });
+
+            assertThat(CloseTrackingHttpClientSpiProvider.closeCount(), is(1));
+        } finally {
+            oidcConfig.generalWebClient().closeResource();
+        }
+        assertThat(CloseTrackingHttpClientSpiProvider.closeCount(), is(2));
     }
 
     @Test
