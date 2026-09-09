@@ -50,6 +50,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ResilientValueTest {
     @Test
+    void unavailableExceptionUsesFaultToleranceExceptionHierarchy() {
+        assertThat(new ResilientValue.UnavailableException("not ready"),
+                   instanceOf(FaultToleranceException.class));
+    }
+
+    @Test
     void retriesAndCachesSuccessfulValue() {
         AtomicInteger calls = new AtomicInteger();
         ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",

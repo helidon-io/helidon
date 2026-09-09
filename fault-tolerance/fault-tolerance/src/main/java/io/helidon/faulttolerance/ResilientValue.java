@@ -61,7 +61,7 @@ public interface ResilientValue<T> extends Supplier<T> {
      * Exception indicating that a source may become available later.
      */
     @Api.Internal
-    class UnavailableException extends RuntimeException {
+    class UnavailableException extends FaultToleranceException {
         private static final long serialVersionUID = 1L;
 
         /**
