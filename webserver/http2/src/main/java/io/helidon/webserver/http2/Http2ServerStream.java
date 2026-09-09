@@ -249,7 +249,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
                 connectionAttackVectorMetrics.madeYouResetCheck();
             }
-        } catch (UncheckedIOException e) {
+        } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write window update", e);
         }
     }
@@ -597,7 +597,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
         }
         streams.remove(this.streamId);
         Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-        writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+        try {
+            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write reset stream", e);
+        }
         connectionAttackVectorMetrics.madeYouResetCheck();
 
         if (currentFrameLength > 0) {
