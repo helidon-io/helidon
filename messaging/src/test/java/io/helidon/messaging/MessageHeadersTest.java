@@ -16,9 +16,13 @@
 
 package io.helidon.messaging;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
@@ -169,6 +173,18 @@ class MessageHeadersTest {
         assertThrows(NullPointerException.class, () -> MessageHeader.create(null, "value"));
         assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (String) null));
         assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (MessageHeaderValue) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (byte[]) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (Boolean) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (Byte) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (Short) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (Integer) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (Long) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (BigInteger) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (BigDecimal) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (Float) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (Double) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (Instant) null));
+        assertThrows(NullPointerException.class, () -> MessageHeader.create("name", (UUID) null));
         assertThrows(NullPointerException.class, () -> MessageHeaders.create((List<MessageHeader>) null));
         assertThrows(NullPointerException.class,
                      () -> MessageHeaders.create(MessageHeader.create("a", "b"), null));

@@ -137,6 +137,65 @@ class MessagingPublicApiTest {
     }
 
     @Test
+    void createsHeadersFromSupportedJavaTypes() {
+        byte[] binary = {1, 2};
+        BigInteger arbitraryInteger = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
+        BigDecimal decimal = new BigDecimal("12.30");
+        Instant timestamp = Instant.parse("2026-09-09T10:15:30Z");
+        UUID uuid = UUID.fromString("01234567-89ab-cdef-0123-456789abcdef");
+        Set<Class<?>> valueTypes = Set.copyOf(
+                Arrays.stream(MessageHeader.class.getDeclaredMethods())
+                        .filter(method -> method.getName().equals("create"))
+                        .filter(method -> method.getParameterCount() == 2)
+                        .map(method -> method.getParameterTypes()[1])
+                        .toList());
+
+        assertThat(valueTypes, is(Set.of(MessageHeaderValue.class,
+                                         String.class,
+                                         byte[].class,
+                                         Boolean.class,
+                                         Byte.class,
+                                         Short.class,
+                                         Integer.class,
+                                         Long.class,
+                                         BigInteger.class,
+                                         BigDecimal.class,
+                                         Float.class,
+                                         Double.class,
+                                         Instant.class,
+                                         UUID.class)));
+
+        List<MessageHeader> headers = List.of(
+                MessageHeader.create("binary", binary),
+                MessageHeader.create("boolean", Boolean.TRUE),
+                MessageHeader.create("byte", Byte.MIN_VALUE),
+                MessageHeader.create("short", Short.MAX_VALUE),
+                MessageHeader.create("integer", Integer.MIN_VALUE),
+                MessageHeader.create("long", Long.MAX_VALUE),
+                MessageHeader.create("arbitrary-integer", arbitraryInteger),
+                MessageHeader.create("decimal", decimal),
+                MessageHeader.create("float", Float.MIN_VALUE),
+                MessageHeader.create("double", Double.MAX_VALUE),
+                MessageHeader.create("timestamp", timestamp),
+                MessageHeader.create("uuid", uuid));
+        binary[0] = 9;
+
+        assertThat(headers, is(List.of(
+                MessageHeader.create("binary", MessageHeaderValue.BinaryValue.create(new byte[] {1, 2})),
+                MessageHeader.create("boolean", MessageHeaderValue.BooleanValue.create(true)),
+                MessageHeader.create("byte", MessageHeaderValue.IntegerValue.create(Byte.MIN_VALUE)),
+                MessageHeader.create("short", MessageHeaderValue.IntegerValue.create(Short.MAX_VALUE)),
+                MessageHeader.create("integer", MessageHeaderValue.IntegerValue.create(Integer.MIN_VALUE)),
+                MessageHeader.create("long", MessageHeaderValue.IntegerValue.create(Long.MAX_VALUE)),
+                MessageHeader.create("arbitrary-integer", MessageHeaderValue.IntegerValue.create(arbitraryInteger)),
+                MessageHeader.create("decimal", MessageHeaderValue.DecimalValue.create(decimal)),
+                MessageHeader.create("float", MessageHeaderValue.Float32Value.create(Float.MIN_VALUE)),
+                MessageHeader.create("double", MessageHeaderValue.Float64Value.create(Double.MAX_VALUE)),
+                MessageHeader.create("timestamp", MessageHeaderValue.TimestampValue.create(timestamp)),
+                MessageHeader.create("uuid", MessageHeaderValue.UuidValue.create(uuid)))));
+    }
+
+    @Test
     void headerCollectionsAreUsableOutsideTheirPackage() {
         MessageHeaders headers = MessageHeaders.builder()
                 .add("trace", "value")

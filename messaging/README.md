@@ -199,7 +199,9 @@ authoritative globally ordered representation. Explicit `first`, `last`, and `al
 transport's duplicate semantics on another; `valuesByName()` is only a derived grouped view and loses cross-name
 ordering. The closed `MessageHeaderValue` model supports null, text, immutable binary, boolean, integer, decimal,
 32/64-bit floating point, timestamp, UUID, and opaque connector-encoded values. `Message.header(name)` remains a
-last-valued text convenience and never stringifies a typed value.
+last-valued text convenience and never stringifies a typed value. `MessageHeader.create(name, value)` accepts the
+corresponding Java types directly, including boxed integral and floating-point values; use the `MessageHeaderValue`
+overload for explicit null and opaque connector-encoded values.
 
 `localMetadata()` is a separate, immutable, exact-name map for values that follow the message envelope only inside the
 current process. It uses the same closed `MessageHeaderValue` value model, but it is single-valued and is never exposed through
