@@ -41,12 +41,10 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.faulttolerance.RetryConfig;
-import io.helidon.messaging.spi.ConnectorConfig;
-import io.helidon.messaging.spi.ConnectorProvider;
-import io.helidon.messaging.spi.IncomingConnector;
-import io.helidon.messaging.spi.IncomingConnectorProvider;
-import io.helidon.messaging.spi.OutgoingConnector;
-import io.helidon.messaging.spi.OutgoingConnectorProvider;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -66,6 +64,7 @@ class ChannelRegistryFailurePolicyTest {
             "helidon_messaging_dead_letter_failure_message";
 
     private final List<ChannelRegistry> startedRegistries = new ArrayList<>();
+    private final RegistryTestSupport registrySupport = new RegistryTestSupport();
 
     @AfterEach
     void closeStartedRegistries() {
@@ -82,6 +81,7 @@ class ChannelRegistryFailurePolicyTest {
             }
         }
         startedRegistries.clear();
+        registrySupport.close();
         if (closeFailure instanceof RuntimeException runtimeException) {
             throw runtimeException;
         }
@@ -165,7 +165,7 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testLiteralDottedChannelInvokesConnectorProviders() {
+    void testLiteralDottedChannelInvokesConfiguredConnectors() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
         ChannelRegistry registry = registry(
@@ -194,7 +194,7 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testLiteralDottedConnectorDefaultsAndChannelOverrides() {
+    void testChannelConfigurationDoesNotMergeConnectorConfiguration() {
         TestIncomingConnector incoming = new TestIncomingConnector("acme.v1");
         ChannelRegistry registry = registry(
                 List.of(registration("inherited", _ -> { }),
@@ -204,6 +204,8 @@ class ChannelRegistryFailurePolicyTest {
                         messaging:
                           connector:
                             acme~1v1:
+                              type: test
+                              index: 0
                               endpoint: https://default.example.test
                               items: [a, b, c]
                               authentication:
@@ -232,17 +234,16 @@ class ChannelRegistryFailurePolicyTest {
 
             TestConnectorConfig inherited = incoming.config("inherited");
             assertThat(inherited.connector(), is("acme.v1"));
-            assertThat(inherited.properties().get("endpoint"), is("https://default.example.test"));
-            assertThat(inherited.properties().get("authentication.username"), is("connector-user"));
-            assertThat(inherited.properties().get("authentication.password"), is("connector-password"));
-            assertThat(inherited.config().get("items").asList(String.class).get(), is(List.of("a", "b", "c")));
+            assertThat(inherited.config().get("endpoint").exists(), is(false));
+            assertThat(inherited.config().get("authentication").exists(), is(false));
+            assertThat(inherited.config().get("items").exists(), is(false));
             assertThat(inherited.config().get("failure").exists(), is(false));
 
             TestConnectorConfig overridden = incoming.config("overridden");
             assertThat(overridden.connector(), is("acme.v1"));
             assertThat(overridden.properties().get("endpoint"), is("https://channel.example.test"));
             assertThat(overridden.properties().get("authentication.username"), is("channel-user"));
-            assertThat(overridden.properties().get("authentication.password"), is("connector-password"));
+            assertThat(overridden.config().get("authentication.password").exists(), is(false));
             assertThat(overridden.config().get("items").asList(String.class).get(), is(List.of("x")));
             assertThat(overridden.config().get("failure").exists(), is(false));
 
@@ -257,23 +258,13 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testConnectorConfigMergePreservesHybridValues() {
+    void testChannelConfigurationPreservesHybridValues() {
         TestIncomingConnector incoming = new TestIncomingConnector();
-        ConfigNode.ObjectNode defaultConnector = ConfigNode.ObjectNode.builder()
-                .addObject("settings", ConfigNode.ObjectNode.builder()
-                        .value("default")
-                        .addValue("child", "nested")
-                        .build())
-                .addList("items", ConfigNode.ListNode.builder()
-                        .value("default-list")
-                        .addValue("a")
-                        .addValue("b")
-                        .build())
-                .build();
         ConfigNode.ObjectNode channel = ConfigNode.ObjectNode.builder()
                 .addValue("connector", "test-in")
                 .addObject("settings", ConfigNode.ObjectNode.builder()
                         .value("channel")
+                        .addValue("child", "nested")
                         .build())
                 .addList("items", ConfigNode.ListNode.builder()
                         .value("channel-list")
@@ -283,7 +274,10 @@ class ChannelRegistryFailurePolicyTest {
         ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
                 .addObject("messaging", ConfigNode.ObjectNode.builder()
                         .addObject("connector", ConfigNode.ObjectNode.builder()
-                                .addObject("test-in", defaultConnector)
+                                .addObject("test-in", ConfigNode.ObjectNode.builder()
+                                        .addValue("type", "test")
+                                        .addValue("index", "0")
+                                        .build())
                                 .build())
                         .addObject("incoming", ConfigNode.ObjectNode.builder()
                                 .addObject("orders", channel)
@@ -2218,7 +2212,7 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testConfiguredConnectorWithoutProviderIsRejected() {
+    void testUnknownConfiguredConnectorIsRejected() {
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
         IllegalArgumentException incomingFailure = assertThrows(
                 IllegalArgumentException.class,
@@ -2233,7 +2227,7 @@ class ChannelRegistryFailurePolicyTest {
                                                         connector: test-out
                                                   """),
                                           List.of(outgoing)));
-        assertThat(incomingFailure.getMessage(), containsString("No connector provider of type missing-in"));
+        assertThat(incomingFailure.getMessage(), containsString("No configured connector named missing-in"));
         assertThat(outgoing.createdCount(), is(0));
 
         IllegalArgumentException outgoingFailure = assertThrows(
@@ -2246,7 +2240,7 @@ class ChannelRegistryFailurePolicyTest {
                                                         connector: missing-out
                                                   """),
                                           List.of()));
-        assertThat(outgoingFailure.getMessage(), containsString("No connector provider of type missing-out"));
+        assertThat(outgoingFailure.getMessage(), containsString("No configured connector named missing-out"));
     }
 
     @Test
@@ -2290,7 +2284,7 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testUnsupportedProviderDirectionIsRejectedBeforeConnectorCreation() {
+    void testUnsupportedDirectionIsRejectedBeforeChannelCreation() {
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
 
         IllegalArgumentException failure = assertThrows(
@@ -2309,7 +2303,7 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testDuplicateConnectorProviderTypeIsRejected() {
+    void testDuplicateConnectorInstanceNameIsRejected() {
         TestOutgoingConnector first = new TestOutgoingConnector();
         TestOutgoingConnector second = new TestOutgoingConnector();
 
@@ -2317,28 +2311,31 @@ class ChannelRegistryFailurePolicyTest {
                 IllegalArgumentException.class,
                 () -> registry(List.of(), yaml("{}"), List.of(first, second)));
 
-        assertThat(failure.getMessage(), containsString("Duplicate connector provider type test-out"));
+        assertThat(failure.getMessage(), containsString("Duplicate messaging connector name test-out"));
         assertThat(first.createdCount(), is(0));
         assertThat(second.createdCount(), is(0));
     }
 
     @Test
-    void testBlankConnectorProviderTypeIsRejected() {
-        AtomicInteger configCreated = new AtomicInteger();
-        ConnectorProvider provider = new ConnectorProvider() {
+    void testBlankConnectorInstanceNameIsRejected() {
+        MessagingConnector connector = new MessagingConnector() {
             @Override
-            public String connectorType() {
-                return " ";
+            public String type() {
+                return "test";
+            }
+
+            @Override
+            public MessagingConnectorProviderConfig prototype() {
+                return RegistryTestSupport.prototype(" ");
             }
 
         };
 
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
-                () -> registry(List.of(), yaml("{}"), List.of(provider)));
+                () -> registry(List.of(), yaml("{}"), List.of(connector)));
 
-        assertThat(failure.getMessage(), containsString("Connector provider type must not be blank"));
-        assertThat(configCreated.get(), is(0));
+        assertThat(failure.getMessage(), containsString("Messaging connector name must not be blank"));
     }
 
     @Test
@@ -2524,21 +2521,17 @@ class ChannelRegistryFailurePolicyTest {
         assertThat(failure.getMessage(), containsString("TestKeyedMessage<java.lang.Long, java.lang.Integer>"));
     }
 
-    private static ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+    private ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
                                             Config config,
-                                            List<ConnectorProvider> connectorProviders) {
-        return registry(consumerRegistrations, List.of(), config, connectorProviders);
+                                            List<MessagingConnector> connectors) {
+        return registry(consumerRegistrations, List.of(), config, connectors);
     }
 
-    private static ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+    private ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
                                             List<EmitterRegistration> emitterRegistrations,
                                             Config config,
-                                            List<ConnectorProvider> connectorProviders) {
-        return new ChannelRegistry(consumerRegistrations,
-                                   emitterRegistrations,
-                                   config,
-                                   connectorProviders,
-                                   new MessagingLifecycleGuard());
+                                            List<MessagingConnector> connectors) {
+        return registrySupport.registry(consumerRegistrations, emitterRegistrations, config, connectors);
     }
 
     private static MessagingRejectedException awaitConfiguredTimeout(IncomingConnectorContext context,
@@ -2894,14 +2887,12 @@ class ChannelRegistryFailurePolicyTest {
     private interface TestSpecialMessage<T> extends Message<T> {
     }
 
-    public record TestConnectorConfig(ConnectorDirection direction,
-                                      String channelName,
+    private record TestConnectorConfig(String channelName,
                                       String connector,
                                       Map<String, String> properties,
-                                      Config config) implements ConnectorConfig {
+                                      Config config) {
         private static TestConnectorConfig from(Config config) {
             return new TestConnectorConfig(
-                    ConnectorDirection.valueOf(config.get("direction").asString().orElseThrow()),
                     config.get("channel-name").asString().orElseThrow(),
                     config.get("connector").asString().orElseThrow(),
                     Map.copyOf(config.detach().asMap().orElse(Map.of())),
@@ -2909,7 +2900,7 @@ class ChannelRegistryFailurePolicyTest {
         }
     }
 
-    static final class TestIncomingConnector implements IncomingConnectorProvider {
+    static final class TestIncomingConnector implements MessagingConnector {
         private final String connectorType;
         private final Map<String, IncomingConnectorContext> contexts = new ConcurrentHashMap<>();
         private final Map<String, TestConnectorConfig> configs = new ConcurrentHashMap<>();
@@ -2926,17 +2917,22 @@ class ChannelRegistryFailurePolicyTest {
         }
 
         @Override
-        public String connectorType() {
-            return connectorType;
+        public String type() {
+            return "test";
         }
 
         @Override
-        public IncomingConnector createIncomingConnector(Config config) {
+        public MessagingConnectorProviderConfig prototype() {
+            return RegistryTestSupport.prototype(connectorType);
+        }
+
+        @Override
+        public Optional<IncomingChannel> incoming(Config config) {
             configCreated.incrementAndGet();
             TestConnectorConfig connectorConfig = TestConnectorConfig.from(config);
             created.incrementAndGet();
             configs.put(connectorConfig.channelName(), connectorConfig);
-            return new IncomingConnector() {
+            return Optional.of(new IncomingChannel() {
                 private final CountDownLatch stopped = new CountDownLatch(1);
                 private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -2966,7 +2962,7 @@ class ChannelRegistryFailurePolicyTest {
                         stopped.countDown();
                     }
                 }
-            };
+            });
         }
 
         private static void await(CountDownLatch latch, Duration timeout, String operation) {
@@ -2983,7 +2979,7 @@ class ChannelRegistryFailurePolicyTest {
         private IncomingConnectorContext context(String channel) {
             IncomingConnectorContext context = contexts.get(channel);
             if (context == null) {
-                throw new AssertionError("Connector context is not available; start the registry first");
+                throw new AssertionError("ChannelConnection context is not available; start the registry first");
             }
             return context;
         }
@@ -3005,7 +3001,7 @@ class ChannelRegistryFailurePolicyTest {
         }
     }
 
-    static final class TestOutgoingConnector implements OutgoingConnectorProvider {
+    static final class TestOutgoingConnector implements MessagingConnector {
         private final List<Message<?>> messages = new CopyOnWriteArrayList<>();
         private final AtomicInteger configCreated = new AtomicInteger();
         private final AtomicInteger created = new AtomicInteger();
@@ -3031,16 +3027,21 @@ class ChannelRegistryFailurePolicyTest {
         }
 
         @Override
-        public String connectorType() {
-            return "test-out";
+        public String type() {
+            return "test";
         }
 
         @Override
-        public OutgoingConnector createOutgoingConnector(Config config) {
+        public MessagingConnectorProviderConfig prototype() {
+            return RegistryTestSupport.prototype("test-out");
+        }
+
+        @Override
+        public Optional<OutgoingChannel> outgoing(Config config) {
             configCreated.incrementAndGet();
             TestConnectorConfig.from(config);
             created.incrementAndGet();
-            return new OutgoingConnector() {
+            return Optional.of(new OutgoingChannel() {
                 @Override
                 public void start() {
                 }
@@ -3069,7 +3070,7 @@ class ChannelRegistryFailurePolicyTest {
                 @Override
                 public void close() {
                 }
-            };
+            });
         }
 
         private List<Message<?>> messages() {

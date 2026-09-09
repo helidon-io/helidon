@@ -39,8 +39,10 @@ import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeaders;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.MessagingException;
-import io.helidon.messaging.spi.IncomingConnector;
-import io.helidon.messaging.spi.IncomingConnectorProvider;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingConnectorProvider;
+import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Service;
@@ -500,30 +502,46 @@ class ChannelMessagingTypes {
     }
 
     @Service.Singleton
-    static class TestIncomingConnectorProvider implements IncomingConnectorProvider {
+    static class TestMessagingConnectorProvider implements MessagingConnectorProvider {
         private final TestConnectorObserver observer;
 
         @Service.Inject
-        TestIncomingConnectorProvider(TestConnectorObserver observer) {
+        TestMessagingConnectorProvider(TestConnectorObserver observer) {
             this.observer = observer;
         }
 
         @Override
-        public String connectorType() {
+        public String configKey() {
             return TEST_CONNECTOR;
         }
 
         @Override
-        public IncomingConnector createIncomingConnector(Config config) {
-            return new TestIncomingConnector(observer);
+        public MessagingConnector create(Config config, String name) {
+            var prototype = new TestConnectorProviderConfig(name, Optional.of(config));
+            return new MessagingConnector() {
+                @Override
+                public String type() {
+                    return TEST_CONNECTOR;
+                }
+
+                @Override
+                public MessagingConnectorProviderConfig prototype() {
+                    return prototype;
+                }
+
+                @Override
+                public Optional<IncomingChannel> incoming(Config channelConfig) {
+                    return Optional.of(new TestIncomingChannel(observer));
+                }
+            };
         }
 
-        private static final class TestIncomingConnector implements IncomingConnector {
+        private static final class TestIncomingChannel implements IncomingChannel {
             private final TestConnectorObserver observer;
             private final CountDownLatch stop = new CountDownLatch(1);
             private final AtomicBoolean stopped = new AtomicBoolean();
 
-            private TestIncomingConnector(TestConnectorObserver observer) {
+            private TestIncomingChannel(TestConnectorObserver observer) {
                 this.observer = observer;
             }
 
@@ -654,7 +672,7 @@ class ChannelMessagingTypes {
     }
 
     @Service.Singleton
-    static class ShutdownIncomingConnectorProvider implements IncomingConnectorProvider {
+    static class ShutdownMessagingConnectorProvider implements MessagingConnectorProvider {
         private static final AtomicReference<CountDownLatch> SOURCE_STARTED =
                 new AtomicReference<>(new CountDownLatch(0));
 
@@ -667,20 +685,36 @@ class ChannelMessagingTypes {
         }
 
         @Override
-        public String connectorType() {
+        public String configKey() {
             return SHUTDOWN_CONNECTOR;
         }
 
         @Override
-        public IncomingConnector createIncomingConnector(Config config) {
-            return new ShutdownConnector(SOURCE_STARTED.get());
+        public MessagingConnector create(Config config, String name) {
+            var prototype = new TestConnectorProviderConfig(name, Optional.of(config));
+            return new MessagingConnector() {
+                @Override
+                public String type() {
+                    return SHUTDOWN_CONNECTOR;
+                }
+
+                @Override
+                public MessagingConnectorProviderConfig prototype() {
+                    return prototype;
+                }
+
+                @Override
+                public Optional<IncomingChannel> incoming(Config channelConfig) {
+                    return Optional.of(new ShutdownIncomingChannel(SOURCE_STARTED.get()));
+                }
+            };
         }
 
-        private static final class ShutdownConnector implements IncomingConnector {
+        private static final class ShutdownIncomingChannel implements IncomingChannel {
             private final CountDownLatch sourceStarted;
             private final CountDownLatch stop = new CountDownLatch(1);
 
-            private ShutdownConnector(CountDownLatch sourceStarted) {
+            private ShutdownIncomingChannel(CountDownLatch sourceStarted) {
                 this.sourceStarted = sourceStarted;
             }
 
@@ -725,6 +759,10 @@ class ChannelMessagingTypes {
         List<Message<String>> messages() {
             return messages;
         }
+    }
+
+    private record TestConnectorProviderConfig(String name, Optional<Config> config)
+            implements MessagingConnectorProviderConfig {
     }
 
     record HeaderDelivery(String payload, String header) {

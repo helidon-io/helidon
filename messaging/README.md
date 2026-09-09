@@ -35,7 +35,7 @@ application parent. Add the configuration parser used by the application as a re
 </dependencies>
 ```
 
-Concrete Kafka and JMS connector implementations remain in the
+Concrete Kafka, JMS, and Pulsar connector implementations are in the
 [Helidon Extensions repository](https://github.com/helidon-io/helidon-extensions) and are consumed separately once
 they are built against this core API. Their artifacts and connector-specific configuration documentation are versioned
 there. The core runtime discovers connector providers through the Service Registry.
@@ -278,8 +278,9 @@ connector completed. The target channel must have at least one receiver or confi
 
 ### Configure connectors
 
-Add external sources under `messaging.incoming` and external sinks under `messaging.outgoing`.
-Connector-wide defaults under `messaging.connector.<type>` are overlaid by the corresponding channel values.
+Declare named connector instances under `messaging.connector`, then reference those names from external sources under
+`messaging.incoming` and external sinks under `messaging.outgoing`. Each connector retains its typed common
+configuration and applies channel-specific overrides when creating a channel connection.
 
 First-party connectors from the Helidon Extensions repository use the `helidon-` prefix so they remain distinguishable
 from third-party providers. For example, an application using the JMS connector can configure:
@@ -287,25 +288,44 @@ from third-party providers. For example, an application using the JMS connector 
 ```yaml
 messaging:
   connector:
-    helidon-jms:
+    primary:
+      type: helidon-jms
       connection-factory: primary-jms
 
   incoming:
     orders:
-      connector: helidon-jms
+      connector: primary
       destination: orders
       destination-type: QUEUE
 
   outgoing:
     validated-orders:
-      connector: helidon-jms
+      connector: primary
       destination: validated-orders
       destination-type: QUEUE
 ```
 
-Connector options other than `connector` are connector-specific. The `failure` subtree of an incoming channel is
-portable messaging configuration; it is not a connector option and cannot be placed in connector-wide defaults. See
-the selected connector's documentation in the Helidon Extensions repository for its complete configuration.
+The same connector declaration can use a list:
+
+```yaml
+messaging:
+  connector:
+    - name: primary
+      type: helidon-jms
+      connection-factory: primary-jms
+```
+
+`type` selects a `MessagingConnectorProvider`; the object key or list entry's `name` identifies the resulting
+`MessagingConnector`. In object form, an omitted `type` defaults to the object key; in list form, an omitted `name`
+defaults to `type`. Several named instances can use the same provider type. `MessagingConfig` resolves this connector
+list using the Service Registry and retains `incoming` and `outgoing` as `Map<String, Config>`. A channel node's
+`name`, when present, overrides its object key as the logical channel name.
+
+Channel options other than `connector` and `failure` are connector-specific. The runtime removes the portable
+`failure` subtree before passing channel configuration to the connector and supplies the resolved `channel-name`.
+It does not merge connector defaults into that tree or inject a direction; the configured connector applies its own
+typed defaults. The `failure` subtree belongs to an incoming channel and cannot be placed in connector-wide defaults.
+See the selected connector's documentation in the Helidon Extensions repository for its complete configuration.
 
 ### Retry, drop, and dead-letter handling
 
@@ -367,7 +387,7 @@ Configuration overrides annotation members independently:
 messaging:
   incoming:
     orders:
-      connector: helidon-jms
+      connector: primary
       destination: orders
       destination-type: QUEUE
       failure:
@@ -483,15 +503,51 @@ The builder supports these elements:
 | `payloadSink` | Consume each payload. |
 | `messageSink` | Consume each message envelope. |
 | `batchSink` | Consume a complete batch once. |
-| `outgoingConnector` | Add a builder- or graph-owned connector as a required output. |
+| `incomingChannel` | Add a builder- or graph-owned `IncomingChannel` as a source. |
+| `outgoingChannel` | Add a builder- or graph-owned `OutgoingChannel` as a required output. |
 
 Every channel must have at least one output. Synchronous routing cycles are rejected. A channel can have at most one
 stream source, and downstream paths from distinct stream sources cannot converge.
 
-The imperative builder registers streams as sources and can attach an `OutgoingConnector` directly. The built graph
-exposes typed emitters for application-originated input. The builder owns registered streams and connectors until a
-successful build transfers them to the graph. The builder does not currently expose an incoming-connector registration
-method. Declarative connector configuration and `@Messaging.OnFailure` policies are not applied to an imperative graph.
+The imperative builder accepts channel connections created from typed connector and channel configuration builders.
+The built graph exposes typed emitters for application-originated input. The builder owns registered streams and
+channel connections until a successful build transfers them to the graph. The graph manages channel startup,
+incoming delivery admission, draining, and shutdown. Declarative connector configuration and `@Messaging.OnFailure`
+policies are not applied to an imperative graph.
+
+For example, the Kafka extension provides typed configuration for both directions:
+
+```java
+KafkaConnector kafka = KafkaConnector.builder()
+        .name("primary")
+        .bootstrapServers("localhost:9092")
+        .build();
+
+try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
+    MessagingChannel<String> orders = builder.channel("orders", String.class);
+    MessagingChannel<String> outgoing = builder.channel("outgoing", String.class);
+
+    builder.incomingChannel(orders, kafka.incoming(KafkaIncomingConfig.builder()
+                    .channelName("orders")
+                    .topic("orders")
+                    .groupId("inventory-service")
+                    .build()))
+            .messageSink(orders, message -> System.out.println(message.entity()))
+            .outgoingChannel(outgoing, kafka.outgoing(KafkaOutgoingConfig.builder()
+                    .channelName("outgoing")
+                    .topic("orders")
+                    .build()));
+
+    try (MessagingGraph graph = builder.build()) {
+        graph.start();
+        graph.emitter(outgoing).emit(Message.create("new order"));
+        // Keep the graph running for the application's lifetime.
+    }
+}
+```
+
+The configured `KafkaConnector` supplies the shared bootstrap servers. Each factory call returns a fresh channel
+connection whose resources belong to the builder and then the graph.
 
 ### Emit batches
 
@@ -538,28 +594,30 @@ an unsuccessful or indeterminate delivery can therefore produce duplicates.
 
 ## Create a connector
 
-A connector module contains one stateless provider and one new lifecycle object for every configured incoming or
-outgoing binding. The provider is shared; connector instances are not. Implement only the direction interfaces the
-transport supports. Types implemented or extended by connector authors, including connector configuration, are in the
+A connector module contains a stateless `MessagingConnectorProvider`, a configured `MessagingConnector`, and one new
+channel connection for every incoming or outgoing binding. The provider creates named connectors; each connector
+retains common configuration and creates its supported channel directions. Types implemented or extended by connector
+authors, including the common connector configuration prototype, are in the
 exported `io.helidon.messaging.spi` package. Runtime-owned context and delivery handles supplied through those contracts
 are in `io.helidon.messaging`; the examples below omit routine imports.
 
-`ConnectorProvider`, `IncomingConnectorProvider`, and `OutgoingConnectorProvider` are Service Registry contracts. A
-provider that implements both directions is registered under all three contracts. The messaging runtime discovers all
-providers through `ConnectorProvider` and uses the two direction contracts as capabilities; applications may also look
-up a specific direction contract directly.
+`MessagingConnectorProvider` is the Service Registry contract and extends `ConfiguredProvider<MessagingConnector>`.
+`IncomingChannel` and `OutgoingChannel` extend the common `ChannelConnection` lifecycle contract. A named
+`MessagingConnector` is a factory, not a channel lifecycle resource; the graph owns the connections attached to it.
 
 ### 1. Choose the connector identity and directions
 
 Choose a non-blank connector type that is unique in the application. Helidon connectors use the `helidon-` prefix;
 third-party connectors should use a similarly distinctive name. The examples below use `example-acme`.
 
-- Implement `IncomingConnectorProvider` for a source.
-- Implement `OutgoingConnectorProvider` for a sink.
-- Implement both interfaces on one provider when the transport supports both directions.
+- Override `MessagingConnector.incoming(Config)` for a source.
+- Override `MessagingConnector.outgoing(Config)` for a sink.
+- Override both methods when the transport supports both directions.
 
-The runtime rejects duplicate provider types and rejects an incoming or outgoing binding when its selected provider
-does not implement that direction.
+The default directional methods return `Optional.empty()`; a connector must support at least one direction. The runtime
+rejects duplicate configured connector names and rejects a binding when its selected connector does not support that
+direction. Connector names and provider types serve different purposes: a type identifies the implementation, while a
+name selects one configured instance of it.
 
 ### 2. Create the connector module
 
@@ -618,16 +676,33 @@ provider. A consuming application adds the connector artifact and, when modular,
 
 ### 3. Define and validate connector configuration
 
-Extending `ConnectorConfig` adds the runtime-provided connector type, direction, and channel name to the generated
-configuration:
+Extend `MessagingConnectorProviderConfig` to inherit the configured connector instance name and original configuration.
+Use `Prototype.Factory` so the generated builder creates the connector:
+
+```java
+@Prototype.Blueprint
+@Prototype.Configured(value = AcmeConnectorProvider.CONNECTOR_TYPE, root = false)
+@Prototype.Provides(MessagingConnectorProvider.class)
+interface AcmeConnectorConfigBlueprint extends MessagingConnectorProviderConfig, Prototype.Factory<AcmeConnector> {
+    @Option.Required
+    @Option.Configured
+    String endpoint();
+}
+```
+
+Define channel-specific configuration separately. This example uses one channel prototype for both directions because
+they need the same options; a connector can define distinct incoming and outgoing prototypes:
 
 ```java
 @Prototype.Blueprint
 @Prototype.Configured
-interface AcmeConnectorConfigBlueprint extends ConnectorConfig {
+interface AcmeChannelConfigBlueprint {
     @Option.Required
     @Option.Configured
-    String endpoint();
+    String channelName();
+
+    @Option.Configured
+    Optional<String> endpoint();
 
     @Option.Required
     @Option.Configured
@@ -635,68 +710,112 @@ interface AcmeConnectorConfigBlueprint extends ConnectorConfig {
 }
 ```
 
-Builder code generation creates `AcmeConnectorConfig` and its `create(Config)` factory. Add a builder decorator or
+Builder code generation creates `AcmeConnectorConfig` and `AcmeChannelConfig`. Add a builder decorator or
 custom builder methods for validation that involves several options, secrets, mutually exclusive values, or normalized
 transport properties. Mark secret options with `@Option.Confidential`, copy mutable values defensively, and keep them
 out of diagnostics and `toString()` output.
 
-For each binding, the runtime constructs the effective `Config` in this order:
+The runtime first builds `MessagingConfig` and resolves each named connector through its provider. For each channel
+binding it then:
 
-1. Start with defaults under `messaging.connector.<connector-type>`.
-2. Overlay the selected `incoming` or `outgoing` channel configuration.
-3. Remove the portable `failure` subtree.
-4. Add `channel-name`, `connector`, and `direction` (`INCOMING` or `OUTGOING`).
+1. Selects the configured connector named by the channel's `connector` property.
+2. Removes the portable `failure` subtree from the channel configuration.
+3. Supplies the resolved logical `channel-name`, overriding any configured `channel-name`.
+4. Calls the connector's `incoming(Config)` or `outgoing(Config)` method with that channel configuration.
 
-The provider should parse and validate this configuration, but it must not open connections, create delivery threads,
-poll, or retain connector instances.
+The connector parses the channel prototype and applies its typed common defaults. The runtime neither merges the two
+configuration trees nor injects a direction. Creating a configured connector or channel connection must not open
+transport connections, create delivery threads, or poll; those actions belong to channel startup.
 
 ### 4. Implement the stateless provider
 
-Register the provider as a Service Registry singleton. Return a fresh, unstarted connector from every successful
-factory call:
+Register the provider as a Service Registry singleton. It creates a configured connector from the selected node and
+instance name:
 
 ```java
 @Service.Singleton
-public final class AcmeConnectorProvider
-        implements IncomingConnectorProvider, OutgoingConnectorProvider {
+public final class AcmeConnectorProvider implements MessagingConnectorProvider {
     public static final String CONNECTOR_TYPE = "example-acme";
 
     @Override
-    public String connectorType() {
+    public String configKey() {
         return CONNECTOR_TYPE;
     }
 
     @Override
-    public IncomingConnector createIncomingConnector(Config config) {
-        AcmeConnectorConfig connectorConfig =
-                AcmeConnectorConfig.create(Objects.requireNonNull(config));
-        requireDirection(connectorConfig, ConnectorDirection.INCOMING);
-        return new AcmeIncomingConnector(connectorConfig);
-    }
-
-    @Override
-    public OutgoingConnector createOutgoingConnector(Config config) {
-        AcmeConnectorConfig connectorConfig =
-                AcmeConnectorConfig.create(Objects.requireNonNull(config));
-        requireDirection(connectorConfig, ConnectorDirection.OUTGOING);
-        return new AcmeOutgoingConnector(connectorConfig);
-    }
-
-    private static void requireDirection(AcmeConnectorConfig config,
-                                         ConnectorDirection expected) {
-        if (config.direction() != expected) {
-            throw new IllegalArgumentException("Unexpected connector direction " + config.direction());
-        }
+    public AcmeConnector create(Config config, String name) {
+        return AcmeConnector.builder()
+                .config(config)
+                .name(name)
+                .build();
     }
 }
 ```
 
-The provider may be called for several channels and graphs. It must remain stateless and must never reuse a transport
-client or connector lifecycle object between bindings.
+The configured connector keeps the immutable prototype and provides typed factories for imperative use:
 
-### 5. Implement an incoming connector
+```java
+public final class AcmeConnector implements MessagingConnector, RuntimeType.Api<AcmeConnectorConfig> {
+    private final AcmeConnectorConfig config;
 
-The runtime invokes `IncomingConnector.run` once on a runtime-owned virtual thread. Establish enough transport state
+    private AcmeConnector(AcmeConnectorConfig config) {
+        this.config = Objects.requireNonNull(config);
+    }
+
+    public static AcmeConnector create(AcmeConnectorConfig config) {
+        return new AcmeConnector(config);
+    }
+
+    public static AcmeConnectorConfig.Builder builder() {
+        return AcmeConnectorConfig.builder();
+    }
+
+    @Override
+    public AcmeConnectorConfig prototype() {
+        return config;
+    }
+
+    @Override
+    public String type() {
+        return AcmeConnectorProvider.CONNECTOR_TYPE;
+    }
+
+    @Override
+    public Optional<IncomingChannel> incoming(Config channelConfig) {
+        return Optional.of(incoming(AcmeChannelConfig.create(Objects.requireNonNull(channelConfig))));
+    }
+
+    public IncomingChannel incoming(AcmeChannelConfig channelConfig) {
+        Objects.requireNonNull(channelConfig);
+        return new AcmeIncomingChannel(effective(channelConfig));
+    }
+
+    @Override
+    public Optional<OutgoingChannel> outgoing(Config channelConfig) {
+        return Optional.of(outgoing(AcmeChannelConfig.create(Objects.requireNonNull(channelConfig))));
+    }
+
+    public OutgoingChannel outgoing(AcmeChannelConfig channelConfig) {
+        Objects.requireNonNull(channelConfig);
+        return new AcmeOutgoingChannel(effective(channelConfig));
+    }
+
+    private AcmeChannelConfig effective(AcmeChannelConfig channelConfig) {
+        return AcmeChannelConfig.builder()
+                .from(channelConfig)
+                .endpoint(channelConfig.endpoint().orElse(config.endpoint()))
+                .build();
+    }
+}
+```
+
+The provider may be called for several connectors and graphs. It remains stateless, and each configured connector can
+create several independent channel connections. Return a fresh, unstarted connection from every successful channel
+factory call and never reuse a transport client or channel lifecycle object between bindings.
+
+### 5. Implement an incoming channel
+
+The runtime invokes `IncomingChannel.run` once on a runtime-owned virtual thread. Establish enough transport state
 to report readiness, call `context.awaitRunning()` exactly once, and acquire no delivery until it returns `true`.
 
 Before polling, reading, or otherwise accepting a transport delivery, reserve runtime capacity. Keep the returned
@@ -704,8 +823,8 @@ delivery lease until both runtime processing and transport settlement finish. Th
 placeholder types:
 
 ```java
-final class AcmeIncomingConnector implements IncomingConnector {
-    private final AcmeConnectorConfig config;
+final class AcmeIncomingChannel implements IncomingChannel {
+    private final AcmeChannelConfig config;
     private final AtomicBoolean runStarted = new AtomicBoolean();
     private final AtomicBoolean draining = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -713,7 +832,7 @@ final class AcmeIncomingConnector implements IncomingConnector {
     private volatile AcmeConsumer consumer;
     private volatile Thread owner;
 
-    AcmeIncomingConnector(AcmeConnectorConfig config) {
+    AcmeIncomingChannel(AcmeChannelConfig config) {
         this.config = config;
     }
 
@@ -957,17 +1076,17 @@ The runtime owns the incoming `run` virtual thread and delivery tasks. Do not cr
 delivery. Transport libraries may still use their normal internal I/O threads. Different connector bindings and
 channels can overlap, so shared native resources must be synchronized without coupling sibling connector lifecycles.
 
-### 6. Implement an outgoing connector
+### 6. Implement an outgoing channel
 
-`OutgoingConnector.start()` acquires binding-owned transport resources and returns only when sends can begin.
+`OutgoingChannel.start()` acquires binding-owned transport resources and returns only when sends can begin.
 `sendBatch()` is synchronous: it must not return until the connector's documented external success point is reached.
 
 ```java
-final class AcmeOutgoingConnector implements OutgoingConnector {
-    private final AcmeConnectorConfig config;
+final class AcmeOutgoingChannel implements OutgoingChannel {
+    private final AcmeChannelConfig config;
     private final AcmeLifecycle lifecycle = new AcmeLifecycle();
 
-    AcmeOutgoingConnector(AcmeConnectorConfig config) {
+    AcmeOutgoingChannel(AcmeChannelConfig config) {
         this.config = config;
     }
 
@@ -1113,18 +1232,20 @@ messaging:
       destination: orders-out
 ```
 
-Add a generated receiver or named emitter for each configured channel, start the Service Registry application, and
-verify that the provider is discovered on both the class path and module path.
+When the connector name differs from its provider type, declare `type` explicitly as shown in the configuration
+section above. Add a generated receiver or named emitter for each configured channel, start the Service Registry
+application, and verify that the provider is discovered on both the class path and module path.
 
 ### 9. Test the connector contract
 
 At minimum, cover:
 
-- connector type uniqueness, supported directions, the effective defaults-plus-channel overlay, injected common fields,
-  stripped `failure` keys, required values, secrets, defensive copying and redaction, and direction rejection;
-- Service Registry discovery and fresh, resource-free connector instances from every provider factory call; also prove
-  that the provider is not a lifecycle resource, provider-registry shutdown does not close an unattached factory-created
-  connector, and an attached connector is closed by its owning graph;
+- provider type selection, named connector uniqueness, object and list forms, supported directions, typed common
+  defaults and channel overrides, injected `channel-name`, stripped `failure` keys, required values, secrets,
+  defensive copying and redaction, and direction rejection;
+- Service Registry discovery and fresh, resource-free channel connections from every directional factory call; also
+  prove that providers and configured connectors are not lifecycle resources, provider-registry shutdown does not
+  close an unattached factory-created connection, and an attached connection is closed by its owning graph;
 - incoming readiness, reserve-before-acquire ordering, message-count bounds, empty polls, ordering, immutable message
   snapshots, globally ordered duplicate and typed headers, immutable binary snapshots, exact case-sensitive names,
   oversize post-acquisition rejection, and release of every unused reservation exactly once;

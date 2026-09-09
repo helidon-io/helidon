@@ -22,7 +22,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.messaging.ConnectorDirection;
 import io.helidon.messaging.Message;
 import io.helidon.service.registry.Service;
 
@@ -31,9 +30,10 @@ final class CustomConnectorProbe {
     private final List<String> configured = new CopyOnWriteArrayList<>();
     private final List<String> sent = new CopyOnWriteArrayList<>();
     private final List<String> received = new CopyOnWriteArrayList<>();
+    private final List<String> lifecycle = new CopyOnWriteArrayList<>();
     private final CountDownLatch settled = new CountDownLatch(1);
 
-    void configured(ConnectorDirection direction,
+    void configured(String direction,
                     String channel,
                     String connector,
                     String endpoint,
@@ -43,6 +43,18 @@ final class CustomConnectorProbe {
 
     List<String> configured() {
         return List.copyOf(configured);
+    }
+
+    void started(String channel) {
+        lifecycle.add("started:" + channel);
+    }
+
+    void closed(String channel) {
+        lifecycle.add("closed:" + channel);
+    }
+
+    List<String> lifecycle() {
+        return List.copyOf(lifecycle);
     }
 
     void sent(String channel, String prefix, Message<String> message) {

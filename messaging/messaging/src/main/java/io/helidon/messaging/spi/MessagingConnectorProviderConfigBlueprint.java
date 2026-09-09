@@ -36,6 +36,7 @@ interface MessagingConnectorProviderConfigBlueprint {
      * @return connector name
      */
     @Option.Required
+    @Option.Configured
     String name();
 
     /**

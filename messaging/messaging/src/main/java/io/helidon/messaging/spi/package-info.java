@@ -17,7 +17,14 @@
 /**
  * Service provider interfaces implemented or extended by messaging transport connectors.
  * <p>
- * Connector implementations use these contracts to expose providers and bindings. Connector-facing runtime types
- * supplied through these contracts are in the {@code io.helidon.messaging} package.
+ * A {@link io.helidon.messaging.spi.MessagingConnectorProvider} creates a named
+ * {@link io.helidon.messaging.spi.MessagingConnector} from configuration. Each configured connector retains a
+ * {@link io.helidon.messaging.spi.MessagingConnectorProviderConfig} prototype and creates fresh
+ * {@link io.helidon.messaging.spi.IncomingChannel} or {@link io.helidon.messaging.spi.OutgoingChannel} connections for
+ * the directions it supports. Both channel contracts extend {@link io.helidon.messaging.spi.ChannelConnection};
+ * their owning messaging graph manages their lifecycle.
+ * <p>
+ * Connector-facing runtime context and delivery types supplied through these contracts are in the
+ * {@code io.helidon.messaging} package.
  */
 package io.helidon.messaging.spi;
