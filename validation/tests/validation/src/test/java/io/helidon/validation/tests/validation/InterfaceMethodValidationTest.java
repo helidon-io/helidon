@@ -17,6 +17,7 @@
 package io.helidon.validation.tests.validation;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -876,6 +877,9 @@ class InterfaceMethodValidationTest {
 
         assertThat(service.validate(new ValidatedType("good_test_value", 42, new BigDecimal("1.10"))), is("ok"));
         assertThat(service.validateAll(List.of(new ValidatedType("good_test_value", 42, new BigDecimal("1.10")))), is("ok"));
+        assertThat(service.validate(null), is("ok"));
+        assertThat(service.validateAll(Collections.singletonList(null)), is("ok"));
+        assertThat(service.nullableReturn(), is((ValidatedType) null));
 
         var result = assertThrows(ValidationException.class, () -> service.validate(invalidValue));
         assertViolation(result,

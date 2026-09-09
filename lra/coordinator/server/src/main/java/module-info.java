@@ -15,7 +15,7 @@
  */
 
 /**
- * Helidon LRA coordinator.
+ * Mock LRA coordinator with Narayana like rest api for testing.
  */
 module io.helidon.lra.coordinator {
     exports io.helidon.lra.coordinator;

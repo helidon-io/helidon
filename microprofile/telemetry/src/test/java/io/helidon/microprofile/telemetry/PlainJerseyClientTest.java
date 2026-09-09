@@ -26,6 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 class PlainJerseyClientTest {
+
     @Test
     void plainJerseyClientSkipsCdiDependentTelemetryFilter() {
         try (Client client = ClientBuilder.newBuilder().register(new SuccessfulResponseFilter()).build()) {
@@ -34,6 +35,26 @@ class PlainJerseyClientTest {
                     assertThat(response.getStatus(), is(200));
                     assertThat(response.readEntity(String.class), is("pong"));
                 }
+            }
+        }
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void plainJerseyClientSkipsServerResponseWriteProvidersWhenEnabled() {
+        String setting = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE;
+        String originalValue = System.getProperty(setting);
+        System.setProperty(setting, "true");
+        try (Client client = ClientBuilder.newBuilder().build()) {
+            assertThat("Server writer interceptor is not registered with a client",
+                       client.getConfiguration().isRegistered(HelidonTelemetryWriterInterceptor.class), is(false));
+            assertThat("Server request-event listener is not registered with a client",
+                       client.getConfiguration().isRegistered(HelidonTelemetryRequestEventListener.class), is(false));
+        } finally {
+            if (originalValue == null) {
+                System.clearProperty(setting);
+            } else {
+                System.setProperty(setting, originalValue);
             }
         }
     }

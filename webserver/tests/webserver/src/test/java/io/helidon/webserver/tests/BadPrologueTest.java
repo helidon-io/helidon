@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,15 +126,48 @@ class BadPrologueTest {
     @Test
     void testBadFragment() {
         String response = socketClient.sendAndReceive(Method.GET,
-                                                      "/?a=b#invalid-fragment>",
+                                                      "/#fragment",
                                                       null,
                                                       List.of());
 
         assertThat(response, containsString("400 Bad Request"));
-        // beginning of message to the first double quote
-        assertThat(response, containsString("Fragment contains invalid char: "));
-        // end of message from double quote, index of bad char, and bad char
-        assertThat(response, containsString(", index: 16, char: 0x3e"));
-        assertThat(response, not(containsString(">")));
+        assertThat(response, not(containsString("500 Internal Server Error")));
+        assertThat(response, containsString("Bad request, see server log for more information"));
+    }
+
+    @Test
+    void testBadAbsoluteFormFragment() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "http://example.com/#fragment",
+                                                      null,
+                                                      List.of());
+
+        assertThat(response, containsString("400 Bad Request"));
+        assertThat(response, not(containsString("500 Internal Server Error")));
+        assertThat(response, containsString("Bad request, see server log for more information"));
+    }
+
+    @Test
+    void testRelativeOriginForm() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "boards/",
+                                                      null,
+                                                      List.of());
+
+        assertThat(response, containsString("400 Bad Request"));
+        assertThat(response, not(containsString("500 Internal Server Error")));
+        assertThat(response, containsString("Bad request, see server log for more information"));
+    }
+
+    @Test
+    void testQueryOnlyOriginForm() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "?q=1",
+                                                      null,
+                                                      List.of());
+
+        assertThat(response, containsString("400 Bad Request"));
+        assertThat(response, not(containsString("500 Internal Server Error")));
+        assertThat(response, containsString("Bad request, see server log for more information"));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import java.net.URI;
 import java.util.Optional;
 
 /**
- * LRA participant managed by coordinator.
+ * Mock LRA coordinator with Narayana like rest api for testing.
+ * <p>
+ * LRA participant managed by the coordinator.
  */
 public interface Participant {
 

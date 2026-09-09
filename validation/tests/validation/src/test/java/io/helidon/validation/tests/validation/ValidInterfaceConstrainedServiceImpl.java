@@ -31,4 +31,9 @@ class ValidInterfaceConstrainedServiceImpl implements ValidInterfaceConstrainedS
     public String validateAll(List<? super ValidatedType> values) {
         return "ok";
     }
+
+    @Override
+    public ValidatedType nullableReturn() {
+        return null;
+    }
 }

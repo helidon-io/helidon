@@ -18,6 +18,7 @@ package io.helidon.microprofile.lra;
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -31,6 +32,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
+import io.helidon.tracing.Span;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -54,6 +56,9 @@ class NonJaxRsResource {
 
     private static final System.Logger LOGGER = System.getLogger(NonJaxRsResource.class.getName());
     private static final String LRA_PARTICIPANT = "lra-participant";
+    private static final String URL_QUERY = "url.query";
+    private static final String REDACTED_CAPABILITY_QUERY =
+            NonJaxRsCallbackAuthenticator.CAPABILITY_QUERY_PARAMETER + "=[REDACTED]";
     private static final HeaderName LRA_HTTP_CONTEXT_HEADER = HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
     private static final HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER = HeaderNames.create(LRA.LRA_HTTP_ENDED_CONTEXT_HEADER);
     private static final HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER = HeaderNames.create(LRA.LRA_HTTP_PARENT_CONTEXT_HEADER);
@@ -70,14 +75,17 @@ class NonJaxRsResource {
             );
 
     private final ParticipantService participantService;
+    private final NonJaxRsCallbackAuthenticator callbackAuthenticator;
     private final String contextPath;
 
     @Inject
     NonJaxRsResource(ParticipantService participantService,
+                     NonJaxRsCallbackAuthenticator callbackAuthenticator,
                      @ConfigProperty(name = CONFIG_CONTEXT_PATH_KEY,
                                      defaultValue = CONTEXT_PATH_DEFAULT) String contextPath,
                      Config config) {
         this.participantService = participantService;
+        this.callbackAuthenticator = callbackAuthenticator;
         this.contextPath = contextPath;
     }
 
@@ -91,6 +99,13 @@ class NonJaxRsResource {
     }
 
     private void handleRequest(ServerRequest req, ServerResponse res) {
+        List<String> capabilities = req.query()
+                .all(NonJaxRsCallbackAuthenticator.CAPABILITY_QUERY_PARAMETER, List::of);
+        if (!capabilities.isEmpty()) {
+            req.context().get(Span.class)
+                    .ifPresent(span -> span.tag(URL_QUERY, REDACTED_CAPABILITY_QUERY));
+        }
+
         HttpPrologue prologue = req.prologue();
 
         if (LOGGER.isLoggable(Level.DEBUG)) {
@@ -114,6 +129,11 @@ class NonJaxRsResource {
         String fqdn = path.get("fqdn");
         String method = path.get("methodName");
         String type = path.get("type");
+
+        if (!callbackAuthenticator.authenticate(capabilities, lraId, type, fqdn, method)) {
+            res.status(Status.FORBIDDEN_403).send();
+            return;
+        }
 
         try {
             handleRequest(req, res, type, fqdn, method, lraId, parentId, propagatedHeaders);

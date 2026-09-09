@@ -83,10 +83,14 @@ final class ValidationHelper {
     }
 
     static void addValidationOfValid(ContentBuilder<?> contentBuilder, String validatorField, String varName) {
-        contentBuilder.addContent(validatorField)
+        contentBuilder.addContent("if (")
+                .addContent(varName)
+                .addContentLine(" != null) {")
+                .addContent(validatorField)
                 .addContent(".check(validation__ctx, ")
                 .addContent(varName)
-                .addContentLine(");");
+                .addContentLine(");")
+                .addContentLine("}");
     }
 
     static ValidationContext validationContext(TypeName generatedType,

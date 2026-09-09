@@ -64,6 +64,17 @@ Merged configuration for langchain4j.providers.ollama
 </tr>
 <tr>
 <td>
+<code>dimensions</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>dimensions(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
+</tr>
+<tr>
+<td>
 <code>enabled</code>
 </td>
 <td>

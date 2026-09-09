@@ -338,7 +338,11 @@ See [Configuration options][io-helidon-telem-5].
 <!--/include-->
 
 
-OpenTelemetry also supports a Zipkin exporter which it has recently deprecated.
+> [!WARNING]
+> The OpenTelemetry Zipkin exporter is deprecated. OpenTelemetry stopped
+> publishing it in 1.65.0, and Helidon 27 removes support for it. Existing
+> Helidon 4 applications can continue using the exporter with the aligned OTel
+> version, but should migrate to the OTLP exporter.
 
 ### Zipkin Exporter
 
@@ -413,9 +417,9 @@ In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 <td><code>OtlpHttp{signal}Exporter</code></td>
 </tr>
 <tr>
-<td><a href="../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md"><code>zipkin</code></a></td>
-<td><code>ZipkinSpanExporter</code></td>
-<td><code>opentelemetry-exporter-zipkin</code></td>
+<td><a href="../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md"><code>zipkin</code></a> (deprecated)</td>
+<td><code>ZipkinSpanExporter</code> (deprecated)</td>
+<td><code>opentelemetry-exporter-zipkin</code> (last published before OTel 1.65.0)</td>
 </tr>
 <tr>
 <td><code>console</code></td>
@@ -482,7 +486,8 @@ telemetry:
   tracing:
     sampler: "always_off"
     exporters:
-      - type: zipkin
+      - type: otlp
+        protocol: http/proto
         compression: gzip
     processors:
       - type: batch
@@ -505,11 +510,10 @@ telemetry:
   tracing:
     sampler: "always_off"
     exporters:
-      - type: zipkin
-        compression: gzip
-        name: "compressed-zipkin"
+      - type: console
+        name: "console"
       - endpoint: "http://collect.com:4317"
-        name: "alternate-otlp""
+        name: "alternate-otlp"
     processors:
       - type: batch
         max-queue-size: 50

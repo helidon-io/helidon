@@ -2226,24 +2226,12 @@ class JsonParserArray extends JsonParserBase {
     }
 
     private void skipObject() {
-        byte b = nextToken();
-        if (b == '}') {
-            return;
-        }
-        if (b == '"') {
-            skipString();
-            b = nextToken();
-        } else {
-            throw createException("Key name start expected", b);
-        }
-        if (b != ':') {
-            throw createException("Colon expected after the key", b);
-        }
-        nextToken();
-        skip();
-        b = nextToken();
-        while (b == ',') {
-            b = nextToken();
+        enterStructure();
+        try {
+            byte b = nextToken();
+            if (b == '}') {
+                return;
+            }
             if (b == '"') {
                 skipString();
                 b = nextToken();
@@ -2256,31 +2244,51 @@ class JsonParserArray extends JsonParserBase {
             nextToken();
             skip();
             b = nextToken();
-        }
+            while (b == ',') {
+                b = nextToken();
+                if (b == '"') {
+                    skipString();
+                    b = nextToken();
+                } else {
+                    throw createException("Key name start expected", b);
+                }
+                if (b != ':') {
+                    throw createException("Colon expected after the key", b);
+                }
+                nextToken();
+                skip();
+                b = nextToken();
+            }
 
-        if (b == '}') {
-            return;
+            if (b != '}') {
+                throw createException("Comma or the end of the object expected", b);
+            }
+        } finally {
+            exitStructure();
         }
-        throw createException("Comma or the end of the object expected", b);
     }
 
     private void skipArray() {
-        byte b = nextToken();
-        if (b == ']') {
-            return;
-        }
-        skip(); // Skip the first array value
-        b = nextToken();
-        while (b == ',') {
-            nextToken();
-            skip();
+        enterStructure();
+        try {
+            byte b = nextToken();
+            if (b == ']') {
+                return;
+            }
+            skip(); // Skip the first array value
             b = nextToken();
-        }
+            while (b == ',') {
+                nextToken();
+                skip();
+                b = nextToken();
+            }
 
-        if (b == ']') {
-            return;
+            if (b != ']') {
+                throw createException("Comma or the end of the array expected", b);
+            }
+        } finally {
+            exitStructure();
         }
-        throw createException("Comma or the end of the array expected", b);
     }
 
 }

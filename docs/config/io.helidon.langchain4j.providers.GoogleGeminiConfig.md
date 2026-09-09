@@ -74,6 +74,17 @@ Merged configuration for langchain4j.providers.google-gemini
 </tr>
 <tr>
 <td>
+<code>aspect-<wbr>ratio</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>aspect<wbr>Ratio(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
 <code>base-<wbr>url</code>
 </td>
 <td>
@@ -82,6 +93,28 @@ Merged configuration for langchain4j.providers.google-gemini
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>base<wbr>Url(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
+<code>cached-<wbr>content-<wbr>name</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>cached<wbr>Content<wbr>Name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
+<code>custom-<wbr>headers</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>custom<wbr>Headers(<wbr>java.<wbr>util.<wbr>Map)</code></td>
 </tr>
 <tr>
 <td>
@@ -162,6 +195,28 @@ Merged configuration for langchain4j.providers.google-gemini
 <code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>http-<wbr>client-<wbr>builder</code></td>
+</tr>
+<tr>
+<td>
+<code>image-<wbr>aspect-<wbr>ratio</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>image<wbr>Aspect<wbr>Ratio(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
+<code>image-<wbr>size</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>image<wbr>Size(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>

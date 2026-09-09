@@ -33,6 +33,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
@@ -181,6 +182,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                              + request.headers().get(HeaderNames.HOST).get()
                                              + " HTTP/1.1\r\n");
         } else {
+            String requestTarget = requestTarget(uri);
             // When proxy is set, ensure that the request uses absolute URI because of Section 5.1.2 Request-URI in
             // https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html which states: "The absoluteURI form is REQUIRED when the
             // request is being made to a proxy."
@@ -196,7 +198,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             nonEntityData.writeAscii(request.method().text()
                                              + " "
                                              + requestUri
-                                             + uri.pathWithQueryAndFragment()
+                                             + requestTarget
                                              + " HTTP/1.1\r\n");
         }
 
@@ -207,7 +209,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                                                            request.method(),
                                                                                            uri.path(),
                                                                                            uri.query(),
-                                                                                           uri.fragment()));
+                                                                                           UriFragment.empty()));
         }
     }
 
@@ -277,6 +279,17 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
     Http1ConnectionListener recvListener() {
         return recvListener;
+    }
+
+    private static String requestTarget(ClientUri uri) {
+        String requestTarget = uri.pathWithQueryAndFragment();
+        var fragment = uri.fragment();
+        if (!fragment.hasValue()) {
+            return requestTarget;
+        }
+        String rawFragment = fragment.rawValue();
+        int fragmentLength = requestTarget.endsWith(rawFragment) ? rawFragment.length() : fragment.value().length();
+        return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
     }
 
     private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {

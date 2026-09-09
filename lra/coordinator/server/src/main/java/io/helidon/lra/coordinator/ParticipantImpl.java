@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ class ParticipantImpl implements Participant {
             }
             LOGGER.log(Level.DEBUG, () -> "Sending compensate, sync retry: " + i.get()
                     + ", status: " + status.get().name()
-                    + " statusUri: " + statusURI().map(URI::toASCIIString).orElse(null));
+                    + " statusUri: " + loggablePath(statusURI()));
             HttpClientResponse response = null;
             try {
                 // call for client status only on retries and when status uri is known
@@ -256,7 +256,7 @@ class ParticipantImpl implements Participant {
                 case 200:
                 case 410:
                     LOGGER.log(Level.INFO, "Compensated participant of LRA {0} {1}",
-                               new Object[] {lra.lraId(), this.compensateURI()});
+                               new Object[] {lra.lraId(), loggablePath(this.compensateURI())});
                     status.set(Status.COMPENSATED);
                     compensateCalled.set(CompensateStatus.SENT);
                     return true;
@@ -276,10 +276,10 @@ class ParticipantImpl implements Participant {
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING,
                            () -> "Can't reach participant's compensate endpoint: "
-                                   + endpointURI.map(URI::toASCIIString).orElse("unknown"), e);
+                                   + loggablePath(endpointURI), e);
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
                     LOGGER.log(Level.WARNING, "Failed to compensate participant of LRA {0} {1} {2}",
-                               new Object[] {lra.lraId(), this.compensateURI(), e.getMessage()});
+                               new Object[] {lra.lraId(), loggablePath(this.compensateURI()), e.getMessage()});
                     status.set(Status.FAILED_TO_COMPENSATE);
                 } else {
                     status.set(Status.COMPENSATING);
@@ -302,7 +302,7 @@ class ParticipantImpl implements Participant {
             }
             LOGGER.log(Level.DEBUG, () -> "Sending complete, sync retry: " + i.get()
                     + ", status: " + status.get().name()
-                    + " statusUri: " + statusURI().map(URI::toASCIIString).orElse(null));
+                    + " statusUri: " + loggablePath(statusURI()));
             HttpClientResponse response = null;
             try {
                 if (status.get().isFinal()) {
@@ -365,12 +365,11 @@ class ParticipantImpl implements Participant {
 
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING,
-                           () -> "Can't reach participant's complete endpoint: " + endpointURI.map(URI::toASCIIString)
-                                   .orElse("unknown"), e);
+                           () -> "Can't reach participant's complete endpoint: " + loggablePath(endpointURI), e);
                 if (remainingCloseAttempts.decrementAndGet() <= 0) {
                     LOGGER.log(Level.WARNING, "Failed to complete participant of LRA {0} {1} {2}",
                                new Object[] {lra.lraId(),
-                                       this.completeURI(), e.getMessage()});
+                                       loggablePath(this.completeURI()), e.getMessage()});
                     status.set(Status.FAILED_TO_COMPLETE);
                 } else {
                     status.set(Status.COMPLETING);
@@ -455,7 +454,7 @@ class ParticipantImpl implements Participant {
                                                               response.as(String.class),
                                                               status.get(),
                                                               lra.lraId(),
-                                                              statusURI.toASCIIString()));
+                                                              loggablePath(statusURI)));
             default:
                 ParticipantStatus reportedStatus = valueOf(response.as(String.class));
                 Status currentStatus = status.get();
@@ -467,12 +466,12 @@ class ParticipantImpl implements Participant {
                                        + "current participant state is {2}, "
                                        + "lra: {3} "
                                        + "status uri: {4}",
-                               new Object[] {code, reportedStatus, currentStatus, lra.lraId(), statusURI.toASCIIString()});
+                               new Object[] {code, reportedStatus, currentStatus, lra.lraId(), loggablePath(statusURI)});
                     return Optional.empty();
                 }
             }
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Error when getting participant status. " + statusURI, e);
+            LOGGER.log(Level.WARNING, "Error when getting participant status. " + loggablePath(statusURI), e);
             // skip dependent compensation call, another retry with status call might be luckier
             throw e;
         }
@@ -496,7 +495,7 @@ class ParticipantImpl implements Participant {
             }
         } catch (Throwable e) {
             LOGGER.log(Level.WARNING, "Unable to send forget of lra {0} to {1}",
-                       new Object[] {lra.lraId(), forgetURI().get()});
+                       new Object[] {lra.lraId(), loggablePath(forgetURI().get())});
             forgetCalled.set(ForgetStatus.NOT_SENT);
         }
         return forgetCalled.get() == ForgetStatus.SENT;
@@ -519,6 +518,30 @@ class ParticipantImpl implements Participant {
         }
 
         return false;
+    }
+
+    private static String loggablePath(Optional<URI> uri) {
+        return uri.map(ParticipantImpl::loggablePath).orElse("unknown");
+    }
+
+    // Package-private for testing URL credential redaction.
+    static String loggablePath(URI uri) {
+        String rawPath = uri.getRawPath();
+        if (rawPath == null) {
+            return "unknown";
+        }
+        for (int i = 0; i < rawPath.length(); i++) {
+            if (Character.isISOControl(rawPath.charAt(i))) {
+                StringBuilder sanitized = new StringBuilder(rawPath);
+                for (int j = i; j < sanitized.length(); j++) {
+                    if (Character.isISOControl(sanitized.charAt(j))) {
+                        sanitized.setCharAt(j, '?');
+                    }
+                }
+                return sanitized.toString();
+            }
+        }
+        return rawPath;
     }
 
     enum Status {

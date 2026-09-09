@@ -130,17 +130,23 @@ current_version() {
   awk 'BEGIN {FS="[<>]"} ; /<version>/ {print $3; exit 0}' "${WS_DIR}"/pom.xml
 }
 
-# arg1: pattern
-# arg2: include pattern
+# arg1: dir
+# arg2: pattern
+# arg3: include pattern
 search() {
   set +o pipefail
-  grep "${1}" -Er . --include "${2}" | cut -d ':' -f 1 | xargs git ls-files | sort | uniq
+  grep "${2}" -Er "${1}" --include "${3}" | cut -d ':' -f 1 | xargs git ls-files | sort | uniq
 }
 
 replace() {
-  local pattern value replace include
+  local dir pattern value replace include
+
   while (( ${#} > 0 )); do
     case ${1} in
+    "--dir="*)
+      dir=${1#*=}
+      shift
+      ;;
     "--pattern="*)
       pattern=${1#*=}
       shift
@@ -168,7 +174,7 @@ replace() {
     replace=${pattern/\.\*/${value}}
   fi
 
-  for file in $(search "${pattern}" "${include}"); do
+  for file in $(search "${dir:-.}" "${pattern}" "${include}"); do
     echo "Updating ${file}"
     sed -e s@"${pattern}"@"${replace}"@g "${file}" > "${file}.tmp"
     mv "${file}.tmp" "${file}"
@@ -201,9 +207,10 @@ update_version(){
 
   # update docs
   replace \
-    --pattern="^  version: \".*\"$" \
-    --replace="  version: \"${version}\"" \
-    --include="README.md"
+    --pattern="${current_version}" \
+    --replace="${version}" \
+    --dir="docs" \
+    --include="*.md"
 }
 
 create_tag() {

@@ -176,12 +176,19 @@ langchain4j:
 If `enabled` is set to `false`, the configuration is ignored, and the component
 is not created.
 
+LangChain4j no longer supports the image `style` or image `response-format`
+options. Helidon accepts them for configuration compatibility, but ignores
+them. Use `output-format` to configure the generated image format, and describe
+the desired visual style in the prompt. The `response-format` option for OpenAI
+chat models remains supported.
+
 ### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key               | Type                  | Description                                                                                           |
 |-------------------|-----------------------|-------------------------------------------------------------------------------------------------------|
 | `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                |
+| `background`      | string                | The background setting for generated images.                                                         |
 | `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
 | `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                      |
 | `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                           |
@@ -189,12 +196,15 @@ is not created.
 | `log-responses`   | boolean               | Whether to log API responses.                                                                         |
 | `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                |
 | `model-name`      | string                | The model name to use.                                                                                |
+| `moderation`      | string                | The moderation setting for generated images.                                                         |
 | `organization-id` | string                | The ID of the organization for API requests.                                                          |
+| `output-compression` | integer            | The compression level for generated output images.                                                   |
+| `output-format`   | string                | The file format for generated output images.                                                         |
 | `persist-to`      | Path                  | The path or location where the generated images should be persisted.                                  |
 | `quality`         | string                | The quality of the generated images.                                                                  |
-| `response-format` | string                | The format of the response.                                                                           |
+| `response-format` | string                | Deprecated and ignored. Use `output-format` to configure the generated image format.                  |
 | `size`            | string                | The desired size of the generated images.                                                             |
-| `style`           | string                | The style of the generated images.                                                                    |
+| `style`           | string                | Deprecated and ignored. Describe the desired visual style in the prompt.                              |
 | `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format.                                |
 | `user`            | string                | The unique identifier for the user making the request.                                                |
 | `with-persisting` | boolean               | The flag to indicate whether to persist the generated images.                                         |

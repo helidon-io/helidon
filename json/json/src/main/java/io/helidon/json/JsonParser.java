@@ -37,6 +37,12 @@ import static io.helidon.json.JsonParserArray.WHITESPACE_CHARS;
 public interface JsonParser {
 
     /**
+     * Maximum number of nested JSON object and array structures supported by this parser.
+     * The root object or array counts as one structure.
+     */
+    int MAX_NESTING_DEPTH = 1_000;
+
+    /**
      * Create a new JSON parser from a JSON string.
      * <p>
      * This method creates an in-memory parser that processes the entire JSON string

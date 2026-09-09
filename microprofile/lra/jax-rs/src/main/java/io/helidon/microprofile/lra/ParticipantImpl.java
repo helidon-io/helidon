@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.lra;
 
-import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -44,7 +43,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.UriBuilder;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
@@ -55,8 +53,6 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
 import org.glassfish.jersey.model.AnnotatedMethod;
 
 class ParticipantImpl implements Participant {
-
-    private static final System.Logger LOGGER = System.getLogger(ParticipantImpl.class.getName());
 
     static final Set<Class<? extends Annotation>> LRA_ANNOTATIONS =
             Set.of(
@@ -98,48 +94,13 @@ class ParticipantImpl implements Participant {
                     callbackPath(AfterLRA.class), AfterLRA.class
             );
 
-    private final Map<Class<? extends Annotation>, URI> compensatorLinks = new HashMap<>();
+    private final Map<Class<? extends Annotation>, URI> compensatorLinks;
     private final Map<Class<? extends Annotation>, Set<Method>> methodMap;
 
-    ParticipantImpl(URI baseUri, String contextPath, Class<?> resourceClazz) {
-        methodMap = scanForLRAMethods(resourceClazz);
-        methodMap.entrySet().stream()
-                // Looking only for participant methods
-                .filter(e -> e.getKey() != LRA.class)
-                .forEach(e -> {
-                    Set<Method> methods = e.getValue();
-                    Method method = methods.stream().iterator().next();
-                    if (methods.size() > 1) {
-                        LOGGER.log(Level.WARNING,
-                                "LRA participant {0} contains more then one @{1} method!",
-                                new Object[] {method.getDeclaringClass().getName(),
-                                        e.getKey().getSimpleName()}
-                        );
-                    }
-
-                    if (isNonJaxRsParticipantMethod(resourceClazz, method)) {
-                        //no jax-rs method
-                        URI uri = UriBuilder.fromUri(baseUri)
-                                .path(contextPath) //Auxiliary non Jax-Rs resource
-                                .path(callbackPath(e.getKey()))//@Complete -> /complete
-                                .path(resourceClazz.getName())
-                                .path(method.getName())
-                                .build();
-                        compensatorLinks.put(e.getKey(), uri);
-                        return;
-                    }
-
-                    UriBuilder builder = UriBuilder.fromUri(baseUri)
-                            .path(resourceClazz);
-
-                    jaxRsMethod(resourceClazz, method)
-                            .map(m -> m.getAnnotation(Path.class))
-                            .map(Path::value)
-                            .ifPresent(builder::path);
-
-                    URI uri = builder.build();
-                    compensatorLinks.put(e.getKey(), uri);
-                });
+    ParticipantImpl(Map<Class<? extends Annotation>, URI> compensatorLinks,
+                    Map<Class<? extends Annotation>, Set<Method>> methodMap) {
+        this.compensatorLinks = Map.copyOf(compensatorLinks);
+        this.methodMap = methodMap;
     }
 
     boolean isLraMethod(Method m) {
@@ -168,7 +129,7 @@ class ParticipantImpl implements Participant {
                         .anyMatch(annotationType -> annotationType.isAnnotationPresent(HttpMethod.class));
     }
 
-    private static Optional<AnnotatedMethod> jaxRsMethod(Class<?> resourceClass, Method method) {
+    static Optional<AnnotatedMethod> jaxRsMethod(Class<?> resourceClass, Method method) {
         Method callbackMethod = method;
         try {
             callbackMethod = resourceClass.getMethod(method.getName(), method.getParameterTypes());
@@ -256,7 +217,7 @@ class ParticipantImpl implements Participant {
                 + this.complete()
                 .or(this::compensate)
                 .or(this::after)
-                .map(URI::toASCIIString)
+                .map(URI::getRawPath)
                 .orElse(null)
                 + "}";
     }

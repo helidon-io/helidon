@@ -165,6 +165,13 @@ class CoordinatorTest {
         }
     }
 
+    @Test
+    void loggableParticipantPathDoesNotDecodeEscapedControls() {
+        URI callbackUri = URI.create("https://participant.example/callback%0D%0Aforged?capability=secret");
+
+        assertThat(ParticipantImpl.loggablePath(callbackUri), is("/callback%0D%0Aforged"));
+    }
+
     private String start() {
         return client.post("/lra-coordinator/start").requestEntity(String.class);
     }

@@ -131,6 +131,17 @@ Configuration for LangChain4j model OpenAiStreamingChatModel
 </tr>
 <tr>
 <td>
+<code>use-<wbr>input-<wbr>image-<wbr>format</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiStreaming<wbr>Chat<wbr>Model.<wbr>Open<wbr>AiStreaming<wbr>Chat<wbr>Model<wbr>Builder#<wbr>useInput<wbr>Image<wbr>Format(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
+</tr>
+<tr>
+<td>
 <code>log-<wbr>requests</code>
 </td>
 <td>
@@ -347,7 +358,7 @@ Configuration for LangChain4j model OpenAiStreamingChatModel
 </td>
 <td>
 </td>
-<td>Enable a "JSON mode" in the model configuration</td>
+<td>For chat models, response format enables JSON mode; for image models, this legacy compatibility option is deprecated and ignored</td>
 </tr>
 <tr>
 <td>

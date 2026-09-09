@@ -18,17 +18,24 @@ package io.helidon.integrations.langchain4j.providers.openai;
 
 import java.time.Duration;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.testing.junit5.Testing;
 
+import dev.langchain4j.model.embedding.listener.EmbeddingModelListener;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.integrations.langchain4j.providers.openai.OpenAiConstants.ConfigCategory.MODEL;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 
+@Testing.Test
 class EmbeddingModelConfigTest {
     public static final String MODEL_NAME = "test-chat-model";
 
@@ -59,5 +66,32 @@ class EmbeddingModelConfigTest {
         assertThat(config.customHeaders().size(), is(2));
         assertThat(config.customHeaders().get("header1"), is(equalTo("value1")));
         assertThat(config.customHeaders().get("header2"), is(equalTo("value2")));
+    }
+
+    @Test
+    void testNamedEmbeddingListener(ServiceRegistry registry) {
+        // language=YAML
+        var yaml = """
+                langchain4j:
+                  models:
+                    test-embedding-model:
+                      provider: open-ai
+                      http-client-builder-discover-services: false
+                      listeners.service-registry.named: test-embedding-listener
+                  providers:
+                    open-ai:
+                      api-key: api-key
+                """;
+
+        var config = OpenAiEmbeddingModelConfig.builder()
+                .serviceRegistry(registry)
+                .config(OpenAiConstants.create(Config.just(yaml, MediaTypes.APPLICATION_X_YAML),
+                                               MODEL,
+                                               "test-embedding-model"))
+                .build();
+        var listener = registry.getNamed(EmbeddingModelListener.class, "test-embedding-listener");
+
+        assertThat(config.listeners(), contains(sameInstance(listener)));
+        assertThat(config.configuredBuilder().build(), is(notNullValue()));
     }
 }

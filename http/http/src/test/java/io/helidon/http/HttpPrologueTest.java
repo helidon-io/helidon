@@ -152,4 +152,38 @@ class HttpPrologueTest {
 
         assertThat(withoutDelimiter.equals(withDelimiter), is(false));
     }
+
+    @Test
+    void testRelativePathCanBeCreatedWhenValidated() {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.GET,
+                                                    "boards/",
+                                                    true);
+        assertThat(prologue.uriPath().rawPath(), is("boards/"));
+    }
+
+    @Test
+    void testAbsolutePathRemainsValid() {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.GET,
+                                                    "/boards/",
+                                                    true);
+        assertThat(prologue.uriPath().rawPath(), is("/boards/"));
+    }
+
+    @Test
+    void testAbsoluteFormRemainsValid() {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.GET,
+                                                    "http://example.com/boards/",
+                                                    true);
+        assertThat(prologue.uriPath().path(), is("/boards/"));
+    }
+
 }

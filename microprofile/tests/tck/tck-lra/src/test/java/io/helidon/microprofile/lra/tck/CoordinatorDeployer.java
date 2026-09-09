@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,9 @@ public class CoordinatorDeployer {
                             // reuse port second time(TckRecoveryTests does redeploy)
                             "server.sockets.0.port", String.valueOf(coordinatorPort.get()),
                             "server.sockets.0.worker-count", "16",
+                            "lra.participant.non-jax-rs.callback-auth.secret",
+                            "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+                            "mp.lra.participant.url", "http://localhost:0",
                             "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator",
                             "helidon.lra.coordinator.recovery-interval", "100",
                             "helidon.lra.coordinator.timeout", "3000"

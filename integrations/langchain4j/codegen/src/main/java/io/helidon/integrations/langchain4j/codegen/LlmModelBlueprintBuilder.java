@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.langchain4j.codegen;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -79,12 +80,15 @@ class LlmModelBlueprintBuilder extends IntrospectionBlueprintBuilder {
 
     @Override
     protected Map<String, TypedElementInfo> resolveOverriddenProperties() {
-        return parentTypeInfo()
-                .elementInfo()
-                .stream()
+        var lineage = new ArrayList<TypeInfo>();
+        ModelType.allParents(parentTypeInfo(), lineage);
+        return lineage.stream()
+                .flatMap(type -> type.elementInfo().stream())
                 .filter(e -> e.kind().equals(ElementKind.METHOD))
                 .filter(e -> e.hasAnnotation(LangchainTypes.OPT_CONFIGURED))
-                .collect(Collectors.toMap(info -> info.signature().name(), Function.identity()));
+                .collect(Collectors.toMap(info -> info.signature().name(),
+                                          Function.identity(),
+                                          (mostSpecific, ignored) -> mostSpecific));
     }
 
     void addEnableProperty() {

@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -27,12 +28,15 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
+import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
@@ -262,7 +266,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     private UriInfo createUriInfo() {
-        return ctx.listenerContext().config().requestedUriDiscoveryContext()
+        UriInfo requestedUri = ctx.listenerContext().config().requestedUriDiscoveryContext()
                 .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
                 .uriInfo(remotePeer().address(),
                          localPeer().address(),
@@ -270,5 +274,80 @@ abstract class Http1ServerRequest implements RoutingRequest {
                          headers,
                          query(),
                          isSecure());
+        if (!Method.CONNECT.equals(prologue.method())) {
+            return requestedUri;
+        }
+        String authority = prologue.uriPath().rawPath();
+        UriInfo connectUri = UriInfo.builder()
+                .from(requestedUri)
+                .authority(authority)
+                .path("")
+                .build();
+        return new ConnectUriInfo(connectUri, connectUri.authority());
+    }
+
+    private static final class ConnectUriInfo implements UriInfo {
+        private final UriInfo delegate;
+        private final String authority;
+
+        private ConnectUriInfo(UriInfo delegate, String authority) {
+            this.delegate = delegate;
+            this.authority = authority;
+        }
+
+        @Override
+        public String scheme() {
+            return delegate.scheme();
+        }
+
+        @Override
+        public String host() {
+            return delegate.host();
+        }
+
+        @Override
+        public int port() {
+            return delegate.port();
+        }
+
+        @Override
+        public String authority() {
+            return authority;
+        }
+
+        @Override
+        public UriPath path() {
+            return delegate.path();
+        }
+
+        @Override
+        public UriQuery query() {
+            return delegate.query();
+        }
+
+        @Override
+        public UriFragment fragment() {
+            return delegate.fragment();
+        }
+
+        @Override
+        public URI toUri() {
+            return URI.create(scheme() + "://" + authority);
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return delegate.equals(object);
+        }
+
+        @Override
+        public int hashCode() {
+            return delegate.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return delegate.toString();
+        }
     }
 }

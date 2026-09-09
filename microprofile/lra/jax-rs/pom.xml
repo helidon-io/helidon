@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.lra</groupId>
         <artifactId>helidon-microprofile-lra-project</artifactId>
-        <version>4.5.2-SNAPSHOT</version>
+        <version>4.5.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-lra</artifactId>
@@ -60,6 +60,10 @@
         <dependency>
             <groupId>io.helidon.lra</groupId>
             <artifactId>helidon-lra-coordinator-client-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

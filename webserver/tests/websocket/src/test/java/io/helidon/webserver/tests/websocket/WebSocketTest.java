@@ -28,6 +28,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
@@ -41,6 +44,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -184,6 +188,27 @@ class WebSocketTest {
         assertThat(listener.results().statusCode, is(1009));
         assertThat(listener.results().reason, is("Payload too large"));
         isNormalClose = false;
+    }
+
+    @Test
+    void rejectedUpgradeWithCloseClosesConnection() throws Exception {
+        isNormalClose = false;
+        try (SocketHttpClient socketClient = SocketHttpClient.create(port)) {
+            socketClient.requestRaw("""
+                                            GET /echo HTTP/1.1\r
+                                            Host: localhost:%d\r
+                                            Upgrade: websocket\r
+                                            Connection: Upgrade, close\r
+                                            Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r
+                                            Sec-WebSocket-Version: 13\r
+                                            \r
+                                            """.formatted(port));
+
+            String response = socketClient.receive();
+            assertThat(SocketHttpClient.statusFromResponse(response), is(Status.BAD_REQUEST_400));
+            assertThat(SocketHttpClient.headersFromResponse(response), hasHeader(HeaderValues.CONNECTION_CLOSE));
+            socketClient.assertConnectionIsClosed();
+        }
     }
 
     private static class TestListener implements java.net.http.WebSocket.Listener {

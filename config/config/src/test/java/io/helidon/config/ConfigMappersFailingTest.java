@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public class ConfigMappersFailingTest {
         return ConfigMappers.BUILT_IN_MAPPERS.keySet()
                 .stream()
                 .filter(cls -> !Boolean.class.equals(cls)) //'Boolean.parseBoolean' does NOT fail
+                .filter(cls -> !char[].class.equals(cls)) //'String.toCharArray' does NOT fail
                 .filter(cls -> !File.class.equals(cls)) //'new File' does NOT fail
                 .filter(cls -> !Path.class.equals(cls)) //'Paths.get' does NOT fail
                 .filter(cls -> !Map.class.equals(cls)) //'Map' can bew created from any value

@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import io.helidon.common.uri.UriValidationException;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -79,6 +81,7 @@ class CorsPathValidator {
                     originPatterns.add(Pattern.compile(origin, Pattern.CASE_INSENSITIVE));
                 } else {
                     exactMatchOrigins.add(origin);
+                    exactMatchOrigins.add(normalizeDefaultPort(origin));
                 }
             }
 
@@ -230,6 +233,33 @@ class CorsPathValidator {
             }
         }
         return Result.ALLOWED;
+    }
+
+    private static String normalizeDefaultPort(String origin) {
+        int authorityOffset;
+        int portLength;
+        if (origin.startsWith("http://") && origin.endsWith(":80")) {
+            authorityOffset = "http://".length();
+            portLength = 3;
+        } else if (origin.startsWith("https://") && origin.endsWith(":443")) {
+            authorityOffset = "https://".length();
+            portLength = 4;
+        } else {
+            return origin;
+        }
+        int portOffset = origin.length() - portLength;
+        if (portOffset == authorityOffset
+                || origin.indexOf('/', authorityOffset) != -1
+                || origin.indexOf('?', authorityOffset) != -1
+                || origin.indexOf('#', authorityOffset) != -1) {
+            return origin;
+        }
+        try {
+            UriValidator.validateHost(origin.substring(authorityOffset, portOffset));
+        } catch (UriValidationException ignored) {
+            return origin;
+        }
+        return origin.substring(0, portOffset);
     }
 
     private boolean invalidHeaders(ServerRequest req, ServerResponse res, List<String> headers) {

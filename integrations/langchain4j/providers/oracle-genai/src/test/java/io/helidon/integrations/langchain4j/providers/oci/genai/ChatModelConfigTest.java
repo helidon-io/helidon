@@ -19,6 +19,7 @@ package io.helidon.integrations.langchain4j.providers.oci.genai;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.Errors;
 import io.helidon.common.media.type.MediaTypes;
@@ -33,6 +34,7 @@ import com.oracle.bmc.generativeaiinference.model.ChatDetails;
 import com.oracle.bmc.generativeaiinference.model.DedicatedServingMode;
 import com.oracle.bmc.generativeaiinference.model.GenericChatRequest;
 import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiChatModel;
+import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiStreamingChatModel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +44,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 
 @Testing.Test(perMethod = true)
 class ChatModelConfigTest {
@@ -125,6 +128,32 @@ class ChatModelConfigTest {
 
         assertThat(config.authProvider().map(BasicAuthenticationDetailsProvider::getKeyId), is(Optional.of("mockNamed2")));
         assertThat(config.region(), is(Region.AP_TOKYO_1));
+    }
+
+    @Test
+    void testNamedStreamingExecutor(ServiceRegistry registry) {
+        // language=YAML
+        var yaml = """
+                langchain4j:
+                  models:
+                    test-streaming-model:
+                      provider: oci-gen-ai
+                      executor-service.service-registry.named: test-executor
+                  providers:
+                    oci-gen-ai:
+                      model-name: model-name
+                      compartment-id: compartment-id
+                      region: us-ashburn-1
+                """;
+
+        Config c = Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML));
+        var config = OciGenAiStreamingChatModelConfig.builder()
+                .serviceRegistry(registry)
+                .config(OciGenAiConstants.create(c, OciGenAiStreamingChatModel.class, "test-streaming-model"))
+                .build();
+        var executor = registry.getNamed(ExecutorService.class, "test-executor");
+
+        assertThat(config.executorService().orElseThrow(), sameInstance(executor));
     }
 
     @Test

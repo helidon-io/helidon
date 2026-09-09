@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,11 +52,11 @@ helidon.lra.coordinator:
           SENDING_STATUS            VARCHAR(32),
           REMAINING_CLOSE_ATTEMPTS  INT,
           REMAINING_AFTER_ATTEMPTS  INT,
-          COMPLETE_LINK             VARCHAR(255),
-          COMPENSATE_LINK           VARCHAR(255),
-          AFTER_LINK                VARCHAR(255),
-          FORGET_LINK               VARCHAR(255),
-          STATUS_LINK               VARCHAR(255)
+          COMPLETE_LINK             VARCHAR(2048),
+          COMPENSATE_LINK           VARCHAR(2048),
+          AFTER_LINK                VARCHAR(2048),
+          FORGET_LINK               VARCHAR(2048),
+          STATUS_LINK               VARCHAR(2048)
         )
         
       load: >-

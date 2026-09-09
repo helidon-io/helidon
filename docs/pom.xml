@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.5.2-SNAPSHOT</version>
+        <version>4.5.4-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-docs</artifactId>
     <packaging>pom</packaging>
@@ -76,10 +76,6 @@
                         <configuration>
                             <commandlineArgs>${project.basedir}/config</commandlineArgs>
                             <mainClass>io.helidon.config.metadata.docs.Main</mainClass>
-                            <classpathFilenameExclusions>
-                                <exclusion>helidon-logging-slf4j-${helidon.version}.jar</exclusion>
-                                <exclusion>helidon-logging-log4j-${helidon.version}.jar</exclusion>
-                            </classpathFilenameExclusions>
                         </configuration>
                     </execution>
                 </executions>

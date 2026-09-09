@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ class LeaveAnnotationHandler implements AnnotationHandler {
         getLraContext(reqCtx)
                 .ifPresent(lraId -> {
                     URI baseUri = reqCtx.getUriInfo().getBaseUri();
-                    Participant p = participantService.participant(baseUri, resourceInfo.getResourceClass());
+                    Participant p = participantService.participant(baseUri, resourceInfo.getResourceClass(), lraId);
                     coordinatorClient.leave(lraId, PropagatedHeaders.noop(), p);
                     reqCtx.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
                     reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);

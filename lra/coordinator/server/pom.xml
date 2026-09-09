@@ -25,13 +25,13 @@
     <parent>
         <groupId>io.helidon.lra</groupId>
         <artifactId>helidon-lra-coordinator-project</artifactId>
-        <version>4.5.2-SNAPSHOT</version>
+        <version>4.5.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-lra-coordinator-server</artifactId>
 
-    <name>Helidon LRA Coordinator</name>
-    <description>Narayana compatible LRA coordinator</description>
+    <name>Helidon LRA Mock Coordinator</name>
+    <description>Mock Narayana-compatible LRA coordinator for testing; not for production use</description>
 
     <properties>
         <mainClass>io.helidon.lra.coordinator.Main</mainClass>
@@ -261,7 +261,6 @@
         </plugins>
     </build>
 </project>
-
 
 
 

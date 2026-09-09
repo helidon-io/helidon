@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,17 +22,16 @@ import io.helidon.builder.api.Option;
 import io.helidon.integrations.langchain4j.AiProvider;
 
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiImageModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 @AiProvider.ModelConfig(value = OpenAiChatModel.class)
 @AiProvider.ModelConfig(value = OpenAiStreamingChatModel.class)
-@AiProvider.ModelConfig(value = OpenAiImageModel.class)
 interface OpenAiLc4jProvider {
 
     /**
-     * Enable a "JSON mode" in the model configuration. This way, the LLM will be forced to respond with a valid JSON.
-     * For newer models that support Structured Outputs use supported-capabilities.
+     * For chat models, response format enables JSON mode; for image models, this legacy compatibility option is
+     * deprecated and ignored.
+     * For newer chat models that support Structured Outputs, use supported-capabilities.
      *
      * @return "json_object" to enable JSON mode on older models like gpt-3.5-turbo or gpt-4
      */
