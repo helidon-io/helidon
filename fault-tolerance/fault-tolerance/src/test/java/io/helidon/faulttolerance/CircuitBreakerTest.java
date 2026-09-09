@@ -16,6 +16,7 @@
 
 package io.helidon.faulttolerance;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CircuitBreakerTest extends CircuitBreakerBaseTest {
@@ -119,9 +121,9 @@ class CircuitBreakerTest extends CircuitBreakerBaseTest {
                 .build();
 
         moveToHalfOpen(applyOnBreaker);
-        assertCallerCancellationState(applyOnBreaker, CircuitBreaker.State.OPEN);
+        assertCallerCancellationState(applyOnBreaker, new InterruptedException("cancelled"), CircuitBreaker.State.OPEN);
         moveToHalfOpen(skipOnBreaker);
-        assertCallerCancellationState(skipOnBreaker, CircuitBreaker.State.HALF_OPEN);
+        assertCallerCancellationState(skipOnBreaker, new InterruptedException("cancelled"), CircuitBreaker.State.HALF_OPEN);
         skipOnBreaker.invoke(() -> "success");
         assertThat(skipOnBreaker.state(), is(CircuitBreaker.State.CLOSED));
     }
@@ -135,16 +137,119 @@ class CircuitBreakerTest extends CircuitBreakerBaseTest {
                 .addApplyOn(InterruptedException.class)
                 .build();
 
-        assertCallerCancellationState(breaker, CircuitBreaker.State.OPEN);
+        assertCallerCancellationState(breaker, new InterruptedException("cancelled"), CircuitBreaker.State.OPEN);
     }
 
-    private static void assertCallerCancellationState(CircuitBreaker breaker, CircuitBreaker.State expectedState) {
+    @Test
+    void wrappedCallerCancellationUsesApplyOnInClosedState() {
+        CircuitBreaker breaker = CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .delay(Duration.ofDays(1))
+                .addApplyOn(IOException.class)
+                .build();
+        try {
+            assertCallerCancellationState(breaker,
+                                          new IOException("I/O", new InterruptedException("cancelled")),
+                                          CircuitBreaker.State.OPEN);
+        } finally {
+            breaker.state(CircuitBreaker.State.CLOSED);
+        }
+    }
+
+    @Test
+    void wrappedCallerCancellationUsesSkipOnInClosedState() {
+        CircuitBreaker breaker = CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .delay(Duration.ofDays(1))
+                .addApplyOn(Throwable.class)
+                .addSkipOn(IOException.class)
+                .build();
+        try {
+            assertCallerCancellationState(breaker,
+                                          new IOException("I/O", new InterruptedException("cancelled")),
+                                          CircuitBreaker.State.CLOSED);
+        } finally {
+            breaker.state(CircuitBreaker.State.CLOSED);
+        }
+    }
+
+    @Test
+    void wrappedCallerCancellationUsesApplyOnInHalfOpenState()
+            throws InterruptedException, ExecutionException, TimeoutException {
+        CircuitBreaker breaker = CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .delay(Duration.ofMillis(200))
+                .successThreshold(1)
+                .addApplyOn(IllegalStateException.class)
+                .addApplyOn(IOException.class)
+                .build();
+        try {
+            moveToHalfOpen(breaker);
+            assertCallerCancellationState(breaker,
+                                          new IOException("I/O", new InterruptedException("cancelled")),
+                                          CircuitBreaker.State.OPEN);
+        } finally {
+            breaker.state(CircuitBreaker.State.CLOSED);
+        }
+    }
+
+    @Test
+    void wrappedCallerCancellationUsesSkipOnInHalfOpenState()
+            throws InterruptedException, ExecutionException, TimeoutException {
+        CircuitBreaker breaker = CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .delay(Duration.ofMillis(200))
+                .successThreshold(1)
+                .addApplyOn(Throwable.class)
+                .addSkipOn(IOException.class)
+                .build();
+        try {
+            moveToHalfOpen(breaker);
+            assertCallerCancellationState(breaker,
+                                          new IOException("I/O", new InterruptedException("cancelled")),
+                                          CircuitBreaker.State.HALF_OPEN);
+            assertThat(breaker.invoke(() -> "success"), is("success"));
+            assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
+        } finally {
+            breaker.state(CircuitBreaker.State.CLOSED);
+        }
+    }
+
+    @Test
+    void wrappedCallerCancellationIsNeutralByDefault()
+            throws InterruptedException, ExecutionException, TimeoutException {
+        CircuitBreaker breaker = CircuitBreaker.builder()
+                .volume(1)
+                .errorRatio(100)
+                .delay(Duration.ofMillis(200))
+                .successThreshold(1)
+                .build();
+        try {
+            IOException failure = new IOException("I/O", new InterruptedException("cancelled"));
+            assertCallerCancellationState(breaker, failure, CircuitBreaker.State.CLOSED);
+            moveToHalfOpen(breaker);
+            assertCallerCancellationState(breaker, failure, CircuitBreaker.State.HALF_OPEN);
+            assertThat(breaker.invoke(() -> "success"), is("success"));
+            assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
+        } finally {
+            breaker.state(CircuitBreaker.State.CLOSED);
+        }
+    }
+
+    private static void assertCallerCancellationState(CircuitBreaker breaker,
+                                                     Throwable failure,
+                                                     CircuitBreaker.State expectedState) {
         Thread.currentThread().interrupt();
         try {
-            assertThrows(SupplierException.class,
-                         () -> breaker.invoke(() -> {
-                             throw new SupplierException(new InterruptedException("cancelled"));
-                         }));
+            SupplierException exception = assertThrows(SupplierException.class,
+                                                      () -> breaker.invoke(() -> {
+                                                          throw new SupplierException(failure);
+                                                      }));
+            assertThat(exception.getCause(), sameInstance(failure));
             assertThat(Thread.currentThread().isInterrupted(), is(true));
             assertThat(breaker.state(), is(expectedState));
         } finally {

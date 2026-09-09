@@ -16,6 +16,7 @@
 
 package io.helidon.faulttolerance;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -673,6 +674,40 @@ class ResilientValueTest {
         assertThat(value.get(), is("loaded"));
         assertThat(calls.get(), is(2));
         assertThat(circuitBreaker.state(), is(CircuitBreaker.State.CLOSED));
+    }
+
+    @Test
+    void wrappedCallerCancellationDoesNotOpenCircuitBreaker() {
+        AtomicInteger calls = new AtomicInteger();
+        InterruptedException interrupted = new InterruptedException("cancelled");
+        CircuitBreaker breaker = circuitBreaker();
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
+                                                             () -> {
+                                                                 if (calls.incrementAndGet() == 1) {
+                                                                     throw new ResilientValue.UnavailableException(
+                                                                             "I/O failed",
+                                                                             new IOException("I/O", interrupted));
+                                                                 }
+                                                                 return "loaded";
+                                                             },
+                                                             retry(2),
+                                                             breaker,
+                                                             timeout()));
+        Thread.currentThread().interrupt();
+        try {
+            ResilientValue.UnavailableException failure = assertThrows(ResilientValue.UnavailableException.class, value::get);
+            assertThat(failure.getCause().getCause(), sameInstance(interrupted));
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+        } finally {
+            Thread.interrupted();
+        }
+        assertThat(calls.get(), is(1));
+        assertThat(value.loaded(), is(false));
+        assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
+        assertThat(value.get(), is("loaded"));
+        assertThat(calls.get(), is(2));
+        assertThat(value.loaded(), is(true));
+        assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
     }
 
     @Test

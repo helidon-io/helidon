@@ -51,7 +51,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final AtomicBoolean halfOpenInProgress = new AtomicBoolean();
     private final AtomicReference<Future<Boolean>> schedule = new AtomicReference<>();
     private final ErrorChecker errorChecker;
-    private final boolean callerCancellationIsFailure;
+    private final boolean applyOnConfigured;
     private final String name;
     private final CircuitBreakerConfig config;
     private final boolean metricsEnabled;
@@ -79,8 +79,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.results = new ResultWindow(config.volume(), config.errorRatio());
         this.executor = config.executor().orElseGet(FaultTolerance.executor());
         this.errorChecker = ErrorChecker.create(config.skipOn(), config.applyOn());
-        this.callerCancellationIsFailure = !config.applyOn().isEmpty()
-                && !errorChecker.shouldSkip(new InterruptedException());
+        this.applyOnConfigured = !config.applyOn().isEmpty();
         this.name = config.name().orElseGet(() -> "circuit-breaker-" + System.identityHashCode(config));
         this.config = config;
 
@@ -166,11 +165,11 @@ class CircuitBreakerImpl implements CircuitBreaker {
             return result;
         } catch (Throwable t) {
             Throwable throwable = SupplierHelper.unwrapThrowable(t);
-            boolean callerCancelled = callerCancelled(t);
-            if (callerCancelled && !callerCancellationIsFailure) {
+            boolean shouldSkip = errorChecker.shouldSkip(throwable);
+            if (callerCancelled(t) && (!applyOnConfigured || shouldSkip)) {
                 throw SupplierHelper.toRuntimeException(throwable);
             }
-            if (!callerCancelled && errorChecker.shouldSkip(throwable)) {
+            if (shouldSkip) {
                 results.update(ResultWindow.Result.SUCCESS);
             } else {
                 results.update(ResultWindow.Result.FAILURE);
@@ -204,11 +203,11 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 return result;
             } catch (Throwable t) {
                 Throwable throwable = SupplierHelper.unwrapThrowable(t);
-                boolean callerCancelled = callerCancelled(t);
-                if (callerCancelled && !callerCancellationIsFailure) {
+                boolean shouldSkip = errorChecker.shouldSkip(throwable);
+                if (callerCancelled(t) && (!applyOnConfigured || shouldSkip)) {
                     throw SupplierHelper.toRuntimeException(throwable);
                 }
-                if (!callerCancelled && errorChecker.shouldSkip(throwable)) {
+                if (shouldSkip) {
                     // success
                     int successes = successCounter.incrementAndGet();
                     if (successes >= successThreshold) {

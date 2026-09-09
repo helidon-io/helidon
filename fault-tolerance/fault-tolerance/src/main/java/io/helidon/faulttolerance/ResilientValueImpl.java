@@ -131,6 +131,11 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
             loadedValue = circuitBreaker.invoke(this::loadWithRetry);
         } catch (CircuitBreakerOpenException e) {
             throw new ResilientValue.UnavailableException(description + " is temporarily unavailable", e);
+        } catch (SupplierException e) {
+            if (Thread.currentThread().isInterrupted() && SupplierHelper.interrupted(e) != null) {
+                throw new ResilientValue.UnavailableException(description + " load interrupted", e);
+            }
+            throw e;
         } catch (UnavailableException e) {
             if (Thread.currentThread().isInterrupted() && SupplierHelper.interrupted(e) != null) {
                 throw e;
@@ -150,8 +155,19 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
     private T loadWithRetry() {
         try {
             return retry.invoke(this::loadWithTimeout);
-        } catch (RetryTimeoutException e) {
-            throw new ResilientValue.UnavailableException(description + " did not become available before the retry timeout", e);
+        } catch (RuntimeException e) {
+            if (Thread.currentThread().isInterrupted()) {
+                Throwable interrupted = SupplierHelper.interrupted(e);
+                if (interrupted != null) {
+                    // Classify caller cancellation separately from an unavailable source in the circuit breaker.
+                    throw new SupplierException(interrupted);
+                }
+            }
+            if (e instanceof RetryTimeoutException) {
+                throw new ResilientValue.UnavailableException(description + " did not become available before the retry timeout",
+                                                             e);
+            }
+            throw e;
         }
     }
 
