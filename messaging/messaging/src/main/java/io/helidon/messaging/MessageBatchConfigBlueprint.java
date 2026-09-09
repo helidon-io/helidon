@@ -28,8 +28,8 @@ import io.helidon.common.Api;
  * @param <T> payload type
  */
 @Api.Preview
-@Prototype.Blueprint(decorator = MessageBatchConfigSupport.BuilderDecorator.class, createEmptyPublic = false)
-@Prototype.CustomMethods(MessageBatchConfigSupport.class)
+@Prototype.Blueprint(decorator = MessagingConfigSupport.MessageBatchBuilderDecorator.class, createEmptyPublic = false)
+@Prototype.CustomMethods(MessagingConfigSupport.MessageBatchCustomMethods.class)
 interface MessageBatchConfigBlueprint<T> extends Prototype.Factory<MessageBatch<T>> {
     /**
      * Opaque delivery correlation ID.
@@ -37,8 +37,8 @@ interface MessageBatchConfigBlueprint<T> extends Prototype.Factory<MessageBatch<
      *
      * @return identity
      */
-    @Option.DefaultMethod(type = MessageBatchConfigSupport.class, value = "defaultId")
-    @Option.Decorator(MessageBatchConfigSupport.IdDecorator.class)
+    @Option.DefaultMethod(type = MessagingConfigSupport.MessageBatchCustomMethods.class, value = "defaultId")
+    @Option.Decorator(MessagingConfigSupport.MessageBatchIdDecorator.class)
     String id();
 
     /**

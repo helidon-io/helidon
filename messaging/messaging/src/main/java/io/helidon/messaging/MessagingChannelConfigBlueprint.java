@@ -16,21 +16,23 @@
 
 package io.helidon.messaging;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
-final class DeadLetterConfigBuilderDecorator
-        implements Prototype.BuilderDecorator<DeadLetterConfig.BuilderBase<?, ?>> {
-    static void validate(String channel) {
-        if (channel == null) {
-            throw new IllegalArgumentException("failure.dead-letter.channel must be configured");
-        }
-        if (channel.isBlank()) {
-            throw new IllegalArgumentException("failure.dead-letter.channel must not be blank");
-        }
-    }
-
-    @Override
-    public void decorate(DeadLetterConfig.BuilderBase<?, ?> target) {
-        validate(target.channel().orElse(null));
-    }
+/**
+ * Configuration of a logical messaging channel.
+ */
+@Api.Preview
+@Prototype.Blueprint
+@Prototype.Configured
+interface MessagingChannelConfigBlueprint {
+    /**
+     * Execution overrides for this channel. Values not configured inherit the messaging defaults.
+     *
+     * @return channel execution overrides
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    MessagingExecutionConfig execution();
 }

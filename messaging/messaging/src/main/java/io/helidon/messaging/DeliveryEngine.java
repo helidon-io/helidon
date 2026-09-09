@@ -65,17 +65,19 @@ final class DeliveryEngine implements AutoCloseable {
     private final ThreadFactory dispatchThreadFactory;
     private final ThreadFactory cleanupThreadFactory;
     private final ThreadFactory sourceThreadFactory;
+    private final MessagingConfig defaults;
     private final Duration shutdownTimeout;
     private final AtomicBoolean accepting = new AtomicBoolean(true);
     private final AtomicBoolean closed = new AtomicBoolean();
     private final Runnable dispatchAdmissionHook;
 
-    DeliveryEngine(MessagingExecutionConfig defaultConfig) {
+    DeliveryEngine(MessagingConfig defaultConfig) {
         this(defaultConfig, NOOP);
     }
 
-    DeliveryEngine(MessagingExecutionConfig defaultConfig, Runnable dispatchAdmissionHook) {
-        this.shutdownTimeout = Objects.requireNonNull(defaultConfig).shutdownTimeout();
+    DeliveryEngine(MessagingConfig defaultConfig, Runnable dispatchAdmissionHook) {
+        this.defaults = Objects.requireNonNull(defaultConfig);
+        this.shutdownTimeout = defaultConfig.shutdownTimeout();
         this.dispatchAdmissionHook = Objects.requireNonNull(dispatchAdmissionHook);
         this.dispatchThreadFactory = virtualThreadFactory("helidon-messaging-dispatch-", "Messaging delivery failed");
         this.cleanupThreadFactory = virtualThreadFactory("helidon-messaging-cleanup-",
@@ -89,6 +91,10 @@ final class DeliveryEngine implements AutoCloseable {
 
     static void ensureCurrentDeliveryActive() {
         currentAncestry();
+    }
+
+    MessagingConfig configuration() {
+        return defaults;
     }
 
     void registerChannel(String channel, MessagingExecutionConfig config) {
@@ -282,7 +288,7 @@ final class DeliveryEngine implements AutoCloseable {
     }
 
     int maxDeliveryMessages(String channel) {
-        MessagingExecutionConfig config = dispatcher(channel).config;
+        MessagingConfigSupport.Execution config = dispatcher(channel).config;
         return Math.min(config.maxInFlightMessages(), config.maxPendingMessages());
     }
 
@@ -819,7 +825,7 @@ final class DeliveryEngine implements AutoCloseable {
 
     private final class ChannelDispatcher {
         private final String channel;
-        private final MessagingExecutionConfig config;
+        private final MessagingConfigSupport.Execution config;
         private final ReentrantLock lock = new ReentrantLock(true);
         private final Condition changed = lock.newCondition();
         private final Semaphore pendingAdmissions;
@@ -835,8 +841,8 @@ final class DeliveryEngine implements AutoCloseable {
 
         private ChannelDispatcher(String channel, MessagingExecutionConfig config) {
             this.channel = channel;
-            this.config = config;
-            this.pendingAdmissions = new Semaphore(config.maxPendingAdmissions(), true);
+            this.config = MessagingConfigSupport.execution(defaults, config);
+            this.pendingAdmissions = new Semaphore(this.config.maxPendingAdmissions(), true);
         }
 
         private DeliveryTask submit(int messageCount,
