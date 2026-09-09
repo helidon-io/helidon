@@ -664,7 +664,7 @@ class BuilderCodegen implements CodegenExtension {
                         .findAnnotation(Types.PROTOTYPE_CONFIGURED)
                         .flatMap(it -> it.booleanValue("metadata"))
                         .orElse(true)) {
-            var schemaGen = new SchemaGenerator(this.ctx);
+            var schemaGen = new SchemaGenerator(this.ctx, ctx);
             classModel.addAnnotation(schemaGen.type(prototypeInfo, options));
         }
 
