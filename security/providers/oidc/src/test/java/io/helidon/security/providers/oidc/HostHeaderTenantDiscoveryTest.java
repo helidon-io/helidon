@@ -882,11 +882,11 @@ class HostHeaderTenantDiscoveryTest {
         private final AtomicInteger jwkHits = new AtomicInteger();
         private final CountDownLatch metadataRequest = new CountDownLatch(1);
         private final JsonObject[] metadataHolder = new JsonObject[1];
+        private final WebServer server;
+        private final URI identityUri;
         private volatile boolean metadataAvailable = true;
         private volatile boolean jwkAvailable = true;
         private volatile CountDownLatch metadataResponseGate;
-        private final WebServer server;
-        private final URI identityUri;
 
         private MockIdpServer() {
             this.server = WebServer.builder()
