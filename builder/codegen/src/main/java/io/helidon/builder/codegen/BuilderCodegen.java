@@ -717,7 +717,6 @@ class BuilderCodegen implements CodegenExtension {
         generatePrototypeMethods(classModel, options);
 
         List<OptionInfo> optionList = Utils.options(options);
-
         // abstract class BuilderBase...
         TypeName implementationType = GenerateAbstractBuilder.generate(
                 ctx,
