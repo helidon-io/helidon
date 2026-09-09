@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -275,6 +277,7 @@ public class MessagingRuntimeJmhBenchmark {
         @Param({"1", "32", "1024"})
         public int batchSize;
 
+        private ServiceRegistryManager registryManager;
         private ChannelRegistry registry;
         private IncomingConnectorContext context;
         private MessageBatch<String> batch;
@@ -316,27 +319,41 @@ public class MessagingRuntimeJmhBenchmark {
                 }
             };
 
-            registry = new ChannelRegistry(List.of(registration),
-                                           List.of(),
-                                           Config.empty(),
-                                           List.of(),
-                                           new MessagingLifecycleGuard());
+            registryManager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                   .discoverServices(false)
+                                                                   .discoverServicesFromServiceLoader(false)
+                                                                   .build());
             try {
+                registry = new ChannelRegistry(List.of(registration),
+                                               List.of(),
+                                               Config.empty(),
+                                               registryManager.registry(),
+                                               new MessagingLifecycleGuard());
                 registry.start();
                 context = registry.incomingContext(CHANNEL);
             } catch (RuntimeException | Error e) {
-                closeAfterSetupFailure(registry::close, e);
+                closeAfterSetupFailure(this::tearDown, e);
                 throw e;
             }
         }
 
         /**
-         * Close the registry after a trial.
+         * Close the messaging runtime and service registry after a trial.
          */
         @TearDown(Level.Trial)
         public void tearDown() {
-            if (registry != null) {
-                registry.close();
+            try {
+                if (registry != null) {
+                    registry.close();
+                }
+            } catch (RuntimeException | Error e) {
+                if (registryManager != null) {
+                    closeAfterSetupFailure(registryManager::shutdown, e);
+                }
+                throw e;
+            }
+            if (registryManager != null) {
+                registryManager.shutdown();
             }
         }
     }

@@ -40,6 +40,7 @@ interface MessagingConfigBlueprint {
      * @return execution configuration
      */
     @Option.Configured
+    @Option.DefaultCode("io.helidon.messaging.MessagingExecutionConfig.create()")
     MessagingExecutionConfig execution();
 
     /**

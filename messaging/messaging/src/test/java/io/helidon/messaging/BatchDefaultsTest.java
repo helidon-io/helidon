@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.GenericType;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 import org.junit.jupiter.api.Test;
 
@@ -83,7 +83,7 @@ class BatchDefaultsTest {
     @Test
     void outgoingConnectorWrapsSingleMessageInBatch() {
         AtomicReference<MessageBatch<?>> received = new AtomicReference<>();
-        OutgoingConnector connector = new OutgoingConnector() {
+        OutgoingChannel connector = new OutgoingChannel() {
             @Override
             public void start() {
             }

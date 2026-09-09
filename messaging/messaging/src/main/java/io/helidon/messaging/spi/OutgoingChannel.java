@@ -35,7 +35,7 @@ import io.helidon.messaging.MessageBatch;
  * Runtime-invoked sends execute with the current delivery's Helidon context bound to the calling thread.
  */
 @Api.Preview
-public interface OutgoingConnector extends Connector {
+public interface OutgoingChannel extends ChannelConnection {
     /**
      * Establish transport resources for this binding.
      * <p>

@@ -24,10 +24,10 @@ import io.helidon.config.Config;
 import io.helidon.config.NamedService;
 
 /**
- * A configured messaging connector capable of creating channel-specific connector instances.
+ * A configured messaging connector capable of creating channel connections.
  * <p>
  * An implementation must support at least one direction by overriding {@link #incoming(Config)},
- * {@link #outgoing(Config)}, or both. Each successful invocation must return a fresh, unstarted channel connector.
+ * {@link #outgoing(Config)}, or both. Each successful invocation must return a fresh, unstarted channel connection.
  */
 @Api.Preview
 public interface MessagingConnector extends NamedService {
@@ -44,23 +44,23 @@ public interface MessagingConnector extends NamedService {
     }
 
     /**
-     * Create an incoming connector for one channel.
+     * Create an incoming channel connection.
      *
      * @param channelConfig channel-specific configuration
-     * @return incoming connector, or empty if this connector does not support incoming channels
+     * @return incoming channel connection, or empty if this connector does not support incoming channels
      */
-    default Optional<IncomingConnector> incoming(Config channelConfig) {
+    default Optional<IncomingChannel> incoming(Config channelConfig) {
         Objects.requireNonNull(channelConfig);
         return Optional.empty();
     }
 
     /**
-     * Create an outgoing connector for one channel.
+     * Create an outgoing channel connection.
      *
      * @param channelConfig channel-specific configuration
-     * @return outgoing connector, or empty if this connector does not support outgoing channels
+     * @return outgoing channel connection, or empty if this connector does not support outgoing channels
      */
-    default Optional<OutgoingConnector> outgoing(Config channelConfig) {
+    default Optional<OutgoingChannel> outgoing(Config channelConfig) {
         Objects.requireNonNull(channelConfig);
         return Optional.empty();
     }

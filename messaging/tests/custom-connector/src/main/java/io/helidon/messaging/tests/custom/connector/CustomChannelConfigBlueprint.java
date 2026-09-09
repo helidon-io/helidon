@@ -14,30 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging.spi;
+package io.helidon.messaging.tests.custom.connector;
+
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.Api;
-import io.helidon.messaging.ConnectorDirection;
 
 /**
- * Effective connector configuration assembled for one channel direction.
+ * Channel-specific custom connector configuration.
  */
-@Api.Preview
-@Prototype.Blueprint
-@Prototype.Configured
-interface ConnectorConfigBlueprint {
+@Prototype.Blueprint(isPublic = false)
+@Prototype.Configured(root = false)
+interface CustomChannelConfigBlueprint {
     /**
-     * Runtime-supplied connector direction relative to the messaging graph.
-     *
-     * @return direction
-     */
-    @Option.Configured
-    ConnectorDirection direction();
-
-    /**
-     * Runtime-supplied logical channel name.
+     * Logical messaging channel name.
      *
      * @return channel name
      */
@@ -45,11 +36,18 @@ interface ConnectorConfigBlueprint {
     String channelName();
 
     /**
-     * Selected connector provider type.
+     * In-memory endpoint override, using the connector endpoint when absent.
      *
-     * @return connector name
+     * @return endpoint override
      */
     @Option.Configured
-    String connector();
+    Optional<String> endpoint();
 
+    /**
+     * Message prefix override, using the connector prefix when absent.
+     *
+     * @return prefix override
+     */
+    @Option.Configured
+    Optional<String> prefix();
 }

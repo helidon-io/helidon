@@ -36,9 +36,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.messaging.spi.Connector;
-import io.helidon.messaging.spi.IncomingConnector;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.ChannelConnection;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 /**
  * One validated messaging topology and lifecycle.
@@ -56,9 +56,9 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private final Map<String, SourceBinding> sources = new LinkedHashMap<>();
     private final Set<Runnable> sourceIdentities =
             Collections.newSetFromMap(new IdentityHashMap<>());
-    private final List<Connector> connectorBindings = new ArrayList<>();
-    private final List<OutgoingConnector> outgoingConnectors = new ArrayList<>();
-    private final Set<Connector> connectorIdentities =
+    private final List<ChannelConnection> connectorBindings = new ArrayList<>();
+    private final List<OutgoingChannel> outgoingConnectors = new ArrayList<>();
+    private final Set<ChannelConnection> connectorIdentities =
             Collections.newSetFromMap(new IdentityHashMap<>());
     private final AtomicBoolean shutdownOwner = new AtomicBoolean();
     private final CompletableFuture<Void> preparationCompletion = new CompletableFuture<>();
@@ -242,7 +242,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     }
 
     void addIncomingConnector(String name,
-                              IncomingConnector connector,
+                              IncomingChannel connector,
                               IncomingConnectorContext context) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(connector);
@@ -254,7 +254,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                 throw new IllegalArgumentException("Duplicate messaging source " + name);
             }
             if (connectorIdentities.contains(connector)) {
-                throw new IllegalArgumentException("Connector is already owned by this messaging graph");
+                throw new IllegalArgumentException("Channel connection is already owned by this messaging graph");
             }
             sources.put(name, new SourceBinding(name, connector, context));
             connectorIdentities.add(connector);
@@ -515,7 +515,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     }
 
     private void startOutgoingConnectors() {
-        for (OutgoingConnector outgoing : outgoingConnectors) {
+        for (OutgoingChannel outgoing : outgoingConnectors) {
             requireStarting();
             OperationResult result = invokeUnbounded("start outgoing connector "
                                                              + outgoing.getClass().getName(),
@@ -620,7 +620,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                                            long deadline,
                                            ForcedCleanupOrdering cleanupOrdering) {
         for (int i = connectorBindings.size() - 1; i >= 0; i--) {
-            Connector binding = connectorBindings.get(i);
+            ChannelConnection binding = connectorBindings.get(i);
             CompletableFuture<Void> forceCompletion = cleanupOrdering.register(binding);
             OperationResult result = invokeCleanupBounded("force close connector binding "
                                                                   + binding.getClass().getName(),
@@ -640,7 +640,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                                            long deadline,
                                            ForcedCleanupOrdering cleanupOrdering) {
         for (int i = connectorBindings.size() - 1; i >= 0; i--) {
-            Connector binding = connectorBindings.get(i);
+            ChannelConnection binding = connectorBindings.get(i);
             String operation = "close connector binding " + binding.getClass().getName();
             OperationResult result = cleanupOrdering == null
                     ? invokeCleanupBounded(operation, deadline, binding::close)
@@ -658,7 +658,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                                           ForcedCleanupOrdering cleanupOrdering) {
         List<SourceBinding> sourceBindings = new ArrayList<>(sources.values());
         for (int i = sourceBindings.size() - 1; i >= 0; i--) {
-            Connector connector = sourceBindings.get(i).connector();
+            ChannelConnection connector = sourceBindings.get(i).connector();
             if (connector == null) {
                 continue;
             }
@@ -682,7 +682,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                                           ForcedCleanupOrdering cleanupOrdering) {
         List<SourceBinding> sourceBindings = new ArrayList<>(sources.values());
         for (int i = sourceBindings.size() - 1; i >= 0; i--) {
-            Connector connector = sourceBindings.get(i).connector();
+            ChannelConnection connector = sourceBindings.get(i).connector();
             if (connector == null) {
                 continue;
             }
@@ -786,24 +786,24 @@ final class DefaultMessagingGraph implements MessagingGraph {
 
     private void validateContributionBindings(List<?> bindings,
                                               Iterable<? extends Runnable> contributionSources) {
-        Set<Connector> newIdentities = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<ChannelConnection> newIdentities = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Runnable source : contributionSources) {
-            if (source instanceof Connector connector
+            if (source instanceof ChannelConnection connector
                     && (connectorIdentities.contains(connector) || !newIdentities.add(connector))) {
-                throw new IllegalArgumentException("Connector is already owned by this messaging graph");
+                throw new IllegalArgumentException("Channel connection is already owned by this messaging graph");
             }
         }
         for (Object binding : bindings) {
             Objects.requireNonNull(binding);
-            if (binding instanceof Connector connector
+            if (binding instanceof ChannelConnection connector
                     && (connectorIdentities.contains(connector) || !newIdentities.add(connector))) {
-                throw new IllegalArgumentException("Connector is already owned by this messaging graph");
+                throw new IllegalArgumentException("Channel connection is already owned by this messaging graph");
             }
         }
     }
 
     private void addSourceLocked(String name, Runnable source) {
-        Connector connector = source instanceof Connector candidate ? candidate : null;
+        ChannelConnection connector = source instanceof ChannelConnection candidate ? candidate : null;
         sources.put(name, new SourceBinding(name, source, connector));
         sourceIdentities.add(source);
         if (connector != null) {
@@ -812,10 +812,10 @@ final class DefaultMessagingGraph implements MessagingGraph {
     }
 
     private void addBindingLocked(Object binding) {
-        if (binding instanceof Connector connector) {
+        if (binding instanceof ChannelConnection connector) {
             connectorIdentities.add(connector);
             connectorBindings.add(connector);
-            if (connector instanceof OutgoingConnector outgoingConnector) {
+            if (connector instanceof OutgoingChannel outgoingConnector) {
                 outgoingConnectors.add(outgoingConnector);
             }
         }
@@ -1235,20 +1235,20 @@ final class DefaultMessagingGraph implements MessagingGraph {
     }
 
     private static final class ForcedCleanupOrdering {
-        private final Map<Connector, CompletableFuture<Void>> forceCompletions = new IdentityHashMap<>();
+        private final Map<ChannelConnection, CompletableFuture<Void>> forceCompletions = new IdentityHashMap<>();
 
-        private CompletableFuture<Void> register(Connector connector) {
+        private CompletableFuture<Void> register(ChannelConnection connector) {
             CompletableFuture<Void> completion = new CompletableFuture<>();
             if (forceCompletions.put(Objects.requireNonNull(connector), completion) != null) {
-                throw new IllegalStateException("Connector force cleanup was registered more than once");
+                throw new IllegalStateException("Channel connection force cleanup was registered more than once");
             }
             return completion;
         }
 
-        private CompletableFuture<Void> forceCompletion(Connector connector) {
+        private CompletableFuture<Void> forceCompletion(ChannelConnection connector) {
             CompletableFuture<Void> forceCompletion = forceCompletions.get(Objects.requireNonNull(connector));
             if (forceCompletion == null) {
-                throw new IllegalStateException("Connector close was registered before force cleanup");
+                throw new IllegalStateException("Channel connection close was registered before force cleanup");
             }
             return forceCompletion;
         }
@@ -1334,8 +1334,8 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private final class SourceBinding {
         private final String name;
         private final Runnable source;
-        private final Connector connector;
-        private final IncomingConnector incomingConnector;
+        private final ChannelConnection connector;
+        private final IncomingChannel incomingConnector;
         private final ManagedSourceContext incomingContext;
         private final CountDownLatch admissionSignal = new CountDownLatch(1);
         private final AtomicBoolean admissionCancelled = new AtomicBoolean();
@@ -1345,7 +1345,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
 
         private SourceBinding(String name,
                               Runnable source,
-                              Connector connector) {
+                              ChannelConnection connector) {
             this.name = name;
             this.source = source;
             this.connector = connector;
@@ -1354,7 +1354,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
 
         private SourceBinding(String name,
-                              IncomingConnector incomingConnector,
+                              IncomingChannel incomingConnector,
                               IncomingConnectorContext incomingContext) {
             this.name = name;
             this.source = null;
@@ -1377,11 +1377,11 @@ final class DefaultMessagingGraph implements MessagingGraph {
             return name;
         }
 
-        private Connector connector() {
+        private ChannelConnection connector() {
             return connector;
         }
 
-        private IncomingConnector incomingConnector() {
+        private IncomingChannel incomingConnector() {
             return incomingConnector;
         }
 

@@ -32,9 +32,9 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.messaging.spi.Connector;
-import io.helidon.messaging.spi.IncomingConnector;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.ChannelConnection;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -90,7 +90,7 @@ class MessagingGraphTest {
         CountDownLatch deliveryStarted = new CountDownLatch(1);
         CountDownLatch releaseDelivery = new CountDownLatch(1);
         CountDownLatch deliveryFinished = new CountDownLatch(1);
-        OutgoingConnector outgoing = new OutgoingConnector() {
+        OutgoingChannel outgoing = new OutgoingChannel() {
             @Override
             public void start() {
                 events.add("start-outgoing");
@@ -111,7 +111,7 @@ class MessagingGraphTest {
                 events.add("close-outgoing");
             }
         };
-        IncomingConnector incoming = new IncomingConnector() {
+        IncomingChannel incoming = new IncomingChannel() {
             @Override
             public void run(IncomingConnectorContext context) {
                 if (!outgoingReady.get()) {
@@ -443,7 +443,7 @@ class MessagingGraphTest {
         IllegalStateException startupFailure = new IllegalStateException("outgoing is not ready");
         AtomicInteger forceCalls = new AtomicInteger();
         AtomicInteger closeCalls = new AtomicInteger();
-        OutgoingConnector outgoing = new OutgoingConnector() {
+        OutgoingChannel outgoing = new OutgoingChannel() {
             @Override
             public void start() {
                 throw startupFailure;
@@ -489,7 +489,7 @@ class MessagingGraphTest {
         CountDownLatch releaseForce = new CountDownLatch(1);
         CountDownLatch stop = new CountDownLatch(1);
         AtomicInteger forceCalls = new AtomicInteger();
-        IncomingConnector source = new IncomingConnector() {
+        IncomingChannel source = new IncomingChannel() {
             @Override
             public void run(IncomingConnectorContext context) {
                 running.countDown();
@@ -543,7 +543,7 @@ class MessagingGraphTest {
         CountDownLatch closeStarted = new CountDownLatch(1);
         CountDownLatch releaseClose = new CountDownLatch(1);
         AtomicInteger closeCalls = new AtomicInteger();
-        Connector binding = new Connector() {
+        ChannelConnection binding = new ChannelConnection() {
             @Override
             public void forceClose() {
             }
@@ -749,7 +749,7 @@ class MessagingGraphTest {
         CountDownLatch releaseSource = new CountDownLatch(1);
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
         AtomicReference<DefaultMessagingGraph> graphReference = new AtomicReference<>();
-        IncomingConnector source = new IncomingConnector() {
+        IncomingChannel source = new IncomingChannel() {
             @Override
             public void run(IncomingConnectorContext context) {
                 if (!context.awaitRunning()) {
@@ -858,7 +858,7 @@ class MessagingGraphTest {
     void connectorCloseCanReenterGraphClose() {
         AtomicInteger connectorCloseCalls = new AtomicInteger();
         AtomicReference<DefaultMessagingGraph> graphReference = new AtomicReference<>();
-        Connector connector = new Connector() {
+        ChannelConnection connector = new ChannelConnection() {
             @Override
             public void forceClose() {
             }
@@ -974,7 +974,7 @@ class MessagingGraphTest {
     void rollbackHandlesOneFailureInstanceFromStartupAndCleanup() {
         IllegalStateException sharedFailure = new IllegalStateException("shared lifecycle failure");
         CountDownLatch running = new CountDownLatch(1);
-        IncomingConnector source = new IncomingConnector() {
+        IncomingChannel source = new IncomingChannel() {
             @Override
             public void run(IncomingConnectorContext context) {
                 running.countDown();
@@ -1084,7 +1084,7 @@ class MessagingGraphTest {
         AtomicBoolean closeBeforeForce = new AtomicBoolean();
         AtomicBoolean closeInterrupted = new AtomicBoolean();
         List<String> events = new CopyOnWriteArrayList<>();
-        graph.addBinding(new Connector() {
+        graph.addBinding(new ChannelConnection() {
             @Override
             public void forceClose() {
                 events.add("force-start");
@@ -1137,7 +1137,7 @@ class MessagingGraphTest {
         CountDownLatch releaseClose = new CountDownLatch(1);
         CountDownLatch closeFinished = new CountDownLatch(1);
         AtomicBoolean closeInterrupted = new AtomicBoolean();
-        graph.addBinding(new Connector() {
+        graph.addBinding(new ChannelConnection() {
             @Override
             public void forceClose() {
             }
@@ -1174,7 +1174,7 @@ class MessagingGraphTest {
         CountDownLatch closeStarted = new CountDownLatch(1);
         CountDownLatch releaseClose = new CountDownLatch(1);
         AtomicBoolean forceRequested = new AtomicBoolean();
-        graph.addBinding(new Connector() {
+        graph.addBinding(new ChannelConnection() {
             @Override
             public void forceClose() {
                 forceRequested.set(true);
@@ -1199,7 +1199,7 @@ class MessagingGraphTest {
 
         await(closeStarted);
         assertThat(failure.getMessage(), containsString("Timed out while attempting to close connector binding"));
-        assertThat("Connector close exceeded the bounded cleanup phase",
+        assertThat("Channel connection close exceeded the bounded cleanup phase",
                    elapsed < TimeUnit.SECONDS.toNanos(1),
                    is(true));
         assertThat(forceRequested.get(), is(true));
@@ -1523,7 +1523,7 @@ class MessagingGraphTest {
         }
     }
 
-    private static final class DualConnector implements IncomingConnector, OutgoingConnector {
+    private static final class DualConnector implements IncomingChannel, OutgoingChannel {
         private final List<String> events;
         private final CountDownLatch running = new CountDownLatch(1);
         private final CountDownLatch stopped = new CountDownLatch(1);
@@ -1573,7 +1573,7 @@ class MessagingGraphTest {
         }
     }
 
-    private static class TrackingBinding implements Connector {
+    private static class TrackingBinding implements ChannelConnection {
         private final String name;
         private final List<String> events;
         private final CountDownLatch closedSignal = new CountDownLatch(1);
@@ -1605,7 +1605,7 @@ class MessagingGraphTest {
         }
     }
 
-    private static final class ManagedSource extends TrackingBinding implements IncomingConnector {
+    private static final class ManagedSource extends TrackingBinding implements IncomingChannel {
         private final AtomicBoolean ready;
         private final BooleanSupplier admissionGuard;
         private final RuntimeException readinessFailure;
@@ -1740,7 +1740,7 @@ class MessagingGraphTest {
         }
     }
 
-    private static final class StartupBlockingSource implements IncomingConnector {
+    private static final class StartupBlockingSource implements IncomingChannel {
         private final CountDownLatch running = new CountDownLatch(1);
         private final CountDownLatch startupReleased = new CountDownLatch(1);
         private final CountDownLatch stopped = new CountDownLatch(1);
@@ -1813,7 +1813,7 @@ class MessagingGraphTest {
         }
     }
 
-    private static final class StartupBlockingOutgoing implements OutgoingConnector {
+    private static final class StartupBlockingOutgoing implements OutgoingChannel {
         private final CountDownLatch starting = new CountDownLatch(1);
         private final CountDownLatch startupReleased = new CountDownLatch(1);
         private final CountDownLatch startExited = new CountDownLatch(1);
@@ -1907,7 +1907,7 @@ class MessagingGraphTest {
         }
     }
 
-    private static final class NormalEndingSource implements IncomingConnector {
+    private static final class NormalEndingSource implements IncomingChannel {
         private final CountDownLatch running = new CountDownLatch(1);
         private final CountDownLatch admission = new CountDownLatch(1);
         private final AtomicReference<Thread> owner = new AtomicReference<>();
@@ -1937,7 +1937,7 @@ class MessagingGraphTest {
         }
     }
 
-    private static final class StopFailingSource implements IncomingConnector {
+    private static final class StopFailingSource implements IncomingChannel {
         private final RuntimeException failure;
         private final CountDownLatch running = new CountDownLatch(1);
         private final CountDownLatch admission = new CountDownLatch(1);

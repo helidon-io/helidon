@@ -16,6 +16,7 @@
 
 package io.helidon.messaging;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -24,13 +25,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.ChannelConnection;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 /**
  * Default messaging graph builder.
@@ -38,7 +42,7 @@ import io.helidon.messaging.spi.OutgoingConnector;
 final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     private final List<SourceDefinition> sources = new ArrayList<>();
     private final Set<Stream<?>> sourceIdentities = Collections.newSetFromMap(new IdentityHashMap<>());
-    private final Set<OutgoingConnector> connectorIdentities = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<ChannelConnection> connectorIdentities = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Map<MessagingChannel<?>, DefaultMessagingChannel<?>> channels = new IdentityHashMap<>();
     private final Set<MessagingChannel<?>> outputChannels = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Set<DefaultMessagingChannel<?>> sourceChannels = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -200,9 +204,32 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     @Override
-    public <T> MessagingGraph.Builder outgoingConnector(MessagingChannel<T> source, OutgoingConnector connector) {
+    public <T> MessagingGraph.Builder incomingChannel(MessagingChannel<T> target, IncomingChannel connection) {
+        DefaultMessagingChannel<T> actualTarget = channel(target);
+        IncomingChannel actualConnection = Objects.requireNonNull(connection);
+        if (sourceChannels.contains(actualTarget)) {
+            throw new IllegalArgumentException("Messaging channel " + target.name() + " already has a source");
+        }
+        if (!connectorIdentities.add(actualConnection)) {
+            throw new IllegalArgumentException("Channel connection is already owned by this messaging graph builder");
+        }
+        try {
+            DefaultMessagingGraph actualGraph = graph();
+            actualGraph.addIncomingConnector(target.name() + "-incoming-" + ++sourceSequence,
+                                             actualConnection,
+                                             new BuilderIncomingConnectorContext(actualGraph, actualTarget));
+        } catch (RuntimeException | Error e) {
+            connectorIdentities.remove(actualConnection);
+            throw e;
+        }
+        sourceChannels.add(actualTarget);
+        return this;
+    }
+
+    @Override
+    public <T> MessagingGraph.Builder outgoingChannel(MessagingChannel<T> source, OutgoingChannel connector) {
         DefaultMessagingChannel<T> actualSource = channel(source);
-        OutgoingConnector actualConnector = Objects.requireNonNull(connector);
+        OutgoingChannel actualConnector = Objects.requireNonNull(connector);
         if (!connectorIdentities.add(actualConnector)) {
             throw new IllegalArgumentException("Outgoing connector is already owned by this messaging graph builder");
         }
@@ -364,5 +391,51 @@ final class DefaultMessagingGraphBuilder implements MessagingGraph.Builder {
     }
 
     private record Route(String source, String target) {
+    }
+
+    private static final class BuilderIncomingConnectorContext implements IncomingConnectorContext {
+        private final DefaultMessagingGraph graph;
+        private final DefaultMessagingChannel<?> channel;
+        private final AdmissionTimeoutBudget admissionTimeoutBudget;
+
+        private BuilderIncomingConnectorContext(DefaultMessagingGraph graph, DefaultMessagingChannel<?> channel) {
+            this.graph = graph;
+            this.channel = channel;
+            this.admissionTimeoutBudget = new AdmissionTimeoutBudget(channel.name(), System::nanoTime);
+        }
+
+        @Override
+        public String channel() {
+            return channel.name();
+        }
+
+        @Override
+        public int maxDeliveryMessages() {
+            return graph.maxDeliveryMessages(channel.name());
+        }
+
+        @Override
+        public ConnectorDeliveryReservation reserveDelivery() {
+            admissionTimeoutBudget.reset();
+            ConnectorDeliveryReservation reservation = graph.deliveryEngine().reserveConnectorDelivery(
+                    channel.name(),
+                    maxDeliveryMessages(),
+                    channel::emitBatchObject);
+            admissionTimeoutBudget.reset();
+            return reservation;
+        }
+
+        @Override
+        public Optional<ConnectorDeliveryReservation> tryReserveDelivery() {
+            return admissionTimeoutBudget.attempt(
+                    () -> graph.deliveryEngine().admissionTimeout(channel.name())
+                            .map(Duration::toNanos)
+                            .orElse(Long.MAX_VALUE),
+                    remaining -> graph.deliveryEngine().tryReserveConnectorDelivery(
+                            channel.name(),
+                            maxDeliveryMessages(),
+                            remaining,
+                            channel::emitBatchObject));
+        }
     }
 }

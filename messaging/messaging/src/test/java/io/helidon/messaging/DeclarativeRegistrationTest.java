@@ -18,6 +18,7 @@ package io.helidon.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -26,10 +27,11 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
-import io.helidon.messaging.spi.ConnectorProvider;
-import io.helidon.messaging.spi.IncomingConnector;
-import io.helidon.messaging.spi.IncomingConnectorProvider;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -45,6 +47,13 @@ class DeclarativeRegistrationTest {
     private static final GenericType<Message<String>> STRING_MESSAGE_TYPE = new GenericType<>() { };
     private static final GenericType<Message<Integer>> INTEGER_MESSAGE_TYPE = new GenericType<>() { };
     private static final GenericType<?> PRIMITIVE_INT_TYPE = GenericType.create(int.class);
+
+    private final RegistryTestSupport registrySupport = new RegistryTestSupport();
+
+    @AfterEach
+    void closeServiceRegistries() {
+        registrySupport.close();
+    }
 
     @Test
     void rejectsNullRuntimeBatchArguments() {
@@ -268,14 +277,19 @@ class DeclarativeRegistrationTest {
                                                      STRING_TYPE,
                                                      STRING_MESSAGE_TYPE,
                                                      Function.identity());
-        IncomingConnectorProvider incomingProvider = new IncomingConnectorProvider() {
+        MessagingConnector incomingConnector = new MessagingConnector() {
             @Override
-            public String connectorType() {
-                return "test-in";
+            public String type() {
+                return "test";
             }
 
             @Override
-            public IncomingConnector createIncomingConnector(Config config) {
+            public MessagingConnectorProviderConfig prototype() {
+                return RegistryTestSupport.prototype("test-in");
+            }
+
+            @Override
+            public Optional<IncomingChannel> incoming(Config config) {
                 throw new AssertionError("Output validation must run before connector creation");
             }
         };
@@ -288,7 +302,7 @@ class DeclarativeRegistrationTest {
                                                       audit:
                                                         connector: test-in
                                                   """),
-                                          List.of(incomingProvider)));
+                                          List.of(incomingConnector)));
         assertThat(outputFailure.getMessage(), containsString("processor target channel audit has no outputs"));
     }
 
@@ -476,21 +490,17 @@ class DeclarativeRegistrationTest {
         assertThat(failure.getMessage(), containsString("first -> second -> first"));
     }
 
-    private static ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+    private ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
                                             Config config,
-                                            List<ConnectorProvider> connectorProviders) {
-        return registry(consumerRegistrations, List.of(), config, connectorProviders);
+                                            List<MessagingConnector> connectors) {
+        return registry(consumerRegistrations, List.of(), config, connectors);
     }
 
-    private static ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+    private ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
                                             List<EmitterRegistration> emitterRegistrations,
                                             Config config,
-                                            List<ConnectorProvider> connectorProviders) {
-        return new ChannelRegistry(consumerRegistrations,
-                                   emitterRegistrations,
-                                   config,
-                                   connectorProviders,
-                                   new MessagingLifecycleGuard());
+                                            List<MessagingConnector> connectors) {
+        return registrySupport.registry(consumerRegistrations, emitterRegistrations, config, connectors);
     }
 
     private static Config yaml(String yaml) {

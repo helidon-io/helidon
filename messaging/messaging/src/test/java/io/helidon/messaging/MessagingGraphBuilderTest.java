@@ -33,7 +33,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
-import io.helidon.messaging.spi.OutgoingConnector;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 import org.junit.jupiter.api.Test;
 
@@ -98,6 +99,64 @@ class MessagingGraphBuilderTest {
             assertThat(((DefaultMessagingGraph) graph).maxDeliveryMessages("source"), is(3));
             assertThat(((DefaultMessagingGraph) graph).maxDeliveryMessages("target"), is(1));
         }
+    }
+
+    @Test
+    void incomingChannelUsesManagedLifecycleAndRoutedAdmission() throws InterruptedException {
+        CountDownLatch delivered = new CountDownLatch(1);
+        AtomicReference<String> channelName = new AtomicReference<>();
+        AtomicInteger deliveryLimit = new AtomicInteger();
+        AtomicReference<Message<String>> received = new AtomicReference<>();
+        Message<String> message = Message.create("from-transport");
+        TestIncomingChannel connection = new TestIncomingChannel(context -> {
+            channelName.set(context.channel());
+            deliveryLimit.set(context.maxDeliveryMessages());
+            if (context.awaitRunning()) {
+                try (var reservation = context.reserveDelivery();
+                     var delivery = reservation.start(MessageBatch.create(message))) {
+                    delivery.await();
+                    delivered.countDown();
+                }
+            }
+        });
+
+        try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
+            MessagingChannel<String> source = builder.channel("incoming", String.class);
+            MessagingChannel<String> target = builder.channel("processed", GenericType.create(String.class),
+                                                              MessagingExecutionConfig.builder()
+                                                                      .maxInFlightMessages(1)
+                                                                      .build());
+            builder.incomingChannel(source, connection)
+                    .route(source, target)
+                    .messageSink(target, received::set);
+
+            try (MessagingGraph graph = builder.build()) {
+                assertThat(channelName.get(), nullValue());
+                graph.start();
+                assertThat("Incoming delivery did not complete", delivered.await(5, TimeUnit.SECONDS), is(true));
+                assertThat(channelName.get(), is("incoming"));
+                assertThat(deliveryLimit.get(), is(1));
+                assertThat(received.get(), sameInstance(message));
+            }
+        }
+        assertThat(connection.closed.get(), is(true));
+    }
+
+    @Test
+    void incomingChannelOwnershipRejectsReuseAndClosesAbandonedConnections() {
+        TestIncomingChannel connection = new TestIncomingChannel(_ -> { });
+        try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
+            MessagingChannel<String> first = builder.channel("first", String.class);
+            MessagingChannel<String> second = builder.channel("second", String.class);
+            builder.incomingChannel(first, connection);
+
+            IllegalArgumentException duplicate = assertThrows(IllegalArgumentException.class,
+                                                              () -> builder.incomingChannel(second, connection));
+            assertThat(duplicate.getMessage(), containsString("already owned"));
+            assertThrows(IllegalArgumentException.class, () -> builder.payloadSource(first, Stream.empty()));
+            assertThat(connection.closed.get(), is(false));
+        }
+        assertThat(connection.closed.get(), is(true));
     }
 
     @Test
@@ -325,7 +384,7 @@ class MessagingGraphBuilderTest {
         MessagingChannel<String> channel = builder.channel("ordered", String.class);
         List<String> outputs = new ArrayList<>();
         builder.messageSink(channel, _ -> outputs.add("first"))
-                .outgoingConnector(channel, new OutgoingConnector() {
+                .outgoingChannel(channel, new OutgoingChannel() {
                     @Override
                     public void start() {
                     }
@@ -357,7 +416,7 @@ class MessagingGraphBuilderTest {
     void successfulBuildTransfersResourceOwnershipAndRejectsBuilderReuse() {
         AtomicInteger streamCloses = new AtomicInteger();
         AtomicBoolean connectorReleased = new AtomicBoolean();
-        OutgoingConnector connector = new OutgoingConnector() {
+        OutgoingChannel connector = new OutgoingChannel() {
             @Override
             public void start() {
             }
@@ -379,7 +438,7 @@ class MessagingGraphBuilderTest {
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<String> channel = builder.channel("transferred", String.class);
         builder.payloadSource(channel, Stream.<String>empty().onClose(streamCloses::incrementAndGet))
-                .outgoingConnector(channel, connector);
+                .outgoingChannel(channel, connector);
         MessagingGraph graph = builder.build();
         try {
             assertThrows(IllegalStateException.class, builder::build);
@@ -406,7 +465,7 @@ class MessagingGraphBuilderTest {
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<String> channel = builder.channel("abandoned", String.class);
         builder.payloadSource(channel, Stream.<String>empty().onClose(() -> streamClosed.set(true)))
-                .outgoingConnector(channel, connector);
+                .outgoingChannel(channel, connector);
 
         builder.close();
 
@@ -451,7 +510,7 @@ class MessagingGraphBuilderTest {
                     awaitUninterruptibly(releaseClose);
                     closeExited.countDown();
                 }))
-                .outgoingConnector(channel, connector)
+                .outgoingChannel(channel, connector)
                 .payloadSink(channel, _ -> { });
 
         Thread closeThread = Thread.ofVirtual().start(() -> runCapturing(builder::close, closeFailure));
@@ -464,10 +523,10 @@ class MessagingGraphBuilderTest {
             assertThat(closeFailure.get().getMessage(),
                        closeFailure.get().getMessage(),
                        containsString("Timed out"));
-            assertThat("Connector force close was not attempted after stream cleanup timed out",
+            assertThat("ChannelConnection force close was not attempted after stream cleanup timed out",
                        connector.forceAttempted.await(5, TimeUnit.SECONDS),
                        is(true));
-            assertThat("Connector close was not attempted after stream cleanup timed out",
+            assertThat("ChannelConnection close was not attempted after stream cleanup timed out",
                        connector.closeAttempted.await(5, TimeUnit.SECONDS),
                        is(true));
             assertThat("Post-deadline connector close started with its interrupt status set",
@@ -487,7 +546,7 @@ class MessagingGraphBuilderTest {
         OrderedConnector connector = new OrderedConnector(lifecycle);
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<String> channel = builder.channel("abandoned-connector", String.class);
-        builder.outgoingConnector(channel, connector);
+        builder.outgoingChannel(channel, connector);
 
         builder.close();
 
@@ -1058,7 +1117,7 @@ class MessagingGraphBuilderTest {
         MessagingChannel<String> second = builder.channel("second", String.class);
         TestConnector connector = new TestConnector();
         builder.payloadSource(first, Stream.<String>empty().onClose(() -> closed.set(true)))
-                .outgoingConnector(first, connector)
+                .outgoingChannel(first, connector)
                 .route(first, second)
                 .route(second, first);
 
@@ -1173,7 +1232,35 @@ class MessagingGraphBuilderTest {
     private record ConnectorMessage<T>(T entity, MessageHeaders headers) implements Message<T> {
     }
 
-    private static final class TestConnector implements OutgoingConnector {
+    private static final class TestIncomingChannel implements IncomingChannel {
+        private final Consumer<IncomingConnectorContext> source;
+        private final AtomicBoolean closed = new AtomicBoolean();
+
+        private TestIncomingChannel(Consumer<IncomingConnectorContext> source) {
+            this.source = source;
+        }
+
+        @Override
+        public void run(IncomingConnectorContext context) {
+            source.accept(context);
+        }
+
+        @Override
+        public void drain() {
+        }
+
+        @Override
+        public void forceClose() {
+            close();
+        }
+
+        @Override
+        public void close() {
+            closed.set(true);
+        }
+    }
+
+    private static final class TestConnector implements OutgoingChannel {
         private final AtomicBoolean closed = new AtomicBoolean();
 
         @Override
@@ -1195,7 +1282,7 @@ class MessagingGraphBuilderTest {
         }
     }
 
-    private static final class OrderedConnector implements OutgoingConnector {
+    private static final class OrderedConnector implements OutgoingChannel {
         private final List<String> lifecycle;
         private final CountDownLatch forceAttempted = new CountDownLatch(1);
         private final CountDownLatch closeAttempted = new CountDownLatch(1);
