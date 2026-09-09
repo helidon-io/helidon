@@ -318,8 +318,13 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
         int statusCode = responseStatus.code();
         if (statusCode == Status.NO_CONTENT_204_CODE
-                || statusCode == Status.RESET_CONTENT_205_CODE
                 || statusCode == Status.NOT_MODIFIED_304_CODE) {
+            return false;
+        }
+        if (statusCode == Status.RESET_CONTENT_205_CODE
+                && !responseHeaders.contains(HeaderNames.CONTENT_LENGTH)
+                && !responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)) {
+            // Preserve header-terminated 205 compatibility, but honor declared framing so it is consumed before reuse.
             return false;
         }
         if ((
