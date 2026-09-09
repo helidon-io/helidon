@@ -45,6 +45,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -403,6 +404,78 @@ class ResilientValueTest {
         assertThat(followerFailure.get(), is((Throwable) null));
         assertThat(value.loaded(), is(true));
         assertThat(calls.get(), is(2));
+    }
+
+    @Test
+    void interruptedErrorFromLoadLeaderIsShared() throws InterruptedException {
+        CountDownLatch loading = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
+        AtomicReference<Throwable> followerFailure = new AtomicReference<>();
+        CircuitBreaker circuitBreaker = new CircuitBreaker() {
+            private final CircuitBreakerConfig prototype = CircuitBreakerConfig.builder().buildPrototype();
+
+            @Override
+            public String name() {
+                return "interruptible-test-circuit-breaker";
+            }
+
+            @Override
+            public <T> T invoke(Supplier<? extends T> supplier) {
+                if (calls.incrementAndGet() == 1) {
+                    loading.countDown();
+                    try {
+                        release.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new AssertionError(e);
+                    }
+                }
+                return supplier.get();
+            }
+
+            @Override
+            public CircuitBreakerConfig prototype() {
+                return prototype;
+            }
+
+            @Override
+            public State state() {
+                return State.CLOSED;
+            }
+
+            @Override
+            public void state(State newState) {
+            }
+        };
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
+                                                             () -> "loaded",
+                                                             retry(1),
+                                                             circuitBreaker,
+                                                             timeout()));
+
+        Thread loaderThread = Thread.ofVirtual().start(() -> captureFailure(value, loaderFailure));
+        Thread followerThread = Thread.ofVirtual().unstarted(() -> captureFailure(value, followerFailure));
+        try {
+            assertThat(loading.await(10, TimeUnit.SECONDS), is(true));
+            followerThread.start();
+            awaitWaiting(followerThread);
+            loaderThread.interrupt();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+        } finally {
+            release.countDown();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+
+        assertThat(loaderThread.isAlive(), is(false));
+        assertThat(followerThread.isAlive(), is(false));
+        assertThat(loaderFailure.get(), instanceOf(AssertionError.class));
+        assertThat(followerFailure.get(), sameInstance(loaderFailure.get()));
+        assertThat(value.loaded(), is(false));
+        assertThat(calls.get(), is(1));
     }
 
     @Test

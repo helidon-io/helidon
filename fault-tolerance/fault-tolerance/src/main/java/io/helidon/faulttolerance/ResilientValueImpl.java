@@ -117,7 +117,8 @@ final class ResilientValueImpl<T> implements ResilientValue<T> {
             try {
                 return new Outcome<>(load(), null, false);
             } catch (RuntimeException | Error e) {
-                boolean callerInterrupted = Thread.currentThread().isInterrupted()
+                boolean callerInterrupted = !(e instanceof Error)
+                        && Thread.currentThread().isInterrupted()
                         && SupplierHelper.interrupted(e) != null;
                 return new Outcome<>(null, e, callerInterrupted);
             }
