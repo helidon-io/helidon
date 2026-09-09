@@ -657,11 +657,6 @@ class BuilderCodegen implements CodegenExtension {
                                                  prototype))
                 .accessModifier(prototypeInfo.accessModifier());
 
-        if (blueprint.hasAnnotation(Types.PROTOTYPE_SEALED)) {
-            classModel.sealed(true)
-                    .addPermittedSubclass(prototype.fqName() + ".BuilderBase." + ifaceName + "Impl");
-        }
-
         typeArguments.forEach(classModel::addGenericArgument);
 
         if (prototypeInfo.configured().isPresent()) {
@@ -721,23 +716,28 @@ class BuilderCodegen implements CodegenExtension {
         // re-create all blueprint methods to have correct javadoc references
         generatePrototypeMethods(classModel, options);
 
-        List<OptionInfo> optionList = options.stream()
-                .map(OptionHandler::option)
-                .collect(Collectors.toUnmodifiableList());
+        List<OptionInfo> optionList = Utils.options(options);
 
         // abstract class BuilderBase...
-        GenerateAbstractBuilder.generate(ctx,
-                                         extensions,
-                                         classModel,
-                                         prototypeInfo,
-                                         new GenerateAbstractBuilder.TypeArguments(typeArguments, typeGenericArguments),
-                                         options,
-                                         newDefaults);
+        TypeName implementationType = GenerateAbstractBuilder.generate(
+                ctx,
+                extensions,
+                classModel,
+                prototypeInfo,
+                new GenerateAbstractBuilder.TypeArguments(typeArguments, typeGenericArguments),
+                options,
+                newDefaults);
+
+        if (blueprint.hasAnnotation(Types.PROTOTYPE_SEALED)) {
+            classModel.sealed(true)
+                    .addPermittedSubclass(implementationType);
+        }
 
         // class Builder extends BuilderBase ...
         GenerateBuilder.generate(extensions,
                                  classModel,
                                  prototypeInfo,
+                                 implementationType,
                                  typeArguments,
                                  typeGenericArguments,
                                  options);

@@ -40,6 +40,7 @@ final class GenerateBuilder {
     public static void generate(List<BuilderCodegenExtension> extensions,
                                 ClassModel.Builder classBuilder,
                                 PrototypeInfo prototypeInfo,
+                                TypeName implementationType,
                                 List<TypeArgument> typeArguments,
                                 List<TypeName> typeArgumentNames, List<OptionHandler> options) {
 
@@ -84,8 +85,7 @@ final class GenerateBuilder {
                                 .addContentLine("preBuildPrototype();")
                                 .addContentLine("validatePrototype();")
                                 .addContent("return new ")
-                                .addContent(prototype.genericTypeName())
-                                .addContent("Impl");
+                                .addContent(implementationType);
                         if (!typeArguments.isEmpty()) {
                             method.addContent("<>");
                         }

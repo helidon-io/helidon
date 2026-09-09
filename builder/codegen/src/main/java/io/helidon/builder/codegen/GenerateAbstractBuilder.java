@@ -62,15 +62,23 @@ final class GenerateAbstractBuilder {
     private GenerateAbstractBuilder() {
     }
 
-    static void generate(RoundContext ctx,
-                         List<BuilderCodegenExtension> extensions,
-                         ClassModel.Builder classModel,
-                         PrototypeInfo prototypeInfo,
-                         TypeArguments genericArguments,
-                         List<OptionHandler> options,
-                         List<BuilderCodegen.NewDefault> newDefaults) {
+    static TypeName generate(RoundContext ctx,
+                             List<BuilderCodegenExtension> extensions,
+                             ClassModel.Builder classModel,
+                             PrototypeInfo prototypeInfo,
+                             TypeArguments genericArguments,
+                             List<OptionHandler> options,
+                             List<BuilderCodegen.NewDefault> newDefaults) {
         Optional<TypeName> superType = prototypeInfo.superPrototype();
         TypeName prototype = prototypeInfo.prototypeType();
+        String ifaceName = prototype.className();
+        TypeName implementationType = TypeName.builder()
+                .packageName(prototype.packageName())
+                .addEnclosingName(ifaceName)
+                .addEnclosingName("BuilderBase")
+                .className(ifaceName + "Impl")
+                .build();
+        boolean sealedPrototype = prototypeInfo.blueprint().hasAnnotation(Types.PROTOTYPE_SEALED);
         List<TypeArgument> typeArguments = genericArguments.arguments();
         List<TypeName> typeArgumentNames = genericArguments.names();
 
@@ -141,12 +149,19 @@ final class GenerateAbstractBuilder {
             }
 
             // before the builder class is finished, we also generate a protected implementation
-            generatePrototypeImpl(extensions, builder, prototypeInfo, options, typeArguments, typeArgumentNames);
+            generatePrototypeImpl(extensions,
+                                  builder,
+                                  prototypeInfo,
+                                  implementationType,
+                                  sealedPrototype,
+                                  options,
+                                  genericArguments);
 
             extensions.forEach(it -> it.updateBuilderBase(prototypeInfo,
                                                           Utils.options(options),
                                                           builder));
         });
+        return implementationType;
     }
 
     static void buildRuntimeObjectMethod(InnerClass.Builder classBuilder,
@@ -1207,16 +1222,18 @@ final class GenerateAbstractBuilder {
     private static void generatePrototypeImpl(List<BuilderCodegenExtension> extensions,
                                               InnerClass.Builder classBuilder,
                                               PrototypeInfo prototypeInfo,
+                                              TypeName implementationType,
+                                              boolean sealedPrototype,
                                               List<OptionHandler> options,
-                                              List<TypeArgument> typeArguments,
-                                              List<TypeName> typeArgumentNames) {
+                                              TypeArguments genericArguments) {
         Optional<TypeName> superPrototype = prototypeInfo.superPrototype();
 
         TypeName prototype = prototypeInfo.prototypeType();
+        List<TypeArgument> typeArguments = genericArguments.arguments();
+        List<TypeName> typeArgumentNames = genericArguments.names();
         String ifaceName = prototype.className();
-        boolean sealedPrototype = prototypeInfo.blueprint().hasAnnotation(Types.PROTOTYPE_SEALED);
         // inner class of the builder
-        String implName = ifaceName + "Impl";
+        String implName = implementationType.className();
 
         // inner class of builder base
         classBuilder.addInnerClass(builder -> {
