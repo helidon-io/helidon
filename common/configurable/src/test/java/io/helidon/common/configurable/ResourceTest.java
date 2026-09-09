@@ -189,6 +189,22 @@ class ResourceTest {
     }
 
     @Test
+    void testConfigUriClosesHttpErrorStream() {
+        TestUrlStreamHandlerProvider.reset();
+        TestUrlStreamHandlerProvider.failWithHttpError();
+        URI uri = URI.create(TestUrlStreamHandlerProvider.PROTOCOL + "://resource");
+        ResourceConfig resourceConfig = ResourceConfig.builder()
+                .uri(uri)
+                .buildPrototype();
+
+        assertThrows(ResourceException.class,
+                     () -> Resource.create(resourceConfig, Duration.ofMillis(50)).bytes());
+
+        TestUrlStreamHandlerProvider.RecordingUrlConnection connection = TestUrlStreamHandlerProvider.connection();
+        assertThat(connection.errorStreamClosed(), is(true));
+    }
+
+    @Test
     void testConfigTimeoutWithNonUriResource() {
         ResourceConfig resourceConfig = ResourceConfig.builder()
                 .contentPlain(STRING_CONTENT)

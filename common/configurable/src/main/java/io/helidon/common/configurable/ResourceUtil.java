@@ -18,6 +18,7 @@ package io.helidon.common.configurable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URLConnection;
@@ -149,7 +150,28 @@ final class ResourceUtil {
         connection.setConnectTimeout(timeoutMillis);
         connection.setReadTimeout(timeoutMillis);
         connection.setUseCaches(false);
-        return connection.getInputStream();
+        try {
+            return connection.getInputStream();
+        } catch (IOException e) {
+            cleanUpFailedHttpConnection(connection, e);
+            throw e;
+        }
+    }
+
+    private static void cleanUpFailedHttpConnection(URLConnection connection, IOException originalException) {
+        if (!(connection instanceof HttpURLConnection httpConnection)) {
+            return;
+        }
+        InputStream errorStream = httpConnection.getErrorStream();
+        if (errorStream != null) {
+            try {
+                errorStream.close();
+                return;
+            } catch (IOException e) {
+                originalException.addSuppressed(e);
+            }
+        }
+        httpConnection.disconnect();
     }
 
     private static int timeoutMillis(Duration timeout) {

@@ -16,9 +16,11 @@
 
 package io.helidon.common.configurable;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.spi.URLStreamHandlerProvider;
 
@@ -27,6 +29,7 @@ public final class TestUrlStreamHandlerProvider extends URLStreamHandlerProvider
     static final String PROTOCOL = "helidon-test-timeout";
 
     private static RecordingUrlConnection connection;
+    private static boolean failWithHttpError;
 
     static RecordingUrlConnection connection() {
         return connection;
@@ -34,6 +37,11 @@ public final class TestUrlStreamHandlerProvider extends URLStreamHandlerProvider
 
     static void reset() {
         connection = null;
+        failWithHttpError = false;
+    }
+
+    static void failWithHttpError() {
+        failWithHttpError = true;
     }
 
     @Override
@@ -43,16 +51,20 @@ public final class TestUrlStreamHandlerProvider extends URLStreamHandlerProvider
         }
         return new URLStreamHandler() {
             @Override
-            protected URLConnection openConnection(URL url) {
-                connection = new RecordingUrlConnection(url);
+            protected HttpURLConnection openConnection(URL url) {
+                connection = new RecordingUrlConnection(url, failWithHttpError);
                 return connection;
             }
         };
     }
 
-    static final class RecordingUrlConnection extends URLConnection {
-        private RecordingUrlConnection(URL url) {
+    static final class RecordingUrlConnection extends HttpURLConnection {
+        private final boolean failWithHttpError;
+        private boolean errorStreamClosed;
+
+        private RecordingUrlConnection(URL url, boolean failWithHttpError) {
             super(url);
+            this.failWithHttpError = failWithHttpError;
         }
 
         @Override
@@ -61,9 +73,41 @@ public final class TestUrlStreamHandlerProvider extends URLStreamHandlerProvider
         }
 
         @Override
-        public InputStream getInputStream() {
+        public InputStream getInputStream() throws IOException {
             connect();
+            if (failWithHttpError) {
+                responseCode = HTTP_UNAVAILABLE;
+                throw new IOException("HTTP error response");
+            }
             return InputStream.nullInputStream();
+        }
+
+        @Override
+        public InputStream getErrorStream() {
+            if (!failWithHttpError) {
+                return null;
+            }
+            return new ByteArrayInputStream(new byte[0]) {
+                @Override
+                public void close() throws IOException {
+                    errorStreamClosed = true;
+                    super.close();
+                }
+            };
+        }
+
+        @Override
+        public void disconnect() {
+            connected = false;
+        }
+
+        @Override
+        public boolean usingProxy() {
+            return false;
+        }
+
+        boolean errorStreamClosed() {
+            return errorStreamClosed;
         }
     }
 }
