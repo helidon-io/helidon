@@ -281,6 +281,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     throw tooManyConcurrentRequests();
                 }
             }
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            throw new CloseConnectionException("Connection closed by client", e);
         } catch (CloseConnectionException e) {
             throw e;
         } catch (BadRequestException e) {

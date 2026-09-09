@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
@@ -39,6 +41,7 @@ import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.Router;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
@@ -47,6 +50,10 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -155,7 +162,40 @@ class Http2ServerStreamTest {
         assertThat(flowControl.getRemainingWindowSize(), is(initialWindowSize));
     }
 
+    @Test
+    void invalidContentLengthResetWrapsSocketWriterException() {
+        SocketWriterException writeFailure = new SocketWriterException();
+        Http2ServerStream stream = stream(new ClosingHandler(), failingWriter(writeFailure));
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.CONTENT_LENGTH, 2);
+        stream.headers(Http2Headers.create(headers), false);
+        BufferData payload = BufferData.create("frank");
+        Http2FrameHeader header = dataHeader(payload.available(), Http2Flag.END_OF_STREAM);
+
+        ServerConnectionException exception = assertThrows(ServerConnectionException.class,
+                                                           () -> stream.data(header, payload, true));
+
+        assertThat(exception.getCause(), sameInstance(writeFailure));
+    }
+
+    @Test
+    void invalidWindowUpdateResetWrapsSocketWriterException() {
+        SocketWriterException writeFailure = new SocketWriterException();
+        Http2ServerStream stream = stream(new ClosingHandler(), failingWriter(writeFailure));
+        stream.headers(headers(), false);
+
+        ServerConnectionException exception = assertThrows(ServerConnectionException.class,
+                                                           () -> stream.windowUpdate(new Http2WindowUpdate(0)));
+
+        assertThat(exception.getCause(), sameInstance(writeFailure));
+    }
+
     private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler) {
+        return stream(handler, noOpWriter());
+    }
+
+    private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler,
+                                            Http2StreamWriter writer) {
         ConnectionContext ctx = mock(ConnectionContext.class);
         when(ctx.router()).thenReturn(Router.empty());
         when(ctx.socketId()).thenReturn("socket");
@@ -180,7 +220,7 @@ class Http2ServerStreamTest {
                                      STREAM_ID,
                                      Http2Settings.create(),
                                      Http2Settings.create(),
-                                     noOpWriter(),
+                                     writer,
                                      flowControl,
                                      mock(Http2ConnectionChecks.class));
     }
@@ -239,6 +279,12 @@ class Http2ServerStreamTest {
                 return 0;
             }
         };
+    }
+
+    private static Http2StreamWriter failingWriter(RuntimeException failure) {
+        Http2StreamWriter writer = mock(Http2StreamWriter.class);
+        doThrow(failure).when(writer).write(any(Http2FrameData.class));
+        return writer;
     }
 
     private static class ClosingHandler implements Http2SubProtocolSelector.SubProtocolHandler {

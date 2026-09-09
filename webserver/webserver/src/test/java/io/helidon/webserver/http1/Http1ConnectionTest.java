@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -35,6 +36,7 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -112,6 +114,20 @@ class Http1ConnectionTest {
             writer.releaseFlush.countDown();
             executor.shutdownNow();
         }
+    }
+
+    @Test
+    void peerCloseWhileReadingHeadersClosesConnection() {
+        AtomicReference<byte[]> input =
+                new AtomicReference<>("GET / HTTP/1.1\r\nHost:".getBytes(StandardCharsets.UTF_8));
+        Http1Connection connection = createConnection(mock(DataWriter.class),
+                                                      DataReader.create(() -> input.getAndSet(null)),
+                                                      Router.empty());
+
+        CloseConnectionException exception = assertThrows(CloseConnectionException.class,
+                                                          () -> connection.handle(FixedLimit.create()));
+
+        assertThat(exception.getCause(), instanceOf(DataReader.InsufficientDataAvailableException.class));
     }
 
     private static Http1Connection createConnection(DataWriter dataWriter) {
