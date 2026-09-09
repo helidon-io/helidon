@@ -34,6 +34,14 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-buffers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-socket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-uri</artifactId>
         </dependency>
         <dependency>

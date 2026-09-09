@@ -18,7 +18,10 @@ package io.helidon.common.buffers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
@@ -35,6 +38,69 @@ class BufferDataTest {
         return Stream.of(new TestContext("fixed", BufferData.create(1024)),
                          new TestContext("growing", BufferData.growing(0)),
                          new TestContext("byte[]", BufferData.create(new byte[1024]).clear()));
+    }
+
+    @Test
+    void growingBufferWriteBufferSurvivesLaterGrowth() {
+        byte[] prefix = new byte[250];
+        byte[] payload = new byte[20];
+        byte[] suffix = new byte[300];
+        Arrays.fill(prefix, (byte) 1);
+        Arrays.fill(payload, (byte) 2);
+        Arrays.fill(suffix, (byte) 3);
+
+        BufferData buffer = BufferData.growing(256);
+        buffer.write(prefix);
+        buffer.write(BufferData.create(payload));
+        buffer.write(suffix);
+
+        assertThat(buffer.readBytes(), is(concat(prefix, payload, suffix)));
+    }
+
+    @Test
+    void growingBufferWritePartialBufferSurvivesLaterGrowth() {
+        byte[] prefix = new byte[250];
+        byte[] payload = new byte[20];
+        byte[] suffix = new byte[300];
+        Arrays.fill(prefix, (byte) 1);
+        Arrays.fill(payload, (byte) 2);
+        Arrays.fill(suffix, (byte) 3);
+        BufferData source = BufferData.create(payload);
+
+        BufferData buffer = BufferData.growing(256);
+        buffer.write(prefix);
+        buffer.write(source, 10);
+        buffer.write(suffix);
+
+        assertThat(buffer.readBytes(), is(concat(prefix, Arrays.copyOf(payload, 10), suffix)));
+        assertThat(source.available(), is(10));
+    }
+
+    @Test
+    void growingBufferWriteDoesNotExposeBackingArray() {
+        AtomicReference<byte[]> retained = new AtomicReference<>();
+        BufferData source = (BufferData) Proxy.newProxyInstance(BufferData.class.getClassLoader(),
+                                                                 new Class<?>[] {BufferData.class},
+                                                                 (_, method, arguments) -> {
+                                                                     return switch (method.getName()) {
+                                                                         case "available" -> 1;
+                                                                         case "read" -> {
+                                                                             byte[] target = (byte[]) arguments[0];
+                                                                             retained.set(target);
+                                                                             target[0] = 1;
+                                                                             yield 1;
+                                                                         }
+                                                                         default -> throw new IllegalStateException(method.toString());
+                                                                     };
+                                                                 });
+        BufferData buffer = BufferData.growing(256);
+
+        buffer.write(source);
+        byte[] retainedBytes = retained.get();
+        assertThat(retainedBytes, Matchers.notNullValue());
+        retainedBytes[0] = 2;
+
+        assertThat(buffer.read(), is(1));
     }
 
     @ParameterizedTest
@@ -471,6 +537,17 @@ class BufferDataTest {
     BufferData dataFromHex(String hexEncoded) {
         byte[] bytes = HexFormat.of().parseHex(hexEncoded.replace(" ", ""));
         return BufferData.create(bytes);
+    }
+
+    private static byte[] concat(byte[]... arrays) {
+        int length = Arrays.stream(arrays).mapToInt(array -> array.length).sum();
+        byte[] result = new byte[length];
+        int offset = 0;
+        for (byte[] array : arrays) {
+            System.arraycopy(array, 0, result, offset, array.length);
+            offset += array.length;
+        }
+        return result;
     }
 
     private record TestContext(String name, BufferData bufferData) {

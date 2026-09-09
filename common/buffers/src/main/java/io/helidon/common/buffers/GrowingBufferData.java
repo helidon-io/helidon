@@ -150,20 +150,15 @@ class GrowingBufferData implements BufferData {
 
     @Override
     public void write(BufferData toWrite) {
-        ensureSize(toWrite.available());
-        byte[] buffer = new byte[toWrite.available()];
-        int read = toWrite.read(buffer);
-        System.arraycopy(buffer, 0, this.bytes, writePosition, read);
-        writePosition += read;
+        write(toWrite, toWrite.available());
     }
 
     @Override
     public void write(BufferData toWrite, int length) {
         ensureSize(length);
-        byte[] buffer = new byte[length];
-        int read = toWrite.read(buffer);
-        System.arraycopy(buffer, 0, this.bytes, writePosition, read);
+        int read = readSource(toWrite, length);
         writePosition += read;
+        this.length = Math.max(this.length, writePosition);
     }
 
     @Override
@@ -240,8 +235,22 @@ class GrowingBufferData implements BufferData {
         return Arrays.copyOfRange(bytes, 0, length);
     }
 
+    private int readSource(BufferData source, int length) {
+        Class<?> sourceType = source.getClass();
+        if (sourceType == FixedBufferData.class
+                || sourceType == GrowingBufferData.class
+                || sourceType == ReadOnlyArrayData.class) {
+            return source.read(bytes, writePosition, length);
+        }
+
+        byte[] buffer = new byte[length];
+        int read = source.read(buffer);
+        System.arraycopy(buffer, 0, bytes, writePosition, read);
+        return read;
+    }
+
     private void ensureSize(int i) {
-        if (this.bytes.length > writePosition + i) {
+        if (this.bytes.length >= writePosition + i) {
             return;
         }
 

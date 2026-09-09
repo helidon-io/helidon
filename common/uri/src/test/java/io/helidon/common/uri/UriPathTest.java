@@ -26,6 +26,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriPathTest {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/",
+            "/baseline11",
+            "/json/25",
+            "/async-db",
+            "/alpha_beta/~user"
+    })
+    void simplePathValidationPreservesPath(String rawPath) {
+        UriPath path = UriPath.create(rawPath);
+
+        path.validate();
+
+        assertThat(path.path(), is(rawPath));
+    }
+
     @Test
     void testEncodePercent() {
         // the path contains string %20, not a space!
