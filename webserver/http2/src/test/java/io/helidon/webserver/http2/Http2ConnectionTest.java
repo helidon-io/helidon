@@ -22,6 +22,7 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
@@ -95,6 +96,23 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionTest {
+
+    @Test
+    void peerCloseWhileReadingPrefaceClosesConnection() {
+        byte[] preface = Http2Util.prefaceData().readBytes();
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(Arrays.copyOf(preface, preface.length - 1));
+        DataWriter writer = mock(DataWriter.class);
+        Http2Connection connection = new Http2Connection(http2Context(writer, DataReader.create(input::poll)),
+                                                         Http2Config.create(),
+                                                         List.of());
+        connection.expectPreface();
+
+        CloseConnectionException exception = assertThrows(CloseConnectionException.class,
+                                                          () -> connection.handle(FixedLimit.create()));
+
+        assertThat(exception.getCause(), instanceOf(DataReader.InsufficientDataAvailableException.class));
+    }
 
     @Test
     void h2cUpgradeRespectsConcurrentStreamLimit() throws InterruptedException {
