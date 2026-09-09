@@ -29,6 +29,7 @@ import io.helidon.common.Api;
  */
 @Api.Preview
 @Prototype.Blueprint(decorator = MessagingConfigSupport.MessageBatchBuilderDecorator.class, createEmptyPublic = false)
+@Prototype.Sealed
 @Prototype.CustomMethods(MessagingConfigSupport.MessageBatchCustomMethods.class)
 interface MessageBatchConfigBlueprint<T> extends Prototype.Factory<MessageBatch<T>> {
     /**

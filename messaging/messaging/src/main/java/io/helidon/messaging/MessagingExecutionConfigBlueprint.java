@@ -28,6 +28,7 @@ import io.helidon.common.Api;
  */
 @Api.Preview
 @Prototype.Blueprint(decorator = MessagingConfigSupport.ExecutionBuilderDecorator.class)
+@Prototype.Sealed
 @Prototype.Configured
 interface MessagingExecutionConfigBlueprint {
     /**

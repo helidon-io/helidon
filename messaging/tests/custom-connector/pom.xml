@@ -80,7 +80,6 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-media-type</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -101,6 +100,19 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                        <configuration>
+                            <!-- Config requires this module transitively on the main module path. -->
+                            <ignoredNonTestScopedDependencies>io.helidon.common:helidon-common-media-type</ignoredNonTestScopedDependencies>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

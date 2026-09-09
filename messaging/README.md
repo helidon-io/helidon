@@ -415,18 +415,17 @@ directly.
 ### Configure execution limits
 
 Messaging uses bounded admission rather than a Reactive Streams protocol. Global limits are configured under
-`messaging.execution`; channel-specific values under `messaging.channel.<channel>.execution` override
-them:
+`messaging`; channel-specific values under `messaging.channel.<channel>.execution` override them. Channel overrides
+have no defaults: omitted values inherit the global settings.
 
 ```yaml
 messaging:
-  execution:
-    queue-capacity: 0
-    max-pending-admissions: 64
-    max-pending-messages: 1024
-    max-in-flight-messages: 1024
-    admission-timeout: PT5S
-    shutdown-timeout: PT10S
+  queue-capacity: 0
+  max-pending-admissions: 64
+  max-pending-messages: 1024
+  max-in-flight-messages: 1024
+  admission-timeout: PT5S
+  shutdown-timeout: PT10S
 
   channel:
     orders:
@@ -436,8 +435,8 @@ messaging:
 
 Admitted deliveries execute sequentially in FIFO order within each channel, so messaging methods handling that channel
 are never invoked concurrently. Different channels have independent dispatchers, so deliveries on different channels
-may execute at the same time. `shutdown-timeout` is runtime-wide, cannot be overridden per channel, and applies only to
-shutdown or failed-startup rollback; it does not bound connector startup or readiness. Configure transport connection
+may execute at the same time. `shutdown-timeout` is configured only under `messaging` and applies only to shutdown or
+failed-startup rollback; it does not bound connector startup or readiness. Configure transport connection
 and startup limits on the connector. Capacity, timeout, cancellation, and shutdown admission failures are reported as
 `MessagingRejectedException` with a typed reason.
 
@@ -460,28 +459,29 @@ For generated receiver and emitter examples, see `ChannelMessagingTypes.java` in
 
 The imperative API builds and owns a typed messaging graph directly in Java. It uses the
 `helidon-messaging` runtime dependency but does not require messaging code generation.
+Both imperative builders and declarative registrations produce `MessagingConfig` and use the same graph assembly
+and lifecycle. The graph builder can also load configuration with `.config(config.get("messaging"))`.
 
 ### Build and run a graph
 
 ```java
-try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
-    MessagingChannel<String> input = builder.channel("input", String.class);
-    MessagingChannel<String> output = builder.channel("output", String.class);
+MessagingGraph.Builder builder = MessagingGraph.builder();
+MessagingChannel<String> input = builder.channel("input", String.class);
+MessagingChannel<String> output = builder.channel("output", String.class);
 
-    builder.messageProcessor(input, output, message ->
-                    Message.builder(message.entity().toUpperCase())
-                            .header("trace-id", message.header("trace-id").orElse("unknown"))
-                            .build())
-            .messageSink(output, message -> System.out.println(message.entity()));
+builder.messageProcessor(input, output, message ->
+                Message.builder(message.entity().toUpperCase())
+                        .header("trace-id", message.header("trace-id").orElse("unknown"))
+                        .build())
+        .messageSink(output, message -> System.out.println(message.entity()));
 
-    try (MessagingGraph graph = builder.build()) {
-        graph.start();
+try (MessagingGraph graph = builder.build()) {
+    graph.start();
 
-        Emitter<String> emitter = graph.emitter(input);
-        emitter.emit(Message.builder("hello")
-                             .header("trace-id", "123")
-                             .build());
-    }
+    Emitter<String> emitter = graph.emitter(input);
+    emitter.emit(Message.builder("hello")
+                         .header("trace-id", "123")
+                         .build());
 }
 ```
 
@@ -495,25 +495,24 @@ The builder supports these elements:
 
 | Method | Purpose |
 | --- | --- |
-| `payloadSource` | Feed payloads from a builder- or graph-owned `Stream`. |
-| `messageSource` | Feed message envelopes from a builder- or graph-owned `Stream`. |
+| `payloadSource` | Feed payloads from a graph-owned `Stream`. |
+| `messageSource` | Feed message envelopes from a graph-owned `Stream`. |
 | `route` | Forward a batch unchanged between channels of the same payload type. |
 | `payloadProcessor` | Transform each payload; input headers are not propagated. |
 | `messageProcessor` | Transform each message and explicitly control the resulting headers. |
 | `payloadSink` | Consume each payload. |
 | `messageSink` | Consume each message envelope. |
 | `batchSink` | Consume a complete batch once. |
-| `incomingChannel` | Add a builder- or graph-owned `IncomingChannel` as a source. |
-| `outgoingChannel` | Add a builder- or graph-owned `OutgoingChannel` as a required output. |
+| `incomingChannel` | Add a graph-owned `IncomingChannel` as a source. |
+| `outgoingChannel` | Add a graph-owned `OutgoingChannel` as a required output. |
 
 Every channel must have at least one output. Synchronous routing cycles are rejected. A channel can have at most one
 stream source, and downstream paths from distinct stream sources cannot converge.
 
 The imperative builder accepts channel connections created from typed connector and channel configuration builders.
-The built graph exposes typed emitters for application-originated input. The builder owns registered streams and
-channel connections until a successful build transfers them to the graph. The graph manages channel startup,
-incoming delivery admission, draining, and shutdown. Declarative connector configuration and `@Messaging.OnFailure`
-policies are not applied to an imperative graph.
+The built graph exposes typed emitters for application-originated input and owns registered streams and channel
+connections. It manages channel startup, incoming delivery admission, draining, and shutdown. Generated consumer
+registrations contribute annotation-based `@Messaging.OnFailure` policies to the same graph.
 
 For example, the Kafka extension provides typed configuration for both directions:
 
@@ -523,31 +522,30 @@ KafkaConnector kafka = KafkaConnector.builder()
         .bootstrapServers("localhost:9092")
         .build();
 
-try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
-    MessagingChannel<String> orders = builder.channel("orders", String.class);
-    MessagingChannel<String> outgoing = builder.channel("outgoing", String.class);
+MessagingGraph.Builder builder = MessagingGraph.builder();
+MessagingChannel<String> orders = builder.channel("orders", String.class);
+MessagingChannel<String> outgoing = builder.channel("outgoing", String.class);
 
-    builder.incomingChannel(orders, kafka.incoming(KafkaIncomingConfig.builder()
-                    .channelName("orders")
-                    .topic("orders")
-                    .groupId("inventory-service")
-                    .build()))
-            .messageSink(orders, message -> System.out.println(message.entity()))
-            .outgoingChannel(outgoing, kafka.outgoing(KafkaOutgoingConfig.builder()
-                    .channelName("outgoing")
-                    .topic("orders")
-                    .build()));
+builder.incomingChannel(orders, kafka.incoming(KafkaIncomingConfig.builder()
+                .channelName("orders")
+                .topic("orders")
+                .groupId("inventory-service")
+                .build()))
+        .messageSink(orders, message -> System.out.println(message.entity()))
+        .outgoingChannel(outgoing, kafka.outgoing(KafkaOutgoingConfig.builder()
+                .channelName("outgoing")
+                .topic("orders")
+                .build()));
 
-    try (MessagingGraph graph = builder.build()) {
-        graph.start();
-        graph.emitter(outgoing).emit(Message.create("new order"));
-        // Keep the graph running for the application's lifetime.
-    }
+try (MessagingGraph graph = builder.build()) {
+    graph.start();
+    graph.emitter(outgoing).emit(Message.create("new order"));
+    // Keep the graph running for the application's lifetime.
 }
 ```
 
 The configured `KafkaConnector` supplies the shared bootstrap servers. Each factory call returns a fresh channel
-connection whose resources belong to the builder and then the graph.
+connection whose resources belong to the built graph.
 
 ### Emit batches
 
@@ -567,26 +565,22 @@ boundary. All emitter calls wait for end-to-end completion. A partial or indeter
 
 ### Configure execution and lifecycle
 
-Configure graph-wide defaults before declaring the first channel:
+Configure graph-wide defaults directly on the graph builder:
 
 ```java
-MessagingExecutionConfig execution = MessagingExecutionConfig.builder()
+MessagingGraph.Builder builder = MessagingGraph.builder()
         .queueCapacity(32)
         .maxInFlightMessages(256)
-        .shutdownTimeout(Duration.ofSeconds(10))
-        .build();
-
-MessagingGraph.Builder builder = MessagingGraph.builder()
-        .executionConfig(execution);
+        .shutdownTimeout(Duration.ofSeconds(10));
 ```
 
-The `channel` overload that accepts a `GenericType<T>` and `MessagingExecutionConfig` supplies channel-specific
-admission and message limits; the shutdown timeout remains graph-wide. Delivery remains sequential within every
-channel, while different channels may execute concurrently.
+The `channel` overload that accepts a `GenericType<T>` and `MessagingExecutionConfig` supplies sparse channel-specific
+admission and message limits. Unconfigured fields inherit the graph defaults; the shutdown timeout is configured only
+on the graph. Delivery remains sequential within every channel, while different channels may execute concurrently.
 
 Closing a running graph stops new external admission, drains admitted work, and closes graph-owned streams and
-connectors. Closing an unbuilt builder releases resources already transferred to it. Failures from asynchronous stream
-sources are reported when the graph closes.
+connections. A failed build also closes registered resources. Failures from asynchronous stream sources are reported
+when the graph closes.
 
 An imperative emission has the same at-least-once behavior as a declarative emission: for each delivery, outputs run
 sequentially, the first failure prevents later outputs from running, and earlier outputs are not rolled back. Retrying

@@ -59,7 +59,7 @@
 <tr>
 <td>
 <a id="messaging"></a>
-<a href="io.helidon.messaging.MessagingConfig.md">
+<a href="io.helidon.messaging.MessagingGraph.md">
 <code>messaging</code>
 </a>
 </td>

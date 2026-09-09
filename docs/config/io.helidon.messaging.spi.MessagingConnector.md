@@ -12,7 +12,7 @@ No implementations are currently known.
 
 ## Usages
 
-- <a href="io.helidon.messaging.MessagingConfig.md#connector"><code>messaging.<wbr>connector</code></a>
+- <a href="io.helidon.messaging.MessagingGraph.md#connector"><code>messaging.<wbr>connector</code></a>
 
 ---
 

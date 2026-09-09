@@ -34,6 +34,7 @@ import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
 import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
 import io.helidon.messaging.spi.OutgoingChannel;
 
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessagingGraphBuilderTest {
     private static final Duration SHORT_SHUTDOWN_TIMEOUT = Duration.ofMillis(100);
+
+    @Test
+    void configurationLeavesAreSealed() {
+        for (Class<?> type : List.of(MessagingConfig.class,
+                                    MessagingChannelConfig.class,
+                                    MessagingExecutionConfig.class,
+                                    MessageBatchConfig.class,
+                                    FailurePolicy.class,
+                                    DeadLetterConfig.class)) {
+            assertThat(type.getName(), type.isSealed(), is(true));
+        }
+        assertThat(MessagingConnectorProviderConfig.class.isSealed(), is(false));
+    }
 
     @Test
     void exposesCommonBuilderContract() {
