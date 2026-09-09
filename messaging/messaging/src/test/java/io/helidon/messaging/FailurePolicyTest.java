@@ -131,14 +131,14 @@ class FailurePolicyTest {
                 .delay(Duration.ofMillis(25))
                 .calls(3)
                 .buildPrototype();
-        MutableDeadLetterConfig mutableDeadLetter = new MutableDeadLetterConfig("orders-dlq");
+        var deadLetter = DeadLetterConfig.builder().channel("orders-dlq");
         FailurePolicy policy = FailurePolicy.builder()
                 .retry(retry)
                 .onExhausted(FailureDisposition.DEAD_LETTER)
-                .deadLetter(mutableDeadLetter)
+                .deadLetter(deadLetter.build())
                 .build();
 
-        mutableDeadLetter.update("changed-dlq");
+        deadLetter.channel("changed-dlq");
 
         assertThat(policy.retry(), is(retry));
         assertThat(policy.retry().delay(), is(Duration.ofMillis(25)));
@@ -159,33 +159,14 @@ class FailurePolicyTest {
                         dead-letter: {}
                         """, MediaTypes.APPLICATION_YAML)));
         assertThat(emptyDeadLetter.getMessage(), containsString("channel must be configured"));
-        assertThrows(RuntimeException.class,
-                     () -> FailurePolicy.builder()
-                             .onExhausted(FailureDisposition.DEAD_LETTER)
-                             .deadLetter(DeadLetterConfig.builder().channel(" ").build())
-                             .build());
+        RuntimeException blankChannel = assertThrows(RuntimeException.class,
+                () -> DeadLetterConfig.builder().channel(" ").build());
+        assertThat(blankChannel.getMessage(), containsString("channel must not be blank"));
         assertThrows(RuntimeException.class,
                      () -> FailurePolicy.builder()
                              .onExhausted(FailureDisposition.DROP)
                              .deadLetter(DeadLetterConfig.builder().channel("orders-dlq").build())
                              .build());
-
-        DeadLetterConfig invalid = () -> " ";
-        RuntimeException customFailure = assertThrows(
-                RuntimeException.class,
-                () -> FailurePolicy.builder()
-                        .onExhausted(FailureDisposition.DEAD_LETTER)
-                        .deadLetter(invalid)
-                        .build());
-        assertThat(customFailure.getMessage(), containsString("channel must not be blank"));
-        DeadLetterConfig nullChannel = () -> null;
-        RuntimeException nullFailure = assertThrows(
-                RuntimeException.class,
-                () -> FailurePolicy.builder()
-                        .onExhausted(FailureDisposition.DEAD_LETTER)
-                        .deadLetter(nullChannel)
-                        .build());
-        assertThat(nullFailure.getMessage(), containsString("channel must be configured"));
     }
 
     @Test
@@ -314,23 +295,6 @@ class FailurePolicyTest {
         @Override
         public MessageHeaders headers() {
             return MessageHeaders.empty();
-        }
-    }
-
-    private static final class MutableDeadLetterConfig implements DeadLetterConfig {
-        private String channel;
-
-        private MutableDeadLetterConfig(String channel) {
-            this.channel = channel;
-        }
-
-        @Override
-        public String channel() {
-            return channel;
-        }
-
-        private void update(String channel) {
-            this.channel = channel;
         }
     }
 }

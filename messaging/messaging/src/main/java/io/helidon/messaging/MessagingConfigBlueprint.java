@@ -33,6 +33,7 @@ import io.helidon.messaging.spi.MessagingConnectorProvider;
  * Messaging configuration.
  */
 @Prototype.Blueprint(decorator = MessagingConfigSupport.BuilderDecorator.class)
+@Prototype.Sealed
 @Prototype.CustomMethods(MessagingConfigSupport.GraphCustomMethods.class)
 @Prototype.Configured("messaging")
 @Prototype.RegistrySupport

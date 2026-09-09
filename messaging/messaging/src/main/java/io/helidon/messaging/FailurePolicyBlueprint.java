@@ -28,6 +28,7 @@ import io.helidon.faulttolerance.RetryConfig;
  */
 @Api.Preview
 @Prototype.Blueprint(decorator = MessagingConfigSupport.FailurePolicyBuilderDecorator.class)
+@Prototype.Sealed
 @Prototype.Configured
 @Prototype.CustomMethods(MessagingConfigSupport.FailurePolicyBuilderDecorator.class)
 interface FailurePolicyBlueprint {

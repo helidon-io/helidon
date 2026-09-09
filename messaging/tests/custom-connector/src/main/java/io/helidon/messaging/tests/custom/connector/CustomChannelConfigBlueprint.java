@@ -25,6 +25,7 @@ import io.helidon.builder.api.Prototype;
  * Channel-specific custom connector configuration.
  */
 @Prototype.Blueprint(isPublic = false)
+@Prototype.Sealed
 @Prototype.Configured(root = false)
 interface CustomChannelConfigBlueprint {
     /**
