@@ -47,7 +47,9 @@ public class HttpRedirectJmhBenchmark {
     private static final int REQUESTS_PER_INVOCATION = 8;
     private static final String HOST = "127.0.0.1";
     private static final String REDIRECT_PATH = "/redirect";
+    private static final String EARLY_REDIRECT_PATH = "/early-redirect";
     private static final String TARGET_PATH = "/target";
+    private static final String NO_CONTENT_PATH = "/no-content";
     private static final byte[] REQUEST_ENTITY = "request-entity".getBytes(StandardCharsets.UTF_8);
     private static final byte[] RESPONSE_ENTITY = "ok".getBytes(StandardCharsets.UTF_8);
 
@@ -59,13 +61,21 @@ public class HttpRedirectJmhBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1PutOutputStreamEarlyRedirect(NetworkState state, Blackhole blackhole) {
+        invokeEarlyRedirectOutputStream(state.http1Client, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http2PutOutputStreamRedirect(NetworkState state, Blackhole blackhole) {
         invokeRedirectOutputStream(state.http2Client, blackhole);
     }
 
     private static void configureRouting(HttpRouting.Builder routing) {
         routing.put(REDIRECT_PATH, HttpRedirectJmhBenchmark::redirect)
-                .put(TARGET_PATH, HttpRedirectJmhBenchmark::handle);
+                .put(EARLY_REDIRECT_PATH, HttpRedirectJmhBenchmark::earlyRedirect)
+                .put(TARGET_PATH, HttpRedirectJmhBenchmark::handle)
+                .get(NO_CONTENT_PATH, HttpRedirectJmhBenchmark::noContent);
     }
 
     private static void redirect(ServerRequest request, ServerResponse response) {
@@ -75,9 +85,19 @@ public class HttpRedirectJmhBenchmark {
                 .send();
     }
 
+    private static void earlyRedirect(ServerRequest request, ServerResponse response) {
+        response.status(Status.FOUND_302)
+                .header(HeaderNames.LOCATION, NO_CONTENT_PATH)
+                .send();
+    }
+
     private static void handle(ServerRequest request, ServerResponse response) {
         request.content().as(byte[].class);
         response.send(RESPONSE_ENTITY);
+    }
+
+    private static void noContent(ServerRequest request, ServerResponse response) {
+        response.status(Status.NO_CONTENT_204).send();
     }
 
     private static void invokeRedirectOutputStream(HttpClient<?> client, Blackhole blackhole) {
@@ -91,6 +111,26 @@ public class HttpRedirectJmhBenchmark {
                 output.close();
             })) {
                 consume(response, blackhole);
+            }
+        }
+    }
+
+    private static void invokeEarlyRedirectOutputStream(HttpClient<?> client, Blackhole blackhole) {
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            ClientRequest<?> request = client.method(Method.PUT)
+                    .uri(EARLY_REDIRECT_PATH)
+                    .header(HeaderNames.CONTENT_TYPE, "application/octet-stream")
+                    .followRedirects(true);
+            try (HttpClientResponse response = request.outputStream(output -> {
+                output.write(REQUEST_ENTITY);
+                output.close();
+            })) {
+                response.entity().consume();
+                int status = response.status().code();
+                if (status != Status.NO_CONTENT_204.code()) {
+                    throw new IllegalStateException("Unexpected early-redirect response: " + response.status());
+                }
+                blackhole.consume(status);
             }
         }
     }
@@ -140,6 +180,7 @@ public class HttpRedirectJmhBenchmark {
                 String baseUri = "http://" + HOST + ":" + server.port();
                 http1Client = Http1Client.builder()
                         .baseUri(baseUri)
+                        .sendExpectContinue(true)
                         .shareConnectionCache(false)
                         .servicesDiscoverServices(false)
                         .build();

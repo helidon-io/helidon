@@ -30,7 +30,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 class HttpRedirectJmhRunnerTest {
-    private static final String METHODS = "(http1PutOutputStreamRedirect|http2PutOutputStreamRedirect)";
+    private static final String METHODS = "(http1PutOutputStreamEarlyRedirect|http1PutOutputStreamRedirect"
+            + "|http2PutOutputStreamRedirect)";
 
     @Test
     void runExactBenchmarks() throws RunnerException {
