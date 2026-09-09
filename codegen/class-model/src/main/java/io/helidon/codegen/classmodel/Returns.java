@@ -18,12 +18,14 @@ package io.helidon.codegen.classmodel;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
 /**
  * Objects which describes return type configuration.
  */
+@Api.Internal
 public final class Returns extends DescribableComponent {
 
     private Returns(Builder builder) {

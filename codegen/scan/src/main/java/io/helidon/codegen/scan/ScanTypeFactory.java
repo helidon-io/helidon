@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.codegen.scan;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 import io.github.classgraph.ClassInfo;
@@ -26,6 +27,7 @@ import io.github.classgraph.HierarchicalTypeSignature;
 /**
  * Factory for types based on classpath scanning.
  */
+@Api.Internal
 public final class ScanTypeFactory {
     private ScanTypeFactory() {
     }

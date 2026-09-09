@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ModuleTypeInfo;
@@ -42,6 +43,7 @@ import io.helidon.common.types.TypeName;
  * This type loads {@link io.helidon.codegen.spi.CodegenExtensionProvider extension providers}, and invokes
  * each {@link io.helidon.codegen.spi.CodegenExtension} with appropriate types and annotations.
  */
+@Api.Stable
 public class Codegen {
     private static final List<CodegenExtensionProvider> EXTENSIONS =
             HelidonServiceLoader.create(ServiceLoader.load(CodegenExtensionProvider.class,

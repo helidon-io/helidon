@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package io.helidon.codegen.spi;
 import java.util.Collection;
 
 import io.helidon.codegen.CodegenContext;
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 
 /**
  * Maps annotation from a single annotation instance to zero or more annotation instances.
  */
+@Api.Internal
 public interface AnnotationMapper {
     /**
      * Check if the annotation is supported.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,13 @@ package io.helidon.codegen;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * An event happening during code gen. This is not a fast solution, it is only to be used when processing code, where
  * we can have a bit of an overhead!
  */
+@Api.Stable
 interface CodegenEventBlueprint {
     /**
      * Level can be used directly (command line tools), mapped to Maven level (maven plugins),

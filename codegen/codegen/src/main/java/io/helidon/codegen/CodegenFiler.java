@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
  * An abstraction for writing out source files and resource files.
  * Always attempts to create a new file and replace its content (as it is impossible to update files in annotation processing).
  */
+@Api.Stable
 public interface CodegenFiler {
     /**
      * Write a source file from its {@link io.helidon.codegen.classmodel.ClassModel}.
@@ -40,6 +42,7 @@ public interface CodegenFiler {
      *                            (you can use {@link io.helidon.common.types.TypeInfo#originatingElementValue()})
      * @return written path, we expect to always run on local file system
      */
+    @Api.Internal
     Path writeSourceFile(ClassModel classModel, Object... originatingElements);
 
     /**

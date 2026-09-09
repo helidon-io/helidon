@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -32,6 +33,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Model of the annotation.
  */
+@Api.Internal
 public final class Annotation extends CommonComponent {
 
     private final List<AnnotationParameter> parameters;

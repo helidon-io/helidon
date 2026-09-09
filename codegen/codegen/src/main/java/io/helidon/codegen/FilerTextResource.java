@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ package io.helidon.codegen;
 
 import java.util.List;
 
+import io.helidon.common.Api;
+
 /**
  * A resource from output (such as {@code target/META-INF/helidon}) that can have existing
  * values, and may be replaced with a new value.
  */
+@Api.Stable
 public interface FilerTextResource {
     /**
      * Existing lines of the resource. Returns an empty list if the resource does not exist.

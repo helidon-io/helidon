@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.codegen.spi;
 import java.util.Optional;
 
 import io.helidon.codegen.CodegenContext;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.common.types.TypeInfo;
  * This mapper can be used to handle complex changes to a definition of a type, such as combining
  * multiple annotations into a single one.
  */
+@Api.Internal
 public interface TypeMapper {
     /**
      * Check if the type is supported.

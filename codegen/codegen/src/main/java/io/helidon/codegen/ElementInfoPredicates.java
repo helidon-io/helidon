@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.codegen;
 import java.util.List;
 import java.util.function.Predicate;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
@@ -32,6 +33,7 @@ import io.helidon.common.types.TypedElementInfo;
  * @see io.helidon.common.types.TypedElementInfo
  * @see io.helidon.common.types.TypeInfo#elementInfo()
  */
+@Api.Stable
 public final class ElementInfoPredicates {
     /**
      * A predicate that accepts all.

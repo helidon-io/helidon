@@ -19,10 +19,13 @@ package io.helidon.codegen;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * An exception for any code processing and generation tools.
  * This exception can hold {@link #originatingElement()} that may be used to provide more information to the user.
  */
+@Api.Stable
 public class CodegenException extends RuntimeException {
     /**
      * Originating element, depends on which codegen implementation is used.

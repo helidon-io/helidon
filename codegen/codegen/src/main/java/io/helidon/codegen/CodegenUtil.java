@@ -18,12 +18,14 @@ package io.helidon.codegen;
 
 import java.util.Locale;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 
 /**
  * Tools for generating code.
  */
+@Api.Stable
 public final class CodegenUtil {
     private CodegenUtil() {
     }

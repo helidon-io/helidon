@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.AnnotationProperty.ConstantValue;
 import io.helidon.common.types.ElementKind;
@@ -30,6 +31,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Annotation parameter model.
  */
+@Api.Internal
 public final class AnnotationParameter extends CommonComponent {
 
     private final Set<TypeName> importedTypes;

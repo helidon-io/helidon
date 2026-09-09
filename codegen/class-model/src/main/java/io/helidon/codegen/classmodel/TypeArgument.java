@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -29,6 +30,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Generic type argument model.
  */
+@Api.Internal
 public final class TypeArgument extends Type implements TypeName {
 
     private final TypeName token;

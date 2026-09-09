@@ -23,10 +23,12 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.CodegenLogger;
+import io.helidon.common.Api;
 
 /**
  * Provides configuration to the javac compiler.
  */
+@Api.Internal
 @Prototype.Blueprint
 interface CompilerOptionsBlueprint {
 

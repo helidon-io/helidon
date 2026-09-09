@@ -18,9 +18,12 @@ package io.helidon.codegen;
 
 import java.util.List;
 
+import io.helidon.common.Api;
+
 /**
  * An abstraction for logging code processing and generation events.
  */
+@Api.Stable
 public interface CodegenLogger {
     /**
      * Create a new logger backed by {@link java.lang.System.Logger}.

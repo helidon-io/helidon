@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package io.helidon.codegen.spi;
 
 import io.helidon.codegen.CodegenOptions;
+import io.helidon.common.Api;
 
 
 /**
  * {@link java.util.ServiceLoader} provider interface for element mapping.
  * This provider is used to load all mappers accessible through {@link io.helidon.codegen.CodegenContext#elementMappers()}.
  */
+@Api.Internal
 public interface ElementMapperProvider extends CodegenProvider {
     /**
      * Create an element mapper based on provided options.

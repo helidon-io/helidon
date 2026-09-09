@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
  * Implementation of codegen utilities for classpath scanning.
  */
 module io.helidon.codegen.scan {
+    requires static io.helidon.common;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.codegen;
     requires transitive io.github.classgraph;

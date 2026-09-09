@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import io.helidon.codegen.spi.AnnotationMapper;
 import io.helidon.codegen.spi.ElementMapper;
 import io.helidon.codegen.spi.TypeMapper;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -31,6 +32,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Code processing and generation context.
  */
+@Api.Stable
 public interface CodegenContext {
 
     /**
@@ -105,6 +107,7 @@ public interface CodegenContext {
      *
      * @return list of mapper
      */
+    @Api.Internal
     List<ElementMapper> elementMappers();
 
     /**
@@ -113,6 +116,7 @@ public interface CodegenContext {
      *
      * @return list of mapper
      */
+    @Api.Internal
     List<TypeMapper> typeMappers();
 
     /**
@@ -121,6 +125,7 @@ public interface CodegenContext {
      *
      * @return list of mapper
      */
+    @Api.Internal
     List<AnnotationMapper> annotationMappers();
 
     /**

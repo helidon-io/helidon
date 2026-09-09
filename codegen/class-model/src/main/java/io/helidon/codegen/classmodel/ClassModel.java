@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -43,6 +44,7 @@ import io.helidon.common.types.TypeName;
  *     {@link Builder#addField(Field)} to add record components, as non-static fields are not supported in records</li>
  * </ul>
  */
+@Api.Internal
 public final class ClassModel extends ClassBase {
 
     /**

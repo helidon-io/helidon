@@ -43,6 +43,7 @@ import static io.helidon.common.types.TypeNames.INHERITED;
 /**
  * Utilities for type hierarchy.
  */
+@Api.Stable
 public final class TypeHierarchy {
     private TypeHierarchy() {
     }
