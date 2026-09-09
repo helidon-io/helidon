@@ -105,6 +105,36 @@ public class JwtProviderTest {
     }
 
     @Test
+    void malformedAuthorizationHeaderIsRejectedWithoutCredentialDetails() {
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt"));
+        ProviderRequest request = mock(ProviderRequest.class);
+        SecurityEnvironment environment = SecurityEnvironment.builder()
+                .header("Authorization", "Basic credential-that-must-not-appear")
+                .build();
+        when(request.env()).thenReturn(environment);
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(request);
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(authenticationResponse.description(),
+                   is(Optional.of("JWT header not available or in a wrong format: "
+                                          + "Header does not start with expected prefix")));
+    }
+
+    @Test
+    void unexpectedSecurityExceptionDoesNotExposeExceptionDetails() {
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt"));
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.env()).thenThrow(new SecurityException("credential-that-must-not-appear\r\nforged-entry"));
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(request);
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(authenticationResponse.description(),
+                   is(Optional.of("JWT header not available or in a wrong format")));
+    }
+
+    @Test
     @DisplayName("Valid signature with wrong issuer is rejected")
     public void testWrongIssuer() {
         JwtProvider provider = JwtProvider.create(providersConfig.get("jwt"));

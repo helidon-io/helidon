@@ -54,7 +54,7 @@ public final class TokenHandler {
                 if (m.matches()) {
                     return m.group(1);
                 }
-                throw new SecurityException("Header does not match expected pattern: " + s);
+                throw new SecurityException("Header does not match expected pattern");
             };
         } else if (null != builder.tokenPrefix) {
             int len = builder.tokenPrefix.length();
@@ -64,7 +64,7 @@ public final class TokenHandler {
                 if (s.toLowerCase().startsWith(lcPrefix)) {
                     return s.substring(len);
                 }
-                throw new SecurityException("Header does not start with expected prefix " + lcPrefix + ", it is: " + s);
+                throw new SecurityException("Header does not start with expected prefix");
             };
         } else {
             this.headerExtractor = s -> s;

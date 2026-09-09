@@ -171,11 +171,21 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         if (!authenticate) {
             return AuthenticationResponse.abstain();
         }
+        Map<String, List<String>> headers;
+        // Rule 0.1 exception to Rule 1.5: Java 21 cannot use "_" for the unused exceptions below.
+        try {
+            headers = providerRequest.env().headers();
+        } catch (Exception ignored) {
+            return failOrAbstain("JWT header not available or in a wrong format");
+        }
+
         Optional<String> maybeToken;
         try {
-            maybeToken = atnTokenHandler.extractToken(providerRequest.env().headers());
-        } catch (Exception e) {
-            return failOrAbstain("JWT header not available or in a wrong format" + e);
+            maybeToken = atnTokenHandler.extractToken(headers);
+        } catch (SecurityException e) {
+            return failOrAbstain("JWT header not available or in a wrong format: " + e.getMessage());
+        } catch (Exception ignored) {
+            return failOrAbstain("JWT header not available or in a wrong format");
         }
 
         return maybeToken
