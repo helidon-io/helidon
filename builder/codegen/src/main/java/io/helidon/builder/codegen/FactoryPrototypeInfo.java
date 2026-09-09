@@ -552,12 +552,7 @@ final class FactoryPrototypeInfo {
         prototypeExtends.add(PROTOTYPE_API);
 
         // add custom implements
-        blueprint.findAnnotation(Types.PROTOTYPE_IMPLEMENT)
-                .flatMap(Annotation::stringValues)
-                .stream()
-                .flatMap(List::stream)
-                .map(TypeName::create)
-                .forEach(prototypeExtends::add);
+        implementedTypes(blueprint).forEach(prototypeExtends::add);
 
         // add declared implements
         for (TypeInfo superInterface : blueprint.interfaceTypeInfo()) {
@@ -633,6 +628,12 @@ final class FactoryPrototypeInfo {
     private static void validateSealedSuperPrototype(RoundContext ctx, TypeInfo blueprint) {
         superBlueprintDefinition(ctx, blueprint)
                 .filter(it -> it.hasAnnotation(Types.PROTOTYPE_SEALED))
+                .or(() -> implementedTypes(blueprint)
+                        .stream()
+                        .map(it -> implementedPrototypeBlueprint(ctx, it))
+                        .flatMap(Optional::stream)
+                        .filter(it -> it.hasAnnotation(Types.PROTOTYPE_SEALED))
+                        .findFirst())
                 .ifPresent(superBlueprint -> {
                     TypeName prototype = generatedTypeName(blueprint);
                     TypeName superPrototype = generatedTypeName(superBlueprint);
@@ -641,6 +642,25 @@ final class FactoryPrototypeInfo {
                                                        + ". Sealed prototypes must be leaf prototypes.",
                                                blueprint);
                 });
+    }
+
+    private static List<TypeName> implementedTypes(TypeInfo blueprint) {
+        return blueprint.findAnnotation(Types.PROTOTYPE_IMPLEMENT)
+                .flatMap(Annotation::stringValues)
+                .stream()
+                .flatMap(List::stream)
+                .map(TypeName::create)
+                .toList();
+    }
+
+    private static Optional<TypeInfo> implementedPrototypeBlueprint(RoundContext ctx, TypeName prototype) {
+        TypeName genericPrototype = prototype.genericTypeName();
+        return ctx.typeInfo(genericPrototype)
+                .flatMap(it -> generatedPrototypeBlueprint(ctx, it))
+                .or(() -> ctx.typeInfo(TypeName.builder(genericPrototype)
+                                               .className(genericPrototype.className() + BLUEPRINT)
+                                               .build())
+                        .filter(it -> it.hasAnnotation(PROTOTYPE_BLUEPRINT)));
     }
 
     private static Optional<TypeInfo> superBlueprintDefinition(RoundContext ctx,

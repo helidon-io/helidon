@@ -157,6 +157,80 @@ class SealedPrototypeTest {
                         + "Sealed prototypes must be leaf prototypes.")));
     }
 
+    @Test
+    void testImplementedSealedPrototypeInheritanceRejected() {
+        var compiler = compiler().build();
+        var parentResult = TestCompiler.builder()
+                .from(compiler)
+                .addSource("ParentConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        @Prototype.Blueprint
+                        @Prototype.Sealed
+                        interface ParentConfigBlueprint {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(parentResult.diagnostics().toString(), parentResult.success(), is(true));
+
+        var childResult = TestCompiler.builder()
+                .from(compiler)
+                .printDiagnostics(false)
+                .addClasspathEntry(parentResult.classOutput())
+                .addSource("ChildConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        @Prototype.Blueprint
+                        @Prototype.Implement("com.acme.ParentConfig")
+                        interface ChildConfigBlueprint {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(childResult.success(), is(false));
+        assertThat(childResult.diagnostics(), hasItem(containsString(
+                "Prototype ChildConfig cannot extend sealed prototype ParentConfig. "
+                        + "Sealed prototypes must be leaf prototypes.")));
+    }
+
+    @Test
+    void testImplementedGenericSealedPrototypeInSameRoundRejected() {
+        var result = compiler()
+                .addSource("ChildConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        @Prototype.Blueprint
+                        @Prototype.Implement("com.acme.ParentConfig<T>")
+                        interface ChildConfigBlueprint<T> {
+                        }
+                        """)
+                .addSource("ParentConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        @Prototype.Blueprint
+                        @Prototype.Sealed
+                        interface ParentConfigBlueprint<T> {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(false));
+        assertThat(result.diagnostics(), hasItem(containsString(
+                "Prototype ChildConfig cannot extend sealed prototype ParentConfig. "
+                        + "Sealed prototypes must be leaf prototypes.")));
+    }
+
     private static TestCompiler.Builder compiler() {
         return TestCompiler.builder()
                 .currentRelease()
