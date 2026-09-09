@@ -37,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -73,6 +74,7 @@ import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.spi.WebClientService;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -460,15 +462,25 @@ class Http1ClientTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"307 Temporary Redirect", "308 Permanent Redirect"})
-    void testTerminalNoContentRedirectClosesIncompleteUploadConnection(String redirectStatus) throws Exception {
+    @MethodSource("terminalBodylessRedirects")
+    void testTerminalBodylessRedirectClosesIncompleteUploadConnection(String redirectStatus,
+                                                                      String responseStatus) throws Exception {
         String requestBody = "redirect-body";
-        try (NoContentRedirectServer redirectTarget = NoContentRedirectServer.start()) {
+        AtomicInteger serviceRequests = new AtomicInteger();
+        AtomicInteger serviceCompletions = new AtomicInteger();
+        WebClientService countingService = (chain, request) -> {
+            serviceRequests.incrementAndGet();
+            var response = chain.proceed(request);
+            response.whenComplete().thenRun(serviceCompletions::incrementAndGet);
+            return response;
+        };
+        try (NoContentRedirectServer redirectTarget = NoContentRedirectServer.start(responseStatus)) {
             String redirectResponse = "HTTP/1.1 " + redirectStatus + "\r\n"
                     + "Location: " + redirectTarget.uri() + "\r\n"
                     + "Content-Length: 0\r\n\r\n";
             Http1Client redirectClient = Http1Client.builder()
                     .sendExpectContinue(true)
+                    .addService(countingService)
                     .build();
             try {
                 Http1ClientRequest request = redirectClient.put(redirectTarget.redirectUri());
@@ -480,12 +492,14 @@ class Http1ClientTest {
                 });
 
                 try {
-                    assertThat(response.status(), is(Status.NO_CONTENT_204));
+                    assertThat(response.status().code(), is(Integer.parseInt(responseStatus.substring(0, 3))));
                     assertThat(response.entity().inputStream().readAllBytes().length, is(0));
                     assertThat(redirectTarget.awaitConnectionClose(), is(true));
                 } finally {
                     response.close();
                 }
+                assertThat(serviceRequests.get(), is(2));
+                assertThat(serviceCompletions.get(), is(2));
             } finally {
                 redirectClient.closeResource();
             }
@@ -919,6 +933,15 @@ class Http1ClientTest {
                 arguments(Arrays.asList(" HeaderValue"), false),
                 arguments(Arrays.asList("HeaderValue1", "Header\u007fValue"), false),
                 arguments(Arrays.asList("HeaderValue1\r\n", "HeaderValue2"), false)
+        );
+    }
+
+    private static Stream<Arguments> terminalBodylessRedirects() {
+        return Stream.of(
+                arguments("307 Temporary Redirect", "204 No Content"),
+                arguments("308 Permanent Redirect", "204 No Content"),
+                arguments("307 Temporary Redirect", "205 Reset Content"),
+                arguments("307 Temporary Redirect", "304 Not Modified")
         );
     }
 
@@ -1452,18 +1475,17 @@ class Http1ClientTest {
 
     private record NoContentRedirectServer(ServerSocket server,
                                            CompletableFuture<Boolean> connectionClosed) implements AutoCloseable {
-        private static final byte[] RESPONSE = ("HTTP/1.1 204 No Content\r\n"
-                + "\r\n").getBytes(StandardCharsets.US_ASCII);
-
-        static NoContentRedirectServer start() throws IOException {
+        static NoContentRedirectServer start(String responseStatus) throws IOException {
             ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
             server.setSoTimeout(5_000);
+            byte[] response = ("HTTP/1.1 " + responseStatus + "\r\n"
+                    + "\r\n").getBytes(StandardCharsets.US_ASCII);
             CompletableFuture<Boolean> connectionClosed = CompletableFuture.supplyAsync(() -> {
                 try (Socket socket = server.accept()) {
                     socket.setSoTimeout(5_000);
                     InputStream inputStream = socket.getInputStream();
                     readHeaders(inputStream);
-                    socket.getOutputStream().write(RESPONSE);
+                    socket.getOutputStream().write(response);
                     socket.getOutputStream().flush();
                     return inputStream.read() == -1;
                 } catch (IOException e) {
