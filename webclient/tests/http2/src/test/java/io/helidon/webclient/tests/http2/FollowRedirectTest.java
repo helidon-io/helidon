@@ -251,14 +251,18 @@ class FollowRedirectTest {
                 .sendExpectContinue(true)
                 .outputStream(output -> output.write("entity".getBytes(StandardCharsets.UTF_8)));
 
-        assertThat(response.status(), is(Status.NO_CONTENT_204));
-        String peerPort = response.headers().get(PEER_PORT_HEADER).get();
-        assertThat(response.inputStream().readAllBytes().length, is(0));
+        try {
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            String peerPort = response.headers().get(PEER_PORT_HEADER).get();
+            assertThat(response.inputStream().readAllBytes().length, is(0));
 
-        try (Http2ClientResponse followUp = webClient.get()
-                .path("/peerPort")
-                .request()) {
-            assertThat(followUp.entity().as(String.class), is(peerPort));
+            try (Http2ClientResponse followUp = webClient.get()
+                    .path("/peerPort")
+                    .request()) {
+                assertThat(followUp.entity().as(String.class), is(peerPort));
+            }
+        } finally {
+            response.close();
         }
     }
 

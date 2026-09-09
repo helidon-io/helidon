@@ -476,9 +476,13 @@ class Http1ClientTest {
                     output.close();
                 });
 
-                assertThat(response.status(), is(Status.NO_CONTENT_204));
-                assertThat(response.entity().inputStream().readAllBytes().length, is(0));
-                assertThat(redirectTarget.awaitConnectionClose(), is(true));
+                try {
+                    assertThat(response.status(), is(Status.NO_CONTENT_204));
+                    assertThat(response.entity().inputStream().readAllBytes().length, is(0));
+                    assertThat(redirectTarget.awaitConnectionClose(), is(true));
+                } finally {
+                    response.close();
+                }
             } finally {
                 redirectClient.closeResource();
             }
