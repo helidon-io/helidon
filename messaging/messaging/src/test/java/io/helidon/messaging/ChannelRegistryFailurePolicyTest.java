@@ -2680,7 +2680,7 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     private static DeadLetterConfig deadLetterConfig(String channel) {
-        return () -> channel;
+        return DeadLetterConfig.builder().channel(channel).build();
     }
 
     private static ConsumerRegistration registration(String channel, Consumer<Message<?>> consumer) {

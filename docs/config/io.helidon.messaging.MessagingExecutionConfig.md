@@ -2,7 +2,7 @@
 
 ## Description
 
-Messaging admission and shutdown configuration
+Optional messaging execution overrides
 
 ## Configuration options
 
@@ -12,7 +12,6 @@ Messaging admission and shutdown configuration
 <tr>
 <th>Key</th>
 <th>Type</th>
-<th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
@@ -24,9 +23,6 @@ Messaging admission and shutdown configuration
 <td>
 <code>Integer</code>
 </td>
-<td>
-<code>1024</code>
-</td>
 <td>Positive maximum total messages retained by waiting callers and open connector reservations</td>
 </tr>
 <tr>
@@ -35,9 +31,6 @@ Messaging admission and shutdown configuration
 </td>
 <td>
 <code>Integer</code>
-</td>
-<td>
-<code>1024</code>
 </td>
 <td>Positive maximum number of admitted messages</td>
 </tr>
@@ -48,22 +41,7 @@ Messaging admission and shutdown configuration
 <td>
 <code>Integer</code>
 </td>
-<td>
-<code>64</code>
-</td>
 <td>Positive maximum number of callers waiting for blocking admission and open connector reservations</td>
-</tr>
-<tr>
-<td>
-<code>shutdown-<wbr>timeout</code>
-</td>
-<td>
-<code>Duration</code>
-</td>
-<td>
-<code>PT10S</code>
-</td>
-<td>Positive global maximum time, representable in nanoseconds, to wait for admitted messaging work to finish and graph-owned resources to close during shutdown or failed-startup rollback</td>
 </tr>
 <tr>
 <td>
@@ -71,8 +49,6 @@ Messaging admission and shutdown configuration
 </td>
 <td>
 <code>Duration</code>
-</td>
-<td>
 </td>
 <td>Optional positive maximum time to wait for capacity, representable in nanoseconds</td>
 </tr>
@@ -83,9 +59,6 @@ Messaging admission and shutdown configuration
 <td>
 <code>Integer</code>
 </td>
-<td>
-<code>0</code>
-</td>
 <td>Maximum number of admitted tasks that may wait for an execution slot; must be zero or greater</td>
 </tr>
 </tbody>
@@ -95,7 +68,7 @@ Messaging admission and shutdown configuration
 
 ## Usages
 
-- <a href="io.helidon.messaging.MessagingConfig.md#execution"><code>messaging.<wbr>execution</code></a>
+- <a href="io.helidon.messaging.MessagingChannelConfig.md#execution"><code>messaging.<wbr>channel.<wbr>execution</code></a>
 
 ---
 

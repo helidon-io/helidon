@@ -25,6 +25,7 @@ import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
  * Custom connector configuration.
  */
 @Prototype.Blueprint(isPublic = false)
+@Prototype.Sealed
 @Prototype.Configured(value = CustomConnectorProvider.CONNECTOR_TYPE, root = false)
 @Prototype.Provides(MessagingConnectorProvider.class)
 interface CustomConnectorConfigBlueprint extends MessagingConnectorProviderConfig, Prototype.Factory<CustomConnector> {

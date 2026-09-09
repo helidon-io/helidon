@@ -25,6 +25,7 @@ import io.helidon.common.Api;
  */
 @Api.Preview
 @Prototype.Blueprint
+@Prototype.Sealed
 @Prototype.Configured
 interface MessagingChannelConfigBlueprint {
     /**
