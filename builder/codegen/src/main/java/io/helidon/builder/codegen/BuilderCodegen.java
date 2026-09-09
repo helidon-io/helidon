@@ -126,12 +126,13 @@ class BuilderCodegen implements CodegenExtension {
         ctx.logger().log(Level.DEBUG, "Processing builder codegen round.");
         Collection<TypeInfo> blueprints = roundContext.annotatedTypes(Types.PROTOTYPE_BLUEPRINT);
 
-        List<TypeInfo> blueprintInterfaces = blueprints.stream()
-                .filter(it -> it.kind() == ElementKind.INTERFACE)
-                .toList();
-
-        for (TypeInfo blueprintInterface : blueprintInterfaces) {
-            process(roundContext, blueprintInterface);
+        for (TypeInfo blueprint : blueprints) {
+            if (blueprint.kind() != ElementKind.INTERFACE) {
+                throw new CodegenException("@Prototype.Blueprint can only be used on interfaces: "
+                                                   + blueprint.typeName().fqName(),
+                                           blueprint);
+            }
+            process(roundContext, blueprint);
         }
     }
 

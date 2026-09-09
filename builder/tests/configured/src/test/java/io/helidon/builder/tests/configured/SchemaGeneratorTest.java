@@ -1861,6 +1861,30 @@ class SchemaGeneratorTest {
     }
 
     @Test
+    void testRejectsBlueprintClass() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("BadBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        @Prototype.Blueprint
+                        final class BadBlueprint {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(false));
+        assertThat(result.diagnostics(), hasItem(containsString(
+                "@Prototype.Blueprint can only be used on interfaces: com.acme.BadBlueprint")));
+    }
+
+    @Test
     void testInvalidBlueprintNameInConfiguredPrototypeScan() {
         var result = TestCompiler.builder()
                 .currentRelease()
@@ -1921,7 +1945,7 @@ class SchemaGeneratorTest {
                         import io.helidon.builder.api.Prototype;
 
                         @Prototype.Blueprint
-                        final class Bad {
+                        interface Bad {
                         }
                         """)
                 .build()

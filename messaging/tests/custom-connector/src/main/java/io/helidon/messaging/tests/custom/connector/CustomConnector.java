@@ -30,9 +30,10 @@ import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.spi.IncomingConnector;
+import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.OutgoingConnector;
 
-final class CustomConnector implements RuntimeType.Api<CustomConnectorConfig> {
+final class CustomConnector implements MessagingConnector, RuntimeType.Api<CustomConnectorConfig> {
     private final CustomConnectorConfig config;
 
     private CustomConnector(CustomConnectorConfig config) {
@@ -56,6 +57,11 @@ final class CustomConnector implements RuntimeType.Api<CustomConnectorConfig> {
         return config;
     }
 
+    @Override
+    public String type() {
+        return CustomConnectorProvider.CONNECTOR_TYPE;
+    }
+
     String endpoint() {
         return config.endpoint();
     }
@@ -64,6 +70,7 @@ final class CustomConnector implements RuntimeType.Api<CustomConnectorConfig> {
         return config.prefix();
     }
 
+    @Override
     public Optional<IncomingConnector> incoming(Config channelConfig) {
         Objects.requireNonNull(channelConfig);
         return Optional.of(new Incoming(config));
@@ -74,6 +81,7 @@ final class CustomConnector implements RuntimeType.Api<CustomConnectorConfig> {
         return Stream.generate(this::receive);
     }
 
+    @Override
     public Optional<OutgoingConnector> outgoing(Config channelConfig) {
         Objects.requireNonNull(channelConfig);
         String channelName = channelConfig.get("channel-name").asString().orElseThrow();
