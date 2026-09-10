@@ -1,8 +1,8 @@
-# io.<wbr>helidon.<wbr>messaging.<wbr>Failure<wbr>Policy
+# io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Failure<wbr>Config
 
 ## Description
 
-Portable incoming delivery failure policy
+Incoming failure-policy overrides applied to the declared policy or messaging defaults
 
 ## Configuration options
 
@@ -12,7 +12,6 @@ Portable incoming delivery failure policy
 <tr>
 <th>Key</th>
 <th>Type</th>
-<th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
@@ -27,9 +26,7 @@ Portable incoming delivery failure policy
 <td>
 <code>Dead<wbr>Letter<wbr>Config</code>
 </td>
-<td>
-</td>
-<td>Dead-letter delivery configuration; required for <code>Failure<wbr>Disposition#<wbr>DEAD_<wbr>LETTER</code> and invalid for other dispositions</td>
+<td>Dead-letter target override</td>
 </tr>
 <tr>
 <td>
@@ -41,10 +38,7 @@ Portable incoming delivery failure policy
 <td>
 <code>Failure<wbr>Disposition</code>
 </td>
-<td>
-<code>FAIL</code>
-</td>
-<td>Terminal disposition after delivery attempts are exhausted; dead letter requires a target channel</td>
+<td>Disposition used when retry attempts are exhausted</td>
 </tr>
 <tr>
 <td>
@@ -53,14 +47,16 @@ Portable incoming delivery failure policy
 <td>
 <code>Retry<wbr>Config</code>
 </td>
-<td>
-</td>
-<td>Fault tolerance retry instance used for incoming delivery</td>
+<td>Complete retry instance for this incoming channel</td>
 </tr>
 </tbody>
 </table>
 
 
+
+## Usages
+
+- <a href="io.helidon.messaging.spi.MessagingIncomingConfig.md#failure"><code>messaging.<wbr>incoming.<wbr>failure</code></a>
 
 ---
 

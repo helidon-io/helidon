@@ -1,8 +1,8 @@
-# io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Channel<wbr>Config
+# io.<wbr>helidon.<wbr>messaging.<wbr>spi.<wbr>Messaging<wbr>Outgoing<wbr>Config
 
 ## Description
 
-Configuration of a logical messaging channel
+Common configuration of an outgoing messaging channel connection
 
 ## Configuration options
 
@@ -28,6 +28,15 @@ Configuration of a logical messaging channel
 </td>
 <td>Execution overrides for this channel</td>
 </tr>
+<tr>
+<td>
+<code>connector</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Name of the configured connector instance used by this channel connection</td>
+</tr>
 </tbody>
 </table>
 
@@ -35,7 +44,7 @@ Configuration of a logical messaging channel
 
 ## Usages
 
-- <a href="io.helidon.messaging.MessagingGraph.md#channel"><code>messaging.<wbr>channel</code></a>
+- <a href="io.helidon.messaging.MessagingGraph.md#outgoing"><code>messaging.<wbr>outgoing</code></a>
 
 ---
 

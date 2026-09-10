@@ -29,6 +29,10 @@ This type is an enumeration.
 </tbody>
 </table>
 
+## Usages
+
+- <a href="io.helidon.messaging.MessagingFailureConfig.md#on-exhausted"><code>messaging.<wbr>incoming.<wbr>failure.<wbr>on-exhausted</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

@@ -68,7 +68,8 @@ Optional messaging execution overrides
 
 ## Usages
 
-- <a href="io.helidon.messaging.MessagingChannelConfig.md#execution"><code>messaging.<wbr>channel.<wbr>execution</code></a>
+- <a href="io.helidon.messaging.spi.MessagingIncomingConfig.md#execution"><code>messaging.<wbr>incoming.<wbr>execution</code></a>
+- <a href="io.helidon.messaging.spi.MessagingOutgoingConfig.md#execution"><code>messaging.<wbr>outgoing.<wbr>execution</code></a>
 
 ---
 
