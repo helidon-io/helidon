@@ -1562,11 +1562,23 @@ class Http2ClientConnectionTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"HEAD, 200, false, false", "HEAD, 200, true, false", "HEAD, 426, false, false", "HEAD, 426, true, false",
-                "GET, 304, false, false", "GET, 304, true, false",
-                "HEAD, 200, false, true", "HEAD, 200, true, true", "HEAD, 426, false, true", "HEAD, 426, true, true",
-                "GET, 304, false, true", "GET, 304, true, true"})
-    void forbiddenResponseContentResetsOnlyItsStream(String methodName, int statusCode, boolean endOfStream, boolean padded)
+    @CsvSource({"HEAD, 200, false, false, false", "HEAD, 200, true, false, false",
+                "HEAD, 426, false, false, false", "HEAD, 426, true, false, false",
+                "GET, 304, false, false, false", "GET, 304, true, false, false",
+                "HEAD, 200, false, true, false", "HEAD, 200, true, true, false",
+                "HEAD, 426, false, true, false", "HEAD, 426, true, true, false",
+                "GET, 304, false, true, false", "GET, 304, true, true, false",
+                "HEAD, 200, false, false, true", "HEAD, 200, true, false, true",
+                "HEAD, 426, false, false, true", "HEAD, 426, true, false, true",
+                "GET, 304, false, false, true", "GET, 304, true, false, true",
+                "HEAD, 200, false, true, true", "HEAD, 200, true, true, true",
+                "HEAD, 426, false, true, true", "HEAD, 426, true, true, true",
+                "GET, 304, false, true, true", "GET, 304, true, true, true"})
+    void forbiddenResponseContentResetsOnlyItsStream(String methodName,
+                                                    int statusCode,
+                                                    boolean endOfStream,
+                                                    boolean padded,
+                                                    boolean consumePriorData)
             throws Exception {
         Method method = Method.create(methodName);
         Status status = Status.create(statusCode);
@@ -1587,19 +1599,24 @@ class Http2ClientConnectionTest {
                     .status(status);
             test.offerInbound(encodedHeaderFrame(malformedStream.streamId(), headers, inboundTable, huffman));
             assertThat(malformedStream.readHeaders().status(), is(status));
+            Http2FrameData queuedData = paddedDataFrame(malformedStream.streamId(), BufferData.EMPTY_BYTES, false, 255);
+            assertThat(connection.handle(queuedData.header(), queuedData.data()), is(true));
+            if (consumePriorData) {
+                // Credit already returned by consumption must not be returned again when the stream fails.
+                malformedStream.readOne(TEST_WAIT_TIMEOUT);
+            }
             byte[] forbiddenContent = "forbidden".getBytes(StandardCharsets.UTF_8);
             Http2FrameData firstData = padded
                     ? paddedDataFrame(malformedStream.streamId(), forbiddenContent, endOfStream, 3)
                     : dataFrame(malformedStream.streamId(), forbiddenContent, endOfStream);
-            int discardedLength = firstData.header().length();
-            if (endOfStream) {
-                test.offerInbound(firstData);
-            } else {
+            int discardedLength = (consumePriorData ? 0 : queuedData.header().length()) + firstData.header().length();
+            // Process the rejection before response construction can consume the earlier queued padding.
+            assertThat(connection.handle(firstData.header(), firstData.data()), is(true));
+            if (!endOfStream) {
                 // DATA already in flight after the reset still consumes connection credit, including padding.
                 Http2FrameData lateData = paddedDataFrame(malformedStream.streamId(), forbiddenContent, false, 255);
                 discardedLength += lateData.header().length();
-                test.offerInbound(firstData,
-                                  lateData,
+                test.offerInbound(lateData,
                                   dataFrame(malformedStream.streamId(), BufferData.EMPTY_BYTES, true));
             }
             test.offerInbound(encodedHeaderFrame(siblingStream.streamId(), encodedResponseHeaders(false), inboundTable, huffman),

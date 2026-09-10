@@ -1019,11 +1019,12 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         inboundStateLock.lock();
         try {
             inboundFailure = failure;
+            int discardedDataLength = buffer.failAndDiscard(failure);
             try {
                 reset(Http2ErrorCode.PROTOCOL);
             } finally {
-                buffer.fail(failure);
                 close();
+                connection.flowControl().incrementInboundConnectionWindowSize(discardedDataLength);
                 inboundStateChanged.signalAll();
             }
         } finally {
