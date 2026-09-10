@@ -480,6 +480,66 @@ class ResilientValueTest {
     }
 
     @Test
+    void interruptedErrorFromLoaderIsSharedThroughFaultTolerance() throws InterruptedException {
+        CountDownLatch loading = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<AssertionError> originalError = new AtomicReference<>();
+        AtomicReference<Throwable> loaderFailure = new AtomicReference<>();
+        AtomicReference<Throwable> followerFailure = new AtomicReference<>();
+        AtomicBoolean loaderInterrupted = new AtomicBoolean();
+        ResilientValue<String> value = ResilientValue.create(new ResilientConfig<>("test value",
+                                                             () -> {
+                                                                 if (calls.incrementAndGet() == 1) {
+                                                                     loading.countDown();
+                                                                     try {
+                                                                         release.await();
+                                                                     } catch (InterruptedException e) {
+                                                                         Thread.currentThread().interrupt();
+                                                                         AssertionError error = new AssertionError(e);
+                                                                         originalError.set(error);
+                                                                         throw error;
+                                                                     }
+                                                                 }
+                                                                 return "loaded";
+                                                             },
+                                                             retry(2),
+                                                             circuitBreaker(),
+                                                             timeout()));
+
+        Thread loaderThread = Thread.ofVirtual().start(() -> {
+            try {
+                captureFailure(value, loaderFailure);
+            } finally {
+                loaderInterrupted.set(Thread.currentThread().isInterrupted());
+            }
+        });
+        Thread followerThread = Thread.ofVirtual().unstarted(() -> captureFailure(value, followerFailure));
+        try {
+            assertThat(loading.await(10, TimeUnit.SECONDS), is(true));
+            followerThread.start();
+            awaitWaiting(followerThread);
+            loaderThread.interrupt();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+        } finally {
+            release.countDown();
+            loaderThread.join(TimeUnit.SECONDS.toMillis(10));
+            followerThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+
+        assertThat(loaderThread.isAlive(), is(false));
+        assertThat(followerThread.isAlive(), is(false));
+        assertThat("A follower must share the failed load instead of starting another load", calls.get(), is(1));
+        assertThat(loaderFailure.get(), instanceOf(SupplierException.class));
+        assertThat(loaderFailure.get().getCause(), sameInstance(originalError.get()));
+        assertThat(originalError.get().getCause(), instanceOf(InterruptedException.class));
+        assertThat(followerFailure.get(), sameInstance(loaderFailure.get()));
+        assertThat(loaderInterrupted.get(), is(true));
+        assertThat(value.loaded(), is(false));
+    }
+
+    @Test
     void concurrentFollowerReceivesLoadFailure() throws InterruptedException {
         CountDownLatch loading = new CountDownLatch(1);
         CountDownLatch continueLoading = new CountDownLatch(1);

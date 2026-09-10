@@ -84,6 +84,9 @@ public class SupplierHelper {
     static Throwable interrupted(Throwable throwable) {
         Throwable current = throwable;
         for (int i = 0; current != null && i < 64; i++) {
+            if (current instanceof Error) {
+                return null;
+            }
             if (current instanceof InterruptedException) {
                 return current;
             }
