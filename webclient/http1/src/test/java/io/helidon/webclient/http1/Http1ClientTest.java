@@ -1892,6 +1892,7 @@ class Http1ClientTest {
     private record UpgradeRequiredServer(ServerSocket server,
                                          CompletableFuture<Void> completion) implements AutoCloseable {
         private static final byte[] UPGRADE_RESPONSE = ("HTTP/1.1 426 Upgrade Required\r\n"
+                + "Connection: Upgrade\r\n"
                 + "Upgrade: h2c\r\n"
                 + "Content-Length: 7\r\n"
                 + "\r\n"
