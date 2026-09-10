@@ -15,6 +15,8 @@
  */
 package io.helidon.data.jdbc.tests.declarative;
 
+import java.util.Objects;
+
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.data.jdbc.tests.application.MapperFailureContact;
 import io.helidon.service.registry.Service;
@@ -28,6 +30,7 @@ public final class ThrowingContactMapper implements JdbcClient.RowMapper<MapperF
 
     @Override
     public MapperFailureContact map(JdbcClient.Row row) {
+        Objects.requireNonNull(row, "The JDBC row must not be null.");
         throw failure;
     }
 

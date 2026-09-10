@@ -146,8 +146,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs combine.children="append">
-                        <!-- This module intentionally exercises preview JDBC APIs; internal API use must still fail. -->
                         <arg>-Ahelidon.api.preview=ignore</arg>
+                        <arg>-Ahelidon.api.incubating=ignore</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

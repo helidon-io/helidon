@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"Data", "JDBC"})
 @Features.Since("27.0.0")
+@Features.Incubating
 module io.helidon.data.jdbc {
 
     requires transitive java.sql;

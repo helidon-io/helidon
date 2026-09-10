@@ -223,6 +223,32 @@ final class JdbcExceptionTranslator {
     }
 
     /**
+     * Combines provider-owned JDBC infrastructure failures while preserving the first fatal error.
+     *
+     * @param primary current primary failure, or {@code null}
+     * @param operation stable provider operation label
+     * @param failure additional infrastructure failure
+     * @return combined failure
+     */
+    static Throwable mergeInfrastructure(Throwable primary, String operation, Throwable failure) {
+        if (primary == null) {
+            return failure instanceof Error ? failure : prepare(operation, failure);
+        }
+        if (primary == failure) {
+            return primary;
+        }
+        if (failure instanceof Error error) {
+            if (primary instanceof Error) {
+                primary.addSuppressed(error);
+                return primary;
+            }
+            error.addSuppressed(sanitize("retaining an earlier JDBC infrastructure failure", primary));
+            return error;
+        }
+        return suppress(primary, operation, failure);
+    }
+
+    /**
      * Creates a provider-owned SQLException whose message contains no SQL or
      * connection configuration and may therefore remain visible.
      *
@@ -553,6 +579,14 @@ final class JdbcExceptionTranslator {
     }
 
     /**
+     * Marks an SQL exception whose message was created by this provider and is
+     * therefore safe to preserve during repeated sanitization.
+     */
+    private interface SafeSqlDiagnostic {
+        DiagnosticBudget diagnosticBudget();
+    }
+
+    /**
      * Iteratively rebuilds a bounded, acyclic exception graph. Repeated source
      * nodes reuse one provider-owned copy so benign shared relationships are
      * retained. Only relationships that would create a cycle are omitted.
@@ -778,14 +812,6 @@ final class JdbcExceptionTranslator {
         private String vendorCodeDescription() {
             return vendorCodeAvailable ? Integer.toString(vendorCode) : "not provided";
         }
-    }
-
-    /**
-     * Marks an SQL exception whose message was created by this provider and is
-     * therefore safe to preserve during repeated sanitization.
-     */
-    private interface SafeSqlDiagnostic {
-        DiagnosticBudget diagnosticBudget();
     }
 
     private static final class SafeSQLException extends SQLException implements SafeSqlDiagnostic {

@@ -29,7 +29,8 @@ import io.helidon.common.Api;
  * statement is executed or mapped. Code generation reads these annotations,
  * the JDBC provider does not inspect them at runtime.
  */
-@Api.Preview
+@Api.Incubating
+@Api.Since("27.0.0")
 public final class Jdbc {
 
     // Use one provider identifier for repository selection, service qualifiers, and transaction lifecycle events.

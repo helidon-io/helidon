@@ -68,7 +68,7 @@ class JdbcTransactionConnectionManagerHikariTest {
                 assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
                     client.create("INSERT INTO ITEMS VALUES (?)").bind(1, 2).execute();
                     client.create("SELECT ID FROM ITEMS")
-                            .map(row -> {
+                            .map(_ -> {
                                 throw new IllegalStateException("mapper failed");
                             })
                             .list();
@@ -163,12 +163,94 @@ class JdbcTransactionConnectionManagerHikariTest {
     }
 
     /**
+     * Proves a fatal end failure outranks an earlier recoverable commit
+     * observer failure without making the durable commit ambiguous.
+     */
+    @Test
+    void fatalEndFailureOutranksCommitObserverFailureAfterRealCommit() {
+        try (HikariDataSource dataSource = dataSource("tx_fatal_end_after_commit")) {
+            JdbcTestClients.create(dataSource)
+                    .create("CREATE TABLE ITEMS (ID INT PRIMARY KEY)")
+                    .execute();
+            JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
+            JdbcClient client = transactionAwareClient(dataSource, manager);
+            IllegalStateException commitFailure = new IllegalStateException("commit observer failed");
+            OutOfMemoryError endFailure = new OutOfMemoryError("end observer failed");
+            OneShotEndFailure endObserver = new OneShotEndFailure(endFailure);
+            JdbcTxSupport support = new JdbcTxSupport(
+                    manager,
+                    List.of(new OneShotCompletionFailure(true, commitFailure), manager, endObserver));
+
+            OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                            () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                                client.create("INSERT INTO ITEMS VALUES (1)").execute();
+                                                                return null;
+                                                            }));
+
+            assertThat(reportedFailure, sameInstance(endFailure));
+            assertThat(endFailure.getSuppressed().length, is(1));
+            assertThat(endFailure.getSuppressed()[0], instanceOf(TxException.class));
+            assertThat(endFailure.getSuppressed()[0].getMessage(),
+                       is("The local JDBC transaction was committed, but a later transaction lifecycle notification "
+                                  + "failed during commit. The committed work must not be retried automatically."));
+            assertThat(endFailure.getSuppressed()[0].getCause().getCause(), sameInstance(commitFailure));
+            assertThat(endObserver.failed, is(true));
+            assertThat(support.transaction(Tx.Type.REQUIRED,
+                                           () -> client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one()),
+                       is(1L));
+            assertPoolReusable(dataSource);
+        }
+    }
+
+    /**
      * Proves repeated references to one rollback-listener failure do not
      * prevent the JDBC manager from rolling back and releasing its connection.
      */
     @Test
     void sharedRollbackListenerFailureDoesNotRetainTheConnection() {
         assertSharedCompletionFailureReleasesConnection("tx_shared_rollback_failure", false);
+    }
+
+    /**
+     * Proves a fatal rollback observer failure outranks the provider's
+     * synthetic rollback-only exception after the database rollback succeeds.
+     */
+    @Test
+    void fatalRollbackObserverOutranksSyntheticFailureAfterRealRollback() {
+        try (HikariDataSource dataSource = dataSource("tx_fatal_synthetic_rollback")) {
+            JdbcTestClients.create(dataSource)
+                    .create("CREATE TABLE ITEMS (ID INT PRIMARY KEY)")
+                    .execute();
+            JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
+            JdbcClient client = transactionAwareClient(dataSource, manager);
+            OutOfMemoryError rollbackFailure = new OutOfMemoryError("rollback observer failed");
+            OneShotCompletionFailure observer = new OneShotCompletionFailure(false, rollbackFailure);
+            JdbcTxSupport support = new JdbcTxSupport(manager, List.of(manager, observer));
+
+            OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                            () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                                client.create("INSERT INTO ITEMS VALUES (1)").execute();
+                                                                assertThrows(TxException.class,
+                                                                             () -> support.transaction(
+                                                                                     Tx.Type.SUPPORTED,
+                                                                                     () -> {
+                                                                                         throw new IllegalStateException(
+                                                                                                 "joined task failed");
+                                                                                     }));
+                                                                return null;
+                                                            }));
+
+            assertThat(reportedFailure, sameInstance(rollbackFailure));
+            assertThat(rollbackFailure.getSuppressed().length, is(1));
+            assertThat(rollbackFailure.getSuppressed()[0], instanceOf(TxException.class));
+            assertThat(rollbackFailure.getSuppressed()[0].getMessage(),
+                       is("The local JDBC transaction was marked for rollback."));
+            assertThat(observer.failed, is(true));
+            assertThat(support.transaction(Tx.Type.REQUIRED,
+                                           () -> client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one()),
+                       is(0L));
+            assertPoolReusable(dataSource);
+        }
     }
 
     /**
@@ -333,7 +415,7 @@ class JdbcTransactionConnectionManagerHikariTest {
     private static DataSource firstConnectionThenPool(Connection first, HikariDataSource pool) throws SQLException {
         AtomicBoolean firstBorrow = new AtomicBoolean(true);
         DataSource dataSource = mock(DataSource.class);
-        when(dataSource.getConnection()).thenAnswer(invocation ->
+        when(dataSource.getConnection()).thenAnswer(_ ->
                 firstBorrow.getAndSet(false) ? first : pool.getConnection());
         return dataSource;
     }
@@ -341,6 +423,59 @@ class JdbcTransactionConnectionManagerHikariTest {
     private static void assertPoolReusable(HikariDataSource pool) {
         assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
         assertThat(pool.getHikariPoolMXBean().getTotalConnections(), is(1));
+    }
+
+    /**
+     * Listener which fails its first end event.
+     */
+    private static final class OneShotEndFailure implements TxLifeCycle {
+        private final Throwable failure;
+        private boolean failed;
+
+        private OneShotEndFailure(Throwable failure) {
+            this.failure = failure;
+        }
+
+        @Override
+        public void start(String type) {
+            Objects.requireNonNull(type, "The transaction type must not be null.");
+        }
+
+        @Override
+        public void end() {
+            if (!failed) {
+                failed = true;
+                if (failure instanceof Error error) {
+                    throw error;
+                }
+                throw (RuntimeException) failure;
+            }
+        }
+
+        @Override
+        public void begin(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        }
+
+        @Override
+        public void commit(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        }
+
+        @Override
+        public void rollback(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        }
+
+        @Override
+        public void suspend(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        }
+
+        @Override
+        public void resume(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        }
     }
 
     /**

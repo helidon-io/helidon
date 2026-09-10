@@ -47,7 +47,8 @@ import io.helidon.service.registry.Service;
  * support and participates in the transaction surrounding the intercepted
  * service invocation.
  */
-@Api.Preview
+@Api.Incubating
+@Api.Since("27.0.0")
 @Service.Contract
 public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
 
@@ -151,7 +152,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * Bind positions use JDBC indexes, which start at one. The stage accepts
      * exactly one terminal operation and is not safe for concurrent use.
      */
-    @Api.Preview
+    @Api.Incubating
     interface Statement {
 
         /**
@@ -245,7 +246,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * transaction boundary. A directly created client does not join such a
      * transaction.
      */
-    @Api.Preview
+    @Api.Incubating
     interface GeneratedKeys {
 
         /**
@@ -280,7 +281,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      *
      * @param <T> mapped type
      */
-    @Api.Preview
+    @Api.Incubating
     interface Rows<T> {
 
         /**
@@ -341,7 +342,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      *
      * @param <T> mapped type
      */
-    @Api.Preview
+    @Api.Incubating
     @Service.Contract
     @FunctionalInterface
     interface RowMapper<T> {
@@ -365,7 +366,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * {@link RowMapper#map(Row)} callback. It must not be passed to another
      * thread and is no longer valid after the callback returns.
      */
-    @Api.Preview
+    @Api.Incubating
     interface Row {
 
         /**

@@ -116,7 +116,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                 // Publish the connection only after it is ready for transaction use.
                 association.connection = connection;
             } catch (SQLException | RuntimeException | Error failure) {
-                Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, failure);
+                Throwable reportedFailure = JdbcConnectionInvalidator.invalidateInfrastructure(connection, failure);
                 failJdbcAssociation(state, state.activeJdbc, association);
                 throw JdbcExceptionTranslator.translateFailure("transaction connection setup", reportedFailure);
             }
@@ -284,11 +284,11 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             }
             Throwable failure = JdbcExceptionTranslator.safeException(
                     "Automatic commit mode was enabled before the local JDBC transaction completed.");
-            failure = JdbcConnectionInvalidator.invalidate(connection, failure);
+            failure = JdbcConnectionInvalidator.invalidateInfrastructure(connection, failure);
             association.compromised(failure);
             return TransactionConnectionState.AUTO_COMMIT_ENABLED;
         } catch (SQLException | RuntimeException | Error inspectionFailure) {
-            Throwable failure = JdbcConnectionInvalidator.invalidate(connection, inspectionFailure);
+            Throwable failure = JdbcConnectionInvalidator.invalidateInfrastructure(connection, inspectionFailure);
             if (!(failure instanceof Error)) {
                 failure = JdbcExceptionTranslator.sanitize("validating a local transaction connection", failure);
             }
@@ -340,7 +340,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                 try {
                     connection.rollback();
                 } catch (SQLException | RuntimeException | Error rollbackFailure) {
-                    completionFailure = JdbcExceptionTranslator.suppress(
+                    completionFailure = JdbcExceptionTranslator.mergeInfrastructure(
                             completionFailure,
                             "rolling back after a failed transaction commit",
                             rollbackFailure);
@@ -351,7 +351,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         if (completionFailure != null) {
             association.failed(CompletionOutcome.UNKNOWN);
             // Restoring auto commit after an unknown outcome could commit pending work.
-            completionFailure = JdbcConnectionInvalidator.invalidate(connection, completionFailure);
+            completionFailure = JdbcConnectionInvalidator.invalidateInfrastructure(connection, completionFailure);
             throwTransactionFailure(commit
                                             ? "The local JDBC transaction commit failed, and the outcome is unknown."
                                             : "The local JDBC transaction rollback failed, and the outcome is unknown.",
@@ -366,7 +366,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             connection.setAutoCommit(true);
         } catch (SQLException | RuntimeException | Error restoreFailure) {
             association.failed(outcome);
-            Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, restoreFailure);
+            Throwable reportedFailure = JdbcConnectionInvalidator.invalidateInfrastructure(connection, restoreFailure);
             throwTransactionFailure(completionCleanupMessage(association.outcome, "restore automatic commit mode"),
                                     reportedFailure);
             return;
@@ -376,7 +376,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             connection.close();
         } catch (SQLException | RuntimeException | Error closeFailure) {
             association.failed(outcome);
-            Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, closeFailure);
+            Throwable reportedFailure = JdbcConnectionInvalidator.invalidateInfrastructure(connection, closeFailure);
             throwTransactionFailure(completionCleanupMessage(association.outcome, "close the connection"),
                                     reportedFailure);
         }
@@ -617,7 +617,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             if (association.outcome == null) {
                 association.outcome = CompletionOutcome.UNKNOWN;
                 if (association.connection != null) {
-                    failure = JdbcConnectionInvalidator.invalidate(association.connection, failure);
+                    failure = JdbcConnectionInvalidator.invalidateInfrastructure(association.connection, failure);
                     association.connection = null;
                 }
             }

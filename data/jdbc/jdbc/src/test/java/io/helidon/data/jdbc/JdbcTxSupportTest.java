@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -613,6 +614,306 @@ class JdbcTxSupportTest {
     }
 
     /**
+     * Proves a fatal end notification outranks a recoverable post-commit
+     * notification while retaining the confirmed-commit diagnostic.
+     */
+    @Test
+    void fatalEndFailureOutranksConfirmedCommitObserverFailure() {
+        IllegalStateException commitFailure = new IllegalStateException("commit observer failed");
+        OutOfMemoryError endFailure = new OutOfMemoryError("end observer failed");
+        RecordingLifeCycle following = new RecordingLifeCycle();
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("commit", commitFailure),
+                                               new OneShotFailingLifeCycle("end", endFailure),
+                                               following));
+
+        OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                        () -> support.transaction(Tx.Type.REQUIRED, () -> null));
+
+        assertThat(reportedFailure, sameInstance(endFailure));
+        assertThat(endFailure.getSuppressed().length, is(1));
+        assertThat(endFailure.getSuppressed()[0], instanceOf(TxException.class));
+        assertThat(endFailure.getSuppressed()[0].getMessage(),
+                   is("The local JDBC transaction was committed, but a later transaction lifecycle notification "
+                              + "failed during commit. The committed work must not be retried automatically."));
+        assertThat(endFailure.getSuppressed()[0].getCause().getCause(), sameInstance(commitFailure));
+        assertThat(following.count("commit"), is(1L));
+        assertThat(following.count("end"), is(1L));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves an application task failure remains primary when the later end
+     * notification is fatal and all listeners still receive cleanup.
+     */
+    @Test
+    void taskFailureRemainsPrimaryWhenEndFailsFatally() {
+        IllegalArgumentException taskFailure = new IllegalArgumentException("task failed");
+        OutOfMemoryError endFailure = new OutOfMemoryError("end observer failed");
+        RecordingLifeCycle following = new RecordingLifeCycle();
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("end", endFailure), following));
+
+        TxException reportedFailure = assertThrows(TxException.class,
+                                                   () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                       throw taskFailure;
+                                                   }));
+
+        assertThat(reportedFailure.getCause(), sameInstance(taskFailure));
+        assertThat(reportedFailure.getSuppressed().length, is(1));
+        assertThat(reportedFailure.getSuppressed()[0], sameInstance(endFailure));
+        assertThat(following.count("rollback"), is(1L));
+        assertThat(following.count("end"), is(1L));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves fatal end cleanup outranks an earlier start infrastructure
+     * failure, prevents task invocation, and leaves the thread reusable.
+     */
+    @Test
+    void fatalEndCleanupFailureOutranksStartFailure() {
+        IllegalStateException startFailure = new IllegalStateException("start observer failed");
+        OutOfMemoryError endFailure = new OutOfMemoryError("end observer failed");
+        AtomicBoolean invoked = new AtomicBoolean();
+        RecordingLifeCycle following = new RecordingLifeCycle();
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("start", startFailure),
+                                               new OneShotFailingLifeCycle("end", endFailure),
+                                               following));
+
+        OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                        () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                            invoked.set(true);
+                                                            return null;
+                                                        }));
+
+        assertThat(reportedFailure, sameInstance(endFailure));
+        assertThat(endFailure.getSuppressed().length, is(1));
+        assertThat(endFailure.getSuppressed()[0], instanceOf(TxException.class));
+        assertThat(endFailure.getSuppressed()[0].getCause(), sameInstance(startFailure));
+        assertThat(invoked.get(), is(false));
+        assertThat(following.count("start:jdbc"), is(1L));
+        assertThat(following.count("end"), is(1L));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves a fatal compensating resume failure outranks a recoverable
+     * suspend failure before the requested nested task can run.
+     */
+    @Test
+    void fatalCompensatingResumeFailureOutranksSuspendFailure() {
+        IllegalStateException suspendFailure = new IllegalStateException("suspend observer failed");
+        OutOfMemoryError resumeFailure = new OutOfMemoryError("resume observer failed");
+        AtomicBoolean nestedInvoked = new AtomicBoolean();
+        RecordingLifeCycle following = new RecordingLifeCycle();
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("suspend", suspendFailure),
+                                               new OneShotFailingLifeCycle("resume", resumeFailure),
+                                               following));
+
+        OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                        () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                            support.transaction(Tx.Type.NEW, () -> {
+                                                                nestedInvoked.set(true);
+                                                                return null;
+                                                            });
+                                                            return null;
+                                                        }));
+
+        assertThat(reportedFailure, sameInstance(resumeFailure));
+        assertThat(resumeFailure.getSuppressed().length, is(1));
+        assertThat(resumeFailure.getSuppressed()[0], instanceOf(TxException.class));
+        assertThat(resumeFailure.getSuppressed()[0].getCause(), sameInstance(suspendFailure));
+        assertThat(nestedInvoked.get(), is(false));
+        assertThat(following.count("suspend"), is(1L));
+        assertThat(following.count("resume"), is(1L));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves an application failure from a NEW task remains primary when
+     * resuming its outer transaction fails fatally.
+     */
+    @Test
+    void newTaskFailureRemainsPrimaryWhenResumeFailsFatally() {
+        IllegalArgumentException taskFailure = new IllegalArgumentException("task failed");
+        OutOfMemoryError resumeFailure = new OutOfMemoryError("resume observer failed");
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("resume", resumeFailure)));
+
+        TxException reportedFailure = assertThrows(TxException.class,
+                                                   () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                       support.transaction(Tx.Type.NEW, () -> {
+                                                           throw taskFailure;
+                                                       });
+                                                       return null;
+                                                   }));
+
+        assertThat(reportedFailure.getCause(), sameInstance(taskFailure));
+        assertThat(reportedFailure.getSuppressed().length, is(1));
+        assertThat(reportedFailure.getSuppressed()[0], sameInstance(resumeFailure));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves a fatal outer resume failure outranks infrastructure failure
+     * while beginning a NEW transaction and leaves the thread reusable.
+     */
+    @Test
+    void fatalResumeFailureOutranksNewInfrastructureFailure() {
+        IllegalStateException beginFailure = new IllegalStateException("begin observer failed");
+        OutOfMemoryError resumeFailure = new OutOfMemoryError("resume observer failed");
+        AtomicBoolean nestedInvoked = new AtomicBoolean();
+        AtomicBoolean outerBegun = new AtomicBoolean();
+        AtomicBoolean failNestedBegin = new AtomicBoolean(true);
+        RecordingLifeCycle beginObserver = new RecordingLifeCycle() {
+            @Override
+            public void begin(String txIdentity) {
+                super.begin(txIdentity);
+                if (outerBegun.getAndSet(true) && failNestedBegin.getAndSet(false)) {
+                    throw beginFailure;
+                }
+            }
+        };
+        JdbcTxSupport support = support(List.of(beginObserver,
+                                               new OneShotFailingLifeCycle("resume", resumeFailure)));
+
+        OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                        () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                            support.transaction(Tx.Type.NEW, () -> {
+                                                                nestedInvoked.set(true);
+                                                                return null;
+                                                            });
+                                                            return null;
+                                                        }));
+
+        assertThat(reportedFailure, sameInstance(resumeFailure));
+        assertThat(resumeFailure.getSuppressed().length, is(1));
+        assertThat(resumeFailure.getSuppressed()[0], instanceOf(TxException.class));
+        assertThat(resumeFailure.getSuppressed()[0].getCause(), sameInstance(beginFailure));
+        assertThat(nestedInvoked.get(), is(false));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves an application failure from an UNSUPPORTED task remains primary
+     * when restoring the suspended outer transaction fails fatally.
+     */
+    @Test
+    void unsupportedTaskFailureRemainsPrimaryWhenResumeFailsFatally() {
+        IllegalArgumentException taskFailure = new IllegalArgumentException("task failed");
+        OutOfMemoryError resumeFailure = new OutOfMemoryError("resume observer failed");
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("resume", resumeFailure)));
+
+        TxException reportedFailure = assertThrows(TxException.class,
+                                                   () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                       support.transaction(Tx.Type.UNSUPPORTED, () -> {
+                                                           throw taskFailure;
+                                                       });
+                                                       return null;
+                                                   }));
+
+        assertThat(reportedFailure.getCause(), sameInstance(taskFailure));
+        assertThat(reportedFailure.getSuppressed().length, is(1));
+        assertThat(reportedFailure.getSuppressed()[0], sameInstance(resumeFailure));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves rollback initiated by an application failure preserves that
+     * failure even when the rollback observer reports a fatal error.
+     */
+    @Test
+    void taskFailureRemainsPrimaryWhenRollbackFailsFatally() {
+        IllegalArgumentException taskFailure = new IllegalArgumentException("task failed");
+        OutOfMemoryError rollbackFailure = new OutOfMemoryError("rollback observer failed");
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("rollback", rollbackFailure)));
+
+        TxException reportedFailure = assertThrows(TxException.class,
+                                                   () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                       throw taskFailure;
+                                                   }));
+
+        assertThat(reportedFailure.getCause(), sameInstance(taskFailure));
+        assertThat(reportedFailure.getSuppressed().length, is(1));
+        assertThat(reportedFailure.getSuppressed()[0], sameInstance(rollbackFailure));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves a fatal rollback failure outranks the infrastructure exception
+     * which caused begin compensation before any task work executes.
+     */
+    @Test
+    void fatalRollbackFailureOutranksBeginInfrastructureFailure() {
+        IllegalStateException beginFailure = new IllegalStateException("begin observer failed");
+        OutOfMemoryError rollbackFailure = new OutOfMemoryError("rollback observer failed");
+        AtomicBoolean invoked = new AtomicBoolean();
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("begin", beginFailure),
+                                               new OneShotFailingLifeCycle("rollback", rollbackFailure)));
+
+        OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                        () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                            invoked.set(true);
+                                                            return null;
+                                                        }));
+
+        assertThat(reportedFailure, sameInstance(rollbackFailure));
+        assertThat(rollbackFailure.getSuppressed().length, is(1));
+        assertThat(rollbackFailure.getSuppressed()[0], instanceOf(TxException.class));
+        assertThat(rollbackFailure.getSuppressed()[0].getCause(), sameInstance(beginFailure));
+        assertThat(invoked.get(), is(false));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves a fatal rollback failure outranks a synthetic rollback-only
+     * exception when the outer application task itself completed normally.
+     */
+    @Test
+    void fatalRollbackFailureOutranksSyntheticRollbackOnlyFailure() {
+        OutOfMemoryError rollbackFailure = new OutOfMemoryError("rollback observer failed");
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("rollback", rollbackFailure)));
+
+        OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                        () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                            assertThrows(TxException.class,
+                                                                         () -> support.transaction(
+                                                                                 Tx.Type.SUPPORTED,
+                                                                                 () -> {
+                                                                                     throw new IllegalStateException(
+                                                                                             "joined task failed");
+                                                                                 }));
+                                                            return null;
+                                                        }));
+
+        assertThat(reportedFailure, sameInstance(rollbackFailure));
+        assertThat(rollbackFailure.getSuppressed().length, is(1));
+        assertThat(rollbackFailure.getSuppressed()[0], instanceOf(TxException.class));
+        assertThat(rollbackFailure.getSuppressed()[0].getMessage(),
+                   is("The local JDBC transaction was marked for rollback."));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
+     * Proves one throwable reused by the task and end observer cannot trigger
+     * self-suppression, skip a later listener, or poison thread state.
+     */
+    @Test
+    void sharedTaskAndEndFailureDoesNotAttemptSelfSuppression() {
+        TxException sharedFailure = new TxException("shared failure");
+        RecordingLifeCycle following = new RecordingLifeCycle();
+        JdbcTxSupport support = support(List.of(new OneShotFailingLifeCycle("end", sharedFailure), following));
+
+        TxException reportedFailure = assertThrows(TxException.class,
+                                                   () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                       throw sharedFailure;
+                                                   }));
+
+        assertThat(reportedFailure, sameInstance(sharedFailure));
+        assertThat(sharedFailure.getSuppressed().length, is(0));
+        assertThat(following.count("end"), is(1L));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
      * Drives the transaction shape which delivers one selected lifecycle event.
      *
      * @param support transaction support
@@ -658,6 +959,7 @@ class JdbcTxSupportTest {
 
         @Override
         public void start(String type) {
+            Objects.requireNonNull(type, "The transaction type must not be null.");
             events.add("start:" + type);
         }
 
@@ -668,27 +970,32 @@ class JdbcTxSupportTest {
 
         @Override
         public void begin(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
             assertThat(txIdentity.isBlank(), is(false));
             events.add("begin:" + txIdentity);
         }
 
         @Override
         public void commit(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
             events.add("commit:" + txIdentity);
         }
 
         @Override
         public void rollback(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
             events.add("rollback:" + txIdentity);
         }
 
         @Override
         public void suspend(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
             events.add("suspend:" + txIdentity);
         }
 
         @Override
         public void resume(String txIdentity) {
+            Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
             events.add("resume:" + txIdentity);
         }
 

@@ -90,31 +90,50 @@ final class JdbcTxSupport implements TxSupport {
                             listener -> listener.start(Jdbc.PROVIDER),
                             JdbcTransactionAction.START.text());
         } catch (RuntimeException | Error startFailure) {
-            notifyAfterFailure(TxLifeCycle::end, JdbcTransactionAction.START.cleanupText(), startFailure);
-            throw startFailure;
+            throw propagate(notifyAfterInfrastructureFailure(TxLifeCycle::end,
+                                                             JdbcTransactionAction.START.cleanupText(),
+                                                             startFailure));
         }
-        T result;
+        Callable<T> trackedTask = () -> {
+            try {
+                return task.call();
+            } catch (Exception | Error taskFailure) {
+                completion.recordTaskFailure();
+                throw taskFailure;
+            }
+        };
+        T result = null;
+        Throwable invocationFailure = null;
         try {
             result = switch (type) {
-                case MANDATORY -> mandatory(task);
-                case NEW -> requiresNew(task, completion);
-                case NEVER -> never(task);
-                case REQUIRED -> required(task, completion);
-                case SUPPORTED -> supported(task);
-                case UNSUPPORTED -> unsupported(task);
+                case MANDATORY -> mandatory(trackedTask);
+                case NEW -> requiresNew(trackedTask, completion);
+                case NEVER -> never(trackedTask);
+                case REQUIRED -> required(trackedTask, completion);
+                case SUPPORTED -> supported(trackedTask);
+                case UNSUPPORTED -> unsupported(trackedTask, completion);
             };
         } catch (RuntimeException | Error failure) {
-            notifyAfterFailure(TxLifeCycle::end, JdbcTransactionAction.END.text(), failure);
-            throw failure;
+            invocationFailure = failure;
         }
+        Throwable endFailure = null;
         try {
             notifyListeners(listeners, TxLifeCycle::end, JdbcTransactionAction.END.text());
-        } catch (RuntimeException endFailure) {
-            if (completion.committed()) {
-                throw committedLifecycleFailure(JdbcTransactionAction.END.text(), endFailure);
-            }
-            throw endFailure;
+        } catch (RuntimeException | Error failure) {
+            endFailure = failure;
         }
+        if (invocationFailure != null) {
+            if (completion.taskFailed()) {
+                suppress(invocationFailure, endFailure);
+            } else {
+                invocationFailure = merge(invocationFailure, endFailure);
+            }
+            throw propagate(invocationFailure);
+        }
+        if (endFailure instanceof RuntimeException && completion.committed()) {
+            throw committedLifecycleFailure(JdbcTransactionAction.END.text(), endFailure);
+        }
+        throwFailure(endFailure);
         return result;
     }
 
@@ -182,6 +201,19 @@ final class JdbcTxSupport implements TxSupport {
     }
 
     /**
+     * Returns a recoverable failure for throwing or propagates a fatal error unchanged.
+     *
+     * @param failure runtime or fatal failure
+     * @return recoverable failure
+     */
+    private static RuntimeException propagate(Throwable failure) {
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        return (RuntimeException) failure;
+    }
+
+    /**
      * Runs a task only when a local transaction is active.
      *
      * @param task application task
@@ -210,8 +242,7 @@ final class JdbcTxSupport implements TxSupport {
         try {
             result = callNew(task, completion);
         } catch (RuntimeException | Error failure) {
-            resumeAfterFailure(suspended, failure);
-            throw failure;
+            throw propagate(resumeAfterFailure(suspended, failure, completion.taskFailed()));
         }
         try {
             resume(suspended);
@@ -267,17 +298,17 @@ final class JdbcTxSupport implements TxSupport {
      * Suspends an active transaction while the task runs outside it.
      *
      * @param task application task
+     * @param completion invocation completion state
      * @param <T> result type
      * @return task result
      */
-    private <T> T unsupported(Callable<T> task) {
+    private <T> T unsupported(Callable<T> task, InvocationCompletion completion) {
         Transaction suspended = suspend();
         T result;
         try {
             result = callOutside(task);
         } catch (RuntimeException | Error failure) {
-            resumeAfterFailure(suspended, failure);
-            throw failure;
+            throw propagate(resumeAfterFailure(suspended, failure, completion.taskFailed()));
         }
         resume(suspended);
         return result;
@@ -441,11 +472,12 @@ final class JdbcTxSupport implements TxSupport {
     }
 
     /**
-     * Removes and rolls back the current transaction while preserving the
-     * application's primary failure.
+     * Removes and rolls back the current transaction. Application task
+     * failures remain primary; infrastructure failures are combined using
+     * fatal-aware precedence.
      *
      * @param transaction transaction to roll back
-     * @param primaryFailure application failure, or {@code null}
+     * @param primaryFailure failure which initiated rollback, or {@code null}
      * @param completion invocation completion state
      */
     private void rollback(Transaction transaction, Throwable primaryFailure, InvocationCompletion completion) {
@@ -470,11 +502,11 @@ final class JdbcTxSupport implements TxSupport {
 
         Throwable rollbackFailure = merge(receipt.failure(), observerFailure);
         rollbackFailure = merge(rollbackFailure, removeCurrent(transaction));
-        if (primaryFailure != null) {
+        if (primaryFailure != null && completion.taskFailed()) {
             suppress(primaryFailure, rollbackFailure);
             return;
         }
-        throwFailure(rollbackFailure);
+        throwFailure(merge(primaryFailure, rollbackFailure));
     }
 
     /**
@@ -494,10 +526,9 @@ final class JdbcTxSupport implements TxSupport {
                             JdbcTransactionAction.SUSPEND.text());
         } catch (RuntimeException | Error failure) {
             transaction.restoreAfterSuspendFailure();
-            notifyAfterFailure(listener -> listener.resume(transaction.identity),
-                               JdbcTransactionAction.SUSPEND.cleanupText(),
-                               failure);
-            throw failure;
+            throw propagate(notifyAfterInfrastructureFailure(listener -> listener.resume(transaction.identity),
+                                                             JdbcTransactionAction.SUSPEND.cleanupText(),
+                                                             failure));
         }
         return transaction;
     }
@@ -524,18 +555,26 @@ final class JdbcTxSupport implements TxSupport {
     }
 
     /**
-     * Attempts to restore a suspended transaction without replacing a task
-     * failure.
+     * Attempts to restore a suspended transaction after a failed invocation.
+     * Application task failures remain primary, while infrastructure failures
+     * yield to a later fatal resume error.
      *
      * @param transaction suspended transaction
-     * @param primaryFailure task failure
+     * @param primaryFailure invocation failure
+     * @param taskFailed whether the application task failed
+     * @return combined failure
      */
-    private void resumeAfterFailure(Transaction transaction, Throwable primaryFailure) {
+    private Throwable resumeAfterFailure(Transaction transaction, Throwable primaryFailure, boolean taskFailed) {
         try {
             resume(transaction);
         } catch (RuntimeException | Error resumeFailure) {
-            suppress(primaryFailure, resumeFailure);
+            if (taskFailed) {
+                suppress(primaryFailure, resumeFailure);
+            } else {
+                primaryFailure = merge(primaryFailure, resumeFailure);
+            }
         }
+        return primaryFailure;
     }
 
     /**
@@ -629,18 +668,22 @@ final class JdbcTxSupport implements TxSupport {
     }
 
     /**
-     * Delivers a cleanup notification without replacing an existing failure.
+     * Delivers cleanup after an infrastructure failure while preserving the first fatal error.
      *
      * @param action listener action
      * @param event event name used in diagnostics
      * @param primaryFailure failure that initiated cleanup
+     * @return combined infrastructure failure
      */
-    private void notifyAfterFailure(ListenerAction action, String event, Throwable primaryFailure) {
+    private Throwable notifyAfterInfrastructureFailure(ListenerAction action,
+                                                       String event,
+                                                       Throwable primaryFailure) {
         try {
             notifyListeners(listeners, action, event);
         } catch (RuntimeException | Error cleanupFailure) {
-            suppress(primaryFailure, cleanupFailure);
+            primaryFailure = merge(primaryFailure, cleanupFailure);
         }
+        return primaryFailure;
     }
 
     /**
@@ -672,6 +715,7 @@ final class JdbcTxSupport implements TxSupport {
      */
     private static final class InvocationCompletion {
         private CompletionOutcome outcome;
+        private boolean taskFailed;
 
         /**
          * Returns whether this invocation committed its new transaction.
@@ -680,6 +724,22 @@ final class JdbcTxSupport implements TxSupport {
          */
         private boolean committed() {
             return outcome == CompletionOutcome.COMMITTED;
+        }
+
+        /**
+         * Returns whether the application task failed during this invocation.
+         *
+         * @return whether the task failed
+         */
+        private boolean taskFailed() {
+            return taskFailed;
+        }
+
+        /**
+         * Records that the application task failed during this invocation.
+         */
+        private void recordTaskFailure() {
+            taskFailed = true;
         }
 
         /**

@@ -70,6 +70,7 @@
                 <configuration>
                     <compilerArgs combine.children="append">
                         <arg>-Ahelidon.api.preview=ignore</arg>
+                        <arg>-Ahelidon.api.incubating=ignore</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

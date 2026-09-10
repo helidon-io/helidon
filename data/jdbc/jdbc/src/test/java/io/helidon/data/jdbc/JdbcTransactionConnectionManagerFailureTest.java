@@ -40,6 +40,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -154,6 +155,143 @@ class JdbcTransactionConnectionManagerFailureTest {
         verify(connection).rollback();
         verify(connection).abort(any());
         verify(connection).close();
+        manager.end();
+    }
+
+    /**
+     * Verifies that a fatal compensating rollback failure cannot be hidden by
+     * the recoverable failure from the preceding commit attempt.
+     */
+    @Test
+    void fatalCompensatingRollbackFailureOutranksCommitFailure() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        SQLException commitFailure = new SQLException("private commit detail", "08006", 95);
+        OutOfMemoryError rollbackFailure = new OutOfMemoryError("rollback failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, false, false);
+        doThrow(commitFailure).when(connection).commit();
+        doThrow(rollbackFailure).when(connection).rollback();
+        JdbcTransactionConnectionManager manager = activeManager("fatal-rollback-after-commit");
+        manager.acquire(dataSource).close();
+
+        CompletionReceipt receipt = manager.commitLocal("fatal-rollback-after-commit");
+
+        assertThat(receipt.outcome(), is(CompletionOutcome.UNKNOWN));
+        assertThat(receipt.failure(), sameInstance(rollbackFailure));
+        assertThat(rollbackFailure.getSuppressed().length, is(1));
+        Throwable safeCommitFailure = rollbackFailure.getSuppressed()[0];
+        assertThat(safeCommitFailure, not(sameInstance(commitFailure)));
+        assertThat(safeCommitFailure.getMessage(), is("The JDBC driver reported a failure."));
+        assertThat(((SQLException) safeCommitFailure).getSQLState(), is("08006"));
+        assertThat(((SQLException) safeCommitFailure).getErrorCode(), is(95));
+        verify(connection).commit();
+        verify(connection).rollback();
+        verify(connection).abort(any());
+        verify(connection).close();
+        verify(connection, never()).setAutoCommit(true);
+        manager.end();
+    }
+
+    /**
+     * Verifies that a confirmed commit outcome survives a fatal error while
+     * invalidating the connection after automatic commit restoration fails.
+     */
+    @Test
+    void confirmedCommitSurvivesFatalInvalidationAfterRestoreFailure() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        SQLException restoreFailure = new SQLException("private restore detail", "08006", 96);
+        OutOfMemoryError abortFailure = new OutOfMemoryError("abort failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, false, false);
+        doThrow(restoreFailure).when(connection).setAutoCommit(true);
+        doThrow(abortFailure).when(connection).abort(any());
+        JdbcTransactionConnectionManager manager = activeManager("fatal-abort-after-commit");
+        manager.acquire(dataSource).close();
+
+        CompletionReceipt receipt = manager.commitLocal("fatal-abort-after-commit");
+
+        assertThat(receipt.outcome(), is(CompletionOutcome.COMMITTED));
+        assertThat(receipt.failure(), sameInstance(abortFailure));
+        assertThat(abortFailure.getSuppressed().length, is(1));
+        Throwable safeRestoreFailure = abortFailure.getSuppressed()[0];
+        assertThat(safeRestoreFailure, not(sameInstance(restoreFailure)));
+        assertThat(safeRestoreFailure.getMessage(), is("The JDBC driver reported a failure."));
+        assertThat(((SQLException) safeRestoreFailure).getSQLState(), is("08006"));
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+        verify(connection).abort(any());
+        verify(connection).close();
+        manager.end();
+    }
+
+    /**
+     * Verifies that confirmed rollback remains authoritative when ordinary
+     * close and its invalidation fallback both fail.
+     */
+    @Test
+    void confirmedRollbackSurvivesFatalInvalidationAfterCloseFailure() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        SQLException closeFailure = new SQLException("private close detail", "08006", 97);
+        OutOfMemoryError abortFailure = new OutOfMemoryError("abort failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, false, false);
+        doThrow(closeFailure).when(connection).close();
+        doThrow(abortFailure).when(connection).abort(any());
+        JdbcTransactionConnectionManager manager = activeManager("fatal-abort-after-rollback");
+        manager.acquire(dataSource).close();
+
+        CompletionReceipt receipt = manager.rollbackLocal("fatal-abort-after-rollback");
+
+        assertThat(receipt.outcome(), is(CompletionOutcome.ROLLED_BACK));
+        assertThat(receipt.failure(), sameInstance(abortFailure));
+        assertThat(abortFailure.getSuppressed().length, is(2));
+        for (Throwable diagnostic : abortFailure.getSuppressed()) {
+            assertThat(diagnostic, not(sameInstance(closeFailure)));
+            assertThat(diagnostic.getMessage(), is("The JDBC driver reported a failure."));
+            assertThat(((SQLException) diagnostic).getSQLState(), is("08006"));
+        }
+        verify(connection).rollback();
+        verify(connection).setAutoCommit(true);
+        verify(connection).abort(any());
+        verify(connection, times(2)).close();
+        manager.end();
+    }
+
+    /**
+     * Verifies that a fatal invalidation failure during connection setup is
+     * propagated unchanged and does not leave a reusable association behind.
+     */
+    @Test
+    void fatalSetupInvalidationFailureLeavesTheManagerReusable() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        SQLException setupFailure = new SQLException("private setup detail", "08006", 98);
+        OutOfMemoryError abortFailure = new OutOfMemoryError("abort failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        doThrow(setupFailure).when(connection).setAutoCommit(false);
+        doThrow(abortFailure).when(connection).abort(any());
+        JdbcTransactionConnectionManager manager = activeManager("fatal-setup-invalidation");
+
+        OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                        () -> manager.acquire(dataSource));
+
+        assertThat(reportedFailure, sameInstance(abortFailure));
+        assertThat(abortFailure.getSuppressed().length, is(1));
+        assertThat(abortFailure.getSuppressed()[0], not(sameInstance(setupFailure)));
+        assertThat(abortFailure.getSuppressed()[0].getMessage(), is("The JDBC driver reported a failure."));
+        verify(connection).abort(any());
+        verify(connection).close();
+        CompletionReceipt receipt = manager.rollbackLocal("fatal-setup-invalidation");
+        assertThat(receipt.outcome(), is(CompletionOutcome.ROLLED_BACK));
+        manager.end();
+
+        manager.start(Jdbc.PROVIDER);
+        manager.begin("after-fatal-setup");
+        assertThat(manager.commitLocal("after-fatal-setup").outcome(), is(CompletionOutcome.COMMITTED));
         manager.end();
     }
 

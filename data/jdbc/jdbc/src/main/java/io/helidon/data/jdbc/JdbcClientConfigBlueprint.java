@@ -29,7 +29,8 @@ import io.helidon.service.registry.Service;
  * supplied only through a programmatic builder. Registry managed clients are
  * configured under {@code data.clients.jdbc}.
  */
-@Api.Preview
+@Api.Incubating
+@Api.Since("27.0.0")
 @Prototype.Blueprint(createEmptyPublic = false, decorator = JdbcClientConfigSupport.Decorator.class)
 @Prototype.Configured(JdbcClientConfigFactory.CONFIG_KEY)
 interface JdbcClientConfigBlueprint extends SqlConfig, Prototype.Factory<JdbcClient> {

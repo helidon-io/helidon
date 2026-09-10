@@ -28,7 +28,7 @@ import io.helidon.data.jdbc.JdbcClient.Statement;
  * generation and the JDBC runtime. Application code uses {@link JdbcClient}
  * directly.
  */
-@Api.Preview
+@Api.Incubating
 @Api.Since("27.0.0")
 public final class GeneratedJdbcData {
 

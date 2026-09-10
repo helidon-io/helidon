@@ -45,18 +45,39 @@ final class JdbcConnectionInvalidator {
      * @return primary failure, possibly replaced by a bounded SQL diagnostic
      */
     static Throwable invalidate(Connection connection, Throwable primaryFailure) {
+        return invalidate(connection, primaryFailure, JdbcExceptionTranslator::suppress);
+    }
+
+    /**
+     * Aborts a connection after an infrastructure failure while preserving the first fatal error.
+     *
+     * @param connection unsafe connection
+     * @param primaryFailure infrastructure failure which required invalidation
+     * @return combined infrastructure failure
+     */
+    static Throwable invalidateInfrastructure(Connection connection, Throwable primaryFailure) {
+        return invalidate(connection, primaryFailure, JdbcExceptionTranslator::mergeInfrastructure);
+    }
+
+    private static Throwable invalidate(Connection connection,
+                                        Throwable primaryFailure,
+                                        FailureMerger failureMerger) {
         try {
             connection.abort(ABORT_EXECUTOR);
         } catch (SQLException | RuntimeException | Error abortFailure) {
-            primaryFailure = JdbcExceptionTranslator.suppress(primaryFailure, "aborting a connection", abortFailure);
+            primaryFailure = failureMerger.merge(primaryFailure, "aborting a connection", abortFailure);
         }
         try {
             connection.close();
         } catch (SQLException | RuntimeException | Error closeFailure) {
-            primaryFailure = JdbcExceptionTranslator.suppress(primaryFailure,
-                                                               "closing an invalidated connection",
-                                                               closeFailure);
+            primaryFailure = failureMerger.merge(primaryFailure, "closing an invalidated connection", closeFailure);
         }
         return primaryFailure;
+    }
+
+    @FunctionalInterface
+    private interface FailureMerger {
+
+        Throwable merge(Throwable primary, String operation, Throwable failure);
     }
 }
