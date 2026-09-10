@@ -18,8 +18,10 @@ package io.helidon.webclient.http1;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.util.List;
+import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
@@ -150,6 +152,20 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     @Override
+    public InputStream inputStream() {
+        this.entityRequested = true;
+
+        if (inputStream == null) {
+            return InputStream.nullInputStream();
+        }
+
+        return new ResponseInputStream(inputStream,
+                                       directContentLength(),
+                                       this::closeFullyReadEntity,
+                                       this::close);
+    }
+
+    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
@@ -231,12 +247,27 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private void entityFullyRead() {
         try {
-            this.entityFullyRead = true;
-            inputStream.close();
-            this.close();
+            closeFullyReadEntity();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
+    }
+
+    private void closeFullyReadEntity() throws IOException {
+        this.entityFullyRead = true;
+        try {
+            inputStream.close();
+        } finally {
+            this.close();
+        }
+    }
+
+    private long directContentLength() {
+        // Content-Length describes the encoded representation, not the decoded stream returned to callers.
+        if (responseHeaders.contains(HeaderNames.CONTENT_ENCODING)) {
+            return -1;
+        }
+        return responseHeaders.contentLength().orElse(-1);
     }
 
     private BufferData readBytes(int estimate) {
@@ -246,5 +277,80 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             return null;
         }
         return bufferData;
+    }
+
+    @FunctionalInterface
+    private interface IoRunnable {
+        void run() throws IOException;
+    }
+
+    private static final class ResponseInputStream extends InputStream {
+        private final InputStream delegate;
+        private final IoRunnable entityFullyReadRunnable;
+        private final Runnable closeResponseRunnable;
+        private long remainingLength;
+        private boolean closed;
+
+        private ResponseInputStream(InputStream delegate,
+                                    long contentLength,
+                                    IoRunnable entityFullyReadRunnable,
+                                    Runnable closeResponseRunnable) {
+            this.delegate = delegate;
+            this.remainingLength = contentLength;
+            this.entityFullyReadRunnable = entityFullyReadRunnable;
+            this.closeResponseRunnable = closeResponseRunnable;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (closed) {
+                return -1;
+            }
+            int read = delegate.read();
+            return completeAfterRead(read, read == -1 ? 0 : 1);
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, bytes.length);
+            if (length == 0) {
+                return 0;
+            }
+            if (closed) {
+                return -1;
+            }
+            int read = delegate.read(bytes, offset, length);
+            return completeAfterRead(read, Math.max(read, 0));
+        }
+
+        @Override
+        public int available() throws IOException {
+            return closed ? 0 : delegate.available();
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!closed) {
+                closed = true;
+                try {
+                    delegate.close();
+                } finally {
+                    closeResponseRunnable.run();
+                }
+            }
+        }
+
+        private int completeAfterRead(int read, int bytesRead) throws IOException {
+            if (!closed) {
+                if (remainingLength >= 0) {
+                    remainingLength -= bytesRead;
+                }
+                if (read == -1 || remainingLength == 0) {
+                    closed = true;
+                    entityFullyReadRunnable.run();
+                }
+            }
+            return read;
+        }
     }
 }

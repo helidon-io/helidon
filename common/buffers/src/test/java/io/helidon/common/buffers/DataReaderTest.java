@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,60 @@
 package io.helidon.common.buffers;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 class DataReaderTest {
+
+    @Test
+    void directReadDrainsBufferedBytesFirst() {
+        var supplied = new AtomicReference<>(new byte[] {1, 2, 3});
+        var directCalls = new AtomicInteger();
+        var direct = new AtomicReference<>(new byte[] {4, 5, 6, 7});
+        DataReader dataReader = DataReader.create(
+                () -> supplied.getAndSet(null),
+                (bytes, offset, length) -> {
+                    directCalls.incrementAndGet();
+                    byte[] source = direct.getAndSet(null);
+                    if (source == null) {
+                        return -1;
+                    }
+                    int read = Math.min(source.length, length);
+                    System.arraycopy(source, 0, bytes, offset, read);
+                    return read;
+                });
+        dataReader.ensureAvailable();
+        byte[] target = new byte[7];
+
+        assertThat(dataReader.read(target, 0, target.length), is(3));
+        assertThat(directCalls.get(), is(0));
+        assertThat(dataReader.read(target, 3, target.length - 3), is(4));
+        assertThat(directCalls.get(), is(1));
+        assertArrayEquals(new byte[] {1, 2, 3, 4, 5, 6, 7}, target);
+    }
+
+    @Test
+    void bulkReadFallsBackToBufferedSupplier() {
+        var supplied = new AtomicReference<>(new byte[] {1, 2, 3});
+        DataReader dataReader = DataReader.create(() -> supplied.getAndSet(null));
+        byte[] target = new byte[5];
+
+        assertThat(dataReader.read(target, 1, 3), is(3));
+        assertArrayEquals(new byte[] {0, 1, 2, 3, 0}, target);
+    }
+
+    @Test
+    void bulkReadReturnsEndOfInputForExhaustedSupplier() {
+        DataReader dataReader = DataReader.create(() -> null);
+
+        assertThat(dataReader.read(new byte[1], 0, 1), is(-1));
+    }
 
     @Test
     void testFindNewLineWithLoneCR() {
