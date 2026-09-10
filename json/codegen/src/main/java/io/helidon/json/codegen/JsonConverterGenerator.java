@@ -33,7 +33,6 @@ import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.Executable;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
-import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -85,10 +84,6 @@ class JsonConverterGenerator {
         Map<String, TypeToConfigure> toConfigure = new HashMap<>();
         classBuilder.name(converterInfo.converterType().className())
                 .addInterface(converterInterfaceType)
-                .addAnnotation(Annotation.builder()
-                                       .type(SuppressWarnings.class)
-                                       .addParameter("value", Api.SUPPRESS_PREVIEW)
-                                       .build())
                 .javadoc(Javadoc.builder()
                                  .add("Json converter for {@link " + converterInfo.originalType().fqName() + "}.")
                                  .build());

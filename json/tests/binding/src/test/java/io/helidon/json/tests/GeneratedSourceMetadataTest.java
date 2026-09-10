@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import io.helidon.codegen.api.stability.ApiStabilityProcessor;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Api;
@@ -109,6 +110,8 @@ class GeneratedSourceMetadataTest {
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
+                .addProcessor(ApiStabilityProcessor::new)
+                .addOption("-Ahelidon.api=fail")
                 .addSource(sourceName, source)
                 .build()
                 .compile();
@@ -135,7 +138,7 @@ class GeneratedSourceMetadataTest {
         assertThat(content, containsString("Licensed under the Apache License, Version 2.0"));
         assertThat(content, not(containsString("// This is a generated file (powered by Helidon).")));
         assertThat(content, containsString("@Generated("));
-        assertThat(content, containsString("@SuppressWarnings(\"" + Api.SUPPRESS_PREVIEW + "\")"));
+        assertThat(content, containsString("@SuppressWarnings(\"" + Api.SUPPRESS_ALL + "\")"));
         assertThat(content, containsString("value = \"" + generator + "\""));
         assertThat(content, containsString("trigger = \"" + trigger + "\""));
     }

@@ -242,6 +242,7 @@ public class DataReader {
      * @param len     number of bytes of the string
      * @return lazy string
      */
+    @Api.Internal
     public LazyString readLazyString(Charset charset, int len) {
         ensureAvailable(); // we have at least 1 byte
         if (len <= head.available()) { // fast case

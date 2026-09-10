@@ -71,6 +71,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-api-stability</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen-testing</artifactId>
             <version>${helidon.version}</version>
             <scope>test</scope>
