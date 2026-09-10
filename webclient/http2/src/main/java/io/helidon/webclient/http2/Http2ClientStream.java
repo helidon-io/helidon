@@ -924,6 +924,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @param endOfStream trailers must always close the remote side
      */
     private void trailersLocked(Http2Headers headers, boolean endOfStream) {
+        if (currentHeaders.status() == Status.NOT_MODIFIED_304) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received trailers on a 304 response");
+        }
         Http2StreamState nextState =
                 Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, false, endOfStream, true);
         if (endOfStream && (nextState == Http2StreamState.CLOSED || state == Http2StreamState.HALF_CLOSED_LOCAL)) {

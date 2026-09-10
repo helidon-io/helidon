@@ -1429,7 +1429,7 @@ class Http2ClientConnectionTest {
                 "HEAD, 200, padded-buffer, 127", "HEAD, 426, padded-buffer, 127", "GET, 304, padded-buffer, 127",
                 "HEAD, 200, padded-buffer, 128", "HEAD, 426, padded-buffer, 128", "GET, 304, padded-buffer, 128",
                 "HEAD, 200, padded-buffer, 255", "HEAD, 426, padded-buffer, 255", "GET, 304, padded-buffer, 255",
-                "HEAD, 200, trailers, 0", "HEAD, 426, trailers, 0", "GET, 304, trailers, 0"})
+                "HEAD, 200, trailers, 0", "HEAD, 426, trailers, 0"})
     void responseWithoutContentPreservesMetadataAndReleasesStream(String methodName,
                                                                  int statusCode,
                                                                  String termination,
@@ -1500,6 +1500,63 @@ class Http2ClientConnectionTest {
             assertThat(nextStream, notNullValue());
             nextStream.close();
             stream.close();
+            connection.close();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"GET, false", "GET, true", "HEAD, false", "HEAD, true"})
+    void notModifiedTrailersResetOnlyTheirStream(String methodName, boolean emptyData) throws Exception {
+        Method method = Method.create(methodName);
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(2));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream malformedStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream siblingStream = connection.createStream(STREAM_CONFIG);
+            malformedStream.writeHeaders(requestHeaders().method(method), true);
+            siblingStream.writeHeaders(requestHeaders(), true);
+            assertThat(connection.tryStream(STREAM_CONFIG), nullValue());
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            Http2Headers headers = Http2Headers.create(WritableHeaders.create()
+                                                             .set(HeaderNames.CONTENT_LENGTH, "123"))
+                    .status(Status.NOT_MODIFIED_304);
+            test.offerInbound(encodedHeaderFrame(malformedStream.streamId(), headers, inboundTable, huffman));
+            assertThat(malformedStream.readHeaders().status(), is(Status.NOT_MODIFIED_304));
+            if (emptyData) {
+                test.offerInbound(dataFrame(malformedStream.streamId(), BufferData.EMPTY_BYTES, false));
+            }
+            test.offerInbound(encodedHeaderFrame(malformedStream.streamId(), encodedTrailers(), inboundTable, huffman, true),
+                              encodedHeaderFrame(siblingStream.streamId(), encodedResponseHeaders(false), inboundTable, huffman),
+                              dataFrame(siblingStream.streamId(), "sibling".getBytes(StandardCharsets.UTF_8), false));
+
+            WebClientServiceRequest request = mock(WebClientServiceRequest.class);
+            when(request.method()).thenReturn(method);
+            Http2CallEntityChain chain = new Http2CallEntityChain(test.client,
+                                                                  mock(Http2ClientRequestImpl.class),
+                                                                  new CompletableFuture<>(),
+                                                                  new CompletableFuture<>(),
+                                                                  BufferData.EMPTY_BYTES);
+            Http2Exception failure = assertThrows(Http2Exception.class, () -> chain.readResponse(request, malformedStream));
+            assertThat(failure.code(), is(Http2ErrorCode.PROTOCOL));
+
+            Http2FrameData reset = test.awaitWrittenFrame(Http2FrameType.RST_STREAM);
+            assertThat(reset.header().streamId(), is(malformedStream.streamId()));
+            assertThat(Http2RstStream.create(reset.data()).errorCode(), is(Http2ErrorCode.PROTOCOL));
+            assertThat(siblingStream.readHeaders().status(), is(Status.OK_200));
+            BufferData data = siblingStream.read();
+            byte[] entity = new byte[data.available()];
+            data.read(entity);
+            assertThat(new String(entity, StandardCharsets.UTF_8), is("sibling"));
+
+            Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
+            assertThat(recoveredStream, notNullValue());
+            assertThat(connection.tryStream(STREAM_CONFIG), nullValue());
+            recoveredStream.close();
+            siblingStream.close();
+            malformedStream.close();
             connection.close();
         }
     }
