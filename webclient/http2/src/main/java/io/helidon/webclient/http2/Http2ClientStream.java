@@ -199,9 +199,15 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     @Override
     public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
-        updateState(Http2StreamState.checkAndGetState(this.state, header.type(), false, endOfStream, false));
-        readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
-        flowControl.inbound().incrementWindowSize(header.length());
+        inboundStateLock.lock();
+        try {
+            updateState(Http2StreamState.checkAndGetState(this.state, header.type(), false, endOfStream, false));
+            readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
+            flowControl.inbound().incrementWindowSize(header.length());
+            buffer.dataProcessed(header.length());
+        } finally {
+            inboundStateLock.unlock();
+        }
     }
 
     @Override
@@ -866,11 +872,12 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         inboundStateLock.lock();
         try {
             inboundFailure = failure;
+            int discardedDataLength = buffer.failAndDiscard(failure);
             try {
                 reset(Http2ErrorCode.PROTOCOL);
             } finally {
-                buffer.fail(failure);
                 close();
+                connection.flowControl().incrementInboundConnectionWindowSize(discardedDataLength);
                 inboundStateChanged.signalAll();
             }
         } finally {
