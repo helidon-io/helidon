@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -159,6 +160,76 @@ public class ConfigMapTest {
         assertThat(builtSet, is(Set.of("first", "second", "duplicate")));
         assertThrows(UnsupportedOperationException.class, () -> builtList.add("third"));
         assertThrows(UnsupportedOperationException.class, () -> builtSet.add("third"));
+    }
+
+    @Test
+    void testOptionalCollectionSingularAdders() {
+        ConfigMap.Builder builder = ConfigMap.builder();
+        assertThat(builder.build().optionalList().isEmpty(), is(true));
+        assertThat(builder.build().optionalSet().isEmpty(), is(true));
+
+        builder.addOptionalList("first")
+                .addOptionalList("first")
+                .addOptionalList("second")
+                .includeOptionalSetItem("first")
+                .includeOptionalSetItem("first")
+                .includeOptionalSetItem("second");
+        ConfigMap snapshot = builder.build();
+        ConfigMap.Builder copied = ConfigMap.builder().from(builder);
+        ConfigMap fromPrototype = ConfigMap.builder(snapshot)
+                .addOptionalList("prototype")
+                .includeOptionalSetItem("prototype")
+                .build();
+        builder.addOptionalList("later").includeOptionalSetItem("later");
+        ConfigMap fromBuilder = copied.addOptionalList("builder").includeOptionalSetItem("builder").build();
+
+        assertThat(snapshot.optionalList().orElseThrow(), is(List.of("first", "first", "second")));
+        assertThat(List.copyOf(snapshot.optionalSet().orElseThrow()), is(List.of("first", "second")));
+        assertThat(fromPrototype.optionalList().orElseThrow(), is(List.of("first", "first", "second", "prototype")));
+        assertThat(fromPrototype.optionalSet().orElseThrow(), is(Set.of("first", "second", "prototype")));
+        assertThat(fromBuilder.optionalList().orElseThrow(), is(List.of("first", "first", "second", "builder")));
+        assertThat(fromBuilder.optionalSet().orElseThrow(), is(Set.of("first", "second", "builder")));
+        assertThrows(UnsupportedOperationException.class, () -> snapshot.optionalList().orElseThrow().add("mutation"));
+        assertThrows(UnsupportedOperationException.class, () -> snapshot.optionalSet().orElseThrow().add("mutation"));
+    }
+
+    @Test
+    void testOptionalCollectionSingularAddAfterEmptyOrClear() {
+        ConfigMap.Builder builder = ConfigMap.builder().optionalList(List.of()).optionalSet(Set.of());
+        assertThat(builder.build().optionalList().orElseThrow(), empty());
+        assertThat(builder.build().optionalSet().orElseThrow(), empty());
+        ConfigMap populated = builder.addOptionalList("first").includeOptionalSetItem("first").build();
+        assertThat(populated.optionalList().orElseThrow(), is(List.of("first")));
+        assertThat(populated.optionalSet().orElseThrow(), is(Set.of("first")));
+
+        builder.clearOptionalList().clearOptionalSet();
+        assertThrows(NullPointerException.class, () -> builder.addOptionalList((String) null));
+        assertThrows(NullPointerException.class, () -> builder.includeOptionalSetItem(null));
+        assertThat(builder.build().optionalList().isEmpty(), is(true));
+        assertThat(builder.build().optionalSet().isEmpty(), is(true));
+
+        ConfigMap rebuilt = builder.addOptionalList("second").includeOptionalSetItem("second").build();
+        assertThat(rebuilt.optionalList().orElseThrow(), is(List.of("second")));
+        assertThat(rebuilt.optionalSet().orElseThrow(), is(Set.of("second")));
+    }
+
+    @Test
+    void testOptionalCollectionSingularAddUsesDecoratorBeforeMutation() {
+        ConfigMap.Builder builder = ConfigMap.builder();
+        IllegalArgumentException listFailure = assertThrows(IllegalArgumentException.class,
+                                                             () -> builder.addOptionalList("forbidden"));
+        IllegalArgumentException setFailure = assertThrows(IllegalArgumentException.class,
+                                                            () -> builder.includeOptionalSetItem("forbidden"));
+        assertThat(listFailure.getMessage(), containsString("Forbidden list item"));
+        assertThat(setFailure.getMessage(), containsString("Forbidden set item"));
+        assertThat(builder.build().optionalList().isEmpty(), is(true));
+        assertThat(builder.build().optionalSet().isEmpty(), is(true));
+
+        builder.addOptionalList("allowed").includeOptionalSetItem("allowed");
+        assertThrows(IllegalArgumentException.class, () -> builder.addOptionalList("forbidden"));
+        assertThrows(IllegalArgumentException.class, () -> builder.includeOptionalSetItem("forbidden"));
+        assertThat(builder.build().optionalList().orElseThrow(), is(List.of("allowed")));
+        assertThat(builder.build().optionalSet().orElseThrow(), is(Set.of("allowed")));
     }
 
     @Test

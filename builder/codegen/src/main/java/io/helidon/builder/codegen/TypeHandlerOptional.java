@@ -251,8 +251,11 @@ class TypeHandlerOptional extends TypeHandlerBasic {
 
     @Override
     Optional<GeneratedMethod> prepareBuilderSingularAdd(Javadoc getterJavadoc) {
-        if (!optionalMap() || option().singular().isEmpty()) {
+        if (!optionalContainer() || option().singular().isEmpty()) {
             return Optional.empty();
+        }
+        if (optionalCollection()) {
+            return Optional.of(prepareOptionalCollectionSingularAdd(getterJavadoc));
         }
 
         OptionSingular singular = option().singular().get();
@@ -373,6 +376,31 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                 .addContent(".of(")
                 .addContent(optionName)
                 .addContent(")");
+    }
+
+    private GeneratedMethod prepareOptionalCollectionSingularAdd(Javadoc getterJavadoc) {
+        OptionSingular singular = option().singular().orElseThrow();
+        String singularName = singular.name();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(Utils.builderReturnType())
+                .elementName(singular.methodName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation))
+                .addParameterArgument(param -> param
+                        .kind(ElementKind.PARAMETER)
+                        .typeName(type().typeArguments().getFirst())
+                        .elementName(singularName));
+
+        return GeneratedMethod.builder()
+                .method(method.build())
+                .javadoc(setterJavadoc(getterJavadoc, singularName, "add single "))
+                .contentBuilder(it -> it.addContent("return add" + capitalize(option().name()) + "(")
+                        .addContent(collectionType())
+                        .addContentLine(".of(" + singularName + "));"))
+                .build();
     }
 
     private Optional<GeneratedMethod> prepareOptionalContainerSetterDeclared(Javadoc getterJavadoc) {
