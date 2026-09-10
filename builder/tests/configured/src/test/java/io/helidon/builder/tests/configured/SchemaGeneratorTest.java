@@ -16,6 +16,8 @@
 package io.helidon.builder.tests.configured;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.List;
 
@@ -51,6 +53,154 @@ class SchemaGeneratorTest {
 
     static final List<String> OPTS = List.of(
             "-Xlint:-deprecation");
+
+    @Test
+    void testImportedSameRoundBlueprintsWithConflictingSimpleNames() throws IOException, ReflectiveOperationException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("com/acme/AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.Map;
+                        import com.acme.spi.ChannelConfig;
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Root configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeConfigBlueprint {
+                            /** @return channel configurations */
+                            @Option.Configured
+                            Map<String, ChannelConfig> channels();
+                        }
+                        """)
+                .addSource("com/acme/spi/ChannelConfigBlueprint.java", """
+                        package com.acme.spi;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Channel configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ChannelConfigBlueprint extends ChannelBaseConfigBlueprint {
+                        }
+                        """)
+                .addSource("com/acme/spi/ChannelBaseConfigBlueprint.java", """
+                        package com.acme.spi;
+
+                        import java.util.Optional;
+                        import com.acme.ExecutionConfig;
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        /** Common channel configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ChannelBaseConfigBlueprint {
+                            /** @return connector name */
+                            @Option.Required
+                            @Option.Configured
+                            String connector();
+
+                            /** @return channel name */
+                            @Option.Required
+                            String channelName();
+
+                            /** @return execution configuration */
+                            @Option.Configured
+                            @Option.DefaultMethod("create")
+                            ExecutionConfig execution();
+
+                            /** @return original configuration */
+                            Optional<Config> config();
+                        }
+                        """)
+                .addSource("com/acme/ExecutionConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Execution configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ExecutionConfigBlueprint {
+                            /** @return queue capacity */
+                            @Option.Configured
+                            @Option.DefaultInt(7)
+                            int queueCapacity();
+                        }
+                        """)
+                .addSource("com/acme/ChannelConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Same-package alternative to the explicitly imported channel configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ChannelConfigBlueprint {
+                        }
+                        """)
+                .addSource("com/acme/spi/ExecutionConfigBlueprint.java", """
+                        package com.acme.spi;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Same-package alternative to the explicitly imported execution configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ExecutionConfigBlueprint {
+                        }
+                        """)
+                .addSource("com/acme/InheritedConfigUsage.java", """
+                        package com.acme;
+
+                        import java.util.List;
+                        import com.acme.spi.ChannelBaseConfig;
+                        import com.acme.spi.ChannelConfig;
+                        import io.helidon.config.Config;
+
+                        public final class InheritedConfigUsage {
+                            public static List<Object> values() {
+                                Config original = Config.empty();
+                                ChannelBaseConfig base = ChannelBaseConfig.builder()
+                                        .config(original)
+                                        .connector("orders-connector")
+                                        .channelName("orders")
+                                        .build();
+                                ChannelConfig channel = ChannelConfig.builder()
+                                        .from(base)
+                                        .execution(ExecutionConfig.builder().queueCapacity(11).build())
+                                        .build();
+                                return List.of(channel.connector(),
+                                               channel.channelName(),
+                                               channel.execution().queueCapacity(),
+                                               channel.config().orElseThrow() == original);
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        String rootConfig = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        String channelConfig = Files.readString(result.sourceOutput().resolve("com/acme/spi/ChannelBaseConfig.java"));
+        String inheritedConfig = Files.readString(result.sourceOutput().resolve("com/acme/spi/ChannelConfig.java"));
+        assertThat(rootConfig, containsString("import com.acme.spi.ChannelConfig;"));
+        assertThat(channelConfig, containsString("import com.acme.ExecutionConfig;"));
+        assertThat(inheritedConfig, containsString("extends ChannelBaseConfig.BuilderBase<BUILDER, PROTOTYPE>"));
+        try (var loader = new URLClassLoader(new URL[] {result.classOutput().toUri().toURL()},
+                                            getClass().getClassLoader())) {
+            Object values = loader.loadClass("com.acme.InheritedConfigUsage").getMethod("values").invoke(null);
+            assertThat(values, is(List.of("orders-connector", "orders", 11, true)));
+        }
+    }
 
     @Test
     void testRoot() throws IOException {
