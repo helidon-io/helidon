@@ -1280,23 +1280,28 @@ Connector defaults and channel overrides can be combined as follows:
 ```yaml
 messaging:
   connector:
-    example-acme:
+    orders-broker:
+      type: example-acme
       endpoint: https://broker.example
 
   incoming:
     orders:
-      connector: example-acme
+      connector: orders-broker
       destination: orders-in
 
   outgoing:
     validated-orders:
-      connector: example-acme
+      connector: orders-broker
+      endpoint: https://outbound-broker.example
       destination: orders-out
 ```
 
-When the connector name differs from its provider type, declare `type` explicitly as shown in the configuration
-section above. Add a generated receiver or named emitter for each configured channel, start the Service Registry
-application, and verify that the provider is discovered on both the class path and module path.
+`orders-broker` names the configured connector instance, while `type: example-acme` selects its provider. The incoming
+`orders` channel inherits the connector's endpoint. The outgoing `validated-orders` channel overrides that endpoint
+for its connection only. Each channel supplies its own required `destination`.
+
+Add a generated receiver or named emitter for each configured channel, start the Service Registry application, and
+verify that the provider is discovered through the Service Registry on both the class path and module path.
 
 ### 9. Test the connector contract
 
