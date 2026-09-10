@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ public interface ScopedRegistry {
     void activate();
 
     /**
-     * Deactivate this registry instance. This method will deactivate all active instances
+     * Deactivate this registry instance. This method will deactivate all active instances.
+     * <p>
+     * This method must not be invoked concurrently on the same registry instance.
      *
      * @throws io.helidon.service.registry.ServiceRegistryException in case one or more services failed to deactivate
      */

@@ -44,7 +44,8 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     private final TypeName scope;
     private final String id;
-    private boolean active = false;
+    private volatile boolean activationAllowed;
+    private RegistryState state = RegistryState.INACTIVE;
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     ScopedRegistryImpl(CoreServiceRegistry registry,
@@ -62,7 +63,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
             Object value = entry.getValue();
             Activator<?> fixedService;
 
-            fixedService = Activators.createActive(provider, value);
+            fixedService = scopedActivator(Activators.createActive(provider, value));
 
             activators.put(key, fixedService);
         }
@@ -73,25 +74,41 @@ class ScopedRegistryImpl implements ScopedRegistry {
      * at the time the scope is active and instances can be created within it.
      */
     public void activate() {
-        active = true;
+        try {
+            serviceProvidersLock.writeLock().lock();
+            state = RegistryState.ACTIVE;
+            activationAllowed = true;
+        } finally {
+            serviceProvidersLock.writeLock().unlock();
+        }
     }
 
     @Override
     public void deactivate() {
+        List<Activator<?>> toShutdown;
         try {
             serviceProvidersLock.writeLock().lock();
-            if (!active) {
+            if (state != RegistryState.ACTIVE) {
                 return;
             }
 
-            List<Activator<?>> toShutdown = activators.values()
+            activationAllowed = false;
+            state = RegistryState.DEACTIVATING;
+            // Include INIT activators that may already have been handed to a lookup before this snapshot.
+            toShutdown = activators.values()
                     .stream()
-                    .filter(it -> it.phase().eligibleForDeactivation())
+                    .filter(it -> it.phase() != ActivationPhase.DESTROYED)
                     .sorted(shutdownComparator())
                     .toList();
+        } finally {
+            serviceProvidersLock.writeLock().unlock();
+        }
 
-            List<Throwable> exceptions = new ArrayList<>();
+        // Deactivation may invoke user lifecycle code and wait for activator instance locks. The scope must already
+        // reject new activators, and its lock must not be held while that code runs.
+        List<Throwable> exceptions = new ArrayList<>();
 
+        try {
             for (Activator<?> managedService : toShutdown) {
                 try {
                     ActivationResult activationResult = managedService.deactivate();
@@ -115,18 +132,21 @@ class ScopedRegistryImpl implements ScopedRegistry {
                     exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description(), e));
                 }
             }
-
-            active = false;
-
-            if (exceptions.isEmpty()) {
-                return;
-            }
-            ServiceRegistryException failure = new ServiceRegistryException("Deactivation failed");
-            exceptions.forEach(failure::addSuppressed);
-            throw failure;
         } finally {
-            serviceProvidersLock.writeLock().unlock();
+            try {
+                serviceProvidersLock.writeLock().lock();
+                state = RegistryState.INACTIVE;
+            } finally {
+                serviceProvidersLock.writeLock().unlock();
+            }
         }
+
+        if (exceptions.isEmpty()) {
+            return;
+        }
+        ServiceRegistryException failure = new ServiceRegistryException("Deactivation failed");
+        exceptions.forEach(failure::addSuppressed);
+        throw failure;
     }
 
     @SuppressWarnings("unchecked")
@@ -148,7 +168,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
             serviceProvidersLock.writeLock().lock();
             checkActive();
             return (Activator<T>) activators.computeIfAbsent(descriptor,
-                                                             desc -> activatorSupplier.get());
+                                                             _ -> scopedActivator(activatorSupplier.get()));
         } finally {
             serviceProvidersLock.writeLock().unlock();
         }
@@ -158,11 +178,19 @@ class ScopedRegistryImpl implements ScopedRegistry {
     <T> Optional<Activator<T>> existingActivator(ServiceInfo descriptor) {
         try {
             serviceProvidersLock.readLock().lock();
+            Activator<?> activator = activators.get(descriptor);
+            if (activator != null && availableForActiveLookup(activator)) {
+                return Optional.of((Activator<T>) activator);
+            }
             checkActive();
-            return Optional.ofNullable((Activator<T>) activators.get(descriptor));
+            return Optional.empty();
         } finally {
             serviceProvidersLock.readLock().unlock();
         }
+    }
+
+    boolean activationAllowed() {
+        return activationAllowed;
     }
 
     private static Comparator<? super Activator<?>> shutdownComparator() {
@@ -173,8 +201,26 @@ class ScopedRegistryImpl implements ScopedRegistry {
     }
 
     private void checkActive() {
-        if (!active) {
+        if (state != RegistryState.ACTIVE) {
             throw new ScopeNotActiveException("Injection scope " + scope.fqName() + "[" + id + "] is not active.", scope);
         }
+    }
+
+    private Activator<?> scopedActivator(Activator<?> activator) {
+        if (activator instanceof Activators.BaseActivator<?> baseActivator) {
+            baseActivator.scopedRegistry(this);
+        }
+        return activator;
+    }
+
+    private boolean availableForActiveLookup(Activator<?> activator) {
+        return state == RegistryState.ACTIVE
+                || (state == RegistryState.DEACTIVATING && activator.phase() == ActivationPhase.ACTIVE);
+    }
+
+    private enum RegistryState {
+        ACTIVE,
+        DEACTIVATING,
+        INACTIVE
     }
 }

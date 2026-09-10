@@ -103,6 +103,9 @@ class MetricsRegistryFactoryCodegenTest {
         assertThat(timed, not(containsString("MetricsFactory metricsFactory")));
         assertThat(timed, not(containsString(".scope(")));
         assertThat(gauge, containsString("var metricsFactory = meters.metricsFactory();"));
+        assertThat(gauge, containsString("this.meterRegistry = meterRegistrySupplier.get();"));
+        assertThat(gauge, containsString("meterRegistry.remove(this.gauge_0);"));
+        assertThat(gauge, not(containsString("void preDestroy() {\n        var meters = meterRegistrySupplier.get();")));
         assertThat(gauge, not(containsString("metricsFactorySupplier")));
         assertThat(gauge, not(containsString(".scope(")));
     }
