@@ -35,18 +35,19 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.config.spi.ConfigNode;
-import io.helidon.faulttolerance.RetryConfig;
 import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingChannelConfig;
 import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
+import io.helidon.messaging.spi.MessagingOutgoingConfig;
 import io.helidon.messaging.spi.OutgoingChannel;
 
 /**
  * Shared graph assembly from programmatic and generated registrations.
  */
 final class MessagingGraphAssembler {
+    private static final Class<?> STANDARD_RETRY_TYPE = FailurePolicy.create().retry().getClass();
+
     private final Map<String, MessagingChannel<?>> channels = new LinkedHashMap<>();
     private final MessagingConfig config;
     private final DefaultMessagingGraph graph;
@@ -112,17 +113,22 @@ final class MessagingGraphAssembler {
         return graph;
     }
 
-    private static String requireConnectorName(Config channelConfig, String direction, String channel) {
-        return channelConfig.get(ConnectorConfigSupport.CONNECTOR_ATTRIBUTE)
-                .asString()
-                .filter(connector -> !connector.isBlank())
-                .orElseThrow(() -> new IllegalArgumentException("Configured " + direction + " channel " + channel
-                                                                        + " must declare a non-blank connector"));
+    private static String requireConnectorName(MessagingChannelConfig channelConfig, String direction, String channel) {
+        if (!channel.equals(channelConfig.channelName())) {
+            throw new IllegalArgumentException("Configured " + direction + " channel " + channel
+                                                       + " does not match channel-name " + channelConfig.channelName());
+        }
+        String connector = channelConfig.connector();
+        if (connector.isBlank()) {
+            throw new IllegalArgumentException("Configured " + direction + " channel " + channel
+                                                       + " must declare a non-blank connector");
+        }
+        return connector;
     }
 
     private void ownProgrammaticResources() {
         for (EmitterRegistration registration : config.emitterRegistrations()) {
-            if (registration instanceof DefaultMessagingGraphBuilder.SourceDefinition source) {
+            if (registration instanceof MessagingConfigSupport.SourceDefinition source) {
                 Runnable task = DefaultMessagingChannel.streamSource(source.stream(), value -> {
                     DefaultMessagingChannel<?> channel = runtimeChannel(source.channel());
                     if (source.messages()) {
@@ -135,7 +141,7 @@ final class MessagingGraphAssembler {
             }
         }
         for (ConsumerRegistration registration : config.consumerRegistrations()) {
-            if (registration instanceof DefaultMessagingGraphBuilder.OutgoingDefinition outgoing) {
+            if (registration instanceof MessagingConfigSupport.OutgoingDefinition outgoing) {
                 graph.addBinding(outgoing.connection());
             }
         }
@@ -148,7 +154,7 @@ final class MessagingGraphAssembler {
     private void validateStreamSourcePaths(List<ConsumerRegistration> consumers, List<EmitterRegistration> emitters) {
         Map<String, String> reachedBySource = new LinkedHashMap<>();
         for (EmitterRegistration emitter : emitters) {
-            if (!(emitter instanceof DefaultMessagingGraphBuilder.SourceDefinition source)) {
+            if (!(emitter instanceof MessagingConfigSupport.SourceDefinition source)) {
                 continue;
             }
             Set<String> reachable = new LinkedHashSet<>();
@@ -185,7 +191,7 @@ final class MessagingGraphAssembler {
             }
         }
         for (EmitterRegistration registration : config.emitterRegistrations()) {
-            if (registration instanceof DefaultMessagingGraphBuilder.SourceDefinition source
+            if (registration instanceof MessagingConfigSupport.SourceDefinition source
                     && !sourceChannels.add(source.channel())) {
                 throw new IllegalArgumentException("Messaging channel " + source.channel() + " already has a source");
             }
@@ -597,7 +603,7 @@ final class MessagingGraphAssembler {
             throw new MessagingException("Unknown messaging processor target channel "
                                                  + processor.outgoingChannel());
         }
-        if (processor instanceof DefaultMessagingGraphBuilder.RouteRegistration) {
+        if (processor instanceof MessagingConfigSupport.RouteRegistration) {
             emitRoutedBatch(target, result);
         } else {
             emitBatch(target, result);
@@ -838,26 +844,7 @@ final class MessagingGraphAssembler {
                                                        + envelopeType.getName()
                                                        + " but received " + message.getClass().getName());
         }
-        Object entity;
-        try {
-            entity = message.entity();
-        } catch (MessagingException failure) {
-            if (message instanceof DeadLetterMessage<?>
-                    && envelopeType.isAssignableFrom(DeadLetterMessage.class)) {
-                return;
-            }
-            throw failure;
-        }
-        if (entity == null) {
-            throw new IllegalArgumentException("Channel " + consumer.channel() + " received a null payload");
-        }
-        Class<?> payloadType = consumer.payloadGenericType().rawType();
-        if (!payloadType.isInstance(entity)) {
-            throw new IllegalArgumentException("Channel " + consumer.channel()
-                                                       + " expected payload type "
-                                                       + payloadType.getName()
-                                                       + " but received " + entity.getClass().getName());
-        }
+        // The channel validates payloads before dispatch. Consumer-specific validation only checks the envelope.
     }
 
     private void validateMessageTypes(ConsumerRegistration consumer, MessageBatch<?> messages) {
@@ -872,29 +859,29 @@ final class MessagingGraphAssembler {
         }
     }
 
-    private List<OutgoingBinding> prepareOutgoingBindings(Map<String, Config> configurations,
+    private List<OutgoingBinding> prepareOutgoingBindings(Map<String, MessagingOutgoingConfig> configurations,
                                                           Map<String, MessagingConnector> connectors) {
         List<OutgoingBinding> bindings = new ArrayList<>();
         for (String channel : new TreeSet<>(configurations.keySet())) {
-            Config channelConfig = configurations.get(channel);
+            MessagingOutgoingConfig channelConfig = configurations.get(channel);
             String connectorName = requireConnectorName(channelConfig, "outgoing", channel);
             MessagingConnector connector = connectors.get(connectorName);
             if (connector == null) {
                 throw new IllegalArgumentException("No configured connector named " + connectorName
                                                            + " for outgoing channel " + channel);
             }
-            bindings.add(new OutgoingBinding(channel, connector, connectorConfig(channelConfig, channel)));
+            bindings.add(new OutgoingBinding(channel, connector, channelConfig));
         }
         return List.copyOf(bindings);
     }
 
     private List<IncomingDescriptor> prepareIncomingDescriptors(
-            Map<String, Config> configurations,
+            Map<String, MessagingIncomingConfig> configurations,
             Map<String, MessagingConnector> connectors,
             Map<String, List<ConsumerRegistration>> registrations) {
         List<IncomingDescriptor> descriptors = new ArrayList<>();
         for (String channel : new TreeSet<>(configurations.keySet())) {
-            Config channelConfig = configurations.get(channel);
+            MessagingIncomingConfig channelConfig = configurations.get(channel);
             String connectorName = requireConnectorName(channelConfig, "incoming", channel);
             MessagingConnector connector = connectors.get(connectorName);
             if (connector == null) {
@@ -902,18 +889,18 @@ final class MessagingGraphAssembler {
                                                            + " for incoming channel " + channel);
             }
             FailurePolicy failurePolicy = failurePolicy(channel,
-                                                        channelConfig.get("failure"),
+                                                        channelConfig.failure(),
                                                         registrations.getOrDefault(channel, List.of()));
             descriptors.add(new IncomingDescriptor(channel,
                                                    failurePolicy,
                                                    connector,
-                                                   connectorConfig(channelConfig, channel)));
+                                                   channelConfig));
         }
         return List.copyOf(descriptors);
     }
 
     private FailurePolicy failurePolicy(String channel,
-                                        Config failureConfig,
+                                        MessagingFailureConfig failureConfig,
                                         List<ConsumerRegistration> registrations) {
         List<FailurePolicyContribution> contributions = registrations.stream()
                 .map(registration -> registration.declaredFailurePolicy()
@@ -921,15 +908,15 @@ final class MessagingGraphAssembler {
                 .flatMap(Optional::stream)
                 .toList();
         if (contributions.isEmpty()) {
-            return mergeFailurePolicy(FailurePolicy.create(), failureConfig);
+            return MessagingConfigSupport.failurePolicy(FailurePolicy.create(), failureConfig);
         }
 
         FailurePolicyContribution first = contributions.getFirst();
-        FailurePolicy effective = mergeFailurePolicy(first.policy(), failureConfig);
+        FailurePolicy effective = MessagingConfigSupport.failurePolicy(first.policy(), failureConfig);
         for (int i = 1; i < contributions.size(); i++) {
             FailurePolicyContribution candidate = contributions.get(i);
-            FailurePolicy candidateEffective = mergeFailurePolicy(candidate.policy(), failureConfig);
-            if (!effective.equals(candidateEffective)) {
+            FailurePolicy candidateEffective = MessagingConfigSupport.failurePolicy(candidate.policy(), failureConfig);
+            if (!equivalentFailurePolicies(effective, candidateEffective)) {
                 throw new IllegalArgumentException("Incoming channel " + channel
                                                            + " has conflicting effective failure policies declared by "
                                                            + "handlers "
@@ -940,27 +927,16 @@ final class MessagingGraphAssembler {
         return effective;
     }
 
-    private FailurePolicy mergeFailurePolicy(FailurePolicy declared, Config failureConfig) {
-        FailurePolicy.Builder builder = FailurePolicy.builder(declared);
-        Config retryConfig = failureConfig.get("retry");
-        if (retryConfig.exists()) {
-            builder.retry(RetryConfig.builder(declared.retry()).config(retryConfig).buildPrototype());
+    private boolean equivalentFailurePolicies(FailurePolicy first, FailurePolicy second) {
+        if (first.onExhausted() != second.onExhausted() || !first.deadLetter().equals(second.deadLetter())) {
+            return false;
         }
-        FailureDisposition configuredDisposition = failureConfig.get("on-exhausted")
-                .as(FailureDisposition.class)
-                .orElse(null);
-        if (configuredDisposition != null) {
-            builder.onExhausted(configuredDisposition);
+        if (first.retry() == second.retry()) {
+            return true;
         }
-        Config deadLetterConfig = failureConfig.get("dead-letter");
-        if (deadLetterConfig.exists()) {
-            builder.deadLetter(DeadLetterConfig.create(deadLetterConfig));
-        }
-        if (configuredDisposition != null && configuredDisposition != FailureDisposition.DEAD_LETTER
-                && !failureConfig.get("dead-letter.channel").exists()) {
-            builder.clearDeadLetter();
-        }
-        return builder.build();
+        return first.retry().getClass() == STANDARD_RETRY_TYPE
+                && second.retry().getClass() == STANDARD_RETRY_TYPE
+                && first.retry().prototype().equals(second.retry().prototype());
     }
 
     private void configureOutgoingConnectors(List<OutgoingBinding> bindings) {
@@ -1117,66 +1093,6 @@ final class MessagingGraphAssembler {
         channels.computeIfAbsent(channel, _ -> createConfiguredChannel(channel, payloadType));
     }
 
-    private Config connectorConfig(Config channelConfig, String channel) {
-        ConfigNode.ObjectNode source = configObjectNode(channelConfig);
-        ConfigNode.ObjectNode.Builder result = ConfigNode.ObjectNode.builder();
-        source.value().ifPresent(result::value);
-        source.forEach((key, node) -> {
-            if (!key.equals("failure")
-                    && !key.startsWith("failure.")
-                    && !key.equals(ConnectorConfigSupport.CHANNEL_NAME_ATTRIBUTE)
-                    && !key.startsWith(ConnectorConfigSupport.CHANNEL_NAME_ATTRIBUTE + ".")) {
-                result.addNode(key, node);
-            }
-        });
-        return Config.just(ConfigSources.create(result.addValue(ConnectorConfigSupport.CHANNEL_NAME_ATTRIBUTE, channel)
-                                                        .build()));
-    }
-
-    private ConfigNode.ObjectNode configObjectNode(Config config) {
-        if (!config.exists()) {
-            return ConfigNode.ObjectNode.empty();
-        }
-        if (config.type() != Config.Type.OBJECT) {
-            throw new IllegalArgumentException("Channel configuration must be an object: " + config.key());
-        }
-        ConfigNode.ObjectNode.Builder result = ConfigNode.ObjectNode.builder();
-        if (config.hasValue()) {
-            result.value(config.asString().orElseThrow());
-        }
-        config.asNodeList().orElse(List.of()).forEach(child -> result.addNode(
-                Config.Key.escapeName(child.name()),
-                configNode(child)));
-        return result.build();
-    }
-
-    private ConfigNode.ListNode configListNode(Config config) {
-        ConfigNode.ListNode.Builder result = ConfigNode.ListNode.builder();
-        if (config.hasValue()) {
-            result.value(config.asString().orElseThrow());
-        }
-        config.asNodeList().orElse(List.of()).stream()
-                .map(this::configNode)
-                .forEach(node -> {
-                    switch (node.nodeType()) {
-                    case OBJECT -> result.addObject((ConfigNode.ObjectNode) node);
-                    case LIST -> result.addList((ConfigNode.ListNode) node);
-                    case VALUE -> result.addValue((ConfigNode.ValueNode) node);
-                    default -> throw new IllegalStateException("Unsupported configuration node type: " + node.nodeType());
-                    }
-                });
-        return result.build();
-    }
-
-    private ConfigNode configNode(Config config) {
-        return switch (config.type()) {
-        case OBJECT -> configObjectNode(config);
-        case LIST -> configListNode(config);
-        case VALUE -> ConfigNode.ValueNode.create(config.asString().orElseThrow());
-        case MISSING -> throw new IllegalStateException("Cannot copy missing configuration node " + config.key());
-        };
-    }
-
     private static final class ResolvedParameterizedType implements ParameterizedType {
         private final Type ownerType;
         private final Type rawType;
@@ -1284,7 +1200,7 @@ final class MessagingGraphAssembler {
 
     private record OutgoingBinding(String channel,
                                    MessagingConnector connector,
-                                   Config config) {
+                                   MessagingOutgoingConfig config) {
     }
 
     private record FailurePolicyContribution(String handlerId, FailurePolicy policy) {
@@ -1293,7 +1209,7 @@ final class MessagingGraphAssembler {
     private record IncomingDescriptor(String channel,
                                       FailurePolicy failurePolicy,
                                       MessagingConnector connector,
-                                      Config config) {
+                                      MessagingIncomingConfig config) {
     }
 
 }

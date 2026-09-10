@@ -49,8 +49,9 @@ class MessagingContextPropagationTest {
         Optional<Context> previousContext = Contexts.context();
         AtomicReference<Context> handlerContext = new AtomicReference<>();
         AtomicReference<Thread> handlerThread = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("orders", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
+        builder.channel(channel);
         builder.payloadSink(channel, _ -> {
             handlerContext.set(currentContext());
             handlerThread.set(Thread.currentThread());
@@ -107,8 +108,9 @@ class MessagingContextPropagationTest {
         AtomicReference<Optional<Context>> secondCallerContext = new AtomicReference<>();
         AtomicReference<Context> firstHandlerContext = new AtomicReference<>();
         AtomicReference<Context> secondHandlerContext = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("orders", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
+        builder.channel(channel);
         builder.payloadSink(channel, value -> {
             if (value.equals("first")) {
                 firstHandlerContext.set(currentContext());
@@ -144,10 +146,13 @@ class MessagingContextPropagationTest {
         AtomicReference<Thread> processorThread = new AtomicReference<>();
         AtomicReference<Thread> intermediateThread = new AtomicReference<>();
         AtomicReference<Thread> targetThread = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> input = builder.channel("input", String.class);
-        MessagingChannel<String> intermediate = builder.channel("intermediate", String.class);
-        MessagingChannel<String> target = builder.channel("target", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> input = MessagingChannel.create("input", String.class);
+        MessagingChannel<String> intermediate = MessagingChannel.create("intermediate", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(input)
+                .channel(intermediate)
+                .channel(target);
         builder.payloadProcessor(input, intermediate, value -> {
                     processorContext.set(currentContext());
                     processorThread.set(Thread.currentThread());
@@ -186,9 +191,11 @@ class MessagingContextPropagationTest {
         AtomicReference<Emitter<String>> childEmitter = new AtomicReference<>();
         AtomicReference<Optional<Context>> childCallerContext = new AtomicReference<>();
         AtomicReference<Context> childHandlerContext = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> parent = builder.channel("parent", String.class);
-        MessagingChannel<String> child = builder.channel("child", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> parent = MessagingChannel.create("parent", String.class);
+        MessagingChannel<String> child = MessagingChannel.create("child", String.class);
+        builder.channel(parent)
+                .channel(child);
         builder.payloadSink(parent, _ -> await(
                         runWithoutContext(() -> childEmitter.get().emit("child"), childCallerContext)))
                 .payloadSink(child, _ -> childHandlerContext.set(currentContext()));
@@ -218,9 +225,11 @@ class MessagingContextPropagationTest {
         AtomicReference<Thread> secondHandlerThread = new AtomicReference<>();
         AtomicReference<Optional<Context>> firstRestoredContext = new AtomicReference<>();
         AtomicReference<Optional<Context>> secondRestoredContext = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> first = builder.channel("first", String.class);
-        MessagingChannel<String> second = builder.channel("second", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> first = MessagingChannel.create("first", String.class);
+        MessagingChannel<String> second = MessagingChannel.create("second", String.class);
+        builder.channel(first)
+                .channel(second);
         builder.payloadSink(first, _ -> {
                     firstHandlerContext.set(currentContext());
                     firstHandlerThread.set(Thread.currentThread());

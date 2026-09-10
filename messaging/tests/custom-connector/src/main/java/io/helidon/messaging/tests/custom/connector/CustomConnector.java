@@ -23,13 +23,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.config.Config;
 import io.helidon.messaging.IncomingConnectorContext;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
+import io.helidon.messaging.spi.MessagingOutgoingConfig;
 import io.helidon.messaging.spi.OutgoingChannel;
 
 final class CustomConnector implements MessagingConnector, RuntimeType.Api<CustomConnectorConfig> {
@@ -70,12 +71,12 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
     }
 
     @Override
-    public Optional<IncomingChannel> incoming(Config channelConfig) {
+    public Optional<IncomingChannel> incoming(MessagingIncomingConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
-        return Optional.of(incoming(CustomChannelConfig.create(channelConfig)));
+        return Optional.of(incoming(incomingConfig(channelConfig)));
     }
 
-    IncomingChannel incoming(CustomChannelConfig channelConfig) {
+    IncomingChannel incoming(CustomIncomingConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
         String endpoint = channelConfig.endpoint().orElse(config.endpoint());
         String prefix = channelConfig.prefix().orElse(config.prefix());
@@ -84,17 +85,37 @@ final class CustomConnector implements MessagingConnector, RuntimeType.Api<Custo
     }
 
     @Override
-    public Optional<OutgoingChannel> outgoing(Config channelConfig) {
+    public Optional<OutgoingChannel> outgoing(MessagingOutgoingConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
-        return Optional.of(outgoing(CustomChannelConfig.create(channelConfig)));
+        return Optional.of(outgoing(outgoingConfig(channelConfig)));
     }
 
-    OutgoingChannel outgoing(CustomChannelConfig channelConfig) {
+    OutgoingChannel outgoing(CustomOutgoingConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
         String endpoint = channelConfig.endpoint().orElse(config.endpoint());
         String prefix = channelConfig.prefix().orElse(config.prefix());
         config.probe().configured("outgoing", channelConfig.channelName(), name(), endpoint, prefix);
         return new Outgoing(config, channelConfig.channelName(), endpoint, prefix);
+    }
+
+    private static CustomIncomingConfig incomingConfig(MessagingIncomingConfig channelConfig) {
+        if (channelConfig instanceof CustomIncomingConfig custom) {
+            return custom;
+        }
+        var builder = CustomIncomingConfig.builder();
+        channelConfig.config().ifPresent(builder::config);
+        return builder.from(channelConfig)
+                .build();
+    }
+
+    private static CustomOutgoingConfig outgoingConfig(MessagingOutgoingConfig channelConfig) {
+        if (channelConfig instanceof CustomOutgoingConfig custom) {
+            return custom;
+        }
+        var builder = CustomOutgoingConfig.builder();
+        channelConfig.config().ifPresent(builder::config);
+        return builder.from(channelConfig)
+                .build();
     }
 
     private static Message<String> stringMessage(Message<?> message) {

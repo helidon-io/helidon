@@ -18,14 +18,22 @@ package io.helidon.messaging.tests.custom.connector;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.messaging.FailureDisposition;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingConfig;
+import io.helidon.messaging.MessagingFailureConfig;
 import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.MessagingRuntime;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
+import io.helidon.messaging.spi.MessagingOutgoingConfig;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -34,6 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
@@ -53,20 +62,24 @@ class CustomConnectorTest {
                 .broker(new CustomConnectorBroker())
                 .probe(probe)
                 .build();
-        CustomChannelConfig sentConfig = CustomChannelConfig.builder()
+        CustomOutgoingConfig sentConfig = CustomOutgoingConfig.builder()
+                .connector("imperative")
                 .channelName("sent")
                 .prefix("outgoing-prefix")
                 .build();
-        CustomChannelConfig receivedConfig = CustomChannelConfig.builder()
+        CustomIncomingConfig receivedConfig = CustomIncomingConfig.builder()
+                .connector("imperative")
                 .channelName("received")
                 .build();
         Message<String> message = Message.builder("hello")
                 .header("trace", "imperative")
                 .build();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> sent = builder.channel("sent", String.class);
-        MessagingChannel<String> received = builder.channel("received", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> sent = MessagingChannel.create("sent", String.class);
+        MessagingChannel<String> received = MessagingChannel.create("received", String.class);
+        builder.channel(sent)
+                .channel(received);
         builder.outgoingChannel(sent, connector.outgoing(sentConfig))
                 .incomingChannel(received, connector.incoming(receivedConfig))
                 .messageSink(received, incoming -> probe.received(received.name(), incoming));
@@ -83,6 +96,131 @@ class CustomConnectorTest {
         assertThat(probe.configured(), containsInAnyOrder(
                 "outgoing:sent:imperative:loopback:outgoing-prefix",
                 "incoming:received:imperative:loopback:imperative-prefix"));
+        assertThat(probe.lifecycle(), hasItems("started:sent", "started:received", "closed:sent", "closed:received"));
+    }
+
+    @Test
+    void usesCompleteTypedRetryOverrideWithRetainedConfiguration() throws InterruptedException {
+        CustomConnectorProbe probe = new CustomConnectorProbe();
+        CustomConnector connector = CustomConnector.builder()
+                .name("typed-failure")
+                .endpoint("loopback")
+                .prefix("failure-prefix")
+                .broker(new CustomConnectorBroker())
+                .probe(probe)
+                .build();
+        Config retained = Config.just("""
+                connector: typed-failure
+                failure:
+                  retry:
+                    calls: 1
+                    overall-timeout: PT30S
+                  on-exhausted: FAIL
+                """, MediaTypes.APPLICATION_YAML);
+        CustomIncomingConfig receivedConfig = CustomIncomingConfig.builder()
+                .config(retained)
+                .channelName("received")
+                .failure(MessagingFailureConfig.builder()
+                                 .retry(retry -> retry.calls(2).delay(Duration.ZERO))
+                                 .onExhausted(FailureDisposition.DROP)
+                                 .build())
+                .build();
+        Retry typedRetry = receivedConfig.failure().retry().orElseThrow();
+        assertThat("typed retry must use its own FT defaults",
+                   typedRetry.prototype().overallTimeout(),
+                   is(RetryConfig.DEFAULT_OVERALL_TIMEOUT));
+        CustomOutgoingConfig sentConfig = CustomOutgoingConfig.builder()
+                .connector("typed-failure")
+                .channelName("sent")
+                .build();
+        AtomicInteger attempts = new AtomicInteger();
+        Message<String> message = Message.builder("hello")
+                .header("trace", "typed-failure")
+                .build();
+
+        MessagingConfig.Builder builder = MessagingGraph.builder()
+                .addConnector(connector)
+                .incoming(Map.of("received", receivedConfig))
+                .outgoing(Map.of("sent", sentConfig));
+        MessagingChannel<String> sent = MessagingChannel.create("sent", String.class);
+        MessagingChannel<String> received = MessagingChannel.create("received", String.class);
+        builder.channel(sent)
+                .channel(received);
+        builder.messageSink(received, _ -> {
+            attempts.incrementAndGet();
+            throw new IllegalStateException("Delivery fails until the typed DROP policy settles it");
+        });
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+            graph.emitter(sent).emit(message);
+
+            assertThat("typed DROP policy did not settle delivery", probe.awaitSettled(WAIT), is(true));
+            assertThat("typed retry count was not applied", attempts.get(), is(2));
+        }
+
+        assertThat(probe.sent(), is(List.of("sent:failure-prefix:hello:typed-failure")));
+        assertThat(probe.received(), is(List.of()));
+        assertThat(probe.lifecycle(), hasItems("started:sent", "started:received", "closed:sent", "closed:received"));
+    }
+
+    @Test
+    void preservesTypedChannelOverridesInConfigurationMaps() throws InterruptedException {
+        CustomConnectorProbe probe = new CustomConnectorProbe();
+        CustomConnector connector = CustomConnector.builder()
+                .name("typed")
+                .endpoint("unused-common-endpoint")
+                .prefix("common-prefix")
+                .broker(new CustomConnectorBroker())
+                .probe(probe)
+                .build();
+        Config retained = Config.just("""
+                connector: unused-connector
+                endpoint: unused-config-endpoint
+                prefix: unused-config-prefix
+                """, MediaTypes.APPLICATION_YAML);
+        CustomOutgoingConfig sentConfig = CustomOutgoingConfig.builder()
+                .config(retained)
+                .connector("typed")
+                .channelName("sent")
+                .endpoint("loopback")
+                .prefix("typed-outgoing-prefix")
+                .build();
+        CustomIncomingConfig receivedConfig = CustomIncomingConfig.builder()
+                .config(retained)
+                .connector("typed")
+                .channelName("received")
+                .endpoint("loopback")
+                .prefix("typed-incoming-prefix")
+                .build();
+        Message<String> message = Message.builder("hello")
+                .header("trace", "typed")
+                .build();
+
+        MessagingConfig.Builder builder = MessagingGraph.builder()
+                .addConnector(connector)
+                .incoming(Map.of("received", receivedConfig))
+                .outgoing(Map.of("sent", sentConfig));
+        MessagingChannel<String> sent = MessagingChannel.create("sent", String.class);
+        MessagingChannel<String> received = MessagingChannel.create("received", String.class);
+        builder.channel(sent)
+                .channel(received);
+        builder.messageSink(received, incoming -> probe.received(received.name(), incoming));
+
+        try (MessagingGraph graph = builder.build()) {
+            assertThat(graph.prototype().incoming().get("received"), sameInstance(receivedConfig));
+            assertThat(graph.prototype().outgoing().get("sent"), sameInstance(sentConfig));
+            graph.start();
+            graph.emitter(sent).emit(message);
+
+            assertThat("message was not received", probe.awaitSettled(WAIT), is(true));
+        }
+
+        assertThat(probe.sent(), is(List.of("sent:typed-outgoing-prefix:hello:typed")));
+        assertThat(probe.received(), is(List.of("received:hello:typed")));
+        assertThat(probe.configured(), containsInAnyOrder(
+                "outgoing:sent:typed:loopback:typed-outgoing-prefix",
+                "incoming:received:typed:loopback:typed-incoming-prefix"));
         assertThat(probe.lifecycle(), hasItems("started:sent", "started:received", "closed:sent", "closed:received"));
     }
 
@@ -168,13 +306,19 @@ class CustomConnectorTest {
                     .buildPrototype();
 
             assertThat(messaging.incoming().keySet(), containsInAnyOrder("received"));
-            Config incoming = messaging.incoming().get("received");
+            MessagingIncomingConfig incomingChannel = messaging.incoming().get("received");
+            assertThat(incomingChannel.connector(), is("custom-connector"));
+            assertThat(incomingChannel.channelName(), is("received"));
+            Config incoming = incomingChannel.config().orElseThrow();
             assertThat(incoming.get("connector").asString().get(), is("custom-connector"));
             assertThat(incoming.get("prefix").asString().get(), is("incoming-prefix"));
             assertThat(incoming.get("custom.delivery.mode").asString().get(), is("ordered"));
 
             assertThat(messaging.outgoing().keySet(), containsInAnyOrder("sent"));
-            Config outgoing = messaging.outgoing().get("sent");
+            MessagingOutgoingConfig outgoingChannel = messaging.outgoing().get("sent");
+            assertThat(outgoingChannel.connector(), is("custom-connector"));
+            assertThat(outgoingChannel.channelName(), is("sent"));
+            Config outgoing = outgoingChannel.config().orElseThrow();
             assertThat(outgoing.get("name").asString().get(), is("sent"));
             assertThat(outgoing.get("connector").asString().get(), is("custom-connector"));
             assertThat(outgoing.get("prefix").asString().get(), is("outgoing-prefix"));
@@ -186,6 +330,7 @@ class CustomConnectorTest {
 
     private static void assertConfiguredRoundTrip(Config config) throws InterruptedException {
         ServiceRegistryConfig registryConfig = ServiceRegistryConfig.builder()
+                .discoverServicesFromServiceLoader(false)
                 .putContractInstance(Config.class, config)
                 .build();
         ServiceRegistryManager manager = ServiceRegistryManager.create(registryConfig);

@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
 
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class FailurePolicyTest {
     @Test
     void testDefaultsAndConfiguredValues() {
         FailurePolicy defaults = FailurePolicy.create();
-        RetryConfig defaultRetry = defaults.retry();
+        RetryConfig defaultRetry = defaults.retry().prototype();
 
         assertThat(defaultRetry.delay(), is(Duration.ofSeconds(1)));
         assertThat(defaultRetry.calls(), is(Integer.MAX_VALUE));
@@ -62,33 +63,43 @@ class FailurePolicyTest {
                   channel: orders-dlq
                 """, MediaTypes.APPLICATION_YAML));
 
-        RetryConfig configuredRetry = configured.retry();
+        RetryConfig configuredRetry = configured.retry().prototype();
         assertThat(configuredRetry.delay(), is(Duration.ofMillis(250)));
         assertThat(configuredRetry.calls(), is(3));
-        assertThat(configuredRetry.delayFactor(), is(2.0));
+        assertThat(configuredRetry.delayFactor(), is(-1.0));
         assertThat(configuredRetry.jitterFactor(), is(-1.0));
-        assertThat(configuredRetry.maxDelay().orElseThrow(), is(Duration.ofMinutes(1)));
-        assertThat(configuredRetry.overallTimeout(), is(Duration.ofNanos(Long.MAX_VALUE)));
+        assertThat(configuredRetry.maxDelay().isEmpty(), is(true));
+        assertThat(configuredRetry.overallTimeout(), is(RetryConfig.DEFAULT_OVERALL_TIMEOUT));
         assertThat(configured.onExhausted(), is(FailureDisposition.DEAD_LETTER));
         assertThat(configured.deadLetter().orElseThrow().channel(), is("orders-dlq"));
 
-        RetryConfig explicit = RetryConfig.builder()
+        Retry explicit = Retry.builder()
                 .calls(1)
                 .delay(Duration.ZERO)
                 .overallTimeout(Duration.ofSeconds(5))
-                .buildPrototype();
+                .build();
         FailurePolicy configThenProgrammatic = FailurePolicy.builder()
                 .config(Config.just("retry.delay: PT0.25S", MediaTypes.APPLICATION_YAML))
                 .retry(explicit)
                 .build();
-        assertThat(configThenProgrammatic.retry(), is(explicit));
+        assertThat(configThenProgrammatic.retry(), sameInstance(explicit));
 
         FailurePolicy programmaticThenConfig = FailurePolicy.builder()
                 .retry(explicit)
                 .config(Config.just("retry.delay: PT0.25S", MediaTypes.APPLICATION_YAML))
                 .build();
-        assertThat(programmaticThenConfig.retry().delay(), is(Duration.ofMillis(250)));
-        assertThat(programmaticThenConfig.retry().calls(), is(Integer.MAX_VALUE));
+        assertThat(programmaticThenConfig.retry().prototype().delay(), is(Duration.ofMillis(250)));
+        assertThat(programmaticThenConfig.retry().prototype().calls(), is(RetryConfig.DEFAULT_CALLS));
+    }
+
+    @Test
+    void testAbsentRetryUsesSharedInstance() {
+        Retry shared = FailurePolicy.create().retry();
+
+        assertThat(FailurePolicy.create().retry(), sameInstance(shared));
+        assertThat(FailurePolicy.builder().onExhausted(FailureDisposition.DROP).build().retry(), sameInstance(shared));
+        assertThat(FailurePolicy.create(Config.just("on-exhausted: DROP", MediaTypes.APPLICATION_YAML)).retry(),
+                   sameInstance(shared));
     }
 
     @Test
@@ -97,27 +108,27 @@ class FailurePolicyTest {
                 retry:
                   delay: PT0.25S
                 """, MediaTypes.APPLICATION_YAML);
-        RetryConfig explicit = RetryConfig.create(config.get("retry"));
+        Retry explicit = Retry.builder().config(config.get("retry")).build();
 
         FailurePolicy policy = FailurePolicy.builder()
                 .config(config)
                 .retry(explicit)
                 .build();
 
-        assertThat(policy.retry(), is(explicit));
-        assertThat(policy.retry().calls(), is(3));
-        assertThat(policy.retry().overallTimeout(), is(Duration.ofSeconds(1)));
+        assertThat(policy.retry(), sameInstance(explicit));
+        assertThat(policy.retry().prototype().calls(), is(3));
+        assertThat(policy.retry().prototype().overallTimeout(), is(Duration.ofSeconds(1)));
     }
 
     @Test
     void testRetryValidation() {
         assertThrows(RuntimeException.class,
                      () -> FailurePolicy.builder()
-                             .retry(RetryConfig.builder().delay(Duration.ofNanos(-1)).buildPrototype())
+                             .retry(Retry.builder().delay(Duration.ofNanos(-1)).build())
                              .build());
         assertThrows(RuntimeException.class,
                      () -> FailurePolicy.builder()
-                             .retry(RetryConfig.builder().calls(0).buildPrototype())
+                             .retry(Retry.builder().calls(0).build())
                              .build());
         FailurePolicy drop = FailurePolicy.builder()
                 .onExhausted(FailureDisposition.DROP)
@@ -127,10 +138,10 @@ class FailurePolicyTest {
 
     @Test
     void testNestedConfigsAreSnapshotted() {
-        RetryConfig retry = RetryConfig.builder(FailurePolicy.create().retry())
+        Retry retry = Retry.builder().from(FailurePolicy.create().retry().prototype())
                 .delay(Duration.ofMillis(25))
                 .calls(3)
-                .buildPrototype();
+                .build();
         var deadLetter = DeadLetterConfig.builder().channel("orders-dlq");
         FailurePolicy policy = FailurePolicy.builder()
                 .retry(retry)
@@ -140,9 +151,9 @@ class FailurePolicyTest {
 
         deadLetter.channel("changed-dlq");
 
-        assertThat(policy.retry(), is(retry));
-        assertThat(policy.retry().delay(), is(Duration.ofMillis(25)));
-        assertThat(policy.retry().calls(), is(3));
+        assertThat(policy.retry(), sameInstance(retry));
+        assertThat(policy.retry().prototype().delay(), is(Duration.ofMillis(25)));
+        assertThat(policy.retry().prototype().calls(), is(3));
         assertThat(policy.deadLetter().orElseThrow().channel(), is("orders-dlq"));
     }
 

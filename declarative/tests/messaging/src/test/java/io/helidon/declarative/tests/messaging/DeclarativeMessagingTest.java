@@ -46,6 +46,7 @@ import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeader;
 import io.helidon.messaging.MessageHeaders;
 import io.helidon.messaging.MessagingChannel;
+import io.helidon.messaging.MessagingConfig;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.MessagingRuntime;
@@ -123,8 +124,9 @@ class DeclarativeMessagingTest {
         List<Message<Integer>> messages = new CopyOnWriteArrayList<>();
         CountDownLatch drained = new CountDownLatch(2);
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Integer> channel = builder.channel("imperative-input-output", Integer.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<Integer> channel = MessagingChannel.create("imperative-input-output", Integer.class);
+        builder.channel(channel);
         builder.messageSource(channel,
                               Stream.of(Message.create(1),
                                         Message.builder(2)
@@ -158,9 +160,11 @@ class DeclarativeMessagingTest {
     void testImperativeChannelCanUseAnotherChannelAsInput() {
         List<Message<Integer>> downstreamMessages = new CopyOnWriteArrayList<>();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Integer> upstream = builder.channel("imperative-upstream", Integer.class);
-        MessagingChannel<Integer> downstream = builder.channel("imperative-downstream", Integer.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<Integer> upstream = MessagingChannel.create("imperative-upstream", Integer.class);
+        MessagingChannel<Integer> downstream = MessagingChannel.create("imperative-downstream", Integer.class);
+        builder.channel(upstream)
+                .channel(downstream);
         builder.route(upstream, downstream)
                 .messageSink(downstream, downstreamMessages::add);
 
@@ -177,8 +181,9 @@ class DeclarativeMessagingTest {
     void testImperativeChannelCanUseOutgoingConnector() {
         List<Message<?>> sentMessages = new CopyOnWriteArrayList<>();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-connector", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("imperative-connector", String.class);
+        builder.channel(channel);
         builder.outgoingChannel(channel, sink(sentMessages));
 
         try (MessagingGraph graph = builder.build()) {
@@ -199,8 +204,9 @@ class DeclarativeMessagingTest {
         List<MessageBatch<String>> batches = new CopyOnWriteArrayList<>();
         List<List<String>> connectorBatches = new CopyOnWriteArrayList<>();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-batch", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("imperative-batch", String.class);
+        builder.channel(channel);
         builder.batchSink(channel, batches::add)
                 .outgoingChannel(channel, new NoOpOutgoingChannel() {
                     @Override
@@ -232,8 +238,9 @@ class DeclarativeMessagingTest {
     @Test
     void testOutgoingConnectorFailureFailsChannelEmit() {
         MessagingException expectedFailure = new MessagingException("connector failed", new IOException("I/O failed"));
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-connector-failure", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("imperative-connector-failure", String.class);
+        builder.channel(channel);
         builder.outgoingChannel(channel, new NoOpOutgoingChannel() {
             @Override
             public void sendBatch(MessageBatch<?> batch) {
@@ -259,8 +266,9 @@ class DeclarativeMessagingTest {
                                                                      new IOException("output I/O failed"));
         AtomicReference<Throwable> actualFailure = new AtomicReference<>();
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-required-outputs", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("imperative-required-outputs", String.class);
+        builder.channel(channel);
         builder.messageSink(channel, message -> {
                     invokedOutputs.add("first");
                     firstOutputEntered.countDown();
@@ -310,8 +318,9 @@ class DeclarativeMessagingTest {
         AtomicInteger secondOutputAttempts = new AtomicInteger();
         MessagingException expectedFailure = new MessagingException("temporary output failure");
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("imperative-fan-out-retry", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("imperative-fan-out-retry", String.class);
+        builder.channel(channel);
         builder.messageSink(channel, message -> deliveries.add("first"))
                 .messageSink(channel, message -> {
                     deliveries.add("second");
@@ -559,9 +568,7 @@ class DeclarativeMessagingTest {
     void testIncomingConnectorDoesNotRetryCheckedHandlerFailureByDefault() throws InterruptedException {
         String channelConfig = "messaging.incoming." + ChannelMessagingTypes.CHECKED_FAILING_CHANNEL;
         useConfig(Map.of(channelConfig + ".connector", ChannelMessagingTypes.TEST_CONNECTOR,
-                         "messaging.connector.test.type", ChannelMessagingTypes.TEST_CONNECTOR,
-                         channelConfig + ".failure.retry.calls", "3",
-                         channelConfig + ".failure.retry.delay", "PT0S"));
+                         "messaging.connector.test.type", ChannelMessagingTypes.TEST_CONNECTOR));
         registry.get(MessagingRuntime.class);
         var observer = registry.get(TestConnectorObserver.class);
         var consumer = registry.get(CheckedFailingConsumer.class);

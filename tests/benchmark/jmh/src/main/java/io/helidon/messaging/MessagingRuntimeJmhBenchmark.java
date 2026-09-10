@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import io.helidon.common.GenericType;
-import io.helidon.config.Config;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -175,8 +174,9 @@ public class MessagingRuntimeJmhBenchmark {
          */
         @Setup(Level.Trial)
         public void setUp() {
-            MessagingGraph.Builder builder = MessagingGraph.builder();
-            MessagingChannel<String> channel = builder.channel(CHANNEL, String.class);
+            MessagingConfig.Builder builder = MessagingGraph.builder();
+            MessagingChannel<String> channel = MessagingChannel.create(CHANNEL, String.class);
+            builder.channel(channel);
             builder.payloadSink(channel, sink);
             graph = builder.build();
             try {
@@ -238,8 +238,9 @@ public class MessagingRuntimeJmhBenchmark {
             this.messages = List.copyOf(messages);
             this.batch = MessageBatch.create(this.messages);
 
-            MessagingGraph.Builder builder = MessagingGraph.builder();
-            MessagingChannel<String> channel = builder.channel(CHANNEL, String.class);
+            MessagingConfig.Builder builder = MessagingGraph.builder();
+            MessagingChannel<String> channel = MessagingChannel.create(CHANNEL, String.class);
+            builder.channel(channel);
             builder.payloadSink(channel, sink);
             graph = builder.build();
             try {
@@ -324,11 +325,11 @@ public class MessagingRuntimeJmhBenchmark {
                                                                    .discoverServicesFromServiceLoader(false)
                                                                    .build());
             try {
-                registry = new ChannelRegistry(List.of(registration),
-                                               List.of(),
-                                               Config.empty(),
-                                               registryManager.registry(),
-                                               new MessagingLifecycleGuard());
+                MessagingConfig messagingConfig = MessagingConfig.builder()
+                        .serviceRegistry(registryManager.registry())
+                        .addConsumerRegistration(registration)
+                        .buildPrototype();
+                registry = new ChannelRegistry(messagingConfig, new MessagingLifecycleGuard());
                 registry.start();
                 context = registry.incomingContext(CHANNEL);
             } catch (RuntimeException | Error e) {
