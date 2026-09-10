@@ -118,12 +118,18 @@ public interface Header extends Value<String> {
     boolean changing();
 
     /**
-     * Cached bytes of a single valued header's value.
+     * Bytes of a single-valued header value.
+     * <p>
+     * Each character in the value is mapped to the byte with the same numeric value using
+     * {@link java.nio.charset.StandardCharsets#ISO_8859_1}. Characters from {@code U+0080} through
+     * {@code U+00FF} therefore represent opaque HTTP field-value octets; they are not interpreted
+     * as UTF-8 or as ISO-8859-1 text.
      *
      * @return value bytes
+     * @throws IllegalArgumentException if the value contains a character above {@code U+00FF}
      */
     default byte[] valueBytes() {
-        return get().getBytes(StandardCharsets.US_ASCII);
+        return encodeValue(get());
     }
 
     /**
@@ -137,15 +143,19 @@ public interface Header extends Value<String> {
             writeHeader(buffer, nameBytes, valueBytes());
         } else {
             for (String value : allValues()) {
-                writeHeader(buffer, nameBytes, value.getBytes(StandardCharsets.US_ASCII));
+                writeHeader(buffer, nameBytes, encodeValue(value));
             }
         }
     }
 
     /**
-     * Check validity of header name and values.
+     * Check validity of the header name and values.
+     * <p>
+     * The name must be a non-empty HTTP token. Values may contain opaque octets represented by
+     * characters from {@code U+0080} through {@code U+00FF}; characters above {@code U+00FF}
+     * cannot be represented in an HTTP field value and are rejected.
      *
-     * @throws IllegalArgumentException in case the HeaderValue is not valid
+     * @throws IllegalArgumentException if the header name or a value is not valid
      */
     default void validate() throws IllegalArgumentException {
         String name = name();
@@ -168,16 +178,25 @@ public interface Header extends Value<String> {
         }
     }
 
+    private static byte[] encodeValue(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (value.charAt(i) > 0xff) {
+                throw new IllegalArgumentException("Header value contains a character above 0xff");
+            }
+        }
+        return value.getBytes(StandardCharsets.ISO_8859_1);
+    }
+
     private static int validateValue(String name, String value, int position) {
         int length = value.length();
         for (int i = 0; i < length; i++) {
             char vChar = value.charAt(i);
             if (position == 0) {
-                if (vChar < '!' || vChar == '\u007f') {
+                if (vChar < '!' || vChar == '\u007f' || vChar > '\u00ff') {
                     throw new IllegalArgumentException("First character of the header value is invalid"
                                                                + " for header '" + name + "'");
                 }
-            } else if (vChar < ' ' && vChar != '\t' || vChar == '\u007f') {
+            } else if (vChar < ' ' && vChar != '\t' || vChar == '\u007f' || vChar > '\u00ff') {
                 throw new IllegalArgumentException("Character at position " + (position + 1)
                                                            + " of the header value is invalid"
                                                            + " for header '" + name + "'");

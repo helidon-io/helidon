@@ -105,7 +105,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
 
-        if (mayHaveEntity(responseStatus, responseHeaders)) {
+        if (mayHaveEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
             builder.inputStream(inputStream(clientConfig,
                                             recvListener,
@@ -149,19 +149,30 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         // either use the explicit connection, or obtain one (keep alive or one-off)
         effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
-        effectiveConnection.readTimeout(this.timeout);
+        try {
+            effectiveConnection.readTimeout(this.timeout);
 
-        DataWriter writer = effectiveConnection.writer();
-        DataReader reader = effectiveConnection.reader();
-        ClientUri uri = serviceRequest.uri();
-        ClientRequestHeaders headers = serviceRequest.headers();
+            DataWriter writer = effectiveConnection.writer();
+            DataReader reader = effectiveConnection.reader();
+            ClientUri uri = serviceRequest.uri();
+            ClientRequestHeaders headers = serviceRequest.headers();
 
-        writeBuffer.clear();
-        originalRequest.sanitizeRedirectHeaders(uri, headers);
-        prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
-        headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
+            writeBuffer.clear();
+            originalRequest.sanitizeRedirectHeaders(uri, headers);
+            prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
-        return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
+            return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
+        } catch (RuntimeException | Error e) {
+            if (connection == null) {
+                try {
+                    effectiveConnection.closeResource();
+                } catch (Throwable closeFailure) {
+                    e.addSuppressed(closeFailure);
+                }
+            }
+            throw e;
+        }
     }
 
     abstract WebClientServiceResponse doProceed(ClientConnection connection,
@@ -245,24 +256,27 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                           DataReader reader) {
 
         Status responseStatus;
-        try {
-            responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-        } catch (UncheckedIOException e) {
-            // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
-            // data of this request on the next use of this connection
+        ClientResponseHeaders responseHeaders;
+        do {
             try {
-                connection.closeResource();
-            } catch (Exception ex) {
-                e.addSuppressed(ex);
+                responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+            } catch (UncheckedIOException e) {
+                // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
+                // data of this request on the next use of this connection
+                try {
+                    connection.closeResource();
+                } catch (Exception ex) {
+                    e.addSuppressed(ex);
+                }
+                throw e;
             }
-            throw e;
-        }
 
-        recvListener.status(connection.helidonSocket(), responseStatus);
+            recvListener.status(connection.helidonSocket(), responseStatus);
 
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
+            responseHeaders = readHeaders(reader);
 
-        recvListener.headers(connection.helidonSocket(), responseHeaders);
+            recvListener.headers(connection.helidonSocket(), responseHeaders);
+        } while (originalRequest.outputStreamRedirect() && isPreContinueInterimResponse(responseStatus));
 
         return createServiceResponse(http1Client,
                                      serviceRequest,
@@ -281,6 +295,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return recvListener;
     }
 
+    private static boolean isPreContinueInterimResponse(Status responseStatus) {
+        return responseStatus.family() == Status.Family.INFORMATIONAL
+                && responseStatus.code() != Status.CONTINUE_100.code()
+                && responseStatus.code() != Status.SWITCHING_PROTOCOLS_101.code();
+    }
+
     private static String requestTarget(ClientUri uri) {
         String requestTarget = uri.pathWithQueryAndFragment();
         var fragment = uri.fragment();
@@ -292,17 +312,27 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
     }
 
-    private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {
+    private static boolean mayHaveEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
+        if (requestMethod == Method.HEAD) {
+            return false;
+        }
         if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
-        // Why is NOT_MODIFIED_304 not added here too?
-        if (responseStatus.code() == Status.NO_CONTENT_204.code()) {
+        int statusCode = responseStatus.code();
+        if (statusCode == Status.NO_CONTENT_204_CODE
+                || statusCode == Status.NOT_MODIFIED_304_CODE) {
             return false;
         }
-        if ((
-                responseHeaders.contains(HeaderNames.UPGRADE)
-                        && !responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+        if (statusCode == Status.RESET_CONTENT_205_CODE
+                && !responseHeaders.contains(HeaderNames.CONTENT_LENGTH)
+                && !responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)) {
+            // Preserve header-terminated 205 compatibility, but honor declared framing so it is consumed before reuse.
+            return false;
+        }
+        if (statusCode == Status.SWITCHING_PROTOCOLS_101_CODE
+                && responseHeaders.contains(HeaderNames.UPGRADE)
+                && !responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             // this is an upgrade response and there is no entity
             return false;
         }

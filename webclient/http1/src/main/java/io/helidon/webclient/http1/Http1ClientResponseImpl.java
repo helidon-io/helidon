@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
+import java.time.Duration;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.ServiceLoader;
@@ -30,7 +31,9 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.ParserMode;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
@@ -38,6 +41,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
@@ -61,6 +65,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
     private final Status responseStatus;
+    private final boolean headResponse;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
     private final InputStream inputStream;
@@ -77,10 +82,12 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private boolean entityRequested;
     private long entityLength;
     private boolean entityFullyRead = false;
+    private boolean closeConnectionOnClose;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
                             Http1ClientProtocolConfig protocolConfig,
                             Status responseStatus,
+                            Method requestMethod,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
                             ClientConnection connection,
@@ -91,6 +98,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;
         this.responseStatus = responseStatus;
+        this.headResponse = requestMethod == Method.HEAD;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.connection = connection;
@@ -106,10 +114,20 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         ));
 
         OptionalLong contentLength = responseHeaders.contentLength();
-        if (contentLength.isPresent()) {
-            this.entityLength = contentLength.getAsLong();
-        } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-            this.entityLength = ENTITY_LENGTH_CHUNKED;
+        if (inputStream != null) {
+            if (contentLength.isPresent()) {
+                this.entityLength = contentLength.getAsLong();
+            } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                this.entityLength = ENTITY_LENGTH_CHUNKED;
+            }
+        } else if (responseStatus.code() == Status.NO_CONTENT_204_CODE
+                && (contentLength.orElse(0) > 0 || responseHeaders.contains(HeaderNames.TRANSFER_ENCODING))) {
+            this.closeConnectionOnClose = true;
+        } else if (!headResponse
+                && responseStatus.code() == Status.RESET_CONTENT_205_CODE
+                && contentLength.isEmpty()
+                && !responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)) {
+            this.closeConnectionOnClose = true;
         }
 
         if (responseHeaders.contains(HeaderNames.TRAILER)) {
@@ -137,6 +155,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             if (!this.entityRequested) {
                 throw new IllegalStateException("Trailers requested before reading entity.");
             }
+            if (headResponse) {
+                return ClientResponseTrailers.create();
+            }
             return ClientResponseTrailers.create(this.trailers.get());
         } else {
             return ClientResponseTrailers.create();
@@ -153,7 +174,14 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
+                if (closeConnectionOnClose
+                        || connection instanceof CloseOnReleaseClientConnection
+                        || headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
+                    connection.closeResource();
+                } else if (inputStream == null
+                        && (headResponse || responseStatus.code() == Status.NOT_MODIFIED_304_CODE)
+                        && connection.reader().available() > 0) {
+                    // HEAD and 304 responses end at their headers; buffered bytes must not become the next response.
                     connection.closeResource();
                 } else {
                     if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {
@@ -186,7 +214,22 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     ClientConnection connection() {
-        return connection;
+        return closeConnectionOnClose ? new CloseOnReleaseClientConnection(connection) : connection;
+    }
+
+    void closeConnectionOnClose() {
+        closeConnectionOnClose = true;
+    }
+
+    void completeIfNoEntityAfterConnectionTransfer() {
+        if (inputStream != null) {
+            return;
+        }
+        if (closeConnectionOnClose || headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
+            close();
+        } else if (closed.compareAndSet(false, true)) {
+            whenComplete.complete(null);
+        }
     }
 
     /**
@@ -246,5 +289,63 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             return null;
         }
         return bufferData;
+    }
+
+    private record CloseOnReleaseClientConnection(ClientConnection delegate) implements ClientConnection {
+        @Override
+        public DataReader reader() {
+            return delegate.reader();
+        }
+
+        @Override
+        public DataWriter writer() {
+            return delegate.writer();
+        }
+
+        @Override
+        public String channelId() {
+            return delegate.channelId();
+        }
+
+        @Override
+        public HelidonSocket helidonSocket() {
+            return delegate.helidonSocket();
+        }
+
+        @Override
+        public void readTimeout(Duration readTimeout) {
+            delegate.readTimeout(readTimeout);
+        }
+
+        @Override
+        public boolean allowExpectContinue() {
+            return delegate.allowExpectContinue();
+        }
+
+        @Override
+        public void allowExpectContinue(boolean allowExpectContinue) {
+            delegate.allowExpectContinue(allowExpectContinue);
+        }
+
+        @Override
+        public boolean isConnected() {
+            return delegate.isConnected();
+        }
+
+        @Override
+        public ClientConnection connect() {
+            delegate.connect();
+            return this;
+        }
+
+        @Override
+        public void releaseResource() {
+            delegate.closeResource();
+        }
+
+        @Override
+        public void closeResource() {
+            delegate.closeResource();
+        }
     }
 }

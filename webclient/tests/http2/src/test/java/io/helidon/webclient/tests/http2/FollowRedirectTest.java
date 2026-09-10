@@ -23,16 +23,23 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -40,17 +47,32 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.http.Status.INTERNAL_SERVER_ERROR_500;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class FollowRedirectTest {
     private static final StringBuilder BUFFER = new StringBuilder();
+    private static final String PATH_COOKIE = "pathOnly=redirect-secret";
+    private static final HeaderName REDIRECT_HEADER = HeaderNames.create("X-Redirect-Test");
+    private static final HeaderName PEER_PORT_HEADER = HeaderNames.create("X-Peer-Port");
+    private static final AtomicReference<String> REDIRECT_SOURCE_COOKIE = new AtomicReference<>();
+    private static final AtomicReference<String> REDIRECT_TARGET_COOKIE = new AtomicReference<>();
     private final Http2Client webClient;
 
     FollowRedirectTest(URI uri) {
         this.webClient = Http2Client.builder()
                 .baseUri(uri)
+                .cookieManager(WebClientCookieManager.builder().automaticStoreEnabled(true).build())
                 .build();
+    }
+
+    @SetUpServer
+    static void setUpServer(WebServerConfig.Builder server) {
+        server.addProtocol(Http2Config.builder()
+                                   .maxConcurrentStreams(1)
+                                   .build());
     }
 
     @SetUpRoute
@@ -67,6 +89,16 @@ class FollowRedirectTest {
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/plain")
                     .send();
+        }).route(Method.PUT, "/redirectNoContent", (req, res) -> {
+            res.status(Status.TEMPORARY_REDIRECT_307)
+                    .header(HeaderNames.LOCATION, "/noContent")
+                    .send();
+        }).route(Method.PUT, "/noContent", (req, res) -> {
+            res.status(Status.NO_CONTENT_204)
+                    .header(PEER_PORT_HEADER, String.valueOf(req.remotePeer().port()))
+                    .send();
+        }).route(Method.GET, "/peerPort", (req, res) -> {
+            res.send(String.valueOf(req.remotePeer().port()));
         }).route(Method.PUT, "/redirectKeepMethodThenGet", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/redirectNoEntityAfterKeepMethod")
@@ -96,6 +128,38 @@ class FollowRedirectTest {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
+        }).route(Method.GET, "/source/prime", (req, res) -> {
+            res.header(HeaderNames.SET_COOKIE, PATH_COOKIE + "; Path=/source")
+                    .send();
+        }).route(Method.PUT, "/source/bounce", (req, res) -> {
+            REDIRECT_SOURCE_COOKIE.set(req.headers().contains(HeaderNames.COOKIE)
+                                               ? req.headers().get(HeaderNames.COOKIE).values()
+                                               : null);
+            res.status(Status.create(308, "Custom Permanent Redirect"))
+                    .header(HeaderNames.LOCATION, "/target/collect")
+                    .send();
+        }).route(Method.PUT, "/target/collect", (req, res) -> {
+            REDIRECT_TARGET_COOKIE.set(req.headers().contains(HeaderNames.COOKIE)
+                                               ? req.headers().get(HeaderNames.COOKIE).values()
+                                               : null);
+            if (req.headers().contains(REDIRECT_HEADER)) {
+                res.status(Status.BAD_REQUEST_400).send("Custom header was preserved");
+                return;
+            }
+            String contentType = req.headers().contentType().orElseThrow().mediaType().text();
+            res.send(contentType + ":" + req.content().as(String.class));
+        }).route(Method.GET, "/redirectDropEntity", (req, res) -> {
+            res.status(Status.FOUND_302)
+                    .header(HeaderNames.LOCATION, "/afterDropEntity")
+                    .send();
+        }).route(Method.GET, "/afterDropEntity", (req, res) -> {
+            if (req.content().hasEntity()
+                    || req.headers().contains(HeaderNames.CONTENT_TYPE)
+                    || req.headers().contains(REDIRECT_HEADER)) {
+                res.status(Status.BAD_REQUEST_400).send("Entity metadata was preserved");
+                return;
+            }
+            res.send("GET without entity metadata");
         }).route(Method.PUT, "/plain", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
                 byte[] buffer = new byte[128];
@@ -156,6 +220,8 @@ class FollowRedirectTest {
     @AfterEach
     void clearBuffer() {
         BUFFER.setLength(0);
+        REDIRECT_SOURCE_COOKIE.set(null);
+        REDIRECT_TARGET_COOKIE.set(null);
     }
 
     @Test
@@ -175,6 +241,28 @@ class FollowRedirectTest {
                     it.close();
                 })) {
             assertThat(response.entity().as(String.class), is(expected));
+        }
+    }
+
+    @Test
+    void noContentRedirectProbeReleasesStreamCapacity() throws IOException {
+        Http2ClientResponse response = webClient.put()
+                .path("/redirectNoContent")
+                .sendExpectContinue(true)
+                .outputStream(output -> output.write("entity".getBytes(StandardCharsets.UTF_8)));
+
+        try {
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
+            String peerPort = response.headers().get(PEER_PORT_HEADER).get();
+            assertThat(response.inputStream().readAllBytes().length, is(0));
+
+            try (Http2ClientResponse followUp = webClient.get()
+                    .path("/peerPort")
+                    .request()) {
+                assertThat(followUp.entity().as(String.class), is(peerPort));
+            }
+        } finally {
+            response.close();
         }
     }
 
@@ -220,6 +308,39 @@ class FollowRedirectTest {
                     it.close();
                 })) {
             assertThat(response.entity().as(String.class), is(expected));
+        }
+    }
+
+    @Test
+    void methodPreservingRedirectReselectsCookiesForTargetPath() {
+        try (Http2ClientResponse response = webClient.get()
+                .path("/source/prime")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        try (Http2ClientResponse response = webClient.put()
+                .path("/source/bounce")
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(REDIRECT_HEADER, "drop")
+                .submit("entity")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("text/plain:entity"));
+        }
+
+        assertThat(REDIRECT_SOURCE_COOKIE.get(), containsString(PATH_COOKIE));
+        assertThat(REDIRECT_TARGET_COOKIE.get(), is(nullValue()));
+    }
+
+    @Test
+    void sameMethodRedirectDropsEntityHeaders() {
+        try (Http2ClientResponse response = webClient.get()
+                .path("/redirectDropEntity")
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(REDIRECT_HEADER, "drop")
+                .submit("entity")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("GET without entity metadata"));
         }
     }
 

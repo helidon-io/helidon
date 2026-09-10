@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.http;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -67,6 +68,17 @@ class MediaTypeTest {
     }
 
     @Test
+    void nullOrEmptyCharsetDoesNotUpdateParameter() {
+        HttpMediaType withCharset = HttpMediaType.create("text/plain; charset=utf-8");
+        HttpMediaType withoutCharset = HttpMediaType.create("text/plain");
+
+        assertThat(withCharset.withCharset((String) null).charset(), is(Optional.of("utf-8")));
+        assertThat(withCharset.withCharset("").charset(), is(Optional.of("utf-8")));
+        assertThat(withoutCharset.withCharset((String) null).charset(), is(Optional.empty()));
+        assertThat(withoutCharset.withCharset("").charset(), is(Optional.empty()));
+    }
+
+    @Test
     void parseParameters() {
         HttpMediaType mediaType = HttpMediaType.create("unknown-type/unknown-subtype; option1=value1; option2=value2");
 
@@ -83,8 +95,86 @@ class MediaTypeTest {
 
     @Test
     void parseEmptyParameterValue() {
-        assertThat(HttpMediaType.create("type/subtype; o1=").parameters(), is(Map.of()));
-        assertThat(HttpMediaType.create("type/subtype; o1=; o2=v2").parameters(), is(Map.of("o2", "v2")));
+        assertThrows(IllegalArgumentException.class, () -> HttpMediaType.create("type/subtype; o1="));
+        assertThrows(IllegalArgumentException.class, () -> HttpMediaType.create("type/subtype; o1=; o2=v2"));
+
+        assertThat(HttpMediaType.create("type/subtype; o1=", ParserMode.RELAXED).parameters(), is(Map.of()));
+        assertThat(HttpMediaType.create("type/subtype; o1=; o2=v2", ParserMode.RELAXED).parameters(),
+                   is(Map.of("o2", "v2")));
+    }
+
+    @Test
+    void parseQuotedParameterValue() {
+        HttpMediaType mediaType = HttpMediaType.create("text/plain; profile=\"a;b\\\"c\\\\d\"; empty=\"\"");
+
+        assertThat(mediaType.parameters(), is(Map.of("profile", "a;b\"c\\d", "empty", "")));
+        assertThat(mediaType.text(), is("text/plain; empty=\"\"; profile=\"a;b\\\"c\\\\d\""));
+    }
+
+    @Test
+    void parseQuotedParameterValueInRelaxedMode() {
+        HttpMediaType mediaType = HttpMediaType.create("text/plain; profile=\"a;b\"", ParserMode.RELAXED);
+
+        assertThat(mediaType.parameters(), is(Map.of("profile", "a;b")));
+    }
+
+    @Test
+    void parseQuotedPairCharacters() {
+        HttpMediaType escaped = HttpMediaType.create("text/plain; value=\"a\\~\\" + (char) 0x80 + "\"");
+        HttpMediaType unescaped = HttpMediaType.create("text/plain; value=\"a" + (char) 0x80 + "\"");
+
+        assertThat(escaped.parameters(), is(Map.of("value", "a~" + (char) 0x80)));
+        assertThat(unescaped.parameters(), is(Map.of("value", "a" + (char) 0x80)));
+    }
+
+    @Test
+    void parseOptionalWhitespaceAndEmptyParameters() {
+        HttpMediaType mediaType = HttpMediaType.create("text/plain\t; ; Charset=\"utf-8\";;format=flowed;");
+
+        assertThat(mediaType.parameters(), is(Map.of("charset", "utf-8", "format", "flowed")));
+        assertThat(mediaType.text(), is("text/plain; charset=utf-8; format=flowed"));
+    }
+
+    @Test
+    void rejectInvalidMediaTypes() {
+        List<String> invalidMediaTypes = List.of("",
+                                                 "text",
+                                                 "/plain",
+                                                 "text/",
+                                                 "text//plain",
+                                                 " text/plain",
+                                                 "text/plain ",
+                                                 "text /plain",
+                                                 "text/ plain",
+                                                 "text/plain, application/json",
+                                                 "text/plain; =value",
+                                                 "text/plain; name =value",
+                                                 "text/plain; name= value",
+                                                 "text/plain; name=",
+                                                 "text/plain; name=;",
+                                                 "text/plain; name=one two",
+                                                 "text/plain; name=\"unterminated",
+                                                 "text/plain; name=\"value\"x",
+                                                 "text/plain; name=\"bad" + (char) 0 + "value\"",
+                                                 "text/plain; name=\"bad" + (char) 0x7f + "value\"",
+                                                 "text/plain; name=\"bad" + (char) 0x100 + "value\"",
+                                                 "text/plain; name=\"bad\\" + (char) 0 + "value\"",
+                                                 "text/plain; name=\"bad\\" + (char) 0x7f + "value\"");
+
+        invalidMediaTypes.forEach(value -> assertThrows(IllegalArgumentException.class,
+                                                        () -> HttpMediaType.create(value),
+                                                        value));
+    }
+
+    @Test
+    void serializeParameterValuesUsingRfc9110Syntax() {
+        HttpMediaType mediaType = HttpMediaType.builder()
+                .mediaType(MediaTypes.TEXT_PLAIN)
+                .addParameter("token", "value")
+                .addParameter("quoted", "a b;c\"d\\e")
+                .build();
+
+        assertThat(mediaType.text(), is("text/plain; quoted=\"a b;c\\\"d\\\\e\"; token=value"));
     }
 
     @Test
@@ -140,10 +230,15 @@ class MediaTypeTest {
     // Calling create method with "text" argument shall throw IllegalArgumentException in strict mode.
     @Test
     void parseInvalidTextInStrictMode() {
-        assertThrows(IllegalArgumentException.class, () -> {
-                         HttpMediaType.create("text");
-                     },
-                     "Cannot parse media type: text");
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                           () -> HttpMediaType.create("text"));
+
+        assertThat(exception.getMessage(), is("Cannot parse media type: text"));
+    }
+
+    @Test
+    void rejectNullParserMode() {
+        assertThrows(NullPointerException.class, () -> HttpMediaType.create("text/plain", null));
     }
 
     // Calling create method with "text" argument shall return "text/plain" in relaxed mode.
