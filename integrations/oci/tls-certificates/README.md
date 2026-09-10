@@ -61,6 +61,9 @@ identity version or independently rotated CA is installed as one complete TLS up
 or reload fails, the last successfully installed TLS material remains active and the candidate update is retried on a
 later poll. Set `always-reload: true` to rebuild TLS even when both values are unchanged.
 
+External reload through `Tls.reload(Tls)` is unsupported and throws `UnsupportedOperationException`.
+Certificate and CA updates are applied through scheduled OCI polling; `always-reload` controls that polling behavior.
+
 The leaf private key is materialized in application JVM memory. This manager does not provide non-exportable HSM-backed
 TLS signing; the CA signing key can remain separately HSM protected.
 

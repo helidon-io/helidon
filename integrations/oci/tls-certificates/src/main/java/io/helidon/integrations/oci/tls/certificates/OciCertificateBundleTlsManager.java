@@ -16,14 +16,18 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsManager;
 import io.helidon.config.Config;
 
 /**
  * A {@link TlsManager} that loads a certificate and its matching private key from an OCI-managed certificate bundle.
+ * Certificate and CA updates are retrieved through scheduled OCI polling.
+ * External reload through {@link Tls#reload(Tls)} is unsupported.
  */
 public interface OciCertificateBundleTlsManager
         extends TlsManager, RuntimeType.Api<OciCertificateBundleTlsManagerConfig> {
@@ -86,8 +90,18 @@ public interface OciCertificateBundleTlsManager
      * @return a configured instance
      */
     static OciCertificateBundleTlsManager create(Consumer<OciCertificateBundleTlsManagerConfig.Builder> consumer) {
+        Objects.requireNonNull(consumer, "consumer");
         var builder = OciCertificateBundleTlsManagerConfig.builder();
         consumer.accept(builder);
         return builder.build();
     }
+
+    /**
+     * Rejects external TLS reload. This manager refreshes its TLS material through scheduled OCI polling.
+     *
+     * @param tls replacement TLS configuration
+     * @throws UnsupportedOperationException external TLS reload is unsupported
+     */
+    @Override
+    void reload(Tls tls);
 }

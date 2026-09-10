@@ -98,6 +98,7 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
 
     @Override
     public void init(TlsConfig tls) {
+        Objects.requireNonNull(tls, "tls");
         lifecycleLock.lock();
         try {
             ContextConfiguration requestedContext = ContextConfiguration.create(tls);
@@ -128,7 +129,7 @@ class DefaultOciCertificateBundleTlsManager extends ConfiguredTlsManager
             certDownloader = registry.supply(OciCertificatesDownloader.class);
             serviceRegistry = registry;
             taskManager = registry.get(TaskManager.class);
-            tlsConfig = Objects.requireNonNull(tls);
+            tlsConfig = tls;
             contextConfiguration = requestedContext;
 
             TlsMaterial initialMaterial = loadMaterial();
