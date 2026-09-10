@@ -24,6 +24,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.declarative.tests.compatibility.v4.LegacyFeatureEndpoint;
+import io.helidon.declarative.tests.compatibility.v4.LegacyLifecycleService;
+import io.helidon.declarative.tests.compatibility.v4.LegacyPerson;
 import io.helidon.declarative.tests.compatibility.v4.LegacyRestClient;
 import io.helidon.declarative.tests.compatibility.v4.LegacyScheduledTask;
 import io.helidon.declarative.tests.compatibility.v4.LegacyWsClientEndpoint;
@@ -37,6 +39,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
+import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
@@ -73,6 +76,7 @@ class DeclarativeCompatibilityTest {
     private static Http1Client client;
     private static WebClient webClient;
     private static TestSpanExporter spanExporter;
+    private static LegacyLifecycleService lifecycle;
     private static int port;
 
     @BeforeAll
@@ -103,6 +107,9 @@ class DeclarativeCompatibilityTest {
         try {
             if (manager != null) {
                 manager.shutdown();
+                if (lifecycle != null) {
+                    ServiceCompatibilityChecks.verifyShutdown(lifecycle);
+                }
             }
         } finally {
             System.clearProperty("compatibility.server.port");
@@ -243,6 +250,54 @@ class DeclarativeCompatibilityTest {
         assertThat(serverEndpoint.lastShard(), is(7));
         assertThat(serverEndpoint.lastClose(), is(new LegacyWsEndpoint.Close("legacy-client-done", WsCloseCodes.NORMAL_CLOSE)));
         assertThat(serverEndpoint.lastHttpPrologue(), notNullValue());
+    }
+
+    @Test
+    @Order(6)
+    void testAsyncAndObjectValidation() throws Exception {
+        InterceptorCompatibilityChecks.verify(registry);
+    }
+
+    @Test
+    @Order(7)
+    void testAdditionalRestFeatures() {
+        RestCompatibilityChecks.verify(registry, client);
+    }
+
+    @Test
+    @Order(8)
+    void testGeneratedJsonBindingAndBuilder() {
+        var binding = registry.get(JsonBinding.class);
+        var person = LegacyPerson.builder()
+                .name("Ada")
+                .age(37)
+                .nickname("Countess")
+                .build();
+        assertThat(person.name(), is("Ada"));
+        assertThat(person.age(), is(37));
+        assertThat(person.nickname(), is(Optional.of("Countess")));
+
+        String json = binding.serialize(person);
+        JsonObject object = binding.deserialize(json, JsonObject.class);
+        assertThat(object.stringValue("name").orElseThrow(), is("Ada"));
+        assertThat(object.numberValue("age").orElseThrow().intValue(), is(37));
+        assertThat(object.stringValue("nickname").orElseThrow(), is("Countess"));
+
+        var restored = binding.deserialize(json, LegacyPerson.class);
+        assertThat(restored.name(), is(person.name()));
+        assertThat(restored.age(), is(person.age()));
+        assertThat(restored.nickname(), is(person.nickname()));
+
+        var withoutNickname = binding.deserialize("{\"name\":\"Grace\",\"age\":85}", LegacyPerson.class);
+        assertThat(withoutNickname.name(), is("Grace"));
+        assertThat(withoutNickname.age(), is(85));
+        assertThat(withoutNickname.nickname(), is(Optional.empty()));
+    }
+
+    @Test
+    @Order(9)
+    void testServiceLifecycleAndEvents() {
+        lifecycle = ServiceCompatibilityChecks.verify(registry);
     }
 
     private static void assertMetric(JsonObject metrics, String prefix, int expectedValue) {

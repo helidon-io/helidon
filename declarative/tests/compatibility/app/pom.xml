@@ -33,6 +33,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.declarative.tests.compatibility</groupId>
             <artifactId>helidon-declarative-tests-compatibility-legacy-4-module</artifactId>
             <version>${project.version}</version>

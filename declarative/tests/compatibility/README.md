@@ -35,4 +35,12 @@ scheduling, metrics, tracing, CORS, and WebSocket endpoints and clients. Asserti
 check current runtime behavior, including expected fault-tolerance exceptions;
 they do not require current observability output to retain Helidon 4 formatting.
 
+Additional cases exercise asynchronous fault tolerance, generated object validators
+and return-value constraints, computed client headers, optional query parameters,
+void and generic REST results, generated JSON converters and builders, and service
+lifecycle, qualifiers, factories, per-lookup scope, and event delivery.
+
+Data is outside this fixture's scope. Declarative gRPC, GraphQL, and OpenAPI
+generation added after Helidon 4.5.4 cannot be tested using this legacy compiler.
+
 The reactor includes these modules through the `tests` profile.

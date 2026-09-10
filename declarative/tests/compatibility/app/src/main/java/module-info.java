@@ -16,6 +16,7 @@
 
 @SuppressWarnings({"helidon:api:incubating", "requires-automatic"})
 module io.helidon.declarative.tests.compatibility.app {
+    requires io.helidon.builder.api;
     requires io.helidon.config.yaml;
     requires io.helidon.declarative.tests.compatibility.v4;
     requires io.helidon.faulttolerance;

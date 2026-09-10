@@ -16,12 +16,14 @@
 
 @SuppressWarnings("helidon:api:incubating")
 module io.helidon.declarative.tests.compatibility.v4 {
+    requires io.helidon.builder.api;
     requires io.helidon.common;
     requires io.helidon.common.buffers;
     requires io.helidon.common.media.type;
     requires io.helidon.config;
     requires io.helidon.faulttolerance;
     requires io.helidon.http;
+    requires io.helidon.json.binding;
     requires io.helidon.metrics.api;
     requires io.helidon.scheduling;
     requires io.helidon.service.registry;
