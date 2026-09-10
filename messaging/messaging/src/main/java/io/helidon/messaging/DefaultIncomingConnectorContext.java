@@ -53,11 +53,7 @@ final class DefaultIncomingConnectorContext implements IncomingConnectorContext 
         this.channel = channel;
         this.failurePolicy = failurePolicy;
         this.admissionTimeoutBudget = new AdmissionTimeoutBudget(channel, System::nanoTime);
-        this.retry = Retry.create(RetryConfig.builder(failurePolicy.retry())
-                                          .name("messaging-delivery-" + channel)
-                                          .addSkipOn(Error.class)
-                                          .addSkipOn(MessagingRejectedException.class)
-                                          .buildPrototype());
+        this.retry = failurePolicy.retry();
     }
 
     @Override
@@ -145,24 +141,43 @@ final class DefaultIncomingConnectorContext implements IncomingConnectorContext 
                                         boolean[] settled,
                                         Deque<PendingDelivery> pending,
                                         PendingDelivery current) {
-        Duration remainingTimeout = remainingOverallTimeout(retry.prototype().overallTimeout(),
-                                                            current.startedNanos());
-        if (current.failedAttempts() > 0 && remainingTimeout.isZero()) {
-            handleTerminalFailure(root,
-                                  settled,
-                                  current.batch(),
-                                  Objects.requireNonNull(current.previousFailure()),
-                                  current.failedAttempts());
-            return;
+        Retry deliveryRetry = retry;
+        if (!current.initialDelivery()) {
+            Duration remainingTimeout = remainingOverallTimeout(retry.prototype().overallTimeout(),
+                                                                current.startedNanos());
+            if (current.failedAttempts() > 0 && remainingTimeout.isZero()) {
+                handleTerminalFailure(root,
+                                      settled,
+                                      current.batch(),
+                                      Objects.requireNonNull(current.previousFailure()),
+                                      current.failedAttempts());
+                return;
+            }
+            deliveryRetry = deferredRetry(current, remainingTimeout);
         }
         RetryingDelivery retrying = new RetryingDelivery(current.batch());
         try {
-            retry(current, remainingTimeout).invoke(context -> {
-                attemptDelivery(root, settled, pending, current, retrying, context);
+            deliveryRetry.invoke(context -> {
+                if (retrying.terminalFailure == null) {
+                    try {
+                        attemptDelivery(root, settled, pending, current, retrying, context);
+                    } catch (Error | MessagingRejectedException failure) {
+                        // Runtime termination must not enter an application's retry classification.
+                        retrying.terminalFailure = failure;
+                    }
+                }
                 return Boolean.TRUE;
             }, this::awaitRetry);
         } catch (RetryException failure) {
-            handleRetryTermination(root, settled, current, retrying, failure);
+            if (retrying.terminalFailure == null) {
+                handleRetryTermination(root, settled, current, retrying, failure);
+            }
+        }
+        if (retrying.terminalFailure instanceof Error error) {
+            throw error;
+        }
+        if (retrying.terminalFailure instanceof MessagingRejectedException rejection) {
+            throw rejection;
         }
     }
 
@@ -316,10 +331,8 @@ final class DefaultIncomingConnectorContext implements IncomingConnectorContext 
         }
     }
 
-    private Retry retry(PendingDelivery current, Duration remainingTimeout) {
-        if (current.initialDelivery()) {
-            return retry;
-        }
+    private Retry deferredRetry(PendingDelivery current, Duration remainingTimeout) {
+        // Deferred siblings resume the retained attempt and timeout budgets through the existing internal adapter.
         RetryConfig prototype = retry.prototype();
         if (remainingTimeout.isZero()) {
             return Retry.create(RetryConfig.builder(prototype)
@@ -580,6 +593,7 @@ final class DefaultIncomingConnectorContext implements IncomingConnectorContext 
     private static final class RetryingDelivery {
         private MessageBatch<?> batch;
         private BatchDeliveryException failure;
+        private Throwable terminalFailure;
 
         private RetryingDelivery(MessageBatch<?> batch) {
             this.batch = batch;

@@ -34,15 +34,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import io.helidon.common.Errors;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.RetryContext;
 import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingChannelConfig;
 import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
+import io.helidon.messaging.spi.MessagingOutgoingConfig;
 import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
 import io.helidon.messaging.spi.OutgoingChannel;
 
@@ -100,8 +108,9 @@ class ChannelRegistryFailurePolicyTest {
                   max-in-flight-messages: 7
                   admission-timeout: PT0.009S
                   shutdown-timeout: PT0.01S
-                  channel:
+                  incoming:
                     orders:
+                      connector: test-in
                       execution:
                         queue-capacity: 12
                         max-pending-messages: 14
@@ -131,8 +140,9 @@ class ChannelRegistryFailurePolicyTest {
                 messaging:
                   queue-capacity: 3
                   max-pending-messages: 5
-                  channel:
+                  incoming:
                     orders~1v1:
+                      connector: test-in
                       execution:
                         queue-capacity: 12
                         max-pending-messages: 14
@@ -147,6 +157,74 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
+    void testIncomingExecutionWinsForSharedChannelName() {
+        ChannelRegistry registry = registry(List.of(), yaml("""
+                messaging:
+                  max-pending-messages: 9
+                  max-in-flight-messages: 8
+                  incoming:
+                    orders:
+                      connector: test-in
+                      execution:
+                        max-in-flight-messages: 3
+                  outgoing:
+                    orders:
+                      connector: test-out
+                      execution:
+                        max-pending-messages: 1
+                        max-in-flight-messages: 1
+                """), List.of(new TestIncomingConnector(), new TestOutgoingConnector()));
+        try {
+            assertThat(registry.incomingContext("orders").maxDeliveryMessages(), is(3));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testOutgoingOnlyChannelUsesOutgoingExecution() {
+        ChannelRegistry registry = registry(List.of(), yaml("""
+                messaging:
+                  max-pending-messages: 9
+                  max-in-flight-messages: 8
+                  outgoing:
+                    orders:
+                      connector: test-out
+                      execution:
+                        max-pending-messages: 4
+                        max-in-flight-messages: 2
+                """), List.of(new TestOutgoingConnector()));
+        try {
+            assertThat(registry.incomingContext("orders").maxDeliveryMessages(), is(2));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testEmptyIncomingExecutionFallsBackToRootNotOutgoing() {
+        ChannelRegistry registry = registry(List.of(), yaml("""
+                messaging:
+                  max-pending-messages: 6
+                  max-in-flight-messages: 5
+                  incoming:
+                    orders:
+                      connector: test-in
+                  outgoing:
+                    orders:
+                      connector: test-out
+                      execution:
+                        max-pending-messages: 1
+                        max-in-flight-messages: 1
+                """), List.of(new TestIncomingConnector(), new TestOutgoingConnector()));
+        try {
+            assertThat(registry.incomingContext("orders").maxDeliveryMessages(), is(5));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
     void testChannelCannotOverrideGlobalShutdownTimeout() {
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
@@ -154,8 +232,9 @@ class ChannelRegistryFailurePolicyTest {
                         List.of(registration("orders", _ -> { })),
                         yaml("""
                                 messaging:
-                                  channel:
+                                  incoming:
                                     orders:
+                                      connector: test-in
                                       execution:
                                         shutdown-timeout: PT1S
                                 """),
@@ -245,7 +324,7 @@ class ChannelRegistryFailurePolicyTest {
             assertThat(overridden.properties().get("authentication.username"), is("channel-user"));
             assertThat(overridden.config().get("authentication.password").exists(), is(false));
             assertThat(overridden.config().get("items").asList(String.class).get(), is(List.of("x")));
-            assertThat(overridden.config().get("failure").exists(), is(false));
+            assertThat(overridden.config().get("failure.retry.calls").asInt().orElseThrow(), is(1));
 
             Config emptyItems = incoming.config("empty").config().get("items");
             assertThat(emptyItems.exists(), is(true));
@@ -313,20 +392,20 @@ class ChannelRegistryFailurePolicyTest {
                         registration("target", message -> received.add((String) message.entity()))),
                 yaml("""
                         messaging:
-                          channel:
+                          incoming:
                             source:
                               execution:
                                 max-pending-messages: 2
                                 max-in-flight-messages: 2
+                              connector: test-in
+                          outgoing:
                             target:
+                              connector: test-out
                               execution:
                                 max-pending-messages: 8
                                 max-in-flight-messages: 1
-                          incoming:
-                            source:
-                              connector: test-in
                         """),
-                List.of(incoming));
+                List.of(incoming, new TestOutgoingConnector()));
         start(registry);
         try {
             IncomingConnectorContext context = incoming.context("source");
@@ -366,14 +445,12 @@ class ChannelRegistryFailurePolicyTest {
                 List.of(registration("orders", _ -> { })),
                 yaml("""
                         messaging:
-                          channel:
+                          incoming:
                             orders:
                               execution:
                                 max-pending-messages: 1
                                 max-in-flight-messages: 1
                                 admission-timeout: %s
-                          incoming:
-                            orders:
                               connector: test-in
                         """.formatted(configuredTimeout)),
                 List.of(incoming));
@@ -408,12 +485,9 @@ class ChannelRegistryFailurePolicyTest {
                 List.of(registration("orders", _ -> { })),
                 yaml("""
                         messaging:
-                          channel:
-                            orders:
-                              execution:
-                                max-pending-messages: 1
-                                max-in-flight-messages: 1
-                                admission-timeout: %s
+                          max-pending-messages: 1
+                          max-in-flight-messages: 1
+                          admission-timeout: %s
                         """.formatted(admissionTimeout)),
                 List.of());
         start(registry);
@@ -490,12 +564,9 @@ class ChannelRegistryFailurePolicyTest {
                 List.of(registration("orders", _ -> { })),
                 yaml("""
                         messaging:
-                          channel:
-                            orders:
-                              execution:
-                                max-pending-messages: 1
-                                max-in-flight-messages: 1
-                                admission-timeout: %s
+                          max-pending-messages: 1
+                          max-in-flight-messages: 1
+                          admission-timeout: %s
                         """.formatted(admissionTimeout)),
                 List.of());
         start(registry);
@@ -522,10 +593,7 @@ class ChannelRegistryFailurePolicyTest {
                 List.of(registration("orders", _ -> { })),
                 yaml("""
                         messaging:
-                          channel:
-                            orders:
-                              execution:
-                                admission-timeout: PT0.000000001S
+                          admission-timeout: PT0.000000001S
                         """),
                 List.of());
         start(registry);
@@ -544,10 +612,7 @@ class ChannelRegistryFailurePolicyTest {
                 List.of(registration("orders", _ -> { })),
                 yaml("""
                         messaging:
-                          channel:
-                            orders:
-                              execution:
-                                admission-timeout: %s
+                          admission-timeout: %s
                         """.formatted(admissionTimeout)),
                 List.of());
         start(registry);
@@ -572,10 +637,7 @@ class ChannelRegistryFailurePolicyTest {
                 List.of(registration("orders", _ -> contextReference.get().tryReserveDelivery())),
                 yaml("""
                         messaging:
-                          channel:
-                            orders:
-                              execution:
-                                admission-timeout: PT0.000000001S
+                          admission-timeout: PT0.000000001S
                         """),
                 List.of());
         start(registry);
@@ -605,14 +667,12 @@ class ChannelRegistryFailurePolicyTest {
                             })),
                             yaml("""
                                     messaging:
-                                      channel:
+                                      incoming:
                                         orders:
                                           execution:
                                             queue-capacity: 0
                                             max-pending-messages: 1
                                             max-in-flight-messages: 1
-                                      incoming:
-                                        orders:
                                           connector: test-in
                                           failure:
                                             retry:
@@ -640,8 +700,7 @@ class ChannelRegistryFailurePolicyTest {
         deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-2")));
 
         TestConnectorConfig connectorConfig = incoming.config("orders");
-        assertThat(connectorConfig.properties().keySet().stream()
-                           .noneMatch(key -> key.equals("failure") || key.startsWith("failure.")), is(true));
+        assertThat(connectorConfig.config().get("failure.retry.calls").asInt().orElseThrow(), is(2));
         assertThat(attempts.get(), is(4));
         assertThat(outgoing.sendCount(), is(2));
         assertThat(outgoing.messages().size(), is(2));
@@ -679,18 +738,18 @@ class ChannelRegistryFailurePolicyTest {
                             })),
                             yaml("""
                                     messaging:
-                                      channel:
+                                      incoming:
                                         orders:
                                           execution:
                                             queue-capacity: 0
                                             max-pending-messages: 2
                                             max-in-flight-messages: 1
-                                      incoming:
-                                        orders:
                                           connector: test-in
                                           failure:
                                             retry:
+                                              calls: 2147483647
                                               delay: PT1H
+                                              overall-timeout: PT9223372036.854775807S
                                     """),
                             List.of(incoming));
         start(registry);
@@ -796,7 +855,7 @@ class ChannelRegistryFailurePolicyTest {
             DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) routed.get();
             assertThat(deadLetter.originalMessage(), sameInstance(unavailable));
             assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
-            assertThat(entityCalls.get(), is(2));
+            assertThat(entityCalls.get(), is(1));
         } finally {
             registry.close();
         }
@@ -812,17 +871,11 @@ class ChannelRegistryFailurePolicyTest {
                             })),
                             yaml("""
                                     messaging:
-                                      channel:
+                                      incoming:
                                         orders:
                                           execution:
                                             max-pending-messages: 2
                                             max-in-flight-messages: 2
-                                        orders-dlq:
-                                          execution:
-                                            max-pending-messages: 8
-                                            max-in-flight-messages: 1
-                                      incoming:
-                                        orders:
                                           connector: test-in
                                           failure:
                                             retry:
@@ -833,6 +886,9 @@ class ChannelRegistryFailurePolicyTest {
                                               channel: orders-dlq
                                       outgoing:
                                         orders-dlq:
+                                          execution:
+                                            max-pending-messages: 8
+                                            max-in-flight-messages: 1
                                           connector: test-out
                                     """),
                             List.of(incoming, outgoing));
@@ -1141,11 +1197,11 @@ class ChannelRegistryFailurePolicyTest {
         AtomicInteger dispatches = new AtomicInteger();
         IllegalStateException processingFailure = new IllegalStateException("failed");
         FailurePolicy failurePolicy = FailurePolicy.builder()
-                .retry(RetryConfig.builder(FailurePolicy.create().retry())
+                .retry(RetryConfig.builder(FailurePolicy.create().retry().prototype())
                                .calls(3)
                                .delay(Duration.ZERO)
                                .overallTimeout(Duration.ofMillis(50))
-                               .buildPrototype())
+                               .build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
         ConsumerRegistration source = batchRegistration("orders", failurePolicy, batch -> {
@@ -1411,14 +1467,108 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
+    void testImperativeFailureOverridesDoNotRequireRawConfiguration() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        MessagingIncomingConfig channel = MessagingIncomingConfig.builder()
+                .connector("test-in")
+                .channelName("orders")
+                .failure(MessagingFailureConfig.builder()
+                                 .retry(Retry.builder().calls(2).delay(Duration.ZERO).build())
+                                 .onExhausted(FailureDisposition.DROP)
+                                 .build())
+                .build();
+        MessagingConfig config = MessagingConfig.builder()
+                .addConnector(incoming)
+                .incoming(Map.of("orders", channel))
+                .addConsumerRegistration(registration("orders", _ -> {
+                    attempts.incrementAndGet();
+                    throw new IllegalStateException("application failure");
+                }))
+                .buildPrototype();
+        assertThat(channel.config().isEmpty(), is(true));
+
+        ChannelRegistry registry = new ChannelRegistry(config, new MessagingLifecycleGuard());
+        start(registry);
+        try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
+             ConnectorDelivery delivery = reservation.start(MessageBatch.create(Message.create("order-1")))) {
+            assertThat("Typed retry and DROP must complete the delivery", delivery.await(Duration.ofSeconds(2)), is(true));
+        }
+
+        assertThat(attempts.get(), is(2));
+    }
+
+    @Test
+    void testSuppliedRetryInstanceReplacesDeclaredRetryAndExecutesDirectly() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        Retry declared = Retry.builder().calls(1).delay(Duration.ZERO).build();
+        TrackingRetry supplied = new TrackingRetry(Retry.builder().calls(3).delay(Duration.ZERO).build());
+        MessagingIncomingConfig channel = MessagingIncomingConfig.builder()
+                .connector("test-in")
+                .channelName("orders")
+                .failure(MessagingFailureConfig.builder().retry(supplied).build())
+                .build();
+        FailurePolicy declaration = FailurePolicy.builder().retry(declared).build();
+        MessagingConfig config = MessagingConfig.builder()
+                .addConnector(incoming)
+                .incoming(Map.of("orders", channel))
+                .addConsumerRegistration(registration("handler", "orders", declaration, _ -> {
+                    if (attempts.incrementAndGet() == 1) {
+                        throw new IllegalStateException("retry once");
+                    }
+                }))
+                .buildPrototype();
+        ChannelRegistry registry = new ChannelRegistry(config, new MessagingLifecycleGuard());
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+        assertThat(attempts.get(), is(2));
+        assertThat(supplied.invocations.get(), is(1));
+        assertThat(supplied.retryCounter(), is(1L));
+        assertThat(declared.retryCounter(), is(0L));
+        assertThat(channel.failure().retry().orElseThrow(), sameInstance(supplied));
+    }
+
+    @Test
+    void testDistinctCustomRetriesDoNotBecomeEquivalentThroughTheirPrototype() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        Retry delegate = Retry.builder().calls(2).delay(Duration.ZERO).build();
+        TrackingRetry first = new TrackingRetry(delegate);
+        TrackingRetry second = new TrackingRetry(delegate);
+        FailurePolicy firstPolicy = FailurePolicy.builder().retry(first).build();
+        FailurePolicy secondPolicy = FailurePolicy.builder().retry(second).build();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(
+                        List.of(registration("first-handler", "orders", firstPolicy, _ -> { }),
+                                registration("second-handler", "orders", secondPolicy, _ -> { })),
+                        yaml("""
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                """),
+                        List.of(incoming)));
+
+        assertThat(first.prototype(), sameInstance(second.prototype()));
+        assertThat(failure.getMessage(), containsString("conflicting effective failure policies"));
+        assertThat(incoming.createdCount(), is(0));
+        assertThat(first.invocations.get(), is(0));
+        assertThat(second.invocations.get(), is(0));
+    }
+
+    @Test
     void testConflictingDeclaredFailurePoliciesAreRejectedAfterConfigMerge() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         FailurePolicy firstPolicy = FailurePolicy.builder()
-                .retry(RetryConfig.builder().calls(2).buildPrototype())
+                .retry(RetryConfig.builder().calls(2).build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
         FailurePolicy secondPolicy = FailurePolicy.builder()
-                .retry(RetryConfig.builder().calls(3).buildPrototype())
+                .retry(RetryConfig.builder().calls(3).build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
 
@@ -1442,15 +1592,15 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testEquivalentCustomNestedFailurePoliciesDoNotConflict() {
+    void testEquivalentBuiltRetryPoliciesDoNotConflict() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         FailurePolicy firstPolicy = FailurePolicy.builder()
-                .retry(retryConfig(Duration.ofMillis(7), 1))
+                .retry(retry(Duration.ofMillis(7), 1))
                 .onExhausted(FailureDisposition.DEAD_LETTER)
                 .deadLetter(deadLetterConfig("orders-dlq"))
                 .build();
         FailurePolicy secondPolicy = FailurePolicy.builder()
-                .retry(retryConfig(Duration.ofMillis(7), 1))
+                .retry(retry(Duration.ofMillis(7), 1))
                 .onExhausted(FailureDisposition.DEAD_LETTER)
                 .deadLetter(deadLetterConfig("orders-dlq"))
                 .build();
@@ -1480,7 +1630,7 @@ class ChannelRegistryFailurePolicyTest {
                 .retry(RetryConfig.builder()
                                .delay(Duration.ofMillis(7))
                                .calls(2)
-                               .buildPrototype())
+                               .build())
                 .onExhausted(FailureDisposition.DEAD_LETTER)
                 .deadLetter(DeadLetterConfig.builder().channel("first-dlq").build())
                 .build();
@@ -1488,7 +1638,7 @@ class ChannelRegistryFailurePolicyTest {
                 .retry(RetryConfig.builder()
                                .delay(Duration.ofMillis(7))
                                .calls(3)
-                               .buildPrototype())
+                               .build())
                 .onExhausted(FailureDisposition.DEAD_LETTER)
                 .deadLetter(DeadLetterConfig.builder().channel("second-dlq").build())
                 .build();
@@ -1515,43 +1665,39 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testCallsOverridePreservesConflictingDeclaredRetryDelays() {
+    void testConfiguredRetryReplacesConflictingDeclaredRetryDelays() {
         TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
         FailurePolicy firstPolicy = FailurePolicy.builder()
-                .retry(RetryConfig.builder()
-                               .delay(Duration.ofMillis(7))
-                               .calls(2)
-                               .buildPrototype())
+                .retry(Retry.builder().delay(Duration.ofMillis(7)).calls(2).build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
         FailurePolicy secondPolicy = FailurePolicy.builder()
-                .retry(RetryConfig.builder()
-                               .delay(Duration.ofMillis(11))
-                               .calls(3)
-                               .buildPrototype())
+                .retry(Retry.builder().delay(Duration.ofMillis(11)).calls(3).build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("first-handler", "orders", firstPolicy, _ -> {
+                            attempts.incrementAndGet();
+                            throw new IllegalStateException("application failure");
+                        }),
+                        registration("second-handler", "orders", secondPolicy, _ -> { })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                              failure:
+                                retry:
+                                  calls: 1
+                        """),
+                List.of(incoming));
+        start(registry);
 
-        IllegalArgumentException failure = assertThrows(
-                IllegalArgumentException.class,
-                () -> registry(
-                        List.of(registration("first-handler", "orders", firstPolicy, _ -> { }),
-                                registration("second-handler", "orders", secondPolicy, _ -> { })),
-                        yaml("""
-                                messaging:
-                                  incoming:
-                                    orders:
-                                      connector: test-in
-                                      failure:
-                                        retry:
-                                          calls: 1
-                                """),
-                        List.of(incoming)));
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
 
-        assertThat(failure.getMessage(), containsString("Incoming channel orders"));
-        assertThat(failure.getMessage(), containsString("first-handler"));
-        assertThat(failure.getMessage(), containsString("second-handler"));
-        assertThat(incoming.createdCount(), is(0));
+        assertThat(incoming.createdCount(), is(1));
+        assertThat(attempts.get(), is(1));
     }
 
     @Test
@@ -1649,7 +1795,7 @@ class ChannelRegistryFailurePolicyTest {
         AtomicInteger attempts = new AtomicInteger();
         AssertionError expected = new AssertionError("fatal");
         FailurePolicy failurePolicy = FailurePolicy.builder()
-                .retry(retryConfig(Duration.ZERO, 3))
+                .retry(Retry.builder().calls(3).delay(Duration.ZERO).addApplyOn(Throwable.class).build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
         ChannelRegistry registry = registry(
@@ -1683,7 +1829,7 @@ class ChannelRegistryFailurePolicyTest {
                 "orders",
                 MessagingRejectedException.Reason.TIMEOUT);
         FailurePolicy failurePolicy = FailurePolicy.builder()
-                .retry(retryConfig(Duration.ZERO, 3))
+                .retry(Retry.builder().calls(3).delay(Duration.ZERO).addApplyOn(Throwable.class).build())
                 .build();
         ChannelRegistry registry = registry(
                 List.of(registration("first-handler", "orders", failurePolicy,
@@ -1718,11 +1864,11 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger firstAttempts = new AtomicInteger();
         AtomicInteger secondAttempts = new AtomicInteger();
-        RetryConfig retry = RetryConfig.builder(FailurePolicy.create().retry())
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
                 .calls(3)
                 .delay(Duration.ZERO)
                 .addSkipOn(IllegalArgumentException.class)
-                .buildPrototype();
+                .build();
         FailurePolicy failurePolicy = FailurePolicy.builder()
                 .retry(retry)
                 .onExhausted(FailureDisposition.DROP)
@@ -1760,7 +1906,7 @@ class ChannelRegistryFailurePolicyTest {
         AssertionError expected = new AssertionError("fatal");
         MessageBatch<String> batch = MessageBatch.create(Message.create("order-1"));
         FailurePolicy failurePolicy = FailurePolicy.builder()
-                .retry(retryConfig(Duration.ZERO, 3))
+                .retry(Retry.builder().calls(3).delay(Duration.ZERO).addApplyOn(Throwable.class).build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
         ChannelRegistry registry = registry(
@@ -1799,11 +1945,11 @@ class ChannelRegistryFailurePolicyTest {
     void testNonRetryableDeliveryUsesDispositionAfterOneAttempt() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger attempts = new AtomicInteger();
-        RetryConfig retry = RetryConfig.builder(FailurePolicy.create().retry())
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
                 .calls(3)
                 .delay(Duration.ZERO)
                 .applyOn(Set.of(IllegalArgumentException.class))
-                .buildPrototype();
+                .build();
         FailurePolicy failurePolicy = FailurePolicy.builder()
                 .retry(retry)
                 .onExhausted(FailureDisposition.DROP)
@@ -1831,11 +1977,11 @@ class ChannelRegistryFailurePolicyTest {
     void testConfiguredRetryableApplicationFailureUsesAllCalls() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger attempts = new AtomicInteger();
-        RetryConfig retry = RetryConfig.builder(FailurePolicy.create().retry())
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
                 .calls(3)
                 .delay(Duration.ZERO)
                 .applyOn(Set.of(IllegalArgumentException.class))
-                .buildPrototype();
+                .build();
         FailurePolicy failurePolicy = FailurePolicy.builder()
                 .retry(retry)
                 .onExhausted(FailureDisposition.DROP)
@@ -1864,10 +2010,10 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger attempts = new AtomicInteger();
         IOException applicationFailure = new IOException("not a runtime failure");
-        RetryConfig retry = RetryConfig.builder(FailurePolicy.create().retry())
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
                 .calls(3)
                 .delay(Duration.ZERO)
-                .buildPrototype();
+                .build();
         FailurePolicy failurePolicy = FailurePolicy.builder()
                 .retry(retry)
                 .build();
@@ -1898,11 +2044,11 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger attempts = new AtomicInteger();
         IOException applicationFailure = new IOException("retryable");
-        RetryConfig retry = RetryConfig.builder(FailurePolicy.create().retry())
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
                 .calls(3)
                 .delay(Duration.ZERO)
                 .applyOn(Set.of(IOException.class))
-                .buildPrototype();
+                .build();
         FailurePolicy failurePolicy = FailurePolicy.builder()
                 .retry(retry)
                 .onExhausted(FailureDisposition.DROP)
@@ -1931,12 +2077,12 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger attempts = new AtomicInteger();
         IOException applicationFailure = new IOException("not retryable");
-        RetryConfig retry = RetryConfig.builder(FailurePolicy.create().retry())
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
                 .calls(3)
                 .delay(Duration.ZERO)
                 .applyOn(Set.of(Throwable.class))
                 .addSkipOn(IOException.class)
-                .buildPrototype();
+                .build();
         FailurePolicy failurePolicy = FailurePolicy.builder()
                 .retry(retry)
                 .onExhausted(FailureDisposition.DROP)
@@ -1964,13 +2110,13 @@ class ChannelRegistryFailurePolicyTest {
     void testRetryTimeoutUsesDispositionWithoutWaiting() {
         TestIncomingConnector incoming = new TestIncomingConnector();
         AtomicInteger attempts = new AtomicInteger();
-        RetryConfig retry = RetryConfig.builder(FailurePolicy.create().retry())
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
                 .calls(3)
                 .delay(Duration.ofSeconds(1))
                 .delayFactor(1)
                 .jitterFactor(0)
                 .overallTimeout(Duration.ofMillis(1))
-                .buildPrototype();
+                .build();
         FailurePolicy failurePolicy = FailurePolicy.builder()
                 .retry(retry)
                 .onExhausted(FailureDisposition.DROP)
@@ -2247,8 +2393,8 @@ class ChannelRegistryFailurePolicyTest {
     void testConfiguredIncomingChannelRequiresConnector() {
         TestIncomingConnector incoming = new TestIncomingConnector();
 
-        IllegalArgumentException failure = assertThrows(
-                IllegalArgumentException.class,
+        Errors.ErrorMessagesException failure = assertThrows(
+                Errors.ErrorMessagesException.class,
                 () -> registry(List.of(registration("orders", _ -> { })),
                                           yaml("""
                                                   messaging:
@@ -2259,7 +2405,7 @@ class ChannelRegistryFailurePolicyTest {
                                           List.of(incoming)));
 
         assertThat(failure.getMessage(),
-                   containsString("Configured incoming channel orders must declare a non-blank connector"));
+                   containsString("Property \"connector\" must not be null"));
         assertThat(incoming.createdCount(), is(0));
     }
 
@@ -2267,8 +2413,8 @@ class ChannelRegistryFailurePolicyTest {
     void testConfiguredOutgoingChannelRequiresConnector() {
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
 
-        IllegalArgumentException failure = assertThrows(
-                IllegalArgumentException.class,
+        Errors.ErrorMessagesException failure = assertThrows(
+                Errors.ErrorMessagesException.class,
                 () -> registry(List.of(registration("orders", _ -> { })),
                                           yaml("""
                                                   messaging:
@@ -2279,7 +2425,7 @@ class ChannelRegistryFailurePolicyTest {
                                           List.of(outgoing)));
 
         assertThat(failure.getMessage(),
-                   containsString("Configured outgoing channel orders must declare a non-blank connector"));
+                   containsString("Property \"connector\" must not be null"));
         assertThat(outgoing.createdCount(), is(0));
     }
 
@@ -2672,11 +2818,11 @@ class ChannelRegistryFailurePolicyTest {
         };
     }
 
-    private static RetryConfig retryConfig(Duration delay, int calls) {
-        return RetryConfig.builder(FailurePolicy.create().retry())
+    private static Retry retry(Duration delay, int calls) {
+        return RetryConfig.builder(FailurePolicy.create().retry().prototype())
                 .delay(delay)
                 .calls(calls)
-                .buildPrototype();
+                .build();
     }
 
     private static DeadLetterConfig deadLetterConfig(String channel) {
@@ -2887,16 +3033,53 @@ class ChannelRegistryFailurePolicyTest {
     private interface TestSpecialMessage<T> extends Message<T> {
     }
 
+    private static final class TrackingRetry implements Retry {
+        private final Retry delegate;
+        private final AtomicInteger invocations = new AtomicInteger();
+
+        private TrackingRetry(Retry delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public RetryConfig prototype() {
+            return delegate.prototype();
+        }
+
+        @Override
+        public String name() {
+            return delegate.name();
+        }
+
+        @Override
+        public long retryCounter() {
+            return delegate.retryCounter();
+        }
+
+        @Override
+        public <T> T invoke(Supplier<? extends T> supplier) {
+            invocations.incrementAndGet();
+            return delegate.invoke(supplier);
+        }
+
+        @Override
+        public <T> T invoke(Function<RetryContext, ? extends T> function, WaitStrategy waitStrategy) {
+            invocations.incrementAndGet();
+            return delegate.invoke(function, waitStrategy);
+        }
+    }
+
     private record TestConnectorConfig(String channelName,
                                       String connector,
                                       Map<String, String> properties,
                                       Config config) {
-        private static TestConnectorConfig from(Config config) {
+        private static TestConnectorConfig from(MessagingChannelConfig config) {
+            Config source = config.config().orElse(Config.empty()).detach();
             return new TestConnectorConfig(
-                    config.get("channel-name").asString().orElseThrow(),
-                    config.get("connector").asString().orElseThrow(),
-                    Map.copyOf(config.detach().asMap().orElse(Map.of())),
-                    config.detach());
+                    config.channelName(),
+                    config.connector(),
+                    Map.copyOf(source.asMap().orElse(Map.of())),
+                    source);
         }
     }
 
@@ -2927,7 +3110,7 @@ class ChannelRegistryFailurePolicyTest {
         }
 
         @Override
-        public Optional<IncomingChannel> incoming(Config config) {
+        public Optional<IncomingChannel> incoming(MessagingIncomingConfig config) {
             configCreated.incrementAndGet();
             TestConnectorConfig connectorConfig = TestConnectorConfig.from(config);
             created.incrementAndGet();
@@ -3037,7 +3220,7 @@ class ChannelRegistryFailurePolicyTest {
         }
 
         @Override
-        public Optional<OutgoingChannel> outgoing(Config config) {
+        public Optional<OutgoingChannel> outgoing(MessagingOutgoingConfig config) {
             configCreated.incrementAndGet();
             TestConnectorConfig.from(config);
             created.incrementAndGet();

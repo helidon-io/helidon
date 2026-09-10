@@ -14,26 +14,34 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.tests.custom.connector;
+
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.Api;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
 
 /**
- * Configuration of a logical messaging channel.
+ * Custom incoming channel configuration.
  */
-@Api.Preview
-@Prototype.Blueprint
+@Prototype.Blueprint(isPublic = false)
 @Prototype.Sealed
-@Prototype.Configured
-interface MessagingChannelConfigBlueprint {
+@Prototype.Configured(root = false)
+interface CustomIncomingConfigBlueprint extends MessagingIncomingConfig {
     /**
-     * Execution overrides for this channel. Values not configured inherit the messaging defaults.
+     * In-memory endpoint override, using the connector endpoint when absent.
      *
-     * @return channel execution overrides
+     * @return endpoint override
      */
     @Option.Configured
-    @Option.DefaultMethod("create")
-    MessagingExecutionConfig execution();
+    Optional<String> endpoint();
+
+    /**
+     * Message prefix override, using the connector prefix when absent.
+     *
+     * @return prefix override
+     */
+    @Option.Configured
+    Optional<String> prefix();
 }

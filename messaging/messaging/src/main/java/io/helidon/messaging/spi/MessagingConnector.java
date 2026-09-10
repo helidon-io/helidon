@@ -20,14 +20,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
-import io.helidon.config.Config;
 import io.helidon.config.NamedService;
 
 /**
  * A configured messaging connector capable of creating channel connections.
  * <p>
- * An implementation must support at least one direction by overriding {@link #incoming(Config)},
- * {@link #outgoing(Config)}, or both. Each successful invocation must return a fresh, unstarted channel connection.
+ * An implementation must support at least one direction by overriding {@link #incoming(MessagingIncomingConfig)},
+ * {@link #outgoing(MessagingOutgoingConfig)}, or both. Each successful invocation must return a fresh, unstarted channel
+ * connection.
  */
 @Api.Preview
 public interface MessagingConnector extends NamedService {
@@ -49,7 +49,7 @@ public interface MessagingConnector extends NamedService {
      * @param channelConfig channel-specific configuration
      * @return incoming channel connection, or empty if this connector does not support incoming channels
      */
-    default Optional<IncomingChannel> incoming(Config channelConfig) {
+    default Optional<IncomingChannel> incoming(MessagingIncomingConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
         return Optional.empty();
     }
@@ -60,7 +60,7 @@ public interface MessagingConnector extends NamedService {
      * @param channelConfig channel-specific configuration
      * @return outgoing channel connection, or empty if this connector does not support outgoing channels
      */
-    default Optional<OutgoingChannel> outgoing(Config channelConfig) {
+    default Optional<OutgoingChannel> outgoing(MessagingOutgoingConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
         return Optional.empty();
     }

@@ -68,14 +68,15 @@ public final class Messaging {
      * Declares default delivery failure handling for the incoming channel named by {@link ReceiveFrom}.
      * The policy is channel- and delivery-scoped, so it covers sibling handlers and downstream outputs participating
      * in the same source delivery rather than only the annotated method invocation. An explicitly configured
-     * {@code failure} key for the incoming channel overrides the corresponding annotation member.
+     * {@code failure} option for the incoming channel overrides the corresponding declared option. Configuring
+     * {@code failure.retry} replaces the complete retry declared by this annotation.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.METHOD)
     public @interface OnFailure {
         /**
-         * Delay before retrying a failed delivery, in {@link java.time.Duration} format. This populates
+         * Delay before retrying a failed delivery, in {@link java.time.Duration} format. This populates the retry prototype's
          * {@link io.helidon.faulttolerance.RetryConfig#delay()}.
          *
          * @return retry delay
@@ -84,7 +85,7 @@ public final class Messaging {
 
         /**
          * Maximum total delivery attempts, including the initial attempt. Zero uses the messaging default of
-         * {@link Integer#MAX_VALUE} calls. Positive values populate
+         * {@link Integer#MAX_VALUE} calls. Positive values populate the retry prototype's
          * {@link io.helidon.faulttolerance.RetryConfig#calls()}. A pre-dispatch mapping failure reported through
          * {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)} or
          * {@link ConnectorDeliveryReservation#tryStartFailed(MessageBatch, RuntimeException)} is treated as exhausted

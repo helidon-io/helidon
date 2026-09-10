@@ -17,31 +17,38 @@
 package io.helidon.messaging;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
-import io.helidon.common.GenericType;
 import io.helidon.config.Config;
-import io.helidon.messaging.spi.IncomingChannel;
-import io.helidon.messaging.spi.OutgoingChannel;
 
 /**
  * One messaging topology and lifecycle.
  * <p>
  * A graph owns all channels, sources, routes, connectors, and their lifecycle. The topology is mutable only
- * through its builder and is frozen by {@link Builder#build()}.
+ * through its builder and is frozen by {@link MessagingConfig.Builder#build()}.
+ * Use each builder and its configuration for one graph only; do not reuse them after a build attempt, including
+ * a failed build. This ownership requirement is not enforced by the builder.
  */
 @Api.Preview
 public interface MessagingGraph extends RuntimeType.Api<MessagingConfig>, AutoCloseable {
     /**
-     * Create a graph builder.
+     * Create a builder for one graph. The builder must not be reused after a build attempt.
      *
      * @return graph builder
      */
-    static Builder builder() {
-        return new DefaultMessagingGraphBuilder();
+    static MessagingConfig.Builder builder() {
+        return MessagingConfig.builder();
+    }
+
+    /**
+     * Create a graph with customized configuration.
+     *
+     * @param consumer messaging configuration builder consumer
+     * @return messaging graph
+     */
+    static MessagingGraph create(Consumer<MessagingConfig.Builder> consumer) {
+        return builder().update(consumer).build();
     }
 
     /**
@@ -97,183 +104,4 @@ public interface MessagingGraph extends RuntimeType.Api<MessagingConfig>, AutoCl
     @Override
     void close();
 
-    /**
-     * Builder of a messaging graph, combining blueprint options with typed programmatic registrations.
-     */
-    abstract class Builder extends MessagingConfig.BuilderBase<Builder, MessagingConfig>
-            implements io.helidon.common.Builder<Builder, MessagingGraph> {
-        /**
-         * Create a graph builder.
-         */
-        protected Builder() {
-        }
-
-        /**
-         * Declare a channel.
-         *
-         * @param name channel name
-         * @param payloadType payload type
-         * @param <T> payload type
-         * @return typed channel handle
-         */
-        public abstract <T> MessagingChannel<T> channel(String name, Class<T> payloadType);
-
-        /**
-         * Declare a channel while preserving parameterized payload type information.
-         *
-         * @param name channel name
-         * @param payloadType payload type
-         * @param <T> payload type
-         * @return typed channel handle
-         */
-        public abstract <T> MessagingChannel<T> channel(String name, GenericType<T> payloadType);
-
-        /**
-         * Declare a channel with channel-specific execution limits.
-         *
-         * @param name channel name
-         * @param payloadType payload type
-         * @param executionConfig channel execution configuration
-         * @param <T> payload type
-         * @return typed channel handle
-         */
-        public abstract <T> MessagingChannel<T> channel(String name,
-                                                       GenericType<T> payloadType,
-                                                       MessagingExecutionConfig executionConfig);
-
-        /**
-         * Add a payload stream source.
-         * <p>
-         * The built graph owns the stream and closes it on shutdown. A failed build also closes registered streams.
-         * A channel can have at most one stream source; explicit multi-source fan-in is not part of this API version.
-         * Downstream paths of distinct stream sources must not converge on the same channel.
-         *
-         * @param channel target channel
-         * @param source source stream
-         * @param <T> payload type
-         * @return updated builder
-         * @throws IllegalArgumentException if the channel already has a stream source
-         */
-        public abstract <T> Builder payloadSource(MessagingChannel<T> channel, Stream<? extends T> source);
-
-        /**
-         * Add a message stream source.
-         * <p>
-         * The built graph owns the stream and closes it on shutdown. A failed build also closes registered streams.
-         * A channel can have at most one stream source; explicit multi-source fan-in is not part of this API version.
-         * Downstream paths of distinct stream sources must not converge on the same channel.
-         *
-         * @param channel target channel
-         * @param source source stream
-         * @param <T> payload type
-         * @return updated builder
-         * @throws IllegalArgumentException if the channel already has a stream source
-         */
-        public abstract <T> Builder messageSource(MessagingChannel<T> channel,
-                                                 Stream<? extends Message<? extends T>> source);
-
-        /**
-         * Route each delivery batch unchanged from one channel to another channel of the same type.
-         *
-         * @param source source channel
-         * @param target target channel
-         * @param <T> payload type
-         * @return updated builder
-         */
-        public abstract <T> Builder route(MessagingChannel<T> source, MessagingChannel<T> target);
-
-        /**
-         * Add a payload processor. The processor is invoked once per batch item in order and its results form one
-         * lineage-preserving derived batch. Message metadata is not propagated by a payload processor.
-         *
-         * @param source source channel
-         * @param target target channel
-         * @param processor payload processor
-         * @param <I> input payload type
-         * @param <O> output payload type
-         * @return updated builder
-         */
-        public abstract <I, O> Builder payloadProcessor(MessagingChannel<I> source,
-                                                       MessagingChannel<O> target,
-                                                       Function<? super I, ? extends O> processor);
-
-        /**
-         * Add a message processor. The processor is invoked once per batch item in order and its results form one
-         * lineage-preserving derived batch.
-         *
-         * @param source source channel
-         * @param target target channel
-         * @param processor message processor
-         * @param <I> input payload type
-         * @param <O> output payload type
-         * @return updated builder
-         */
-        public abstract <I, O> Builder messageProcessor(MessagingChannel<I> source,
-                                                       MessagingChannel<O> target,
-                                                       Function<? super Message<I>, ? extends Message<? extends O>> processor);
-
-        /**
-         * Add a payload sink.
-         *
-         * @param source source channel
-         * @param sink payload sink
-         * @param <T> payload type
-         * @return updated builder
-         */
-        public abstract <T> Builder payloadSink(MessagingChannel<T> source, Consumer<? super T> sink);
-
-        /**
-         * Add a message sink.
-         *
-         * @param source source channel
-         * @param sink message sink
-         * @param <T> payload type
-         * @return updated builder
-         */
-        public abstract <T> Builder messageSink(MessagingChannel<T> source, Consumer<? super Message<T>> sink);
-
-        /**
-         * Add a message batch sink.
-         *
-         * @param source source channel
-         * @param sink message batch sink
-         * @param <T> payload type
-         * @return updated builder
-         */
-        public abstract <T> Builder batchSink(MessagingChannel<T> source, Consumer<MessageBatch<T>> sink);
-
-        /**
-         * Add an incoming channel connection as a source.
-         * <p>
-         * The built graph owns the connection and manages its startup, delivery admission, draining, and shutdown.
-         * A failed build also closes registered connections.
-         *
-         * @param target target channel
-         * @param connection incoming channel connection
-         * @param <T> payload type
-         * @return updated builder
-         */
-        public abstract <T> Builder incomingChannel(MessagingChannel<T> target, IncomingChannel connection);
-
-        /**
-         * Add an outgoing channel connection as a required channel output.
-         * <p>
-         * The built graph owns the connection and closes it on shutdown. A failed build also closes it.
-         *
-         * @param source source channel
-         * @param connection outgoing channel connection
-         * @param <T> payload type
-         * @return updated builder
-         */
-        public abstract <T> Builder outgoingChannel(MessagingChannel<T> source, OutgoingChannel connection);
-
-        /**
-         * Freeze and build the graph.
-         *
-         * @return immutable graph topology
-         * @throws IllegalArgumentException if any channel has no required output or the topology is invalid
-         */
-        @Override
-        public abstract MessagingGraph build();
-    }
 }

@@ -20,6 +20,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -34,7 +36,11 @@ import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
 import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingChannelConfig;
+import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
+import io.helidon.messaging.spi.MessagingOutgoingConfig;
 import io.helidon.messaging.spi.OutgoingChannel;
 
 import org.junit.jupiter.api.Test;
@@ -54,21 +60,26 @@ class MessagingGraphBuilderTest {
     @Test
     void configurationLeavesAreSealed() {
         for (Class<?> type : List.of(MessagingConfig.class,
-                                    MessagingChannelConfig.class,
                                     MessagingExecutionConfig.class,
                                     MessageBatchConfig.class,
                                     FailurePolicy.class,
                                     DeadLetterConfig.class)) {
             assertThat(type.getName(), type.isSealed(), is(true));
         }
-        assertThat(MessagingConnectorProviderConfig.class.isSealed(), is(false));
+        for (Class<?> type : List.of(MessagingConnectorProviderConfig.class,
+                                    MessagingChannelConfig.class,
+                                    MessagingIncomingConfig.class,
+                                    MessagingOutgoingConfig.class)) {
+            assertThat(type.getName(), type.isSealed(), is(false));
+        }
     }
 
     @Test
     void exposesCommonBuilderContract() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("events", String.class);
-        io.helidon.common.Builder<MessagingGraph.Builder, MessagingGraph> commonBuilder = builder;
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
+        builder.channel(channel);
+        io.helidon.common.Builder<MessagingConfig.Builder, MessagingGraph> commonBuilder = builder;
 
         assertThat(commonBuilder.update(it -> it.payloadSink(channel, _ -> { })), sameInstance(builder));
         try (MessagingGraph graph = commonBuilder.get()) {
@@ -78,8 +89,9 @@ class MessagingGraphBuilderTest {
 
     @Test
     void channelIsOpaqueAndEmissionRequiresExplicitStart() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("events", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
+        builder.channel(channel);
         builder.payloadSink(channel, _ -> { });
 
         assertThat(channel instanceof Emitter<?>, is(false));
@@ -94,8 +106,9 @@ class MessagingGraphBuilderTest {
 
     @Test
     void configurationPrototypeBuildsTheProgrammaticGraph() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("configured", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("configured", String.class);
+        builder.channel(channel);
         List<String> received = new ArrayList<>();
         builder.payloadSink(channel, received::add);
 
@@ -118,6 +131,21 @@ class MessagingGraphBuilderTest {
     }
 
     @Test
+    void connectionConfigurationNameMustMatchItsMapKey() {
+        MessagingConfig.Builder builder = MessagingGraph.builder()
+                .addConnector(new TestMessagingConnector())
+                .outgoing(Map.of("orders", MessagingOutgoingConfig.builder()
+                        .connector("test")
+                        .channelName("different")
+                        .build()));
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, builder::build);
+
+        assertThat(failure.getMessage(), containsString("outgoing channel orders"));
+        assertThat(failure.getMessage(), containsString("channel-name different"));
+    }
+
+    @Test
     void buildFinalizesRoutedDeliveryLimits() {
         MessagingExecutionConfig sourceConfig = MessagingExecutionConfig.builder()
                 .maxPendingMessages(8)
@@ -127,9 +155,22 @@ class MessagingGraphBuilderTest {
                 .maxPendingMessages(1)
                 .maxInFlightMessages(3)
                 .build();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", GenericType.create(String.class), sourceConfig);
-        MessagingChannel<String> target = builder.channel("target", GenericType.create(String.class), targetConfig);
+        MessagingConfig.Builder builder = MessagingGraph.builder()
+                .addConnector(new TestMessagingConnector())
+                .outgoing(Map.of("source", MessagingOutgoingConfig.builder()
+                                         .connector("test")
+                                         .channelName("source")
+                                         .execution(sourceConfig)
+                                         .build(),
+                                 "target", MessagingOutgoingConfig.builder()
+                                         .connector("test")
+                                         .channelName("target")
+                                         .execution(targetConfig)
+                                         .build()));
+        MessagingChannel<String> source = MessagingChannel.create("source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(source)
+                .channel(target);
         builder.route(source, target)
                 .payloadSink(target, _ -> { });
 
@@ -158,12 +199,17 @@ class MessagingGraphBuilderTest {
             }
         });
 
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("incoming", String.class);
-        MessagingChannel<String> target = builder.channel("processed", GenericType.create(String.class),
-                                                          MessagingExecutionConfig.builder()
-                                                                  .maxInFlightMessages(1)
-                                                                  .build());
+        MessagingConfig.Builder builder = MessagingGraph.builder()
+                .addConnector(new TestMessagingConnector())
+                .outgoing(Map.of("processed", MessagingOutgoingConfig.builder()
+                        .connector("test")
+                        .channelName("processed")
+                        .execution(MessagingExecutionConfig.builder().maxInFlightMessages(1).build())
+                        .build()));
+        MessagingChannel<String> source = MessagingChannel.create("incoming", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("processed", String.class);
+        builder.channel(source)
+                .channel(target);
         builder.incomingChannel(source, connection)
                 .route(source, target)
                 .messageSink(target, received::set);
@@ -182,9 +228,11 @@ class MessagingGraphBuilderTest {
     @Test
     void incomingChannelOwnershipRejectsReuseAndClosesUnstartedConnections() {
         TestIncomingChannel connection = new TestIncomingChannel(_ -> { });
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> first = builder.channel("first", String.class);
-        MessagingChannel<String> second = builder.channel("second", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> first = MessagingChannel.create("first", String.class);
+        MessagingChannel<String> second = MessagingChannel.create("second", String.class);
+        builder.channel(first)
+                .channel(second);
         builder.incomingChannel(first, connection);
 
         IllegalArgumentException duplicate = assertThrows(IllegalArgumentException.class,
@@ -199,9 +247,11 @@ class MessagingGraphBuilderTest {
 
     @Test
     void payloadAndMessageSourcesFeedIndependentChannels() throws InterruptedException {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Integer> payloadChannel = builder.channel("payload-numbers", Integer.class);
-        MessagingChannel<Integer> messageChannel = builder.channel("message-numbers", Integer.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<Integer> payloadChannel = MessagingChannel.create("payload-numbers", Integer.class);
+        MessagingChannel<Integer> messageChannel = MessagingChannel.create("message-numbers", Integer.class);
+        builder.channel(payloadChannel)
+                .channel(messageChannel);
         List<Message<Integer>> delivered = new CopyOnWriteArrayList<>();
         CountDownLatch delivery = new CountDownLatch(2);
         Consumer<Message<Integer>> sink = message -> {
@@ -225,11 +275,15 @@ class MessagingGraphBuilderTest {
 
     @Test
     void payloadAndMessageProcessorsUseTypedChannels() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> payloadInput = builder.channel("payload-input", String.class);
-        MessagingChannel<Integer> lengths = builder.channel("lengths", Integer.class);
-        MessagingChannel<String> messageInput = builder.channel("message-input", String.class);
-        MessagingChannel<String> upperCase = builder.channel("upper-case", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> payloadInput = MessagingChannel.create("payload-input", String.class);
+        MessagingChannel<Integer> lengths = MessagingChannel.create("lengths", Integer.class);
+        MessagingChannel<String> messageInput = MessagingChannel.create("message-input", String.class);
+        MessagingChannel<String> upperCase = MessagingChannel.create("upper-case", String.class);
+        builder.channel(payloadInput)
+                .channel(lengths)
+                .channel(messageInput)
+                .channel(upperCase);
         List<Integer> deliveredLengths = new ArrayList<>();
         AtomicReference<Message<String>> deliveredMessage = new AtomicReference<>();
 
@@ -259,9 +313,11 @@ class MessagingGraphBuilderTest {
 
     @Test
     void routesRetainLocalMetadataWithTheMessageEnvelope() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("local-metadata-source", String.class);
-        MessagingChannel<String> target = builder.channel("local-metadata-target", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> source = MessagingChannel.create("local-metadata-source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("local-metadata-target", String.class);
+        builder.channel(source)
+                .channel(target);
         AtomicReference<Message<String>> delivered = new AtomicReference<>();
         builder.route(source, target).messageSink(target, delivered::set);
         Message<String> message = Message.builder("payload")
@@ -279,8 +335,9 @@ class MessagingGraphBuilderTest {
 
     @Test
     void emitterOverloadsPreservePayloadMessageAndBatchBoundaries() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("overloaded-emitter", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("overloaded-emitter", String.class);
+        builder.channel(channel);
         List<MessageBatch<String>> delivered = new ArrayList<>();
         builder.batchSink(channel, delivered::add);
         Message<String> message = Message.builder("message").header("trace", "one").build();
@@ -311,10 +368,13 @@ class MessagingGraphBuilderTest {
 
     @Test
     void messageSubtypeAndOuterMessagesDisambiguateObjectEmitter() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Object> directChannel = builder.channel("direct-objects", Object.class);
-        MessagingChannel<String> processorInput = builder.channel("processor-strings", String.class);
-        MessagingChannel<Object> processorOutput = builder.channel("processor-objects", Object.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<Object> directChannel = MessagingChannel.create("direct-objects", Object.class);
+        MessagingChannel<String> processorInput = MessagingChannel.create("processor-strings", String.class);
+        MessagingChannel<Object> processorOutput = MessagingChannel.create("processor-objects", Object.class);
+        builder.channel(directChannel)
+                .channel(processorInput)
+                .channel(processorOutput);
         List<Message<Object>> delivered = new ArrayList<>();
         ConnectorMessage<String> connectorMessage = new ConnectorMessage<>(
                 "connector",
@@ -361,8 +421,9 @@ class MessagingGraphBuilderTest {
 
     @Test
     void stronglyTypedMessageImplementationUsesPayloadOverload() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<MessagePayload> channel = builder.channel("message-payload", MessagePayload.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<MessagePayload> channel = MessagingChannel.create("message-payload", MessagePayload.class);
+        builder.channel(channel);
         AtomicReference<Message<MessagePayload>> delivered = new AtomicReference<>();
         MessagePayload payload = new MessagePayload("payload");
         builder.messageSink(channel, delivered::set);
@@ -378,8 +439,9 @@ class MessagingGraphBuilderTest {
 
     @Test
     void stronglyTypedMessageBatchUsesPayloadOverload() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<MessageBatch<String>> channel = builder.channel("batch-payload", new GenericType<>() { });
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<MessageBatch<String>> channel = MessagingChannel.create("batch-payload", new GenericType<>() { });
+        builder.channel(channel);
         AtomicReference<Message<MessageBatch<String>>> delivered = new AtomicReference<>();
         MessageBatch<String> payload = MessageBatch.create(Message.create("payload"));
         builder.messageSink(channel, delivered::set);
@@ -395,9 +457,11 @@ class MessagingGraphBuilderTest {
 
     @Test
     void messageImplementationCanBeUsedAsPayload() throws InterruptedException {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<MessagePayload> input = builder.channel("message-payload-input", MessagePayload.class);
-        MessagingChannel<MessagePayload> output = builder.channel("message-payload-output", MessagePayload.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<MessagePayload> input = MessagingChannel.create("message-payload-input", MessagePayload.class);
+        MessagingChannel<MessagePayload> output = MessagingChannel.create("message-payload-output", MessagePayload.class);
+        builder.channel(input)
+                .channel(output);
         AtomicReference<MessagePayload> delivered = new AtomicReference<>();
         CountDownLatch delivery = new CountDownLatch(1);
         MessagePayload payload = new MessagePayload("payload");
@@ -418,8 +482,9 @@ class MessagingGraphBuilderTest {
 
     @Test
     void connectorKeepsOutputRegistrationOrder() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("ordered", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("ordered", String.class);
+        builder.channel(channel);
         List<String> outputs = new ArrayList<>();
         builder.messageSink(channel, _ -> outputs.add("first"))
                 .outgoingChannel(channel, new OutgoingChannel() {
@@ -451,7 +516,7 @@ class MessagingGraphBuilderTest {
     }
 
     @Test
-    void successfulBuildTransfersResourceOwnershipAndRejectsBuilderReuse() {
+    void successfulBuildTransfersResourceOwnership() {
         AtomicInteger streamCloses = new AtomicInteger();
         AtomicBoolean connectorReleased = new AtomicBoolean();
         OutgoingChannel connector = new OutgoingChannel() {
@@ -473,15 +538,13 @@ class MessagingGraphBuilderTest {
                 connectorReleased.set(true);
             }
         };
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("transferred", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("transferred", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, Stream.<String>empty().onClose(streamCloses::incrementAndGet))
                 .outgoingChannel(channel, connector);
         MessagingGraph graph = builder.build();
         try {
-            assertThrows(IllegalStateException.class, builder::build);
-            assertThrows(IllegalStateException.class, () -> builder.payloadSink(channel, _ -> { }));
-
             assertThat(streamCloses.get(), is(0));
             assertThat(connectorReleased.get(), is(false));
         } finally {
@@ -498,8 +561,9 @@ class MessagingGraphBuilderTest {
     void closingUnstartedGraphClosesRegisteredResources() {
         AtomicBoolean streamClosed = new AtomicBoolean();
         TestConnector connector = new TestConnector();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("abandoned", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("abandoned", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, Stream.<String>empty().onClose(() -> streamClosed.set(true)))
                 .outgoingChannel(channel, connector);
 
@@ -508,16 +572,17 @@ class MessagingGraphBuilderTest {
 
         assertThat(streamClosed.get(), is(true));
         assertThat(connector.closed.get(), is(true));
-        assertThrows(IllegalStateException.class, builder::build);
     }
 
     @Test
     void closingUnstartedGraphContinuesAfterResourceError() {
         AssertionError closeError = new AssertionError("first close failed");
         AtomicBoolean secondStreamClosed = new AtomicBoolean();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> firstChannel = builder.channel("first-cleanup", String.class);
-        MessagingChannel<String> secondChannel = builder.channel("second-cleanup", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> firstChannel = MessagingChannel.create("first-cleanup", String.class);
+        MessagingChannel<String> secondChannel = MessagingChannel.create("second-cleanup", String.class);
+        builder.channel(firstChannel)
+                .channel(secondChannel);
         builder.payloadSource(firstChannel, Stream.<String>empty().onClose(() -> {
                     throw closeError;
                 }))
@@ -540,9 +605,10 @@ class MessagingGraphBuilderTest {
         CountDownLatch closeExited = new CountDownLatch(1);
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
         OrderedConnector connector = new OrderedConnector(new CopyOnWriteArrayList<>());
-        MessagingGraph.Builder builder = MessagingGraph.builder()
+        MessagingConfig.Builder builder = MessagingGraph.builder()
                 .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT);
-        MessagingChannel<String> channel = builder.channel("blocking-stream-cleanup", String.class);
+        MessagingChannel<String> channel = MessagingChannel.create("blocking-stream-cleanup", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, Stream.<String>empty().onClose(() -> {
                     closeEntered.countDown();
                     awaitUninterruptibly(releaseClose);
@@ -583,8 +649,9 @@ class MessagingGraphBuilderTest {
     void closingUnstartedGraphForceClosesConnectorBeforeNormalClose() {
         List<String> lifecycle = new CopyOnWriteArrayList<>();
         OrderedConnector connector = new OrderedConnector(lifecycle);
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("abandoned-connector", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("abandoned-connector", String.class);
+        builder.channel(channel);
         builder.outgoingChannel(channel, connector);
 
         MessagingGraph graph = builder.build();
@@ -599,9 +666,10 @@ class MessagingGraphBuilderTest {
         CountDownLatch releaseClose = new CountDownLatch(1);
         CountDownLatch closeExited = new CountDownLatch(1);
         AtomicReference<Throwable> buildFailure = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder()
+        MessagingConfig.Builder builder = MessagingGraph.builder()
                 .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT);
-        MessagingChannel<String> channel = builder.channel("outputless-blocking-cleanup", String.class);
+        MessagingChannel<String> channel = MessagingChannel.create("outputless-blocking-cleanup", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, Stream.<String>empty().onClose(() -> {
             closeEntered.countDown();
             awaitUninterruptibly(releaseClose);
@@ -634,8 +702,9 @@ class MessagingGraphBuilderTest {
 
     @Test
     void multipleStreamSourcesOnOneChannelAreRejected() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("merged", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("merged", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, Stream.of("first"))
                 .payloadSink(channel, _ -> { });
 
@@ -652,10 +721,13 @@ class MessagingGraphBuilderTest {
     void downstreamPathsOfStreamSourcesCannotConverge() {
         AtomicBoolean firstClosed = new AtomicBoolean();
         AtomicBoolean secondClosed = new AtomicBoolean();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> first = builder.channel("first-source", String.class);
-        MessagingChannel<String> second = builder.channel("second-source", String.class);
-        MessagingChannel<String> merged = builder.channel("merged-target", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> first = MessagingChannel.create("first-source", String.class);
+        MessagingChannel<String> second = MessagingChannel.create("second-source", String.class);
+        MessagingChannel<String> merged = MessagingChannel.create("merged-target", String.class);
+        builder.channel(first)
+                .channel(second)
+                .channel(merged);
         builder.payloadSource(first, Stream.<String>empty().onClose(() -> firstClosed.set(true)))
                 .payloadSource(second, Stream.<String>empty().onClose(() -> secondClosed.set(true)))
                 .route(first, merged)
@@ -677,9 +749,11 @@ class MessagingGraphBuilderTest {
         AtomicReference<String> delivered = new AtomicReference<>();
         AtomicReference<Throwable> emissionFailure = new AtomicReference<>();
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> input = builder.channel("draining-input", String.class);
-        MessagingChannel<String> output = builder.channel("draining-output", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> input = MessagingChannel.create("draining-input", String.class);
+        MessagingChannel<String> output = MessagingChannel.create("draining-output", String.class);
+        builder.channel(input)
+                .channel(output);
         builder.payloadSink(input, payload -> {
                     handlerEntered.countDown();
                     await(releaseHandler);
@@ -723,9 +797,11 @@ class MessagingGraphBuilderTest {
         AtomicReference<Throwable> childFailure = new AtomicReference<>();
         AtomicReference<Throwable> parentFailure = new AtomicReference<>();
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> first = builder.channel("a", String.class);
-        MessagingChannel<String> second = builder.channel("b", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> first = MessagingChannel.create("a", String.class);
+        MessagingChannel<String> second = MessagingChannel.create("b", String.class);
+        builder.channel(first)
+                .channel(second);
         builder.payloadSink(first, _ -> {
                     targetStarted.countDown();
                     try {
@@ -797,8 +873,9 @@ class MessagingGraphBuilderTest {
     @Test
     void asynchronousStreamSourceFailureIsReportedByClose() {
         IllegalStateException sourceFailure = new IllegalStateException("stream delivery failed");
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("failing-stream", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("failing-stream", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, Stream.of("event"))
                 .payloadSink(channel, _ -> {
                     throw sourceFailure;
@@ -836,8 +913,9 @@ class MessagingGraphBuilderTest {
         Stream<String> source = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
                 false);
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("checked-stream-failure", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("checked-stream-failure", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, source)
                 .payloadSink(channel, _ -> { });
         MessagingGraph graph = builder.build();
@@ -882,8 +960,9 @@ class MessagingGraphBuilderTest {
                         Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
                         false)
                 .onClose(() -> MessagingGraphBuilderTest.<RuntimeException>rethrow(streamCloseFailure));
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("checked-stream-close-failure", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("checked-stream-close-failure", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, source)
                 .payloadSink(channel, _ -> { });
         MessagingGraph graph = builder.build();
@@ -943,9 +1022,10 @@ class MessagingGraphBuilderTest {
                     }
                     streamClosed.set(true);
                 });
-        MessagingGraph.Builder builder = MessagingGraph.builder()
+        MessagingConfig.Builder builder = MessagingGraph.builder()
                 .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT);
-        MessagingChannel<String> channel = builder.channel("blocked-stream-iteration", String.class);
+        MessagingChannel<String> channel = MessagingChannel.create("blocked-stream-iteration", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, source)
                 .payloadSink(channel, _ -> { });
         MessagingGraph graph = builder.build();
@@ -999,8 +1079,9 @@ class MessagingGraphBuilderTest {
                         Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
                         false)
                 .onClose(() -> streamClosed.set(true));
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("failing-stream-iteration", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("failing-stream-iteration", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, source)
                 .payloadSink(channel, _ -> { });
         MessagingGraph graph = builder.build();
@@ -1031,8 +1112,9 @@ class MessagingGraphBuilderTest {
         MessagingRejectedException rejection = new MessagingRejectedException(
                 "downstream",
                 MessagingRejectedException.Reason.SHUTDOWN);
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("drain-failure", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("drain-failure", String.class);
+        builder.channel(channel);
         builder.payloadSource(channel, Stream.of("event"))
                 .payloadSink(channel, _ -> {
                     sinkEntered.countDown();
@@ -1056,8 +1138,9 @@ class MessagingGraphBuilderTest {
 
     @Test
     void batchSinksReceiveOneImmutableBatch() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("events", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
+        builder.channel(channel);
         AtomicReference<MessageBatch<String>> received = new AtomicReference<>();
         builder.batchSink(channel, received::set);
 
@@ -1083,9 +1166,11 @@ class MessagingGraphBuilderTest {
 
     @Test
     void processorFailureLeavesUntouchedBatchSuffixNotAttempted() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel("target", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> source = MessagingChannel.create("source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(source)
+                .channel(target);
         AtomicInteger invocations = new AtomicInteger();
         AtomicReference<MessageBatch<String>> received = new AtomicReference<>();
         builder.payloadProcessor(source, target, value -> {
@@ -1117,8 +1202,9 @@ class MessagingGraphBuilderTest {
     @Test
     void channelRetainsParameterizedPayloadType() {
         GenericType<List<String>> payloadType = new GenericType<>() { };
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<List<String>> channel = builder.channel("lists", payloadType);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<List<String>> channel = MessagingChannel.create("lists", payloadType);
+        builder.channel(channel);
         builder.payloadSink(channel, _ -> { });
 
         try (MessagingGraph _ = builder.build()) {
@@ -1129,10 +1215,12 @@ class MessagingGraphBuilderTest {
 
     @Test
     void channelsCannotCrossBuilderOrGraphBoundaries() {
-        MessagingGraph.Builder firstBuilder = MessagingGraph.builder();
-        MessagingGraph.Builder secondBuilder = MessagingGraph.builder();
-        MessagingChannel<String> first = firstBuilder.channel("first", String.class);
-        MessagingChannel<String> second = secondBuilder.channel("second", String.class);
+        MessagingConfig.Builder firstBuilder = MessagingGraph.builder();
+        MessagingConfig.Builder secondBuilder = MessagingGraph.builder();
+        MessagingChannel<String> first = MessagingChannel.create("first", String.class);
+        MessagingChannel<String> second = MessagingChannel.create("second", String.class);
+        firstBuilder.channel(first);
+        secondBuilder.channel(second);
         firstBuilder.payloadSink(first, _ -> { });
         secondBuilder.payloadSink(second, _ -> { });
 
@@ -1148,9 +1236,11 @@ class MessagingGraphBuilderTest {
     @Test
     void failedTopologyBuildClosesTransferredStream() {
         AtomicBoolean closed = new AtomicBoolean();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> first = builder.channel("first", String.class);
-        MessagingChannel<String> second = builder.channel("second", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> first = MessagingChannel.create("first", String.class);
+        MessagingChannel<String> second = MessagingChannel.create("second", String.class);
+        builder.channel(first)
+                .channel(second);
         TestConnector connector = new TestConnector();
         builder.payloadSource(first, Stream.<String>empty().onClose(() -> closed.set(true)))
                 .outgoingChannel(first, connector)
@@ -1162,40 +1252,39 @@ class MessagingGraphBuilderTest {
         assertThat(failure.getMessage(), containsString("Cyclic synchronous messaging route"));
         assertThat(closed.get(), is(true));
         assertThat(connector.closed.get(), is(true));
-        assertThrows(IllegalStateException.class, builder::build);
     }
 
     @Test
     void duplicateChannelNamesAreRejected() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("events", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
+        builder.channel(channel);
         builder.payloadSink(channel, _ -> { });
 
-        assertThrows(IllegalArgumentException.class, () -> builder.channel("events", String.class));
+        assertThrows(IllegalArgumentException.class,
+                     () -> builder.channel(MessagingChannel.create("events", String.class)));
 
-        try (MessagingGraph _ = builder.build()) {
-            assertThrows(IllegalStateException.class, () -> builder.channel("later", String.class));
+        try (MessagingGraph graph = builder.build()) {
+            assertThat(graph.prototype().channelHandles(), is(List.of(channel)));
         }
     }
 
     @Test
     void primitiveChannelPayloadTypesAreRejected() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-                                                         () -> builder.channel("primitive", int.class));
+                                                         () -> MessagingChannel.create("primitive", int.class));
 
         assertThat(failure.getMessage(), containsString("must not be primitive"));
     }
 
     @Test
     void outputlessChannelsAreRejectedAtBuild() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        builder.channel("discarded", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        builder.channel(MessagingChannel.create("discarded", String.class));
 
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, builder::build);
 
         assertThat(failure.getMessage(), containsString("discarded has no required output"));
-        assertThrows(IllegalStateException.class, builder::build);
     }
 
     private static void await(CountDownLatch latch) {
@@ -1270,6 +1359,7 @@ class MessagingGraphBuilderTest {
     private static final class TestIncomingChannel implements IncomingChannel {
         private final Consumer<IncomingConnectorContext> source;
         private final AtomicBoolean closed = new AtomicBoolean();
+        private final CountDownLatch stopped = new CountDownLatch(1);
 
         private TestIncomingChannel(Consumer<IncomingConnectorContext> source) {
             this.source = source;
@@ -1278,10 +1368,12 @@ class MessagingGraphBuilderTest {
         @Override
         public void run(IncomingConnectorContext context) {
             source.accept(context);
+            awaitUninterruptibly(stopped);
         }
 
         @Override
         public void drain() {
+            stopped.countDown();
         }
 
         @Override
@@ -1292,6 +1384,24 @@ class MessagingGraphBuilderTest {
         @Override
         public void close() {
             closed.set(true);
+            stopped.countDown();
+        }
+    }
+
+    private static final class TestMessagingConnector implements MessagingConnector {
+        @Override
+        public String type() {
+            return "test";
+        }
+
+        @Override
+        public MessagingConnectorProviderConfig prototype() {
+            return RegistryTestSupport.prototype("test");
+        }
+
+        @Override
+        public Optional<OutgoingChannel> outgoing(MessagingOutgoingConfig config) {
+            return Optional.of(new TestConnector());
         }
     }
 
