@@ -172,7 +172,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.myThread = Thread.currentThread();
         try {
             ProxyProtocolData proxyProtocolData = ctx.proxyProtocolData().orElse(null);
-
             while (canRun) {
                 currentlyReadingPrologue = true;
                 HttpPrologue prologue = http1prologue.readPrologue();
@@ -298,6 +297,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     throw tooManyConcurrentRequests(prologue, headers);
                 }
             }
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            throw new CloseConnectionException("Connection closed by client", e);
         } catch (CloseConnectionException e) {
             throw e;
         } catch (BadRequestException e) {

@@ -48,6 +48,7 @@ import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.socket.TlsNioSocket;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.InterruptableTask;
@@ -353,6 +354,12 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         } catch (CloseConnectionException e) {
             // end of request stream - safe to close the connection, as it was requested by our client
             helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
+        } catch (DataReader.InsufficientDataAvailableException | SocketWriterException e) {
+            // the connection ended while reading or writing data
+            helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            helidonSocket.log(LOGGER, TRACE, "connection interrupted", e);
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof SocketException) {
                 // socket exception - the socket failed, probably killed by OS, proxy or client
@@ -525,7 +532,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 int expectedBytes = candidate.bytesToIdentifyConnection();
 
                 ServerConnectionSelector.Support supports;
-                if (expectedBytes == 0 || expectedBytes < currentBuffer.available()) {
+                if (expectedBytes == 0 || expectedBytes <= currentBuffer.available()) {
                     supports = candidate.supports(currentBuffer);
                 } else {
                     // we need more data, let's keep this provider for now

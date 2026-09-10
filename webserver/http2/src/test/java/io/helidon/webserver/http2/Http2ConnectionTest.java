@@ -22,6 +22,7 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
@@ -360,6 +361,23 @@ class Http2ConnectionTest {
                 () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
                 () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
         );
+    }
+
+    @Test
+    void peerCloseWhileReadingPrefaceClosesConnection() {
+        byte[] preface = Http2Util.prefaceData().readBytes();
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(Arrays.copyOf(preface, preface.length - 1));
+        DataWriter writer = mock(DataWriter.class);
+        Http2Connection connection = new Http2Connection(http2Context(writer, DataReader.create(input::poll)),
+                                                         Http2Config.create(),
+                                                         List.of());
+        connection.expectPreface();
+
+        CloseConnectionException exception = assertThrows(CloseConnectionException.class,
+                                                          () -> connection.handle(mock(Limit.class)));
+
+        assertThat(exception.getCause(), instanceOf(DataReader.InsufficientDataAvailableException.class));
     }
 
     @Test

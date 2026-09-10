@@ -253,6 +253,21 @@ class Http1ConnectionTest {
         }
     }
 
+    @Test
+    void peerCloseWhileReadingHeadersClosesConnection() {
+        AtomicReference<byte[]> input =
+                new AtomicReference<>("GET / HTTP/1.1\r\nHost:".getBytes(StandardCharsets.UTF_8));
+        Http1Connection connection = createConnection(DataReader.create(() -> input.getAndSet(null)),
+                                                      mock(DataWriter.class),
+                                                      DirectHandlers.create(),
+                                                      Router.empty());
+
+        CloseConnectionException exception = assertThrows(CloseConnectionException.class,
+                                                          () -> connection.handle(FixedLimit.create()));
+
+        assertThat(exception.getCause(), instanceOf(DataReader.InsufficientDataAvailableException.class));
+    }
+
     private static Http1Connection createConnection(DataWriter dataWriter) {
         return createConnection(mock(DataReader.class), dataWriter, DirectHandlers.create(), Router.empty());
     }
