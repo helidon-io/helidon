@@ -34,6 +34,9 @@ import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.WritableBaggage;
 
+/**
+ * Supplies a tracer that records spans for compatibility test assertions.
+ */
 @Service.Singleton
 public class TestTracerFactory implements Supplier<Tracer> {
     private final TestSpanExporter exporter = new TestSpanExporter();
@@ -44,6 +47,11 @@ public class TestTracerFactory implements Supplier<Tracer> {
         return tracer;
     }
 
+    /**
+     * Returns the exporter that stores completed spans.
+     *
+     * @return test span exporter
+     */
     public TestSpanExporter exporter() {
         return exporter;
     }

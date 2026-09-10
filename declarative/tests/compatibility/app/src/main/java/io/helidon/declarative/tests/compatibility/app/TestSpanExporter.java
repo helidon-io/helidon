@@ -17,15 +17,26 @@
 package io.helidon.declarative.tests.compatibility.app;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.helidon.tracing.Span;
 
+/**
+ * Stores completed spans for compatibility test assertions.
+ */
 public class TestSpanExporter {
     private final List<RecordedSpan> spans = new CopyOnWriteArrayList<>();
 
+    /**
+     * Waits up to ten seconds for a completed span with the given name.
+     *
+     * @param name span name
+     * @return recorded span
+     * @throws InterruptedException if interrupted while waiting
+     * @throws AssertionError if no matching span is recorded before the timeout
+     */
     public RecordedSpan awaitSpan(String name) throws InterruptedException {
         long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
         while (System.nanoTime() < deadline) {
@@ -39,6 +50,9 @@ public class TestSpanExporter {
         throw new AssertionError("Span not exported: " + name + ", exported spans: " + spans);
     }
 
+    /**
+     * Clears all recorded spans.
+     */
     public void clear() {
         spans.clear();
     }
@@ -47,6 +61,14 @@ public class TestSpanExporter {
         spans.add(new RecordedSpan(name, kind, Map.copyOf(tags), error));
     }
 
+    /**
+     * Completed span data used by compatibility test assertions.
+     *
+     * @param name span name
+     * @param kind span kind
+     * @param tags span tags
+     * @param error failure reported when ending the span, or {@code null} on normal completion
+     */
     public record RecordedSpan(String name, Span.Kind kind, Map<String, Object> tags, Throwable error) {
     }
 }

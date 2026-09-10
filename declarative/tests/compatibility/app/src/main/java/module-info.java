@@ -24,6 +24,8 @@ module io.helidon.declarative.tests.compatibility.app {
     requires io.helidon.json.binding;
     requires io.helidon.logging.common;
     requires io.helidon.metrics.api;
+    requires io.helidon.metrics.providers.micrometer;
+    requires io.helidon.metrics.systemmeters;
     requires io.helidon.scheduling;
     requires io.helidon.service.registry;
     requires io.helidon.tracing;

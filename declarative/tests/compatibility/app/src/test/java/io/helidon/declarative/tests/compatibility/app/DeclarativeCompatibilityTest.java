@@ -17,11 +17,10 @@
 package io.helidon.declarative.tests.compatibility.app;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.declarative.tests.compatibility.v4.LegacyFeatureEndpoint;
@@ -61,10 +60,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @SuppressWarnings({"helidon:api:incubating", "helidon:api:preview"})
@@ -114,7 +111,7 @@ class DeclarativeCompatibilityTest {
 
     @Test
     @Order(1)
-    void testHttpServerAndRestClient() {
+    void testHttpServerAndRestClient() throws Exception {
         var response = client.get("/legacy/hello/Ada")
                 .queryParam("prefix", "Hola")
                 .header(HeaderValues.create("X-Legacy", "direct"))
@@ -185,7 +182,7 @@ class DeclarativeCompatibilityTest {
                 .request(JsonObject.class);
         assertThat(metricsResponse.status(), is(Status.OK_200));
 
-        JsonObject appMetrics = metricsResponse.entity().objectValue("application").orElseThrow();
+        JsonObject appMetrics = metricsResponse.entity();
         assertMetric(appMetrics, "LegacyFeatureEndpoint.counted", 1);
         assertMetric(appMetrics, "LegacyFeatureEndpoint.gaugeValue", 42);
         assertThat(appMetrics.objectValue("legacy-timed").orElse(null), notNullValue());
@@ -270,34 +267,23 @@ class DeclarativeCompatibilityTest {
         assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start), lessThan(2500L));
     }
 
-    private static void assertServerBulkhead(LegacyFeatureEndpoint endpoint) {
-        List<CompletableFuture<String>> calls = new ArrayList<>();
-        calls.add(CompletableFuture.supplyAsync(() -> endpoint.bulkhead(Optional.of(1500))));
-        for (int i = 0; i < 5; i++) {
-            calls.add(CompletableFuture.supplyAsync(() -> endpoint.bulkhead(Optional.empty())));
-        }
-
-        List<Throwable> failures = new ArrayList<>();
-        for (CompletableFuture<String> call : calls) {
-            Throwable failure = joinFailure(call);
-            if (failure != null) {
-                failures.add(failure);
+    private static void assertServerBulkhead(LegacyFeatureEndpoint endpoint) throws Exception {
+        var entered = new CountDownLatch(1);
+        var release = new CompletableFuture<Void>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var active = executor.submit(() -> endpoint.bulkhead(() -> {
+                entered.countDown();
+                release.join();
+            }));
+            try {
+                assertThat("Legacy bulkhead invocation started", entered.await(10, TimeUnit.SECONDS), is(true));
+                assertThrows(BulkheadException.class, () -> endpoint.bulkhead(() -> {
+                    throw new AssertionError("Rejected bulkhead invocation must not execute");
+                }));
+            } finally {
+                release.complete(null);
             }
-        }
-
-        assertThat(failures.size(), greaterThanOrEqualTo(1));
-        if (failures.stream()
-                .noneMatch(it -> it instanceof BulkheadException)) {
-            fail("Expected a bulkhead rejection, but failures were: " + failures);
-        }
-    }
-
-    private static Throwable joinFailure(CompletableFuture<String> call) {
-        try {
-            call.join();
-            return null;
-        } catch (CompletionException e) {
-            return e.getCause();
+            assertThat(active.get(10, TimeUnit.SECONDS), is("bulkhead"));
         }
     }
 

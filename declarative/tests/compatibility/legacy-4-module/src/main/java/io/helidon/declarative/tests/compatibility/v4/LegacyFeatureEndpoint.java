@@ -138,12 +138,10 @@ public class LegacyFeatureEndpoint implements LegacyHttpApi {
         return "bulkhead";
     }
 
-    private void sleep(Optional<Integer> sleepMillis) {
-        try {
-            Thread.sleep(sleepMillis.orElse(0));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+    @Ft.Bulkhead(limit = 1, queueLength = 0)
+    public String bulkhead(Runnable action) {
+        action.run();
+        return "bulkhead";
     }
 
     @Http.GET
@@ -201,5 +199,13 @@ public class LegacyFeatureEndpoint implements LegacyHttpApi {
 
     public String validated(@Validation.String.NotBlank String value) {
         return "validated:" + value;
+    }
+
+    private void sleep(Optional<Integer> sleepMillis) {
+        try {
+            Thread.sleep(sleepMillis.orElse(0));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
