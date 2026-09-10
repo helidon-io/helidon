@@ -911,7 +911,7 @@ class HostHeaderTenantDiscoveryTest {
                                     res.status(Status.SERVICE_UNAVAILABLE_503).send();
                                 }
                             })
-                            .get("/jwks", (req, res) -> {
+                            .get("/jwks", (_, res) -> {
                                 jwkHits.incrementAndGet();
                                 if (jwkAvailable) {
                                     res.send(JWK_JSON);
