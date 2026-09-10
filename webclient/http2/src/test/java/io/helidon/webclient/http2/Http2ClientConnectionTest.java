@@ -2514,7 +2514,12 @@ class Http2ClientConnectionTest {
             doAnswer(invocation -> {
                 maybeFailWrites();
                 maybeBlockWriteNow();
-                writtenFrames.add(invocation.<BufferData>getArgument(0).copy());
+                BufferData frame = invocation.getArgument(0);
+                byte[] bytes = new byte[frame.available()];
+                for (int i = 0; i < bytes.length; i++) {
+                    bytes[i] = (byte) frame.get(i);
+                }
+                writtenFrames.add(BufferData.create(bytes));
                 initialWriteNowCallsCompleted.countDown();
                 return null;
             }).when(dataWriter).writeNow(any(BufferData.class));
