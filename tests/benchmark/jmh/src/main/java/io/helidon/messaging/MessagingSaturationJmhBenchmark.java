@@ -154,14 +154,15 @@ public class MessagingSaturationJmhBenchmark {
          */
         @Setup(Level.Trial)
         public void setup() {
-            MessagingGraph.Builder builder = MessagingGraph.builder()
+            MessagingConfig.Builder builder = MessagingGraph.builder()
                     .queueCapacity(0)
                     .maxPendingAdmissions(PENDING_BUDGET)
                     .maxPendingMessages(PENDING_BUDGET)
                     .maxInFlightMessages(1)
                     .shutdownTimeout(Duration.ofSeconds(30));
             try {
-                MessagingChannel<String> channel = builder.channel("saturated", String.class);
+                MessagingChannel<String> channel = MessagingChannel.create("saturated", String.class);
+                builder.channel(channel);
                 builder.payloadSink(channel, _ -> Blackhole.consumeCPU(WORK_TOKENS));
                 graph = builder.build();
                 graph.start();

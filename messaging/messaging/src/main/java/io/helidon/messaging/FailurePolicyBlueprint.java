@@ -21,7 +21,7 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
-import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.Retry;
 
 /**
  * Portable incoming delivery failure policy.
@@ -30,23 +30,21 @@ import io.helidon.faulttolerance.RetryConfig;
 @Prototype.Blueprint(decorator = MessagingConfigSupport.FailurePolicyBuilderDecorator.class)
 @Prototype.Sealed
 @Prototype.Configured
-@Prototype.CustomMethods(MessagingConfigSupport.FailurePolicyBuilderDecorator.class)
 interface FailurePolicyBlueprint {
     /**
-     * Fault tolerance retry configuration under {@code failure.retry}, with {@code calls}, {@code delay},
-     * {@code delay-factor}, {@code jitter}, {@code jitter-factor}, {@code max-delay}, {@code overall-timeout}, and
-     * {@code enable-metrics}; omitted keys use messaging defaults of {@code Integer.MAX_VALUE} calls, a one-second
-     * initial delay, factor-two exponential backoff, no jitter, a one-minute maximum delay, a practically unbounded
-     * timeout, and disabled metrics.
+     * Fault tolerance retry instance used for incoming delivery. When no retry is supplied, all default policies
+     * share one messaging retry instance with {@code Integer.MAX_VALUE} calls, a one-second initial delay,
+     * factor-two exponential backoff, no jitter, a one-minute maximum delay, a practically unbounded timeout,
+     * and disabled instance metrics.
      * <p>
-     * A programmatically supplied {@link RetryConfig} retains its FT values. To customize the messaging defaults, use
-     * {@code RetryConfig.builder(FailurePolicy.create().retry())}.
+     * An explicitly configured or programmatically supplied retry is complete and is used as supplied. Options omitted
+     * within an explicit retry use fault-tolerance defaults, without inheriting messaging defaults.
      *
-     * @return retry configuration
+     * @return retry instance
      */
     @Option.Configured
     @Option.DefaultMethod(type = MessagingConfigSupport.FailurePolicyBuilderDecorator.class, value = "defaultRetry")
-    RetryConfig retry();
+    Retry retry();
 
     /**
      * Terminal disposition after delivery attempts are exhausted; dead letter requires a target channel. A

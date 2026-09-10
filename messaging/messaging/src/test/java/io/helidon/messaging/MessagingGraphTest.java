@@ -661,8 +661,9 @@ class MessagingGraphTest {
         CountDownLatch releaseSink = new CountDownLatch(1);
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
         AtomicReference<MessagingGraph> graphReference = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder().from(config(SHUTDOWN_TIMEOUT));
-        MessagingChannel<String> channel = builder.channel("orders", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder().from(config(SHUTDOWN_TIMEOUT));
+        MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
+        builder.channel(channel);
         builder.payloadSink(channel, _ -> {
             try {
                 graphReference.get().close();
@@ -811,8 +812,9 @@ class MessagingGraphTest {
         CountDownLatch releaseLock = new CountDownLatch(1);
         AtomicInteger produced = new AtomicInteger();
         AtomicInteger delivered = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder().from(config(SHUTDOWN_TIMEOUT));
-        MessagingChannel<Integer> channel = builder.channel("stream", Integer.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder().from(config(SHUTDOWN_TIMEOUT));
+        MessagingChannel<Integer> channel = MessagingChannel.create("stream", Integer.class);
+        builder.channel(channel);
         DefaultMessagingGraph graph = (DefaultMessagingGraph) builder.payloadSource(
                         channel,
                         Stream.generate(() -> {
@@ -1011,9 +1013,11 @@ class MessagingGraphTest {
         CountDownLatch streamDelivered = new CountDownLatch(1);
         CountDownLatch streamClosed = new CountDownLatch(1);
         Message<String> streamMessage = message("from-stream");
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> upstream = builder.channel("upstream", String.class);
-        MessagingChannel<String> downstream = builder.channel("downstream", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> upstream = MessagingChannel.create("upstream", String.class);
+        MessagingChannel<String> downstream = MessagingChannel.create("downstream", String.class);
+        builder.channel(upstream)
+                .channel(downstream);
         builder.route(upstream, downstream)
                 .messageSource(downstream, Stream.of(streamMessage).onClose(streamClosed::countDown))
                 .messageSink(downstream, message -> {

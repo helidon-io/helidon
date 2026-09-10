@@ -43,7 +43,7 @@ final class MessagingTypes {
     static final TypeName FAILURE_DISPOSITION =
             TypeName.create("io.helidon.messaging.FailureDisposition");
     static final TypeName FAILURE_POLICY = TypeName.create("io.helidon.messaging.FailurePolicy");
-    static final TypeName RETRY_CONFIG = TypeName.create("io.helidon.faulttolerance.RetryConfig");
+    static final TypeName RETRY = TypeName.create("io.helidon.faulttolerance.Retry");
     static final TypeName SUPPLIER_EXCEPTION = TypeName.create("io.helidon.faulttolerance.SupplierException");
     static final TypeName HEADER_PARAM =
             TypeName.create("io.helidon.messaging.Messaging.HeaderParam");

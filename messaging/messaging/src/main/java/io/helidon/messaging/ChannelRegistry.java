@@ -16,12 +16,9 @@
 
 package io.helidon.messaging;
 
-import java.util.List;
 import java.util.Optional;
 
-import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Service-registry bootstrap for the shared messaging graph.
@@ -32,17 +29,8 @@ class ChannelRegistry implements MessagingRuntime {
     private final DefaultMessagingGraph graph;
 
     @Service.Inject
-    ChannelRegistry(List<ConsumerRegistration> consumerRegistrations,
-                    List<EmitterRegistration> emitterRegistrations,
-                    Config config,
-                    ServiceRegistry serviceRegistry,
-                    MessagingLifecycleGuard lifecycleGuard) {
-        this.graph = (DefaultMessagingGraph) MessagingConfig.builder()
-                .serviceRegistry(serviceRegistry)
-                .config(config.get("messaging"))
-                .consumerRegistrations(consumerRegistrations)
-                .emitterRegistrations(emitterRegistrations)
-                .build();
+    ChannelRegistry(MessagingConfig config, MessagingLifecycleGuard lifecycleGuard) {
+        this.graph = (DefaultMessagingGraph) config.build();
         try {
             graph.prepare();
         } catch (RuntimeException | Error e) {

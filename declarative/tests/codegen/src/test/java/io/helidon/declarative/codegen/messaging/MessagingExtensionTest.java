@@ -578,7 +578,7 @@ class MessagingExtensionTest {
         String source = generatedSource(result, "FailurePolicyConsumer__MessagingConsumer_");
         assertThat(source, source.contains("private static final FailurePolicy DECLARED_FAILURE_POLICY"), is(true));
         assertThat(source,
-                   source.contains(".retry(RetryConfig.builder(FailurePolicy.create().retry())"),
+                   source.contains(".retry(Retry.builder().from(FailurePolicy.create().retry().prototype())"),
                    is(true));
         assertThat(source,
                    source.contains(".delay(Duration.parse(\"PT0.25S\")).calls(3)"),
@@ -619,7 +619,7 @@ class MessagingExtensionTest {
         String annotatedSource = generatedSource(result, "BareFailurePolicyConsumer__MessagingConsumer_");
         assertThat(annotatedSource, annotatedSource.contains("DECLARED_FAILURE_POLICY"), is(true));
         assertThat(annotatedSource,
-                   annotatedSource.contains(".retry(RetryConfig.builder(FailurePolicy.create().retry())"),
+                   annotatedSource.contains(".retry(Retry.builder().from(FailurePolicy.create().retry().prototype())"),
                    is(true));
         assertThat(annotatedSource,
                    annotatedSource.contains(".delay(Duration.parse(\"PT1S\")).calls(2147483647)"),
@@ -2169,7 +2169,7 @@ class MessagingExtensionTest {
                 .addClasspath(COMPILER_CLASSPATH)
                 .addClasspath(loadClass("io.helidon.builder.api.Prototype"))
                 .addClasspath(loadClass("io.helidon.config.ConfigBuilderSupport"))
-                .addClasspath(loadClass("io.helidon.faulttolerance.RetryConfig"))
+                .addClasspath(loadClass("io.helidon.faulttolerance.Retry"))
                 .addClasspath(loadClass("io.helidon.messaging.Messaging"))
                 .update(this::addProcessor)
                 .printDiagnostics(false)

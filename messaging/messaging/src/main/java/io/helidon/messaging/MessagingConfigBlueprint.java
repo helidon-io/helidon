@@ -24,13 +24,16 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
-import io.helidon.config.Config;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingConnectorProvider;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
+import io.helidon.messaging.spi.MessagingOutgoingConfig;
 
 /**
  * Messaging configuration.
+ * Use each builder and its configuration to create one graph only. Do not reuse them after a build attempt,
+ * including a failed build. Configuration snapshots do not duplicate streams or channel connections.
  */
 @Prototype.Blueprint(decorator = MessagingConfigSupport.BuilderDecorator.class)
 @Prototype.Sealed
@@ -94,15 +97,6 @@ interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
     Duration shutdownTimeout();
 
     /**
-     * Logical channel settings, keyed by channel name.
-     *
-     * @return channel settings
-     */
-    @Option.Configured
-    @Option.Singular
-    Map<String, MessagingChannelConfig> channel();
-
-    /**
      * Consumer and processor registrations contributing channel outputs.
      *
      * @return registrations
@@ -124,7 +118,6 @@ interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
      * @return channel handles
      */
     @Option.Access("")
-    @Option.Singular
     List<MessagingChannel<?>> channelHandles();
 
     /**
@@ -149,18 +142,20 @@ interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
     List<MessagingConnector> connector();
 
     /**
-     * Incoming channel configurations, keyed by channel name.
+     * Incoming channel configurations, keyed by channel name, whose execution settings take precedence over outgoing
+     * configurations of the same logical channel.
      *
      * @return incoming channel configurations
      */
     @Option.Configured
-    Map<String, Config> incoming();
+    Map<String, MessagingIncomingConfig> incoming();
 
     /**
-     * Outgoing channel configurations, keyed by channel name.
+     * Outgoing channel configurations, keyed by channel name; their execution settings apply only when the logical
+     * channel has no incoming configuration.
      *
      * @return outgoing channel configurations
      */
     @Option.Configured
-    Map<String, Config> outgoing();
+    Map<String, MessagingOutgoingConfig> outgoing();
 }

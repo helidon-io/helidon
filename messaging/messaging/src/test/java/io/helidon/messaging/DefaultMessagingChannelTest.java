@@ -18,6 +18,8 @@ package io.helidon.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CountDownLatch;
@@ -29,8 +31,11 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import io.helidon.common.GenericType;
 import io.helidon.messaging.spi.ChannelConnection;
+import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
+import io.helidon.messaging.spi.MessagingOutgoingConfig;
+import io.helidon.messaging.spi.OutgoingChannel;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -44,8 +49,9 @@ class DefaultMessagingChannelTest {
     @Test
     void customPayloadIsDelivered() {
         List<CustomPayload> delivered = new ArrayList<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<CustomPayload> channel = builder.channel("custom", CustomPayload.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<CustomPayload> channel = MessagingChannel.create("custom", CustomPayload.class);
+        builder.channel(channel);
         builder.messageSink(channel, message -> delivered.add(message.entity()));
 
         try (MessagingGraph graph = builder.build()) {
@@ -61,10 +67,13 @@ class DefaultMessagingChannelTest {
     @Test
     void independentlyBuiltInputsCanFeedOneChannel() {
         List<String> delivered = new ArrayList<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> first = builder.channel("first", String.class);
-        MessagingChannel<String> second = builder.channel("second", String.class);
-        MessagingChannel<String> merged = builder.channel("merged", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> first = MessagingChannel.create("first", String.class);
+        MessagingChannel<String> second = MessagingChannel.create("second", String.class);
+        MessagingChannel<String> merged = MessagingChannel.create("merged", String.class);
+        builder.channel(first)
+                .channel(second)
+                .channel(merged);
         builder.route(first, merged)
                 .route(second, merged)
                 .messageSink(merged, message -> delivered.add(message.entity()));
@@ -82,8 +91,9 @@ class DefaultMessagingChannelTest {
     void earlierOutputSuccessMakesLaterConfirmedFailureIndeterminate() {
         AtomicInteger firstOutputInvocations = new AtomicInteger();
         RuntimeException itemFailure = new RuntimeException("second output rejected the item");
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("fan-out", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("fan-out", String.class);
+        builder.channel(channel);
         builder.batchSink(channel, _ -> firstOutputInvocations.incrementAndGet())
                 .batchSink(channel, batch -> {
                     throw new BatchDeliveryException("second output failed",
@@ -111,8 +121,9 @@ class DefaultMessagingChannelTest {
         AtomicInteger firstOutputInvocations = new AtomicInteger();
         AtomicInteger laterOutputInvocations = new AtomicInteger();
         RuntimeException itemFailure = new RuntimeException("second output failed");
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("fan-out", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("fan-out", String.class);
+        builder.channel(channel);
         builder.batchSink(channel, _ -> firstOutputInvocations.incrementAndGet())
                 .batchSink(channel, batch -> {
                     throw new BatchDeliveryException(
@@ -151,12 +162,11 @@ class DefaultMessagingChannelTest {
     @Test
     void targetAdmissionRejectionBeforeDispatchIsNotAttempted() {
         AtomicInteger targetInvocations = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel(
-                "target",
-                GenericType.create(String.class),
-                MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
+        MessagingConfig.Builder builder = builderWithLimitedTarget();
+        MessagingChannel<String> source = MessagingChannel.create("source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(source)
+                .channel(target);
         builder.route(source, target)
                 .batchSink(target, _ -> targetInvocations.incrementAndGet());
         MessageBatch<String> batch = MessageBatch.create(List.of(Message.create("first"),
@@ -182,12 +192,11 @@ class DefaultMessagingChannelTest {
     void earlierFanOutSuccessMakesTargetAdmissionRejectionIndeterminate() {
         AtomicInteger earlierOutputInvocations = new AtomicInteger();
         AtomicInteger targetInvocations = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel(
-                "target",
-                GenericType.create(String.class),
-                MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
+        MessagingConfig.Builder builder = builderWithLimitedTarget();
+        MessagingChannel<String> source = MessagingChannel.create("source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(source)
+                .channel(target);
         builder.batchSink(source, _ -> earlierOutputInvocations.incrementAndGet())
                 .route(source, target)
                 .batchSink(target, _ -> targetInvocations.incrementAndGet());
@@ -212,9 +221,11 @@ class DefaultMessagingChannelTest {
     @Test
     void targetCancellationAfterDispatchRemainsIndeterminate() {
         AtomicInteger targetInvocations = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel("target", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> source = MessagingChannel.create("source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(source)
+                .channel(target);
         builder.route(source, target)
                 .batchSink(target, _ -> {
                     targetInvocations.incrementAndGet();
@@ -243,12 +254,11 @@ class DefaultMessagingChannelTest {
         AtomicInteger sourceSideEffects = new AtomicInteger();
         AtomicInteger targetInvocations = new AtomicInteger();
         AtomicReference<Emitter<String>> targetEmitter = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel(
-                "target",
-                GenericType.create(String.class),
-                MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
+        MessagingConfig.Builder builder = builderWithLimitedTarget();
+        MessagingChannel<String> source = MessagingChannel.create("source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(source)
+                .channel(target);
         builder.batchSink(source, _ -> {
                     sourceSideEffects.incrementAndGet();
                     targetEmitter.get().emit(MessageBatch.create(List.of(Message.create("first"),
@@ -276,12 +286,11 @@ class DefaultMessagingChannelTest {
     void processorSideEffectsBeforeTargetRejectionRemainIndeterminate() {
         AtomicInteger processorInvocations = new AtomicInteger();
         AtomicInteger targetInvocations = new AtomicInteger();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel(
-                "target",
-                GenericType.create(String.class),
-                MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
+        MessagingConfig.Builder builder = builderWithLimitedTarget();
+        MessagingChannel<String> source = MessagingChannel.create("source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(source)
+                .channel(target);
         builder.payloadProcessor(source, target, payload -> {
                     processorInvocations.incrementAndGet();
                     return payload;
@@ -308,8 +317,9 @@ class DefaultMessagingChannelTest {
     @Test
     void closingBeforeStartClosesStreamInput() {
         AtomicBoolean streamClosed = new AtomicBoolean();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Object> channel = builder.channel("stream", Object.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<Object> channel = MessagingChannel.create("stream", Object.class);
+        builder.channel(channel);
         MessagingGraph graph = builder.payloadSource(channel,
                                                       Stream.empty().onClose(() -> streamClosed.set(true)))
                 .payloadSink(channel, _ -> { })
@@ -325,8 +335,9 @@ class DefaultMessagingChannelTest {
     void activeUnboundedStreamClosesGracefully() throws InterruptedException {
         CountDownLatch delivered = new CountDownLatch(1);
         AtomicBoolean streamClosed = new AtomicBoolean();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<Integer> channel = builder.channel("stream", Integer.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<Integer> channel = MessagingChannel.create("stream", Integer.class);
+        builder.channel(channel);
         MessagingGraph graph = builder.payloadSource(channel,
                                                       Stream.generate(() -> 1)
                                                               .onClose(() -> streamClosed.set(true)))
@@ -463,6 +474,16 @@ class DefaultMessagingChannelTest {
         assertThat(sourceFailure.get() instanceof MessagingRejectedException, is(true));
     }
 
+    private static MessagingConfig.Builder builderWithLimitedTarget() {
+        return MessagingGraph.builder()
+                .addConnector(new TargetConnector())
+                .outgoing(Map.of("target", MessagingOutgoingConfig.builder()
+                        .connector("test")
+                        .channelName("target")
+                        .execution(MessagingExecutionConfig.builder().maxInFlightMessages(1).build())
+                        .build()));
+    }
+
     private static void awaitUninterruptibly(CountDownLatch latch) {
         boolean interrupted = false;
         while (true) {
@@ -479,5 +500,38 @@ class DefaultMessagingChannelTest {
     }
 
     private record CustomPayload(String value) {
+    }
+
+    private static final class TargetConnector implements MessagingConnector {
+        @Override
+        public String type() {
+            return "test";
+        }
+
+        @Override
+        public MessagingConnectorProviderConfig prototype() {
+            return RegistryTestSupport.prototype("test");
+        }
+
+        @Override
+        public Optional<OutgoingChannel> outgoing(MessagingOutgoingConfig config) {
+            return Optional.of(new OutgoingChannel() {
+                @Override
+                public void start() {
+                }
+
+                @Override
+                public void sendBatch(MessageBatch<?> batch) {
+                }
+
+                @Override
+                public void forceClose() {
+                }
+
+                @Override
+                public void close() {
+                }
+            });
+        }
     }
 }

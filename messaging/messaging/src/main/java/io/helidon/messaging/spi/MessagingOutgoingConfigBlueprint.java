@@ -14,32 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.spi;
 
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
-import io.helidon.common.GenericType;
 
 /**
- * Immutable typed handle to a channel owned by a {@link MessagingGraph}.
- * <p>
- * A channel does not own topology or lifecycle. Use {@link MessagingGraph#emitter(MessagingChannel)} for imperative
- * emission and close the graph to release all channel resources.
- *
- * @param <T> payload type
+ * Common configuration of an outgoing messaging channel connection.
+ * Connector-specific blueprints extend {@link io.helidon.messaging.spi.MessagingOutgoingConfig}.
  */
 @Api.Preview
-public interface MessagingChannel<T> {
-    /**
-     * Channel name.
-     *
-     * @return channel name
-     */
-    String name();
-
-    /**
-     * Complete channel payload type.
-     *
-     * @return payload type
-     */
-    GenericType<T> payloadType();
+@Prototype.Blueprint
+@Prototype.Configured
+interface MessagingOutgoingConfigBlueprint extends MessagingChannelConfigBlueprint {
 }

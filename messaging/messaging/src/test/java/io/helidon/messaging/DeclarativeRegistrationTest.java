@@ -30,6 +30,7 @@ import io.helidon.config.Config;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -289,7 +290,7 @@ class DeclarativeRegistrationTest {
             }
 
             @Override
-            public Optional<IncomingChannel> incoming(Config config) {
+            public Optional<IncomingChannel> incoming(MessagingIncomingConfig config) {
                 throw new AssertionError("Output validation must run before connector creation");
             }
         };

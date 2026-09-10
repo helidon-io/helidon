@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.messaging.BatchDeliveryException;
 import io.helidon.messaging.BatchItemOutcome;
 import io.helidon.messaging.ConnectorDelivery;
@@ -286,10 +286,10 @@ class MessagingPublicApiTest {
 
     @Test
     void nestedFailurePolicyConfigurationIsUsableOutsideItsPackage() {
-        RetryConfig retry = RetryConfig.builder()
+        Retry retry = Retry.builder()
                 .delay(Duration.ofMillis(250))
                 .calls(3)
-                .buildPrototype();
+                .build();
         DeadLetterConfig deadLetter = DeadLetterConfig.builder()
                 .channel("orders-dlq")
                 .build();
@@ -299,8 +299,9 @@ class MessagingPublicApiTest {
                 .deadLetter(deadLetter)
                 .build();
 
-        assertThat(policy.retry().delay(), is(Duration.ofMillis(250)));
-        assertThat(policy.retry().calls(), is(3));
+        assertThat(policy.retry(), sameInstance(retry));
+        assertThat(policy.retry().prototype().delay(), is(Duration.ofMillis(250)));
+        assertThat(policy.retry().prototype().calls(), is(3));
         assertThat(policy.onExhausted(), is(FailureDisposition.DEAD_LETTER));
         assertThat(policy.deadLetter().orElseThrow().channel(), is("orders-dlq"));
     }

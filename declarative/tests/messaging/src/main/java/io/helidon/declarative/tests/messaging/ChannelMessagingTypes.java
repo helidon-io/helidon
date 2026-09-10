@@ -43,6 +43,7 @@ import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingConnectorProvider;
 import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Service;
@@ -530,7 +531,7 @@ class ChannelMessagingTypes {
                 }
 
                 @Override
-                public Optional<IncomingChannel> incoming(Config channelConfig) {
+                public Optional<IncomingChannel> incoming(MessagingIncomingConfig channelConfig) {
                     return Optional.of(new TestIncomingChannel(observer));
                 }
             };
@@ -704,7 +705,7 @@ class ChannelMessagingTypes {
                 }
 
                 @Override
-                public Optional<IncomingChannel> incoming(Config channelConfig) {
+                public Optional<IncomingChannel> incoming(MessagingIncomingConfig channelConfig) {
                     return Optional.of(new ShutdownIncomingChannel(SOURCE_STARTED.get()));
                 }
             };

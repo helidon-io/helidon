@@ -53,8 +53,9 @@ class MessageNullPayloadTest {
                 return MessageHeaders.empty();
             }
         };
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("messages", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("messages", String.class);
+        builder.channel(channel);
         builder.payloadSink(channel, _ -> { });
 
         try (MessagingGraph graph = builder.build()) {
@@ -72,8 +73,9 @@ class MessageNullPayloadTest {
         AtomicInteger entityCalls = new AtomicInteger();
         MessagingException entityFailure = new MessagingException("entity unavailable");
         Message<String> unavailable = unavailableMessage(entityCalls, entityFailure);
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("unavailable", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("unavailable", String.class);
+        builder.channel(channel);
         builder.messageSink(channel, _ -> { });
 
         try (MessagingGraph graph = builder.build()) {
@@ -99,8 +101,9 @@ class MessageNullPayloadTest {
                 1,
                 new MessagingException("mapping failed"));
         AtomicReference<Message<String>> delivered = new AtomicReference<>();
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("dead-letter", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("dead-letter", String.class);
+        builder.channel(channel);
         builder.messageSink(channel, delivered::set);
 
         try (MessagingGraph graph = builder.build()) {
@@ -120,8 +123,9 @@ class MessageNullPayloadTest {
                 "source",
                 1,
                 new MessagingException("handler failed"));
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> channel = builder.channel("dead-letter", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = MessagingChannel.create("dead-letter", String.class);
+        builder.channel(channel);
         builder.messageSink(channel, _ -> { });
 
         try (MessagingGraph graph = builder.build()) {
@@ -138,9 +142,11 @@ class MessageNullPayloadTest {
 
     @Test
     void imperativePayloadProcessorRejectsNullResult() {
-        MessagingGraph.Builder builder = MessagingGraph.builder();
-        MessagingChannel<String> source = builder.channel("source", String.class);
-        MessagingChannel<String> target = builder.channel("target", String.class);
+        MessagingConfig.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> source = MessagingChannel.create("source", String.class);
+        MessagingChannel<String> target = MessagingChannel.create("target", String.class);
+        builder.channel(source)
+                .channel(target);
         builder.payloadProcessor(source, target, _ -> null)
                 .payloadSink(target, _ -> { });
 

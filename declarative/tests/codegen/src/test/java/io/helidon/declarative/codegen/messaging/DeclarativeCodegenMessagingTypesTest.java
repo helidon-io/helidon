@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.SupplierException;
 import io.helidon.messaging.BatchDeliveryException;
 import io.helidon.messaging.BatchItemOutcome;
@@ -97,7 +97,7 @@ class DeclarativeCodegenMessagingTypesTest {
         checkField(toCheck, checked, fields, "OBJECTS", Objects.class);
         checkField(toCheck, checked, fields, "ON_FAILURE", Messaging.OnFailure.class);
         checkField(toCheck, checked, fields, "RECEIVE_FROM", Messaging.ReceiveFrom.class);
-        checkField(toCheck, checked, fields, "RETRY_CONFIG", RetryConfig.class);
+        checkField(toCheck, checked, fields, "RETRY", Retry.class);
         checkField(toCheck, checked, fields, "SUPPLIER_EXCEPTION", SupplierException.class);
         checkField(toCheck, checked, fields, "SEND_TO", Messaging.SendTo.class);
         checkField(toCheck, checked, fields, "PROCESSOR_REGISTRATION", ProcessorRegistration.class);

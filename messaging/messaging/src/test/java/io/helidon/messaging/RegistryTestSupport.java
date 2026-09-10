@@ -64,11 +64,13 @@ final class RegistryTestSupport implements AutoCloseable {
             runtimeConfig = Config.just(ConfigSources.create(root),
                                         ConfigSources.create(config));
         }
-        return new ChannelRegistry(consumers,
-                                   emitters,
-                                   runtimeConfig,
-                                   manager.registry(),
-                                   new MessagingLifecycleGuard());
+        MessagingConfig messagingConfig = MessagingConfig.builder()
+                .serviceRegistry(manager.registry())
+                .config(runtimeConfig.get("messaging"))
+                .consumerRegistrations(consumers)
+                .emitterRegistrations(emitters)
+                .buildPrototype();
+        return new ChannelRegistry(messagingConfig, new MessagingLifecycleGuard());
     }
 
     @Override
