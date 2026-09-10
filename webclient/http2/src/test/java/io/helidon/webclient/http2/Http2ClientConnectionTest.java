@@ -357,11 +357,20 @@ class Http2ClientConnectionTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"HEAD, 200, headers", "HEAD, 426, headers", "GET, 304, headers",
-                "HEAD, 200, data", "HEAD, 426, data", "GET, 304, data",
-                "HEAD, 200, padded", "HEAD, 426, padded", "GET, 304, padded",
-                "HEAD, 200, trailers", "HEAD, 426, trailers", "GET, 304, trailers"})
-    void responseWithoutContentPreservesMetadataAndReleasesStream(String methodName, int statusCode, String termination) {
+    @CsvSource({"HEAD, 200, headers, 0", "HEAD, 426, headers, 0", "GET, 304, headers, 0",
+                "HEAD, 200, data, 0", "HEAD, 426, data, 0", "GET, 304, data, 0",
+                "HEAD, 200, padded, 3", "HEAD, 426, padded, 3", "GET, 304, padded, 3",
+                "HEAD, 200, padded, 127", "HEAD, 426, padded, 127", "GET, 304, padded, 127",
+                "HEAD, 200, padded, 128", "HEAD, 426, padded, 128", "GET, 304, padded, 128",
+                "HEAD, 200, padded, 255", "HEAD, 426, padded, 255", "GET, 304, padded, 255",
+                "HEAD, 200, padded-buffer, 127", "HEAD, 426, padded-buffer, 127", "GET, 304, padded-buffer, 127",
+                "HEAD, 200, padded-buffer, 128", "HEAD, 426, padded-buffer, 128", "GET, 304, padded-buffer, 128",
+                "HEAD, 200, padded-buffer, 255", "HEAD, 426, padded-buffer, 255", "GET, 304, padded-buffer, 255",
+                "HEAD, 200, trailers, 0", "HEAD, 426, trailers, 0", "GET, 304, trailers, 0"})
+    void responseWithoutContentPreservesMetadataAndReleasesStream(String methodName,
+                                                                 int statusCode,
+                                                                 String termination,
+                                                                 int padding) {
         Method method = Method.create(methodName);
         Status status = Status.create(statusCode);
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
@@ -386,7 +395,12 @@ class Http2ClientConnectionTest {
                 assertThat(connection.tryStream(STREAM_CONFIG), nullValue());
                 switch (termination) {
                 case "data" -> test.offerInbound(dataFrame(stream.streamId(), new byte[0], true));
-                case "padded" -> test.offerInbound(paddedDataFrame(stream.streamId(), new byte[0], true));
+                case "padded" -> test.offerInbound(paddedDataFrame(stream.streamId(), new byte[0], true, padding));
+                case "padded-buffer" -> {
+                    // Mutable buffers expose signed bytes, unlike the reader's read-only buffers.
+                    Http2FrameData frame = paddedDataFrame(stream.streamId(), new byte[0], true, padding);
+                    assertThat(connection.handle(frame.header(), frame.data()), is(true));
+                }
                 case "trailers" -> test.offerInbound(dataFrame(stream.streamId(), new byte[0], false),
                                                      encodedHeaderFrame(stream.streamId(),
                                                                         encodedTrailers(),
@@ -455,7 +469,7 @@ class Http2ClientConnectionTest {
             assertThat(malformedStream.readHeaders().status(), is(status));
             byte[] forbiddenContent = "forbidden".getBytes(StandardCharsets.UTF_8);
             test.offerInbound(padded
-                                      ? paddedDataFrame(malformedStream.streamId(), forbiddenContent, endOfStream)
+                                      ? paddedDataFrame(malformedStream.streamId(), forbiddenContent, endOfStream, 3)
                                       : dataFrame(malformedStream.streamId(), forbiddenContent, endOfStream),
                               encodedHeaderFrame(siblingStream.streamId(), encodedResponseHeaders(false), inboundTable, huffman),
                               dataFrame(siblingStream.streamId(), "sibling".getBytes(StandardCharsets.UTF_8), false));
@@ -812,8 +826,7 @@ class Http2ClientConnectionTest {
         return new Http2FrameData(header, BufferData.create(bytes));
     }
 
-    private static Http2FrameData paddedDataFrame(int streamId, byte[] bytes, boolean endOfStream) {
-        int padding = 3;
+    private static Http2FrameData paddedDataFrame(int streamId, byte[] bytes, boolean endOfStream, int padding) {
         byte[] paddedBytes = new byte[1 + bytes.length + padding];
         paddedBytes[0] = (byte) padding;
         System.arraycopy(bytes, 0, paddedBytes, 1, bytes.length);
