@@ -45,6 +45,8 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 // Use by both RoutingTest and RulesTest to share the same test methods
 abstract class RoutingTestBase {
+    static final String GET_CATCHALL_RESPONSE = "get_catchall";
+
     private static final Header MULTI_HANDLER = HeaderValues.createCached(
             HeaderNames.create("X-Multi-Handler"), "true");
     private static final String HEAD_ROUTE_HEADER = "X-Head-Route";
@@ -67,7 +69,7 @@ abstract class RoutingTestBase {
 
     static void sendHead(ServerResponse res, String responseMessage) {
         res.headers().set(HeaderValues.createCached(HeaderNames.create(HEAD_ROUTE_HEADER), responseMessage));
-        res.headers().contentLength(responseMessage.getBytes(StandardCharsets.UTF_8).length);
+        res.headers().contentLength(GET_CATCHALL_RESPONSE.getBytes(StandardCharsets.UTF_8).length);
         res.send();
     }
 
@@ -125,7 +127,7 @@ abstract class RoutingTestBase {
                                  boolean hasResponseEntity) {
         try (Http1ClientResponse response = request.apply(path).request()) {
             assertThat(response.status(), is(Status.OK_200));
-            assertResponseEntity(response, responseMessage, hasResponseEntity);
+            assertResponseEntity(response, path, responseMessage, hasResponseEntity);
         }
     }
 
@@ -137,7 +139,7 @@ abstract class RoutingTestBase {
                                                    boolean hasResponseEntity) {
         try (Http1ClientResponse response = request.apply(path).request()) {
             assertThat(response.status(), is(Status.OK_200));
-            assertResponseEntity(response, responseMessage, hasResponseEntity);
+            assertResponseEntity(response, path, responseMessage, hasResponseEntity);
         }
     }
 
@@ -161,7 +163,7 @@ abstract class RoutingTestBase {
         try (Http1ClientResponse response = request.apply(path).request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), hasHeader(MULTI_HANDLER));
-            assertResponseEntity(response, responseMessage, hasResponseEntity);
+            assertResponseEntity(response, path, responseMessage, hasResponseEntity);
         }
     }
 
@@ -176,6 +178,7 @@ abstract class RoutingTestBase {
     }
 
     private static void assertResponseEntity(Http1ClientResponse response,
+                                             String path,
                                              String responseMessage,
                                              boolean hasResponseEntity) {
         if (hasResponseEntity) {
@@ -184,6 +187,11 @@ abstract class RoutingTestBase {
             assertThat(response.headers(),
                        hasHeader(HeaderValues.createCached(HeaderNames.create(HEAD_ROUTE_HEADER), responseMessage)));
             assertThrows(IllegalStateException.class, () -> response.as(String.class));
+            try (Http1ClientResponse getResponse = client.get(path).request()) {
+                assertThat(getResponse.status(), is(Status.OK_200));
+                byte[] getContent = getResponse.as(byte[].class);
+                assertThat(response.headers().contentLength().orElse(-1), is((long) getContent.length));
+            }
         }
     }
 
