@@ -108,9 +108,10 @@ class ScopedRegistryImplTest {
         CountDownLatch deactivationCompleted = new CountDownLatch(1);
         ScopedRegistryImpl registry = registry();
         BlockingActivationActivator pending = new BlockingActivationActivator(PENDING_DESCRIPTOR,
-                                                                                activationStarted,
-                                                                                continueActivation,
-                                                                                deactivationStarted);
+                                                                                 activationStarted,
+                                                                                 continueActivation,
+                                                                                 deactivationStarted,
+                                                                                 ActivationPhase.POST_CONSTRUCTING);
         registry.activator(pending.descriptor(), () -> pending);
 
         AtomicReference<ActivationResult> activationResult = new AtomicReference<>();
@@ -167,7 +168,39 @@ class ScopedRegistryImplTest {
     }
 
     @Test
+    void completedConstructionIsNotPreDestroyedDuringShutdown() throws InterruptedException {
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.CONSTRUCTING, 0);
+    }
+
+    @Test
+    void completedInjectionIsNotPreDestroyedDuringShutdown() throws InterruptedException {
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.INJECTING, 0);
+    }
+
+    @Test
     void completedPostConstructIsPreDestroyedDuringShutdown() throws InterruptedException {
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING, 1);
+    }
+
+    @Test
+    void activeActivatorIsPreDestroyedDuringShutdown() {
+        ScopedRegistryImpl registry = registry();
+        LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR);
+        registry.activator(activator.descriptor(), () -> activator);
+        ActivationResult activationResult = activator.activate(ActivationRequest.builder()
+                                                                       .targetPhase(ActivationPhase.ACTIVE)
+                                                                       .build());
+
+        registry.deactivate();
+
+        assertThat("activation succeeded", activationResult.failure(), is(false));
+        assertThat("pre destroy invocations", activator.preDestroyInvocations(), is(1));
+        assertThat(activator.phase(), is(ActivationPhase.DESTROYED));
+    }
+
+    private static void completedCallbackIsDeactivatedDuringShutdown(ActivationPhase blockedPhase,
+                                                                     int expectedLifecycleInvocations)
+            throws InterruptedException {
         CountDownLatch activationStarted = new CountDownLatch(1);
         CountDownLatch continueActivation = new CountDownLatch(1);
         CountDownLatch deactivationStarted = new CountDownLatch(1);
@@ -178,9 +211,10 @@ class ScopedRegistryImplTest {
                                                       deactivationStarted,
                                                       continueDeactivation);
         BlockingActivationActivator pending = new BlockingActivationActivator(PENDING_DESCRIPTOR,
-                                                                                activationStarted,
-                                                                                continueActivation,
-                                                                                pendingDeactivationStarted);
+                                                                                 activationStarted,
+                                                                                 continueActivation,
+                                                                                 pendingDeactivationStarted,
+                                                                                 blockedPhase);
         registry.activator(blocker.descriptor(), () -> blocker);
         registry.activator(pending.descriptor(), () -> pending);
 
@@ -211,6 +245,7 @@ class ScopedRegistryImplTest {
         activationThread.start();
         try {
             assertThat("activation started", activationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
+            assertThat("blocked callback phase", pending.phase(), is(blockedPhase));
             shutdownThread.start();
             assertThat("higher run-level deactivation started",
                        deactivationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
@@ -235,24 +270,9 @@ class ScopedRegistryImplTest {
         assertThat("shutdown failure", shutdownFailure.get(), nullValue());
         assertThat("target instances not published", pending.targetInstancesSet(), is(false));
         assertThat("pending deactivation started", pendingDeactivationStarted.getCount(), is(0L));
-        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(1));
+        assertThat("post construct invocations", pending.postConstructInvocations(), is(expectedLifecycleInvocations));
+        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(expectedLifecycleInvocations));
         assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
-    }
-
-    @Test
-    void activeActivatorIsPreDestroyedDuringShutdown() {
-        ScopedRegistryImpl registry = registry();
-        LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR);
-        registry.activator(activator.descriptor(), () -> activator);
-        ActivationResult activationResult = activator.activate(ActivationRequest.builder()
-                                                                       .targetPhase(ActivationPhase.ACTIVE)
-                                                                       .build());
-
-        registry.deactivate();
-
-        assertThat("activation succeeded", activationResult.failure(), is(false));
-        assertThat("pre destroy invocations", activator.preDestroyInvocations(), is(1));
-        assertThat(activator.phase(), is(ActivationPhase.DESTROYED));
     }
 
     private static ScopedRegistryImpl registry() {
@@ -294,18 +314,22 @@ class ScopedRegistryImplTest {
         private final CountDownLatch activationStarted;
         private final CountDownLatch continueActivation;
         private final CountDownLatch deactivationStarted;
+        private final ActivationPhase blockedPhase;
+        private int postConstructInvocations;
         private int preDestroyInvocations;
         private boolean targetInstancesSet;
 
         private BlockingActivationActivator(ServiceDescriptor<Object> descriptor,
                                              CountDownLatch activationStarted,
                                              CountDownLatch continueActivation,
-                                             CountDownLatch deactivationStarted) {
+                                             CountDownLatch deactivationStarted,
+                                             ActivationPhase blockedPhase) {
             super(null, null);
             this.descriptor = descriptor;
             this.activationStarted = activationStarted;
             this.continueActivation = continueActivation;
             this.deactivationStarted = deactivationStarted;
+            this.blockedPhase = blockedPhase;
         }
 
         @Override
@@ -325,16 +349,19 @@ class ScopedRegistryImplTest {
         }
 
         @Override
+        void construct(ActivationResult.Builder response) {
+            awaitCallback(ActivationPhase.CONSTRUCTING);
+        }
+
+        @Override
+        void inject(ActivationResult.Builder response) {
+            awaitCallback(ActivationPhase.INJECTING);
+        }
+
+        @Override
         void postConstruct(ActivationResult.Builder response) {
-            activationStarted.countDown();
-            try {
-                if (!continueActivation.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-                    throw new AssertionError("Timed out waiting to continue activation");
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new AssertionError(e);
-            }
+            awaitCallback(ActivationPhase.POST_CONSTRUCTING);
+            postConstructInvocations++;
         }
 
         @Override
@@ -353,6 +380,25 @@ class ScopedRegistryImplTest {
 
         private boolean targetInstancesSet() {
             return targetInstancesSet;
+        }
+
+        private int postConstructInvocations() {
+            return postConstructInvocations;
+        }
+
+        private void awaitCallback(ActivationPhase phase) {
+            if (phase != blockedPhase) {
+                return;
+            }
+            activationStarted.countDown();
+            try {
+                if (!continueActivation.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    throw new AssertionError("Timed out waiting to continue activation");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+            }
         }
     }
 

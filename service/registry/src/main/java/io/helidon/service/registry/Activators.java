@@ -168,6 +168,7 @@ final class Activators {
 
         volatile ActivationPhase currentPhase = ActivationPhase.INIT;
         private boolean deactivationRequested;
+        private boolean postConstructCompleted;
         private boolean activationCleanupPending;
         private ScopedRegistryImpl scopedRegistry;
 
@@ -398,9 +399,9 @@ final class Activators {
             if (!deactivationRequested && (scopedRegistry == null || scopedRegistry.activationAllowed())) {
                 return false;
             }
-            if (currentPhase.eligibleForDeactivation()) {
-                // Activation stopped at a callback boundary. Preserve its phase so queued deactivation can clean up
-                // after the activating thread releases the instance lock, without publishing the instance.
+            if (postConstructCompleted && currentPhase.eligibleForDeactivation()) {
+                // Preserve queued cleanup only after post construct returned normally. Earlier cancellation must not
+                // invoke pre destroy on an instance whose lifecycle initialization is incomplete.
                 activationCleanupPending = true;
             } else {
                 currentPhase = ActivationPhase.DESTROYED;
@@ -468,6 +469,7 @@ final class Activators {
                     return response.build();
                 }
                 postConstruct(response);
+                postConstructCompleted = true;
                 if (activationInterrupted(response)) {
                     return response.build();
                 }
