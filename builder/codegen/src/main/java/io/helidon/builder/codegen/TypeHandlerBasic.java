@@ -806,6 +806,13 @@ class TypeHandlerBasic implements TypeHandler {
             return;
         }
 
+        var parameterType = factoryMethod.parameterType().orElse(null);
+        if (parameterType != null && !(parameterType.equals(CONFIG) || parameterType.equals(COMMON_CONFIG))) {
+            content.addContent(".as(")
+                    .addContent(parameterType.boxed().genericTypeName())
+                    .addContent(".class)");
+        }
+
         content.addContent(".as(")
                 .addContent(factoryMethod.declaringType().genericTypeName())
                 .addContent("::");
