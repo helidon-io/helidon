@@ -215,20 +215,34 @@ final class JdbcMethodGenerator {
                 .addAnnotation(Annotation.create(Override.class));
         plan.method().typeParameters()
                 .forEach(typeParameter -> method.addGenericArgument(TypeArgument.create(typeParameter)));
-        plan.method().parameterArguments()
-                .forEach(parameter -> method.addParameter(Parameter.builder()
-                                                            .name(parameter.elementName())
-                                                            .type(parameter.typeName())
-                                                            .build()));
-        plan.method().throwsChecked().forEach(method::addThrows);
-        Set<String> parameterNames = new HashSet<>();
-        for (TypedElementInfo parameter : plan.method().parameterArguments()) {
-            parameterNames.add(parameter.elementName());
+        // Repository parameters can shadow unqualified generated fields. Override parameter names are not part of
+        // the Java method signature, so rename only colliding implementation parameters and retain their bind mapping.
+        Set<String> generatedFieldNames = new HashSet<>();
+        generatedFieldNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
+        generatedFieldNames.add(plan.sqlFieldName());
+        if (plan.mappingKind() != JdbcMethodPlan.MappingKind.SCALAR) {
+            generatedFieldNames.add(plan.mapperFieldName());
         }
+        Map<String, String> parameterNames = new LinkedHashMap<>();
+        Set<String> generatedParameterNames = new HashSet<>();
+        for (TypedElementInfo parameter : plan.method().parameterArguments()) {
+            String parameterName = parameter.elementName();
+            // Repeat the prefix when an application parameter already occupies the first generated name.
+            while (generatedFieldNames.contains(parameterName) || generatedParameterNames.contains(parameterName)) {
+                parameterName = JdbcCodegenConstants.GENERATED_VARIABLE_PREFIX + parameterName;
+            }
+            generatedParameterNames.add(parameterName);
+            parameterNames.put(parameter.elementName(), parameterName);
+            method.addParameter(Parameter.builder()
+                                        .name(parameterName)
+                                        .type(parameter.typeName())
+                                        .build());
+        }
+        plan.method().throwsChecked().forEach(method::addThrows);
         String statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME;
         int statementNameSuffix = 2;
         // Repository parameter names are in method scope, so the generated statement variable must avoid them.
-        while (parameterNames.contains(statementName)) {
+        while (generatedParameterNames.contains(statementName)) {
             statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME + statementNameSuffix++;
         }
         method.addContent(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT)
@@ -244,7 +258,7 @@ final class JdbcMethodGenerator {
                 .addContent(String.valueOf(plan.parameterPlan().parameterCount()))
                 .addContentLine(");");
         for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
-            addBind(method, statementName, bind, bindParameterMethodName);
+            addBind(method, statementName, parameterNames, bind, bindParameterMethodName);
         }
         addTerminal(plan, method, statementName);
     }
@@ -254,14 +268,16 @@ final class JdbcMethodGenerator {
      *
      * @param method generated method
      * @param statementName local statement variable
+     * @param parameterNames source-to-generated parameter names
      * @param bind physical bind
      * @param bindParameterMethodName shared nullable-bind helper, or {@code null} to emit the branch inline
      */
     private static void addBind(Method.Builder method,
                                 String statementName,
+                                Map<String, String> parameterNames,
                                 JdbcSqlParameterPlan.Bind bind,
                                 String bindParameterMethodName) {
-        String parameterName = bind.parameter().elementName();
+        String parameterName = parameterNames.get(bind.parameter().elementName());
         if (!bind.nullable()) {
             method.addContent(statementName)
                     .addContent(".bind(")
@@ -380,7 +396,12 @@ final class JdbcMethodGenerator {
             if (plan.mappingKind() == JdbcMethodPlan.MappingKind.SCALAR
                     && plan.operation() == JdbcMethodPlan.Operation.GENERATED_KEYS) {
                 // The scalar mapper returns Optional<T> so SQL NULL and no row both become Optional.empty().
-                method.addContent(".flatMap(value -> value)");
+                // Its generator-owned lambda name also avoids shadowing an application parameter named value.
+                method.addContent(".flatMap(")
+                        .addContent(JdbcCodegenConstants.OPTIONAL_VALUE_PARAMETER_NAME)
+                        .addContent(" -> ")
+                        .addContent(JdbcCodegenConstants.OPTIONAL_VALUE_PARAMETER_NAME)
+                        .addContent(")");
             }
             method.addContentLine(";");
         }

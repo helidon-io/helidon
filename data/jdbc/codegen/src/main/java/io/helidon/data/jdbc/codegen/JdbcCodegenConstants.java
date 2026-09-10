@@ -24,9 +24,12 @@ final class JdbcCodegenConstants {
     static final String DEFAULT_CLIENT_NAME = "@default";
     static final String REPOSITORY_SUFFIX = "__Jdbc";
     static final String GENERATED_VERSION = "1";
+    static final String GENERATED_VARIABLE_PREFIX = "data__";
     static final String ANNOTATION_VALUE_PROPERTY = "value";
     static final String JDBC_CLIENT_NAME = "jdbcClient";
     static final String JDBC_STATEMENT_NAME = "jdbcStatement";
+    static final String ROW_PARAMETER_NAME = GENERATED_VARIABLE_PREFIX + "row";
+    static final String OPTIONAL_VALUE_PARAMETER_NAME = GENERATED_VARIABLE_PREFIX + "value";
     static final String BIND_PARAMETER_METHOD_NAME = "bindParameter";
     static final String SQL_FIELD_PREFIX = "SQL_";
     static final String MAPPER_FIELD_PREFIX = "MAPPER_";

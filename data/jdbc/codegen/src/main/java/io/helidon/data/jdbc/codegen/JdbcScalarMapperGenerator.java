@@ -58,7 +58,13 @@ final class JdbcScalarMapperGenerator {
                                        boolean nullable) {
         method.addContent(".generatedKeys()");
         addGeneratedKeyColumns(method, columnNames);
-        method.addContent(nullable ? ".map(row -> row.optional(1, " : ".map(row -> row.get(1, ")
+        // This lambda is nested in the repository method, so use a generator-owned name instead of shadowing an
+        // application parameter named row.
+        method.addContent(".map(")
+                .addContent(JdbcCodegenConstants.ROW_PARAMETER_NAME)
+                .addContent(" -> ")
+                .addContent(JdbcCodegenConstants.ROW_PARAMETER_NAME)
+                .addContent(nullable ? ".optional(1, " : ".get(1, ")
                 .addContent(mappedType.boxed())
                 .addContent(".class))");
     }
