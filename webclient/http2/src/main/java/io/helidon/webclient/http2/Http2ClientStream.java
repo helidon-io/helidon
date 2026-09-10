@@ -28,6 +28,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2ErrorCode;
@@ -84,7 +85,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private volatile RuntimeException connectionFailure;
     // accessed from stream thread an connection thread
     private volatile StreamFlowControl flowControl;
+    // Wire completion is independent of whether the response semantics permit content.
     private boolean hasEntity;
+    private boolean headRequest;
+    private boolean responseNoContent;
     private boolean continue100Received;
     private volatile boolean inboundEndQueued;
     private volatile boolean locallyReset;
@@ -296,15 +300,15 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     /**
-     * Determines if an entity is expected. Set to {@code false} when an EOS flag
-     * is received.
+     * Determines whether the response can expose an entity. HEAD and 304 responses
+     * have no entity even when empty DATA frames are needed to end the stream.
      *
      * @return {@code true} if entity expected, {@code false} otherwise.
      */
     public boolean hasEntity() {
         inboundStateLock.lock();
         try {
-            return hasEntity;
+            return hasEntity && !responseNoContent;
         } finally {
             inboundStateLock.unlock();
         }
@@ -420,6 +424,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         if (inboundEndQueued || currentReadState != ReadState.DATA) {
             throw invalidInboundDataState(currentReadState);
         }
+        if (responseNoContent && dataContentLength(frameData) != 0) {
+            failResponseContent();
+            return false;
+        }
         if (!endOfStream) {
             return true;
         }
@@ -477,6 +485,22 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     BufferData read(int i) {
         return read();
+    }
+
+    void finishNoContent() {
+        if (!responseNoContent) {
+            return;
+        }
+        // Bodyless responses still have to receive END_STREAM before they can be closed.
+        while (expectsEntityData()) {
+            readOne(timeout);
+        }
+        inboundStateLock.lock();
+        try {
+            throwIfInboundFailed();
+        } finally {
+            inboundStateLock.unlock();
+        }
     }
 
     /**
@@ -544,6 +568,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         inboundStateLock.lock();
         try {
             updateState(Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true));
+            this.headRequest = http2Headers.method() == Method.HEAD;
             this.readState = readState.check(http2Headers.httpHeaders().containsToken(HeaderValues.EXPECT_100)
                                                      ? ReadState.CONTINUE_100_HEADERS
                                                      : ReadState.HEADERS);
@@ -853,6 +878,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
         this.currentHeaders = headers;
         this.continue100Received = false;
+        this.responseNoContent = headRequest || headers.status() == Status.NOT_MODIFIED_304;
         this.hasEntity = !endOfStream;
     }
 
@@ -922,6 +948,17 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         reset(failure.code());
     }
 
+    private static int dataContentLength(Http2FrameData frameData) {
+        int length = frameData.data().available();
+        if (frameData.header().flags(Http2FrameTypes.DATA).padded()) {
+            if (length == 0 || frameData.data().get(0) >= length) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid DATA padding");
+            }
+            length -= frameData.data().get(0) + 1;
+        }
+        return length;
+    }
+
     private static void validateRegularHeaders(Headers headers) {
         for (var header : headers) {
             try {
@@ -972,6 +1009,23 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private Http2Exception invalidInboundDataState(ReadState currentReadState) {
         return new Http2Exception(Http2ErrorCode.PROTOCOL,
                                   "Received DATA frame in invalid response read state " + currentReadState);
+    }
+
+    private void failResponseContent() {
+        var failure = new Http2Exception(Http2ErrorCode.PROTOCOL, "Received content on a HEAD or 304 response");
+        inboundStateLock.lock();
+        try {
+            inboundFailure = failure;
+            try {
+                reset(Http2ErrorCode.PROTOCOL);
+            } finally {
+                buffer.fail(failure);
+                close();
+                inboundStateChanged.signalAll();
+            }
+        } finally {
+            inboundStateLock.unlock();
+        }
     }
 
     enum ReadState {

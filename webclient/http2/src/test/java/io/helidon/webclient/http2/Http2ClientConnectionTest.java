@@ -39,6 +39,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
@@ -59,6 +60,7 @@ import io.helidon.http.http2.Http2HuffmanEncoder;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.http.http2.Http2Util;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
@@ -69,14 +71,19 @@ import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.ResolvedClientTarget;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -145,6 +152,21 @@ class Http2ClientConnectionTest {
                                                                                              : 0),
                                                           streamId);
         return new Http2FrameData(header, BufferData.create(bytes));
+    }
+
+    private static Http2FrameData paddedDataFrame(int streamId, byte[] bytes, boolean endOfStream) {
+        int padding = 3;
+        byte[] paddedBytes = new byte[1 + bytes.length + padding];
+        paddedBytes[0] = (byte) padding;
+        System.arraycopy(bytes, 0, paddedBytes, 1, bytes.length);
+        Http2FrameHeader header = Http2FrameHeader.create(paddedBytes.length,
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(Http2Flag.PADDED
+                                                                                             | (endOfStream
+                                                                                                     ? Http2Flag.END_OF_STREAM
+                                                                                                     : 0)),
+                                                          streamId);
+        return new Http2FrameData(header, BufferData.create(paddedBytes));
     }
 
     private static Http2FrameData windowUpdateFrame(int streamId) {
@@ -1398,6 +1420,139 @@ class Http2ClientConnectionTest {
         }
     }
 
+    @ParameterizedTest
+    @CsvSource({"HEAD, 200, headers", "HEAD, 426, headers", "GET, 304, headers",
+                "HEAD, 200, data", "HEAD, 426, data", "GET, 304, data",
+                "HEAD, 200, padded", "HEAD, 426, padded", "GET, 304, padded",
+                "HEAD, 200, trailers", "HEAD, 426, trailers", "GET, 304, trailers"})
+    void responseWithoutContentPreservesMetadataAndReleasesStream(String methodName, int statusCode, String termination) {
+        Method method = Method.create(methodName);
+        Status status = Status.create(statusCode);
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders().method(method), true);
+            assertThat(connection.tryStream(STREAM_CONFIG), nullValue());
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            Http2Headers headers = Http2Headers.create(WritableHeaders.create()
+                                                             .set(HeaderNames.CONTENT_LENGTH, "123"))
+                    .status(status);
+            boolean headersEndStream = termination.equals("headers");
+            test.offerInbound(encodedHeaderFrame(stream.streamId(), headers, inboundTable, huffman, headersEndStream));
+            assertThat(stream.readHeaders().status(), is(status));
+
+            if (!headersEndStream) {
+                // Response semantics alone do not release the peer's concurrent-stream slot.
+                assertThat(connection.tryStream(STREAM_CONFIG), nullValue());
+                switch (termination) {
+                case "data" -> test.offerInbound(dataFrame(stream.streamId(), new byte[0], true));
+                case "padded" -> test.offerInbound(paddedDataFrame(stream.streamId(), new byte[0], true));
+                case "trailers" -> test.offerInbound(dataFrame(stream.streamId(), new byte[0], false),
+                                                     encodedHeaderFrame(stream.streamId(),
+                                                                        encodedTrailers(),
+                                                                        inboundTable,
+                                                                        huffman,
+                                                                        true));
+                default -> throw new IllegalArgumentException("Unknown response termination: " + termination);
+                }
+            }
+
+            WebClientServiceRequest request = mock(WebClientServiceRequest.class);
+            when(request.method()).thenReturn(method);
+            Http2CallEntityChain chain = new Http2CallEntityChain(test.client,
+                                                                  mock(Http2ClientRequestImpl.class),
+                                                                  new CompletableFuture<>(),
+                                                                  new CompletableFuture<>(),
+                                                                  BufferData.EMPTY_BYTES);
+            WebClientServiceResponse response = chain.readResponse(request, stream);
+            assertThat(response.status(), is(status));
+            assertThat(response.headers().get(HeaderNames.CONTENT_LENGTH).get(), is("123"));
+            assertThat(response.inputStream().isPresent(), is(false));
+
+            WebClientServiceResponse outputStreamResponse =
+                    Http2CallChainBase.createServiceResponse(request,
+                                                             test.clientConfig,
+                                                             stream,
+                                                             new CompletableFuture<>(),
+                                                             status,
+                                                             ClientResponseHeaders.create(headers.httpHeaders()));
+            assertThat(outputStreamResponse.headers().get(HeaderNames.CONTENT_LENGTH).get(), is("123"));
+            assertThat(outputStreamResponse.inputStream().isPresent(), is(false));
+
+            Http2ClientStream nextStream = connection.tryStream(STREAM_CONFIG);
+            assertThat(nextStream, notNullValue());
+            nextStream.close();
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"HEAD, 200, false, false", "HEAD, 200, true, false", "HEAD, 426, false, false", "HEAD, 426, true, false",
+                "GET, 304, false, false", "GET, 304, true, false",
+                "HEAD, 200, false, true", "HEAD, 200, true, true", "HEAD, 426, false, true", "HEAD, 426, true, true",
+                "GET, 304, false, true", "GET, 304, true, true"})
+    void forbiddenResponseContentResetsOnlyItsStream(String methodName, int statusCode, boolean endOfStream, boolean padded)
+            throws Exception {
+        Method method = Method.create(methodName);
+        Status status = Status.create(statusCode);
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(2));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream malformedStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream siblingStream = connection.createStream(STREAM_CONFIG);
+            malformedStream.writeHeaders(requestHeaders().method(method), true);
+            siblingStream.writeHeaders(requestHeaders(), true);
+            assertThat(connection.tryStream(STREAM_CONFIG), nullValue());
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            Http2Headers headers = Http2Headers.create(WritableHeaders.create()
+                                                             .set(HeaderNames.CONTENT_LENGTH, "123"))
+                    .status(status);
+            test.offerInbound(encodedHeaderFrame(malformedStream.streamId(), headers, inboundTable, huffman));
+            assertThat(malformedStream.readHeaders().status(), is(status));
+            byte[] forbiddenContent = "forbidden".getBytes(StandardCharsets.UTF_8);
+            test.offerInbound(padded
+                                      ? paddedDataFrame(malformedStream.streamId(), forbiddenContent, endOfStream)
+                                      : dataFrame(malformedStream.streamId(), forbiddenContent, endOfStream),
+                              encodedHeaderFrame(siblingStream.streamId(), encodedResponseHeaders(false), inboundTable, huffman),
+                              dataFrame(siblingStream.streamId(), "sibling".getBytes(StandardCharsets.UTF_8), false));
+
+            WebClientServiceRequest request = mock(WebClientServiceRequest.class);
+            when(request.method()).thenReturn(method);
+            Http2CallEntityChain chain = new Http2CallEntityChain(test.client,
+                                                                  mock(Http2ClientRequestImpl.class),
+                                                                  new CompletableFuture<>(),
+                                                                  new CompletableFuture<>(),
+                                                                  BufferData.EMPTY_BYTES);
+            Http2Exception failure = assertThrows(Http2Exception.class, () -> chain.readResponse(request, malformedStream));
+            assertThat(failure.code(), is(Http2ErrorCode.PROTOCOL));
+
+            Http2FrameData reset = test.awaitWrittenFrame(Http2FrameType.RST_STREAM);
+            assertThat(reset.header().streamId(), is(malformedStream.streamId()));
+            assertThat(Http2RstStream.create(reset.data()).errorCode(), is(Http2ErrorCode.PROTOCOL));
+            assertThat(siblingStream.readHeaders().status(), is(Status.OK_200));
+            BufferData data = siblingStream.read();
+            byte[] entity = new byte[data.available()];
+            data.read(entity);
+            assertThat(new String(entity, StandardCharsets.UTF_8), is("sibling"));
+
+            Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
+            assertThat(recoveredStream, notNullValue());
+            assertThat(connection.tryStream(STREAM_CONFIG), nullValue());
+            recoveredStream.close();
+            siblingStream.close();
+            malformedStream.close();
+            connection.close();
+        }
+    }
+
     @Test
     void initialZeroMaxConcurrentStreamsClosesUnusableConnection() {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
@@ -2281,6 +2436,7 @@ class Http2ClientConnectionTest {
 
         private final ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
         private final LinkedBlockingQueue<byte[]> inboundFrames = new LinkedBlockingQueue<>();
+        private final LinkedBlockingQueue<BufferData> writtenFrames = new LinkedBlockingQueue<>();
         // The client preface is the first writeNow call; the initial SETTINGS ACK is the second.
         private final CountDownLatch initialWriteNowCallsCompleted = new CountDownLatch(2);
         private final AtomicBoolean failWrites = new AtomicBoolean();
@@ -2322,6 +2478,7 @@ class Http2ClientConnectionTest {
             doAnswer(invocation -> {
                 maybeFailWrites();
                 maybeBlockWriteNow();
+                writtenFrames.add(invocation.<BufferData>getArgument(0).copy());
                 initialWriteNowCallsCompleted.countDown();
                 return null;
             }).when(dataWriter).writeNow(any(BufferData.class));
@@ -2367,6 +2524,26 @@ class Http2ClientConnectionTest {
 
         private void closeInbound() {
             inboundFrames.add(END_INBOUND);
+        }
+
+        private Http2FrameData awaitWrittenFrame(Http2FrameType expectedType) throws InterruptedException {
+            long deadline = System.nanoTime() + TEST_WAIT_TIMEOUT.toNanos();
+            while (true) {
+                BufferData data = writtenFrames.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                assertThat("Expected an outbound " + expectedType + " frame", data, notNullValue());
+                if (data.available() == Http2Util.PREFACE_LENGTH) {
+                    byte[] bytes = new byte[Http2Util.PREFACE_LENGTH];
+                    data.read(bytes);
+                    data.rewind();
+                    if (Http2Util.isPreface(bytes)) {
+                        continue;
+                    }
+                }
+                Http2FrameHeader header = Http2FrameHeader.create(data);
+                if (header.type() == expectedType) {
+                    return new Http2FrameData(header, data);
+                }
+            }
         }
 
         private void assertConnectionClosed() {

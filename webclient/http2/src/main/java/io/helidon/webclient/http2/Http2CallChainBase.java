@@ -121,7 +121,9 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
 
     static Http2Headers readHeaders(Http2ClientStream stream, Duration readTimeout) {
         try {
-            return readTimeout == null ? stream.readHeaders() : stream.readHeaders(readTimeout);
+            Http2Headers headers = readTimeout == null ? stream.readHeaders() : stream.readHeaders(readTimeout);
+            stream.finishNoContent();
+            return headers;
         } catch (Http2Exception e) {
             resetAndClose(stream, e);
             throw e;
