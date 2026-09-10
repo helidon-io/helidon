@@ -298,14 +298,14 @@ final class DefaultMessagingGraph implements MessagingGraph {
     }
 
     @Override
-    public void start() {
+    public MessagingGraph start() {
         prepareIfNeeded(false);
 
         boolean startOwner;
         lifecycleLock.lock();
         try {
             if (state == State.RUNNING) {
-                return;
+                return this;
             }
             if (state == State.STARTING) {
                 startOwner = false;
@@ -321,7 +321,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
         if (!startOwner) {
             awaitStartup();
-            return;
+            return this;
         }
 
         try {
@@ -367,6 +367,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
             }
             throw e;
         }
+        return this;
     }
 
     void ensureRunning() {

@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -41,8 +42,10 @@ import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeader;
 import io.helidon.messaging.MessageHeaders;
 import io.helidon.messaging.MessageMetadata;
+import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingEntryPoint;
 import io.helidon.messaging.MessagingException;
+import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.MessagingRejectedException;
 
 import org.junit.jupiter.api.Test;
@@ -53,6 +56,30 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessagingPublicApiTest {
+    @Test
+    void startReturnsSameGraph() {
+        try (MessagingGraph graph = MessagingGraph.builder().build()) {
+            assertThat(graph.start(), sameInstance(graph));
+            assertThat(graph.start(), sameInstance(graph));
+        }
+    }
+
+    @Test
+    void graphCanBeBuiltAndStartedFluentlyOutsideItsPackage() {
+        MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
+        List<String> received = new ArrayList<>();
+
+        try (MessagingGraph graph = MessagingGraph.builder()
+                .channel(channel)
+                .payloadSink(channel, received::add)
+                .build()
+                .start()) {
+            graph.emitter(channel).emit("started");
+        }
+
+        assertThat(received, is(List.of("started")));
+    }
+
     @Test
     void messagingExceptionsRejectNullConstructorArguments() {
         MessagingRejectedException.Reason reason = MessagingRejectedException.Reason.SATURATED;
