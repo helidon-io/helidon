@@ -468,10 +468,21 @@ class Http2ClientConnectionTest {
             test.offerInbound(encodedHeaderFrame(malformedStream.streamId(), headers, inboundTable, huffman));
             assertThat(malformedStream.readHeaders().status(), is(status));
             byte[] forbiddenContent = "forbidden".getBytes(StandardCharsets.UTF_8);
-            test.offerInbound(padded
-                                      ? paddedDataFrame(malformedStream.streamId(), forbiddenContent, endOfStream, 3)
-                                      : dataFrame(malformedStream.streamId(), forbiddenContent, endOfStream),
-                              encodedHeaderFrame(siblingStream.streamId(), encodedResponseHeaders(false), inboundTable, huffman),
+            Http2FrameData firstData = padded
+                    ? paddedDataFrame(malformedStream.streamId(), forbiddenContent, endOfStream, 3)
+                    : dataFrame(malformedStream.streamId(), forbiddenContent, endOfStream);
+            int discardedLength = firstData.header().length();
+            if (endOfStream) {
+                test.offerInbound(firstData);
+            } else {
+                // DATA already in flight after the reset still consumes connection credit, including padding.
+                Http2FrameData lateData = paddedDataFrame(malformedStream.streamId(), forbiddenContent, false, 255);
+                discardedLength += lateData.header().length();
+                test.offerInbound(firstData,
+                                  lateData,
+                                  dataFrame(malformedStream.streamId(), BufferData.EMPTY_BYTES, true));
+            }
+            test.offerInbound(encodedHeaderFrame(siblingStream.streamId(), encodedResponseHeaders(false), inboundTable, huffman),
                               dataFrame(siblingStream.streamId(), "sibling".getBytes(StandardCharsets.UTF_8), false));
 
             WebClientServiceRequest request = mock(WebClientServiceRequest.class);
@@ -492,6 +503,18 @@ class Http2ClientConnectionTest {
             byte[] entity = new byte[data.available()];
             data.read(entity);
             assertThat(new String(entity, StandardCharsets.UTF_8), is("sibling"));
+
+            int connectionCredit = 0;
+            for (BufferData written : test.writtenFrames) {
+                Http2FrameHeader header = Http2FrameHeader.create(written);
+                assertThat("Only credit updates may follow the malformed-stream reset",
+                           header.type(), is(Http2FrameType.WINDOW_UPDATE));
+                if (header.streamId() == 0) {
+                    connectionCredit += Http2WindowUpdate.create(written).windowSizeIncrement();
+                }
+            }
+            assertThat("Discarded DATA and the consumed sibling body must restore exact connection credit",
+                       connectionCredit, is(discardedLength + entity.length));
 
             Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
             assertThat(recoveredStream, notNullValue());
