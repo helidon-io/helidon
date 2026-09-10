@@ -77,8 +77,10 @@ public interface MessagingGraph extends RuntimeType.Api<MessagingConfig>, AutoCl
      * The core runtime does not impose a startup deadline. ChannelConnection transport configuration may define its own
      * connection or readiness limits. Waiting in this method is interruptible; concurrent {@link #close()} cancels
      * startup.
+     *
+     * @return this graph
      */
-    void start();
+    MessagingGraph start();
 
     /**
      * Obtain an imperative emitter for a channel owned by this graph.
