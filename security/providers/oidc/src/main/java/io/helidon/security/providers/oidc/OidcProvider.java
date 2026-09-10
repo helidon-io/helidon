@@ -110,7 +110,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
         tenantIdFinders = List.copyOf(builder.tenantIdFinders);
 
-        oidcConfig.validateForAuthentication();
         tenantAuthHandlers = new TenantCache<>(builder.tenantConfigFinders,
                                                oidcConfig,
                                                this::tenantAuthenticationHandler);

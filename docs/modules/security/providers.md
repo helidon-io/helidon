@@ -77,11 +77,13 @@ security:
 
 ### How does it work?
 
-At Helidon startup, if the OIDC provider is configured, Helidon validates the
-configuration for consistency. This includes required client and identity
-values, the configured signing-key route, and any fixed metadata or JWK values.
-Inline and classpath resources are fixed and are therefore loaded and validated
-at startup.
+Building OIDC configuration validates required client and identity values.
+An enabled `OidcFeature` also validates the configured signing-key route and
+fixed metadata or JWK values at startup. When using `OidcProvider` directly,
+these authentication-specific checks run when a tenant is first used for inbound
+authentication. Outbound-only token propagation and client-credentials exchange
+do not require inbound signing keys. Inline and classpath resources are fixed
+and are loaded when building the configuration.
 
 Metadata and JWK sources that may become available later are loaded on the first
 authentication request that needs them. These include filesystem paths, URIs,

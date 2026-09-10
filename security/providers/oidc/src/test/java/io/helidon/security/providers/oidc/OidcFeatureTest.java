@@ -26,6 +26,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.common.uri.UriQuery;
@@ -33,6 +34,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.faulttolerance.ResilientValue;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
@@ -41,6 +43,7 @@ import io.helidon.json.JsonObject;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
@@ -54,6 +57,7 @@ import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.TenantConfig;
+import io.helidon.security.providers.oidc.common.spi.TenantIdFinder;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
@@ -157,10 +161,13 @@ class OidcFeatureTest {
     Path temporaryDirectory;
 
     @Test
-    void authenticationConsumersRejectMissingFixedSigningSourceAtStartup() {
+    void authenticationConsumersRejectMissingFixedSigningSource() {
         OidcConfig invalidDefault = fixedConfigWithoutSigningJwk().build();
+        OidcProvider authenticationProvider = OidcProvider.create(invalidDefault);
 
-        assertThrows(IllegalArgumentException.class, () -> OidcProvider.create(invalidDefault));
+        var exception = assertThrows(IllegalArgumentException.class,
+                                    () -> authenticationProvider.authenticate(Mockito.mock(ProviderRequest.class)));
+        assertThat(exception.getMessage(), containsString("A signing JWK source is required"));
         assertThrows(IllegalArgumentException.class, () -> OidcFeature.create(invalidDefault));
         OidcFeature.builder()
                 .config(invalidDefault)
@@ -169,13 +176,19 @@ class OidcFeatureTest {
     }
 
     @Test
-    void authenticationConsumersRejectMissingFixedNamedTenantSigningSourceAtStartup() {
+    void authenticationConsumersRejectMissingFixedNamedTenantSigningSource() {
         TenantConfig invalidNamedTenant = fixedTenantWithoutSigningJwk("named");
         OidcConfig config = fixedConfig(TEST_KEYS)
                 .addTenantConfig(invalidNamedTenant)
                 .build();
+        OidcProvider authenticationProvider = OidcProvider.builder()
+                .oidcConfig(config)
+                .addTenantConfigFinder((TenantIdFinder) _ -> Optional.of("named"))
+                .build();
 
-        assertThrows(IllegalArgumentException.class, () -> OidcProvider.create(config));
+        var exception = assertThrows(IllegalArgumentException.class,
+                                    () -> authenticationProvider.authenticate(Mockito.mock(ProviderRequest.class)));
+        assertThat(exception.getMessage(), containsString("A signing JWK source is required"));
         assertThrows(IllegalArgumentException.class, () -> OidcFeature.create(config));
     }
 
@@ -203,7 +216,7 @@ class OidcFeatureTest {
     }
 
     @Test
-    void customTenantWithInvalidFixedJwkEndpointFailsAtStartup() {
+    void authenticationConsumersRejectCustomTenantWithInvalidFixedJwkEndpoint() {
         TenantConfig tenantConfig = Mockito.mock(TenantConfig.class, Mockito.CALLS_REAL_METHODS);
         when(tenantConfig.name()).thenReturn("custom");
         when(tenantConfig.identityUri()).thenReturn(URI.create("http://idp.example.test/identity"));
@@ -216,8 +229,15 @@ class OidcFeatureTest {
         OidcConfig config = fixedConfig(TEST_KEYS)
                 .addTenantConfig(tenantConfig)
                 .build();
+        OidcProvider authenticationProvider = OidcProvider.builder()
+                .oidcConfig(config)
+                .addTenantConfigFinder((TenantIdFinder) _ -> Optional.of("custom"))
+                .build();
 
-        assertThrows(IllegalArgumentException.class, () -> OidcProvider.create(config));
+        var exception = assertThrows(IllegalArgumentException.class,
+                                    () -> authenticationProvider.authenticate(Mockito.mock(ProviderRequest.class)));
+        assertThat(exception.getMessage(), containsString("OIDC metadata JWK endpoint must be an absolute URI"));
+        assertThrows(IllegalArgumentException.class, () -> OidcFeature.create(config));
     }
 
     @Test
@@ -540,6 +560,104 @@ class OidcFeatureTest {
 
         List<String> authorization = response.requestHeaders().get("Authorization");
         assertThat("Authorization header", authorization, hasItem("Bearer " + tokenContent));
+    }
+
+    @Test
+    void outboundOnlyProviderPropagatesTokenWithoutSigningKeys() {
+        OidcConfig config = fixedConfigWithoutSigningJwk().build();
+        try {
+            OidcProvider outboundProvider = OidcProvider.builder()
+                    .oidcConfig(config)
+                    .outboundConfig(OutboundConfig.builder()
+                                            .addTarget(OutboundTarget.builder("service")
+                                                               .addHost("service.example.test")
+                                                               .build())
+                                            .build())
+                    .build();
+            Security security = Security.builder()
+                    .addOutboundSecurityProvider(outboundProvider)
+                    .build();
+            SecurityContext context = Mockito.mock(SecurityContext.class);
+            when(context.user()).thenReturn(Optional.of(Subject.builder()
+                                                               .addPublicCredential(TokenCredential.class,
+                                                                                    TokenCredential.builder()
+                                                                                            .token("user-token")
+                                                                                            .build())
+                                                               .build()));
+
+            OutboundSecurityResponse response = security.contextBuilder("outbound-only").build()
+                    .outboundClientBuilder()
+                    .securityContext(context)
+                    .outboundEnvironment(SecurityEnvironment.builder()
+                                                 .targetUri(URI.create("http://service.example.test/resource"))
+                                                 .path("/resource")
+                                                 .build())
+                    .outboundEndpointConfig(EndpointConfig.create())
+                    .buildAndGet();
+
+            assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+            assertThat(response.requestHeaders().get("Authorization"), is(List.of("Bearer user-token")));
+        } finally {
+            config.generalWebClient().closeResource();
+        }
+    }
+
+    @Test
+    void outboundOnlyProviderExchangesClientCredentialsWithoutSigningKeys() {
+        AtomicReference<String> requestBody = new AtomicReference<>();
+        WebServer server = WebServer.builder()
+                .host("localhost")
+                .port(0)
+                .featuresDiscoverServices(false)
+                .routing(routing -> routing.post("/token", (req, res) -> {
+                    requestBody.set(req.content().as(String.class));
+                    res.header(HeaderValues.CONTENT_TYPE_JSON).send("{\"access_token\":\"outbound-token\"}");
+                }))
+                .build()
+                .start();
+        try {
+            Config outboundType = Config.create(ConfigSources.create(Map.of("outbound-type", "CLIENT_CREDENTIALS")));
+            OidcConfig config = fixedConfigWithoutSigningJwk()
+                    .config(outboundType)
+                    .identityUri(URI.create("http://localhost:" + server.port() + "/identity"))
+                    .tokenEndpointUri(URI.create("http://localhost:" + server.port() + "/token"))
+                    .tokenEndpointAuthentication(OidcConfig.ClientAuthentication.CLIENT_SECRET_POST)
+                    .build();
+            var client = config.appWebClient();
+            try {
+                OidcProvider outboundProvider = OidcProvider.builder()
+                        .oidcConfig(config)
+                        .outboundConfig(OutboundConfig.builder()
+                                                .addTarget(OutboundTarget.builder("service")
+                                                                   .addHost("service.example.test")
+                                                                   .build())
+                                                .build())
+                        .build();
+                Security security = Security.builder()
+                        .addOutboundSecurityProvider(outboundProvider)
+                        .build();
+
+                OutboundSecurityResponse response = security.contextBuilder("outbound-only").build()
+                        .outboundClientBuilder()
+                        .outboundEnvironment(SecurityEnvironment.builder()
+                                                     .targetUri(URI.create("http://service.example.test/resource"))
+                                                     .path("/resource")
+                                                     .build())
+                        .outboundEndpointConfig(EndpointConfig.create())
+                        .buildAndGet();
+
+                assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+                assertThat(response.requestHeaders().get("Authorization"), is(List.of("Bearer outbound-token")));
+                assertThat(requestBody.get(), containsString("grant_type=client_credentials"));
+                assertThat(requestBody.get(), containsString("client_id=id"));
+                assertThat(requestBody.get(), containsString("client_secret=secret"));
+            } finally {
+                client.closeResource();
+                config.generalWebClient().closeResource();
+            }
+        } finally {
+            server.stop();
+        }
     }
 
     @Test
