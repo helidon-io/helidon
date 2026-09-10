@@ -215,7 +215,8 @@ final class MessagingConfigSupport {
         public void decorate(MessagingExecutionConfig.BuilderBase<?, ?> target) {
             target.config().ifPresent(config -> {
                 if (config.get("shutdown-timeout").exists()) {
-                    throw new IllegalArgumentException("Channel execution configuration must not override global shutdown-timeout");
+                    throw new IllegalArgumentException(
+                            "Channel execution configuration must not override global shutdown-timeout");
                 }
             });
             target.queueCapacity().ifPresent(value -> requireNonNegative(value, "messaging.execution.queue-capacity"));
