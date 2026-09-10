@@ -1,2 +1,4 @@
-io.prometheus.client
-io.prometheus.client.exemplars
+io.prometheus.metrics.expositionformats
+io.prometheus.metrics.model.registry
+io.prometheus.metrics.model.snapshots
+io.prometheus.metrics.tracer.common

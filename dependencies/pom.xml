@@ -87,7 +87,7 @@
         <version.lib.opentelemetry>1.65.0</version.lib.opentelemetry>
         <version.lib.parsson>1.1.9</version.lib.parsson>
         <version.lib.postgresql>42.7.13</version.lib.postgresql>
-        <version.lib.prometheus>0.16.0</version.lib.prometheus>
+        <version.lib.prometheus>1.7.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
         <version.lib.snakeyaml>2.6</version.lib.snakeyaml>
@@ -227,10 +227,20 @@
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.lib.snakeyaml}</version>
             </dependency>
-            <!-- Webserver related -->
+            <!-- Prometheus related -->
             <dependency>
                 <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient_tracer_common</artifactId>
+                <artifactId>prometheus-metrics-exposition-textformats</artifactId>
+                <version>${version.lib.prometheus}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>prometheus-metrics-model</artifactId>
+                <version>${version.lib.prometheus}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>prometheus-metrics-tracer-common</artifactId>
                 <version>${version.lib.prometheus}</version>
             </dependency>
             <dependency>
@@ -259,11 +269,6 @@
             <dependency>
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-registry-prometheus</artifactId>
-                <version>${version.lib.micrometer-prometheus}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-prometheus-simpleclient</artifactId>
                 <version>${version.lib.micrometer-prometheus}</version>
             </dependency>
             <dependency>

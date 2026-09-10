@@ -7435,12 +7435,10 @@ Fourth Party Dependencies
         <dependency>
             <id>149612</id>
             <name>micrometer-registry-prometheus</name>
-            <version>1.11.3</version>
+            <version>1.17.1</version>
             <licensor>VMware</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-integrations-micrometer</consumer>
-                <consumer>helidon-integrations-micrometer-cdi</consumer>
                 <consumer>helidon-metrics-providers-micrometer</consumer>
             </consumers>
             <attribution>micrometer-registry-prometheus (io.micrometer:micrometer-registry-prometheus)
@@ -8569,17 +8567,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         </dependency>
         <dependency>
             <id>149860</id>
-            <name>simpleclient</name>
-            <version>0.16.0</version>
+            <name>Prometheus Java Client</name>
+            <version>1.7.0</version>
             <licensor>The Prometheus Authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-integrations-micrometer</consumer>
-                <consumer>helidon-integrations-micrometer-cdi</consumer>
-                <consumer>helidon-metrics-prometheus</consumer>
+                <consumer>helidon-metrics-providers-micrometer</consumer>
             </consumers>
-            <attribution>Copyright: prometheus
-=== Source URL: https://github.com/prometheus/client_java/tree/parent-0.16.0/simpleclient
+            <attribution>Dependency: io.prometheus:prometheus-metrics-model
+Copyright: The Prometheus Authors
+=== Source URL: https://github.com/prometheus/client_java/tree/v1.7.0/prometheus-metrics-model
 License: Apache 2.0
 
  ./LICENSE
@@ -8603,9 +8600,9 @@ Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
 -------------- Separator --------------
 
 
-Dependency: io.prometheus:simpleclient_tracer_common
+Dependency: io.prometheus:prometheus-metrics-exposition-textformats
 Copyright: The Prometheus Authors
-=== Source URL: https://github.com/prometheus/client_java/tree/parent-0.16.0/simpleclient_tracer/simpleclient_tracer_common
+=== Source URL: https://github.com/prometheus/client_java/tree/v1.7.0/prometheus-metrics-exposition-textformats
 License: Apache 2.0
 
  ./LICENSE
@@ -8622,9 +8619,9 @@ Apache 2.0
 
 
 
-Dependency: io.prometheus:simpleclient_tracer_otel
+Dependency: io.prometheus:prometheus-metrics-tracer-common
 Copyright: The Prometheus Authors
-=== Source URL: https://github.com/prometheus/client_java/tree/parent-0.16.0/simpleclient_tracer/simpleclient_tracer_otel
+=== Source URL: https://github.com/prometheus/client_java/tree/v1.7.0/prometheus-metrics-tracer-common
 License: Apache 2.0
 
  ./LICENSE
@@ -8641,9 +8638,10 @@ Apache 2.0
 
 
 
-Dependency: io.prometheus:simpleclient_tracer_otel_agent
+Dependency: io.prometheus:prometheus-metrics-core, io.prometheus:prometheus-metrics-config,
+            io.prometheus:prometheus-metrics-exposition-formats
 Copyright: The Prometheus Authors
-=== Source URL: https://github.com/prometheus/client_java/tree/parent-0.16.0/simpleclient_tracer/simpleclient_tracer_otel_agent
+=== Source URL: https://github.com/prometheus/client_java/tree/v1.7.0
 License: Apache 2.0
 
  ./LICENSE
@@ -8661,7 +8659,6 @@ Apache 2.0
 
 
 
- === Entry created by OSCS on 2022-09-12T08:41:03.530
 </attribution>
         </dependency>
         <dependency>

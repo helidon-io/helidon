@@ -84,6 +84,7 @@ The following tables list specifically what operations the proxies permit.
 |--------------------------|--------------------------------------------------------------|-----|
 | `asParent(Span.Builder)` | Sets this context as the parent of a new span builder.       | ✓   |
 | `baggage()`              | Returns `Baggage` instance associated with the span context. | ✓   |
+| `sampled()`              | Reports whether the associated span is sampled.              | ✓   |
 | `spanId()`               | Returns the span ID.                                         | ✓   |
 | `traceId()`              | Returns the trace ID.                                        | ✓   |
 

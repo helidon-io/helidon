@@ -47,10 +47,6 @@ import io.helidon.metrics.spi.MeterBuilderCustomizer;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.exemplars.DefaultExemplarSampler;
-
 /**
  * Implementation of the neutral Helidon metrics factory based on Micrometer.
  */
@@ -364,12 +360,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
             the list of publishers in the build config object is empty. To see
              */
             if (!metricsConfig.publishersConfigured()) {
-                enabledMicrometerPublishers.add(spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
-                        ? new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null))
-                        : new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null),
-                                                      new CollectorRegistry(),
-                                                      io.micrometer.core.instrument.Clock.SYSTEM,
-                                                      new DefaultExemplarSampler(spanContextSupplierProvider.get())));
+                enabledMicrometerPublishers.add(PrometheusPublisher.create()
+                                                        .prometheusRegistry()
+                                                        .apply(key -> metricsConfig.lookupConfig(key).orElse(null),
+                                                               spanContextSupplierProvider));
             }
         } catch (RuntimeException | Error e) {
             enabledMicrometerPublishers.forEach(registry -> {

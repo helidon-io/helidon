@@ -31,17 +31,15 @@ module io.helidon.metrics.providers.micrometer {
 
     requires io.helidon.metrics.api;
     requires micrometer.core;
-    requires static micrometer.registry.prometheus;
-    requires static micrometer.registry.prometheus.simpleclient;
+    requires transitive micrometer.registry.prometheus;
     requires io.helidon.common;
     requires io.helidon.common.media.type;
     requires io.helidon.config;
-    requires simpleclient.common;
-    requires simpleclient.tracer.common;
-    requires simpleclient;
     requires micrometer.registry.otlp;
     requires io.helidon.service.registry;
     requires io.prometheus.metrics.model;
+    requires transitive io.prometheus.metrics.tracer.common;
+    requires io.prometheus.writer.text;
 
     exports io.helidon.metrics.providers.micrometer;
     exports io.helidon.metrics.providers.micrometer.spi;
