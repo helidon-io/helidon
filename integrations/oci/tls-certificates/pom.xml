@@ -81,6 +81,10 @@
             <artifactId>helidon-common-key-util</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-configurable</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.fault-tolerance</groupId>
             <artifactId>helidon-fault-tolerance</artifactId>
         </dependency>
@@ -191,7 +195,6 @@
                         <CA_OCID>SETME</CA_OCID>
                         <SERVER_CERT_OCID>SETME</SERVER_CERT_OCID>
                         <SERVER_KEY_OCID>SETME</SERVER_KEY_OCID>
-                        <oci.real.usage>false</oci.real.usage>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

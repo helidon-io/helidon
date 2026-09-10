@@ -7,7 +7,27 @@ This type is a provider contract.
 ## Implementations
 
 
-No implementations are currently known.
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="oci-certificate-bundle-tls-manager"></a>
+<a href="io.helidon.integrations.oci.tls.certificates.OciCertificateBundleTlsManager.md">
+<code>oci-<wbr>certificate-<wbr>bundle-<wbr>tls-<wbr>manager</code>
+</a>
+</td>
+<td>Blueprint configuration for <code>Oci<wbr>Certificate<wbr>Bundle<wbr>TlsManager</code></td>
+</tr>
+</tbody>
+</table>
+
 
 
 ## Usages
