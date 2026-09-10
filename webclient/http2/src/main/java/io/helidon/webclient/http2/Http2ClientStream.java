@@ -951,10 +951,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private static int dataContentLength(Http2FrameData frameData) {
         int length = frameData.data().available();
         if (frameData.header().flags(Http2FrameTypes.DATA).padded()) {
-            if (length == 0 || frameData.data().get(0) >= length) {
+            if (length == 0 || (frameData.data().get(0) & 0xFF) >= length) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid DATA padding");
             }
-            length -= frameData.data().get(0) + 1;
+            length -= (frameData.data().get(0) & 0xFF) + 1;
         }
         return length;
     }
