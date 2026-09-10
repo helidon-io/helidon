@@ -130,6 +130,15 @@ public abstract class ClassBase extends AnnotatedComponent {
     }
 
     /**
+     * Generic type parameters declared by this type, including their bounds.
+     *
+     * @return declared generic type parameters
+     */
+    public List<TypeArgument> genericArguments() {
+        return List.copyOf(genericParameters);
+    }
+
+    /**
      * Kind of this type.
      *
      * @return kind
@@ -375,6 +384,18 @@ public abstract class ClassBase extends AnnotatedComponent {
         } else {
             return field1.accessModifier().compareTo(field2.accessModifier());
         }
+    }
+
+    private static String typeName(ElementKind kind) {
+        return switch (kind) {
+        case CLASS -> "class";
+        case INTERFACE -> "interface";
+        case ENUM -> "enum";
+        case ANNOTATION_TYPE -> "@interface";
+        case RECORD -> "record";
+        case CONSTRUCTOR, FIELD, METHOD, PARAMETER, PACKAGE, RECORD_COMPONENT, STATIC_INIT, INSTANCE_INIT, ENUM_CONSTANT,
+             LOCAL_VARIABLE, MODULE, OTHER -> throw new IllegalStateException("Invalid kind for a Java class: " + kind);
+        };
     }
 
     private void writeGenericParameters(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports) {
@@ -918,17 +939,6 @@ public abstract class ClassBase extends AnnotatedComponent {
         }
 
         /**
-         * Whether this type is static.
-         *
-         * @param isStatic whether type is static
-         * @return updated builder instance
-         */
-        B isStatic(boolean isStatic) {
-            this.isStatic = isStatic;
-            return identity();
-        }
-
-        /**
          * Add an enum constant (only valid if the class type is set to ENUM.
          *
          * @param builderConsumer consumer of field builder, type does not have to be specified.
@@ -938,6 +948,17 @@ public abstract class ClassBase extends AnnotatedComponent {
             var builder = EnumConstant.builder();
             builderConsumer.accept(builder);
             this.enumConstants.add(builder.build());
+            return identity();
+        }
+
+        /**
+         * Whether this type is static.
+         *
+         * @param isStatic whether type is static
+         * @return updated builder instance
+         */
+        B isStatic(boolean isStatic) {
+            this.isStatic = isStatic;
             return identity();
         }
 
@@ -959,17 +980,5 @@ public abstract class ClassBase extends AnnotatedComponent {
                 throw new IllegalStateException("Trying to add enum constants to a class of type: " + classType);
             }
         }
-    }
-
-    private static String typeName(ElementKind kind) {
-        return switch (kind) {
-        case CLASS -> "class";
-        case INTERFACE -> "interface";
-        case ENUM -> "enum";
-        case ANNOTATION_TYPE -> "@interface";
-        case RECORD -> "record";
-        case CONSTRUCTOR, FIELD, METHOD, PARAMETER, PACKAGE, RECORD_COMPONENT, STATIC_INIT, INSTANCE_INIT, ENUM_CONSTANT,
-             LOCAL_VARIABLE, MODULE, OTHER -> throw new IllegalStateException("Invalid kind for a Java class: " + kind);
-        };
     }
 }

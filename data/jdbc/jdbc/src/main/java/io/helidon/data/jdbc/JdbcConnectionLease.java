@@ -1,0 +1,216 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.data.jdbc;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+/**
+ * Logical ownership of a connection for one JDBC terminal operation.
+ * <p>
+ * Outside a transaction, closing the lease closes the connection (or returns
+ * it to its pool). During a local transaction, operation cleanup closes its
+ * result set and statement while transaction completion retains ownership of
+ * the physical connection. Keeping that distinction here lets the runner use
+ * the same cleanup order in both cases.
+ */
+interface JdbcConnectionLease extends AutoCloseable {
+
+    /**
+     * Returns the standard lease policy used outside local transactions.
+     *
+     * @return provider of physically owned connections
+     */
+    static Provider ownedProvider() {
+        return Owned::acquire;
+    }
+
+    /**
+     * Returns the connection available to the current operation.
+     *
+     * @return leased connection
+     */
+    Connection connection();
+
+    /**
+     * Releases the logical lease.
+     *
+     * @throws io.helidon.data.DataException when validation or release fails
+     * @throws IllegalStateException when the driver reports an unchecked failure
+     */
+    @Override
+    void close();
+
+    /**
+     * Supplies an owned or transaction-bound lease for one operation.
+     */
+    @FunctionalInterface
+    interface Provider {
+        /**
+         * Acquires a logical connection lease.
+         *
+         * @param dataSource operation datasource
+         * @return acquired lease
+         * @throws io.helidon.data.DataException when the connection cannot be acquired
+         * @throws IllegalStateException when the driver reports an unchecked failure
+         */
+        JdbcConnectionLease acquire(DataSource dataSource);
+    }
+
+    /**
+     * Lease that validates auto-commit before closing its physical connection and invalidates the connection when
+     * validation or close cannot confirm safe release.
+     */
+    final class Owned implements JdbcConnectionLease {
+
+        private static final String AUTO_COMMIT_REQUIRED =
+                "Data sources used for JDBC operations must provide connections with auto-commit enabled.";
+        private static final String AUTO_COMMIT_MUST_REMAIN_ENABLED =
+                "The JDBC operation must leave its connection with auto-commit enabled.";
+
+        private final Connection connection;
+        private boolean closed;
+
+        /**
+         * Creates a lease with physical connection ownership.
+         *
+         * @param connection owned connection
+         */
+        private Owned(Connection connection) {
+            this.connection = connection;
+        }
+
+        /**
+         * Acquires and validates a physically owned connection. Operations that
+         * own their connection require auto-commit so an ordinary lease close
+         * cannot leave transaction completion to driver-specific
+         * {@link Connection#close()} behavior. A rejected connection is
+         * invalidated before the acquisition failure is rethrown because an
+         * ordinary close cannot prove that a pooled physical connection is safe
+         * for another borrower.
+         * <p>
+         * This conservative policy may discard a physical connection that a
+         * pool could have reset, and aborting it can cost more than returning it
+         * to the pool. Persistent datasource misconfiguration can therefore
+         * cause connection churn while operations continue to fail. A
+         * datasource that returns a proxy connection remains responsible for
+         * applying {@link Connection#abort(java.util.concurrent.Executor)} to
+         * the underlying physical connection as required by its JDBC contract.
+         *
+         * @param dataSource source of the owned connection
+         * @return validated connection lease
+         * @throws io.helidon.data.DataException when acquisition or validation fails
+         */
+        static Owned acquire(DataSource dataSource) {
+            Connection connection;
+            try {
+                connection = JdbcExceptionTranslator.invoke("acquiring a connection",
+                                                            dataSource::getConnection);
+            } catch (SQLException | RuntimeException | Error failure) {
+                throw JdbcExceptionTranslator.translateFailure("connection acquisition", failure);
+            }
+            try {
+                if (!JdbcExceptionTranslator.invoke("inspecting automatic commit mode",
+                                                    connection::getAutoCommit)) {
+                    throw JdbcExceptionTranslator.safeException(AUTO_COMMIT_REQUIRED);
+                }
+                return new Owned(connection);
+            } catch (SQLException | RuntimeException | Error failure) {
+                Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, failure);
+                throw JdbcExceptionTranslator.translateFailure("connection validation", reportedFailure);
+            }
+        }
+
+        @Override
+        public Connection connection() {
+            if (closed) {
+                throw new IllegalStateException("The connection lease is closed.");
+            }
+            return connection;
+        }
+
+        /**
+         * Validates and closes the owned connection, or invalidates it when the connection is no longer safe for
+         * ordinary release. The first validation or close failure remains the reported failure even when best-effort
+         * invalidation succeeds.
+         *
+         * @throws io.helidon.data.DataException when validation or release fails
+         * @throws IllegalStateException when the driver reports an unchecked failure
+         */
+        @Override
+        public void close() {
+            if (closed) {
+                return;
+            }
+
+            Throwable failure = null;
+            boolean safeForOrdinaryClose = false;
+            try {
+                try {
+                    if (JdbcExceptionTranslator.invoke("inspecting automatic commit mode before releasing a connection",
+                                                       connection::getAutoCommit)) {
+                        safeForOrdinaryClose = true;
+                    } else {
+                        failure = JdbcExceptionTranslator.safeException(AUTO_COMMIT_MUST_REMAIN_ENABLED);
+                        try {
+                            JdbcExceptionTranslator.invokeVoid("rolling back after automatic commit mode changed",
+                                                               connection::rollback);
+                            JdbcExceptionTranslator.invokeVoid("restoring automatic commit mode after an operation",
+                                                               () -> connection.setAutoCommit(true));
+                            safeForOrdinaryClose = true;
+                        } catch (SQLException | RuntimeException | Error recoveryFailure) {
+                            failure = JdbcExceptionTranslator.suppress(failure,
+                                                                       "recovering automatic commit mode",
+                                                                       recoveryFailure);
+                        }
+                    }
+                } catch (SQLException | RuntimeException | Error inspectionFailure) {
+                    failure = inspectionFailure;
+                }
+
+                if (safeForOrdinaryClose) {
+                    try {
+                        JdbcExceptionTranslator.invokeVoid("closing a connection", connection::close);
+                    } catch (SQLException | RuntimeException | Error closeFailure) {
+                        // Connection.close may fail before a pool return or physical release. Invalidate immediately
+                        // rather than leaving the runner with a terminal lease whose connection has no cleanup path.
+                        Throwable releaseFailure = closeFailure;
+                        if (failure != null) {
+                            releaseFailure = JdbcExceptionTranslator.suppress(failure,
+                                                                              "closing a connection",
+                                                                              closeFailure);
+                        }
+                        failure = JdbcConnectionInvalidator.invalidate(connection, releaseFailure);
+                    }
+                } else {
+                    // An unreadable mode or failed recovery cannot use ordinary close because JDBC does not define the
+                    // outcome of closing a connection while a transaction is active.
+                    failure = JdbcConnectionInvalidator.invalidate(connection, failure);
+                }
+            } finally {
+                // Success and completed invalidation are both terminal. A later close must not reuse or retry an
+                // unsafe connection after this method has exhausted the provider's cleanup sequence.
+                closed = true;
+            }
+
+            if (failure != null) {
+                throw JdbcExceptionTranslator.translateFailure("connection release", failure);
+            }
+        }
+    }
+}

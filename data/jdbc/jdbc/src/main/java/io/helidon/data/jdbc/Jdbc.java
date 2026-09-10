@@ -1,0 +1,201 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.data.jdbc;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import io.helidon.common.Api;
+
+/**
+ * Declares JDBC behavior for Helidon Data repository methods.
+ * <p>
+ * Each repository method supplies one SQL statement and may specify how the
+ * statement is executed or mapped. Code generation reads these annotations,
+ * the JDBC provider does not inspect them at runtime.
+ */
+@Api.Incubating
+@Api.Since("27.0.0")
+public final class Jdbc {
+
+    // Use one provider identifier for repository selection, service qualifiers, and transaction lifecycle events.
+    static final String PROVIDER = "jdbc";
+
+    /**
+     * Prevents construction.
+     */
+    private Jdbc() {
+        throw new UnsupportedOperationException("The Jdbc class cannot be instantiated.");
+    }
+
+    /**
+     * Execution choices supported by the JDBC repository provider.
+     */
+    public enum ExecutionType {
+        /**
+         * Allows code generation to infer query or update behavior from the method
+         * signature and its JDBC annotations.
+         */
+        AUTO,
+
+        /**
+         * Executes the statement as a query and maps its rows.
+         */
+        QUERY,
+
+        /**
+         * Executes the statement as an update.
+         */
+        UPDATE
+    }
+
+    /**
+     * Selects the JDBC client managed by the registry, used by a repository.
+     * <p>
+     * The value names the required {@link JdbcClient} qualified with
+     * {@link io.helidon.service.registry.Service.Named}. When this annotation
+     * is absent, code generation selects the client named
+     * {@link io.helidon.service.registry.Service.Named#DEFAULT_NAME}.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Client {
+
+        /**
+         * Returns the required JDBC client name.
+         *
+         * @return JDBC client name
+         */
+        String value();
+    }
+
+    /**
+     * Declares one SQL statement executed by a repository method.
+     * <p>
+     * Every abstract JDBC repository method must declare this annotation.
+     * The SQL statement may use named markers matching Java parameter names or
+     * positional JDBC markers. A statement must use one style consistently.
+     * <p>
+     * A repository invocation supplies the SQL, after rewriting any named bind
+     * markers, to the driver as one {@link java.sql.PreparedStatement}. Helidon
+     * validates the repository method and bind markers but does not parse
+     * database grammar, split scripts, or validate statement boundaries
+     * specific to a database. The value must therefore describe exactly one
+     * SQL statement. SQL scripts, batches, compound or multiple statement
+     * strings specific to a JDBC driver, stored procedure calls, SQL that
+     * controls transactions, and commands that change connection or session
+     * state, including auto-commit mode, are not supported.
+     * <p>
+     * A single schema definition statement may be executed when the repository
+     * invocation does not participate in a Helidon local JDBC transaction. The
+     * invocation then uses its own connection in auto-commit mode, and the
+     * statement executes as an independent auto-commit operation. Schema
+     * definition statements and any other statements with semantics specific
+     * to a database that implicitly commit or otherwise end a transaction are
+     * not supported while participating in a Helidon local JDBC transaction.
+     * This restriction applies regardless of whether the database supports
+     * transactional DDL.
+     * <p>
+     * Helidon treats the SQL as opaque: it does not classify statements or
+     * reliably detect an implicit commit. If unsupported SQL is executed
+     * within a local transaction, a database may commit pending work while
+     * leaving JDBC auto-commit disabled. A later rollback cannot undo that
+     * committed work. Consequently, a repository operation or transaction
+     * failure does not establish that the database made no changes, and
+     * applications must not retry the operation automatically.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Statement {
+
+        /**
+         * Returns the SQL statement.
+         *
+         * @return one SQL statement
+         */
+        String value();
+    }
+
+    /**
+     * Selects how a repository statement is executed.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Execution {
+
+        /**
+         * Returns the requested execution type.
+         *
+         * @return execution type
+         */
+        ExecutionType value() default ExecutionType.AUTO;
+    }
+
+    /**
+     * Requests generated keys from an update statement.
+     * <p>
+     * An empty value requests the generated keys selected by the JDBC driver.
+     * Otherwise, the provided values are passed to JDBC in declaration order.
+     * <p>
+     * Without a local transaction, the update may be committed before the repository finishes reading or mapping the
+     * generated keys, checking the expected number of keys, or releasing JDBC resources. Such a failure does not
+     * establish that the update was rolled back and must not be retried automatically. When key materialization and the
+     * update must be atomic, execute the repository method within a Helidon local transaction and allow the failure to
+     * escape the transaction boundary.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface GeneratedKeys {
+
+        /**
+         * Returns the requested generated column names.
+         *
+         * @return column names, or an empty array to request the keys selected
+         *         by the JDBC driver
+         */
+        String[] value() default {};
+    }
+
+    /**
+     * Selects an application row mapper for query or generated key rows.
+     * <p>
+     * With a mapper class, generated code injects that exact service type.
+     * Without an explicit mapper class, generated code requires a row mapper
+     * service whose generic result type exactly matches the repository result
+     * type. When this annotation is absent for a query or generated key result,
+     * supported scalar results are mapped from column one, and supported records
+     * use generated component mapping.
+     * <p>
+     * A mapper used by a singleton repository must be stateless or safe for
+     * concurrent use. The mapper receives a scoped {@link JdbcClient.Row} and
+     * never owns JDBC resources.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface RowMapper {
+
+        /**
+         * Returns the mapper service type.
+         *
+         * @return service type, or the raw {@link JdbcClient.RowMapper} contract
+         *         to select by generic result type
+         */
+        Class<? extends JdbcClient.RowMapper> value()
+                default JdbcClient.RowMapper.class;
+    }
+}

@@ -17,8 +17,10 @@
 package io.helidon.codegen;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.spi.AnnotationMapper;
@@ -78,6 +80,12 @@ public abstract class CodegenContextDelegate implements CodegenContext {
     @Override
     public Optional<TypeInfo> typeInfo(TypeName typeName, Predicate<TypedElementInfo> elementPredicate) {
         return delegate.typeInfo(typeName, elementPredicate);
+    }
+
+    @Override
+    public TypeHierarchyResolver typeHierarchyResolver(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
+        Objects.requireNonNull(typeInfoLookup, "The type information lookup must not be null.");
+        return delegate.typeHierarchyResolver(typeInfoLookup);
     }
 
     @Override

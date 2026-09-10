@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ class RoundContextImpl implements RoundContext {
     private final CodegenContext ctx;
     private final List<ClassCode> newTypesFromPreviousExtensions;
     private final Collection<TypeName> annotations;
+    private TypeHierarchyResolver typeHierarchyResolver;
 
     RoundContextImpl(CodegenContext ctx,
                      List<ClassCode> newTypes,
@@ -139,8 +140,46 @@ class RoundContextImpl implements RoundContext {
         return generatedClass(typeName)
                 .map(it -> ClassModelFactory.create(
                         this,
-                        typeName,
+                        resolvedTypeName(typeName, it),
                         it));
+    }
+
+    @Override
+    public TypeHierarchyResolver typeHierarchyResolver() {
+        if (typeHierarchyResolver == null) {
+            // Resolver construction can consult the compiler model, so create it only when hierarchy work is requested.
+            // The bound lookup remains live and continues to see ClassModels added later in this processing round.
+            typeHierarchyResolver = ctx.typeHierarchyResolver(this::typeInfo);
+        }
+        return typeHierarchyResolver;
+    }
+
+    Collection<ClassCode> newTypes() {
+        return newTypes.values();
+    }
+
+    /**
+     * Uses the declared name of a generated top level class when only its simple
+     * name is available.
+     * <p>
+     * An extension can request type information for source produced earlier in the
+     * same processing run, before javac creates an element for it. The generated
+     * class lookup can resolve the simple name by searching registered packages. In
+     * that case, the matched {@link ClassModel} supplies the fully qualified name
+     * for the resulting {@link TypeInfo}. Already qualified and nested names are
+     * preserved.
+     *
+     * @param requestedName name supplied by the processing environment
+     * @param generatedClass matched class model
+     * @return name to use when creating type information
+     */
+    private static TypeName resolvedTypeName(TypeName requestedName, ClassBase generatedClass) {
+        if (requestedName.packageName().isEmpty()
+                && requestedName.enclosingNames().isEmpty()
+                && generatedClass instanceof ClassModel classModel) {
+            return classModel.typeName();
+        }
+        return requestedName;
     }
 
     private Optional<ClassBase> generatedClass(TypeName typeName) {
@@ -231,7 +270,4 @@ class RoundContextImpl implements RoundContext {
                 .build();
     }
 
-    Collection<ClassCode> newTypes() {
-        return newTypes.values();
-    }
 }

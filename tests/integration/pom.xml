@@ -32,6 +32,7 @@
 
     <modules>
         <module>config</module>
+        <module>data-jdbc</module>
         <module>dbclient</module>
         <module>discovery</module>
         <module>harness</module>

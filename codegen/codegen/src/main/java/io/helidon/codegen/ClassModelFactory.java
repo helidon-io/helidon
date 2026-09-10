@@ -43,8 +43,18 @@ final class ClassModelFactory {
                            TypeName requestedTypeName,
                            ClassBase requestedType) {
 
+        TypeName rawTypeName = requestedTypeName.genericTypeName();
+        // A ClassModel may be queried in the same processing run before javac has created a TypeElement. Preserve its
+        // formal variables and bounds separately from the concrete use-site type so member resolution can substitute,
+        // for example, Box<T> components when the requested type is Box<String>.
+        TypeName declaredTypeName = TypeName.builder(rawTypeName)
+                .typeArguments(requestedType.genericArguments())
+                .build();
+
         var builder = TypeInfo.builder()
                 .typeName(requestedTypeName)
+                .rawType(rawTypeName)
+                .declaredType(declaredTypeName)
                 .kind(requestedType.kind())
                 .accessModifier(requestedType.accessModifier())
                 .update(it -> {
@@ -67,7 +77,7 @@ final class ClassModelFactory {
             ctx.typeInfo(typeName).ifPresent(builder::addInterfaceTypeInfo);
         }
         for (Field field : requestedType.fields()) {
-            addField(builder, field);
+            addField(builder, requestedType.kind(), field);
         }
         for (Constructor constructor : requestedType.constructors()) {
             addConstructor(requestedTypeName, builder, constructor);
@@ -168,10 +178,14 @@ final class ClassModelFactory {
         );
     }
 
-    private static void addField(TypeInfo.Builder builder, Field field) {
+    private static void addField(TypeInfo.Builder builder, ElementKind enclosingKind, Field field) {
         builder.addElementInfo(fieldInfo -> fieldInfo
                 .typeName(field.typeName())
-                .kind(ElementKind.FIELD)
+                // ClassModel stores record components in its instance field collection. Report them using the element
+                // kind javac supplies when TypeInfo is requested before the generated record has been compiled.
+                .kind(enclosingKind == ElementKind.RECORD && !field.isStatic()
+                              ? ElementKind.RECORD_COMPONENT
+                              : ElementKind.FIELD)
                 .accessModifier(field.accessModifier())
                 .elementName(field.name())
                 .description(String.join("\n", field.description()))

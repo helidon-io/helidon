@@ -481,6 +481,21 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.data.jdbc</groupId>
+                <artifactId>helidon-data-jdbc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.data.jdbc</groupId>
+                <artifactId>helidon-data-jdbc-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.data.jdbc</groupId>
+                <artifactId>helidon-data-jdbc-lexical</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.data.jakarta.persistence</groupId>
                 <artifactId>helidon-data-jakarta-persistence</artifactId>
                 <version>${helidon.version}</version>

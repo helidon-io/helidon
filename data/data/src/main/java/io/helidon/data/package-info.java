@@ -17,25 +17,25 @@
 /**
  * Helidon Data Repository.
  * <p>
- * The Helidon Data Repository provides unified API to work with database queries.
- * Data repository queries are an abstraction on top of Object–Relational Mapping (ORM).
- * They allow compile time translation of interfaces with query definitions into implementing
- * classes.
+ * Helidon Data provides a unified repository API for database operations. Repository interfaces are translated into
+ * implementing classes at compile time.
  * <p>
- * Data repository queries are methods of interfaces that extend {@link io.helidon.data.Data.GenericRepository}.
- * Data repository queries can be implemented in three ways:
+ * A repository interface can extend {@link io.helidon.data.Data.GenericRepository} to identify its entity and
+ * identifier types. A persistence provider may also support repository interfaces annotated with
+ * {@link io.helidon.data.Data.Repository} that do not declare these types at the repository level.
+ * <p>
+ * Depending on the persistence provider, repository operations can be defined in three ways:
  * <ul>
- *     <li>using method annotated with {@link io.helidon.data.Data.Query}</li>
- *     <li>using method name as query definition</li>
- *     <li>extending existing {@link io.helidon.data.Data.GenericRepository} child interfaces
- *         with common sets of query methods:
+ *     <li>annotating a method with {@link io.helidon.data.Data.Query}</li>
+ *     <li>deriving a query from the method name</li>
+ *     <li>extending a standard repository interface that provides common operations or capabilities:
  *         <ul>
- *             <li>{@link io.helidon.data.Data.BasicRepository} to implement basic set of entity operations</li>
- *             <li>{@link io.helidon.data.Data.CrudRepository} to implement entity CRUD operations</li>
- *             <li>{@link io.helidon.data.Data.PageableRepository} to implement pageable
- *                 {@link io.helidon.data.Data.BasicRepository#findAll()} queries</li>
- *             <li>{@link io.helidon.data.Data.SessionRepository} to get access to persistence provider's session,
- *                  e.g. {@code jakarta.persistence.EntityManager}</li>
+ *             <li>{@link io.helidon.data.Data.BasicRepository} for a basic set of entity operations</li>
+ *             <li>{@link io.helidon.data.Data.CrudRepository} for entity CRUD operations</li>
+ *             <li>{@link io.helidon.data.Data.PageableRepository} for pageable alternatives to
+ *                 {@link io.helidon.data.Data.BasicRepository#findAll()}</li>
+ *             <li>{@link io.helidon.data.Data.SessionRepository} for access to a persistence provider session, such as
+ *                 {@code jakarta.persistence.EntityManager}</li>
  *         </ul>
  *     </li>
  * </ul>

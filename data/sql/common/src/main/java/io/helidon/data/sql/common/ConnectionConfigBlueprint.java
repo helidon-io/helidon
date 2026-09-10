@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,15 @@ import io.helidon.builder.api.Prototype;
 /**
  * Configuration of a JDBC connection to a database.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = ConnectionConfigSupport.Decorator.class)
 @Prototype.Configured
 interface ConnectionConfigBlueprint {
     /**
-     * Database connection url.
+     * JDBC connection URL.
+     * <p>
+     * This value is required and must not be empty.
      *
-     * @return the connection url
+     * @return JDBC connection URL
      */
     @Option.Configured
     String url();
@@ -53,9 +55,9 @@ interface ConnectionConfigBlueprint {
     Optional<char[]> password();
 
     /**
-     * JDBC driver class for database connection.
+     * Fully qualified name of the JDBC driver class.
      *
-     * @return the JDBC driver class name
+     * @return configured JDBC driver class name
      */
     @Option.Configured
     @Option.Redundant
