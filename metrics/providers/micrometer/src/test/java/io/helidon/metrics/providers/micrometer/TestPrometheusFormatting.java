@@ -275,6 +275,34 @@ class TestPrometheusFormatting {
     }
 
     @Test
+    void testLegacyCounterActualGeneratedNameTagIsSelectable() {
+        MetricsConfig legacyConfig = MetricsConfig.builder()
+                .addPublisher(PrometheusPublisher.builder()
+                                      .namingConvention(builder -> builder.nonLetterPrefix("m_"))
+                                      .build())
+                .warnOnMultipleRegistries(false)
+                .build();
+        MeterRegistry legacyRegistry = metricsFactory.createMeterRegistry(legacyConfig);
+        try {
+            legacyRegistry.getOrCreate(metricsFactory.counterBuilder("jobs")
+                                               .addTag(metricsFactory.tagCreate("le", "actual")))
+                    .increment();
+
+            var formatter = MicrometerPrometheusFormatter.builder(legacyRegistry)
+                    .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                    .meterNameSelection(Set.of("jobs"))
+                    .tagSelection(Map.of("le", Set.of("actual")))
+                    .build();
+
+            assertThat("Actual counter tag which shares a generated label name remains selectable with legacy naming",
+                       checkAndCast(formatter.format()),
+                       containsString("jobs_total{le=\"actual\"} 1.0"));
+        } finally {
+            legacyRegistry.close();
+        }
+    }
+
+    @Test
     void testGeneratedCommonLabelDoesNotSatisfyTagSelection() {
         Meter.builder("generatedCommonLabel",
                       Meter.Type.OTHER,

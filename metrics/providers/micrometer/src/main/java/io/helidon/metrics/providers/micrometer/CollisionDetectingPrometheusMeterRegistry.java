@@ -125,7 +125,7 @@ class CollisionDetectingPrometheusMeterRegistry extends PrometheusMeterRegistry 
     protected LongTaskTimer newLongTaskTimer(Meter.Id id,
                                              DistributionStatisticConfig distributionStatisticConfig) {
         return register(id,
-                        distributionNames(id, distributionStatisticConfig),
+                        longTaskTimerNames(id, distributionStatisticConfig),
                         () -> super.newLongTaskTimer(id, distributionStatisticConfig));
     }
 
@@ -170,6 +170,17 @@ class CollisionDetectingPrometheusMeterRegistry extends PrometheusMeterRegistry 
                       conventionName + CREATED_SUFFIX);
     }
 
+    private Set<String> longTaskTimerNames(Meter.Id id,
+                                           DistributionStatisticConfig distributionStatisticConfig) {
+        Set<String> result = new LinkedHashSet<>(distributionNames(id, distributionStatisticConfig));
+        if (distributionStatisticConfig.isPublishingHistogram()) {
+            String conventionName = expositionName(id);
+            result.add(conventionName + "_gcount");
+            result.add(conventionName + "_gsum");
+        }
+        return Set.copyOf(result);
+    }
+
     private String expositionName(Meter.Id id) {
         return PrometheusNameSupport.expositionName(id, config().namingConvention());
     }
@@ -202,7 +213,7 @@ class CollisionDetectingPrometheusMeterRegistry extends PrometheusMeterRegistry 
                                                                + "' is produced by both " + claim.owner + " and " + owner);
                 }
             }
-            names.forEach(name -> claims.compute(name, (ignored, claim) -> claim == null
+            names.forEach(name -> claims.compute(name, (_, claim) -> claim == null
                     ? new Claim(owner)
                     : claim.increment()));
             return new Reservation(names);
@@ -233,7 +244,7 @@ class CollisionDetectingPrometheusMeterRegistry extends PrometheusMeterRegistry 
     }
 
     private void releaseLocked(Reservation reservation) {
-        reservation.names.forEach(name -> claims.computeIfPresent(name, (ignored, claim) -> claim.decrement()));
+        reservation.names.forEach(name -> claims.computeIfPresent(name, (_, claim) -> claim.decrement()));
     }
 
     private static final class Claim {

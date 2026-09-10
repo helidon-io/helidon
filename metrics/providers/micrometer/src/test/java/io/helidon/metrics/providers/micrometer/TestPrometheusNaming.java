@@ -266,11 +266,20 @@ class TestPrometheusNaming {
     void testLongTaskTimerGeneratedNameCollisionsAreRejectedDuringRegistration() {
         PrometheusMeterRegistry registry = registry(PrometheusPublisher.create());
         try {
-            LongTaskTimer.builder("operation").register(registry);
+            LongTaskTimer.builder("operation")
+                    .publishPercentileHistogram()
+                    .register(registry);
 
             assertThrows(IllegalArgumentException.class,
                          () -> Gauge.builder("operation_seconds_max", () -> 1).register(registry));
-            assertThat(scrape(registry), containsString("operation_seconds_max 0.0"));
+            assertThrows(IllegalArgumentException.class,
+                         () -> Gauge.builder("operation_seconds_gcount", () -> 1).register(registry));
+            assertThrows(IllegalArgumentException.class,
+                         () -> Gauge.builder("operation_seconds_gsum", () -> 1).register(registry));
+            assertThat(scrape(registry),
+                       allOf(containsString("operation_seconds_gcount 0"),
+                             containsString("operation_seconds_gsum 0.0"),
+                             containsString("operation_seconds_max 0.0")));
         } finally {
             registry.close();
         }

@@ -240,15 +240,12 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         prometheusMeterRegistry.forEachMeter(meter -> {
             Meter.Id meterId = meter.getId();
             String conventionName = PrometheusNameSupport.expositionName(meterId, namingConvention);
-            String familyName = meterId.getType() == Meter.Type.COUNTER && conventionName.endsWith("_total")
-                    ? conventionName.substring(0, conventionName.length() - "_total".length())
-                    : conventionName;
-            result.computeIfAbsent(familyName,
+            result.computeIfAbsent(conventionName,
                                    _ -> meterId.getConventionTags(namingConvention).stream()
                                            .map(Tag::getKey)
                                            .collect(Collectors.toUnmodifiableSet()));
             if (meter instanceof Timer || meter instanceof DistributionSummary || meter instanceof LongTaskTimer) {
-                result.putIfAbsent(conventionName + "_max", result.get(familyName));
+                result.putIfAbsent(conventionName + "_max", result.get(conventionName));
             }
         });
         return result;
