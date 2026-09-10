@@ -73,7 +73,7 @@ class RoutingTest extends RoutingTestBase {
                 .trace("/trace_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("trace_multi"))
                 .patch("/patch_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("patch_multi"))
                 // shortcut methods with no path pattern
-                .get((req, res) -> res.send("get_catchall"))
+                .get((req, res) -> res.send(GET_CATCHALL_RESPONSE))
                 .post((req, res) -> res.send("post_catchall"))
                 .put((req, res) -> res.send("put_catchall"))
                 .delete((req, res) -> res.send("delete_catchall"))
