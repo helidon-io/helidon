@@ -19,25 +19,31 @@ Messaging configuration
 <tbody>
 <tr>
 <td>
+<a id="incoming"></a>
+<a href="io.helidon.messaging.spi.MessagingIncomingConfig.md">
 <code>incoming</code>
+</a>
 </td>
 <td>
-<code>Map&lt;<wbr>String,<wbr> Config&gt;</code>
+<code>Map&lt;<wbr>String,<wbr> Messaging<wbr>Incoming<wbr>Config&gt;</code>
 </td>
 <td>
 </td>
-<td>Incoming channel configurations, keyed by channel name</td>
+<td>Incoming channel configurations, keyed by channel name, whose execution settings take precedence over outgoing configurations of the same logical channel</td>
 </tr>
 <tr>
 <td>
+<a id="outgoing"></a>
+<a href="io.helidon.messaging.spi.MessagingOutgoingConfig.md">
 <code>outgoing</code>
+</a>
 </td>
 <td>
-<code>Map&lt;<wbr>String,<wbr> Config&gt;</code>
+<code>Map&lt;<wbr>String,<wbr> Messaging<wbr>Outgoing<wbr>Config&gt;</code>
 </td>
 <td>
 </td>
-<td>Outgoing channel configurations, keyed by channel name</td>
+<td>Outgoing channel configurations, keyed by channel name; their execution settings apply only when the logical channel has no incoming configuration</td>
 </tr>
 <tr>
 <td>
@@ -76,20 +82,6 @@ Messaging configuration
 <code>1024</code>
 </td>
 <td>Positive maximum number of admitted messages, including queued and executing deliveries</td>
-</tr>
-<tr>
-<td>
-<a id="channel"></a>
-<a href="io.helidon.messaging.MessagingChannelConfig.md">
-<code>channel</code>
-</a>
-</td>
-<td>
-<code>Map&lt;<wbr>String,<wbr> Messaging<wbr>Channel<wbr>Config&gt;</code>
-</td>
-<td>
-</td>
-<td>Logical channel settings, keyed by channel name</td>
 </tr>
 <tr>
 <td>

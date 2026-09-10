@@ -318,13 +318,17 @@ messaging:
 `type` selects a `MessagingConnectorProvider`; the object key or list entry's `name` identifies the resulting
 `MessagingConnector`. In object form, an omitted `type` defaults to the object key; in list form, an omitted `name`
 defaults to `type`. Several named instances can use the same provider type. `MessagingConfig` resolves this connector
-list using the Service Registry and retains `incoming` and `outgoing` as `Map<String, Config>`. A channel node's
-`name`, when present, overrides its object key as the logical channel name.
+list using the Service Registry. Its `incoming` and `outgoing` maps contain `MessagingIncomingConfig` and
+`MessagingOutgoingConfig` values from `io.helidon.messaging.spi`. Both extend `MessagingChannelConfig`, which carries
+the required connector name, logical channel name, sparse execution overrides, and optional original configuration.
+A channel node's `name`, when present, overrides its object key as the logical channel name. `channelName` is typed
+metadata, not a configuration option: configuration derives it from the entry, while imperative builders supply it
+explicitly.
 
-Channel options other than `connector` and `failure` are connector-specific. The runtime removes the portable
-`failure` subtree before passing channel configuration to the connector and supplies the resolved `channel-name`.
-It does not merge connector defaults into that tree or inject a direction; the configured connector applies its own
-typed defaults. The `failure` subtree belongs to an incoming channel and cannot be placed in connector-wide defaults.
+The runtime uses typed `execution` and incoming `failure` settings, and passes the typed channel configuration to
+the connector. The original configuration node is retained for connector setup adapters. The configured connector
+applies its own typed common defaults; the runtime does not merge connector configuration trees or inject a direction.
+The `failure` subtree belongs to an incoming channel and cannot be placed in connector-wide defaults.
 See the selected connector's documentation in the Helidon Extensions repository for its complete configuration.
 
 ### Retry, drop, and dead-letter handling
@@ -357,14 +361,31 @@ channel with an actual output. The target is represented by the optional `DeadLe
 policy.
 
 Configuration can use the FT retry keys `calls`, `delay`, `delay-factor`, `jitter`, `jitter-factor`, `max-delay`,
-`overall-timeout`, and `enable-metrics`. Programmatic configuration can additionally use `applyOn` and `skipOn` to
-select retryable throwables. Messaging retries `RuntimeException` by default and never retries `Error` or
-`MessagingRejectedException`. The overall timeout continues across failed and deferred subsets of the same retained
-delivery; partial success never resets its retry budget. For a structured batch failure, throwable selection uses the
-aligned delivery exception's application cause and applies that decision to the current failed subset.
+`overall-timeout`, and `enable-metrics`. Programmatic `FailurePolicy` declarations can additionally use `applyOn` and
+`skipOn` on their FT retry configuration to select retryable throwables. Messaging retries `RuntimeException` by default
+and never retries `Error` or `MessagingRejectedException`. The overall timeout continues across failed and deferred
+subsets of the same retained delivery; partial success never resets its retry budget. For a structured batch failure,
+throwable selection uses the aligned delivery exception's application cause and applies that decision to the current
+failed subset.
 
-To retain the messaging defaults while changing selected values programmatically, build from
-`FailurePolicy.create().retry()` and pass the resulting `RetryConfig` to `FailurePolicy.Builder.retry`.
+`MessagingIncomingConfig.failure()` exposes `MessagingFailureConfig`, with optional `retry`, `onExhausted`, and
+`deadLetter` values. When `retry` is present, it supplies a complete FT `Retry` instance: omitted retry options use FT
+defaults of three calls, a 200-millisecond initial delay, and a one-second overall timeout. Retry options do not inherit
+individual values from the declared policy or messaging defaults. When `retry` is absent, the runtime uses the handler's
+declared `Retry`, or the shared messaging default described above if no handler policy is supplied.
+
+The incoming configuration builder's `.failure(failure)` method accepts the same settings programmatically. The runtime
+uses the supplied `Retry` instance directly:
+
+```java
+Retry retry = Retry.builder().calls(1).build();
+MessagingFailureConfig failure = MessagingFailureConfig.builder()
+        .retry(retry)
+        .onExhausted(FailureDisposition.DROP)
+        .build();
+```
+
+When constructing a complete `FailurePolicy` directly, pass the `Retry` instance to `FailurePolicy.Builder.retry`.
 
 A dead-letter target must use the source payload type. Its local receivers must accept `DeadLetterMessage<T>` or a
 compatible `Message<T>` envelope, and dead-letter routes cannot form cycles. These constraints are validated before
@@ -381,7 +402,7 @@ The policy belongs to the incoming channel and retained delivery, not only to th
 sibling receivers and downstream outputs reached by that delivery. If several receivers on one channel declare a
 policy, their effective policies must agree.
 
-Configuration overrides annotation members independently:
+Configuration selects the retry instance, exhaustion disposition, and dead-letter target independently:
 
 ```yaml
 messaging:
@@ -396,11 +417,11 @@ messaging:
         on-exhausted: DROP
 ```
 
-This merges the nested retry settings, retaining the annotation's retry delay while changing the total attempts to one,
-and replaces `DEAD_LETTER` with `DROP`. The inherited dead-letter configuration is cleared. Without either an annotation
-or configuration, an incoming connector uses the messaging retry defaults described above and `FAIL`. A mapping
-failure reported through `ConnectorDeliveryReservation.startFailed` is terminal after its initial attempt because the
-runtime cannot repeat connector-owned transport mapping.
+This replaces the annotation's retry instance with a new FT `Retry` configured for one call; its other options use FT
+defaults. It also replaces `DEAD_LETTER` with `DROP` and clears the inherited dead-letter configuration. Without either
+an annotation or configuration, an incoming connector uses the shared messaging retry default described above and `FAIL`.
+A mapping failure reported through `ConnectorDeliveryReservation.startFailed` is terminal after its initial attempt
+because the runtime cannot repeat connector-owned transport mapping.
 
 Exhaustion has these results:
 
@@ -415,8 +436,9 @@ directly.
 ### Configure execution limits
 
 Messaging uses bounded admission rather than a Reactive Streams protocol. Global limits are configured under
-`messaging`; channel-specific values under `messaging.channel.<channel>.execution` override them. Channel overrides
-have no defaults: omitted values inherit the global settings.
+`messaging`; connection-specific values under `messaging.incoming.<channel>.execution` or
+`messaging.outgoing.<channel>.execution` override them. Channel overrides have no defaults: omitted values inherit
+the global settings.
 
 ```yaml
 messaging:
@@ -427,11 +449,17 @@ messaging:
   admission-timeout: PT5S
   shutdown-timeout: PT10S
 
-  channel:
+  incoming:
     orders:
+      connector: primary
+      destination: orders
       execution:
         queue-capacity: 32
 ```
+
+If a logical channel appears in both maps, its incoming configuration supplies the execution overrides. Unconfigured
+fields inherit the root settings; they do not fall back to the outgoing entry. A channel without either connection
+configuration uses the root settings.
 
 Admitted deliveries execute sequentially in FIFO order within each channel, so messaging methods handling that channel
 are never invoked concurrently. Different channels have independent dispatchers, so deliveries on different channels
@@ -460,16 +488,24 @@ For generated receiver and emitter examples, see `ChannelMessagingTypes.java` in
 The imperative API builds and owns a typed messaging graph directly in Java. It uses the
 `helidon-messaging` runtime dependency but does not require messaging code generation.
 Both imperative builders and declarative registrations produce `MessagingConfig` and use the same graph assembly
-and lifecycle. The graph builder can also load configuration with `.config(config.get("messaging"))`.
+and lifecycle. `MessagingGraph.builder()` returns a `MessagingConfig.Builder`, which can also load configuration with
+`.config(config.get("messaging"))`.
+
+During declarative setup, the configuration provider combines the root configuration, owning Service Registry, and
+consumer and emitter registrations into a typed `MessagingConfig`. `ChannelRegistry` receives that configuration and
+builds the graph with `config.build()`. Delivery and failure handling use typed objects rather than configuration-tree
+lookups.
 
 ### Build and run a graph
 
 ```java
-MessagingGraph.Builder builder = MessagingGraph.builder();
-MessagingChannel<String> input = builder.channel("input", String.class);
-MessagingChannel<String> output = builder.channel("output", String.class);
+MessagingChannel<String> input = MessagingChannel.create("input", String.class);
+MessagingChannel<String> output = MessagingChannel.create("output", String.class);
 
-builder.messageProcessor(input, output, message ->
+MessagingConfig.Builder builder = MessagingGraph.builder()
+        .channel(input)
+        .channel(output)
+        .messageProcessor(input, output, message ->
                 Message.builder(message.entity().toUpperCase())
                         .header("trace-id", message.header("trace-id").orElse("unknown"))
                         .build())
@@ -485,9 +521,15 @@ try (MessagingGraph graph = builder.build()) {
 }
 ```
 
-`MessagingChannel<T>` is an opaque handle owned by its graph. Use `Class<T>` for a simple payload type or
-`GenericType<T>` to retain a parameterized payload type. `build()` freezes and validates the topology, and `start()`
-must complete before an emitter can emit.
+`MessagingChannel<T>` is a typed logical channel handle. Create it with `MessagingChannel.create`, using `Class<T>` for
+a simple payload type or `GenericType<T>` to retain a parameterized payload type. Register each handle with
+`builder.channel(handle)` before adding sources, sinks, or routes that use it. `build()` freezes and validates the
+topology, and `start()` must complete before an emitter can emit.
+
+Use each messaging builder and its configuration to create one graph. Do not reuse either after a graph build attempt,
+whether it succeeds or fails. You may take `buildPrototype()` snapshots before that attempt, but snapshots retain the
+same streams and channel connections; they do not duplicate owned resources and must not be used to build additional
+graphs.
 
 ### Build a topology
 
@@ -495,6 +537,7 @@ The builder supports these elements:
 
 | Method | Purpose |
 | --- | --- |
+| `channel` | Register a typed `MessagingChannel<T>` handle. |
 | `payloadSource` | Feed payloads from a graph-owned `Stream`. |
 | `messageSource` | Feed message envelopes from a graph-owned `Stream`. |
 | `route` | Forward a batch unchanged between channels of the same payload type. |
@@ -509,7 +552,7 @@ The builder supports these elements:
 Every channel must have at least one output. Synchronous routing cycles are rejected. A channel can have at most one
 stream source, and downstream paths from distinct stream sources cannot converge.
 
-The imperative builder accepts channel connections created from typed connector and channel configuration builders.
+The imperative builder accepts configured connectors and typed incoming and outgoing configurations.
 The built graph exposes typed emitters for application-originated input and owns registered streams and channel
 connections. It manages channel startup, incoming delivery admission, draining, and shutdown. Generated consumer
 registrations contribute annotation-based `@Messaging.OnFailure` policies to the same graph.
@@ -519,23 +562,32 @@ For example, the Kafka extension provides typed configuration for both direction
 ```java
 KafkaConnector kafka = KafkaConnector.builder()
         .name("primary")
-        .bootstrapServers("localhost:9092")
+        .addBootstrapServer("localhost:9092")
         .build();
 
-MessagingGraph.Builder builder = MessagingGraph.builder();
-MessagingChannel<String> orders = builder.channel("orders", String.class);
-MessagingChannel<String> outgoing = builder.channel("outgoing", String.class);
+MessagingChannel<String> orders = MessagingChannel.create("orders", String.class);
+MessagingChannel<String> outgoing = MessagingChannel.create("outgoing", String.class);
 
-builder.incomingChannel(orders, kafka.incoming(KafkaIncomingConfig.builder()
-                .channelName("orders")
-                .topic("orders")
-                .groupId("inventory-service")
-                .build()))
-        .messageSink(orders, message -> System.out.println(message.entity()))
-        .outgoingChannel(outgoing, kafka.outgoing(KafkaOutgoingConfig.builder()
-                .channelName("outgoing")
-                .topic("orders")
-                .build()));
+KafkaIncomingConfig ordersConfig = KafkaIncomingConfig.builder()
+        .connector(kafka.name())
+        .channelName(orders.name())
+        .execution(execution -> execution.maxInFlightMessages(64))
+        .topic("orders")
+        .groupId("inventory-service")
+        .build();
+KafkaOutgoingConfig outgoingConfig = KafkaOutgoingConfig.builder()
+        .connector(kafka.name())
+        .channelName(outgoing.name())
+        .topic("orders")
+        .build();
+
+MessagingConfig.Builder builder = MessagingGraph.builder()
+        .channel(orders)
+        .channel(outgoing)
+        .addConnector(kafka)
+        .incoming(Map.of(orders.name(), ordersConfig))
+        .outgoing(Map.of(outgoing.name(), outgoingConfig))
+        .messageSink(orders, message -> System.out.println(message.entity()));
 
 try (MessagingGraph graph = builder.build()) {
     graph.start();
@@ -544,8 +596,8 @@ try (MessagingGraph graph = builder.build()) {
 }
 ```
 
-The configured `KafkaConnector` supplies the shared bootstrap servers. Each factory call returns a fresh channel
-connection whose resources belong to the built graph.
+The configured `KafkaConnector` supplies the shared bootstrap servers. The graph reads execution overrides from the
+typed configurations, then asks the connector to create fresh channel connections whose resources belong to the graph.
 
 ### Emit batches
 
@@ -568,15 +620,17 @@ boundary. All emitter calls wait for end-to-end completion. A partial or indeter
 Configure graph-wide defaults directly on the graph builder:
 
 ```java
-MessagingGraph.Builder builder = MessagingGraph.builder()
+MessagingConfig.Builder builder = MessagingGraph.builder()
         .queueCapacity(32)
         .maxInFlightMessages(256)
         .shutdownTimeout(Duration.ofSeconds(10));
 ```
 
-The `channel` overload that accepts a `GenericType<T>` and `MessagingExecutionConfig` supplies sparse channel-specific
-admission and message limits. Unconfigured fields inherit the graph defaults; the shutdown timeout is configured only
-on the graph. Delivery remains sequential within every channel, while different channels may execute concurrently.
+Set sparse `MessagingExecutionConfig` overrides on the typed incoming or outgoing configuration, as in the Kafka
+example above. Register that configuration in the graph's corresponding map so the runtime can apply its admission
+and message limits. Unconfigured fields inherit the graph defaults; if both directions name the same logical channel,
+only the incoming entry supplies overrides. The shutdown timeout is configured only on the graph. Delivery remains
+sequential within every channel, while different channels may execute concurrently.
 
 Closing a running graph stops new external admission, drains admitted work, and closes graph-owned streams and
 connections. A failed build also closes registered resources. Failures from asynchronous stream sources are reported
@@ -604,8 +658,8 @@ are in `io.helidon.messaging`; the examples below omit routine imports.
 Choose a non-blank connector type that is unique in the application. Helidon connectors use the `helidon-` prefix;
 third-party connectors should use a similarly distinctive name. The examples below use `example-acme`.
 
-- Override `MessagingConnector.incoming(Config)` for a source.
-- Override `MessagingConnector.outgoing(Config)` for a sink.
+- Override `MessagingConnector.incoming(MessagingIncomingConfig)` for a source.
+- Override `MessagingConnector.outgoing(MessagingOutgoingConfig)` for a sink.
 - Override both methods when the transport supports both directions.
 
 The default directional methods return `Optional.empty()`; a connector must support at least one direction. The runtime
@@ -665,8 +719,9 @@ module com.example.messaging.connector.acme {
 }
 ```
 
-The generated Service Registry descriptor performs provider discovery; do not add a Java `provides` directive for the
-provider. A consuming application adds the connector artifact and, when modular, requires the connector module.
+The package-private provider is discovered using its generated Helidon Service Registry descriptor. Leave it out of
+Java `ServiceLoader` configuration and `module-info.java` `provides` directives. A consuming application adds the
+connector artifact and, when modular, requires the connector module.
 
 ### 3. Define and validate connector configuration
 
@@ -684,17 +739,27 @@ interface AcmeConnectorConfigBlueprint extends MessagingConnectorProviderConfig,
 }
 ```
 
-Define channel-specific configuration separately. This example uses one channel prototype for both directions because
-they need the same options; a connector can define distinct incoming and outgoing prototypes:
+Define direction-specific configurations extending the corresponding SPI base. The base supplies `connector`,
+`channelName`, `execution`, and the retained original `config`; do not redeclare `channelName` as configurable.
+Incoming configurations also inherit typed `failure` settings from `MessagingIncomingConfig`.
+Options overriding common connector values are optional and have no defaults. Collection options retain their
+declared blueprint merge behavior.
 
 ```java
 @Prototype.Blueprint
 @Prototype.Configured
-interface AcmeChannelConfigBlueprint {
+interface AcmeIncomingConfigBlueprint extends MessagingIncomingConfig {
+    @Option.Configured
+    Optional<String> endpoint();
+
     @Option.Required
     @Option.Configured
-    String channelName();
+    String destination();
+}
 
+@Prototype.Blueprint
+@Prototype.Configured
+interface AcmeOutgoingConfigBlueprint extends MessagingOutgoingConfig {
     @Option.Configured
     Optional<String> endpoint();
 
@@ -704,32 +769,33 @@ interface AcmeChannelConfigBlueprint {
 }
 ```
 
-Builder code generation creates `AcmeConnectorConfig` and `AcmeChannelConfig`. Add a builder decorator or
-custom builder methods for validation that involves several options, secrets, mutually exclusive values, or normalized
-transport properties. Mark secret options with `@Option.Confidential`, copy mutable values defensively, and keep them
-out of diagnostics and `toString()` output.
+Builder code generation creates `AcmeConnectorConfig`, `AcmeIncomingConfig`, and `AcmeOutgoingConfig`. Add a builder
+decorator or custom builder methods for validation involving several options, secrets, mutually exclusive values, or
+normalized transport properties. Mark secret options with `@Option.Confidential`, copy mutable values defensively, and
+keep them out of diagnostics and `toString()` output.
 
-The runtime first builds `MessagingConfig` and resolves each named connector through its provider. For each channel
-binding it then:
+Setup builds `MessagingConfig` and resolves each named connector through its provider. Graph assembly uses that typed
+configuration for each channel binding:
 
 1. Selects the configured connector named by the channel's `connector` property.
-2. Removes the portable `failure` subtree from the channel configuration.
-3. Supplies the resolved logical `channel-name`, overriding any configured `channel-name`.
-4. Calls the connector's `incoming(Config)` or `outgoing(Config)` method with that channel configuration.
+2. Applies typed execution overrides and resolves incoming `MessagingFailureConfig` against the declared failure policy.
+3. Uses the logical name carried by `channelName()` and retains the original configuration node.
+4. Calls `incoming(MessagingIncomingConfig)` or `outgoing(MessagingOutgoingConfig)` with that typed configuration.
 
-The connector parses the channel prototype and applies its typed common defaults. The runtime neither merges the two
-configuration trees nor injects a direction. Creating a configured connector or channel connection must not open
-transport connections, create delivery threads, or poll; those actions belong to channel startup.
+The connector accepts its concrete configuration directly, or reads connector-specific values from the retained node
+and copies the typed base fields. It then applies common connector defaults. This adaptation stays inside the
+directional factory; no separate public conversion step is needed. Creating a configured connector or channel connection
+must not open transport connections, create delivery threads, or poll; those actions belong to channel startup.
 
 ### 4. Implement the stateless provider
 
-Register the provider as a Service Registry singleton. It creates a configured connector from the selected node and
-instance name:
+Register the provider as a package-private Service Registry singleton. The connector and its configuration API remain
+public. The provider creates a configured connector from the selected node and instance name:
 
 ```java
 @Service.Singleton
-public final class AcmeConnectorProvider implements MessagingConnectorProvider {
-    public static final String CONNECTOR_TYPE = "example-acme";
+final class AcmeConnectorProvider implements MessagingConnectorProvider {
+    static final String CONNECTOR_TYPE = "example-acme";
 
     @Override
     public String configKey() {
@@ -746,7 +812,8 @@ public final class AcmeConnectorProvider implements MessagingConnectorProvider {
 }
 ```
 
-The configured connector keeps the immutable prototype and provides typed factories for imperative use:
+The configured connector keeps the immutable prototype and handles both typed imperative configurations and retained
+configuration nodes through the same directional factories:
 
 ```java
 public final class AcmeConnector implements MessagingConnector, RuntimeType.Api<AcmeConnectorConfig> {
@@ -775,30 +842,31 @@ public final class AcmeConnector implements MessagingConnector, RuntimeType.Api<
     }
 
     @Override
-    public Optional<IncomingChannel> incoming(Config channelConfig) {
-        return Optional.of(incoming(AcmeChannelConfig.create(Objects.requireNonNull(channelConfig))));
-    }
-
-    public IncomingChannel incoming(AcmeChannelConfig channelConfig) {
+    public Optional<IncomingChannel> incoming(MessagingIncomingConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
-        return new AcmeIncomingChannel(effective(channelConfig));
+        AcmeIncomingConfig.Builder builder = AcmeIncomingConfig.builder();
+        if (channelConfig instanceof AcmeIncomingConfig acmeConfig) {
+            builder.from(acmeConfig);
+        } else {
+            channelConfig.config().ifPresent(builder::config);
+            builder.from(channelConfig);
+        }
+        builder.endpoint(builder.endpoint().orElse(config.endpoint()));
+        return Optional.of(new AcmeIncomingChannel(builder.build()));
     }
 
     @Override
-    public Optional<OutgoingChannel> outgoing(Config channelConfig) {
-        return Optional.of(outgoing(AcmeChannelConfig.create(Objects.requireNonNull(channelConfig))));
-    }
-
-    public OutgoingChannel outgoing(AcmeChannelConfig channelConfig) {
+    public Optional<OutgoingChannel> outgoing(MessagingOutgoingConfig channelConfig) {
         Objects.requireNonNull(channelConfig);
-        return new AcmeOutgoingChannel(effective(channelConfig));
-    }
-
-    private AcmeChannelConfig effective(AcmeChannelConfig channelConfig) {
-        return AcmeChannelConfig.builder()
-                .from(channelConfig)
-                .endpoint(channelConfig.endpoint().orElse(config.endpoint()))
-                .build();
+        AcmeOutgoingConfig.Builder builder = AcmeOutgoingConfig.builder();
+        if (channelConfig instanceof AcmeOutgoingConfig acmeConfig) {
+            builder.from(acmeConfig);
+        } else {
+            channelConfig.config().ifPresent(builder::config);
+            builder.from(channelConfig);
+        }
+        builder.endpoint(builder.endpoint().orElse(config.endpoint()));
+        return Optional.of(new AcmeOutgoingChannel(builder.build()));
     }
 }
 ```
@@ -818,7 +886,7 @@ placeholder types:
 
 ```java
 final class AcmeIncomingChannel implements IncomingChannel {
-    private final AcmeChannelConfig config;
+    private final AcmeIncomingConfig config;
     private final AtomicBoolean runStarted = new AtomicBoolean();
     private final AtomicBoolean draining = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -826,7 +894,7 @@ final class AcmeIncomingChannel implements IncomingChannel {
     private volatile AcmeConsumer consumer;
     private volatile Thread owner;
 
-    AcmeIncomingChannel(AcmeChannelConfig config) {
+    AcmeIncomingChannel(AcmeIncomingConfig config) {
         this.config = config;
     }
 
@@ -1077,10 +1145,10 @@ channels can overlap, so shared native resources must be synchronized without co
 
 ```java
 final class AcmeOutgoingChannel implements OutgoingChannel {
-    private final AcmeChannelConfig config;
+    private final AcmeOutgoingConfig config;
     private final AcmeLifecycle lifecycle = new AcmeLifecycle();
 
-    AcmeOutgoingChannel(AcmeChannelConfig config) {
+    AcmeOutgoingChannel(AcmeOutgoingConfig config) {
         this.config = config;
     }
 
@@ -1235,7 +1303,7 @@ application, and verify that the provider is discovered on both the class path a
 At minimum, cover:
 
 - provider type selection, named connector uniqueness, object and list forms, supported directions, typed common
-  defaults and channel overrides, injected `channel-name`, stripped `failure` keys, required values, secrets,
+  defaults and channel overrides, typed channel-name metadata, retained source configuration, required values, secrets,
   defensive copying and redaction, and direction rejection;
 - Service Registry discovery and fresh, resource-free channel connections from every directional factory call; also
   prove that providers and configured connectors are not lifecycle resources, provider-registry shutdown does not

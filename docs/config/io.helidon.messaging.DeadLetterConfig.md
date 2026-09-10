@@ -30,6 +30,10 @@ Dead-letter delivery configuration
 
 
 
+## Usages
+
+- <a href="io.helidon.messaging.MessagingFailureConfig.md#dead-letter"><code>messaging.<wbr>incoming.<wbr>failure.<wbr>dead-<wbr>letter</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.
