@@ -15,12 +15,16 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.sql.DataSource;
 
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
@@ -34,13 +38,16 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class JdbcTxSupportTest {
 
     @Test
     void requiredBeginsAndCommitsOneTransaction() {
         RecordingLifeCycle events = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         assertThat(support.transaction(Tx.Type.REQUIRED, () -> "result"), is("result"));
 
@@ -50,7 +57,7 @@ class JdbcTxSupportTest {
     @Test
     void nestedRequiredJoinsAndFailureMarksOuterRollbackOnly() {
         RecordingLifeCycle events = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
             support.transaction(Tx.Type.REQUIRED, () -> {
@@ -69,7 +76,7 @@ class JdbcTxSupportTest {
     @Test
     void newSuspendsAndResumesOuterTransaction() {
         RecordingLifeCycle events = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         support.transaction(Tx.Type.REQUIRED, () -> {
             support.transaction(Tx.Type.NEW, () -> null);
@@ -92,7 +99,7 @@ class JdbcTxSupportTest {
     @Test
     void newOutsideATransactionBeginsAndCommits() {
         RecordingLifeCycle events = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         assertThat(support.transaction(Tx.Type.NEW, () -> "result"), is("result"));
 
@@ -101,7 +108,7 @@ class JdbcTxSupportTest {
 
     @Test
     void enforcesMandatoryAndNeverPropagation() {
-        JdbcTxSupport support = new JdbcTxSupport(List.of());
+        JdbcTxSupport support = support(List.of());
 
         TxException mandatoryFailure = assertThrows(TxException.class,
                                                     () -> support.transaction(Tx.Type.MANDATORY, () -> null));
@@ -120,7 +127,7 @@ class JdbcTxSupportTest {
     @Test
     void supportedNeverAndUnsupportedRunWithoutStartingATransaction() {
         RecordingLifeCycle events = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         assertThat(support.transaction(Tx.Type.SUPPORTED, () -> "supported"), is("supported"));
         assertThat(support.transaction(Tx.Type.NEVER, () -> "never"), is("never"));
@@ -136,7 +143,7 @@ class JdbcTxSupportTest {
     @Test
     void caughtJoinedFailureStillMarksTransactionRollbackOnly() {
         RecordingLifeCycle events = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
             assertThrows(TxException.class, () -> support.transaction(Tx.Type.SUPPORTED, () -> {
@@ -153,7 +160,7 @@ class JdbcTxSupportTest {
     @Test
     void unsupportedSuspendsWithoutStartingAnotherTransaction() {
         RecordingLifeCycle events = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         support.transaction(Tx.Type.REQUIRED, () -> {
             support.transaction(Tx.Type.UNSUPPORTED, () -> null);
@@ -180,7 +187,7 @@ class JdbcTxSupportTest {
                 throw new IllegalStateException("resume failed");
             }
         };
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         TxException failure = assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
             support.transaction(Tx.Type.NEW, () -> {
@@ -206,7 +213,7 @@ class JdbcTxSupportTest {
                 }
             }
         };
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
         AtomicBoolean joinedAfterFailure = new AtomicBoolean();
 
         assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
@@ -236,7 +243,7 @@ class JdbcTxSupportTest {
                 }
             }
         };
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
         AtomicBoolean nestedTaskInvoked = new AtomicBoolean();
 
         assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
@@ -267,7 +274,7 @@ class JdbcTxSupportTest {
             }
         };
         RecordingLifeCycle following = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(failing, following));
+        JdbcTxSupport support = support(List.of(failing, following));
 
         assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> null));
         assertThat(following.count("begin"), is(1L));
@@ -291,7 +298,7 @@ class JdbcTxSupportTest {
             }
         };
         RecordingLifeCycle following = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(failing, following));
+        JdbcTxSupport support = support(List.of(failing, following));
 
         assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> null));
         assertThat(following.eventKinds(), is(List.of("start:jdbc", "end")));
@@ -315,9 +322,14 @@ class JdbcTxSupportTest {
             }
         };
         RecordingLifeCycle following = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(failing, following));
+        JdbcTxSupport support = support(List.of(failing, following));
 
-        assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> null));
+        TxException failure = assertThrows(TxException.class,
+                                           () -> support.transaction(Tx.Type.REQUIRED, () -> null));
+        assertThat(failure.getMessage(),
+                   is("The local JDBC transaction was committed, but a later transaction lifecycle notification "
+                              + "failed during commit. The committed work must not be retried automatically."));
+        assertThat(failure.getCause().getCause().getMessage(), is("commit failed"));
         assertThat(following.count("commit"), is(1L));
         assertThat(following.count("end"), is(1L));
 
@@ -339,9 +351,14 @@ class JdbcTxSupportTest {
             }
         };
         RecordingLifeCycle following = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(failing, following));
+        JdbcTxSupport support = support(List.of(failing, following));
 
-        assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> null));
+        TxException failure = assertThrows(TxException.class,
+                                           () -> support.transaction(Tx.Type.REQUIRED, () -> null));
+        assertThat(failure.getMessage(),
+                   is("The local JDBC transaction was committed, but a later transaction lifecycle notification "
+                              + "failed during end. The committed work must not be retried automatically."));
+        assertThat(failure.getCause().getCause().getMessage(), is("end failed"));
         assertThat(following.count("commit"), is(1L));
         assertThat(following.count("end"), is(1L));
 
@@ -359,7 +376,7 @@ class JdbcTxSupportTest {
                 throw new IllegalStateException("rollback failed");
             }
         };
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         TxException failure = assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
             throw new IllegalArgumentException("task failed");
@@ -373,7 +390,7 @@ class JdbcTxSupportTest {
     @Test
     void interruptedTaskRestoresInterruptStatusAndRollsBack() {
         RecordingLifeCycle events = new RecordingLifeCycle();
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         try {
             TxException failure = assertThrows(TxException.class,
@@ -391,7 +408,7 @@ class JdbcTxSupportTest {
 
     @Test
     void transactionContextIsNotInheritedByVirtualThreads() throws InterruptedException {
-        JdbcTxSupport support = new JdbcTxSupport(List.of());
+        JdbcTxSupport support = support(List.of());
         AtomicReference<Throwable> virtualThreadFailure = new AtomicReference<>();
         AtomicBoolean mandatoryRejected = new AtomicBoolean();
 
@@ -415,7 +432,7 @@ class JdbcTxSupportTest {
 
     @Test
     void reusesTheSameExecutorWorkerAfterSuccessAndFailure() throws Exception {
-        JdbcTxSupport support = new JdbcTxSupport(List.of());
+        JdbcTxSupport support = support(List.of());
         try (var executor = Executors.newSingleThreadExecutor()) {
             assertThat(executor.submit(() -> support.transaction(Tx.Type.REQUIRED, () -> "success")).get(),
                        is("success"));
@@ -451,7 +468,7 @@ class JdbcTxSupportTest {
                 throw new IllegalStateException("resume failed");
             }
         };
-        JdbcTxSupport support = new JdbcTxSupport(List.of(events));
+        JdbcTxSupport support = support(List.of(events));
 
         TxException failure = assertThrows(TxException.class, () -> support.transaction(Tx.Type.REQUIRED, () -> {
             support.transaction(Tx.Type.NEW, () -> {
@@ -474,7 +491,7 @@ class JdbcTxSupportTest {
                                           ? new OneShotFailingLifeCycle(event)
                                           : new RecordingLifeCycle());
                 }
-                JdbcTxSupport support = new JdbcTxSupport(List.copyOf(listeners));
+                JdbcTxSupport support = support(List.copyOf(listeners));
 
                 assertThrows(RuntimeException.class, () -> exerciseLifecycleFailure(support, event));
 
@@ -489,6 +506,75 @@ class JdbcTxSupportTest {
     }
 
     /**
+     * Proves a fatal listener failure remains fatal regardless of whether a
+     * recoverable listener fails before or after it. Dispatch must still reach
+     * later listeners and leave the thread usable.
+     */
+    @Test
+    void fatalListenerFailureOutranksPeerRuntimeFailureWithoutStoppingDispatch() {
+        for (String event : List.of("start", "begin", "suspend", "resume", "commit", "rollback", "end")) {
+            for (boolean fatalFirst : List.of(false, true)) {
+                IllegalStateException runtimeFailure = new IllegalStateException(event + " runtime failure");
+                OutOfMemoryError fatalFailure = new OutOfMemoryError(event + " fatal failure");
+                RecordingLifeCycle runtimeListener = new OneShotFailingLifeCycle(event, runtimeFailure);
+                RecordingLifeCycle fatalListener = new OneShotFailingLifeCycle(event, fatalFailure);
+                RecordingLifeCycle following = new RecordingLifeCycle();
+                List<RecordingLifeCycle> observers = fatalFirst
+                        ? List.of(fatalListener, runtimeListener, following)
+                        : List.of(runtimeListener, fatalListener, following);
+                JdbcTxSupport support = support(observers);
+
+                Throwable reportedFailure;
+                if (event.equals("rollback")) {
+                    TxException applicationFailure =
+                            assertThrows(TxException.class, () -> exerciseLifecycleFailure(support, event));
+                    assertThat(applicationFailure.getSuppressed().length, is(1));
+                    reportedFailure = applicationFailure.getSuppressed()[0];
+                } else {
+                    reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                   () -> exerciseLifecycleFailure(support, event));
+                }
+
+                assertThat(reportedFailure, sameInstance(fatalFailure));
+                assertThat(fatalFailure.getSuppressed().length, is(1));
+                assertThat(fatalFailure.getSuppressed()[0], sameInstance(runtimeFailure));
+                assertThat(following.count(event.equals("start") ? "start:jdbc" : event), is(1L));
+                assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+            }
+        }
+    }
+
+    /**
+     * Proves a fatal completion-observer failure cannot be hidden by an
+     * earlier unknown-outcome transaction exception.
+     */
+    @Test
+    void fatalObserverFailureOutranksUnknownCompletionFailure() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, false, false);
+        doThrow(new SQLException("commit failed")).when(connection).commit();
+        JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
+        OutOfMemoryError fatalFailure = new OutOfMemoryError("commit observer fatal failure");
+        TxLifeCycle observer = new OneShotFailingLifeCycle("commit", fatalFailure);
+        JdbcTxSupport support = new JdbcTxSupport(manager, List.of(manager, observer));
+
+        OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                        () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                            manager.acquire(dataSource).close();
+                                                            return null;
+                                                        }));
+
+        assertThat(reportedFailure, sameInstance(fatalFailure));
+        assertThat(fatalFailure.getSuppressed().length, is(1));
+        assertThat(fatalFailure.getSuppressed()[0], instanceOf(TxException.class));
+        assertThat(fatalFailure.getSuppressed()[0].getMessage(),
+                   is("The local JDBC transaction commit failed, and the outcome is unknown."));
+        assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
+    }
+
+    /**
      * Proves two listeners returning the same failure instance cannot stop a
      * lifecycle event from reaching a later listener or poison the thread.
      */
@@ -499,7 +585,7 @@ class JdbcTxSupportTest {
             RecordingLifeCycle first = new OneShotFailingLifeCycle(event, sharedFailure);
             RecordingLifeCycle second = new OneShotFailingLifeCycle(event, sharedFailure);
             RecordingLifeCycle following = new RecordingLifeCycle();
-            JdbcTxSupport support = new JdbcTxSupport(List.of(first, second, following));
+            JdbcTxSupport support = support(List.of(first, second, following));
 
             RuntimeException reportedFailure =
                     assertThrows(RuntimeException.class, () -> exerciseLifecycleFailure(support, event));
@@ -513,6 +599,12 @@ class JdbcTxSupportTest {
             if (event.equals("rollback")) {
                 assertThat(failure.getSuppressed().length, is(1));
                 lifecycleFailure = failure.getSuppressed()[0];
+            } else if (event.equals("resume") || event.equals("commit") || event.equals("end")) {
+                assertThat(failure.getMessage(),
+                           is("The local JDBC transaction was committed, but a later transaction lifecycle "
+                                      + "notification failed during " + event
+                                      + ". The committed work must not be retried automatically."));
+                lifecycleFailure = failure.getCause();
             } else {
                 lifecycleFailure = failure;
             }
@@ -542,6 +634,20 @@ class JdbcTxSupportTest {
                     support.transaction(Tx.Type.NEW, () -> null));
         default -> throw new AssertionError("Unknown lifecycle event " + event);
         }
+    }
+
+    /**
+     * Creates transaction support with its dedicated connection manager also
+     * present in the lifecycle listener list used by production injection.
+     *
+     * @param observers test lifecycle observers
+     * @return local JDBC transaction support
+     */
+    private static JdbcTxSupport support(List<? extends TxLifeCycle> observers) {
+        JdbcTransactionConnectionManager connectionManager = new JdbcTransactionConnectionManager();
+        List<TxLifeCycle> listeners = new ArrayList<>(observers);
+        listeners.add(connectionManager);
+        return new JdbcTxSupport(connectionManager, List.copyOf(listeners));
     }
 
     private static class RecordingLifeCycle implements TxLifeCycle {
@@ -620,7 +726,7 @@ class JdbcTxSupportTest {
         /**
          * Failure thrown for the configured event.
          */
-        private final RuntimeException failure;
+        private final Throwable failure;
 
         /**
          * Whether the configured failure has already occurred.
@@ -631,7 +737,7 @@ class JdbcTxSupportTest {
             this(failingEvent, new IllegalStateException(failingEvent + " failed"));
         }
 
-        private OneShotFailingLifeCycle(String failingEvent, RuntimeException failure) {
+        private OneShotFailingLifeCycle(String failingEvent, Throwable failure) {
             this.failingEvent = failingEvent;
             this.failure = failure;
         }
@@ -686,7 +792,10 @@ class JdbcTxSupportTest {
         private void fail(String event) {
             if (!failed && failingEvent.equals(event)) {
                 failed = true;
-                throw failure;
+                if (failure instanceof Error error) {
+                    throw error;
+                }
+                throw (RuntimeException) failure;
             }
         }
     }

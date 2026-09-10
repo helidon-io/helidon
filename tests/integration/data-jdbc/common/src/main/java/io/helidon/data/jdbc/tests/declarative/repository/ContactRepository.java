@@ -27,6 +27,7 @@ import io.helidon.data.jdbc.tests.application.SingleMapperContact;
 import io.helidon.data.jdbc.tests.application.TestSql;
 import io.helidon.data.jdbc.tests.declarative.ExplicitContactMapper;
 import io.helidon.data.jdbc.tests.declarative.ThrowingContactMapper;
+import io.helidon.transaction.Tx;
 
 /**
  * Declarative repository exercised through generated service metadata.
@@ -341,6 +342,29 @@ public interface ContactRepository {
     @Jdbc.GeneratedKeys({"id", "name"})
     @Jdbc.RowMapper
     ContactLabel insertMapped(String name);
+
+    /**
+     * Inserts and deliberately fails while mapping the generated key outside a transaction.
+     *
+     * @param name contact name
+     * @return no value because mapping fails
+     */
+    @Jdbc.Statement(TestSql.INSERT_WITHOUT_EMAIL)
+    @Jdbc.GeneratedKeys("id")
+    @Jdbc.RowMapper(ThrowingContactMapper.class)
+    MapperFailureContact insertWithMapperFailure(String name);
+
+    /**
+     * Inserts and deliberately fails while mapping the generated key in a required transaction.
+     *
+     * @param name contact name
+     * @return no value because mapping fails
+     */
+    @Tx.Required
+    @Jdbc.Statement(TestSql.INSERT_WITHOUT_EMAIL)
+    @Jdbc.GeneratedKeys("id")
+    @Jdbc.RowMapper(ThrowingContactMapper.class)
+    MapperFailureContact insertWithMapperFailureInTransaction(String name);
 
     /**
      * Inserts and optionally maps generated columns through the marker mapper.

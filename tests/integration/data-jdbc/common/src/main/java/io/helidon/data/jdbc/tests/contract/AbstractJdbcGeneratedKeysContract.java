@@ -25,12 +25,14 @@ import io.helidon.data.jdbc.tests.application.GeneratedKeyOperations;
 import io.helidon.data.jdbc.tests.support.DatabaseFixture;
 import io.helidon.data.jdbc.tests.support.SensitiveFailureAssertions;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.transaction.TxException;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -143,6 +145,42 @@ public abstract class AbstractJdbcGeneratedKeysContract {
         assertThat(label.label(), is("preferred:generated-mapped"));
         assertThat(database.committedByName("generated-mapped"),
                    is(Optional.of(new ContactView(label.id(), "generated-mapped", Optional.empty()))));
+    }
+
+    /**
+     * Proves an application mapper failure is propagated unchanged after an
+     * operation-owned auto-commit update and that the write is already visible
+     * through an independent connection. This protects callers from treating
+     * the terminal failure as evidence that retrying the insert is safe.
+     */
+    @Test
+    protected void mapperFailureAfterAutoCommitLeavesWriteCommitted() {
+        String name = "generated-mapper-failure-committed";
+        RuntimeException expected = generatedKeys.generatedKeyMapperFailure();
+
+        RuntimeException failure = assertThrows(RuntimeException.class,
+                                                () -> generatedKeys.insertWithMapperFailure(name));
+
+        assertThat(failure, sameInstance(expected));
+        assertThat(database.committedByName(name).isPresent(), is(true));
+    }
+
+    /**
+     * Proves the same generated-key mapper failure causes a managed local
+     * transaction to roll back when it escapes the transaction boundary. The
+     * transaction exception retains the exact mapper failure as its cause and
+     * an independent query observes no inserted row.
+     */
+    @Test
+    protected void mapperFailureEscapingTransactionRollsWriteBack() {
+        String name = "generated-mapper-failure-rolled-back";
+        RuntimeException expected = generatedKeys.generatedKeyMapperFailure();
+
+        TxException failure = assertThrows(TxException.class,
+                                           () -> generatedKeys.insertWithMapperFailureInTransaction(name));
+
+        assertThat(failure.getCause(), sameInstance(expected));
+        assertThat(database.committedByName(name), is(Optional.empty()));
     }
 
     /**

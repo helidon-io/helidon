@@ -55,6 +55,26 @@ public final class TransactionSql {
     public static final String INVALID_QUERY = "SELECT DATA_VALUE FROM TX_MATRIX_MISSING";
 
     /**
+     * Creates the table used to prove DDL execution outside a local transaction.
+     */
+    public static final String CREATE_DDL_PROBE = "CREATE TABLE DDL_AUTO_COMMIT_PROBE (ID INTEGER PRIMARY KEY)";
+
+    /**
+     * Inserts one row into the DDL probe table through a separate operation-owned connection.
+     */
+    public static final String INSERT_DDL_PROBE = "INSERT INTO DDL_AUTO_COMMIT_PROBE (ID) VALUES (1)";
+
+    /**
+     * Counts rows committed to the DDL probe table.
+     */
+    public static final String QUERY_DDL_PROBE = "SELECT COUNT(*) FROM DDL_AUTO_COMMIT_PROBE";
+
+    /**
+     * Removes the DDL probe table.
+     */
+    public static final String DROP_DDL_PROBE = "DROP TABLE DDL_AUTO_COMMIT_PROBE";
+
+    /**
      * Removes all transaction-matrix rows before a scenario.
      */
     public static final String RESET = "DELETE FROM TX_MATRIX";

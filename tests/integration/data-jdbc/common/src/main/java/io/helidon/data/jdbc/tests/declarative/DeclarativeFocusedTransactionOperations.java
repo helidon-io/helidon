@@ -18,6 +18,7 @@ package io.helidon.data.jdbc.tests.declarative;
 import io.helidon.data.jdbc.tests.application.transaction.FocusedTransactionOperations;
 import io.helidon.data.jdbc.tests.declarative.repository.FocusedTransactionRepository;
 import io.helidon.service.registry.Service;
+import io.helidon.transaction.Tx;
 
 /**
  * Dispatches focused transaction behavior tests to generated repository methods.
@@ -49,6 +50,19 @@ public final class DeclarativeFocusedTransactionOperations implements FocusedTra
     @Override
     public long insertUnsupported(String value) {
         return repository.insertUnsupported(value);
+    }
+
+    @Override
+    public long executeDdlWithoutTransaction() {
+        return Tx.transaction(Tx.Type.NEVER, () -> {
+            repository.createDdlProbe();
+            try {
+                repository.insertDdlProbe();
+                return repository.queryDdlProbe();
+            } finally {
+                repository.dropDdlProbe();
+            }
+        });
     }
 
     @Override

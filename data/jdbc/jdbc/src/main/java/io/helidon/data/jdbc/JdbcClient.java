@@ -95,16 +95,30 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * <p>
      * A terminal operation supplies the complete SQL string to the driver as
      * one {@link java.sql.PreparedStatement}. Helidon does not parse database
-     * grammar, split scripts, or validate database specific statement
-     * boundaries. The supported contract therefore requires exactly one SQL
-     * statement. SQL scripts, batches, driver specific compound or
-     * multiple statement strings, stored procedure calls, and transaction-control
-     * SQL, including commands that change auto-commit mode, are not supported.
+     * grammar, split scripts, or validate statement boundaries specific to a
+     * database. The supported contract therefore requires exactly one SQL
+     * statement. SQL scripts, batches, compound or multiple statement strings
+     * specific to a JDBC driver, stored procedure calls, SQL that controls
+     * transactions, and commands that change connection or session state,
+     * including auto-commit mode, are not supported.
      * <p>
-     * A driver may accept such unsupported SQL and commit work before Helidon
-     * detects an invalid connection state or reports a failure. A terminal
-     * operation failure in that case does not establish that the database made
-     * no changes; applications must not retry it automatically.
+     * A single schema definition statement may be executed when the terminal
+     * operation does not participate in a Helidon local JDBC transaction. The
+     * operation then uses its own connection in auto-commit mode, and the
+     * statement executes as an independent auto-commit operation.
+     * Schema definition statements and any other statements with semantics
+     * specific to a database that implicitly commit or otherwise end a
+     * transaction are not supported while participating in a Helidon local
+     * JDBC transaction. This restriction applies regardless of whether the
+     * database supports transactional DDL.
+     * <p>
+     * Helidon treats the SQL as opaque: it does not classify statements or
+     * reliably detect an implicit commit. If unsupported SQL is executed
+     * within a local transaction, a database may commit pending work while
+     * leaving JDBC auto-commit disabled. A later rollback cannot undo that
+     * committed work. Consequently, a terminal operation or transaction
+     * failure does not establish that the database made no changes, and
+     * applications must not retry the operation automatically.
      * <p>
      * The SQL is trusted executable application input. This method does not
      * sanitize data concatenated into the SQL text. Represent untrusted values
@@ -114,14 +128,15 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * from an explicit application allowlist.
      * <p>
      * Marker recognition uses a portable lexical policy. Question marks
-     * inside ordinary single-quoted strings, PostgreSQL escape and dollar
-     * quoted strings, double-quoted or backtick identifiers, Oracle
-     * alternative strings, and conventional comments are ignored. Square
-     * brackets are ordinary punctuation. A doubled question mark is preserved
-     * as driver escape syntax rather than counted as bind markers. A
-     * {@code --} comment requires following whitespace, a control character,
-     * or end-of-input; other double-dash sequences are rejected as
-     * dialect-ambiguous. Nested block comments are rejected.
+     * inside ordinary strings enclosed in single quotes, PostgreSQL escape and
+     * dollar quoted strings, identifiers quoted with double quotes or
+     * backticks, Oracle alternative strings, and conventional comments are
+     * ignored. Square brackets are ordinary punctuation. A doubled question
+     * mark is preserved as driver escape syntax rather than counted as bind
+     * markers. A {@code --} comment requires following whitespace, a control
+     * character, or the end of input. Other sequences containing two hyphens
+     * are rejected because their meaning differs among SQL dialects. Nested
+     * block comments are rejected.
      *
      * @param sql one SQL statement containing zero or more {@code ?} markers
      * @return statement description
@@ -133,16 +148,16 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     /**
      * Describes one prepared JDBC operation.
      * <p>
-     * Bind positions are one-based. The stage accepts exactly one terminal
-     * operation and is not safe for concurrent use.
+     * Bind positions use JDBC indexes, which start at one. The stage accepts
+     * exactly one terminal operation and is not safe for concurrent use.
      */
     @Api.Preview
     interface Statement {
 
         /**
-         * Binds a non-null supported scalar value.
+         * Binds a supported scalar value that is not {@code null}.
          *
-         * @param index one-based JDBC position
+         * @param index JDBC position, starting at one
          * @param value supported scalar value
          * @return this statement
          * @throws NullPointerException if the value is {@code null}
@@ -154,8 +169,15 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         /**
          * Executes an update and returns its update count as a {@code long} value.
          * <p>
-         * Helidon's JDBC provider uses the large update count when the driver supports it. Otherwise, it returns the
-         * legacy integer update count as a {@code long} value.
+         * Helidon's JDBC provider uses the large update count when the driver
+         * supports it. Otherwise, the provider returns the legacy integer
+         * update count as a {@code long} value.
+         * <p>
+         * A connection owned by the operation uses auto-commit. A failure
+         * reported after the update executes, including while processing the
+         * result or releasing JDBC resources, does not establish that the
+         * database made no changes. Applications must not retry the update
+         * automatically.
          *
          * @return update count
          * @throws io.helidon.data.DataException if JDBC execution fails
@@ -168,17 +190,18 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          *
          * @param mapper row mapper
          * @param <T> mapped type
-         * @return materialized-row terminal stage
+         * @return terminal stage for materialized rows
          * @throws NullPointerException if the mapper is {@code null}
          * @throws IllegalStateException if a terminal operation has started
          */
         <T> Rows<T> map(RowMapper<T> mapper);
 
         /**
-         * Selects column-one mapping for a supported scalar type.
+         * Selects mapping from the first column for a supported scalar type.
          * <p>
-         * {@link Rows#one()} and {@link Rows#list()} require a non-null column
-         * value. {@link Rows#optional()} returns {@link Optional#empty()} both
+         * {@link Rows#one()} and {@link Rows#list()} require a column value
+         * that is not {@code null}.
+         * {@link Rows#optional()} returns {@link Optional#empty()} both
          * when no row is returned and when exactly one row contains SQL
          * {@code NULL} in column one. Applications that need to distinguish
          * those states can use {@link #map(RowMapper)} with a mapper that
@@ -187,7 +210,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          *
          * @param scalarType scalar type
          * @param <T> mapped scalar type
-         * @return materialized-row terminal stage
+         * @return terminal stage for materialized rows
          * @throws NullPointerException if the type is {@code null}
          * @throws IllegalArgumentException if the scalar type is not supported
          * @throws IllegalStateException if a terminal operation has started
@@ -195,12 +218,12 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         <T> Rows<T> map(Class<T> scalarType);
 
         /**
-         * Selects generated-key execution.
+         * Selects generated key execution.
          * <p>
          * Adding no columns requests the driver's default generated keys.
          * Configuration does not acquire JDBC resources.
          *
-         * @return generated-key configuration stage
+         * @return generated key configuration stage
          * @throws IllegalStateException if a terminal operation has started
          */
         GeneratedKeys generatedKeys();
@@ -211,6 +234,16 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * <p>
      * The stage preserves column order. It is single use, is not safe for
      * concurrent use, and performs no JDBC work.
+     * <p>
+     * When the operation owns the connection, the update may be committed
+     * before a terminal operation finishes reading or mapping the generated
+     * keys, checking the expected number of keys, or releasing JDBC resources.
+     * A terminal failure therefore does not establish that the update was
+     * rolled back and must not be retried automatically. When generated key
+     * materialization and the update must be atomic, use a client managed by
+     * the registry inside a local transaction and let the failure escape the
+     * transaction boundary. A directly created client does not join such a
+     * transaction.
      */
     @Api.Preview
     interface GeneratedKeys {
@@ -218,7 +251,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         /**
          * Adds one generated column requested from JDBC.
          *
-         * @param columnName non-blank generated column name
+         * @param columnName generated column name that is not blank
          * @return this generated key stage
          * @throws NullPointerException if the column name is {@code null}
          * @throws IllegalArgumentException if the column name is blank or exactly duplicates an existing name
@@ -227,11 +260,11 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         GeneratedKeys addColumn(String columnName);
 
         /**
-         * Selects the mapper for generated-key rows and finalizes this stage.
+         * Selects the mapper for generated key rows and finalizes this stage.
          *
          * @param mapper generated key row mapper
          * @param <T> mapped key type
-         * @return materialized-key terminal stage
+         * @return terminal stage for materialized keys
          * @throws NullPointerException if the mapper is {@code null}
          * @throws IllegalStateException if mapping has already been selected
          */
@@ -239,7 +272,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     }
 
     /**
-     * Materialized result terminals for a mapped query or generated-key result.
+     * Materialized result terminals for a mapped query or generated key result.
      * <p>
      * The stage accepts exactly one terminal invocation and is not safe for
      * concurrent use. An exception from an application mapper is propagated
@@ -336,9 +369,9 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     interface Row {
 
         /**
-         * Reads a nullable value by one-based column index.
+         * Reads a nullable value by a column index that starts at one.
          *
-         * @param index one-based column index
+         * @param index column index, starting at one
          * @param type requested scalar type
          * @param <T> scalar type
          * @return optional value
@@ -366,12 +399,13 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         <T> Optional<T> optional(String label, Class<T> type);
 
         /**
-         * Reads a non-null value by the column index, starting at one.
+         * Reads a value that must not be {@code null} by the column index,
+         * starting at one.
          *
-         * @param index one-based column index
+         * @param index column index, starting at one
          * @param type requested scalar type
          * @param <T> scalar type
-         * @return non-null value
+         * @return value that is not {@code null}
          * @throws io.helidon.data.DataException if the column contains SQL {@code NULL} or cannot be read
          * @throws NullPointerException if the type is {@code null}
          * @throws IllegalArgumentException if the index or type is invalid
@@ -381,12 +415,12 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         <T> T get(int index, Class<T> type);
 
         /**
-         * Reads a non-null value by column label.
+         * Reads a value that must not be {@code null} by column label.
          *
          * @param label column label
          * @param type requested scalar type
          * @param <T> scalar type
-         * @return non-null value
+         * @return value that is not {@code null}
          * @throws io.helidon.data.DataException if the label is absent or ambiguous,
          *                                          the column contains SQL {@code NULL},
          *                                          or the column cannot be read

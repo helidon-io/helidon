@@ -45,6 +45,13 @@ public interface FocusedTransactionOperations {
     long insertUnsupported(String value);
 
     /**
+     * Creates, uses, and removes a table while transaction participation is forbidden.
+     *
+     * @return committed row count observed through a separate JDBC operation
+     */
+    long executeDdlWithoutTransaction();
+
+    /**
      * Runs an invalid query inside the current transaction, or starts a required transaction when none is active.
      */
     void failRequired();

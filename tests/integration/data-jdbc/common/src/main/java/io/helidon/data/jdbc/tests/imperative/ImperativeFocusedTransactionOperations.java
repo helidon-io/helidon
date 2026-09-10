@@ -57,6 +57,19 @@ public final class ImperativeFocusedTransactionOperations implements FocusedTran
     }
 
     @Override
+    public long executeDdlWithoutTransaction() {
+        return Tx.transaction(Tx.Type.NEVER, () -> {
+            client.create(TransactionSql.CREATE_DDL_PROBE).execute();
+            try {
+                client.create(TransactionSql.INSERT_DDL_PROBE).execute();
+                return client.create(TransactionSql.QUERY_DDL_PROBE).map(Long.class).one();
+            } finally {
+                client.create(TransactionSql.DROP_DDL_PROBE).execute();
+            }
+        });
+    }
+
+    @Override
     public void failRequired() {
         Tx.transaction(Tx.Type.REQUIRED, () -> {
             client.create(TransactionSql.INVALID_QUERY).map(String.class).list();

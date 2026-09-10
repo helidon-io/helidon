@@ -33,12 +33,12 @@ import io.helidon.transaction.spi.TxLifeCycle;
  * Associates one lazily acquired connection with a local JDBC transaction.
  * <p>
  * Transaction propagation and JDBC resource association are separate
- * responsibilities. {@link JdbcTxSupport} owns propagation and sends
- * {@link TxLifeCycle} events without depending on JDBC APIs. This listener
- * consumes those events and manages the datasource identity, connection
- * association, and internal connection leases used by {@code JdbcClient}.
+ * responsibilities. {@link JdbcTxSupport} owns propagation and invokes this
+ * manager directly to complete a local JDBC transaction. This manager also
+ * consumes {@link TxLifeCycle} events to establish connection associations and
+ * detect transaction contexts owned by other providers.
  * <p>
- * The listener belongs to Data JDBC because the provider owns every JDBC
+ * The manager belongs to Data JDBC because the provider owns every JDBC
  * resource. Keeping transaction propagation and connection association in the
  * provider also avoids a public cross-module SPI for internal connection
  * leases. Generated repositories and the transaction API never receive the
@@ -238,6 +238,26 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             failKnownContext(state);
             throw new IllegalStateException("The transaction cannot be resumed because its identity is not recognized.");
         }
+    }
+
+    /**
+     * Commits a transaction owned by the local JDBC transaction support.
+     *
+     * @param txIdentity transaction identity
+     * @return authoritative completion outcome and any completion failure
+     */
+    CompletionReceipt commitLocal(String txIdentity) {
+        return completeLocal(txIdentity, true);
+    }
+
+    /**
+     * Rolls back a transaction owned by the local JDBC transaction support.
+     *
+     * @param txIdentity transaction identity
+     * @return authoritative completion outcome and any completion failure
+     */
+    CompletionReceipt rollbackLocal(String txIdentity) {
+        return completeLocal(txIdentity, false);
     }
 
     /**
@@ -534,6 +554,50 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             return;
         }
 
+        CompletionReceipt receipt = completeLocal(state, txIdentity, association, commit);
+        Throwable failure = receipt.failure();
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+    }
+
+    /**
+     * Completes a required local JDBC association.
+     *
+     * @param txIdentity transaction identity
+     * @param commit whether to commit rather than roll back
+     * @return authoritative completion outcome and any completion failure
+     */
+    private CompletionReceipt completeLocal(String txIdentity, boolean commit) {
+        State state = requireState("complete a local JDBC transaction");
+        Association association = state.jdbcTransactions.get(txIdentity);
+        if (association == null) {
+            failKnownContext(state);
+            return new CompletionReceipt(
+                    CompletionOutcome.UNKNOWN,
+                    new IllegalStateException("The local JDBC transaction identity is not recognized."));
+        }
+        return completeLocal(state, txIdentity, association, commit);
+    }
+
+    /**
+     * Completes and removes one local JDBC association without losing its
+     * database outcome when completion or cleanup fails.
+     *
+     * @param state current thread state
+     * @param txIdentity transaction identity
+     * @param association local JDBC association
+     * @param commit whether to commit rather than roll back
+     * @return authoritative completion outcome and any completion failure
+     */
+    private CompletionReceipt completeLocal(State state,
+                                              String txIdentity,
+                                              Association association,
+                                              boolean commit) {
+
         boolean failedContext = association.state == AssociationState.FAILED;
         if (!failedContext && !txIdentity.equals(state.activeJdbc)) {
             failJdbcAssociation(state, txIdentity, association);
@@ -541,20 +605,24 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         }
         // A failed context can only roll back, even when the lifecycle requests commit.
         boolean effectiveCommit = commit && !failedContext;
-        association.beginCompletion();
-        RuntimeException runtimeFailure = null;
-        Error errorFailure = null;
+        Throwable failure = null;
         try {
+            association.beginCompletion();
             completeConnection(association, effectiveCommit);
             if (failedContext && commit) {
-                runtimeFailure = new TxException("The failed local JDBC transaction was rolled back instead of committed.");
+                failure = new TxException("The failed local JDBC transaction was rolled back instead of committed.");
             }
-        } catch (RuntimeException failure) {
-            runtimeFailure = failure;
-        } catch (Error failure) {
-            errorFailure = failure;
+        } catch (RuntimeException | Error completionFailure) {
+            failure = completionFailure;
+            if (association.outcome == null) {
+                association.outcome = CompletionOutcome.UNKNOWN;
+                if (association.connection != null) {
+                    failure = JdbcConnectionInvalidator.invalidate(association.connection, failure);
+                    association.connection = null;
+                }
+            }
         } finally {
-            // Clear thread state before propagating a completion failure.
+            // Clear thread state before reporting a completion or cleanup failure.
             state.jdbcTransactions.remove(txIdentity);
             if (txIdentity.equals(state.activeJdbc)) {
                 state.activeJdbc = null;
@@ -564,12 +632,15 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             }
             removeIfEmpty(state);
         }
-        if (errorFailure != null) {
-            throw errorFailure;
+
+        CompletionOutcome outcome = association.outcome;
+        if (outcome == null) {
+            outcome = CompletionOutcome.UNKNOWN;
+            if (failure == null) {
+                failure = new TxException("The local JDBC transaction completed without a known outcome.");
+            }
         }
-        if (runtimeFailure != null) {
-            throw runtimeFailure;
-        }
+        return new CompletionReceipt(outcome, failure);
     }
 
     /**
@@ -649,7 +720,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     /**
      * Outcome of JDBC transaction completion, independent of connection cleanup.
      */
-    private enum CompletionOutcome {
+    enum CompletionOutcome {
 
         COMMITTED,
         ROLLED_BACK,
@@ -684,6 +755,15 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      * Ordinary pooled datasources continue to use object identity.
      */
     interface StableIdentity {
+    }
+
+    /**
+     * Immutable result of completing one local JDBC transaction.
+     *
+     * @param outcome authoritative database outcome
+     * @param failure completion or cleanup failure, or {@code null}
+     */
+    record CompletionReceipt(CompletionOutcome outcome, Throwable failure) {
     }
 
     /**

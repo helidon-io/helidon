@@ -23,6 +23,13 @@ import java.util.Optional;
  */
 public interface GeneratedKeyOperations {
     /**
+     * Returns the mapper failure used by the generated-key failure scenarios.
+     *
+     * @return mapper failure
+     */
+    RuntimeException generatedKeyMapperFailure();
+
+    /**
      * Inserts a contact and returns one named scalar generated key.
      *
      * @param name contact name
@@ -62,6 +69,20 @@ public interface GeneratedKeyOperations {
      * @return mapped generated columns
      */
     ContactLabel insertMapped(String name);
+
+    /**
+     * Inserts a contact and fails while mapping its generated key outside a transaction.
+     *
+     * @param name contact name
+     */
+    void insertWithMapperFailure(String name);
+
+    /**
+     * Inserts a contact and fails while mapping its generated key inside a required transaction.
+     *
+     * @param name contact name
+     */
+    void insertWithMapperFailureInTransaction(String name);
 
     /**
      * Inserts a contact while requesting an invalid generated key column.

@@ -93,6 +93,76 @@ class JdbcTransactionConnectionManagerHikariTest {
     }
 
     /**
+     * Proves the committed data is visible before a completion observer runs.
+     */
+    @Test
+    void commitCompletesBeforeCompletionObserversRun() {
+        try (HikariDataSource dataSource = dataSource("tx_commit_before_observer")) {
+            JdbcClient setupClient = JdbcTestClients.create(dataSource);
+            setupClient.create("CREATE TABLE ITEMS (ID INT PRIMARY KEY)").execute();
+            JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
+            JdbcClient client = transactionAwareClient(dataSource, manager);
+            AtomicBoolean committedVisible = new AtomicBoolean();
+            IllegalStateException observerFailure = new IllegalStateException("commit observer failed");
+            TxLifeCycle observer = new OneShotCompletionFailure(
+                    true,
+                    observerFailure,
+                    () -> committedVisible.set(client.create("SELECT COUNT(*) FROM ITEMS")
+                                                       .map(Long.class)
+                                                       .one() == 1L));
+            JdbcTxSupport support = new JdbcTxSupport(manager, List.of(observer, manager));
+
+            TxException failure = assertThrows(TxException.class,
+                                               () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                   client.create("INSERT INTO ITEMS VALUES (1)").execute();
+                                                   return null;
+                                               }));
+
+            assertThat(committedVisible.get(), is(true));
+            assertThat(failure.getMessage(),
+                       is("The local JDBC transaction was committed, but a later transaction lifecycle notification "
+                                  + "failed during commit. The committed work must not be retried automatically."));
+            assertThat(failure.getCause().getCause(), sameInstance(observerFailure));
+            assertPoolReusable(dataSource);
+        }
+    }
+
+    /**
+     * Proves a fatal observer failure remains fatal after a confirmed commit,
+     * while every JDBC resource is released for the next transaction.
+     */
+    @Test
+    void fatalCommitObserverFailureRemainsFatalAfterConfirmedCommit() {
+        try (HikariDataSource dataSource = dataSource("tx_fatal_commit_observer")) {
+            JdbcClient setupClient = JdbcTestClients.create(dataSource);
+            setupClient.create("CREATE TABLE ITEMS (ID INT PRIMARY KEY)").execute();
+            JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
+            JdbcClient client = transactionAwareClient(dataSource, manager);
+            IllegalStateException runtimeFailure = new IllegalStateException("commit observer failed");
+            OutOfMemoryError fatalFailure = new OutOfMemoryError("commit observer fatal failure");
+            OneShotCompletionFailure first = new OneShotCompletionFailure(true, runtimeFailure);
+            OneShotCompletionFailure second = new OneShotCompletionFailure(true, fatalFailure);
+            JdbcTxSupport support = new JdbcTxSupport(manager, List.of(first, manager, second));
+
+            OutOfMemoryError reportedFailure = assertThrows(OutOfMemoryError.class,
+                                                            () -> support.transaction(Tx.Type.REQUIRED, () -> {
+                                                                client.create("INSERT INTO ITEMS VALUES (1)").execute();
+                                                                return null;
+                                                            }));
+
+            assertThat(reportedFailure, sameInstance(fatalFailure));
+            assertThat(fatalFailure.getSuppressed().length, is(1));
+            assertThat(fatalFailure.getSuppressed()[0], sameInstance(runtimeFailure));
+            assertThat(first.failed, is(true));
+            assertThat(second.failed, is(true));
+            assertThat(support.transaction(Tx.Type.REQUIRED,
+                                           () -> client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one()),
+                       is(1L));
+            assertPoolReusable(dataSource);
+        }
+    }
+
+    /**
      * Proves repeated references to one rollback-listener failure do not
      * prevent the JDBC manager from rolling back and releasing its connection.
      */
@@ -175,8 +245,8 @@ class JdbcTransactionConnectionManagerHikariTest {
     }
 
     /**
-     * Exercises two listeners which throw one shared failure before the JDBC
-     * connection manager, then proves completion and same-thread reuse.
+     * Exercises listeners on both sides of the JDBC connection manager which
+     * throw one shared failure, then proves completion and same-thread reuse.
      *
      * @param databaseName isolated H2 database name
      * @param commit whether to exercise commit rather than rollback
@@ -188,10 +258,11 @@ class JdbcTransactionConnectionManagerHikariTest {
                     .execute();
             JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
             IllegalStateException sharedFailure = new IllegalStateException("completion listener failed");
-            JdbcTxSupport support = new JdbcTxSupport(List.of(
-                    new OneShotCompletionFailure(commit, sharedFailure),
-                    new OneShotCompletionFailure(commit, sharedFailure),
-                    manager));
+            OneShotCompletionFailure first = new OneShotCompletionFailure(commit, sharedFailure);
+            OneShotCompletionFailure second = new OneShotCompletionFailure(commit, sharedFailure);
+            JdbcTxSupport support = new JdbcTxSupport(
+                    manager,
+                    List.of(first, manager, second));
             JdbcClient client = transactionAwareClient(dataSource, manager);
 
             RuntimeException reportedFailure;
@@ -213,10 +284,16 @@ class JdbcTransactionConnectionManagerHikariTest {
             }
 
             assertPoolReusable(dataSource);
+            assertThat(first.failed, is(true));
+            assertThat(second.failed, is(true));
             assertThat(reportedFailure, instanceOf(TxException.class));
             TxException failure = (TxException) reportedFailure;
             if (commit) {
-                assertThat(failure.getCause(), sameInstance(sharedFailure));
+                assertThat(failure.getMessage(),
+                           is("The local JDBC transaction was committed, but a later transaction lifecycle "
+                                      + "notification failed during commit. The committed work must not be retried "
+                                      + "automatically."));
+                assertThat(failure.getCause().getCause(), sameInstance(sharedFailure));
             } else {
                 assertThat(failure.getSuppressed().length, is(1));
                 assertThat(failure.getSuppressed()[0].getCause(), sameInstance(sharedFailure));
@@ -271,7 +348,8 @@ class JdbcTransactionConnectionManagerHikariTest {
      */
     private static final class OneShotCompletionFailure implements TxLifeCycle {
         private final boolean failCommit;
-        private final RuntimeException failure;
+        private final Throwable failure;
+        private final Runnable beforeFailure;
         private boolean failed;
 
         /**
@@ -280,9 +358,25 @@ class JdbcTransactionConnectionManagerHikariTest {
          * @param failCommit whether commit rather than rollback fails
          * @param failure shared failure to throw
          */
-        private OneShotCompletionFailure(boolean failCommit, RuntimeException failure) {
+        private OneShotCompletionFailure(boolean failCommit, Throwable failure) {
+            this(failCommit, failure, () -> {
+            });
+        }
+
+        /**
+         * Creates a listener which runs an assertion probe before failing one
+         * completion event.
+         *
+         * @param failCommit whether commit rather than rollback fails
+         * @param failure shared failure to throw
+         * @param beforeFailure probe invoked before the failure
+         */
+        private OneShotCompletionFailure(boolean failCommit,
+                                         Throwable failure,
+                                         Runnable beforeFailure) {
             this.failCommit = failCommit;
             this.failure = failure;
+            this.beforeFailure = beforeFailure;
         }
 
         @Override
@@ -328,7 +422,11 @@ class JdbcTransactionConnectionManagerHikariTest {
         private void fail() {
             if (!failed) {
                 failed = true;
-                throw failure;
+                beforeFailure.run();
+                if (failure instanceof Error error) {
+                    throw error;
+                }
+                throw (RuntimeException) failure;
             }
         }
     }

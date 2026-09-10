@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.data.jdbc.JdbcTransactionConnectionManager.CompletionOutcome;
+import io.helidon.data.jdbc.JdbcTransactionConnectionManager.CompletionReceipt;
 import io.helidon.service.registry.Service;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
@@ -33,8 +35,9 @@ import io.helidon.transaction.spi.TxSupport;
  * Applies Helidon transaction propagation rules to local JDBC transactions.
  * <p>
  * This service owns propagation and lifecycle notification.
- * {@link JdbcTransactionConnectionManager} consumes those notifications and
- * associates connections lazily.
+ * {@link JdbcTransactionConnectionManager} completes the provider-owned JDBC
+ * resource directly and also consumes lifecycle notifications to detect
+ * transaction contexts owned by other providers.
  */
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
@@ -43,8 +46,14 @@ final class JdbcTxSupport implements TxSupport {
     // Generate compact process-local identities so lifecycle listeners can correlate events without application state.
     private static final AtomicLong IDS = new AtomicLong();
 
+    // Dedicated owner of local JDBC resource completion.
+    private final JdbcTransactionConnectionManager connectionManager;
+
     // Lifecycle listeners, copied once to keep notification order stable.
     private final List<TxLifeCycle> listeners;
+
+    // Completion observers retain service order but cannot obscure the JDBC outcome.
+    private final List<TxLifeCycle> completionObservers;
 
     // Active and suspended transaction stack for the current thread.
     private final ThreadLocal<ArrayDeque<Transaction>> transactions = new ThreadLocal<>();
@@ -52,11 +61,16 @@ final class JdbcTxSupport implements TxSupport {
     /**
      * Creates the local JDBC propagation service.
      *
+     * @param connectionManager local JDBC completion participant
      * @param listeners lifecycle listeners
      */
     @Service.Inject
-    JdbcTxSupport(List<TxLifeCycle> listeners) {
+    JdbcTxSupport(JdbcTransactionConnectionManager connectionManager, List<TxLifeCycle> listeners) {
+        this.connectionManager = connectionManager;
         this.listeners = List.copyOf(listeners);
+        this.completionObservers = this.listeners.stream()
+                .filter(listener -> listener != connectionManager)
+                .toList();
     }
 
     @Override
@@ -68,10 +82,13 @@ final class JdbcTxSupport implements TxSupport {
     public <T> T transaction(Tx.Type type, Callable<T> task) {
         Objects.requireNonNull(type, "The transaction type must not be null.");
         Objects.requireNonNull(task, "The transaction task must not be null.");
+        InvocationCompletion completion = new InvocationCompletion();
         // Bracket every propagation call so listeners can associate later lifecycle
         // events with this transaction provider.
         try {
-            notifyListeners(listener -> listener.start(Jdbc.PROVIDER), JdbcTransactionAction.START.text());
+            notifyListeners(listeners,
+                            listener -> listener.start(Jdbc.PROVIDER),
+                            JdbcTransactionAction.START.text());
         } catch (RuntimeException | Error startFailure) {
             notifyAfterFailure(TxLifeCycle::end, JdbcTransactionAction.START.cleanupText(), startFailure);
             throw startFailure;
@@ -80,9 +97,9 @@ final class JdbcTxSupport implements TxSupport {
         try {
             result = switch (type) {
                 case MANDATORY -> mandatory(task);
-                case NEW -> requiresNew(task);
+                case NEW -> requiresNew(task, completion);
                 case NEVER -> never(task);
-                case REQUIRED -> required(task);
+                case REQUIRED -> required(task, completion);
                 case SUPPORTED -> supported(task);
                 case UNSUPPORTED -> unsupported(task);
             };
@@ -90,19 +107,33 @@ final class JdbcTxSupport implements TxSupport {
             notifyAfterFailure(TxLifeCycle::end, JdbcTransactionAction.END.text(), failure);
             throw failure;
         }
-        notifyListeners(TxLifeCycle::end, JdbcTransactionAction.END.text());
+        try {
+            notifyListeners(listeners, TxLifeCycle::end, JdbcTransactionAction.END.text());
+        } catch (RuntimeException endFailure) {
+            if (completion.committed()) {
+                throw committedLifecycleFailure(JdbcTransactionAction.END.text(), endFailure);
+            }
+            throw endFailure;
+        }
         return result;
     }
 
     /**
-     * Combines two failures while retaining their encounter order.
+     * Combines two infrastructure failures without allowing a recoverable
+     * failure to obscure a fatal error. The first error remains primary
+     * regardless of whether it was encountered before or after a runtime
+     * exception.
      *
-     * @param primary first failure
+     * @param primary earlier failure
      * @param secondary later failure
      * @return combined failure
      */
     private static Throwable merge(Throwable primary, Throwable secondary) {
         if (primary == null) {
+            return secondary;
+        }
+        if (secondary instanceof Error && !(primary instanceof Error)) {
+            suppress(secondary, primary);
             return secondary;
         }
         suppress(primary, secondary);
@@ -122,11 +153,26 @@ final class JdbcTxSupport implements TxSupport {
     }
 
     /**
-     * Throws a structural cleanup failure after an otherwise successful completion.
+     * Creates an explicit failure for a lifecycle notification which followed
+     * a confirmed database commit.
      *
-     * @param failure cleanup failure
+     * @param event failed lifecycle event
+     * @param cause notification failure
+     * @return transaction failure which preserves the confirmed commit
      */
-    private static void throwIfRemovalFailed(Throwable failure) {
+    private static TxException committedLifecycleFailure(String event, Throwable cause) {
+        return new TxException("The local JDBC transaction was committed, but a later transaction lifecycle "
+                                       + "notification failed during " + event
+                                       + ". The committed work must not be retried automatically.",
+                               cause);
+    }
+
+    /**
+     * Throws a retained runtime or fatal failure.
+     *
+     * @param failure failure to throw, or {@code null}
+     */
+    private static void throwFailure(Throwable failure) {
         if (failure instanceof Error error) {
             throw error;
         }
@@ -154,19 +200,27 @@ final class JdbcTxSupport implements TxSupport {
      * Suspends an outer transaction and runs the task in a new one.
      *
      * @param task application task
+     * @param completion invocation completion state
      * @param <T> result type
      * @return task result
      */
-    private <T> T requiresNew(Callable<T> task) {
+    private <T> T requiresNew(Callable<T> task, InvocationCompletion completion) {
         Transaction suspended = suspend();
         T result;
         try {
-            result = callNew(task);
+            result = callNew(task, completion);
         } catch (RuntimeException | Error failure) {
             resumeAfterFailure(suspended, failure);
             throw failure;
         }
-        resume(suspended);
+        try {
+            resume(suspended);
+        } catch (RuntimeException resumeFailure) {
+            if (completion.committed()) {
+                throw committedLifecycleFailure(JdbcTransactionAction.RESUME.text(), resumeFailure);
+            }
+            throw resumeFailure;
+        }
         return result;
     }
 
@@ -188,12 +242,13 @@ final class JdbcTxSupport implements TxSupport {
      * Joins the current transaction or starts a new one.
      *
      * @param task application task
+     * @param completion invocation completion state
      * @param <T> result type
      * @return task result
      */
-    private <T> T required(Callable<T> task) {
+    private <T> T required(Callable<T> task, InvocationCompletion completion) {
         Transaction current = current();
-        return current == null ? callNew(task) : callJoined(current, task);
+        return current == null ? callNew(task, completion) : callJoined(current, task);
     }
 
     /**
@@ -280,58 +335,62 @@ final class JdbcTxSupport implements TxSupport {
      * Starts, invokes, and completes one new local transaction.
      *
      * @param task application task
+     * @param completion invocation completion state
      * @param <T> result type
      * @return task result
      */
-    private <T> T callNew(Callable<T> task) {
-        Transaction transaction = begin();
+    private <T> T callNew(Callable<T> task, InvocationCompletion completion) {
+        Transaction transaction = begin(completion);
         T result;
         try {
             result = task.call();
         } catch (TxException e) {
             transaction.markRollbackOnly();
-            rollback(transaction, e);
+            rollback(transaction, e, completion);
             throw e;
         } catch (InterruptedException e) {
             transaction.markRollbackOnly();
             Thread.currentThread().interrupt();
             TxException failure = new TxException("The local JDBC transaction task was interrupted.", e);
-            rollback(transaction, failure);
+            rollback(transaction, failure, completion);
             throw failure;
         } catch (Exception e) {
             transaction.markRollbackOnly();
             TxException failure = new TxException("The local JDBC transaction task failed.", e);
-            rollback(transaction, failure);
+            rollback(transaction, failure, completion);
             throw failure;
         } catch (Error e) {
             transaction.markRollbackOnly();
-            rollback(transaction, e);
+            rollback(transaction, e, completion);
             throw e;
         }
 
         if (transaction.rollbackOnly()) {
             TxException failure = new TxException("The local JDBC transaction was marked for rollback.");
-            rollback(transaction, failure);
+            rollback(transaction, failure, completion);
             throw failure;
         }
-        commit(transaction);
+        commit(transaction, completion);
         return result;
     }
 
     /**
      * Pushes a new transaction before notifying lifecycle listeners.
      *
+     * @param completion invocation completion state
      * @return started transaction
      */
-    private Transaction begin() {
+    private Transaction begin(InvocationCompletion completion) {
         Transaction transaction = new Transaction(Long.toUnsignedString(IDS.incrementAndGet(), 36));
         transactionStack().push(transaction);
         try {
-            notifyListeners(listener -> listener.begin(transaction.identity), JdbcTransactionAction.BEGIN.text());
+            notifyListeners(listeners,
+                            listener -> listener.begin(transaction.identity),
+                            JdbcTransactionAction.BEGIN.text());
             return transaction;
         } catch (RuntimeException | Error failure) {
             transaction.markRollbackOnly();
-            rollback(transaction, failure);
+            rollback(transaction, failure, completion);
             throw failure;
         }
     }
@@ -340,33 +399,45 @@ final class JdbcTxSupport implements TxSupport {
      * Removes and commits the current transaction.
      *
      * @param transaction transaction to commit
+     * @param completion invocation completion state
      */
-    private void commit(Transaction transaction) {
+    private void commit(Transaction transaction, InvocationCompletion completion) {
         transaction.beginCompletion();
-        // Delay a completion failure until thread state is removed, while keeping
-        // an Error distinct from an ordinary runtime failure.
-        RuntimeException runtimeFailure = null;
-        Error errorFailure = null;
+        CompletionReceipt receipt;
         try {
-            notifyListeners(listener -> listener.commit(transaction.identity), JdbcTransactionAction.COMMIT.text());
-            transaction.committed();
-        } catch (RuntimeException failure) {
-            transaction.failed();
-            runtimeFailure = failure;
-        } catch (Error failure) {
-            transaction.failed();
-            errorFailure = failure;
+            receipt = connectionManager.commitLocal(transaction.identity);
+        } catch (RuntimeException | Error failure) {
+            receipt = new CompletionReceipt(CompletionOutcome.UNKNOWN, failure);
+        }
+        transaction.completed(receipt.outcome());
+        completion.completed(receipt.outcome());
+
+        Throwable observerFailure = null;
+        try {
+            notifyListeners(completionObservers,
+                            listener -> listener.commit(transaction.identity),
+                            JdbcTransactionAction.COMMIT.text());
+        } catch (RuntimeException | Error failure) {
+            observerFailure = failure;
+        }
+
+        Throwable completionFailure = receipt.failure();
+        if (completionFailure == null
+                && observerFailure instanceof RuntimeException
+                && receipt.outcome() == CompletionOutcome.COMMITTED) {
+            completionFailure = committedLifecycleFailure(JdbcTransactionAction.COMMIT.text(), observerFailure);
+        } else {
+            completionFailure = merge(completionFailure, observerFailure);
         }
         Throwable removalFailure = removeCurrent(transaction);
-        if (errorFailure != null) {
-            suppress(errorFailure, removalFailure);
-            throw errorFailure;
+        if (completionFailure == null
+                && removalFailure instanceof RuntimeException
+                && receipt.outcome() == CompletionOutcome.COMMITTED) {
+            completionFailure = committedLifecycleFailure("transaction state cleanup", removalFailure);
+        } else {
+            completionFailure = merge(completionFailure, removalFailure);
         }
-        if (runtimeFailure != null) {
-            suppress(runtimeFailure, removalFailure);
-            throw runtimeFailure;
-        }
-        throwIfRemovalFailed(removalFailure);
+        throwFailure(completionFailure);
     }
 
     /**
@@ -375,28 +446,35 @@ final class JdbcTxSupport implements TxSupport {
      *
      * @param transaction transaction to roll back
      * @param primaryFailure application failure, or {@code null}
+     * @param completion invocation completion state
      */
-    private void rollback(Transaction transaction, Throwable primaryFailure) {
+    private void rollback(Transaction transaction, Throwable primaryFailure, InvocationCompletion completion) {
         transaction.beginCompletion();
-        Throwable rollbackFailure = null;
+        CompletionReceipt receipt;
         try {
-            notifyListeners(listener -> listener.rollback(transaction.identity), JdbcTransactionAction.ROLLBACK.text());
-            transaction.rolledBack();
+            receipt = connectionManager.rollbackLocal(transaction.identity);
         } catch (RuntimeException | Error failure) {
-            transaction.failed();
-            rollbackFailure = failure;
+            receipt = new CompletionReceipt(CompletionOutcome.UNKNOWN, failure);
         }
+        transaction.completed(receipt.outcome());
+        completion.completed(receipt.outcome());
+
+        Throwable observerFailure = null;
+        try {
+            notifyListeners(completionObservers,
+                            listener -> listener.rollback(transaction.identity),
+                            JdbcTransactionAction.ROLLBACK.text());
+        } catch (RuntimeException | Error failure) {
+            observerFailure = failure;
+        }
+
+        Throwable rollbackFailure = merge(receipt.failure(), observerFailure);
         rollbackFailure = merge(rollbackFailure, removeCurrent(transaction));
         if (primaryFailure != null) {
             suppress(primaryFailure, rollbackFailure);
             return;
         }
-        if (rollbackFailure instanceof Error error) {
-            throw error;
-        }
-        if (rollbackFailure instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
+        throwFailure(rollbackFailure);
     }
 
     /**
@@ -411,7 +489,9 @@ final class JdbcTxSupport implements TxSupport {
         }
         transaction.suspend();
         try {
-            notifyListeners(listener -> listener.suspend(transaction.identity), JdbcTransactionAction.SUSPEND.text());
+            notifyListeners(listeners,
+                            listener -> listener.suspend(transaction.identity),
+                            JdbcTransactionAction.SUSPEND.text());
         } catch (RuntimeException | Error failure) {
             transaction.restoreAfterSuspendFailure();
             notifyAfterFailure(listener -> listener.resume(transaction.identity),
@@ -433,7 +513,9 @@ final class JdbcTxSupport implements TxSupport {
         }
         transaction.resume();
         try {
-            notifyListeners(listener -> listener.resume(transaction.identity), JdbcTransactionAction.RESUME.text());
+            notifyListeners(listeners,
+                            listener -> listener.resume(transaction.identity),
+                            JdbcTransactionAction.RESUME.text());
         } catch (RuntimeException | Error failure) {
             // Keep listeners that already resumed attached so the outer transaction can still roll back.
             transaction.markRollbackOnly();
@@ -520,13 +602,14 @@ final class JdbcTxSupport implements TxSupport {
     /**
      * Notifies every listener in registration order and combines failures.
      *
+     * @param recipients listeners receiving the event
      * @param action listener action
      * @param event event name used in diagnostics
      */
-    private void notifyListeners(ListenerAction action, String event) {
+    private void notifyListeners(List<TxLifeCycle> recipients, ListenerAction action, String event) {
         Throwable failure = null;
         // Continue after a listener fails so it cannot prevent later listeners from releasing their resources.
-        for (TxLifeCycle listener : listeners) {
+        for (TxLifeCycle listener : recipients) {
             try {
                 action.accept(listener);
             } catch (RuntimeException | Error listenerFailure) {
@@ -554,7 +637,7 @@ final class JdbcTxSupport implements TxSupport {
      */
     private void notifyAfterFailure(ListenerAction action, String event, Throwable primaryFailure) {
         try {
-            notifyListeners(action, event);
+            notifyListeners(listeners, action, event);
         } catch (RuntimeException | Error cleanupFailure) {
             suppress(primaryFailure, cleanupFailure);
         }
@@ -570,7 +653,7 @@ final class JdbcTxSupport implements TxSupport {
         COMPLETING,
         COMMITTED,
         ROLLED_BACK,
-        FAILED
+        UNKNOWN
     }
 
     @FunctionalInterface
@@ -581,6 +664,35 @@ final class JdbcTxSupport implements TxSupport {
          * @param listener receiving listener
          */
         void accept(TxLifeCycle listener);
+    }
+
+    /**
+     * Completion outcome retained until every invocation-level lifecycle event
+     * has finished.
+     */
+    private static final class InvocationCompletion {
+        private CompletionOutcome outcome;
+
+        /**
+         * Returns whether this invocation committed its new transaction.
+         *
+         * @return whether commit was confirmed
+         */
+        private boolean committed() {
+            return outcome == CompletionOutcome.COMMITTED;
+        }
+
+        /**
+         * Records the single transaction completed by this invocation.
+         *
+         * @param completionOutcome authoritative completion outcome
+         */
+        private void completed(CompletionOutcome completionOutcome) {
+            if (outcome != null) {
+                throw new IllegalStateException("The transaction invocation already has a completion outcome.");
+            }
+            outcome = completionOutcome;
+        }
     }
 
     /**
@@ -677,26 +789,18 @@ final class JdbcTxSupport implements TxSupport {
         }
 
         /**
-         * Records a confirmed commit.
+         * Records the authoritative resource-completion outcome independently
+         * from later lifecycle notification failures.
+         *
+         * @param outcome completion outcome
          */
-        private void committed() {
-            transition(TransactionState.COMPLETING, TransactionState.COMMITTED, JdbcTransactionAction.COMMIT.text());
-        }
-
-        /**
-         * Records a confirmed rollback.
-         */
-        private void rolledBack() {
-            transition(TransactionState.COMPLETING,
-                       TransactionState.ROLLED_BACK,
-                       JdbcTransactionAction.ROLLBACK.text());
-        }
-
-        /**
-         * Records a failed terminal lifecycle notification.
-         */
-        private void failed() {
-            transition(TransactionState.COMPLETING, TransactionState.FAILED, "fail completion");
+        private void completed(CompletionOutcome outcome) {
+            require(TransactionState.COMPLETING, JdbcTransactionAction.COMPLETE.text());
+            state = switch (outcome) {
+                case COMMITTED -> TransactionState.COMMITTED;
+                case ROLLED_BACK -> TransactionState.ROLLED_BACK;
+                case UNKNOWN -> TransactionState.UNKNOWN;
+            };
         }
 
         /**
@@ -706,18 +810,6 @@ final class JdbcTxSupport implements TxSupport {
             if (state != TransactionState.ACTIVE && state != TransactionState.MARKED_ROLLBACK) {
                 throw invalidTransition("join");
             }
-        }
-
-        /**
-         * Performs one exact state transition.
-         *
-         * @param expected expected source state
-         * @param next target state
-         * @param operation operation description
-         */
-        private void transition(TransactionState expected, TransactionState next, String operation) {
-            require(expected, operation);
-            state = next;
         }
 
         /**

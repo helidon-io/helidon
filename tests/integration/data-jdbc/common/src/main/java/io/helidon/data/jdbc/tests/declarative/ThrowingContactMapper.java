@@ -24,8 +24,14 @@ import io.helidon.service.registry.Service;
  */
 @Service.Singleton
 public final class ThrowingContactMapper implements JdbcClient.RowMapper<MapperFailureContact> {
+    private final IllegalStateException failure = new IllegalStateException("deliberate mapper failure");
+
     @Override
     public MapperFailureContact map(JdbcClient.Row row) {
-        throw new IllegalStateException("deliberate mapper failure");
+        throw failure;
+    }
+
+    RuntimeException failure() {
+        return failure;
     }
 }

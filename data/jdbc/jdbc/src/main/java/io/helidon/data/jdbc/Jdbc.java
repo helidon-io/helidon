@@ -93,16 +93,30 @@ public final class Jdbc {
      * A repository invocation supplies the SQL, after rewriting any named bind
      * markers, to the driver as one {@link java.sql.PreparedStatement}. Helidon
      * validates the repository method and bind markers but does not parse
-     * database grammar, split scripts, or validate database-specific statement
-     * boundaries. The value must therefore describe exactly one SQL statement.
-     * SQL scripts, batches, driver specific compound or multiple statement strings, stored
-     * procedure calls, and transaction-control SQL, including commands that
-     * change auto-commit mode, are not supported.
+     * database grammar, split scripts, or validate statement boundaries
+     * specific to a database. The value must therefore describe exactly one
+     * SQL statement. SQL scripts, batches, compound or multiple statement
+     * strings specific to a JDBC driver, stored procedure calls, SQL that
+     * controls transactions, and commands that change connection or session
+     * state, including auto-commit mode, are not supported.
      * <p>
-     * A driver may accept such unsupported SQL and commit work before Helidon
-     * detects an invalid connection state or reports a failure. A repository
-     * operation failure in that case does not establish that the database made
-     * no changes, the applications must not retry it automatically.
+     * A single schema definition statement may be executed when the repository
+     * invocation does not participate in a Helidon local JDBC transaction. The
+     * invocation then uses its own connection in auto-commit mode, and the
+     * statement executes as an independent auto-commit operation. Schema
+     * definition statements and any other statements with semantics specific
+     * to a database that implicitly commit or otherwise end a transaction are
+     * not supported while participating in a Helidon local JDBC transaction.
+     * This restriction applies regardless of whether the database supports
+     * transactional DDL.
+     * <p>
+     * Helidon treats the SQL as opaque: it does not classify statements or
+     * reliably detect an implicit commit. If unsupported SQL is executed
+     * within a local transaction, a database may commit pending work while
+     * leaving JDBC auto-commit disabled. A later rollback cannot undo that
+     * committed work. Consequently, a repository operation or transaction
+     * failure does not establish that the database made no changes, and
+     * applications must not retry the operation automatically.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
@@ -136,6 +150,12 @@ public final class Jdbc {
      * <p>
      * An empty value requests the generated keys selected by the JDBC driver.
      * Otherwise, the provided values are passed to JDBC in declaration order.
+     * <p>
+     * Without a local transaction, the update may be committed before the repository finishes reading or mapping the
+     * generated keys, checking the expected number of keys, or releasing JDBC resources. Such a failure does not
+     * establish that the update was rolled back and must not be retried automatically. When key materialization and the
+     * update must be atomic, execute the repository method within a Helidon local transaction and allow the failure to
+     * escape the transaction boundary.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
@@ -151,12 +171,12 @@ public final class Jdbc {
     }
 
     /**
-     * Selects an application row mapper for query or generated-key rows.
+     * Selects an application row mapper for query or generated key rows.
      * <p>
      * With a mapper class, generated code injects that exact service type.
      * Without an explicit mapper class, generated code requires a row mapper
      * service whose generic result type exactly matches the repository result
-     * type. When this annotation is absent for a query or generated-key result,
+     * type. When this annotation is absent for a query or generated key result,
      * supported scalar results are mapped from column one, and supported records
      * use generated component mapping.
      * <p>

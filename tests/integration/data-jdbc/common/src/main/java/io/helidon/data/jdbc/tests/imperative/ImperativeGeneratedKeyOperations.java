@@ -26,6 +26,7 @@ import io.helidon.data.jdbc.tests.application.ContactView;
 import io.helidon.data.jdbc.tests.application.GeneratedKeyOperations;
 import io.helidon.data.jdbc.tests.application.TestSql;
 import io.helidon.service.registry.Service;
+import io.helidon.transaction.Tx;
 
 /**
  * Uses the public JDBC client to exercise generated-key mapping variants.
@@ -36,6 +37,8 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
     private static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.generated-key-column";
 
     private final JdbcClient client;
+    private final RuntimeException generatedKeyMapperFailure =
+            new IllegalStateException("deliberate generated-key mapper failure");
 
     /**
      * Creates the imperative generated-key operation adapter.
@@ -46,6 +49,11 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
     ImperativeGeneratedKeyOperations(@Data.ProviderType("jdbc")
                                      @Service.Named(Service.Named.DEFAULT_NAME) JdbcClient client) {
         this.client = client;
+    }
+
+    @Override
+    public RuntimeException generatedKeyMapperFailure() {
+        return generatedKeyMapperFailure;
     }
 
     @Override
@@ -90,6 +98,19 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
     }
 
     @Override
+    public void insertWithMapperFailure(String name) {
+        failGeneratedKeyMapping(name);
+    }
+
+    @Override
+    public void insertWithMapperFailureInTransaction(String name) {
+        Tx.transaction(Tx.Type.REQUIRED, () -> {
+            failGeneratedKeyMapping(name);
+            return null;
+        });
+    }
+
+    @Override
     public long insertWithInvalidGeneratedKeyColumn(String name) {
         return generatedKeys(statement(name), "MISSING_KEY")
                 .map(row -> row.get(1, Long.class))
@@ -117,6 +138,14 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
             generatedKeys.addColumn(column);
         }
         return generatedKeys;
+    }
+
+    private void failGeneratedKeyMapping(String name) {
+        generatedKeys(statement(name), keyColumn())
+                .map(_ -> {
+                    throw generatedKeyMapperFailure;
+                })
+                .one();
     }
 
     private JdbcClient.Statement statement(String name) {

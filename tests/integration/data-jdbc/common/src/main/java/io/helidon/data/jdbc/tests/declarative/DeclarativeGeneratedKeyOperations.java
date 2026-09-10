@@ -30,15 +30,23 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 public final class DeclarativeGeneratedKeyOperations implements GeneratedKeyOperations {
     private final ContactRepository repository;
+    private final RuntimeException generatedKeyMapperFailure;
 
     /**
      * Creates the declarative generated-key operation adapter.
      *
      * @param repository generated repository
+     * @param throwingMapper generated-key failure mapper
      */
     @Service.Inject
-    DeclarativeGeneratedKeyOperations(ContactRepository repository) {
+    DeclarativeGeneratedKeyOperations(ContactRepository repository, ThrowingContactMapper throwingMapper) {
         this.repository = repository;
+        this.generatedKeyMapperFailure = throwingMapper.failure();
+    }
+
+    @Override
+    public RuntimeException generatedKeyMapperFailure() {
+        return generatedKeyMapperFailure;
     }
 
     @Override
@@ -64,6 +72,16 @@ public final class DeclarativeGeneratedKeyOperations implements GeneratedKeyOper
     @Override
     public ContactLabel insertMapped(String name) {
         return repository.insertMapped(name);
+    }
+
+    @Override
+    public void insertWithMapperFailure(String name) {
+        repository.insertWithMapperFailure(name);
+    }
+
+    @Override
+    public void insertWithMapperFailureInTransaction(String name) {
+        repository.insertWithMapperFailureInTransaction(name);
     }
 
     @Override

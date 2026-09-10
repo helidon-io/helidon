@@ -21,6 +21,8 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import io.helidon.data.DataException;
+import io.helidon.data.jdbc.JdbcTransactionConnectionManager.CompletionOutcome;
+import io.helidon.data.jdbc.JdbcTransactionConnectionManager.CompletionReceipt;
 import io.helidon.transaction.TxException;
 
 import org.junit.jupiter.api.Test;
@@ -61,6 +63,98 @@ class JdbcTransactionConnectionManagerFailureTest {
         assertNullArgument(() -> manager.rollback(null), "The transaction identity must not be null.");
         assertNullArgument(() -> manager.suspend(null), "The transaction identity must not be null.");
         assertNullArgument(() -> manager.resume(null), "The transaction identity must not be null.");
+    }
+
+    /**
+     * Verifies that completing a transaction which acquired no connection
+     * still returns a confirmed logical commit.
+     */
+    @Test
+    void returnsConfirmedCommitWithoutAConnection() {
+        JdbcTransactionConnectionManager manager = activeManager("empty-commit");
+
+        CompletionReceipt receipt = manager.commitLocal("empty-commit");
+
+        assertThat(receipt.outcome(), is(CompletionOutcome.COMMITTED));
+        assertThat(receipt.failure(), nullValue());
+        manager.end();
+    }
+
+    /**
+     * Verifies that the local completion receipt distinguishes a confirmed
+     * rollback from connection cleanup.
+     */
+    @Test
+    void returnsConfirmedRollbackAfterConnectionCleanup() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, false, false);
+        JdbcTransactionConnectionManager manager = activeManager("confirmed-rollback");
+        manager.acquire(dataSource).close();
+
+        CompletionReceipt receipt = manager.rollbackLocal("confirmed-rollback");
+
+        assertThat(receipt.outcome(), is(CompletionOutcome.ROLLED_BACK));
+        assertThat(receipt.failure(), nullValue());
+        verify(connection).rollback();
+        verify(connection).setAutoCommit(true);
+        verify(connection).close();
+        manager.end();
+    }
+
+    /**
+     * Verifies that cleanup failure cannot erase a confirmed commit outcome.
+     */
+    @Test
+    void retainsConfirmedCommitWhenAutoCommitRestorationFails() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        SQLException restoreFailure = new SQLException("restore failed", "08006", 93);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, false, false);
+        doThrow(restoreFailure).when(connection).setAutoCommit(true);
+        JdbcTransactionConnectionManager manager = activeManager("commit-cleanup");
+        manager.acquire(dataSource).close();
+
+        CompletionReceipt receipt = manager.commitLocal("commit-cleanup");
+
+        assertThat(receipt.outcome(), is(CompletionOutcome.COMMITTED));
+        assertThat(receipt.failure(), instanceOf(TxException.class));
+        assertThat(receipt.failure().getMessage(),
+                   is("The local JDBC transaction was committed, but the provider failed to restore automatic "
+                              + "commit mode."));
+        verify(connection).commit();
+        verify(connection).abort(any());
+        verify(connection).close();
+        manager.end();
+    }
+
+    /**
+     * Verifies that a failed commit returns an unknown outcome and invalidates
+     * the connection before returning the receipt.
+     */
+    @Test
+    void returnsUnknownOutcomeAfterCommitFailure() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        SQLException commitFailure = new SQLException("commit failed", "08006", 94);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true, false, false);
+        doThrow(commitFailure).when(connection).commit();
+        JdbcTransactionConnectionManager manager = activeManager("unknown-commit");
+        manager.acquire(dataSource).close();
+
+        CompletionReceipt receipt = manager.commitLocal("unknown-commit");
+
+        assertThat(receipt.outcome(), is(CompletionOutcome.UNKNOWN));
+        assertThat(receipt.failure(), instanceOf(TxException.class));
+        assertThat(receipt.failure().getMessage(),
+                   is("The local JDBC transaction commit failed, and the outcome is unknown."));
+        verify(connection).rollback();
+        verify(connection).abort(any());
+        verify(connection).close();
+        manager.end();
     }
 
     /**

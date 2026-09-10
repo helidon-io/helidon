@@ -63,6 +63,38 @@ public interface FocusedTransactionRepository {
     long insertUnsupported(String value);
 
     /**
+     * Creates the table used to verify DDL execution outside a local transaction.
+     */
+    @Jdbc.Statement(TransactionSql.CREATE_DDL_PROBE)
+    @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+    void createDdlProbe();
+
+    /**
+     * Inserts one row into the DDL probe table.
+     *
+     * @return update count
+     */
+    @Jdbc.Statement(TransactionSql.INSERT_DDL_PROBE)
+    @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+    long insertDdlProbe();
+
+    /**
+     * Counts committed rows in the DDL probe table.
+     *
+     * @return row count
+     */
+    @Jdbc.Statement(TransactionSql.QUERY_DDL_PROBE)
+    @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
+    long queryDdlProbe();
+
+    /**
+     * Removes the DDL probe table.
+     */
+    @Jdbc.Statement(TransactionSql.DROP_DDL_PROBE)
+    @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+    void dropDdlProbe();
+
+    /**
      * Runs an invalid query in a required transaction to force a driver failure.
      *
      * @return no rows because the statement must fail

@@ -113,6 +113,15 @@ public abstract class AbstractJdbcFocusedTransactionContract {
         assertThat(database.committedTransactionValues(), is(List.of("baseline", "unsupported-committed")));
     }
 
+    /**
+     * Verifies portable DDL succeeds through operation-owned connections when
+     * NEVER propagation guarantees that no local transaction is active.
+     */
+    @Test
+    protected void ddlExecutesWithoutLocalTransactionParticipation() {
+        assertThat(operations.executeDdlWithoutTransaction(), is(1L));
+    }
+
     @AfterEach
     protected final void shutDownApplication() {
         if (manager != null) {
