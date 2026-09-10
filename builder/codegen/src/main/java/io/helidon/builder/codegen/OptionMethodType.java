@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.helidon.builder.codegen;
 
+import io.helidon.common.Api;
+
 /**
  * All possible setters to be generated.
  */
+@Api.Incubating
 public enum OptionMethodType {
     /**
      * Getter added to the prototype interface. This method may not be generated if the method is inherited from a public

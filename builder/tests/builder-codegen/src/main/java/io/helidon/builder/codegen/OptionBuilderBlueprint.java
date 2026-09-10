@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.builder.codegen;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.common.types.TypeName;
  * The type must have a {@code builder} method that returns a builder type.
  * The builder then must have a {@code build} method that returns the option type, or a {@code buildPrototype} method.
  */
+@Api.Incubating
 @Prototype.Blueprint(detach = true)
 interface OptionBuilderBlueprint {
     /**

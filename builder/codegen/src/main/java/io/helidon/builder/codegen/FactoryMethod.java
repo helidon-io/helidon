@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.types.TypeName;
 
@@ -34,6 +35,7 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
+@Api.Incubating
 public interface FactoryMethod extends Prototype.Api {
 
     /**

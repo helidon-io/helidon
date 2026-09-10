@@ -25,10 +25,13 @@ import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Api;
+
 /**
  * Prototype is generated from a prototype blueprint, and it is expected to be part of the public API of the module.
  * This class holds all types related to generating prototypes form a blueprint.
  */
+@Api.Stable
 public final class Prototype {
     private Prototype() {
     }
@@ -550,6 +553,7 @@ public final class Prototype {
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
     @Repeatable(Extensions.class)
+    @io.helidon.common.Api.Incubating
     public @interface Extension {
         /**
          * Type the extension supports, see documentation of appropriate extension.
@@ -565,6 +569,7 @@ public final class Prototype {
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
+    @io.helidon.common.Api.Incubating
     public @interface Extensions {
         /**
          * Extensions to use.

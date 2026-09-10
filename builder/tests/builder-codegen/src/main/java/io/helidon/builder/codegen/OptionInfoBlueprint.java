@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
@@ -33,6 +34,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Model of a prototype/builder option.
  */
+@Api.Incubating
 @Prototype.Blueprint(detach = true)
 interface OptionInfoBlueprint extends Annotated {
     /**

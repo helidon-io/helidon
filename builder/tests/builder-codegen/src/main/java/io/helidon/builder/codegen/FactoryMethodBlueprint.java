@@ -19,6 +19,7 @@ package io.helidon.builder.codegen;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.common.types.TypeName;
  * Such methods can be used to map from configuration to a type, or from a prototype to a
  * third party runtime-type.
  */
+@Api.Incubating
 @Prototype.Blueprint(detach = true)
 interface FactoryMethodBlueprint {
     /**

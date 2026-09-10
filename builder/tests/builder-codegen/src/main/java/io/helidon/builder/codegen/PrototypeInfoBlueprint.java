@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.Javadoc;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.TypeInfo;
@@ -32,6 +33,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Information about the prototype we are going to build.
  */
+@Api.Incubating
 @Prototype.Blueprint(detach = true)
 interface PrototypeInfoBlueprint extends Annotated {
     /**

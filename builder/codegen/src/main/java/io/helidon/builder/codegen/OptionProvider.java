@@ -32,6 +32,7 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
+@Api.Incubating
 public interface OptionProvider extends Prototype.Api {
 
     /**

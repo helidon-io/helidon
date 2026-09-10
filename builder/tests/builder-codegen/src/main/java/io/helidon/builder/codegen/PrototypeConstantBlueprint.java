@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Javadoc;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
  * Custom constant definition. This constant will be code generated on the prototype interface.
  */
+@Api.Incubating
 @Prototype.Blueprint(detach = true)
 interface PrototypeConstantBlueprint {
     /**

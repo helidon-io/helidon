@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+
 /**
  * Custom description. The description is copied from javadoc by default.
  * Use this annotation to customize the description, or when the javadoc is not available within
@@ -30,6 +32,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Inherited
 @Retention(RetentionPolicy.CLASS)
+@Api.Stable
 public @interface Description {
     /**
      * Custom description.
