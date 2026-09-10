@@ -663,7 +663,7 @@ class OidcJwkLoadingTest {
         WebServer server = WebServer.builder()
                 .host("localhost")
                 .routing(routing -> routing
-                        .get("/identity/.well-known/openid-configuration", (req, res) -> {
+                        .get("/identity/.well-known/openid-configuration", (_, res) -> {
                             int request = metadataRequests.incrementAndGet();
                             res.header(HeaderValues.CONTENT_TYPE_JSON);
                             if (request == 1) {
@@ -672,7 +672,7 @@ class OidcJwkLoadingTest {
                                 res.send("{\"jwks_uri\":\"http://localhost:" + serverPort.get() + "/jwks\"}");
                             }
                         })
-                        .get("/jwks", (req, res) -> {
+                        .get("/jwks", (_, res) -> {
                             jwkRequests.incrementAndGet();
                             res.header(HeaderValues.CONTENT_TYPE_JSON).send(JWK_JSON);
                         }))
@@ -705,13 +705,13 @@ class OidcJwkLoadingTest {
         WebServer server = WebServer.builder()
                 .host("localhost")
                 .routing(routing -> routing
-                        .get("/identity/.well-known/openid-configuration", (req, res) -> {
+                        .get("/identity/.well-known/openid-configuration", (_, res) -> {
                             metadataRequests.incrementAndGet();
                             delayResponse();
                             res.header(HeaderValues.CONTENT_TYPE_JSON)
                                     .send("{\"jwks_uri\":\"http://localhost:" + serverPort.get() + "/jwks\"}");
                         })
-                        .get("/jwks", (req, res) -> {
+                        .get("/jwks", (_, res) -> {
                             jwkRequests.incrementAndGet();
                             res.header(HeaderValues.CONTENT_TYPE_JSON).send(JWK_JSON);
                         }))
@@ -746,12 +746,12 @@ class OidcJwkLoadingTest {
         WebServer server = WebServer.builder()
                 .host("localhost")
                 .routing(routing -> routing
-                        .get("/identity/.well-known/openid-configuration", (req, res) -> {
+                        .get("/identity/.well-known/openid-configuration", (_, res) -> {
                             metadataRequests.incrementAndGet();
                             res.header(HeaderValues.CONTENT_TYPE_JSON)
                                     .send("{\"jwks_uri\":\"http://localhost:" + serverPort.get() + "/jwks\"}");
                         })
-                        .get("/jwks", (req, res) -> {
+                        .get("/jwks", (_, res) -> {
                             jwkRequests.incrementAndGet();
                             delayResponse();
                             res.header(HeaderValues.CONTENT_TYPE_JSON).send(JWK_JSON);
@@ -787,12 +787,12 @@ class OidcJwkLoadingTest {
         WebServer server = WebServer.builder()
                 .host("localhost")
                 .routing(routing -> routing
-                        .get("/identity/.well-known/openid-configuration", (req, res) -> {
+                        .get("/identity/.well-known/openid-configuration", (_, res) -> {
                             res.header(HeaderValues.CONTENT_TYPE_JSON)
                                     .send("{\"token_endpoint\":\"http://localhost:" + serverPort.get() + "/token\","
                                                   + "\"jwks_uri\":\"http://localhost:" + serverPort.get() + "/jwks\"}");
                         })
-                        .post("/token", (req, res) -> {
+                        .post("/token", (_, res) -> {
                             if (tokenRequests.incrementAndGet() == 1) {
                                 res.status(Status.SERVICE_UNAVAILABLE_503).send();
                             } else {
