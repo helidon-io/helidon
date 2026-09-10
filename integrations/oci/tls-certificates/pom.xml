@@ -81,6 +81,10 @@
             <artifactId>helidon-common-key-util</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-configurable</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.fault-tolerance</groupId>
             <artifactId>helidon-fault-tolerance</artifactId>
         </dependency>
