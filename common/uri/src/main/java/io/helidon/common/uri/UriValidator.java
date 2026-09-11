@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.uri.UriValidationException.Segment;
 
 /**
@@ -37,6 +38,7 @@ import io.helidon.common.uri.UriValidationException.Segment;
  *     <li>fragment - {@link #validateFragment(String)}</li>
  * </ul>
  */
+@Api.Stable
 public final class UriValidator {
     private static final Pattern IP_V4_PATTERN =
             Pattern.compile("^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})$");

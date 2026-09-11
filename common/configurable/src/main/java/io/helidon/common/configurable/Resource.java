@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
@@ -43,6 +44,7 @@ import io.helidon.config.ConfigException;
  * there is an option: call {@link #cacheBytes()} before accessing it by other threads.
  * Note that this stores all the bytes in memory, so use with care!!!
  */
+@Api.Stable
 public interface Resource extends RuntimeType.Api<ResourceConfig> {
     /**
      * Load resource from URI provided.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,12 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Information about one side of this communication (either local or remote).
  */
+@Api.Preview
 public interface PeerInfo {
     /**
      * Socket address of the peer.

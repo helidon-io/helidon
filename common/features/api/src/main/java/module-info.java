@@ -21,6 +21,8 @@
  * @see io.helidon.common.features.api.Features
  */
 module io.helidon.common.features.api {
+    requires static io.helidon.common;
+
     requires transitive io.helidon.common.features.metadata;
 
     exports io.helidon.common.features.api;

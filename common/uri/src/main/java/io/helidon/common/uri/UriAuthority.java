@@ -18,11 +18,14 @@ package io.helidon.common.uri;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * Normalized URI authority.
  * <p>
  * URI authority is a host plus an optional port. Userinfo is not supported.
  */
+@Api.Stable
 public final class UriAuthority {
     /**
      * Undefined port value.

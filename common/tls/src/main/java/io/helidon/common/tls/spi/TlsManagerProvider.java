@@ -18,12 +18,14 @@ package io.helidon.common.tls.spi;
 
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.tls.TlsManager;
 import io.helidon.config.ConfiguredProvider;
 
 /**
  * {@link java.util.ServiceLoader} service provider for {@link io.helidon.common.tls.TlsManager}.
  */
+@Api.Stable
 public interface TlsManagerProvider extends ConfiguredProvider<TlsManager> {
 
     /**

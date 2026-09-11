@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 
 /**
@@ -42,6 +43,7 @@ import io.helidon.common.LazyValue;
  *
  * @param <T> type of emitted item
  */
+@Api.Stable
 public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private volatile Flow.Subscriber<? super T> subscriber;
     private volatile Throwable error = null;

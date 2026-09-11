@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
+
 /**
  * Wrapper {@link Flow.Subscriber} ensuring {@code OnSubscribe}, {@code onNext}, {@code onError}
  * and {@code onComplete} to be signaled serially.
@@ -31,6 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @see <a href="https://github.com/reactive-streams/reactive-streams-jvm#1.3">
  * https://github.com/reactive-streams/reactive-streams-jvm#1.3</a>
  */
+@Api.Stable
 public class SequentialSubscriber<T> implements Flow.Subscriber<T> {
 
     private Flow.Subscriber<T> subscriber;

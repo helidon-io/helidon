@@ -21,11 +21,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.configurable.Resource;
 
 /**
  * Resources from a java keystore (PKCS12, JKS etc.).
  */
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint
 interface KeystoreKeysBlueprint {

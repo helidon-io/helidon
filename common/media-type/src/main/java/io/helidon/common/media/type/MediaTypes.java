@@ -20,6 +20,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Media type detection based on a resource.
  * <p>The media type detection uses the following algorithm:
@@ -29,6 +31,7 @@ import java.util.Optional;
  *     <li>Checks built-in mapping provided by Helidon (with the usual the web relevant media types)</li>
  * </ul>
  */
+@Api.Stable
 public final class MediaTypes {
     /**
      * Wildcard media type.

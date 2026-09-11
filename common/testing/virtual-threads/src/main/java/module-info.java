@@ -18,6 +18,8 @@
  * Virtual Thread testing features for Helidon test extensions.
  */
 module io.helidon.common.testing.virtualthreads {
+    requires static io.helidon.common;
+
     requires jdk.jfr;
 
     exports io.helidon.common.testing.virtualthreads;

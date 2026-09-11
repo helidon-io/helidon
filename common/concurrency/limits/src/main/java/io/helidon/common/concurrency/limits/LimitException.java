@@ -18,12 +18,15 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * A limit was reached and the submitted task cannot be executed.
  *
  * @see io.helidon.common.concurrency.limits.LimitAlgorithm#call(java.util.concurrent.Callable)
  * @see io.helidon.common.concurrency.limits.LimitAlgorithm#run(Runnable)
  */
+@Api.Preview
 public class LimitException extends RuntimeException {
     /**
      * Outcome that caused this exception.

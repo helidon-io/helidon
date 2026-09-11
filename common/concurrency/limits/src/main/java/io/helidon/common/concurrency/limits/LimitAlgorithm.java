@@ -18,6 +18,8 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.concurrent.Callable;
 
+import io.helidon.common.Api;
+
 /**
  * Concurrency limit algorithm.
  * <p>
@@ -26,6 +28,7 @@ import java.util.concurrent.Callable;
  * <p>
  * The convenience methods are backed by the same {@link #tryAcquireOutcome(boolean)} decisions, so behavior is consistent.
  */
+@Api.Preview
 public interface LimitAlgorithm {
     /**
      * Invoke a callable within the limits of this limiter.

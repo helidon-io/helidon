@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.configurable.Resource;
 
 /**
@@ -32,6 +33,7 @@ import io.helidon.common.configurable.Resource;
  * The only supported format is PKCS#8. If you have a different format, you must transform it to PKCS8 PEM format (to
  * use this builder), or to PKCS#12 keystore format (and use {@link io.helidon.common.pki.KeystoreKeys.Builder}).
  */
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint
 interface PemKeysBlueprint {

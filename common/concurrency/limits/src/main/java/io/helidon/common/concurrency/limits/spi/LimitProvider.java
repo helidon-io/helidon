@@ -16,6 +16,7 @@
 
 package io.helidon.common.concurrency.limits.spi;
 
+import io.helidon.common.Api;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.config.ConfiguredProvider;
 import io.helidon.service.registry.Service;
@@ -23,6 +24,7 @@ import io.helidon.service.registry.Service;
 /**
  * A {@link java.util.ServiceLoader} (and service registry) service provider to discover rate limits.
  */
+@Api.Preview
 @Service.Contract
 public interface LimitProvider extends ConfiguredProvider<Limit> {
 }

@@ -30,6 +30,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 
 /**
@@ -37,6 +38,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
+@Api.Stable
 public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
     /**

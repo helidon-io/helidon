@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.common.uri;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 import static io.helidon.common.uri.UriValidator.encode;
 import static io.helidon.common.uri.UriValidator.print;
 
@@ -29,6 +31,7 @@ import static io.helidon.common.uri.UriValidator.print;
  *
  * @see #invalidValue()
  */
+@Api.Stable
 public class UriValidationException extends IllegalArgumentException {
     /**
      * Segment that failed validation.

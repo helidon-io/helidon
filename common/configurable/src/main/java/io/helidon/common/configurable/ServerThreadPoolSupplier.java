@@ -19,12 +19,14 @@ package io.helidon.common.configurable;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
  * Supplier of a custom thread pool with defaults appropriate for a thread-per-request server.
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
+@Api.Stable
 public final class ServerThreadPoolSupplier implements Supplier<ExecutorService> {
 
     private static final int MINIMUM_CORES = 2;

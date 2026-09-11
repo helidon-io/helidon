@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Api;
+
 /**
  * Concat streams to one.
  *
  * @param <T> item type
  */
+@Api.Stable
 public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
     private final Flow.Publisher<T> firstPublisher;
     private final Flow.Publisher<T> secondPublisher;

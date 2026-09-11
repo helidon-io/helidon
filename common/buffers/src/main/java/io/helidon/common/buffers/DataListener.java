@@ -16,11 +16,14 @@
 
 package io.helidon.common.buffers;
 
+import io.helidon.common.Api;
+
 /**
  * A listener for data.
  *
  * @param <T> type of context
  */
+@Api.Stable
 public interface DataListener<T> {
     /**
      * Data received or sent.

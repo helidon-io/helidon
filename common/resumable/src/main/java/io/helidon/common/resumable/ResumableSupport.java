@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,15 @@ package io.helidon.common.resumable;
 
 import java.lang.management.ManagementFactory;
 
+import io.helidon.common.Api;
+
 /**
  * Allows notification of resumable resources before suspend and after resume.
  * Instances of classes implementing {@code Resumable} and registered with
  * {@code ResumableSupport.get().register(resumableResource)} are notified
  * before suspend and after resume by underlying resumable implementation.
  */
+@Api.Preview
 public interface ResumableSupport {
 
     /**

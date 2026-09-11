@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package io.helidon.common.uri;
 
+import io.helidon.common.Api;
 import io.helidon.common.parameters.Parameters;
 
 /**
  * Segment of a path.
  */
+@Api.Stable
 public interface UriPathSegment {
     /**
      * Create a new path segment from raw (encoded) segment value that may contain matrix parameters.

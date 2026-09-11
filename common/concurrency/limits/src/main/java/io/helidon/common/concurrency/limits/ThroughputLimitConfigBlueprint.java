@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 /**
@@ -37,6 +38,7 @@ import io.helidon.common.concurrency.limits.spi.LimitProvider;
 @Prototype.Blueprint
 @Prototype.Configured(value = ThroughputLimit.TYPE, root = false)
 @Prototype.Provides(LimitProvider.class)
+@Api.Preview
 interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLimit>, ClockConfig {
     /**
      * The rate limiting algorithm to apply.

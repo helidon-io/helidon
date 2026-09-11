@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import io.helidon.codegen.api.stability.ApiStabilityProcessor;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Api;
@@ -38,7 +39,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 
-@SuppressWarnings(Api.SUPPRESS_INTERNAL)
+@SuppressWarnings({Api.SUPPRESS_INTERNAL, Api.SUPPRESS_PREVIEW})
 class GeneratedSourceMetadataTest {
     private static final String PACKAGE_NAME = "io.helidon.json.tests.generated";
     private static final String PACKAGE_PATH = PACKAGE_NAME.replace('.', '/') + "/";
@@ -109,6 +110,8 @@ class GeneratedSourceMetadataTest {
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
+                .addProcessor(ApiStabilityProcessor::new)
+                .addOption("-Ahelidon.api=fail")
                 .addSource(sourceName, source)
                 .build()
                 .compile();
@@ -135,6 +138,7 @@ class GeneratedSourceMetadataTest {
         assertThat(content, containsString("Licensed under the Apache License, Version 2.0"));
         assertThat(content, not(containsString("// This is a generated file (powered by Helidon).")));
         assertThat(content, containsString("@Generated("));
+        assertThat(content, containsString("@SuppressWarnings(\"" + Api.SUPPRESS_ALL + "\")"));
         assertThat(content, containsString("value = \"" + generator + "\""));
         assertThat(content, containsString("trigger = \"" + trigger + "\""));
     }

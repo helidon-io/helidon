@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
@@ -36,6 +37,7 @@ import io.helidon.common.mapper.Value;
  * Parameters abstraction (used by any component that has named parameters with possible multiple values).
  * This is a read-only access to the parameters.
  */
+@Api.Stable
 public interface Parameters {
     /**
      * Generic type for parameters.

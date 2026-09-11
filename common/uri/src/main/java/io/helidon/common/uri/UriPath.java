@@ -19,12 +19,14 @@ package io.helidon.common.uri;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.common.parameters.Parameters;
 
 /**
  * Abstraction of HTTP path supporting matrix parameters.
  * Note that matrix parameters are ONLY available on {@link #absolute()} path or on {@link #segments()}.
  */
+@Api.Stable
 public interface UriPath {
     /**
      * Creates a relative path from the provided path and the relative segment(s).

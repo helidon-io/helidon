@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.common.testing.junit5;
 
 import java.util.Properties;
 
+import io.helidon.common.Api;
+
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -32,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store;
  * <code>@ExtendWith(RestoreSystemPropertiesExt.class)</code>
  *
  */
+@Api.Stable
 public class RestoreSystemPropertiesExt implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
 
     private static final String SYSPROPS_KEY = "systemProps";

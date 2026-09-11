@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,15 @@ import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
+import io.helidon.common.Api;
+
 /**
  * Intercept the calls to the various Flow interface methods and calls the appropriate
  * user callbacks.
  *
  * @param <T> the element type of the sequence
  */
+@Api.Stable
 public final class MultiTappedPublisher<T> implements Multi<T>, NamedOperator {
 
     private final Multi<T> source;

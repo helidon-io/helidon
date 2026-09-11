@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.common.testing.junit5;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
@@ -26,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Hamcrest matcher capable of configured retries before failing the assertion, plus more generic retry processing.
  */
+@Api.Stable
 public class MatcherWithRetry {
 
     private static final int RETRY_COUNT = Integer.getInteger("io.helidon.test.retryCount", 10);

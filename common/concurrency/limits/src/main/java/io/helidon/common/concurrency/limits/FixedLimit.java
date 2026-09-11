@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -30,6 +31,7 @@ import io.helidon.config.Config;
  *
  * @see io.helidon.common.concurrency.limits.FixedLimitConfig
  */
+@Api.Preview
 public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<FixedLimitConfig> {
 
     /**

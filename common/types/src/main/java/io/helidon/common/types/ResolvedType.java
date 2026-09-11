@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,15 @@ package io.helidon.common.types;
 
 import java.lang.reflect.Type;
 
+import io.helidon.common.Api;
+
 /**
  * A wrapper for {@link io.helidon.common.types.TypeName} that uses the resolved name for equals and hashCode.
  * This allows us to collect interfaces including type arguments.
  *
  * @see TypeName#resolvedName()
  */
+@Api.Stable
 public interface ResolvedType {
     /**
      * Create a type name from a type (such as class).

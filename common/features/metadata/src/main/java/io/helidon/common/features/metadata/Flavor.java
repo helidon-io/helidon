@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 
 package io.helidon.common.features.metadata;
 
+import io.helidon.common.Api;
+
 /**
  * Flavors of Helidon.
  * This is a copy of the same enum in Feature API. To avoid backward incompatible change, this is duplicated.
  * <p>
  * This module is used both from codegen and from the implementation.
  */
+@Api.Internal
 public enum Flavor {
     /**
      * The "Standard Edition" flavor.

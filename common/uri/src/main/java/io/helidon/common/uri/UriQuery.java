@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.parameters.Parameters;
 
 /**
@@ -28,6 +29,7 @@ import io.helidon.common.parameters.Parameters;
  * Query is the section separated by {@code ?} character from the path, where each query parameter is separated
  * by {@code &} character.
  */
+@Api.Stable
 public interface UriQuery extends Parameters {
     /**
      * Create a new HTTP query from the query string.

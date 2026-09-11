@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 
 /**
@@ -34,6 +35,7 @@ import io.helidon.common.buffers.BufferData;
  * switches to synchronous writes to avoid the queueing and executor handoff cost on low-contention
  * connections.
  */
+@Api.Internal
 public class SmartSocketWriter extends SocketWriter {
     private static final long WINDOW_SIZE = 1000;
     private static final double QUEUE_SIZE_THRESHOLD = 2.0;

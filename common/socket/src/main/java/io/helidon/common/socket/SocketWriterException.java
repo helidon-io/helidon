@@ -18,9 +18,12 @@ package io.helidon.common.socket;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * Socket write failed.
  */
+@Api.Internal
 public class SocketWriterException extends RuntimeException {
     private static final long serialVersionUID = -7500193395790009086L;
 

@@ -24,11 +24,13 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Arrays;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 
 /**
  * Helidon socket that is based on plaintext.
  */
+@Api.Internal
 public sealed class PlainSocket implements HelidonSocket permits TlsSocket {
     private static final int BUFFER_LENGTH = 8 * 1024;
 

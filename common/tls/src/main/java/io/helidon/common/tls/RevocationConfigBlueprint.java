@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Certificate revocation configuration.
@@ -35,6 +36,7 @@ import io.helidon.builder.api.Prototype;
  *     to check the status of a certificate, providing immediate verification of its validity</li>
  * </ul>
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured
 interface RevocationConfigBlueprint {

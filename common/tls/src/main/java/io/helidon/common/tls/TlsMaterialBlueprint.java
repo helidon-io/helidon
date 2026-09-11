@@ -24,10 +24,12 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * TLS key and trust material used to set up or reload manager state.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(TlsMaterialSupport.CustomMethods.class)

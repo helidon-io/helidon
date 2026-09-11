@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
  */
 package io.helidon.common.context;
 
+import io.helidon.common.Api;
+
 /**
  * Exception related to execution of a task in context.
  */
+@Api.Stable
 public class ExecutorException extends RuntimeException {
     /**
      * Create exception with a descriptive message.

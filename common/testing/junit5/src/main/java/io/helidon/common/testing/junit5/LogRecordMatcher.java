@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
+import io.helidon.common.Api;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -26,6 +28,7 @@ import org.hamcrest.TypeSafeMatcher;
 /**
  * Hamcrest matcher for a {@link java.util.logging.LogRecord}.
  */
+@Api.Stable
 public class LogRecordMatcher {
 
     private static final Formatter SIMPLE_LOG_FORMATTER = new SimpleFormatter();

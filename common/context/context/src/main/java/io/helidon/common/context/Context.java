@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 /**
  * A registry for context objects. Enables instance localization between several <i>services / components / ...</i> integrated in
  * a particular known scope. ContextualRegistry instance is intended to be associated with a scope aware object such as
@@ -49,6 +51,7 @@ import java.util.function.Supplier;
  * }</pre></li>
  * </ol>
  */
+@Api.Stable
 public interface Context {
 
     /**

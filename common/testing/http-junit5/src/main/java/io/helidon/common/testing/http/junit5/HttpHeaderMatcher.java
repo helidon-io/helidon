@@ -18,6 +18,7 @@ package io.helidon.common.testing.http.junit5;
 
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderValues;
@@ -31,6 +32,7 @@ import org.hamcrest.TypeSafeMatcher;
 /**
  * Matchers for {@link io.helidon.http.Headers}.
  */
+@Api.Stable
 public final class HttpHeaderMatcher {
     private HttpHeaderMatcher() {
     }

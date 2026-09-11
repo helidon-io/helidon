@@ -16,6 +16,7 @@
 
 package io.helidon.common.concurrency.limits;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
 import io.helidon.config.Config;
@@ -24,6 +25,7 @@ import io.helidon.config.Config;
  * {@link java.util.ServiceLoader} service provider for {@link io.helidon.common.concurrency.limits.AimdLimit}
  * limit implementation.
  */
+@Api.Internal
 @Weight(80)
 public class AimdLimitProvider implements LimitProvider {
     /**

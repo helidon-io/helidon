@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@ package io.helidon.common.reactive;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
+
 /**
  * Helper methods for stream validation.
  */
+@Api.Internal
 public class StreamValidationUtils {
 
 

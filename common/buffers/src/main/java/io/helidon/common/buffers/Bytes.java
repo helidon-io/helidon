@@ -18,6 +18,8 @@ package io.helidon.common.buffers;
 
 import java.nio.ByteOrder;
 
+import io.helidon.common.Api;
+
 /*
  * SWAR related methods in this class are heavily inspired by:
  * PR https://github.com/netty/netty/pull/10737
@@ -29,6 +31,7 @@ import java.nio.ByteOrder;
 /**
  * Bytes commonly used in HTTP.
  */
+@Api.Preview
 public final class Bytes {
     /**
      * {@code :} byte.

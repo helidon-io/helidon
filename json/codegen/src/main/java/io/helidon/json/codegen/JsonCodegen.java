@@ -25,6 +25,7 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Annotation;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -95,6 +96,11 @@ class JsonCodegen implements CodegenExtension {
                                                                    ""));
             JsonBindingFactoryGenerator.generateBindingFactory(builder, typeInfo, ctx);
         }
+
+        builder.addAnnotation(Annotation.builder()
+                                      .type(SuppressWarnings.class)
+                                      .addParameter("value", Api.SUPPRESS_ALL)
+                                      .build());
 
         roundContext.addGeneratedType(generatedType,
                                       builder,

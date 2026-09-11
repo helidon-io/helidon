@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.io.Closeable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.Api;
+
 /**
  * A simplified {@link java.util.concurrent.ExecutorService} that can execute
  * {@link InterruptableTask}s and can be efficiently terminated. A thread that is
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeUnit;
  * executor will query the thread and interrupt it if possible. It is important
  * to efficiently shut down the webserver in certain environments.
  */
+@Api.Internal
 public interface HelidonTaskExecutor extends Closeable {
 
     /**

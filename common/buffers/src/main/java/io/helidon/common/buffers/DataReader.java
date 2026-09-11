@@ -23,9 +23,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 /**
  * Data reader that can pull additional data.
  */
+@Api.Stable
 public class DataReader {
     private final Supplier<byte[]> bytesSupplier;
     private final boolean ignoreLoneEol;
@@ -237,6 +240,7 @@ public class DataReader {
      * @param len     number of bytes of the string
      * @return lazy string
      */
+    @Api.Internal
     public LazyString readLazyString(Charset charset, int len) {
         ensureAvailable(); // we have at least 1 byte
         if (len <= head.available()) { // fast case

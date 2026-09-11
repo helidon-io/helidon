@@ -22,10 +22,12 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * An annotation with defined values.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = TypedElementInfoSupport.BuilderDecorator.class, createEmptyPublic = false)
 @Prototype.CustomMethods(TypedElementInfoSupport.class)
 interface TypedElementInfoBlueprint extends Annotated {

@@ -27,10 +27,12 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Represents the model object for a type.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = TypeInfoSupport.TypeInfoDecorator.class, createEmptyPublic = false)
 interface TypeInfoBlueprint extends Annotated {
     /**

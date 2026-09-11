@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
@@ -51,6 +52,7 @@ import static org.hamcrest.core.Is.is;
  * The SocketHttpClient provides means to simply pass any bytes over the network
  * and to see how a server deals with such a case.
  */
+@Api.Stable
 public class SocketHttpClient implements AutoCloseable {
 
     private static final System.Logger LOGGER = System.getLogger(SocketHttpClient.class.getName());

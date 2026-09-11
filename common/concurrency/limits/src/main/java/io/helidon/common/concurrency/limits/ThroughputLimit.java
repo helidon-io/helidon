@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -32,6 +33,7 @@ import io.helidon.config.Config;
  *
  * @see io.helidon.common.concurrency.limits.ThroughputLimitConfig
  */
+@Api.Preview
 public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.Api<ThroughputLimitConfig> {
 
     /**

@@ -33,6 +33,7 @@ import io.helidon.service.registry.Service;
  * Once the context is exposed through an {@link io.helidon.common.tls.Tls} instance, its identity must not change.
  * Post-initialization material changes are published through the reload methods.
  */
+@Api.Stable
 @Service.Contract
 public interface TlsManager extends NamedService {
 

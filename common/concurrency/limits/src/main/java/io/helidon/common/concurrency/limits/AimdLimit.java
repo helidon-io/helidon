@@ -20,6 +20,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -29,6 +30,7 @@ import io.helidon.config.Config;
  * congestion control. AIMD combines linear growth of the congestion window when there is no congestion with an exponential
  * reduction when congestion is detected.
  */
+@Api.Preview
 public class AimdLimit implements LimitAlgorithm, Limit, RuntimeType.Api<AimdLimitConfig> {
 
     /**

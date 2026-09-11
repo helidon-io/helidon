@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,15 @@ package io.helidon.common.security;
 import java.security.Principal;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Security context.
  * Can be obtained either from context, or from APIs of Helidon components.
  *
  * @param <P> type of principal used by the implementation, this common interface uses Java security Principal
  */
+@Api.Stable
 public interface SecurityContext<P extends Principal> {
     /**
      * Return true if the user is authenticated.

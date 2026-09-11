@@ -28,12 +28,14 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Socket options.
  */
 @Prototype.Configured
 @Prototype.Blueprint(decorator = SocketOptionsBlueprint.BuilderDecorator.class)
+@Api.Preview
 interface SocketOptionsBlueprint {
     /**
      * Arbitrary socket options. Socket options that have dedicated methods

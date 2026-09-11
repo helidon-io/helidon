@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,13 @@ import java.util.function.Predicate;
 
 import javax.management.NotificationEmitter;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.ContextAwareExecutorService;
 
 /**
  * A {@link ThreadPoolExecutor} with an extensible growth policy and queue state accessors.
  */
+@Api.Stable
 public class ThreadPool extends ThreadPoolExecutor {
     private static final System.Logger LOGGER = System.getLogger(ThreadPool.class.getName());
     private static final int MAX_GROWTH_RATE = 100;

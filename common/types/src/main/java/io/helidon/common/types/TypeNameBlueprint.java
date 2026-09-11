@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #name()} returns the package +
@@ -45,6 +46,7 @@ import io.helidon.builder.api.Prototype;
  * <li>{@link #declaredName()} and {@link #resolvedName()}.</li>
  * </ul>
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = TypeNameSupport.Decorator.class)
 @Prototype.CustomMethods(TypeNameSupport.class)
 @Prototype.Implement("java.lang.Comparable<TypeName>")

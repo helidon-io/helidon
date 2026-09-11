@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,13 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.Base64Value;
 
 /**
  * The Signature class is used for simplification of the digital signature creation and verification.
  */
+@Api.Stable
 public class Signature implements Digest {
 
     /**
