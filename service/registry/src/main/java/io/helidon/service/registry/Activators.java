@@ -330,7 +330,9 @@ final class Activators {
                 if (currentPhase != ActivationPhase.ACTIVE || !activeInstancesAvailable(lookup)) {
                     return Optional.empty();
                 }
-                return targetInstances(lookup);
+                // Cached factory products can still have interception wrappers initialized outside the activator lock.
+                return targetInstances(lookup)
+                        .filter(instances -> instances.stream().allMatch(GeneratedService::initialized));
             } finally {
                 instanceLock.readLock().unlock();
             }

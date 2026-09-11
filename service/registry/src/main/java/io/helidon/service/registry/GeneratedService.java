@@ -37,6 +37,13 @@ public final class GeneratedService {
     private GeneratedService() {
     }
 
+    static boolean initialized(Service.QualifiedInstance<?> qualifiedInstance) {
+        if (qualifiedInstance instanceof InterceptionWrapper.LazyQualifiedInstance<?> lazyInstance) {
+            return lazyInstance.instance.isLoaded();
+        }
+        return true;
+    }
+
     /**
      * Each descriptor for s service that is implements {@link Service.QualifiedFactory}
      * implements this interface to provide information about the qualifier it supports.
