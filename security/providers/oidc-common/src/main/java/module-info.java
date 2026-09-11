@@ -31,7 +31,9 @@ module io.helidon.security.providers.oidc.common {
 
     requires static io.helidon.config.metadata;
 
+    requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.config;
+    requires transitive io.helidon.faulttolerance;
     requires transitive io.helidon.security.jwt;
     requires transitive io.helidon.security.util; // TokenHandler is part of API
     requires transitive io.helidon.security;

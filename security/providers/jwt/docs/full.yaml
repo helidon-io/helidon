@@ -27,6 +27,9 @@ security:
         # Set to false for outbound-only providers that should not authenticate inbound requests
         # defaults to true
         authenticate: true
+        # DANGEROUS: Accept tokens with algorithm "none" and no key ID; defaults to false.
+        # Such tokens do not require or load verification JWKs. Signed tokens still require matching keys.
+        allow-unsigned: false
         # If set to true, identity will be propagated further using the configured header and format
         # The user id from current subject will be propagated
         # defaults to true
@@ -34,16 +37,52 @@ security:
         # Can be USER or SERVICE
         # defaults to USER
         principal-type: USER
+        # Loading policy for verification JWK resources configured with a filesystem path or URI.
+        # Classpath and inline resources are validated at startup and do not use this policy.
+        # The circuit breaker wraps a complete retry batch, and timeout applies to each attempt.
+        # The timeout must be positive, run on the calling thread, and not exceed the retry overall timeout.
+        # Once verification keys load successfully, that value is cached for the life of the provider.
+        jwk-loader:
+          timeout:
+            # Maximum duration of each load attempt; defaults to 5 seconds
+            timeout: "PT5S"
+            # Required so a retry cannot overlap an attempt still unwinding after interruption; defaults to true
+            current-thread: true
+            # Whether metrics are enabled for verification-key loading timeouts; defaults to false
+            enable-metrics: false
+          retry:
+            # Total number of load calls, including the initial call; defaults to 2
+            calls: 2
+            # Base delay between calls; defaults to 200 milliseconds
+            delay: "PT0.2S"
+            # Delay factor; -1 selects the default factor unless jitter is configured
+            delay-factor: -1.0
+            # Retry jitter; the negative default leaves jitter disabled
+            jitter: "PT-1S"
+            # Overall budget for both timed attempts and the delay; defaults to 11 seconds
+            overall-timeout: "PT11S"
+            # Whether metrics are enabled for verification-key loading retries; defaults to false
+            enable-metrics: false
+          circuit-breaker:
+            # Time before an open circuit permits a probe; defaults to 5 seconds
+            delay: "PT5S"
+            # One exhausted retry batch opens the circuit by default
+            volume: 1
+            error-ratio: 100
+            # Successful probes required to close the circuit; defaults to 1
+            success-threshold: 1
+            # Whether metrics are enabled for the verification-key loading circuit; defaults to false
+            enable-metrics: false
         # Token extraction
         atn-token:
           # JWK configuration (where to get keys for verification/signatures)
           # either of the following (as defined in Resource utility):
           jwk.resource:
-            path: "/filesystem/path/of/jwk"
             resource-path: "classpath/resource"
-            url: "http://url/of/jwk"
-            content-plain: "{}"
-            content: "base64"
+            # path: "/filesystem/path/of/jwk"
+            # uri: "http://url/of/jwk"
+            # content-plain: "{}"
+            # content: "base64"
           # Whether to verify inbound JWT signatures
           # If set to false while authenticate is true, atn-token.jwt-issuer and
           # atn-token.jwt-audience are both required
@@ -70,11 +109,11 @@ security:
             # JWK configuration (where to get keys for signatures)
             # This is defined only once, as we can have more keys in a single jwk
             # either of the following:
-            path: "/filesystem/path/of/jwk"
             resource-path: "classpath/resource"
-            url: "http://url/of/jwk"
-            content-plain: "{}"
-            content: "base64"
+            # path: "/filesystem/path/of/jwk"
+            # uri: "http://url/of/jwk"
+            # content-plain: "{}"
+            # content: "base64"
           jwt-issuer: "issuer.of.JWT"
           # Used by OutboundConfig
           outbound:

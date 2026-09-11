@@ -22,6 +22,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -178,6 +179,40 @@ public interface Resource extends RuntimeType.Api<ResourceConfig> {
 
         throw new ConfigException("Invalid resource configuration, one of"
                                           + "(path,resource-path,url,content-plain,content) must be configured");
+    }
+
+    /**
+     * Create resource from its configuration, using an explicit timeout when opening and reading a URI resource.
+     * The timeout does not apply to other resource types. Resource source precedence and location are the same as for
+     * {@link #create(ResourceConfig)}. URI connection caching is disabled so each invocation opens a fresh resource.
+     * <p>
+     * Positive sub-millisecond values use one millisecond. Values larger than the maximum timeout supported by
+     * {@link java.net.URLConnection} use that maximum.
+     *
+     * @param config resource configuration
+     * @param timeout URI connect and read timeout
+     * @return a new resource based on its configuration
+     * @throws IllegalArgumentException if the timeout is zero or negative
+     */
+    static Resource create(ResourceConfig config, Duration timeout) {
+        Objects.requireNonNull(config, "Resource configuration must not be null");
+        Objects.requireNonNull(timeout, "Resource URI timeout must not be null");
+        if (timeout.isZero() || timeout.isNegative()) {
+            throw new IllegalArgumentException("Resource URI timeout must be positive");
+        }
+
+        if (config.path().isPresent() || config.resourcePath().isPresent() || config.uri().isEmpty()) {
+            return create(config);
+        }
+
+        URI uri = config.uri().orElseThrow();
+        InputStream inputStream;
+        if (config.useProxy() && config.proxy().isPresent()) {
+            inputStream = ResourceUtil.toIs(uri, config.proxy().orElseThrow(), timeout);
+        } else {
+            inputStream = ResourceUtil.toIs(uri, timeout);
+        }
+        return ResourceUtil.from(inputStream, uri.toString(), Source.URL);
     }
 
     /**

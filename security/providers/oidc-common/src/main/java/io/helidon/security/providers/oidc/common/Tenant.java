@@ -16,13 +16,24 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.configurable.ResourceConfig;
+import io.helidon.common.configurable.ResourceException;
+import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
+import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -41,7 +52,7 @@ public class Tenant {
     private final String authorizationEndpointUri;
     private final URI logoutEndpointUri;
     private final String issuer;
-    private final WebClient appWebClient;
+    private final LazyValue<WebClient> appWebClient;
     private final JwkKeys signJwk;
     private final URI introspectUri;
 
@@ -50,7 +61,7 @@ public class Tenant {
                    URI authorizationEndpointUri,
                    URI logoutEndpointUri,
                    String issuer,
-                   WebClient appWebClient,
+                   LazyValue<WebClient> appWebClient,
                    JwkKeys signJwk,
                    URI introspectUri) {
         this.tenantConfig = tenantConfig;
@@ -76,16 +87,26 @@ public class Tenant {
         Errors.Collector collector = Errors.collector();
 
         URI identityUri = tenantConfig.identityUri();
-        OidcMetadata oidcMetadata = OidcMetadata.builder()
+        Duration jwkTimeout = tenantConfig.tenantLoadingLazy()
+                ? tenantConfig.jwkTimeout().prototype().timeout()
+                : null;
+        ResourceConfig metadataResource = tenantConfig.oidcMetadataResource().orElse(null);
+        JsonObject metadataJson = resolveMetadata(tenantConfig.oidcMetadataJsonObject(),
+                                                  metadataResource,
+                                                  jwkTimeout);
+        OidcMetadata.Builder oidcMetadataBuilder = OidcMetadata.builder()
                 .remoteEnabled(tenantConfig.useWellKnown())
-                .json(tenantConfig.oidcMetadataJsonObject())
+                .json(metadataJson)
+                .reloadable(metadataResource != null)
                 .webClient(webClient)
-                .identityUri(identityUri)
-                .collector(collector)
-                .build();
+                .identityUri(identityUri);
+        if (jwkTimeout != null) {
+            oidcMetadataBuilder.readTimeout(jwkTimeout);
+        }
+        OidcMetadata oidcMetadata = oidcMetadataBuilder.build();
 
         String serverType = tenantConfig.serverType();
-        String metaKey = resolveMetaKey("token_endpoint", serverType, identityUri);
+        String metaKey = OidcUtil.resolveMetaKey("token_endpoint", serverType, identityUri);
         URI tokenEndpointUri = oidcMetadata.getOidcEndpoint(collector,
                                                             tenantConfig.tenantTokenEndpointUri().orElse(null),
                                                             metaKey,
@@ -96,7 +117,7 @@ public class Tenant {
                                                                     "authorization_endpoint",
                                                                     "/oauth2/v1/authorize");
 
-        metaKey = resolveMetaKey("end_session_endpoint", serverType, identityUri);
+        metaKey = OidcUtil.resolveMetaKey("end_session_endpoint", serverType, identityUri);
         URI logoutEndpointUri = oidcMetadata.getOidcEndpoint(collector,
                                                              tenantConfig.tenantLogoutEndpointUri().orElse(null),
                                                              metaKey,
@@ -108,7 +129,7 @@ public class Tenant {
 
         URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
         if (!tenantConfig.validateJwtWithJwk()) {
-            metaKey = resolveMetaKey("introspection_endpoint", serverType, identityUri);
+            metaKey = OidcUtil.resolveMetaKey("introspection_endpoint", serverType, identityUri);
             introspectUri = oidcMetadata.getOidcEndpoint(collector,
                                                          introspectUri,
                                                          metaKey,
@@ -116,88 +137,31 @@ public class Tenant {
         }
 
         collector.collect().checkValid();
-        WebClientConfig.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
+        URI resolvedIntrospectUri = introspectUri;
+        Supplier<WebClient> appWebClient = () -> createAppWebClient(oidcConfig,
+                                                                    tenantConfig,
+                                                                    tokenEndpointUri,
+                                                                    resolvedIntrospectUri);
 
-        if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
-            HttpBasicAuthProvider.Builder httpBasicAuthBuilder = HttpBasicAuthProvider.builder()
-                    .addOutboundTarget(outboundTarget("oidc-token", tokenEndpointUri, tenantConfig));
-
-            if (introspectUri != null) {
-                httpBasicAuthBuilder.addOutboundTarget(outboundTarget("oidc-introspect", introspectUri, tenantConfig));
-            }
-
-            HttpBasicAuthProvider httpBasicAuth = httpBasicAuthBuilder.build();
-            Security tokenOutboundSecurity = Security.builder()
-                    .addOutboundSecurityProvider(httpBasicAuth)
-                    .build();
-
-            webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
+        JwkKeys signJwk = resolveSigningJwk(tenantConfig,
+                                            oidcMetadata,
+                                            collector,
+                                            appWebClient,
+                                            webClient,
+                                            tokenEndpointUri,
+                                            jwkTimeout);
+        Tenant tenant = new Tenant(tenantConfig,
+                                   tokenEndpointUri,
+                                   authorizationEndpointUri,
+                                   logoutEndpointUri,
+                                   issuer,
+                                   LazyValue.create(appWebClient),
+                                   signJwk,
+                                   resolvedIntrospectUri);
+        if (!tenantConfig.tenantLoadingLazy()) {
+            tenant.appWebClient();
         }
-
-        WebClient appWebClient = webClientBuilder.build();
-
-        JwkKeys signJwk = tenantConfig.tenantSignJwk().orElseGet(() -> {
-            if (tenantConfig.validateJwtWithJwk()) {
-                // not configured - use default location
-                String jwksMetaKey = resolveMetaKey("jwks_uri", serverType, identityUri);
-                URI jwkUri = oidcMetadata.getOidcEndpoint(collector,
-                                                          null,
-                                                          jwksMetaKey,
-                                                          null);
-                if (jwkUri != null) {
-                    if ("idcs".equals(serverType)) {
-                        return IdcsSupport.signJwk(appWebClient,
-                                                   webClient,
-                                                   tokenEndpointUri,
-                                                   jwkUri,
-                                                   tenantConfig.clientTimeout(),
-                                                   tenantConfig);
-                    } else {
-                        return JwkKeys.builder()
-                                .json(webClient.get()
-                                              .uri(jwkUri)
-                                              .requestEntity(JsonObject.class))
-                                .build();
-                    }
-                }
-            }
-            return JwkKeys.builder().build();
-        });
-        return new Tenant(tenantConfig,
-                          tokenEndpointUri,
-                          authorizationEndpointUri,
-                          logoutEndpointUri,
-                          issuer,
-                          appWebClient,
-                          signJwk,
-                          introspectUri);
-    }
-
-    private static OutboundTarget outboundTarget(String name, URI endpointUri, TenantConfig tenantConfig) {
-        String scheme = endpointUri.getScheme();
-        String host = endpointUri.getHost();
-        if (scheme == null || host == null) {
-            throw new SecurityException("OIDC endpoint URI must be absolute with scheme and host when using "
-                                                + OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC);
-        }
-        String path = endpointUri.getPath();
-        return OutboundTarget.builder(name)
-                .addTransport(scheme)
-                .addHost(host)
-                .addPath(Pattern.quote(path == null || path.isEmpty() ? "/" : path))
-                .addMethod("POST")
-                .customObject(HttpBasicOutboundConfig.class,
-                              HttpBasicOutboundConfig.create(tenantConfig.clientId(), tenantConfig.clientSecret()))
-                .build();
-    }
-
-    private static String resolveMetaKey(String metaKey, String serverType, URI identityUri) {
-        if ("idcs".equals(serverType) && identityUri.toString().contains(".secure.")) {
-            //when server is IDCS and URI has ".secure." defined, we know we are using MTLS and need to obtain
-            //secured endpoint also.
-            return "secure_" + metaKey;
-        }
-        return metaKey;
+        return tenant;
     }
 
     /**
@@ -247,6 +211,7 @@ public class Tenant {
 
     /**
      * Client with configured proxy and security.
+     * For a lazily loaded tenant, the client is created only after the tenant configuration has loaded successfully.
      * When token endpoint authentication is {@link OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC},
      * client credentials are scoped to POST requests on the token endpoint scheme, host, and path and, when JWT
      * introspection is used, to POST requests on the introspection endpoint scheme, host, and path.
@@ -254,7 +219,7 @@ public class Tenant {
      * @return client for communicating with OIDC identity server
      */
     public WebClient appWebClient() {
-        return appWebClient;
+        return appWebClient.get();
     }
 
     /**
@@ -276,6 +241,185 @@ public class Tenant {
             throw new SecurityException("Introspect URI is not configured when using validate with JWK.");
         }
         return introspectUri;
+    }
+
+    private static OutboundTarget outboundTarget(String name, URI endpointUri, TenantConfig tenantConfig) {
+        String scheme = endpointUri.getScheme();
+        String host = endpointUri.getHost();
+        if (scheme == null || host == null) {
+            throw new SecurityException("OIDC endpoint URI must be absolute with scheme and host when using "
+                                                + OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC);
+        }
+        String path = endpointUri.getPath();
+        return OutboundTarget.builder(name)
+                .addTransport(scheme)
+                .addHost(host)
+                .addPath(Pattern.quote(path == null || path.isEmpty() ? "/" : path))
+                .addMethod("POST")
+                .customObject(HttpBasicOutboundConfig.class,
+                              HttpBasicOutboundConfig.create(tenantConfig.clientId(), tenantConfig.clientSecret()))
+                .build();
+    }
+
+    private static JwkKeys resolveSigningJwk(TenantConfig tenantConfig,
+                                             OidcMetadata oidcMetadata,
+                                             Errors.Collector collector,
+                                             Supplier<WebClient> appWebClient,
+                                             WebClient webClient,
+                                             URI tokenEndpointUri,
+                                             Duration readTimeout) {
+        if (!tenantConfig.validateJwtWithJwk()) {
+            return JwkKeys.builder().build();
+        }
+
+        JwkKeys configuredKeys = tenantConfig.tenantSignJwk().orElse(null);
+        if (configuredKeys != null) {
+            return requireSigningKeys(configuredKeys, false);
+        }
+
+        ResourceConfig configuredResource = tenantConfig.tenantSignJwkResource().orElse(null);
+        if (configuredResource != null) {
+            String description = resourceDescription("OIDC signing JWK", configuredResource);
+            try {
+                JwkKeys keys = JwkKeys.builder()
+                        .resource(createResource(configuredResource, readTimeout))
+                        .build();
+                return requireSigningKeys(keys, true);
+            } catch (ResilientValue.UnavailableException e) {
+                throw e;
+            } catch (ResourceException e) {
+                throw new ResilientValue.UnavailableException(description + " could not be read", e);
+            } catch (JsonException e) {
+                String detail = hasCause(e, IOException.class)
+                        ? " could not be read"
+                        : " does not contain valid JSON";
+                throw new ResilientValue.UnavailableException(description + detail, e);
+            } catch (JwtException e) {
+                throw new ResilientValue.UnavailableException(description + " does not contain usable verification keys", e);
+            }
+        }
+
+        String serverType = tenantConfig.serverType();
+        String jwksMetaKey = OidcUtil.resolveMetaKey("jwks_uri", serverType, tenantConfig.identityUri());
+        URI jwkUri = oidcMetadata.getOidcEndpoint(collector, null, jwksMetaKey, null);
+        if (collector.hasFatal()) {
+            if (oidcMetadata.reloadable()) {
+                collector.clear();
+                throw new ResilientValue.UnavailableException("OIDC metadata does not contain a usable JWK endpoint");
+            }
+            collector.clear();
+            return JwkKeys.builder().build();
+        }
+
+        try {
+            JwkKeys keys;
+            if ("idcs".equals(serverType)) {
+                WebClient idcsClient = appWebClient.get();
+                try {
+                    keys = IdcsSupport.signJwk(idcsClient,
+                                               webClient,
+                                               tokenEndpointUri,
+                                               jwkUri,
+                                               readTimeout,
+                                               tenantConfig);
+                } finally {
+                    idcsClient.closeResource();
+                }
+            } else {
+                keys = JwkKeys.builder()
+                        .json(webClient.get()
+                                      .uri(jwkUri)
+                                      .readTimeout(readTimeout)
+                                      .requestEntity(JsonObject.class))
+                        .build();
+            }
+            return requireSigningKeys(keys, true);
+        } catch (ResilientValue.UnavailableException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new ResilientValue.UnavailableException("OIDC signing JWK is unavailable", e);
+        }
+    }
+
+    private static WebClient createAppWebClient(OidcConfig oidcConfig,
+                                                TenantConfig tenantConfig,
+                                                URI tokenEndpointUri,
+                                                URI introspectUri) {
+        WebClientConfig.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
+
+        if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
+            HttpBasicAuthProvider.Builder httpBasicAuthBuilder = HttpBasicAuthProvider.builder()
+                    .addOutboundTarget(outboundTarget("oidc-token", tokenEndpointUri, tenantConfig));
+
+            if (introspectUri != null) {
+                httpBasicAuthBuilder.addOutboundTarget(outboundTarget("oidc-introspect", introspectUri, tenantConfig));
+            }
+
+            HttpBasicAuthProvider httpBasicAuth = httpBasicAuthBuilder.build();
+            Security tokenOutboundSecurity = Security.builder()
+                    .addOutboundSecurityProvider(httpBasicAuth)
+                    .build();
+
+            webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
+        }
+
+        return webClientBuilder.build();
+    }
+
+    private static JwkKeys requireSigningKeys(JwkKeys keys, boolean mayBecomeAvailable) {
+        if (!keys.keys().isEmpty()) {
+            return keys;
+        }
+        if (mayBecomeAvailable) {
+            throw new ResilientValue.UnavailableException("OIDC signing JWK contains no usable keys");
+        }
+        throw new IllegalArgumentException("Configured OIDC signing JWK must contain at least one usable key");
+    }
+
+    private static JsonObject resolveMetadata(JsonObject configuredMetadata,
+                                              ResourceConfig resourceConfig,
+                                              Duration ioTimeout) {
+        if (resourceConfig == null) {
+            return configuredMetadata;
+        }
+        String description = resourceDescription("OIDC metadata", resourceConfig);
+        try (var stream = createResource(resourceConfig, ioTimeout).stream()) {
+            return JsonParser.create(stream).readJsonObject();
+        } catch (ResourceException e) {
+            throw new ResilientValue.UnavailableException(description + " could not be read", e);
+        } catch (JsonException e) {
+            String detail = hasCause(e, IOException.class)
+                    ? " could not be read"
+                    : " does not contain valid JSON";
+            throw new ResilientValue.UnavailableException(description + detail, e);
+        } catch (IOException e) {
+            throw new ResilientValue.UnavailableException(description + " could not be closed", e);
+        }
+    }
+
+    private static Resource createResource(ResourceConfig resourceConfig, Duration ioTimeout) {
+        return ioTimeout == null ? Resource.create(resourceConfig) : Resource.create(resourceConfig, ioTimeout);
+    }
+
+    private static String resourceDescription(String valueDescription, ResourceConfig resourceConfig) {
+        if (resourceConfig.path().isPresent()) {
+            return valueDescription + " filesystem source";
+        }
+        if (resourceConfig.uri().isPresent()) {
+            return valueDescription + " URI source";
+        }
+        return valueDescription + " resource";
+    }
+
+    private static boolean hasCause(Throwable throwable, Class<? extends Throwable> causeType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (causeType.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
 }

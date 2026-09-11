@@ -39,7 +39,7 @@ JWT authentication provider
 <td>
 <code>false</code>
 </td>
-<td>Configure support for unsigned JWT</td>
+<td>Configure support for unsigned JWTs without requiring verification JWKs</td>
 </tr>
 <tr>
 <td>
@@ -65,6 +65,19 @@ JWT authentication provider
 <code>true</code>
 </td>
 <td>Whether to authenticate requests</td>
+</tr>
+<tr>
+<td>
+<a id="jwk-loader"></a>
+<a href="io.helidon.security.providers.jwt.JwkLoaderConfig.md">
+<code>jwk-<wbr>loader</code>
+</a>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>Configuration for jwk-loader</td>
 </tr>
 <tr>
 <td>

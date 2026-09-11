@@ -495,6 +495,19 @@ Open ID Connect configuration
 </tr>
 <tr>
 <td>
+<a id="jwk-loader"></a>
+<a href="io.helidon.security.providers.idcsRoleMapper.oidcConfig.JwkLoaderConfig.md">
+<code>jwk-<wbr>loader</code>
+</a>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>Configuration for jwk-loader</td>
+</tr>
+<tr>
+<td>
 <code>legacy-<wbr>cookie-<wbr>encryption</code>
 </td>
 <td>

@@ -20,9 +20,13 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
@@ -91,6 +95,69 @@ public interface TenantConfig {
      * @return set of keys used to verify tokens
      */
     Optional<JwkKeys> tenantSignJwk();
+
+    /**
+     * Repeatable resource configuration used to load signing JWK.
+     *
+     * @return signing JWK resource configuration, if configured
+     */
+    default Optional<ResourceConfig> tenantSignJwkResource() {
+        return Optional.empty();
+    }
+
+    /**
+     * Retry used while loading OIDC metadata and signing JWKs.
+     * Defaults to two attempts within an 11-second overall timeout. The retry wraps attempts guarded by
+     * {@link #jwkTimeout()}.
+     *
+     * @return retry to use
+     */
+    default Retry jwkRetry() {
+        return BaseBuilder.defaultJwkRetry();
+    }
+
+    /**
+     * Timeout applied to each attempt to load OIDC metadata and signing JWKs.
+     * Defaults to 5 seconds. The timeout must be positive and must not exceed the retry overall timeout.
+     *
+     * @return timeout to use
+     */
+    default Timeout jwkTimeout() {
+        return BaseBuilder.defaultJwkTimeout();
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWKs.
+     * By default, the circuit opens after one exhausted retry batch and permits a recovery probe after 5 seconds. The
+     * circuit breaker wraps the complete retry batch.
+     *
+     * @return circuit breaker to use
+     */
+    default CircuitBreaker jwkCircuitBreaker() {
+        return BaseBuilder.defaultJwkCircuitBreaker();
+    }
+
+    /**
+     * Whether creating the tenant requires a source that may become available later.
+     *
+     * @return {@code true} when tenant creation should be lazy
+     */
+    default boolean tenantLoadingLazy() {
+        JsonObject metadata = oidcMetadataJsonObject();
+        boolean metadataLoadingLazy = oidcMetadataResource().filter(TenantConfig::isDynamic).isPresent()
+                || (metadata == null && useWellKnown());
+        if (metadataLoadingLazy || !validateJwtWithJwk()) {
+            return metadataLoadingLazy;
+        }
+        if (tenantSignJwkResource().filter(TenantConfig::isDynamic).isPresent()) {
+            return true;
+        }
+        if (tenantSignJwk().isPresent() || metadata == null) {
+            return false;
+        }
+        String key = OidcUtil.resolveMetaKey("jwks_uri", serverType(), identityUri());
+        return metadata.stringValue(key).isPresent();
+    }
 
     /**
      * Logout endpoint on OIDC server.
@@ -186,6 +253,15 @@ public interface TenantConfig {
     JsonObject oidcMetadataJsonObject();
 
     /**
+     * Repeatable resource configuration used to load OIDC metadata.
+     *
+     * @return OIDC metadata resource configuration, if configured
+     */
+    default Optional<ResourceConfig> oidcMetadataResource() {
+        return Optional.empty();
+    }
+
+    /**
      * Whether to use OIDC well known metadata.
      *
      * @return configured oidc metadata
@@ -199,6 +275,10 @@ public interface TenantConfig {
      */
     default Optional<JwkKeys> contentKeyDecryptionKeys() {
         return Optional.empty();
+    }
+
+    private static boolean isDynamic(ResourceConfig resourceConfig) {
+        return resourceConfig.path().isPresent() || resourceConfig.uri().isPresent();
     }
 
     /**

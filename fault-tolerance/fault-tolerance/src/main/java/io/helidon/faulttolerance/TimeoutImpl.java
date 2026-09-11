@@ -115,8 +115,8 @@ class TimeoutImpl implements Timeout {
                 interruptLock.lock();
                 try {
                     if (callReturned.compareAndSet(false, true)) {
-                        thisThread.interrupt();
                         interrupted.set(true);      // needed if InterruptedException caught in supplier
+                        thisThread.interrupt();
                     }
                 } finally {
                     interruptLock.unlock();
@@ -145,8 +145,13 @@ class TimeoutImpl implements Timeout {
 
                     callReturned.set(true);
                     // Run invocation in current thread
-                    // Clear interrupted flag here -- required for uninterruptible busy loops
-                    if (Thread.interrupted()) {
+                    // Clear an interrupt raised by the timeout monitor, including for uninterruptible busy loops.
+                    // Preserve caller cancellation so an outer retry can terminate.
+                    boolean interruptedStatus = Thread.interrupted();
+                    if (interruptedStatus && !interrupted.get()) {
+                        thisThread.interrupt();
+                        LOGGER.log(System.Logger.Level.DEBUG, "Current thread interrupted, preserving status");
+                    } else if (interruptedStatus) {
                         LOGGER.log(System.Logger.Level.DEBUG, "Current thread interrupted, clearing status");
                     }
                 } finally {

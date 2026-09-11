@@ -51,7 +51,8 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
     Optional<String> name();
 
     /**
-     * How long to wait before transitioning from open to half-open state.
+     * How long to wait before transitioning from open to half-open state; must not be negative and must be small enough
+     * to represent in milliseconds.
      *
      * @return delay
      */
@@ -60,7 +61,8 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
     Duration delay();
 
     /**
-     * How many failures out of 100 will trigger the circuit to open.
+     * How many failures out of 100 will trigger the circuit to open; must be between 1 and 100, inclusive, and its
+     * product with the configured volume must not exceed 2,147,483,647.
      * This is adapted to the {@link #volume()} used to handle the window of requests.
      * <p>If errorRatio is 40, and volume is 10, 4 failed requests will open the circuit.
      * Default is {@value #DEFAULT_ERROR_RATIO}.
@@ -73,7 +75,8 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
     int errorRatio();
 
     /**
-     * Rolling window size used to calculate ratio of failed requests.
+     * Rolling window size used to calculate ratio of failed requests; must be at least 1 and its product with the
+     * configured error ratio must not exceed 2,147,483,647.
      * Default is {@value #DEFAULT_VOLUME}.
      *
      * @return how big a window is used to calculate error errorRatio
@@ -84,7 +87,7 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
     int volume();
 
     /**
-     * How many successful calls will close a half-open circuit.
+     * How many successful calls will close a half-open circuit; must be at least 1.
      * Nevertheless, the first failed call will open the circuit again.
      * Default is {@value #DEFAULT_SUCCESS_THRESHOLD}.
      *

@@ -18,16 +18,29 @@ package io.helidon.security.providers.oidc.common;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.CircuitBreakerConfig;
+import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.Timeout;
+import io.helidon.faulttolerance.TimeoutConfig;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -47,8 +60,31 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     static final String DEFAULT_REALM = "helidon";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final int DEFAULT_TIMEOUT_SECONDS = 30;
+    private static final String DEFAULT_JWK_RETRY_NAME = "oidc-jwk-retry";
+    private static final String DEFAULT_JWK_CIRCUIT_BREAKER_NAME = "oidc-jwk-circuit-breaker";
+    private static final String DEFAULT_JWK_TIMEOUT_NAME = "oidc-jwk-timeout";
+    private static final Duration DEFAULT_JWK_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration DEFAULT_JWK_RETRY_OVERALL_TIMEOUT = Duration.ofSeconds(11);
+    private static final RetryConfig DEFAULT_JWK_RETRY_CONFIG = RetryConfig.builder()
+            .name(DEFAULT_JWK_RETRY_NAME)
+            .calls(2)
+            .overallTimeout(DEFAULT_JWK_RETRY_OVERALL_TIMEOUT)
+            .addApplyOn(ResilientValue.UnavailableException.class)
+            .buildPrototype();
+    private static final CircuitBreakerConfig DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG = CircuitBreakerConfig.builder()
+            .name(DEFAULT_JWK_CIRCUIT_BREAKER_NAME)
+            .volume(1)
+            .errorRatio(100)
+            .addApplyOn(ResilientValue.UnavailableException.class)
+            .buildPrototype();
+    private static final TimeoutConfig DEFAULT_JWK_TIMEOUT_CONFIG = TimeoutConfig.builder()
+            .name(DEFAULT_JWK_TIMEOUT_NAME)
+            .timeout(DEFAULT_JWK_TIMEOUT)
+            .currentThread(true)
+            .buildPrototype();
 
     private JsonObject oidcMetadata;
+    private ResourceConfig oidcMetadataResource;
     private OidcConfig.ClientAuthentication tokenEndpointAuthentication = OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC;
     private String clientId;
     private String clientSecret;
@@ -63,6 +99,16 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     private URI tokenEndpointUri;
     private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
     private JwkKeys signJwk;
+    private ResourceConfig signJwkResource;
+    private RetryConfig jwkRetryConfig = DEFAULT_JWK_RETRY_CONFIG;
+    private Retry jwkRetry;
+    private Supplier<? extends Retry> jwkRetrySupplier;
+    private CircuitBreakerConfig jwkCircuitBreakerConfig = DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG;
+    private CircuitBreaker jwkCircuitBreaker;
+    private Supplier<? extends CircuitBreaker> jwkCircuitBreakerSupplier;
+    private TimeoutConfig jwkTimeoutConfig = DEFAULT_JWK_TIMEOUT_CONFIG;
+    private Timeout jwkTimeout;
+    private Supplier<? extends Timeout> jwkTimeoutSupplier;
     private JwkKeys contentKeyDecryptionKeys;
     private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
     private URI introspectUri;
@@ -74,6 +120,18 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     private boolean checkAudience = true;
 
     BaseBuilder() {
+    }
+
+    static Retry defaultJwkRetry() {
+        return RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG).build();
+    }
+
+    static CircuitBreaker defaultJwkCircuitBreaker() {
+        return CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG).build();
+    }
+
+    static Timeout defaultJwkTimeout() {
+        return TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG).build();
     }
 
     void buildConfiguration() {
@@ -89,10 +147,19 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
             OidcUtil.validateExists(collector, clientSecret, "Client Secret", "client-secret");
         }
         OidcUtil.validateExists(collector, identityUri, "Identity URI", "identity-uri");
+        validateAbsoluteUri(collector, identityUri, "identity-uri");
+        validateAbsoluteUri(collector, authorizationEndpointUri, "authorization-endpoint-uri");
+        validateAbsoluteUri(collector, logoutEndpointUri, "logout-endpoint-uri");
+        validateAbsoluteUri(collector, tokenEndpointUri, "token-endpoint-uri");
+        validateAbsoluteUri(collector, introspectUri, "introspect-endpoint-uri");
+        if (jwkLoadingLazy()) {
+            validateJwkFaultTolerance(collector);
+        }
 
         if (audience == null && !optionalAudience && identityUri != null) {
             this.audience = identityUri.toString();
         }
+        validateMetadata(collector);
         // first set of validations
         collector.collect().checkValid();
     }
@@ -109,10 +176,8 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         config.get("identity-uri").as(URI.class).ifPresent(this::identityUri);
 
         // OIDC server configuration
-        config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
+        config.get("oidc-metadata.resource").as(ResourceConfig::create).ifPresent(this::oidcMetadata);
         config.get("base-scopes").asString().ifPresent(this::baseScopes);
-        // backward compatibility
-        config.get("oidc-metadata.resource").as(Resource::create).ifPresent(this::oidcMetadata);
         config.get("oidc-metadata-well-known").asBoolean().ifPresent(this::oidcMetadataWellKnown);
 
         config.get("scope-audience").asString().ifPresent(this::scopeAudience);
@@ -124,7 +189,21 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         config.get("token-endpoint-uri").as(URI.class).ifPresent(this::tokenEndpointUri);
         config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
 
-        config.get("sign-jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+        config.get("sign-jwk.resource").as(ResourceConfig::create).ifPresent(this::signJwk);
+        RetryConfig inheritedRetryConfig = jwkRetryConfig == null ? DEFAULT_JWK_RETRY_CONFIG : jwkRetryConfig;
+        TimeoutConfig inheritedTimeoutConfig = jwkTimeoutConfig == null ? DEFAULT_JWK_TIMEOUT_CONFIG : jwkTimeoutConfig;
+        CircuitBreakerConfig inheritedCircuitBreakerConfig = jwkCircuitBreakerConfig == null
+                ? DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG
+                : jwkCircuitBreakerConfig;
+        config.get("jwk-loader.retry")
+                .as(it -> mergeRetryConfig(inheritedRetryConfig, it))
+                .ifPresent(this::jwkRetry);
+        config.get("jwk-loader.timeout")
+                .as(it -> TimeoutConfig.builder(inheritedTimeoutConfig).config(it).buildPrototype())
+                .ifPresent(this::jwkTimeout);
+        config.get("jwk-loader.circuit-breaker")
+                .as(it -> CircuitBreakerConfig.builder(inheritedCircuitBreakerConfig).config(it).buildPrototype())
+                .ifPresent(this::jwkCircuitBreaker);
         config.get("decryption-keys.resource").as(Resource::create).ifPresent(this::decryptionKeys);
 
         config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
@@ -253,7 +332,41 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     @ConfiguredOption(key = "sign-jwk.resource")
     public B signJwk(Resource resource) {
         validateJwtWithJwk(true);
-        this.signJwk = JwkKeys.builder().resource(resource).build();
+        this.signJwkResource = null;
+        try {
+            this.signJwk = requireSigningKeys(JwkKeys.builder()
+                                                          .resource(Objects.requireNonNull(resource))
+                                                          .build());
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Configured OIDC signing JWK is invalid", e);
+        }
+        return identity();
+    }
+
+    /**
+     * Resource configuration pointing to JWK with public keys of signing certificates used to validate JWT.
+     * Classpath and inline resources are loaded immediately. File system paths and URIs are loaded lazily and may
+     * recover if they become available later.
+     *
+     * @param resourceConfig resource configuration pointing to the JWK
+     * @return updated builder instance
+     */
+    public B signJwk(ResourceConfig resourceConfig) {
+        validateJwtWithJwk(true);
+        validateResourceConfig(Objects.requireNonNull(resourceConfig), "OIDC signing JWK");
+        if (isDynamic(resourceConfig)) {
+            this.signJwk = null;
+            this.signJwkResource = resourceConfig;
+        } else {
+            this.signJwkResource = null;
+            try {
+                this.signJwk = requireSigningKeys(JwkKeys.builder()
+                                                              .resource(Resource.create(resourceConfig))
+                                                              .build());
+            } catch (RuntimeException e) {
+                throw new IllegalArgumentException("Configured OIDC signing JWK is invalid", e);
+            }
+        }
         return identity();
     }
 
@@ -265,7 +378,179 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      */
     public B signJwk(JwkKeys jwk) {
         validateJwtWithJwk(true);
-        this.signJwk = jwk;
+        this.signJwkResource = null;
+        this.signJwk = requireSigningKeys(Objects.requireNonNull(jwk));
+        return identity();
+    }
+
+    /**
+     * Retry used while loading OIDC metadata and signing JWKs; by default, it wraps two timeout-guarded attempts
+     * within an 11-second overall timeout.
+     *
+     * @param jwkRetry retry to use
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-loader.retry", type = Retry.class)
+    public B jwkRetry(Retry jwkRetry) {
+        this.jwkRetry = Objects.requireNonNull(jwkRetry);
+        this.jwkRetryConfig = jwkRetry.prototype();
+        this.jwkRetrySupplier = null;
+        return identity();
+    }
+
+    /**
+     * Retry used while loading OIDC metadata and signing JWK.
+     * Each tenant creates its own retry lazily. An unnamed prototype uses the name
+     * {@value #DEFAULT_JWK_RETRY_NAME}, sharing metrics with other retries using that name.
+     *
+     * @param jwkRetry prototype of retry to use
+     * @return updated builder instance
+     */
+    public B jwkRetry(RetryConfig jwkRetry) {
+        this.jwkRetryConfig = Objects.requireNonNull(jwkRetry);
+        this.jwkRetry = null;
+        this.jwkRetrySupplier = null;
+        return identity();
+    }
+
+    /**
+     * Retry used while loading OIDC metadata and signing JWK.
+     *
+     * @param consumer consumer of builder of retry to use
+     * @return updated builder instance
+     */
+    public B jwkRetry(Consumer<RetryConfig.Builder> consumer) {
+        Objects.requireNonNull(consumer);
+        var builder = RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG);
+        consumer.accept(builder);
+        return jwkRetry(builder.buildPrototype());
+    }
+
+    /**
+     * Retry used while loading OIDC metadata and signing JWK.
+     *
+     * @param supplier supplier of retry to use
+     * @return updated builder instance
+     */
+    public B jwkRetry(Supplier<? extends Retry> supplier) {
+        this.jwkRetrySupplier = Objects.requireNonNull(supplier);
+        this.jwkRetryConfig = null;
+        this.jwkRetry = null;
+        return identity();
+    }
+
+    /**
+     * Timeout applied to each attempt to load OIDC metadata and signing JWKs; it defaults to 5 seconds, must be
+     * positive, must execute on the current thread, and must not exceed the retry overall timeout. Current-thread
+     * execution ensures that a retry cannot overlap an attempt that is still unwinding after an interrupt. The
+     * deadline interrupts the loader; prompt termination also depends on the underlying I/O honoring interruption or
+     * enforcing its own timeout.
+     *
+     * @param jwkTimeout timeout to use
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-loader.timeout", type = Timeout.class)
+    public B jwkTimeout(Timeout jwkTimeout) {
+        this.jwkTimeout = Objects.requireNonNull(jwkTimeout);
+        this.jwkTimeoutConfig = jwkTimeout.prototype();
+        this.jwkTimeoutSupplier = null;
+        return identity();
+    }
+
+    /**
+     * Timeout applied to each attempt to load OIDC metadata and signing JWK.
+     * Each tenant creates its own timeout lazily. An unnamed prototype uses the name
+     * {@value #DEFAULT_JWK_TIMEOUT_NAME}, sharing metrics with other timeouts using that name.
+     *
+     * @param jwkTimeout prototype of timeout to use
+     * @return updated builder instance
+     */
+    public B jwkTimeout(TimeoutConfig jwkTimeout) {
+        this.jwkTimeoutConfig = Objects.requireNonNull(jwkTimeout);
+        this.jwkTimeout = null;
+        this.jwkTimeoutSupplier = null;
+        return identity();
+    }
+
+    /**
+     * Timeout applied to each attempt to load OIDC metadata and signing JWK.
+     *
+     * @param consumer consumer of builder of timeout to use
+     * @return updated builder instance
+     */
+    public B jwkTimeout(Consumer<TimeoutConfig.Builder> consumer) {
+        Objects.requireNonNull(consumer);
+        var builder = TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG);
+        consumer.accept(builder);
+        return jwkTimeout(builder.buildPrototype());
+    }
+
+    /**
+     * Timeout applied to each attempt to load OIDC metadata and signing JWK.
+     *
+     * @param supplier supplier of timeout to use
+     * @return updated builder instance
+     */
+    public B jwkTimeout(Supplier<? extends Timeout> supplier) {
+        this.jwkTimeoutSupplier = Objects.requireNonNull(supplier);
+        this.jwkTimeoutConfig = null;
+        this.jwkTimeout = null;
+        return identity();
+    }
+
+    /**
+     * Circuit breaker around each complete retry batch used to load OIDC metadata and signing JWKs; by default, the
+     * circuit opens after one exhausted batch and permits a recovery probe after 5 seconds.
+     *
+     * @param jwkCircuitBreaker circuit breaker to use
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "jwk-loader.circuit-breaker", type = CircuitBreaker.class)
+    public B jwkCircuitBreaker(CircuitBreaker jwkCircuitBreaker) {
+        this.jwkCircuitBreaker = Objects.requireNonNull(jwkCircuitBreaker);
+        this.jwkCircuitBreakerConfig = jwkCircuitBreaker.prototype();
+        this.jwkCircuitBreakerSupplier = null;
+        return identity();
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     * Each tenant creates its own circuit breaker lazily. An unnamed prototype uses the name
+     * {@value #DEFAULT_JWK_CIRCUIT_BREAKER_NAME}, sharing metrics with other circuit breakers using that name.
+     *
+     * @param jwkCircuitBreaker prototype of circuit breaker to use
+     * @return updated builder instance
+     */
+    public B jwkCircuitBreaker(CircuitBreakerConfig jwkCircuitBreaker) {
+        this.jwkCircuitBreakerConfig = Objects.requireNonNull(jwkCircuitBreaker);
+        this.jwkCircuitBreaker = null;
+        this.jwkCircuitBreakerSupplier = null;
+        return identity();
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     *
+     * @param consumer consumer of builder of circuit breaker to use
+     * @return updated builder instance
+     */
+    public B jwkCircuitBreaker(Consumer<CircuitBreakerConfig.Builder> consumer) {
+        Objects.requireNonNull(consumer);
+        var builder = CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG);
+        consumer.accept(builder);
+        return jwkCircuitBreaker(builder.buildPrototype());
+    }
+
+    /**
+     * Circuit breaker used while loading OIDC metadata and signing JWK.
+     *
+     * @param supplier supplier of circuit breaker to use
+     * @return updated builder instance
+     */
+    public B jwkCircuitBreaker(Supplier<? extends CircuitBreaker> supplier) {
+        this.jwkCircuitBreakerSupplier = Objects.requireNonNull(supplier);
+        this.jwkCircuitBreakerConfig = null;
+        this.jwkCircuitBreaker = null;
         return identity();
     }
 
@@ -358,10 +643,33 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      */
     @ConfiguredOption(key = "oidc-metadata.resource")
     public B oidcMetadata(Resource resource) {
+        this.oidcMetadataResource = null;
         try (var resourceStream = resource.stream()) {
             return oidcMetadataJsonObject(JsonParser.create(resourceStream).readJsonObject());
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to close input stream on resource: " + resource, e);
+        }
+    }
+
+    /**
+     * Resource configuration for OIDC metadata. Classpath and inline resources are loaded immediately. File system
+     * paths and URIs are loaded lazily and may recover if they become available later.
+     *
+     * @param resourceConfig resource configuration pointing to the JSON structure
+     * @return updated builder instance
+     */
+    public B oidcMetadata(ResourceConfig resourceConfig) {
+        validateResourceConfig(Objects.requireNonNull(resourceConfig), "OIDC metadata");
+        if (isDynamic(resourceConfig)) {
+            this.oidcMetadata = null;
+            this.oidcMetadataResource = resourceConfig;
+            return identity();
+        }
+        this.oidcMetadataResource = null;
+        try {
+            return oidcMetadata(Resource.create(resourceConfig));
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Configured OIDC metadata is invalid", e);
         }
     }
 
@@ -373,6 +681,7 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
      * @see #oidcMetadata(Resource)
      */
     public B oidcMetadataJsonObject(JsonObject metadata) {
+        this.oidcMetadataResource = null;
         this.oidcMetadata = metadata;
         return identity();
     }
@@ -494,16 +803,16 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return identity();
     }
 
-    private void clientTimeoutMillis(long millis) {
-        this.clientTimeout(Duration.ofMillis(millis));
-    }
-
     OidcConfig.ClientAuthentication tokenEndpointAuthentication() {
         return tokenEndpointAuthentication;
     }
 
     JsonObject oidcMetadataJsonObject() {
         return oidcMetadata;
+    }
+
+    ResourceConfig oidcMetadataResource() {
+        return oidcMetadataResource;
     }
 
     boolean useWellKnown() {
@@ -566,6 +875,61 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         return signJwk;
     }
 
+    ResourceConfig signJwkResource() {
+        return signJwkResource;
+    }
+
+    LazyValue<Retry> jwkRetry() {
+        Retry instance = jwkRetry;
+        Supplier<? extends Retry> supplier = jwkRetrySupplier;
+        RetryConfig prototype = jwkRetryConfig;
+        return LazyValue.create(() -> {
+            if (instance != null) {
+                return instance;
+            }
+            if (supplier != null) {
+                return Objects.requireNonNull(supplier.get());
+            }
+            return RetryConfig.builder(prototype)
+                    .name(prototype.name().orElse(DEFAULT_JWK_RETRY_NAME))
+                    .build();
+        });
+    }
+
+    LazyValue<Timeout> jwkTimeout() {
+        Timeout instance = jwkTimeout;
+        Supplier<? extends Timeout> supplier = jwkTimeoutSupplier;
+        TimeoutConfig prototype = jwkTimeoutConfig;
+        return LazyValue.create(() -> {
+            if (instance != null) {
+                return instance;
+            }
+            if (supplier != null) {
+                return Objects.requireNonNull(supplier.get());
+            }
+            return TimeoutConfig.builder(prototype)
+                    .name(prototype.name().orElse(DEFAULT_JWK_TIMEOUT_NAME))
+                    .build();
+        });
+    }
+
+    LazyValue<CircuitBreaker> jwkCircuitBreaker() {
+        CircuitBreaker instance = jwkCircuitBreaker;
+        Supplier<? extends CircuitBreaker> supplier = jwkCircuitBreakerSupplier;
+        CircuitBreakerConfig prototype = jwkCircuitBreakerConfig;
+        return LazyValue.create(() -> {
+            if (instance != null) {
+                return instance;
+            }
+            if (supplier != null) {
+                return Objects.requireNonNull(supplier.get());
+            }
+            return CircuitBreakerConfig.builder(prototype)
+                    .name(prototype.name().orElse(DEFAULT_JWK_CIRCUIT_BREAKER_NAME))
+                    .build();
+        });
+    }
+
     boolean validateJwtWithJwk() {
         return validateJwtWithJwk;
     }
@@ -585,4 +949,165 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
     JwkKeys contentKeyDecryptionKeys() {
         return contentKeyDecryptionKeys;
     }
+
+    private static RetryConfig mergeRetryConfig(RetryConfig inheritedConfig, Config config) {
+        var builder = RetryConfig.builder(inheritedConfig);
+        boolean delayFactorConfigured = config.get("delay-factor").exists();
+        boolean jitterConfigured = config.get("jitter").exists();
+        boolean jitterFactorConfigured = config.get("jitter-factor").exists();
+        if (delayFactorConfigured || jitterConfigured || jitterFactorConfigured) {
+            if (!delayFactorConfigured) {
+                builder.delayFactor(-1);
+            }
+            if (!jitterConfigured) {
+                builder.jitter(Duration.ofSeconds(-1));
+            }
+            if (!jitterFactorConfigured) {
+                builder.jitterFactor(-1);
+            }
+        }
+        return builder.config(config).buildPrototype();
+    }
+
+    private static JwkKeys requireSigningKeys(JwkKeys keys) {
+        if (keys.keys().isEmpty()) {
+            throw new IllegalArgumentException("Configured OIDC signing JWK must contain at least one usable key");
+        }
+        return keys;
+    }
+
+    private static boolean isDynamic(ResourceConfig resourceConfig) {
+        return resourceConfig.path().isPresent() || resourceConfig.uri().isPresent();
+    }
+
+    private static void validateResourceConfig(ResourceConfig resourceConfig, String description) {
+        int selectors = 0;
+        selectors += resourceConfig.path().isPresent() ? 1 : 0;
+        selectors += resourceConfig.resourcePath().isPresent() ? 1 : 0;
+        selectors += resourceConfig.uri().isPresent() ? 1 : 0;
+        selectors += resourceConfig.contentPlain().isPresent() ? 1 : 0;
+        selectors += resourceConfig.content().isPresent() ? 1 : 0;
+        if (selectors != 1) {
+            throw new IllegalArgumentException(description + " resource must configure exactly one source");
+        }
+
+        if (resourceConfig.proxyHost().isPresent()) {
+            if (resourceConfig.uri().isEmpty()) {
+                throw new IllegalArgumentException(description + " proxy can only be configured for a URI resource");
+            }
+            if (resourceConfig.proxyHost().orElseThrow().isBlank()) {
+                throw new IllegalArgumentException(description + " proxy host must not be blank");
+            }
+            int proxyPort = resourceConfig.proxyPort();
+            if (proxyPort < 1 || proxyPort > 65_535) {
+                throw new IllegalArgumentException(description + " proxy port must be between 1 and 65535");
+            }
+        }
+        if (resourceConfig.proxy().isPresent() && resourceConfig.uri().isEmpty()) {
+            throw new IllegalArgumentException(description + " proxy can only be configured for a URI resource");
+        }
+        resourceConfig.uri().ifPresent(uri -> validateResourceUri(uri, description));
+    }
+
+    private static void validateAbsoluteUri(Errors.Collector collector, URI uri, String key) {
+        if (uri != null) {
+            if (!uri.isAbsolute()) {
+                collector.fatal(key + " must be an absolute URI");
+            } else if (!isHttpUri(uri)) {
+                collector.fatal(key + " must use HTTP or HTTPS");
+            } else if (uri.getHost() == null) {
+                collector.fatal(key + " HTTP URI must include a host");
+            }
+        }
+    }
+
+    private static void validateResourceUri(URI uri, String description) {
+        if (!uri.isAbsolute()) {
+            throw new IllegalArgumentException(description + " resource URI must be absolute");
+        }
+        try {
+            uri.toURL();
+        } catch (MalformedURLException | IllegalArgumentException e) {
+            throw new IllegalArgumentException(description + " resource URI uses an unsupported scheme", e);
+        }
+        if (httpUriWithoutHost(uri)) {
+            throw new IllegalArgumentException(description + " resource HTTP URI must include a host");
+        }
+    }
+
+    private static boolean httpUriWithoutHost(URI uri) {
+        return isHttpUri(uri) && uri.getHost() == null;
+    }
+
+    private static boolean isHttpUri(URI uri) {
+        String scheme = uri.getScheme();
+        return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+    }
+
+    private void clientTimeoutMillis(long millis) {
+        this.clientTimeout(Duration.ofMillis(millis));
+    }
+
+    private boolean jwkLoadingLazy() {
+        boolean metadataLoadingLazy = oidcMetadataResource != null
+                || (oidcMetadata == null && useWellKnown);
+        if (metadataLoadingLazy || !validateJwtWithJwk) {
+            return metadataLoadingLazy;
+        }
+        if (signJwkResource != null) {
+            return true;
+        }
+        if (signJwk != null || oidcMetadata == null) {
+            return false;
+        }
+        String key = OidcUtil.resolveMetaKey("jwks_uri", serverType, identityUri);
+        return oidcMetadata.stringValue(key).isPresent();
+    }
+
+    private void validateJwkFaultTolerance(Errors.Collector collector) {
+        RetryConfig retryConfig = jwkRetryConfig;
+        TimeoutConfig timeoutConfig = jwkTimeoutConfig;
+        if (retryConfig == null || timeoutConfig == null) {
+            return;
+        }
+        Duration timeout = timeoutConfig.timeout();
+        if (timeout.isNegative() || timeout.isZero()) {
+            collector.fatal("jwk-loader.timeout.timeout must be positive");
+        }
+        if (!timeoutConfig.currentThread()) {
+            collector.fatal("jwk-loader.timeout.current-thread must be true");
+        }
+        if (timeout.compareTo(retryConfig.overallTimeout()) > 0) {
+            collector.fatal("jwk-loader.timeout.timeout must not exceed jwk-loader.retry.overall-timeout");
+        }
+    }
+
+    private void validateMetadata(Errors.Collector collector) {
+        if (oidcMetadata == null) {
+            return;
+        }
+        validateMetadataUri(collector, "authorization_endpoint");
+        validateMetadataUri(collector, OidcUtil.resolveMetaKey("token_endpoint", serverType, identityUri));
+        validateMetadataUri(collector, OidcUtil.resolveMetaKey("end_session_endpoint", serverType, identityUri));
+        validateMetadataUri(collector, OidcUtil.resolveMetaKey("introspection_endpoint", serverType, identityUri));
+        validateMetadataUri(collector, OidcUtil.resolveMetaKey("jwks_uri", serverType, identityUri));
+    }
+
+    private void validateMetadataUri(Errors.Collector collector, String key) {
+        oidcMetadata.stringValue(key).ifPresent(value -> {
+            try {
+                URI uri = URI.create(value);
+                if (!uri.isAbsolute()) {
+                    collector.fatal("OIDC metadata field \"" + key + "\" must be an absolute URI");
+                } else if (!isHttpUri(uri)) {
+                    collector.fatal("OIDC metadata field \"" + key + "\" must use HTTP or HTTPS");
+                } else if (uri.getHost() == null) {
+                    collector.fatal("OIDC metadata field \"" + key + "\" HTTP URI must include a host");
+                }
+            } catch (IllegalArgumentException _) {
+                collector.fatal("OIDC metadata field \"" + key + "\" must be a valid URI");
+            }
+        });
+    }
+
 }

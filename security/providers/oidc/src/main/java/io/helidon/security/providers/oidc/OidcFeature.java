@@ -27,13 +27,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LruCache;
+import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -41,6 +42,11 @@ import io.helidon.common.crypto.CryptoException;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.ResilientValueConfig;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
@@ -154,8 +160,7 @@ public final class OidcFeature implements HttpFeature {
     private static final String STATE_PARAM_NAME = "state";
     private static final String DEFAULT_REDIRECT = "/index.html";
 
-    private final List<TenantConfigFinder> oidcConfigFinders;
-    private final LruCache<String, Tenant> tenants = LruCache.create();
+    private final TenantCache<Tenant> tenants;
     private final OidcConfig oidcConfig;
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
@@ -172,15 +177,15 @@ public final class OidcFeature implements HttpFeature {
             this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
             this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
             this.stateCookieHandler = oidcConfig.stateCookieHandler();
-            this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
-            this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
+            oidcConfig.validateForAuthentication();
+            this.tenants = new TenantCache<>(builder.tenantConfigFinders, oidcConfig, this::tenantSupplier);
         } else {
             this.tokenCookieHandler = null;
             this.idTokenCookieHandler = null;
             this.refreshTokenCookieHandler = null;
             this.tenantCookieHandler = null;
             this.stateCookieHandler = null;
-            this.oidcConfigFinders = List.of();
+            this.tenants = new TenantCache<>(List.of(), oidcConfig, this::tenantSupplier);
         }
     }
 
@@ -310,7 +315,14 @@ public final class OidcFeature implements HttpFeature {
             stateQuery = "&" + STATE_PARAM_NAME + "=" + encode(stateValue);
         }
 
-        Optional<Tenant> tenant = obtainCurrentTenant(tenantName);
+        Optional<Tenant> tenant;
+        try {
+            tenant = obtainCurrentTenant(tenantName);
+        } catch (ResilientValue.UnavailableException _) {
+            clearLocalOidcCookies(res.headers());
+            sendUnavailableTenantResponse(res);
+            return;
+        }
         if (tenant.isEmpty()) {
             clearLocalOidcCookies(res.headers());
             sendUnknownTenantResponse(res);
@@ -321,17 +333,25 @@ public final class OidcFeature implements HttpFeature {
     }
 
     private Optional<Tenant> obtainCurrentTenant(String tenantName) {
-        Optional<Tenant> cachedTenant = tenants.get(tenantName);
-        if (cachedTenant.isPresent()) {
-            return cachedTenant;
-        }
-        return TenantConfigResolver.resolve(oidcConfigFinders, oidcConfig, tenantName)
-                .flatMap(this::cachedTenant);
+        return cachedTenant(tenantName)
+                .map(Supplier::get);
     }
 
-    private Optional<Tenant> cachedTenant(TenantConfigResolver.ResolvedTenantConfig resolvedTenant) {
-        return tenants.computeValue(resolvedTenant.cacheKey(),
-                                    () -> Optional.of(Tenant.create(oidcConfig, resolvedTenant.tenantConfig())));
+    private Optional<Supplier<Tenant>> cachedTenant(String tenantName) {
+        return tenants.get(tenantName);
+    }
+
+    private Supplier<Tenant> tenantSupplier(TenantConfig tenantConfig) {
+        oidcConfig.validateTenantForAuthentication(tenantConfig);
+        Supplier<Tenant> loader = () -> Tenant.create(oidcConfig, tenantConfig);
+        if (!tenantConfig.tenantLoadingLazy()) {
+            return LazyValue.create(loader);
+        }
+        return ResilientValue.create(new ResilientConfig<>("OIDC web feature tenant",
+                                                           loader,
+                                                           tenantConfig.jwkRetry(),
+                                                           tenantConfig.jwkCircuitBreaker(),
+                                                           tenantConfig.jwkTimeout()));
     }
 
     private void logoutWithTenant(ServerRequest req,
@@ -444,7 +464,13 @@ public final class OidcFeature implements HttpFeature {
         JsonObject stateCookie = JsonParser.create(stateCookieJson).readJsonObject();
         res.headers().addCookie(stateCookieHandler.removeCookie().build());
 
-        Optional<Tenant> tenant = obtainCurrentTenant(tenantName);
+        Optional<Tenant> tenant;
+        try {
+            tenant = obtainCurrentTenant(tenantName);
+        } catch (ResilientValue.UnavailableException _) {
+            sendUnavailableTenantResponse(res);
+            return;
+        }
         if (tenant.isEmpty()) {
             processError(res, Status.UNAUTHORIZED_401, "Not a valid authorization code");
             return;
@@ -771,6 +797,11 @@ public final class OidcFeature implements HttpFeature {
         res.send("{\"error\": \"" + error + "\", \"error_description\": \"" + errorDescription + "\"}");
     }
 
+    private void sendUnavailableTenantResponse(ServerResponse serverResponse) {
+        serverResponse.status(Status.SERVICE_UNAVAILABLE_503);
+        serverResponse.send();
+    }
+
     private Optional<JsonObject> stateCookie(ServerRequest req) {
         return stateCookieHandler.findCookie(req.headers().toMap())
                 .flatMap(this::decodeStateCookie);
@@ -794,6 +825,13 @@ public final class OidcFeature implements HttpFeature {
                 .ifPresent(originalUri -> headers.addCookie(RedirectAttemptCookie.remove(oidcConfig,
                                                                                          tenantName,
                                                                                          originalUri)));
+    }
+
+    private record ResilientConfig<T>(String description,
+                                      Supplier<T> loader,
+                                      Retry retry,
+                                      CircuitBreaker circuitBreaker,
+                                      Timeout timeout) implements ResilientValueConfig<T> {
     }
 
     /**

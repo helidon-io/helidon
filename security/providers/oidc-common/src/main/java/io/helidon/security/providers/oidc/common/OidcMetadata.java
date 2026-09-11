@@ -18,9 +18,13 @@ package io.helidon.security.providers.oidc.common;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
+import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
+import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.WebClient;
 
@@ -30,10 +34,12 @@ final class OidcMetadata {
 
     private final JsonObject oidcMetadata;
     private final URI identityUri;
+    private final boolean reloadable;
 
     private OidcMetadata(Builder builder) {
         this.oidcMetadata = builder.metadata;
         this.identityUri = builder.identityUri;
+        this.reloadable = builder.reloadable;
     }
 
     URI getOidcEndpoint(Errors.Collector collector,
@@ -43,6 +49,7 @@ final class OidcMetadata {
 
         // is it explicitly configured?
         if (currentValue != null) {
+            validateEndpoint(currentValue, "Configured OIDC endpoint " + metaKey);
             LOGGER.log(Level.TRACE, () -> metaKey + " explicitly configured: " + currentValue);
             return currentValue;
         }
@@ -58,12 +65,20 @@ final class OidcMetadata {
             }
         } else {
             // get it from metadata
-            String jsonValue = oidcMetadata.stringValue(metaKey).orElse(null);
-            if (jsonValue != null) {
-                if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE, metaKey + " loaded from well known metadata: " + jsonValue);
+            try {
+                String jsonValue = oidcMetadata.stringValue(metaKey).orElse(null);
+                if (jsonValue != null) {
+                    if (LOGGER.isLoggable(Level.TRACE)) {
+                        LOGGER.log(Level.TRACE, metaKey + " loaded from well known metadata: " + jsonValue);
+                    }
+                    foundValue = URI.create(jsonValue);
+                    validateEndpoint(foundValue, "OIDC metadata endpoint");
                 }
-                foundValue = URI.create(jsonValue);
+            } catch (JsonException | IllegalArgumentException e) {
+                if (reloadable) {
+                    throw new ResilientValue.UnavailableException("OIDC metadata contains an invalid endpoint", e);
+                }
+                throw e;
             }
         }
 
@@ -86,22 +101,50 @@ final class OidcMetadata {
     }
 
     public Optional<String> getString(String key) {
-        return Optional.ofNullable(oidcMetadata)
-                .flatMap(it -> it.stringValue(key));
+        try {
+            return Optional.ofNullable(oidcMetadata)
+                    .flatMap(it -> it.stringValue(key));
+        } catch (JsonException e) {
+            if (reloadable) {
+                throw new ResilientValue.UnavailableException("OIDC metadata contains an invalid " + key + " field", e);
+            }
+            throw e;
+        }
+    }
+
+    boolean reloadable() {
+        return reloadable;
+    }
+
+    private static void validateEndpoint(URI uri, String description) {
+        if (!uri.isAbsolute()) {
+            throw new IllegalArgumentException(description + " must be absolute");
+        }
+        String scheme = uri.getScheme();
+        if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+            throw new IllegalArgumentException(description + " must use HTTP or HTTPS");
+        }
+        if (uri.getHost() == null) {
+            throw new IllegalArgumentException(description + " HTTP URI must include a host");
+        }
     }
 
     static class Builder implements io.helidon.common.Builder<Builder, OidcMetadata> {
         private boolean enableRemoteLoad;
         private JsonObject metadata;
         private WebClient webClient;
-        private Errors.Collector collector = Errors.collector();
         private URI identityUri;
+        private Duration readTimeout;
+        private boolean reloadable;
 
         private Builder() {
         }
 
         @Override
         public OidcMetadata build() {
+            if (identityUri != null) {
+                validateEndpoint(identityUri, "Identity URI");
+            }
             if (metadata == null && enableRemoteLoad) {
                 load();
             }
@@ -118,13 +161,18 @@ final class OidcMetadata {
             return this;
         }
 
+        Builder reloadable(boolean reloadable) {
+            this.reloadable = reloadable;
+            return this;
+        }
+
         Builder webClient(WebClient webClient) {
             this.webClient = webClient;
             return this;
         }
 
-        Builder collector(Errors.Collector collector) {
-            this.collector = collector;
+        Builder readTimeout(Duration readTimeout) {
+            this.readTimeout = Objects.requireNonNull(readTimeout);
             return this;
         }
 
@@ -139,13 +187,13 @@ final class OidcMetadata {
             try {
                 this.metadata = webClient.get()
                         .uri(wellKnown)
+                        .readTimeout(readTimeout)
                         .requestEntity(JsonObject.class);
+                this.reloadable = true;
 
                 LOGGER.log(Level.TRACE, () -> "OIDC Metadata loaded from well known URI: " + wellKnown);
             } catch (Exception e) {
-                collector.fatal(e, "Failed to load metadata: " + e.getClass().getName()
-                        + ": " + e.getMessage()
-                        + " from " + wellKnown);
+                throw new ResilientValue.UnavailableException("OIDC metadata is unavailable", e);
             }
         }
 

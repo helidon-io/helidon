@@ -51,6 +51,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final AtomicBoolean halfOpenInProgress = new AtomicBoolean();
     private final AtomicReference<Future<Boolean>> schedule = new AtomicReference<>();
     private final ErrorChecker errorChecker;
+    private final boolean applyOnConfigured;
     private final String name;
     private final CircuitBreakerConfig config;
     private final boolean metricsEnabled;
@@ -78,6 +79,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.results = new ResultWindow(config.volume(), config.errorRatio());
         this.executor = config.executor().orElseGet(FaultTolerance.executor());
         this.errorChecker = ErrorChecker.create(config.skipOn(), config.applyOn());
+        this.applyOnConfigured = !config.applyOn().isEmpty();
         this.name = config.name().orElseGet(() -> "circuit-breaker-" + System.identityHashCode(config));
         this.config = config;
 
@@ -150,6 +152,12 @@ class CircuitBreakerImpl implements CircuitBreaker {
         return schedule.get();
     }
 
+    private static boolean callerCancelled(Throwable throwable) {
+        return !(throwable instanceof Error)
+                && Thread.currentThread().isInterrupted()
+                && SupplierHelper.interrupted(throwable) != null;
+    }
+
     private <U> U executeTask(Supplier<? extends U> supplier) {
         try {
             U result = supplier.get();
@@ -157,7 +165,11 @@ class CircuitBreakerImpl implements CircuitBreaker {
             return result;
         } catch (Throwable t) {
             Throwable throwable = SupplierHelper.unwrapThrowable(t);
-            if (errorChecker.shouldSkip(throwable)) {
+            boolean shouldSkip = errorChecker.shouldSkip(throwable);
+            if (callerCancelled(t) && (!applyOnConfigured || shouldSkip)) {
+                throw SupplierHelper.toRuntimeException(throwable);
+            }
+            if (shouldSkip) {
                 results.update(ResultWindow.Result.SUCCESS);
             } else {
                 results.update(ResultWindow.Result.FAILURE);
@@ -191,7 +203,11 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 return result;
             } catch (Throwable t) {
                 Throwable throwable = SupplierHelper.unwrapThrowable(t);
-                if (errorChecker.shouldSkip(throwable)) {
+                boolean shouldSkip = errorChecker.shouldSkip(throwable);
+                if (callerCancelled(t) && (!applyOnConfigured || shouldSkip)) {
+                    throw SupplierHelper.toRuntimeException(throwable);
+                }
+                if (shouldSkip) {
                     // success
                     int successes = successCounter.incrementAndGet();
                     if (successes >= successThreshold) {

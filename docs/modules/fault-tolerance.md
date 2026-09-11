@@ -316,9 +316,10 @@ implementation in your classpath. For more information about metrics
 implementations see [Helidon Metrics](metrics/metrics.md).
 
 The following tables list all the metrics created by the Fault Tolerance module.
-Note that these metrics are generated per command instance, and that each
-instance *must* be identified by a unique name —assigned either programmatically
-by the application developer or automatically by the API.
+Each handler is identified by its name, assigned either programmatically or
+automatically by the API. Multiple handler instances may intentionally use the
+same name; they then refer to the same metric series.
+Use distinct names when separate per-instance series are required.
 
 Bulkheads:
 

@@ -16,7 +16,11 @@
 
 package io.helidon.security.providers.jwt;
 
+import java.io.IOException;
 import java.lang.System.Logger.Level;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -25,15 +29,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.configurable.ResourceConfig;
+import io.helidon.common.configurable.ResourceException;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.CircuitBreakerConfig;
+import io.helidon.faulttolerance.ResilientValue;
+import io.helidon.faulttolerance.ResilientValueConfig;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.Timeout;
+import io.helidon.faulttolerance.TimeoutConfig;
 import io.helidon.json.JsonArray;
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
@@ -74,16 +91,19 @@ import io.helidon.security.util.TokenHandler;
 public final class JwtProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(JwtProvider.class.getName());
     private static final String DEFAULT_JWT_GROUPS_PATH = "groups";
+    private static final JwkKeys EMPTY_JWK_KEYS = JwkKeys.builder().build();
 
     private final boolean optional;
     private final boolean authenticate;
     private final boolean propagate;
     private final boolean allowImpersonation;
     private final boolean verifySignature;
+    private final boolean useBearerChallenge;
     private final SubjectType subjectType;
     private final TokenHandler atnTokenHandler;
     private final TokenHandler defaultTokenHandler;
     private final JwkKeys verifyKeys;
+    private final ResilientValue<JwkKeys> verifyKeysLoader;
     private final String expectedAudience;
     private final String expectedIssuer;
     private final JwkKeys signKeys;
@@ -100,10 +120,12 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         this.authenticate = builder.authenticate;
         this.propagate = builder.propagate && builder.outboundConfig.targets().size() > 0;
         this.allowImpersonation = builder.allowImpersonation;
+        this.useBearerChallenge = builder.useBearerChallenge;
         this.subjectType = builder.subjectType;
         this.atnTokenHandler = builder.atnTokenHandler;
         this.outboundConfig = builder.outboundConfig;
         this.verifyKeys = builder.verifyKeys;
+        this.verifyKeysLoader = builder.verifyKeysLoader;
         this.signKeys = builder.signKeys;
         this.issuer = builder.issuer;
         this.expectedAudience = builder.expectedAudience;
@@ -172,20 +194,28 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
     private AuthenticationResponse authenticateToken(String token) {
         SignedJwt signedJwt;
+        Jwt jwt;
         try {
             signedJwt = SignedJwt.parseToken(token);
+            jwt = signedJwt.getJwt();
         } catch (Exception e) {
             //invalid token
             return failOrAbstain("Invalid token" + e);
         }
         if (verifySignature) {
-            Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
+            JwkKeys keys;
+            try {
+                keys = verificationKeys(jwt);
+            } catch (ResilientValue.UnavailableException _) {
+                return unavailableOrAbstain("JWT verification keys are temporarily unavailable");
+            }
+            Jwk fallbackJwk = jwt.keyId().isEmpty() ? defaultJwk : null;
+            Errors errors = signedJwt.verifySignature(keys, fallbackJwk);
             if (!errors.isValid()) {
                 return failOrAbstain(errors.toString());
             }
         }
 
-        Jwt jwt = signedJwt.getJwt();
         Errors validate = validateJwt(jwt);
         if (!validate.isValid()) {
             return failOrAbstain(validate.toString());
@@ -344,6 +374,38 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 .map(String::valueOf)
                 .flatMap(username -> attemptImpersonation(outboundEnv, username))
                 .orElseGet(() -> attemptPropagation(providerRequest, outboundEnv));
+    }
+
+    private JwkKeys verificationKeys(Jwt jwt) {
+        if (jwt.keyId().isEmpty()) {
+            return EMPTY_JWK_KEYS;
+        }
+        if (verifyKeys != null) {
+            return verifyKeys;
+        }
+        if (verifyKeysLoader != null) {
+            return verifyKeysLoader.get();
+        }
+        return EMPTY_JWK_KEYS;
+    }
+
+    private AuthenticationResponse unavailableOrAbstain(String message) {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description(message)
+                    .build();
+        }
+        var builder = AuthenticationResponse.builder()
+                .status(AuthenticationResponse.SecurityStatus.FAILURE)
+                .description(message);
+        if (useBearerChallenge) {
+            return builder.statusCode(401)
+                    .responseHeader("WWW-Authenticate", "Bearer")
+                    .build();
+        }
+        return builder.statusCode(503)
+                .build();
     }
 
     private OutboundSecurityResponse attemptPropagation(ProviderRequest providerRequest, SecurityEnvironment outboundEnv) {
@@ -666,12 +728,28 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 description = "JWT authentication provider",
                 provides = {SecurityProvider.class, AuthenticationProvider.class})
     public static final class Builder implements io.helidon.common.Builder<Builder, JwtProvider> {
+        private static final RetryConfig DEFAULT_JWK_RETRY_CONFIG = RetryConfig.builder()
+                .calls(2)
+                .overallTimeout(Duration.ofSeconds(11))
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .buildPrototype();
+        private static final CircuitBreakerConfig DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG = CircuitBreakerConfig.builder()
+                .volume(1)
+                .errorRatio(100)
+                .addApplyOn(ResilientValue.UnavailableException.class)
+                .buildPrototype();
+        private static final TimeoutConfig DEFAULT_JWK_TIMEOUT_CONFIG = TimeoutConfig.builder()
+                .timeout(Duration.ofSeconds(5))
+                .currentThread(true)
+                .buildPrototype();
+
         private boolean verifySignature = true;
         private boolean optional = false;
         private boolean authenticate = true;
         private boolean propagate = true;
         private boolean allowImpersonation = false;
         private boolean allowUnsigned = false;
+        private boolean useBearerChallenge = true;
         private SubjectType subjectType = SubjectType.USER;
         private TokenHandler atnTokenHandler = TokenHandler.builder()
                 .tokenHeader("Authorization")
@@ -679,6 +757,17 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                 .build();
         private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private JwkKeys verifyKeys;
+        private ResourceConfig verifyKeysResource;
+        private ResilientValue<JwkKeys> verifyKeysLoader;
+        private RetryConfig jwkRetryConfig = DEFAULT_JWK_RETRY_CONFIG;
+        private Retry jwkRetry;
+        private Supplier<? extends Retry> jwkRetrySupplier;
+        private CircuitBreakerConfig jwkCircuitBreakerConfig = DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG;
+        private CircuitBreaker jwkCircuitBreaker;
+        private Supplier<? extends CircuitBreaker> jwkCircuitBreakerSupplier;
+        private TimeoutConfig jwkTimeoutConfig = DEFAULT_JWK_TIMEOUT_CONFIG;
+        private Timeout jwkTimeout;
+        private Supplier<? extends Timeout> jwkTimeoutSupplier;
         private JwkKeys signKeys;
         private String issuer;
         private String expectedAudience;
@@ -692,7 +781,18 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
         @Override
         public JwtProvider build() {
-            if (verifySignature && (null == verifyKeys)) {
+            if (verifyKeysResource != null) {
+                validateResourceConfig(verifyKeysResource);
+                if (!isDynamic(verifyKeysResource) || (authenticate && verifySignature)) {
+                    prepareVerifyKeys();
+                } else {
+                    verifyKeysLoader = null;
+                }
+            }
+            if (verifyKeys != null && !allowUnsigned) {
+                verifyKeys = requireUsableKeys(verifyKeys);
+            }
+            if (authenticate && verifySignature && !allowUnsigned && verifyKeys == null && verifyKeysLoader == null) {
                 throw new JwtException("Failed to extract verify JWK from configuration");
             }
             if (authenticate
@@ -747,15 +847,17 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         }
 
         /**
-         * Configure support for unsigned JWT.
+         * Configure support for unsigned JWTs without requiring verification JWKs.
          * If this is set to {@code true} any JWT that has algorithm
          * set to {@code none} and no {@code kid} defined will be accepted.
+         * Such a token does not trigger loading of a configured verification JWK resource. Signed tokens continue to
+         * require matching verification keys.
          * Note that this has serious security impact - if JWT can be sent
          *  from a third party, this allows the third party to send ANY JWT
-         *  and it would be accpted as valid.
+         *  and it would be accepted as valid.
          *
          * @param allowUnsigned to allow unsigned (insecure) JWT
-         * @return updated builder insdtance
+         * @return updated builder instance
          */
         @ConfiguredOption("false")
         public Builder allowUnsigned(boolean allowUnsigned) {
@@ -812,6 +914,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
         @ConfiguredOption(key = "atn-token.handler")
         public Builder atnTokenHandler(TokenHandler tokenHandler) {
             this.atnTokenHandler = tokenHandler;
+            this.useBearerChallenge = false;
             return this;
         }
 
@@ -862,8 +965,222 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          */
         @ConfiguredOption(key = "atn-token.jwk.resource")
         public Builder verifyJwk(Resource verifyJwkResource) {
-            this.verifyKeys = JwkKeys.builder().resource(verifyJwkResource).build();
+            this.verifyKeys = JwkKeys.builder()
+                    .resource(Objects.requireNonNull(verifyJwkResource))
+                    .build();
+            this.verifyKeysResource = null;
+            this.verifyKeysLoader = null;
 
+            return this;
+        }
+
+        /**
+         * Fixed JWK keys used to verify JWTs created by other parties.
+         *
+         * @param verifyKeys keys used to verify inbound JWTs
+         * @return updated builder instance
+         */
+        public Builder verifyJwk(JwkKeys verifyKeys) {
+            this.verifyKeys = Objects.requireNonNull(verifyKeys);
+            this.verifyKeysResource = null;
+            this.verifyKeysLoader = null;
+
+            return this;
+        }
+
+        /**
+         * JWK resource configuration used to verify JWTs created by other parties.
+         * Filesystem paths and URIs are loaded lazily and protected by the configured retry and circuit breaker.
+         * Classpath and inline resources are loaded when the provider is built.
+         *
+         * @param verifyJwkResource configuration of the resource containing verification keys
+         * @return updated builder instance
+         */
+        public Builder verifyJwk(ResourceConfig verifyJwkResource) {
+            this.verifyKeysResource = Objects.requireNonNull(verifyJwkResource);
+            this.verifyKeys = null;
+            this.verifyKeysLoader = null;
+
+            return this;
+        }
+
+        /**
+         * Retry used when loading verification keys from a filesystem path or URI; by default, it wraps two
+         * timeout-guarded attempts within an 11-second overall timeout.
+         *
+         * @param jwkRetry retry to use
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "jwk-loader.retry", type = Retry.class)
+        public Builder jwkRetry(Retry jwkRetry) {
+            this.jwkRetry = Objects.requireNonNull(jwkRetry);
+            this.jwkRetryConfig = jwkRetry.prototype();
+            this.jwkRetrySupplier = null;
+            this.verifyKeysLoader = null;
+
+            return this;
+        }
+
+        /**
+         * Retry used when loading verification keys from a filesystem path or URI.
+         * The supplier is invoked only when a dynamic verification JWK source requires the retry.
+         *
+         * @param jwkRetry prototype of retry to use
+         * @return updated builder instance
+         */
+        public Builder jwkRetry(RetryConfig jwkRetry) {
+            this.jwkRetryConfig = Objects.requireNonNull(jwkRetry);
+            this.jwkRetry = null;
+            this.jwkRetrySupplier = null;
+            this.verifyKeysLoader = null;
+            return this;
+        }
+
+        /**
+         * Retry used when loading verification keys from a filesystem path or URI.
+         *
+         * @param consumer consumer of builder of retry to use
+         * @return updated builder instance
+         */
+        public Builder jwkRetry(Consumer<RetryConfig.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG);
+            consumer.accept(builder);
+            return jwkRetry(builder.buildPrototype());
+        }
+
+        /**
+         * Retry used when loading verification keys from a filesystem path or URI.
+         *
+         * @param supplier supplier of retry to use
+         * @return updated builder instance
+         */
+        public Builder jwkRetry(Supplier<? extends Retry> supplier) {
+            this.jwkRetrySupplier = Objects.requireNonNull(supplier);
+            this.jwkRetryConfig = null;
+            this.jwkRetry = null;
+            this.verifyKeysLoader = null;
+            return this;
+        }
+
+        /**
+         * Timeout applied to each attempt to load verification keys from a filesystem path or URI; it defaults to
+         * 5 seconds, must be positive, must execute on the current thread, and must not exceed the retry overall
+         * timeout. Current-thread execution ensures that a retry cannot overlap an attempt that is still unwinding
+         * after an interrupt. The deadline interrupts the loader; prompt termination also depends on the underlying
+         * I/O honoring interruption or enforcing its own timeout.
+         *
+         * @param jwkTimeout timeout to use
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "jwk-loader.timeout", type = Timeout.class)
+        public Builder jwkTimeout(Timeout jwkTimeout) {
+            this.jwkTimeout = Objects.requireNonNull(jwkTimeout);
+            this.jwkTimeoutConfig = jwkTimeout.prototype();
+            this.jwkTimeoutSupplier = null;
+            this.verifyKeysLoader = null;
+
+            return this;
+        }
+
+        /**
+         * Timeout applied to each attempt to load verification keys from a filesystem path or URI.
+         * The supplier is invoked only when a dynamic verification JWK source requires the timeout.
+         *
+         * @param jwkTimeout prototype of timeout to use
+         * @return updated builder instance
+         */
+        public Builder jwkTimeout(TimeoutConfig jwkTimeout) {
+            this.jwkTimeoutConfig = Objects.requireNonNull(jwkTimeout);
+            this.jwkTimeout = null;
+            this.jwkTimeoutSupplier = null;
+            this.verifyKeysLoader = null;
+            return this;
+        }
+
+        /**
+         * Timeout applied to each attempt to load verification keys from a filesystem path or URI.
+         *
+         * @param consumer consumer of builder of timeout to use
+         * @return updated builder instance
+         */
+        public Builder jwkTimeout(Consumer<TimeoutConfig.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG);
+            consumer.accept(builder);
+            return jwkTimeout(builder.buildPrototype());
+        }
+
+        /**
+         * Timeout applied to each attempt to load verification keys from a filesystem path or URI.
+         *
+         * @param supplier supplier of timeout to use
+         * @return updated builder instance
+         */
+        public Builder jwkTimeout(Supplier<? extends Timeout> supplier) {
+            this.jwkTimeoutSupplier = Objects.requireNonNull(supplier);
+            this.jwkTimeoutConfig = null;
+            this.jwkTimeout = null;
+            this.verifyKeysLoader = null;
+            return this;
+        }
+
+        /**
+         * Circuit breaker around each complete retry batch used to load verification keys from a filesystem path or
+         * URI; by default, the circuit opens after one exhausted batch and permits a recovery probe after 5 seconds.
+         *
+         * @param jwkCircuitBreaker circuit breaker to use
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "jwk-loader.circuit-breaker", type = CircuitBreaker.class)
+        public Builder jwkCircuitBreaker(CircuitBreaker jwkCircuitBreaker) {
+            this.jwkCircuitBreaker = Objects.requireNonNull(jwkCircuitBreaker);
+            this.jwkCircuitBreakerConfig = jwkCircuitBreaker.prototype();
+            this.jwkCircuitBreakerSupplier = null;
+            this.verifyKeysLoader = null;
+
+            return this;
+        }
+
+        /**
+         * Circuit breaker used when loading verification keys from a filesystem path or URI.
+         * The supplier is invoked only when a dynamic verification JWK source requires the circuit breaker.
+         *
+         * @param jwkCircuitBreaker prototype of circuit breaker to use
+         * @return updated builder instance
+         */
+        public Builder jwkCircuitBreaker(CircuitBreakerConfig jwkCircuitBreaker) {
+            this.jwkCircuitBreakerConfig = Objects.requireNonNull(jwkCircuitBreaker);
+            this.jwkCircuitBreaker = null;
+            this.jwkCircuitBreakerSupplier = null;
+            this.verifyKeysLoader = null;
+            return this;
+        }
+
+        /**
+         * Circuit breaker used when loading verification keys from a filesystem path or URI.
+         *
+         * @param consumer consumer of builder of circuit breaker to use
+         * @return updated builder instance
+         */
+        public Builder jwkCircuitBreaker(Consumer<CircuitBreakerConfig.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG);
+            consumer.accept(builder);
+            return jwkCircuitBreaker(builder.buildPrototype());
+        }
+
+        /**
+         * Circuit breaker used when loading verification keys from a filesystem path or URI.
+         *
+         * @param supplier supplier of circuit breaker to use
+         * @return updated builder instance
+         */
+        public Builder jwkCircuitBreaker(Supplier<? extends CircuitBreaker> supplier) {
+            this.jwkCircuitBreakerSupplier = Objects.requireNonNull(supplier);
+            this.jwkCircuitBreakerConfig = null;
+            this.jwkCircuitBreaker = null;
+            this.verifyKeysLoader = null;
             return this;
         }
 
@@ -894,11 +1211,20 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
             Config atnToken = config.get("atn-token");
             if (atnToken.exists()) {
+                atnToken.get("verify-signature").asBoolean().ifPresent(this::verifySignature);
                 verifyKeys(atnToken);
                 atnToken.get("jwt-audience").asString().ifPresent(this::expectedAudience);
                 atnToken.get("jwt-issuer").asString().ifPresent(this::expectedIssuer);
-                atnToken.get("verify-signature").asBoolean().ifPresent(this::verifySignature);
             }
+            config.get("jwk-loader.retry")
+                    .as(it -> RetryConfig.builder(DEFAULT_JWK_RETRY_CONFIG).config(it).buildPrototype())
+                    .ifPresent(this::jwkRetry);
+            config.get("jwk-loader.timeout")
+                    .as(it -> TimeoutConfig.builder(DEFAULT_JWK_TIMEOUT_CONFIG).config(it).buildPrototype())
+                    .ifPresent(this::jwkTimeout);
+            config.get("jwk-loader.circuit-breaker")
+                    .as(it -> CircuitBreakerConfig.builder(DEFAULT_JWK_CIRCUIT_BREAKER_CONFIG).config(it).buildPrototype())
+                    .ifPresent(this::jwkCircuitBreaker);
             Config signToken = config.get("sign-token");
             if (signToken.exists()) {
                 outboundConfig(OutboundConfig.create(signToken));
@@ -984,8 +1310,206 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             return value;
         }
 
+        private static JwkKeys loadDynamicKeys(ResourceConfig resourceConfig,
+                                               String description,
+                                               Duration ioTimeout) {
+            try {
+                return requireUsableKeys(JwkKeys.builder()
+                                                 .resource(Resource.create(resourceConfig, ioTimeout))
+                                                 .build());
+            } catch (ResourceException e) {
+                throw new ResilientValue.UnavailableException(description + " could not be read", e);
+            } catch (JsonException e) {
+                String detail = hasCause(e, IOException.class)
+                        ? " could not be read"
+                        : " does not contain valid JSON";
+                throw new ResilientValue.UnavailableException(description + detail, e);
+            } catch (JwtException e) {
+                throw new ResilientValue.UnavailableException(description + " does not contain usable verification keys", e);
+            }
+        }
+
+        private static boolean hasCause(Throwable throwable, Class<? extends Throwable> causeType) {
+            Throwable current = throwable;
+            while (current != null) {
+                if (causeType.isInstance(current)) {
+                    return true;
+                }
+                current = current.getCause();
+            }
+            return false;
+        }
+
+        private static JwkKeys requireUsableKeys(JwkKeys keys) {
+            Objects.requireNonNull(keys, "Verification JWK keys must not be null");
+            if (keys.keys().isEmpty()) {
+                throw new JwtException("Verification JWK does not contain any usable keys");
+            }
+            return keys;
+        }
+
+        private static boolean isDynamic(ResourceConfig resourceConfig) {
+            return resourceConfig.path().isPresent() || resourceConfig.uri().isPresent();
+        }
+
+        private static String sourceDescription(ResourceConfig resourceConfig) {
+            if (resourceConfig.path().isPresent()) {
+                return "JWT verification JWK filesystem source";
+            }
+            return "JWT verification JWK URI source";
+        }
+
+        private static void validateResourceConfig(ResourceConfig resourceConfig) {
+            int selectors = selectorCount(resourceConfig.resourcePath().isPresent(),
+                                          resourceConfig.path().isPresent(),
+                                          resourceConfig.uri().isPresent(),
+                                          resourceConfig.contentPlain().isPresent(),
+                                          resourceConfig.content().isPresent());
+            if (selectors != 1) {
+                throw new JwtException("Verification JWK resource must configure exactly one of resource-path, path, uri,"
+                                               + " content-plain, or content");
+            }
+            resourceConfig.uri().ifPresent(Builder::validateUri);
+            if (resourceConfig.uri().isEmpty()
+                    && (resourceConfig.proxyHost().isPresent() || resourceConfig.proxy().isPresent())) {
+                throw new JwtException("Verification JWK proxy can only be configured with a URI resource");
+            }
+            if (resourceConfig.proxyHost().filter(String::isBlank).isPresent()) {
+                throw new JwtException("Verification JWK proxy host must not be blank");
+            }
+            if (resourceConfig.proxyHost().isPresent()
+                    && (resourceConfig.proxyPort() < 1 || resourceConfig.proxyPort() > 65535)) {
+                throw new JwtException("Verification JWK proxy port must be between 1 and 65535");
+            }
+        }
+
+        private static void validateResourceConfig(Config resourceConfig) {
+            int selectors = selectorCount(resourceConfig.get("resource-path").exists(),
+                                          resourceConfig.get("path").exists(),
+                                          resourceConfig.get("uri").exists(),
+                                          resourceConfig.get("content-plain").exists(),
+                                          resourceConfig.get("content").exists());
+            if (selectors != 1) {
+                throw new JwtException("Verification JWK resource must configure exactly one of resource-path, path, uri,"
+                                               + " content-plain, or content");
+            }
+            boolean uri = resourceConfig.get("uri").exists();
+            if (!uri && (resourceConfig.get("proxy-host").exists()
+                    || resourceConfig.get("proxy-port").exists())) {
+                throw new JwtException("Verification JWK proxy can only be configured with a URI resource");
+            }
+            if (resourceConfig.get("proxy-port").exists() && !resourceConfig.get("proxy-host").exists()) {
+                throw new JwtException("Verification JWK proxy port requires proxy-host");
+            }
+            resourceConfig.get("proxy-host")
+                    .asString()
+                    .filter(String::isBlank)
+                    .ifPresent(_ -> {
+                        throw new JwtException("Verification JWK proxy host must not be blank");
+                    });
+        }
+
+        private static int selectorCount(boolean... selectors) {
+            int count = 0;
+            for (boolean selector : selectors) {
+                if (selector) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private static void validateUri(URI uri) {
+            if (!uri.isAbsolute()) {
+                throw new JwtException("Verification JWK URI must be absolute");
+            }
+            try {
+                uri.toURL();
+            } catch (MalformedURLException e) {
+                throw new JwtException("Verification JWK URI scheme is not supported", e);
+            }
+            String scheme = uri.getScheme();
+            if (("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+                    && uri.getHost() == null) {
+                throw new JwtException("Verification JWK HTTP URI must include a host");
+            }
+        }
+
         private void verifyKeys(Config config) {
-            config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
+            Config resource = config.get("jwk.resource");
+            if (resource.exists()) {
+                validateResourceConfig(resource);
+                verifyJwk(ResourceConfig.create(resource));
+            }
+        }
+
+        private Retry newJwkRetry() {
+            if (jwkRetry != null) {
+                return jwkRetry;
+            }
+            if (jwkRetrySupplier != null) {
+                return Objects.requireNonNull(jwkRetrySupplier.get());
+            }
+            return RetryConfig.builder(jwkRetryConfig).build();
+        }
+
+        private CircuitBreaker newJwkCircuitBreaker() {
+            if (jwkCircuitBreaker != null) {
+                return jwkCircuitBreaker;
+            }
+            if (jwkCircuitBreakerSupplier != null) {
+                return Objects.requireNonNull(jwkCircuitBreakerSupplier.get());
+            }
+            return CircuitBreakerConfig.builder(jwkCircuitBreakerConfig).build();
+        }
+
+        private Timeout newJwkTimeout() {
+            if (jwkTimeout != null) {
+                return jwkTimeout;
+            }
+            if (jwkTimeoutSupplier != null) {
+                return Objects.requireNonNull(jwkTimeoutSupplier.get());
+            }
+            return TimeoutConfig.builder(jwkTimeoutConfig).build();
+        }
+
+        private void prepareVerifyKeys() {
+            if (verifyKeys != null || verifyKeysResource == null) {
+                return;
+            }
+            ResourceConfig resourceConfig = verifyKeysResource;
+            if (isDynamic(resourceConfig)) {
+                Retry retry = newJwkRetry();
+                CircuitBreaker circuitBreaker = newJwkCircuitBreaker();
+                Timeout timeout = newJwkTimeout();
+                validateJwkFaultTolerance(retry, timeout);
+                String description = sourceDescription(resourceConfig);
+                Duration ioTimeout = timeout.prototype().timeout();
+                verifyKeysLoader = ResilientValue.create(new ResilientConfig<>(
+                        description,
+                        () -> loadDynamicKeys(resourceConfig, description, ioTimeout),
+                        retry,
+                        circuitBreaker,
+                        timeout));
+            } else {
+                verifyKeys = JwkKeys.builder()
+                        .resource(Resource.create(resourceConfig))
+                        .build();
+            }
+        }
+
+        private void validateJwkFaultTolerance(Retry retry, Timeout timeout) {
+            Duration timeoutDuration = timeout.prototype().timeout();
+            if (timeoutDuration.isNegative() || timeoutDuration.isZero()) {
+                throw new IllegalArgumentException("jwk-loader.timeout.timeout must be positive");
+            }
+            if (!timeout.prototype().currentThread()) {
+                throw new IllegalArgumentException("jwk-loader.timeout.current-thread must be true");
+            }
+            if (timeoutDuration.compareTo(retry.prototype().overallTimeout()) > 0) {
+                throw new IllegalArgumentException("jwk-loader.timeout.timeout must not exceed "
+                                                           + "jwk-loader.retry.overall-timeout");
+            }
         }
 
         private void outbound(Config config) {
@@ -993,6 +1517,13 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
             // jwk is optional, we may be propagating existing token
             config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+        }
+
+        private record ResilientConfig<T>(String description,
+                                          Supplier<T> loader,
+                                          Retry retry,
+                                          CircuitBreaker circuitBreaker,
+                                          Timeout timeout) implements ResilientValueConfig<T> {
         }
     }
 }

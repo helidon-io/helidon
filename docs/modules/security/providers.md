@@ -77,13 +77,42 @@ security:
 
 ### How does it work?
 
-At Helidon startup, if OIDC provider is configured, the following will happen:
+Building OIDC configuration validates required client and identity values.
+An enabled `OidcFeature` also validates the configured signing-key route and
+fixed metadata or JWK values at startup. When using `OidcProvider` directly,
+these authentication-specific checks run when a tenant is first used for inbound
+authentication. Outbound-only token propagation and client-credentials exchange
+do not require inbound signing keys. Inline and classpath resources are fixed
+and are loaded when building the configuration.
 
-1.  `client-id`, `client-secret`, and `identityUri` are validated - these must
-    provide values
-2.  Unless all resources are configured as local resources, the provider
-    attempts to contact the `oidc-metadata.resource` endpoint to retrieve all
-    endpoints
+Metadata and JWK sources that may become available later are loaded on the first
+authentication request that needs them. These include filesystem paths, URIs,
+OIDC discovery, and a remote JWK URI obtained from fixed metadata. Concurrent
+requests share the initial load rather than starting duplicate loads. Each
+attempt runs inside `jwk-loader.timeout`, attempts are grouped by
+`jwk-loader.retry`, and the complete retry batch runs inside
+`jwk-loader.circuit-breaker`.
+
+If metadata or JWK loading remains temporarily unavailable, optional provider
+authentication abstains. Required provider authentication returns `401
+Unauthorized` with a `WWW-Authenticate: Bearer` challenge when header
+authentication is enabled, and `503 Service Unavailable` otherwise. OIDC
+redirect callback and logout requests return `503 Service Unavailable` for the
+same temporary source outage.
+
+By default, an attempt times out after 5 seconds. At most two attempts are made,
+separated by a 200 ms delay, within an 11-second overall retry timeout. The
+11-second budget accommodates both 5-second attempts and the delay. The
+circuit opens after the first exhausted batch, rejects requests for 5 seconds,
+and then permits a recovery probe. A successfully loaded value is cached for
+the life of that tenant configuration. All three policies use the standard
+Helidon Fault Tolerance configuration options under `jwk-loader`. Configuration
+is rejected at startup if the attempt timeout is not positive, exceeds the
+overall retry timeout, or does not use current-thread execution. Running the
+loader on the calling thread prevents a retry from overlapping a timed-out
+attempt that is still unwinding after interruption. The timeout interrupts the
+loader at its deadline; prompt termination also depends on the underlying I/O
+honoring interruption or enforcing its own timeout.
 
 At runtime, depending on configuration...
 
@@ -794,6 +823,35 @@ security.
 
 Authentication is based on validating the token (signature, valid before etc.)
 and on asserting the subject of the JWT subject claim.
+
+Inline and classpath verification JWK resources are loaded and validated when
+the provider starts. Filesystem and URI resources are loaded on the first
+authentication request because they may become available later. Concurrent
+requests share that initial load. Each attempt has a default 5-second timeout;
+at most two attempts are made, separated by 200 ms, within an 11-second overall
+retry timeout. After the first exhausted batch, the circuit breaker rejects
+loads for 5 seconds before permitting a recovery probe. A successful key set is
+cached for the life of the provider. Configure the standard Timeout, Retry, and
+Circuit Breaker options under `jwk-loader.timeout`, `jwk-loader.retry`, and
+`jwk-loader.circuit-breaker`, respectively. The 11-second budget accommodates
+both 5-second attempts and the retry delay. Configuration is rejected at
+startup if the attempt timeout is not positive, exceeds the overall retry
+timeout, or does not use current-thread execution. This prevents a retry from
+overlapping a timed-out loader that is still unwinding after interruption. The
+deadline interrupts the loader, so prompt termination also depends on the
+underlying I/O honoring interruption or enforcing its own timeout.
+
+If verification-key loading remains temporarily unavailable, optional
+authentication abstains. Required authentication using the built-in
+Authorization Bearer token handler returns `401 Unauthorized` with a
+`WWW-Authenticate: Bearer` challenge. A provider using a custom token handler
+returns `503 Service Unavailable` instead.
+
+If `allow-unsigned` is explicitly enabled, a token using the `none` algorithm
+without a key ID does not require or trigger loading of verification JWKs.
+Signed tokens still require matching verification keys. Enabling unsigned
+tokens is dangerous and should be limited to environments where untrusted
+parties cannot supply JWTs.
 
 For outbound, we support either token propagation (e.g. the token from request
 is propagated further) or support for generating a brand-new token based on

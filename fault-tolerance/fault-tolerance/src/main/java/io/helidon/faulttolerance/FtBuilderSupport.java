@@ -17,6 +17,7 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
@@ -53,9 +54,38 @@ final class FtBuilderSupport {
             implements Prototype.BuilderDecorator<CircuitBreakerConfig.BuilderBase<?, ?>> {
         @Override
         public void decorate(CircuitBreakerConfig.BuilderBase<?, ?> target) {
+            validate(target);
             if (target.name().isEmpty()) {
                 target.config()
                         .ifPresent(cfg -> target.name(cfg.name()));
+            }
+        }
+
+        private static void validate(CircuitBreakerConfig.BuilderBase<?, ?> target) {
+            int volume = target.volume();
+            int errorRatio = target.errorRatio();
+            int successThreshold = target.successThreshold();
+            Duration delay = Objects.requireNonNull(target.delay());
+
+            if (volume < 1) {
+                throw new IllegalArgumentException("Circuit breaker volume must be at least one");
+            }
+            if (errorRatio < 1 || errorRatio > 100) {
+                throw new IllegalArgumentException("Circuit breaker error ratio must be between 1 and 100");
+            }
+            if (successThreshold < 1) {
+                throw new IllegalArgumentException("Circuit breaker success threshold must be at least one");
+            }
+            if ((long) volume * errorRatio > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("Circuit breaker volume and error ratio are too large");
+            }
+            if (delay.isNegative()) {
+                throw new IllegalArgumentException("Circuit breaker delay must not be negative");
+            }
+            try {
+                delay.toMillis();
+            } catch (ArithmeticException e) {
+                throw new IllegalArgumentException("Circuit breaker delay is too large", e);
             }
         }
     }

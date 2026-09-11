@@ -21,6 +21,11 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.common.LazyValue;
+import io.helidon.common.configurable.ResourceConfig;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
@@ -44,6 +49,10 @@ class TenantConfigImpl implements TenantConfig {
     private final OidcConfig.ClientAuthentication tokenEndpointAuthentication;
     private final Duration clientTimeout;
     private final JwkKeys signJwk;
+    private final ResourceConfig signJwkResource;
+    private final LazyValue<Retry> jwkRetry;
+    private final LazyValue<CircuitBreaker> jwkCircuitBreaker;
+    private final LazyValue<Timeout> jwkTimeout;
     private final JwkKeys contentKeyDecryptionKeys;
     private final String clientSecret;
     private final URI introspectUri;
@@ -51,6 +60,7 @@ class TenantConfigImpl implements TenantConfig {
     private final String scopeAudience;
     private final String serverType;
     private final JsonObject oidcMetadataJsonObject;
+    private final ResourceConfig oidcMetadataResource;
     private final boolean useWellKnown;
     private final String name;
 
@@ -73,8 +83,13 @@ class TenantConfigImpl implements TenantConfig {
 
         this.clientSecret = builder.clientSecret();
         this.signJwk = builder.signJwk();
+        this.signJwkResource = builder.signJwkResource();
+        this.jwkRetry = builder.jwkRetry();
+        this.jwkCircuitBreaker = builder.jwkCircuitBreaker();
+        this.jwkTimeout = builder.jwkTimeout();
         this.contentKeyDecryptionKeys = builder.contentKeyDecryptionKeys();
         this.oidcMetadataJsonObject = builder.oidcMetadataJsonObject();
+        this.oidcMetadataResource = builder.oidcMetadataResource();
         this.useWellKnown = builder.useWellKnown();
 
         if (validateJwtWithJwk) {
@@ -100,6 +115,26 @@ class TenantConfigImpl implements TenantConfig {
     @Override
     public Optional<JwkKeys> tenantSignJwk() {
         return Optional.ofNullable(signJwk);
+    }
+
+    @Override
+    public Optional<ResourceConfig> tenantSignJwkResource() {
+        return Optional.ofNullable(signJwkResource);
+    }
+
+    @Override
+    public Retry jwkRetry() {
+        return jwkRetry.get();
+    }
+
+    @Override
+    public Timeout jwkTimeout() {
+        return jwkTimeout.get();
+    }
+
+    @Override
+    public CircuitBreaker jwkCircuitBreaker() {
+        return jwkCircuitBreaker.get();
     }
 
     @Override
@@ -195,6 +230,11 @@ class TenantConfigImpl implements TenantConfig {
     @Override
     public JsonObject oidcMetadataJsonObject() {
         return oidcMetadataJsonObject;
+    }
+
+    @Override
+    public Optional<ResourceConfig> oidcMetadataResource() {
+        return Optional.ofNullable(oidcMetadataResource);
     }
 
     @Override
