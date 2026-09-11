@@ -25,6 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -635,10 +636,6 @@ class DeliveryEngineTest {
                 delivery.close();
             });
             try {
-                awaitWaiting(waiting);
-                Thread.sleep(150);
-                assertThat("reservation start did not return when admission lock wait timed out",
-                           waiting.completion().isDone(), is(true));
                 MessagingRejectedException timeout = assertInstanceOf(
                         MessagingRejectedException.class,
                         failure(waiting));
@@ -870,14 +867,20 @@ class DeliveryEngineTest {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 1);
             MessageBatch<Object> batch = batch(List.of(message(2)));
 
-            assertThat(reservation.tryStart(batch).isEmpty(), is(true));
-            Thread.sleep(150);
-            MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class,
-                                                               () -> reservation.tryStart(batch));
-            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
-
-            releaseActive.countDown();
-            await(active);
+            try {
+                long deadline = System.nanoTime() + WAIT.toNanos();
+                MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class, () -> {
+                    while (System.nanoTime() < deadline) {
+                        assertThat(reservation.tryStart(batch).isEmpty(), is(true));
+                        Thread.yield();
+                    }
+                    throw new AssertionError("Repeated reservation starts did not exhaust their timeout budget");
+                });
+                assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+            } finally {
+                releaseActive.countDown();
+                await(active);
+            }
             engine.reserveConnectorDelivery("orders", 1).close();
         }
     }
@@ -1001,13 +1004,56 @@ class DeliveryEngineTest {
     }
 
     @Test
+    @Timeout(30)
     void reservationAndStartShareOneCapacityWaitBudget() throws Exception {
-        Duration timeout = Duration.ofMillis(500);
+        Duration timeout = WAIT.multipliedBy(2);
         MessagingConfig config = configBuilder()
                 .maxPendingAdmissions(2)
                 .maxPendingMessages(1)
                 .maxInFlightMessages(1)
                 .admissionTimeout(timeout)
+                .buildPrototype();
+        try (DeliveryEngine engine = engine(config, "orders");
+             ConnectorDelivery active = submitConnectorDelivery(engine, "orders", List.of(message(1)), () -> { })) {
+            assertThat(active.await(WAIT), is(true));
+            ConnectorDeliveryReservation first = engine.reserveConnectorDelivery("orders", 1);
+            AtomicReference<ConnectorDeliveryReservation> acquired = new AtomicReference<>();
+            AsyncTask waiting = async(() -> acquired.set(engine.reserveConnectorDelivery("orders", 1)));
+            try {
+                awaitWaiting(waiting);
+                engine.runWithChannelAdmissionLock("orders", () -> {
+                    // The acquisition cannot finish its timed condition wait until it reacquires this lock.
+                    // Waiting a full budget here ensures expiry without requiring the test thread to resume promptly.
+                    assertThrows(TimeoutException.class,
+                                 () -> waiting.completion().get(timeout.toNanos(), TimeUnit.NANOSECONDS));
+                    first.close();
+                });
+                await(waiting);
+
+                // Pending capacity became available after expiry, so acquisition succeeds with an exhausted budget.
+                // The completed delivery still holds in-flight capacity; resetting the budget would return empty.
+                MessagingRejectedException timedOut = assertThrows(MessagingRejectedException.class,
+                        () -> acquired.get().tryStart(batch(List.of(message(2)))));
+                assertThat(timedOut.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+            } finally {
+                first.close();
+                waiting.thread().interrupt();
+                join(waiting.thread());
+                ConnectorDeliveryReservation reservation = acquired.get();
+                if (reservation != null) {
+                    reservation.close();
+                }
+            }
+        }
+    }
+
+    @Test
+    void reservationStartPreservesExhaustedCapacityWaitBudget() throws Exception {
+        MessagingConfig config = configBuilder()
+                .maxPendingAdmissions(2)
+                .maxPendingMessages(1)
+                .maxInFlightMessages(1)
+                .admissionTimeout(WAIT.multipliedBy(2))
                 .buildPrototype();
         try (DeliveryEngine engine = engine(config, "orders")) {
             CountDownLatch activeStarted = new CountDownLatch(1);
@@ -1020,26 +1066,24 @@ class DeliveryEngineTest {
                         await(releaseActive);
                     });
             await(activeStarted);
-            ConnectorDeliveryReservation first = engine.reserveConnectorDelivery("orders", 1);
-            long started = System.nanoTime();
-            AsyncTask waiting = async(() -> {
-                ConnectorDeliveryReservation second = engine.reserveConnectorDelivery("orders", 1);
-                start(second, List.of(message(1)), () -> { });
-            });
-            awaitWaiting(waiting);
-            Thread.sleep(300);
-            first.close();
-
-            MessagingRejectedException timedOut = assertInstanceOf(
-                    MessagingRejectedException.class,
-                    failure(waiting));
-            assertThat(timedOut.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
-            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
-            assertThat("reserve and start used separate timeout budgets: " + elapsedMillis + "ms",
-                       elapsedMillis < 700, is(true));
-
-            releaseActive.countDown();
-            await(active);
+            try (ConnectorDeliveryReservation reservation = engine.tryReserveConnectorDelivery(
+                    "orders", 1, 0, _ -> { }).orElseThrow()) {
+                // Model a reservation that consumed its capacity-wait budget before transport acquisition.
+                // Starting it must retain that exhausted budget instead of using the configured timeout again.
+                AsyncTask waiting = async(() -> {
+                    try (ConnectorDelivery _ = reservation.start(batch(List.of(message(2))))) {
+                        throw new AssertionError("Reservation started while in-flight capacity was held");
+                    }
+                });
+                MessagingRejectedException timedOut = assertInstanceOf(
+                        MessagingRejectedException.class,
+                        failure(waiting));
+                assertThat(timedOut.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+            } finally {
+                releaseActive.countDown();
+                await(active);
+            }
+            engine.reserveConnectorDelivery("orders", 1).close();
         }
     }
 

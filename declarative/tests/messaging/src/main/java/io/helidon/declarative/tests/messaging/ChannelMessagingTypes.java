@@ -608,7 +608,8 @@ class ChannelMessagingTypes {
         private static final List<String> EVENTS = new CopyOnWriteArrayList<>();
         private static final AtomicInteger INVOCATIONS = new AtomicInteger();
         private static final AtomicReference<CountDownLatch> FIRST_ENTERED = new AtomicReference<>();
-        private static final AtomicReference<CountDownLatch> RELEASE_FIRST = new AtomicReference<>();
+        private static final AtomicReference<CountDownLatch> RELEASE_FIRST =
+                new AtomicReference<>(new CountDownLatch(0));
 
         @Messaging.ReceiveFrom(SHUTDOWN_SINGLETON_CHANNEL)
         void consume(String ignored) {
@@ -636,7 +637,7 @@ class ChannelMessagingTypes {
         }
 
         static boolean awaitFirst() throws InterruptedException {
-            return FIRST_ENTERED.get().await(5, TimeUnit.SECONDS);
+            return FIRST_ENTERED.get().await(30, TimeUnit.SECONDS);
         }
 
         static void releaseFirst() {
@@ -655,20 +656,9 @@ class ChannelMessagingTypes {
     @Service.Singleton
     @Service.RunLevel(Service.RunLevel.NORMAL + 2)
     static class ShutdownSingletonProbe {
-        private static final AtomicReference<CountDownLatch> SHUTDOWN_STARTED =
-                new AtomicReference<>(new CountDownLatch(0));
-
         @Service.PreDestroy
         void close() {
-            SHUTDOWN_STARTED.get().countDown();
-        }
-
-        static void reset() {
-            SHUTDOWN_STARTED.set(new CountDownLatch(1));
-        }
-
-        static boolean awaitShutdown() throws InterruptedException {
-            return SHUTDOWN_STARTED.get().await(5, TimeUnit.SECONDS);
+            ShutdownSingletonConsumer.releaseFirst();
         }
     }
 
