@@ -13,9 +13,7 @@ index:
 
 ## Upgrading
 
-- [2.x Upgrade](upgrade-2x.md)
-- [3.x Upgrade](upgrade-3x.md)
-- [4.x Upgrade](upgrade-4x.md)
+- [Upgrade](upgrade/README.md)
 
 ## Components
 
