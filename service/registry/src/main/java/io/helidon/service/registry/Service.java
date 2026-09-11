@@ -171,6 +171,7 @@ public final class Service {
      * For compatibility with previously generated services, an injected {@link java.util.function.Supplier} may return
      * an already initialized, still-active dependency from the same scope instance during the callback. Such access is limited to
      * the callback thread and fails if resolution would create a service, invoke a factory, or wait for initialization.
+     * The dependency's scope must still be resolvable during cleanup.
      * Prefer retaining dependencies needed for cleanup while the service is active.
      * <p>
      * The method must not have any parameters and must be accessible (not {@code private}).

@@ -94,8 +94,7 @@ class ServiceManager<T> {
                 if (instances.isPresent()) {
                     Dependency dependency = lookup.dependency().orElseThrow();
                     LOGGER.log(System.Logger.Level.WARNING,
-                               "Service {0} requested during shutdown through injected supplier {1}.{2}; "
-                                       + "returning a cached instance for compatibility. "
+                               "Service {0} requested during shutdown through injected supplier {1}.{2}. "
                                        + "Retain dependencies needed for cleanup before shutdown.",
                                provider.descriptor().serviceType(), dependency.service(), dependency.name());
                     return instances;
