@@ -148,21 +148,20 @@ following settings should be set by default:
 Password must stay empty. Click **Connect**, the browser displays a web page.
 The database is correctly set and running.
 
-### Create a Sample Helidon Project Using Maven Archetype
+### Create a Sample Helidon Project Using the Helidon CLI
 
-Generate the project sources using the Helidon Maven archetype. The result is
+Generate the project sources using the Helidon CLI. The result is
 a simple project that can be used for the examples in this guide.
 
-Run the Maven archetype:
+Run the Helidon CLI:
 
 ```shell [Terminal]
-mvn -U archetype:generate -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-se \
-    -DarchetypeVersion=27.0.0-SNAPSHOT \
-    -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-se \
-    -Dpackage=io.helidon.examples.quickstart.se
+helidon init --batch \
+    --flavor SE \
+    --archetype quickstart \
+    --groupid io.helidon.examples \
+    --artifactid helidon-quickstart-se \
+    --package io.helidon.examples.quickstart.se
 ```
 
 A new directory named `helidon-quickstart-se` is created.
