@@ -40,6 +40,10 @@ and return-value constraints, computed client headers, optional query parameters
 void and generic REST results, generated JSON converters and builders, and service
 lifecycle, qualifiers, factories, per-lookup scope, and event delivery.
 
+Helidon 4.5.4 generated descriptors include enclosing type metadata. A separate
+regression in `service/tests/interception` covers older metadata without an
+enclosing type and verifies contract-qualified element interceptor matching.
+
 Data is outside this fixture's scope. Declarative gRPC, GraphQL, and OpenAPI
 generation added after Helidon 4.5.4 cannot be tested using this legacy compiler.
 
