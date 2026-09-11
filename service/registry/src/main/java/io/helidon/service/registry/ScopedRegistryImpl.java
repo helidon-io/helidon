@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.service.registry.Service.QualifiedInstance;
 
 /**
  * Services for a specific scope.
@@ -38,6 +39,7 @@ import io.helidon.common.types.TypeName;
  */
 class ScopedRegistryImpl implements ScopedRegistry {
     private static final System.Logger LOGGER = System.getLogger(ScopedRegistryImpl.class.getName());
+    private static final ThreadLocal<ScopedRegistryImpl> PRE_DESTROY_SCOPE = new ThreadLocal<>();
 
     private final ReadWriteLock serviceProvidersLock = new ReentrantReadWriteLock();
     private final Map<ServiceInfo, Activator<?>> activators = new IdentityHashMap<>();
@@ -191,6 +193,43 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     boolean activationAllowed() {
         return activationAllowed;
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> Optional<List<QualifiedInstance<T>>> cleanupInstances(ServiceInfo descriptor, Lookup lookup) {
+        if (PRE_DESTROY_SCOPE.get() != this) {
+            return Optional.empty();
+        }
+
+        Activator<?> activator;
+        try {
+            serviceProvidersLock.readLock().lock();
+            if (state != RegistryState.DEACTIVATING) {
+                return Optional.empty();
+            }
+            activator = activators.get(descriptor);
+        } finally {
+            serviceProvidersLock.readLock().unlock();
+        }
+
+        if (activator instanceof Activators.BaseActivator<?> baseActivator) {
+            return ((Activators.BaseActivator<T>) baseActivator).cachedInstances(lookup);
+        }
+        return Optional.empty();
+    }
+
+    void preDestroy(Runnable callback) {
+        ScopedRegistryImpl previous = PRE_DESTROY_SCOPE.get();
+        PRE_DESTROY_SCOPE.set(this);
+        try {
+            callback.run();
+        } finally {
+            if (previous == null) {
+                PRE_DESTROY_SCOPE.remove();
+            } else {
+                PRE_DESTROY_SCOPE.set(previous);
+            }
+        }
     }
 
     private static Comparator<? super Activator<?>> shutdownComparator() {

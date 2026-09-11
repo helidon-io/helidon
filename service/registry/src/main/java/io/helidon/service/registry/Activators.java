@@ -299,7 +299,11 @@ final class Activators {
 
                 response.startingActivationPhase(this.currentPhase);
                 stateTransitionStart(response, ActivationPhase.PRE_DESTROYING);
-                preDestroy(response);
+                if (scopedRegistry == null) {
+                    preDestroy(response);
+                } else {
+                    scopedRegistry.preDestroy(() -> preDestroy(response));
+                }
                 stateTransitionStart(response, ActivationPhase.DESTROYED);
 
                 return response.build();
@@ -315,6 +319,21 @@ final class Activators {
 
         boolean activeInstancesAvailable(Lookup lookup) {
             return true;
+        }
+
+        Optional<List<QualifiedInstance<T>>> cachedInstances(Lookup lookup) {
+            // An ACTIVE factory can still be producing its first value under the write lock. Cleanup must not wait for it.
+            if (!instanceLock.readLock().tryLock()) {
+                return Optional.empty();
+            }
+            try {
+                if (currentPhase != ActivationPhase.ACTIVE || !activeInstancesAvailable(lookup)) {
+                    return Optional.empty();
+                }
+                return targetInstances(lookup);
+            } finally {
+                instanceLock.readLock().unlock();
+            }
         }
 
         @Override

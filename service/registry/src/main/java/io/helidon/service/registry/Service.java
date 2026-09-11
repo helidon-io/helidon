@@ -166,9 +166,12 @@ public final class Service {
      * invoked, as we do not control their lifecycle.
      * <p>
      * A pre-destroy method is intended to release resources held by the service instance, not to interact with other services.
-     * It must not invoke methods that may instantiate another service. For example, it must not obtain a value from an
-     * injected {@link java.util.function.Supplier} or call an instance lookup method on an injected
+     * It must not invoke methods that may instantiate another service, such as an instance lookup on an injected
      * {@link io.helidon.service.registry.ServiceRegistry}.
+     * For compatibility with previously generated services, an injected {@link java.util.function.Supplier} may return
+     * an already initialized, still-active dependency from the same scope instance during the callback. Such access is limited to
+     * the callback thread and fails if resolution would create a service, invoke a factory, or wait for initialization.
+     * Prefer retaining dependencies needed for cleanup while the service is active.
      * <p>
      * The method must not have any parameters and must be accessible (not {@code private}).
      */

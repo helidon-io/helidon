@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,7 @@ final class ServiceSupplies {
         traceLookup(lookup, "explode, filter, and sort");
 
         for (ServiceManager<T> serviceManager : serviceManagers) {
-            Optional<ServiceInstance<T>> thisManager = serviceManager.activator()
-                    .instances(lookup)
+            Optional<ServiceInstance<T>> thisManager = serviceManager.instances(lookup)
                     .stream()
                     .flatMap(List::stream)
                     .map(it -> serviceManager.registryInstance(lookup, it))
@@ -58,14 +57,12 @@ final class ServiceSupplies {
 
     private static <T> List<ServiceInstance<T>> explodeFilterAndSort(Lookup lookup,
                                                                      List<ServiceManager<T>> serviceManagers) {
-        // this method is called when we resolve instances, so we can safely assume any scope is active
         traceLookup(lookup, "explode, filter, and sort");
         List<ServiceInstance<T>> result = new ArrayList<>();
 
         for (ServiceManager<T> serviceManager : serviceManagers) {
             List<ServiceInstance<T>> thisManager = new ArrayList<>();
-            serviceManager.activator()
-                    .instances(lookup)
+            serviceManager.instances(lookup)
                     .stream()
                     .flatMap(List::stream)
                     .map(it -> serviceManager.registryInstance(lookup, it))
