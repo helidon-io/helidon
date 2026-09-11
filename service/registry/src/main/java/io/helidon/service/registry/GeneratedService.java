@@ -37,6 +37,29 @@ public final class GeneratedService {
     private GeneratedService() {
     }
 
+    static <T> Service.QualifiedInstance<T> forCleanup(Service.QualifiedInstance<T> qualifiedInstance,
+                                                       ScopeNotActiveException failure) {
+        // Preserve factory result selection without initializing unused interception wrappers during cleanup.
+        if (qualifiedInstance instanceof InterceptionWrapper.LazyQualifiedInstance<?> lazyInstance
+                && !lazyInstance.instance.isLoaded()) {
+            return new Service.QualifiedInstance<>() {
+                @Override
+                public Set<Qualifier> qualifiers() {
+                    return qualifiedInstance.qualifiers();
+                }
+
+                @Override
+                public T get() {
+                    if (!lazyInstance.instance.isLoaded()) {
+                        throw failure;
+                    }
+                    return qualifiedInstance.get();
+                }
+            };
+        }
+        return qualifiedInstance;
+    }
+
     /**
      * Each descriptor for s service that is implements {@link Service.QualifiedFactory}
      * implements this interface to provide information about the qualifier it supports.

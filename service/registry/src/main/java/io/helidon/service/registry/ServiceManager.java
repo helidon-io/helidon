@@ -29,6 +29,8 @@ import io.helidon.service.registry.Service.QualifiedInstance;
 Manager of a single service. There is one instance per service provider (and per service descriptor).
  */
 class ServiceManager<T> {
+    private static final System.Logger LOGGER = System.getLogger(ServiceManager.class.getName());
+
     private final ServiceProvider<T> provider;
     private final boolean skipBindingPlan;
     private final boolean fixedInstance;
@@ -77,6 +79,32 @@ class ServiceManager<T> {
         return new ServiceInstanceImpl<>(provider.descriptor(),
                                          provider.contracts(lookup),
                                          instance);
+    }
+
+    Optional<List<QualifiedInstance<T>>> instances(Lookup lookup) {
+        ScopedRegistry scopedRegistry = scopeSupplier.get().registry();
+        try {
+            return scopedRegistry.activator(provider.descriptor(), activatorSupplier).instances(lookup);
+        } catch (ScopeNotActiveException e) {
+            // Older generated lifecycle callbacks resolve injected suppliers while their owning scope is shutting down.
+            if (lookup.dependency().filter(Dependency::isSupplier).isPresent()
+                    && scopedRegistry instanceof ScopedRegistryImpl scopedRegistryImpl) {
+                Optional<List<QualifiedInstance<T>>> instances =
+                        scopedRegistryImpl.<T>cleanupInstances(provider.descriptor(), lookup)
+                                .map(targets -> targets.stream()
+                                        .map(it -> GeneratedService.forCleanup(it, e))
+                                        .toList());
+                if (instances.isPresent()) {
+                    Dependency dependency = lookup.dependency().orElseThrow();
+                    LOGGER.log(System.Logger.Level.WARNING,
+                               "Service {0} requested during shutdown through injected supplier {1}.{2}. "
+                                       + "Retain dependencies needed for cleanup before shutdown.",
+                               provider.descriptor().serviceType(), dependency.service(), dependency.name());
+                    return instances;
+                }
+            }
+            throw e;
+        }
     }
 
     Optional<List<ServiceInstance<T>>> activeInstances(Lookup lookup) {
