@@ -15,7 +15,7 @@ libraries that can require application changes.
 | --- | --- | --- |
 | Java | Helidon 27 requires Java 26. | Build, test, package, and run with JDK 26 or later. Update container images and CI toolchains. |
 | MicroProfile | MicroProfile support has been decoupled from Helidon and releases independently. MicroProfile support is not available for Helidon 27 at this time. | Keep MicroProfile workloads on Helidon 4.5.x until the independent MicroProfile release is available, or rewrite them to Helidon Core APIs. |
-| Removed modules | The `microprofile`, `jersey`, `lra`, `messaging`, and `integrations` module trees are no longer part of Helidon 27. | Remove these dependencies or replace them with direct third-party dependencies and application-owned integration code. |
+| Removed modules | The `microprofile`, `jersey`, `lra`, and `integrations` module trees are no longer part of Helidon 27. | Remove these dependencies. For former integrations, use a matching Helidon Extensions release when one is available. |
 | Metrics | Prometheus Java client integration is removed. Metrics scopes are ignored by Helidon Core metrics and are deprecated for removal. Static `Metrics` helper methods are removed. | Use the Micrometer-backed metrics provider and service registry lookups. Replace scopes with tags. |
 | Tracing | Jaeger, Zipkin, and OpenTracing compatibility modules are removed. Static global tracer ownership APIs are removed. | Use OpenTelemetry through `helidon-tracing-providers-opentelemetry` and prefer OTLP export. Use injection or the service registry for tracer access. |
 | Config | `io.helidon.config.Config` no longer extends the old common config API. Object mapping is no longer in the core Config module. | Update code that depends on `io.helidon.common.config` bridge types. Add `helidon-config-object-mapping` when object mapping is used. |
@@ -39,30 +39,48 @@ Removed artifacts include:
 This removes Helidon-provided CDI, JAX-RS, and MicroProfile specification
 implementations from the Helidon 27 release train.
 
-### LRA and Messaging
+### LRA 
 
 Removed artifacts include:
 
 - `helidon-lra-*`
 - `helidon-microprofile-lra*`
-- `helidon-messaging`
-- `helidon-messaging-aq`
-- `helidon-messaging-jms`
-- `helidon-messaging-kafka`
-- `helidon-messaging-mock`
-- `helidon-messaging-wls-jms`
 
-### Integrations
+### Integrations and Extensions
 
-The former `integrations` tree is removed. This includes Helidon-provided
-integration modules for CDI data sources, JPA, JTA, JDBC, Eureka, CRaC,
-Micrometer CDI integration, Micronaut, MicroStream, Neo4j, OCI, Vault,
-LangChain4j, OpenAPI UI, GraalVM native image extensions, and database helper
-modules.
+The former `integrations` tree is removed from the Helidon repository. Supported
+integrations are moving to independent releases from
+[Helidon Extensions](https://github.com/helidon-io/helidon-extensions). Each
+extension has its own group ID, artifact IDs, BOM, and release version.
 
-Applications that used these artifacts should depend directly on the
-corresponding third-party library or keep that part of the application on
-Helidon 4.5.x until a replacement is available.
+Replace old `io.helidon.integrations` coordinates with extension coordinates
+where a replacement exists.
+
+For most replacement artifacts, apply this rule:
+
+- In the group ID, replace `io.helidon.integrations` with `io.helidon.extensions`.
+- In the artifact ID, replace `helidon-integrations` with `helidon-extensions`.
+
+For example:
+
+```xml
+<dependency>
+    <groupId>io.helidon.extensions.neo4j</groupId>
+    <artifactId>helidon-extensions-neo4j</artifactId>
+</dependency>
+```
+
+The exceptions are:
+
+| Integration | Replacement rule |
+| --- | --- |
+| Eureka discovery | Use `io.helidon.extensions.eureka:helidon-extensions-eureka-discovery` when you need only the Eureka discovery provider. |
+| OCI | Add `v3` to the group ID and artifact ID. For example, use `io.helidon.extensions.oci.v3:helidon-extensions-oci-v3`. |
+| Vault | Replace `vault` with `hashicorp.vault` in the group ID and `hashicorp-vault` in the artifact ID. For example, use `io.helidon.extensions.hashicorp.vault:helidon-extensions-hashicorp-vault`. |
+
+The extensions repository also includes Gson media support, TOML support,
+OpenAPI Generator, and Chaos. These are independent extensions, not
+one-for-one replacements for old `io.helidon.integrations` artifacts.
 
 ### Tracing Compatibility
 
