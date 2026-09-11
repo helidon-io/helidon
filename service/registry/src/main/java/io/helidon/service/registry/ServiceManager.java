@@ -29,6 +29,8 @@ import io.helidon.service.registry.Service.QualifiedInstance;
 Manager of a single service. There is one instance per service provider (and per service descriptor).
  */
 class ServiceManager<T> {
+    private static final System.Logger LOGGER = System.getLogger(ServiceManager.class.getName());
+
     private final ServiceProvider<T> provider;
     private final boolean skipBindingPlan;
     private final boolean fixedInstance;
@@ -90,6 +92,12 @@ class ServiceManager<T> {
                 Optional<List<QualifiedInstance<T>>> instances =
                         scopedRegistryImpl.cleanupInstances(provider.descriptor(), lookup);
                 if (instances.isPresent()) {
+                    Dependency dependency = lookup.dependency().orElseThrow();
+                    LOGGER.log(System.Logger.Level.WARNING,
+                               "Service {0} requested during shutdown through injected supplier {1}.{2}; "
+                                       + "returning a cached instance for compatibility. "
+                                       + "Retain dependencies needed for cleanup before shutdown.",
+                               provider.descriptor().serviceType(), dependency.service(), dependency.name());
                     return instances;
                 }
             }
