@@ -422,6 +422,7 @@ final class FactoryOption {
         Option.Builder.build() // build method
          */
         if (actualType.equals(OBJECT)
+                || actualType.array()
                 || actualType.unboxed().primitive()
                 || actualType.generic()) {
             // cannot build these for sure

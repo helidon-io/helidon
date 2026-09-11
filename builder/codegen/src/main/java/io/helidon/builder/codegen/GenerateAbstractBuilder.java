@@ -1498,25 +1498,36 @@ final class GenerateAbstractBuilder {
                 .name("toString")
                 .returnType(TypeName.create(String.class))
                 .addAnnotation(Annotations.OVERRIDE)
-                .addContent("return \"" + typeName);
+                .addContent("return ");
 
         List<OptionHandler> toStringFields = options.stream()
                 .filter(it -> it.option().includeInToString() && (isBuilder || !it.option().builderOptionOnly()))
                 .toList();
 
         if (toStringFields.isEmpty()) {
-            method.addContentLine("{};\"");
+            method.addContentLiteral(typeName + "{};")
+                    .addContentLine();
         } else {
-            method.addContentLine("{\"")
+            method.addContentLiteral(typeName + "{")
+                    .addContentLine()
                     .increaseContentPadding()
-                    .increaseContentPadding()
-                    .addContentLine(toStringFields.stream()
-                                            .map(it -> GenerateAbstractBuilder.toStringBody(it, isBuilder))
-                                            .collect(Collectors.joining(" + \",\"\n")));
+                    .increaseContentPadding();
+            Iterator<OptionHandler> fieldIterator = toStringFields.iterator();
+            while (fieldIterator.hasNext()) {
+                toStringBody(method, fieldIterator.next(), isBuilder);
+                if (fieldIterator.hasNext()) {
+                    method.addContent(" + ")
+                            .addContentLiteral(",");
+                }
+                method.addContentLine();
+            }
             if (hasSuper) {
-                method.addContentLine("+ \"};\"");
+                method.addContent("+ ")
+                        .addContentLiteral("};")
+                        .addContentLine();
             } else {
-                method.addContent("+ \"}\"");
+                method.addContent("+ ")
+                        .addContentLiteral("}");
             }
         }
         if (hasSuper) {
@@ -1526,7 +1537,7 @@ final class GenerateAbstractBuilder {
         classBuilder.addMethod(method);
     }
 
-    private static String toStringBody(OptionHandler it, boolean isBuilder) {
+    private static void toStringBody(Method.Builder method, OptionHandler it, boolean isBuilder) {
         var option = it.option();
         var typeName = it.typeHandler().type();
 
@@ -1534,19 +1545,32 @@ final class GenerateAbstractBuilder {
                 .equals(Types.CHAR_ARRAY);
 
         String name = option.name();
+        method.addContent("+ ")
+                .addContentLiteral(name + "=")
+                .addContent(" + ");
         if (secret) {
             if (typeName.primitive() && !typeName.array()) {
-                return "+ \"" + name + "=****\"";
+                method.addContentLiteral("****");
+            } else if (!isBuilder && option.declaredType().isOptional()) {
+                // builder stores fields without optional wrapper
+                method.addContent("(" + name + ".isPresent() ? ")
+                        .addContentLiteral("****")
+                        .addContent(" : ")
+                        .addContentLiteral("null")
+                        .addContent(")");
+            } else {
+                method.addContent("(" + name + " == null ? ")
+                        .addContentLiteral("null")
+                        .addContent(" : ")
+                        .addContentLiteral("****")
+                        .addContent(")");
             }
-            // builder stores fields without optional wrapper
-            if (!isBuilder && option.declaredType().isOptional()) {
-                return "+ \"" + name + "=\" + (" + name + ".isPresent() ? \"****\" : "
-                        + "\"null\")";
-            }
-            return "+ \"" + name + "=\" + (" + name + " == null ? \"null\" : "
-                    + "\"****\")";
+        } else if (option.declaredType().array()) {
+            method.addContent(Arrays.class)
+                    .addContent(".toString(" + name + ")");
+        } else {
+            method.addContent(name);
         }
-        return "+ \"" + name + "=\" + " + name;
     }
 
     private static void implMethods(InnerClass.Builder classBuilder,
