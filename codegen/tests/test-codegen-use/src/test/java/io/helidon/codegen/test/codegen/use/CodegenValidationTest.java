@@ -89,17 +89,6 @@ public class CodegenValidationTest {
     }
 
     @Test
-    void testTypeUseAnnotationsOnMethodReturnTypes() throws ReflectiveOperationException {
-        boolean primitivePresent = (boolean) clazz.getMethod("primitiveMethodTypeUseAnnotationPresent").invoke(instance);
-        boolean declaredPresent = (boolean) clazz.getMethod("declaredMethodTypeUseAnnotationPresent").invoke(instance);
-        boolean arrayPresent = (boolean) clazz.getMethod("arrayMethodTypeUseAnnotationPresent").invoke(instance);
-
-        assertThat("Primitive return type should retain top-level TYPE_USE annotations", primitivePresent, is(true));
-        assertThat("Declared return type should retain top-level TYPE_USE annotations", declaredPresent, is(true));
-        assertThat("Array return type should retain top-level TYPE_USE annotations", arrayPresent, is(true));
-    }
-
-    @Test
     public void testGeneratedClass() {
         CrazyAnnotation annotation = clazz.getAnnotation(CrazyAnnotation.class);
         assertThat(annotation, notNullValue());

@@ -150,27 +150,28 @@ final class AptTypeFactory {
                 default -> throw new IllegalStateException("Unknown primitive type: " + kind);
             };
 
-            return Optional.of(withTypeUseAnnotations(TypeName.create(type), typeMirror, elements));
+            return Optional.of(decorateTypeName(TypeName.create(type), typeMirror, elements));
         }
 
         switch (kind) {
         case VOID -> {
-            return Optional.of(withTypeUseAnnotations(TypeName.create(void.class), typeMirror, elements));
+            return Optional.of(decorateTypeName(TypeName.create(void.class), typeMirror, elements));
         }
         case TYPEVAR -> {
+            var typeVar = (TypeVariable) typeMirror;
+            var typeName = createFromGenericDeclaration(typeVar.asElement().getSimpleName().toString());
             if (!inProgress.add(typeMirror)) {
                 // prevent infinite loop
-                return Optional.of(TypeName.createFromGenericDeclaration(typeMirror.toString()));
+                return Optional.of(decorateTypeName(typeName, typeMirror, elements));
             }
 
             try {
-                var builder = TypeName.builder(createFromGenericDeclaration(typeMirror.toString()));
+                var builder = TypeName.builder(typeName);
 
-                var typeVar = ((TypeVariable) typeMirror);
                 handleBounds(elements, inProgress, typeVar.getUpperBound(), builder::addUpperBound);
                 handleBounds(elements, inProgress, typeVar.getLowerBound(), builder::addLowerBound);
 
-                return Optional.of(withTypeUseAnnotations(builder.build(), typeMirror, elements));
+                return Optional.of(decorateTypeName(builder.build(), typeMirror, elements));
             } finally {
                 inProgress.remove(typeMirror);
             }
@@ -185,10 +186,10 @@ final class AptTypeFactory {
             handleBounds(elements, inProgress, vt.getExtendsBound(), builder::addUpperBound);
             handleBounds(elements, inProgress, vt.getSuperBound(), builder::addLowerBound);
 
-            return Optional.of(withTypeUseAnnotations(builder.build(), typeMirror, elements));
+            return Optional.of(decorateTypeName(builder.build(), typeMirror, elements));
         }
         case ERROR -> {
-            return Optional.of(withTypeUseAnnotations(TypeName.create(typeMirror.toString()), typeMirror, elements));
+            return Optional.of(decorateTypeName(TypeName.create(typeMirror.toString()), typeMirror, elements));
         }
         // this is most likely a type that is code generated as part of this round, best effort
         case NONE -> {
@@ -201,56 +202,47 @@ final class AptTypeFactory {
 
         if (typeMirror instanceof ArrayType arrayType) {
             TypeName typeName = createTypeName(elements, inProgress, arrayType.getComponentType()).orElseThrow();
-            return Optional.of(withTypeUseAnnotations(TypeName.builder(typeName)
-                                                       .componentType(typeName)
-                                                       .array(true)
-                                                       .build(),
-                                           typeMirror,
-                                           elements));
+            TypeName arrayName = TypeName.builder(typeName)
+                    .annotations(List.of())
+                    .componentType(typeName)
+                    .array(true)
+                    .build();
+            return Optional.of(decorateTypeName(arrayName, typeMirror, elements));
         }
 
         if (typeMirror instanceof DeclaredType declaredType) {
-            List<TypeName> typeParams = declaredType.getTypeArguments()
-                    .stream()
-                    .map(it -> createTypeName(elements, inProgress, it))
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toList());
-
-            TypeName result = createTypeName(elements, inProgress, declaredType.asElement()).orElse(null);
-
-            if (result == null) {
-                return Optional.empty();
-            }
-
-            result = withTypeUseAnnotations(result, typeMirror, elements);
-
-            if (typeParams.isEmpty()) {
-                return Optional.ofNullable(result);
-            }
-
             if (!inProgress.add(typeMirror)) {
                 return Optional.empty(); // prevent infinite loop
             }
-            return Optional.of(TypeName.builder(result).typeArguments(typeParams).build());
+            try {
+                List<TypeName> typeParams = declaredType.getTypeArguments()
+                        .stream()
+                        .map(it -> createTypeName(elements, inProgress, it))
+                        .flatMap(Optional::stream)
+                        .collect(Collectors.toList());
+
+                TypeName result = createTypeName(elements, inProgress, declaredType.asElement()).orElse(null);
+
+                if (result == null) {
+                    return Optional.empty();
+                }
+
+                result = decorateTypeName(result, typeMirror, elements);
+
+                if (typeParams.isEmpty()) {
+                    return Optional.of(result);
+                }
+
+                return Optional.of(TypeName.builder(result).typeArguments(typeParams).build());
+            } finally {
+                inProgress.remove(typeMirror);
+            }
         }
 
         throw new IllegalStateException("Unknown type mirror: " + typeMirror);
     }
 
-    /**
-     * Augments the supplied {@link TypeName}, if necessary, to carry any type use annotations present on the supplied
-     * {@link TypeMirror} from which it was originally built, by way of the [@link
-     * AptAnnotationFactory#createAnnotation(AnnotationMirror, Elements)} method.
-     *
-     * <p>This method helps fix <a href="https://github.com/helidon-io/helidon/issues/11532">Github issue 11532</a>.</p>
-     *
-     * @param typeName the non-{@code null} typeName that may need augmenting
-     * @param typeMirror the non-{@code null} {@link TypeMirror} {@code typeName} represents
-     * @param elements an {@link Elements}; if {@code null} no action will be taken
-     * @return the possibly augmented {@link TypeName}, or the supplied {@link TypeName} if no augmentation was needed
-     * @throws NullPointerException if {@code typeName} or {@code typeMirror} is {@code null}
-     */
-    private static TypeName withTypeUseAnnotations(TypeName typeName, TypeMirror typeMirror, Elements elements) {
+    private static TypeName decorateTypeName(TypeName typeName, TypeMirror typeMirror, Elements elements) {
         if (elements == null) {
             return typeName;
         }
