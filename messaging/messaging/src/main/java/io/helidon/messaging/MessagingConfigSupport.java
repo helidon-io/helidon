@@ -72,6 +72,13 @@ final class MessagingConfigSupport {
         return builder.build();
     }
 
+    private static GenericType<?> messageType(GenericType<?> payloadType) {
+        return GenericType.builder()
+                .baseType(Message.class)
+                .addGenericParameter(payloadType)
+                .build();
+    }
+
     private static void requireNonNegative(int value, String name) {
         if (value < 0) {
             throw new IllegalArgumentException(name + " must be zero or greater");
@@ -608,8 +615,15 @@ final class MessagingConfigSupport {
         }
     }
 
-    record SourceDefinition(MessagingChannel<?> handle, Stream<?> stream, boolean messages)
+    record SourceDefinition(MessagingChannel<?> handle,
+                            Stream<?> stream,
+                            boolean messages,
+                            GenericType<?> envelopeGenericType)
             implements EmitterRegistration {
+        SourceDefinition(MessagingChannel<?> handle, Stream<?> stream, boolean messages) {
+            this(handle, stream, messages, messageType(handle.payloadType()));
+        }
+
         @Override
         public String channel() {
             return handle.name();
@@ -623,11 +637,6 @@ final class MessagingConfigSupport {
         @Override
         public GenericType<?> payloadGenericType() {
             return handle.payloadType();
-        }
-
-        @Override
-        public GenericType<?> envelopeGenericType() {
-            return GenericType.create(Message.class);
         }
     }
 
@@ -678,8 +687,15 @@ final class MessagingConfigSupport {
 
     private record ProcessorDefinition(MessagingChannel<?> source,
                                        MessagingChannel<?> target,
-                                       Function<MessageBatch<?>, MessageBatch<?>> processor)
+                                       Function<MessageBatch<?>, MessageBatch<?>> processor,
+                                       GenericType<?> outgoingEnvelopeGenericType)
             implements ProcessorRegistration {
+        private ProcessorDefinition(MessagingChannel<?> source,
+                                    MessagingChannel<?> target,
+                                    Function<MessageBatch<?>, MessageBatch<?>> processor) {
+            this(source, target, processor, messageType(target.payloadType()));
+        }
+
         @Override
         public String channel() {
             return source.name();
@@ -703,11 +719,6 @@ final class MessagingConfigSupport {
         @Override
         public GenericType<?> outgoingPayloadGenericType() {
             return target.payloadType();
-        }
-
-        @Override
-        public GenericType<?> outgoingEnvelopeGenericType() {
-            return GenericType.create(Message.class);
         }
 
         @Override
@@ -716,7 +727,13 @@ final class MessagingConfigSupport {
         }
     }
 
-    record RouteRegistration(MessagingChannel<?> source, MessagingChannel<?> target) implements ProcessorRegistration {
+    record RouteRegistration(MessagingChannel<?> source,
+                             MessagingChannel<?> target,
+                             GenericType<?> outgoingEnvelopeGenericType) implements ProcessorRegistration {
+        RouteRegistration(MessagingChannel<?> source, MessagingChannel<?> target) {
+            this(source, target, messageType(target.payloadType()));
+        }
+
         @Override
         public String channel() {
             return source.name();
@@ -740,11 +757,6 @@ final class MessagingConfigSupport {
         @Override
         public GenericType<?> outgoingPayloadGenericType() {
             return target.payloadType();
-        }
-
-        @Override
-        public GenericType<?> outgoingEnvelopeGenericType() {
-            return GenericType.create(Message.class);
         }
 
         @Override

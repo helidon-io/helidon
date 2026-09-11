@@ -1877,6 +1877,7 @@ final class DeliveryEngine implements AutoCloseable {
 
         @Override
         public boolean await(Duration timeout) {
+            Objects.requireNonNull(timeout, "timeout");
             try {
                 return awaitInterruptibly(timeout);
             } catch (InterruptedException e) {
