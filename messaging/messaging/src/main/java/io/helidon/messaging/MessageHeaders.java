@@ -33,6 +33,7 @@ import io.helidon.common.Api;
  * {@link #entries()} is the authoritative representation and preserves global insertion order, exact names, and
  * duplicate names. Lookup methods are explicitly first- or last-valued because transports assign different meanings
  * to duplicate entries. {@link #valuesByName()} is a derived grouped view and cannot represent cross-name ordering.
+ * Name lookups share an immutable index built lazily on first use. Iterating entries does not build that index.
  * Connectors preserve every supported property and reject unsupported outbound values unless an explicit translation
  * is configured; they must not silently stringify, reorder, or drop entries.
  * <p>

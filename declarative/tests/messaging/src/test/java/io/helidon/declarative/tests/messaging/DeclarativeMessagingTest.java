@@ -43,6 +43,7 @@ import io.helidon.messaging.EmitterRegistration;
 import io.helidon.messaging.MessageHeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessageConfig;
 import io.helidon.messaging.MessageHeader;
 import io.helidon.messaging.MessageHeaders;
 import io.helidon.messaging.MessagingChannel;
@@ -796,7 +797,7 @@ class DeclarativeMessagingTest {
                 MessageHeaderValue.UuidValue.create(UUID.fromString("01234567-89ab-cdef-0123-456789abcdef")),
                 MessageHeaderValue.NativeValue.create("test:encoded", new byte[] {3, 4}));
 
-        Message.Builder<String> message = Message.builder("typed values")
+        MessageConfig.Builder<String> message = Message.builder("typed values")
                 .addHeader("required", MessageHeaderValue.TextValue.create("shadowed"))
                 .addHeader("optional", MessageHeaderValue.BooleanValue.create(false))
                 .addHeader("required", MessageHeaderValue.IntegerValue.create(99))
