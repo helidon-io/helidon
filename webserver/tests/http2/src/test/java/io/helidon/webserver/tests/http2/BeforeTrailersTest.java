@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package io.helidon.webserver.tests.http2;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -27,7 +26,6 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -35,7 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class BeforeTrailersTest {
-    static private final AtomicBoolean CALLED = new AtomicBoolean();
+    private static final HeaderName HELIDON = HeaderNames.create("helidon");
 
     private final WebClient webClient;
 
@@ -48,19 +46,11 @@ class BeforeTrailersTest {
         builder.addFilter((chain, req, res) -> {
                     if (req.path().path().equals("/trailers")) {
                         res.header(HeaderNames.TRAILER, "helidon");
-                        res.beforeTrailers(trailers -> {
-                            trailers.add(HeaderNames.create("helidon"), "rocks");
-                            CALLED.set(true);
-                        });
+                        res.beforeTrailers(trailers -> trailers.add(HELIDON, "rocks"));
                     }
                     chain.proceed();
                 })
                 .any((req, res) -> res.send("hello"));
-    }
-
-    @BeforeEach
-    void reset() {
-        CALLED.set(false);
     }
 
     @Test
@@ -68,7 +58,8 @@ class BeforeTrailersTest {
         Http2Client http2Client = webClient.client(Http2Client.PROTOCOL);
         try (HttpClientResponse res = http2Client.get("/noTrailers").request()) {
             assertThat(res.status().code(), is(200));
-            assertThat(CALLED.get(), is(false));
+            assertThat(res.entity().as(String.class), is("hello"));
+            assertThat(res.headers().contains(HeaderNames.TRAILER), is(false));
         }
     }
 
@@ -77,9 +68,8 @@ class BeforeTrailersTest {
         Http2Client http2Client = webClient.client(Http2Client.PROTOCOL);
         try (HttpClientResponse res = http2Client.get("/trailers").request()) {
             assertThat(res.status().code(), is(200));
-            assertThat(CALLED.get(), is(true));
             assertThat(res.entity().as(String.class), is("hello"));     // need to read entity
-            Header trailer = res.trailers().get(HeaderNames.create("helidon"));
+            Header trailer = res.trailers().get(HELIDON);
             assertThat(trailer.get(), is("rocks"));
         }
     }
