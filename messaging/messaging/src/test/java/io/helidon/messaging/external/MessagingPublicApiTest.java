@@ -39,6 +39,7 @@ import io.helidon.messaging.FailurePolicy;
 import io.helidon.messaging.MessageHeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessageConfig;
 import io.helidon.messaging.MessageHeader;
 import io.helidon.messaging.MessageHeaders;
 import io.helidon.messaging.MessageMetadata;
@@ -280,7 +281,7 @@ class MessagingPublicApiTest {
         assertThrows(NullPointerException.class, () -> Message.builder(null));
         assertThrows(NullPointerException.class, () -> Message.create(null));
 
-        Message.Builder<String> builder = Message.builder("payload")
+        MessageConfig.Builder<String> builder = Message.builder("payload")
                 .header("trace", "original")
                 .addHeader("retained", MessageHeaderValue.IntegerValue.create(42))
                 .localMetadata("diagnostic", "original")
@@ -298,7 +299,7 @@ class MessagingPublicApiTest {
                      () -> builder.addHeader(null, MessageHeaderValue.TextValue.create("appended")));
         assertThrows(NullPointerException.class, () -> builder.addHeader("new", (MessageHeaderValue) null));
         assertThrows(NullPointerException.class, () -> builder.addHeader((MessageHeader) null));
-        assertThrows(NullPointerException.class, () -> builder.headers(null));
+        assertThrows(NullPointerException.class, () -> builder.headers((MessageHeaders) null));
         assertMessageBuilderState(builder, expected);
 
         assertThrows(NullPointerException.class, () -> builder.localMetadata(null, "replacement"));
@@ -361,7 +362,7 @@ class MessagingPublicApiTest {
         assertThat(method.getExceptionTypes().length, is(0));
     }
 
-    private static void assertMessageBuilderState(Message.Builder<String> builder, Message<String> expected) {
+    private static void assertMessageBuilderState(MessageConfig.Builder<String> builder, Message<String> expected) {
         Message<String> actual = builder.build();
         assertThat(actual.headers(), is(expected.headers()));
         assertThat(actual.localMetadata(), is(expected.localMetadata()));

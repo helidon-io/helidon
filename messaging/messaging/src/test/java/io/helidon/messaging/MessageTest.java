@@ -42,7 +42,7 @@ class MessageTest {
 
     @Test
     void replacesTextHeadersAndSnapshotsBuilderState() {
-        Message.Builder<String> builder = Message.builder("payload")
+        MessageConfig.Builder<String> builder = Message.builder("payload")
                 .header("trace", "first")
                 .header("Trace", "case-sensitive")
                 .header("trace", "last");
@@ -93,9 +93,9 @@ class MessageTest {
 
     @Test
     void failedHeaderCollectionReplacementDoesNotChangeBuilder() {
-        Message.Builder<String> builder = Message.builder("payload").header("a", "original");
+        MessageConfig.Builder<String> builder = Message.builder("payload").header("a", "original");
 
-        assertThrows(NullPointerException.class, () -> builder.headers(null));
+        assertThrows(NullPointerException.class, () -> builder.headers((MessageHeaders) null));
 
         assertThat(builder.build().headers().entries(), is(List.of(MessageHeader.create("a", "original"))));
     }
@@ -104,7 +104,7 @@ class MessageTest {
     void defaultsSnapshotsAndReplacesLocalMetadata() {
         Message<String> plain = Message.create("payload");
         MessageMetadata replacement = MessageMetadata.builder().set("replacement", "local").build();
-        Message.Builder<String> builder = Message.builder("payload")
+        MessageConfig.Builder<String> builder = Message.builder("payload")
                 .localMetadata("diagnostic", "first")
                 .localMetadata("typed", MessageHeaderValue.IntegerValue.create(42));
 
@@ -120,7 +120,7 @@ class MessageTest {
         assertThat(message.localMetadata(), is(replacement));
         assertThat(message.headers(), sameInstance(MessageHeaders.empty()));
 
-        assertThrows(NullPointerException.class, () -> builder.localMetadata(null));
+        assertThrows(NullPointerException.class, () -> builder.localMetadata((MessageMetadata) null));
         assertThat(builder.build().localMetadata(), is(replacement));
     }
 

@@ -23,6 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
@@ -58,31 +63,47 @@ class MessageHeadersTest {
     void preservesGlobalOrderDuplicatesAndExactNames() {
         MessageHeaderValue.TextValue first = MessageHeaderValue.TextValue.create("first");
         MessageHeaderValue.BooleanValue middle = MessageHeaderValue.BooleanValue.create(true);
-        MessageHeaderValue.BinaryValue last = MessageHeaderValue.BinaryValue.create(new byte[] {1, 2});
-        MessageHeaders headers = MessageHeaders.create(
+        MessageHeaderValue.BinaryValue binary = MessageHeaderValue.BinaryValue.create(new byte[] {1, 2});
+        MessageHeaderValue.NullValue explicitNull = MessageHeaderValue.NullValue.create();
+        List<MessageHeader> entries = List.of(
                 MessageHeader.create("a", first),
                 MessageHeader.create("b", middle),
-                MessageHeader.create("a", last),
-                MessageHeader.create("A", "case-sensitive"));
+                MessageHeader.create("a", binary),
+                MessageHeader.create("A", "case-sensitive"),
+                MessageHeader.create("a", explicitNull),
+                MessageHeader.create("only-null", explicitNull));
+        MessageHeaders headers = MessageHeaders.create(entries);
+        MessageHeaders equal = MessageHeaders.create(entries);
+        int originalHashCode = headers.hashCode();
 
-        assertThat(headers.entries(), is(List.of(MessageHeader.create("a", first),
-                                                MessageHeader.create("b", middle),
-                                                MessageHeader.create("a", last),
-                                                MessageHeader.create("A", "case-sensitive"))));
         ArrayList<MessageHeader> iterated = new ArrayList<>();
         headers.forEach(iterated::add);
-        assertThat(iterated, is(headers.entries()));
-        assertThat(headers.size(), is(4));
+        assertThat(iterated, is(entries));
+        assertThat(headers.size(), is(6));
         assertThat(headers.isEmpty(), is(false));
         assertThat(headers.contains("a"), is(true));
         assertThat(headers.contains("A"), is(true));
+        assertThat(headers.contains("only-null"), is(true));
         assertThat(headers.contains("missing"), is(false));
         assertThat(headers.first("a").orElseThrow(), is(first));
-        assertThat(headers.last("a").orElseThrow(), is(last));
-        assertThat(headers.all("a"), is(List.of(first, last)));
+        assertThat(headers.last("a").orElseThrow(), is(explicitNull));
+        assertThat(headers.all("a"), is(List.of(first, binary, explicitNull)));
         assertThat(headers.all("A"), is(List.of(MessageHeaderValue.TextValue.create("case-sensitive"))));
+        assertThat(headers.first("only-null").orElseThrow(), is(explicitNull));
+        assertThat(headers.last("only-null").orElseThrow(), is(explicitNull));
         assertThat(headers.first("missing").isEmpty(), is(true));
         assertThat(headers.last("missing").isEmpty(), is(true));
+        assertThat(headers.all("missing"), is(List.of()));
+
+        Map<String, List<MessageHeaderValue>> grouped = headers.valuesByName();
+        assertThat(new ArrayList<>(grouped.keySet()), is(List.of("a", "b", "A", "only-null")));
+        assertThat(grouped.get("a"), is(List.of(first, binary, explicitNull)));
+        assertThat(grouped.get("only-null"), is(List.of(explicitNull)));
+        assertThat(headers.entries(), is(entries));
+        assertThat(headers, is(equal));
+        assertThat(equal, is(headers));
+        assertThat(headers.hashCode(), is(originalHashCode));
+        assertThat(headers.hashCode(), is(equal.hashCode()));
     }
 
     @Test
@@ -99,6 +120,8 @@ class MessageHeadersTest {
                      () -> headers.entries().add(MessageHeader.create("x", "value")));
         assertThrows(UnsupportedOperationException.class,
                      () -> headers.all("a").add(MessageHeaderValue.TextValue.create("value")));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> headers.all("missing").add(MessageHeaderValue.TextValue.create("value")));
 
         Map<String, List<MessageHeaderValue>> grouped = headers.valuesByName();
         assertThat(new ArrayList<>(grouped.keySet()), is(List.of("a", "b")));
@@ -109,6 +132,69 @@ class MessageHeadersTest {
                      () -> grouped.put("x", List.of(MessageHeaderValue.TextValue.create("value"))));
         assertThrows(UnsupportedOperationException.class,
                      () -> grouped.get("a").add(MessageHeaderValue.TextValue.create("value")));
+    }
+
+    @Test
+    void emptyHeadersHaveEmptyLookupViews() {
+        MessageHeaders headers = MessageHeaders.empty();
+
+        assertThat(headers.contains("missing"), is(false));
+        assertThat(headers.first("missing").isEmpty(), is(true));
+        assertThat(headers.last("missing").isEmpty(), is(true));
+        assertThat(headers.all("missing"), is(List.of()));
+        assertThat(headers.valuesByName(), is(Map.of()));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> headers.valuesByName().put("new", List.of(MessageHeaderValue.NullValue.create())));
+    }
+
+    @Test
+    void supportsConcurrentInitialLookups() throws Exception {
+        MessageHeaderValue first = MessageHeaderValue.TextValue.create("first");
+        MessageHeaderValue middle = MessageHeaderValue.BooleanValue.create(true);
+        MessageHeaderValue last = MessageHeaderValue.NullValue.create();
+        MessageHeaderValue upperCase = MessageHeaderValue.TextValue.create("case-sensitive");
+        List<MessageHeader> entries = List.of(MessageHeader.create("a", first),
+                                             MessageHeader.create("b", middle),
+                                             MessageHeader.create("a", last),
+                                             MessageHeader.create("A", upperCase));
+        MessageHeaders headers = MessageHeaders.create(entries);
+        Map<String, List<MessageHeaderValue>> expectedGroups = Map.of("a", List.of(first, last),
+                                                                    "b", List.of(middle),
+                                                                    "A", List.of(upperCase));
+        int taskCount = 16;
+        CountDownLatch ready = new CountDownLatch(taskCount);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        List<Future<?>> tasks = new ArrayList<>();
+        try {
+            for (int i = 0; i < taskCount; i++) {
+                tasks.add(executor.submit(() -> {
+                    ready.countDown();
+                    assertThat(start.await(10, TimeUnit.SECONDS), is(true));
+                    assertThat(headers.first("a").orElseThrow(), is(first));
+                    assertThat(headers.last("a").orElseThrow(), is(last));
+                    assertThat(headers.all("a"), is(List.of(first, last)));
+                    assertThat(headers.contains("A"), is(true));
+                    assertThat(headers.last("A").orElseThrow(), is(upperCase));
+                    assertThat(headers.contains("missing"), is(false));
+                    assertThat(headers.all("missing"), is(List.of()));
+                    assertThat(headers.valuesByName(), is(expectedGroups));
+                    assertThat(new ArrayList<>(headers.valuesByName().keySet()), is(List.of("a", "b", "A")));
+                    assertThat(headers.entries(), is(entries));
+                    return null;
+                }));
+            }
+            assertThat(ready.await(10, TimeUnit.SECONDS), is(true));
+            start.countDown();
+            for (Future<?> task : tasks) {
+                task.get(10, TimeUnit.SECONDS);
+            }
+        } finally {
+            start.countDown();
+            tasks.forEach(task -> task.cancel(true));
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS), is(true));
+        }
     }
 
     @Test
@@ -194,5 +280,12 @@ class MessageHeadersTest {
         assertThrows(NullPointerException.class, () -> MessageHeaders.empty().first(null));
         assertThrows(NullPointerException.class, () -> MessageHeaders.empty().last(null));
         assertThrows(NullPointerException.class, () -> MessageHeaders.empty().all(null));
+
+        MessageHeaders nonEmpty = MessageHeaders.create(MessageHeader.create("retained", "value"));
+        assertThrows(NullPointerException.class, () -> nonEmpty.contains(null));
+        assertThrows(NullPointerException.class, () -> nonEmpty.first(null));
+        assertThrows(NullPointerException.class, () -> nonEmpty.last(null));
+        assertThrows(NullPointerException.class, () -> nonEmpty.all(null));
+        assertThat(nonEmpty.last("retained").orElseThrow(), is(MessageHeaderValue.TextValue.create("value")));
     }
 }

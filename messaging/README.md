@@ -193,11 +193,27 @@ Message<Order> message = Message.builder(order)
         .build();
 ```
 
+`Message.builder()` and `Message.builder(payload)` return the generated `MessageConfig.Builder<T>`.
+Use `build()` to create an immutable message, or `buildPrototype()` to retain its construction options as a
+`MessageConfig<T>` snapshot. Its `headers()` and `localMetadata()` accessors expose an immutable list and map,
+respectively. The generated builder accumulates these collections without copying them on each entry update;
+snapshots are taken when building. The payload is retained by reference; header and local-metadata changes on the
+builder do not affect previously built messages or snapshots. Connector-specific implementations can continue to
+implement `Message<T>` directly.
+
+Whole-value `headers(...)` and `localMetadata(...)` setters replace the respective collection, including overloads
+accepting `MessageHeaders`, `MessageMetadata`, or their builder callbacks and suppliers. `from(...)` follows the
+standard generated collection semantics: existing explicit header entries are retained and incoming entries are
+appended; metadata maps are merged with incoming values replacing matching keys. When copying another builder,
+its untouched collection defaults do not overwrite explicitly modified destination collections. Use a fresh builder
+such as `MessageConfig.builder(snapshot)` for an independent copy of a prototype.
+
 Use `Message.create(order)` when no headers are needed. `header` replaces all values with the same exact,
 case-sensitive name, while `addHeader` appends a duplicate-preserving entry. `MessageHeaders.entries()` is the
 authoritative globally ordered representation. Explicit `first`, `last`, and `all` lookups avoid imposing one
 transport's duplicate semantics on another; `valuesByName()` is only a derived grouped view and loses cross-name
-ordering. The closed `MessageHeaderValue` model supports null, text, immutable binary, boolean, integer, decimal,
+ordering. Name lookups share a lazily built immutable index; forwarding or iterating the ordered entries does not
+build it. The closed `MessageHeaderValue` model supports null, text, immutable binary, boolean, integer, decimal,
 32/64-bit floating point, timestamp, UUID, and opaque connector-encoded values. `Message.header(name)` remains a
 last-valued text convenience and never stringifies a typed value. `MessageHeader.create(name, value)` accepts the
 corresponding Java types directly, including boxed integral and floating-point values; use the `MessageHeaderValue`

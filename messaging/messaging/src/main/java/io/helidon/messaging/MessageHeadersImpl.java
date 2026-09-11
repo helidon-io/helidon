@@ -17,15 +17,20 @@
 package io.helidon.messaging;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 final class MessageHeadersImpl implements MessageHeaders {
     private static final MessageHeaders EMPTY = new MessageHeadersImpl(List.of());
 
     private final List<MessageHeader> entries;
 
+    private volatile Map<String, List<MessageHeaderValue>> index;
+
     private MessageHeadersImpl(List<? extends MessageHeader> entries) {
         this.entries = List.copyOf(entries);
+        this.index = this.entries.isEmpty() ? Map.of() : null;
     }
 
     static MessageHeaders empty() {
@@ -40,6 +45,41 @@ final class MessageHeadersImpl implements MessageHeaders {
     @Override
     public List<MessageHeader> entries() {
         return entries;
+    }
+
+    @Override
+    public boolean contains(String name) {
+        String actualName = Objects.requireNonNull(name);
+        return valuesByName().containsKey(actualName);
+    }
+
+    @Override
+    public Optional<MessageHeaderValue> first(String name) {
+        List<MessageHeaderValue> values = all(name);
+        return values.isEmpty() ? Optional.empty() : Optional.of(values.getFirst());
+    }
+
+    @Override
+    public Optional<MessageHeaderValue> last(String name) {
+        List<MessageHeaderValue> values = all(name);
+        return values.isEmpty() ? Optional.empty() : Optional.of(values.getLast());
+    }
+
+    @Override
+    public List<MessageHeaderValue> all(String name) {
+        String actualName = Objects.requireNonNull(name);
+        return valuesByName().getOrDefault(actualName, List.of());
+    }
+
+    @Override
+    public Map<String, List<MessageHeaderValue>> valuesByName() {
+        Map<String, List<MessageHeaderValue>> result = index;
+        if (result == null) {
+            // Concurrent first lookups may build equivalent immutable indexes; publish only complete snapshots.
+            result = MessageHeaders.super.valuesByName();
+            index = result;
+        }
+        return result;
     }
 
     @Override

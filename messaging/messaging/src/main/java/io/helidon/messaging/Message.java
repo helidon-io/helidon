@@ -35,6 +35,7 @@ import io.helidon.common.Api;
  * separately.
  *
  * @param <T> payload type
+ * @see MessageConfig
  */
 @Api.Preview
 public interface Message<T> {
@@ -44,8 +45,8 @@ public interface Message<T> {
      * @param <T> payload type
      * @return builder
      */
-    static <T> Builder<T> builder() {
-        return new Builder<>();
+    static <T> MessageConfig.Builder<T> builder() {
+        return MessageConfig.builder();
     }
 
     /**
@@ -56,7 +57,7 @@ public interface Message<T> {
      * @return builder
      * @throws NullPointerException if {@code entity} is {@code null}
      */
-    static <T> Builder<T> builder(T entity) {
+    static <T> MessageConfig.Builder<T> builder(T entity) {
         return Message.<T>builder().entity(entity);
     }
 
@@ -139,165 +140,5 @@ public interface Message<T> {
             return Optional.of(textValue.value());
         }
         throw new IllegalStateException("Messaging header '" + name + "' is not a text value");
-    }
-
-    /**
-     * Message builder.
-     *
-     * @param <T> payload type
-     */
-    final class Builder<T> implements io.helidon.common.Builder<Builder<T>, Message<T>> {
-        private final MessageHeaders.Builder headers = MessageHeaders.builder();
-        private final MessageMetadata.Builder localMetadata = MessageMetadata.builder();
-        private T entity;
-
-        private Builder() {
-        }
-
-        /**
-         * Set the message payload.
-         *
-         * @param entity non-null payload
-         * @return updated builder
-         * @throws NullPointerException if {@code entity} is {@code null}
-         */
-        public Builder<T> entity(T entity) {
-            this.entity = Objects.requireNonNull(entity, "entity");
-            return this;
-        }
-
-        /**
-         * Set a portable text header, replacing all values with the same exact name.
-         *
-         * @param name header name
-         * @param value header value
-         * @return updated builder
-         */
-        public Builder<T> header(String name, String value) {
-            Objects.requireNonNull(name, "name");
-            Objects.requireNonNull(value, "value");
-            headers.set(name, value);
-            return this;
-        }
-
-        /**
-         * Set a portable typed header, replacing all values with the same exact name.
-         *
-         * @param name header name
-         * @param value header value
-         * @return updated builder
-         */
-        public Builder<T> header(String name, MessageHeaderValue value) {
-            Objects.requireNonNull(name, "name");
-            Objects.requireNonNull(value, "value");
-            headers.set(name, value);
-            return this;
-        }
-
-        /**
-         * Append a portable text header, retaining values with the same exact name.
-         *
-         * @param name header name
-         * @param value header value
-         * @return updated builder
-         */
-        public Builder<T> addHeader(String name, String value) {
-            Objects.requireNonNull(name, "name");
-            Objects.requireNonNull(value, "value");
-            headers.add(name, value);
-            return this;
-        }
-
-        /**
-         * Append a portable typed header, retaining values with the same exact name.
-         *
-         * @param name header name
-         * @param value header value
-         * @return updated builder
-         */
-        public Builder<T> addHeader(String name, MessageHeaderValue value) {
-            Objects.requireNonNull(name, "name");
-            Objects.requireNonNull(value, "value");
-            headers.add(name, value);
-            return this;
-        }
-
-        /**
-         * Append a portable header entry.
-         *
-         * @param header header entry
-         * @return updated builder
-         */
-        public Builder<T> addHeader(MessageHeader header) {
-            Objects.requireNonNull(header, "header");
-            headers.add(header);
-            return this;
-        }
-
-        /**
-         * Replace all current headers with an ordered snapshot.
-         *
-         * @param headers headers
-         * @return updated builder
-         */
-        public Builder<T> headers(MessageHeaders headers) {
-            MessageHeaders actualHeaders = Objects.requireNonNull(headers);
-            this.headers.clear().addAll(actualHeaders);
-            return this;
-        }
-
-        /**
-         * Set a local text metadata value, replacing the value with the same exact name.
-         *
-         * @param name exact metadata name
-         * @param value text value
-         * @return updated builder
-         */
-        public Builder<T> localMetadata(String name, String value) {
-            Objects.requireNonNull(name, "name");
-            Objects.requireNonNull(value, "value");
-            localMetadata.set(name, value);
-            return this;
-        }
-
-        /**
-         * Set a local typed metadata value, replacing the value with the same exact name.
-         *
-         * @param name exact metadata name
-         * @param value metadata value
-         * @return updated builder
-         */
-        public Builder<T> localMetadata(String name, MessageHeaderValue value) {
-            Objects.requireNonNull(name, "name");
-            Objects.requireNonNull(value, "value");
-            localMetadata.set(name, value);
-            return this;
-        }
-
-        /**
-         * Replace all local metadata with an immutable snapshot.
-         * <p>
-         * Local metadata remains in-process and is not part of portable headers or generic connector mapping.
-         *
-         * @param localMetadata local metadata
-         * @return updated builder
-         */
-        public Builder<T> localMetadata(MessageMetadata localMetadata) {
-            MessageMetadata actualMetadata = Objects.requireNonNull(localMetadata);
-            this.localMetadata.clear().addAll(actualMetadata);
-            return this;
-        }
-
-        /**
-         * Create the message.
-         *
-         * @return immutable message
-         */
-        @Override
-        public Message<T> build() {
-            return new DefaultMessage<>(Objects.requireNonNull(entity, "entity"),
-                                        headers.build(),
-                                        localMetadata.build());
-        }
     }
 }
