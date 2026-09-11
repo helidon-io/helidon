@@ -19,25 +19,10 @@ package io.helidon.codegen.test.codegen.use;
 import io.helidon.common.Weight;
 
 @Weight(48)
-final class TriggerType {
+public final class TriggerType {
     private transient volatile String field = "value";
 
     public synchronized final String getField() {
         return field;
     }
-
-    public @TypeUseMarker long primitiveValue() {
-        return 48L;
-    }
-
-    public @TypeUseMarker DeclaredValueType declaredValue() {
-        return new DeclaredValueType(48L);
-    }
-
-    public String @TypeUseMarker [] arrayValue() {
-        return new String[0];
-    }
-}
-
-record DeclaredValueType(long value) {
 }
