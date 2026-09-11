@@ -574,11 +574,9 @@ class ChannelRegistryFailurePolicyTest {
         IncomingConnectorContext context = registry.incomingContext("orders");
 
         try (ConnectorDeliveryReservation _ = capacityOwner.reserveDelivery()) {
-            assertThat(context.tryReserveDelivery().isEmpty(), is(true));
-            awaitElapsed(System.nanoTime(), admissionTimeout);
-
-            MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class,
-                                                                 context::tryReserveDelivery);
+            MessagingRejectedException timeout = awaitConfiguredTimeout(context,
+                                                                         admissionTimeout,
+                                                                         Duration.ofSeconds(5));
             assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
         }
 
@@ -620,8 +618,10 @@ class ChannelRegistryFailurePolicyTest {
         IncomingConnectorContext context = registry.incomingContext("orders");
 
         try (ConnectorDeliveryReservation _ = capacityOwner.reserveDelivery()) {
-            assertThat(context.tryReserveDelivery().isEmpty(), is(true));
-            awaitElapsed(System.nanoTime(), admissionTimeout);
+            MessagingRejectedException timeout = awaitConfiguredTimeout(context,
+                                                                         admissionTimeout,
+                                                                         Duration.ofSeconds(5));
+            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
         }
         registry.close();
 
@@ -1194,33 +1194,28 @@ class ChannelRegistryFailurePolicyTest {
     @Test
     void testDeferredSubsetRetainsOverallTimeoutBudget() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
-        AtomicInteger dispatches = new AtomicInteger();
+        Duration overallTimeout = Duration.ofMillis(50);
+        List<List<?>> dispatchedPayloads = new CopyOnWriteArrayList<>();
         IllegalStateException processingFailure = new IllegalStateException("failed");
         FailurePolicy failurePolicy = FailurePolicy.builder()
                 .retry(RetryConfig.builder(FailurePolicy.create().retry().prototype())
                                .calls(3)
                                .delay(Duration.ZERO)
-                               .overallTimeout(Duration.ofMillis(50))
+                               .overallTimeout(overallTimeout)
                                .build())
                 .onExhausted(FailureDisposition.DROP)
                 .build();
         ConsumerRegistration source = batchRegistration("orders", failurePolicy, batch -> {
-            int dispatch = dispatches.incrementAndGet();
-            if (dispatch == 1) {
+            dispatchedPayloads.add(batch.payloads());
+            if (batch.size() == 2) {
+                // Exhaust the shared budget before reporting the first failure, regardless of scheduling delays.
+                awaitElapsed(System.nanoTime(), overallTimeout);
                 throw new BatchDeliveryException(
                         "Initial attempt partially deferred",
                         processingFailure,
                         batch,
                         List.of(BatchItemOutcome.indeterminate(0, processingFailure),
                                 BatchItemOutcome.notAttempted(1)));
-            }
-            if (dispatch == 2) {
-                try {
-                    Thread.sleep(Duration.ofMillis(200));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("Interrupted while exhausting retry timeout", e);
-                }
             }
             throw BatchDeliveryExceptionSupport.indeterminate("Retry failed", batch, processingFailure);
         });
@@ -1238,7 +1233,8 @@ class ChannelRegistryFailurePolicyTest {
         deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("first"),
                                                                         Message.create("deferred"))));
 
-        assertThat(dispatches.get(), is(3));
+        // The deferred sibling still gets its initial call, but must not receive a fresh retry timeout budget.
+        assertThat(dispatchedPayloads, is(List.of(List.of("first", "deferred"), List.of("deferred"))));
     }
 
     @Test

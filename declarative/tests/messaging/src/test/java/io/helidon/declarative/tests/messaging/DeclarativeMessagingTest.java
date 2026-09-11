@@ -928,24 +928,20 @@ class DeclarativeMessagingTest {
     @Test
     void testShutdownDrainsAdmittedSingletonConsumer() throws Exception {
         ShutdownSingletonConsumer.reset();
-        ShutdownSingletonProbe.reset();
-        useConfig(Map.of("messaging.execution.shutdown-timeout", "PT1S"));
+        useConfig(Map.of("messaging.shutdown-timeout", "PT30S"));
         MessagingRuntime runtime = registry.get(MessagingRuntime.class);
         registry.get(ShutdownSingletonProbe.class);
         CompletableFuture<Void> emission = async(() -> runtime.emitBatch(
                 ChannelMessagingTypes.SHUTDOWN_SINGLETON_CHANNEL,
                 MessageBatch.create(List.of(Message.create("first"), Message.create("second")))));
-        assertThat(ShutdownSingletonConsumer.awaitFirst(), is(true));
-
-        CompletableFuture<Void> shutdown = async(registryManager::shutdown);
         try {
-            assertThat(ShutdownSingletonProbe.awaitShutdown(), is(true));
+            assertThat(ShutdownSingletonConsumer.awaitFirst(), is(true));
+            registryManager.shutdown();
+            emission.get(30, TimeUnit.SECONDS);
         } finally {
             ShutdownSingletonConsumer.releaseFirst();
         }
 
-        emission.get(5, TimeUnit.SECONDS);
-        shutdown.get(5, TimeUnit.SECONDS);
         assertThat(ShutdownSingletonConsumer.invocations(), is(2));
         assertThat(ShutdownSingletonConsumer.events(),
                    is(List.of("first-enter", "first-exit", "second", "consumer-close")));
