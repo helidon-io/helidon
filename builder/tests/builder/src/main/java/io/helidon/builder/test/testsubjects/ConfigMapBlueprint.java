@@ -39,8 +39,12 @@ interface ConfigMapBlueprint {
     Optional<Map<String, Integer>> optionalNumbers();
 
     @Option.Configured
+    @Option.Singular
+    @Option.Decorator(ConfigMapSupport.OptionalListDecorator.class)
     Optional<List<String>> optionalList();
 
     @Option.Configured
+    @Option.Singular(value = "includeOptionalSetItem", withPrefix = false)
+    @Option.Decorator(ConfigMapSupport.OptionalSetDecorator.class)
     Optional<Set<String>> optionalSet();
 }

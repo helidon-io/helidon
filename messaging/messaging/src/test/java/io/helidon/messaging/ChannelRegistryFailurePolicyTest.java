@@ -1,0 +1,3271 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.messaging;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import io.helidon.common.Errors;
+import io.helidon.common.GenericType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.faulttolerance.RetryContext;
+import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingChannelConfig;
+import io.helidon.messaging.spi.MessagingConnector;
+import io.helidon.messaging.spi.MessagingIncomingConfig;
+import io.helidon.messaging.spi.MessagingOutgoingConfig;
+import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
+import io.helidon.messaging.spi.OutgoingChannel;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class ChannelRegistryFailurePolicyTest {
+    private static final String NON_PORTABLE_FAILURE_TYPE_HEADER =
+            "helidon_messaging_dead_letter_failure_type";
+    private static final String NON_PORTABLE_FAILURE_MESSAGE_HEADER =
+            "helidon_messaging_dead_letter_failure_message";
+
+    private final List<ChannelRegistry> startedRegistries = new ArrayList<>();
+    private final RegistryTestSupport registrySupport = new RegistryTestSupport();
+
+    @AfterEach
+    void closeStartedRegistries() {
+        Throwable closeFailure = null;
+        for (int i = startedRegistries.size() - 1; i >= 0; i--) {
+            try {
+                startedRegistries.get(i).close();
+            } catch (RuntimeException | Error e) {
+                if (closeFailure == null) {
+                    closeFailure = e;
+                } else if (closeFailure != e) {
+                    closeFailure.addSuppressed(e);
+                }
+            }
+        }
+        startedRegistries.clear();
+        registrySupport.close();
+        if (closeFailure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (closeFailure instanceof Error error) {
+            throw error;
+        }
+    }
+
+    @Test
+    void testGlobalAndChannelExecutionConfigurationMerge() {
+        Config config = yaml("""
+                messaging:
+                  queue-capacity: 3
+                  max-pending-admissions: 4
+                  max-pending-messages: 5
+                  max-in-flight-messages: 7
+                  admission-timeout: PT0.009S
+                  shutdown-timeout: PT0.01S
+                  incoming:
+                    orders:
+                      connector: test-in
+                      execution:
+                        queue-capacity: 12
+                        max-pending-messages: 14
+                        admission-timeout: PT0.018S
+                """);
+
+        MessagingConfig global = MessagingConfig.builder().config(config.get("messaging")).buildPrototype();
+        assertThat(global.queueCapacity(), is(3));
+        assertThat(global.maxPendingAdmissions(), is(4));
+        assertThat(global.maxPendingMessages(), is(5));
+        assertThat(global.maxInFlightMessages(), is(7));
+        assertThat(global.admissionTimeout(), is(Optional.of(Duration.ofMillis(9))));
+        assertThat(global.shutdownTimeout(), is(Duration.ofMillis(10)));
+
+        MessagingExecutionConfig overrides = MessagingConfigSupport.channelExecution(global, "orders");
+        MessagingConfigSupport.Execution orders = MessagingConfigSupport.execution(global, overrides);
+        assertThat(orders.queueCapacity(), is(12));
+        assertThat(orders.maxPendingAdmissions(), is(4));
+        assertThat(orders.maxPendingMessages(), is(14));
+        assertThat(orders.maxInFlightMessages(), is(7));
+        assertThat(orders.admissionTimeout(), is(Optional.of(Duration.ofMillis(18))));
+    }
+
+    @Test
+    void testLiteralDottedChannelExecutionConfigurationMerge() {
+        Config config = yaml("""
+                messaging:
+                  queue-capacity: 3
+                  max-pending-messages: 5
+                  incoming:
+                    orders~1v1:
+                      connector: test-in
+                      execution:
+                        queue-capacity: 12
+                        max-pending-messages: 14
+                """);
+
+        MessagingConfig global = MessagingConfig.builder().config(config.get("messaging")).buildPrototype();
+        MessagingConfigSupport.Execution orders = MessagingConfigSupport.execution(
+                global, MessagingConfigSupport.channelExecution(global, "orders.v1"));
+
+        assertThat(orders.queueCapacity(), is(12));
+        assertThat(orders.maxPendingMessages(), is(14));
+    }
+
+    @Test
+    void testIncomingExecutionWinsForSharedChannelName() {
+        ChannelRegistry registry = registry(List.of(), yaml("""
+                messaging:
+                  max-pending-messages: 9
+                  max-in-flight-messages: 8
+                  incoming:
+                    orders:
+                      connector: test-in
+                      execution:
+                        max-in-flight-messages: 3
+                  outgoing:
+                    orders:
+                      connector: test-out
+                      execution:
+                        max-pending-messages: 1
+                        max-in-flight-messages: 1
+                """), List.of(new TestIncomingConnector(), new TestOutgoingConnector()));
+        try {
+            assertThat(registry.incomingContext("orders").maxDeliveryMessages(), is(3));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testOutgoingOnlyChannelUsesOutgoingExecution() {
+        ChannelRegistry registry = registry(List.of(), yaml("""
+                messaging:
+                  max-pending-messages: 9
+                  max-in-flight-messages: 8
+                  outgoing:
+                    orders:
+                      connector: test-out
+                      execution:
+                        max-pending-messages: 4
+                        max-in-flight-messages: 2
+                """), List.of(new TestOutgoingConnector()));
+        try {
+            assertThat(registry.incomingContext("orders").maxDeliveryMessages(), is(2));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testEmptyIncomingExecutionFallsBackToRootNotOutgoing() {
+        ChannelRegistry registry = registry(List.of(), yaml("""
+                messaging:
+                  max-pending-messages: 6
+                  max-in-flight-messages: 5
+                  incoming:
+                    orders:
+                      connector: test-in
+                  outgoing:
+                    orders:
+                      connector: test-out
+                      execution:
+                        max-pending-messages: 1
+                        max-in-flight-messages: 1
+                """), List.of(new TestIncomingConnector(), new TestOutgoingConnector()));
+        try {
+            assertThat(registry.incomingContext("orders").maxDeliveryMessages(), is(5));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testChannelCannotOverrideGlobalShutdownTimeout() {
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(
+                        List.of(registration("orders", _ -> { })),
+                        yaml("""
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                      execution:
+                                        shutdown-timeout: PT1S
+                                """),
+                        List.of()));
+
+        assertThat(failure.getMessage(), containsString("must not override global shutdown-timeout"));
+    }
+
+    @Test
+    void testLiteralDottedChannelInvokesConfiguredConnectors() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        ChannelRegistry registry = registry(
+                List.of(),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders~1v1:
+                              connector: test-in
+                              destination: orders-v1
+                          outgoing:
+                            orders~1v1:
+                              connector: test-out
+                        """),
+                List.of(incoming, outgoing));
+        try {
+            assertThat(incoming.createdCount(), is(1));
+            assertThat(outgoing.createdCount(), is(1));
+            TestConnectorConfig connectorConfig = incoming.config("orders.v1");
+            assertThat(connectorConfig.channelName(), is("orders.v1"));
+            assertThat(connectorConfig.connector(), is("test-in"));
+            assertThat(connectorConfig.properties().get("destination"), is("orders-v1"));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testChannelConfigurationDoesNotMergeConnectorConfiguration() {
+        TestIncomingConnector incoming = new TestIncomingConnector("acme.v1");
+        ChannelRegistry registry = registry(
+                List.of(registration("inherited", _ -> { }),
+                        registration("overridden", _ -> { }),
+                        registration("empty", _ -> { })),
+                yaml("""
+                        messaging:
+                          connector:
+                            acme~1v1:
+                              type: test
+                              index: 0
+                              endpoint: https://default.example.test
+                              items: [a, b, c]
+                              authentication:
+                                username: connector-user
+                                password: connector-password
+                              failure: [ignored]
+                          incoming:
+                            inherited:
+                              connector: acme.v1
+                            overridden:
+                              connector: acme.v1
+                              endpoint: https://channel.example.test
+                              items: [x]
+                              authentication:
+                                username: channel-user
+                              failure:
+                                retry:
+                                  calls: 1
+                            empty:
+                              connector: acme.v1
+                              items: []
+                        """),
+                List.of(incoming));
+        try {
+            assertThat(incoming.createdCount(), is(3));
+
+            TestConnectorConfig inherited = incoming.config("inherited");
+            assertThat(inherited.connector(), is("acme.v1"));
+            assertThat(inherited.config().get("endpoint").exists(), is(false));
+            assertThat(inherited.config().get("authentication").exists(), is(false));
+            assertThat(inherited.config().get("items").exists(), is(false));
+            assertThat(inherited.config().get("failure").exists(), is(false));
+
+            TestConnectorConfig overridden = incoming.config("overridden");
+            assertThat(overridden.connector(), is("acme.v1"));
+            assertThat(overridden.properties().get("endpoint"), is("https://channel.example.test"));
+            assertThat(overridden.properties().get("authentication.username"), is("channel-user"));
+            assertThat(overridden.config().get("authentication.password").exists(), is(false));
+            assertThat(overridden.config().get("items").asList(String.class).get(), is(List.of("x")));
+            assertThat(overridden.config().get("failure.retry.calls").asInt().orElseThrow(), is(1));
+
+            Config emptyItems = incoming.config("empty").config().get("items");
+            assertThat(emptyItems.exists(), is(true));
+            assertThat(emptyItems.type(), is(Config.Type.LIST));
+            assertThat(emptyItems.asList(String.class).get(), is(List.of()));
+            assertThat(incoming.config("empty").config().get("failure").exists(), is(false));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testChannelConfigurationPreservesHybridValues() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        ConfigNode.ObjectNode channel = ConfigNode.ObjectNode.builder()
+                .addValue("connector", "test-in")
+                .addObject("settings", ConfigNode.ObjectNode.builder()
+                        .value("channel")
+                        .addValue("child", "nested")
+                        .build())
+                .addList("items", ConfigNode.ListNode.builder()
+                        .value("channel-list")
+                        .addValue("x")
+                        .build())
+                .build();
+        ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
+                .addObject("messaging", ConfigNode.ObjectNode.builder()
+                        .addObject("connector", ConfigNode.ObjectNode.builder()
+                                .addObject("test-in", ConfigNode.ObjectNode.builder()
+                                        .addValue("type", "test")
+                                        .addValue("index", "0")
+                                        .build())
+                                .build())
+                        .addObject("incoming", ConfigNode.ObjectNode.builder()
+                                .addObject("orders", channel)
+                                .build())
+                        .build())
+                .build();
+        Config config = Config.just(ConfigSources.create(root));
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", _ -> { })),
+                config,
+                List.of(incoming));
+        try {
+            Config settings = incoming.config("orders").config().get("settings");
+            assertThat(settings.type(), is(Config.Type.OBJECT));
+            assertThat(settings.asString().get(), is("channel"));
+            assertThat(settings.get("child").asString().get(), is("nested"));
+            Config items = incoming.config("orders").config().get("items");
+            assertThat(items.type(), is(Config.Type.LIST));
+            assertThat(items.asString().get(), is("channel-list"));
+            assertThat(items.asList(String.class).get(), is(List.of("x")));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testProcessorRouteBoundsConnectorDeliveryAndUnlimitedRetryCompletes() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger processorAttempts = new AtomicInteger();
+        List<String> received = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = registry(
+                List.of(passThroughProcessor("source", "target", processorAttempts),
+                        registration("target", message -> received.add((String) message.entity()))),
+                yaml("""
+                        messaging:
+                          incoming:
+                            source:
+                              execution:
+                                max-pending-messages: 2
+                                max-in-flight-messages: 2
+                              connector: test-in
+                          outgoing:
+                            target:
+                              connector: test-out
+                              execution:
+                                max-pending-messages: 8
+                                max-in-flight-messages: 1
+                        """),
+                List.of(incoming, new TestOutgoingConnector()));
+        start(registry);
+        try {
+            IncomingConnectorContext context = incoming.context("source");
+            int advertised = context.maxDeliveryMessages();
+            List<Message<String>> messages = new ArrayList<>(advertised);
+            for (int i = 0; i < advertised; i++) {
+                messages.add(Message.create("message-" + i));
+            }
+            try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
+                 ConnectorDelivery delivery = reservation.start(MessageBatch.create(messages))) {
+                assertThat(delivery.await(Duration.ofSeconds(2)), is(true));
+            }
+
+            assertThat(advertised, is(1));
+            assertThat(processorAttempts.get(), is(1));
+            assertThat(received, is(List.of("message-0")));
+
+            try (ConnectorDeliveryReservation reservation = context.reserveDelivery()) {
+                MessagingRejectedException oversized = assertThrows(
+                        MessagingRejectedException.class,
+                        () -> reservation.start(MessageBatch.create(List.of(Message.create("one"),
+                                                                          Message.create("two")))));
+                assertThat(oversized.reason(), is(MessagingRejectedException.Reason.OVERSIZED));
+            }
+            assertThat(processorAttempts.get(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testTryReserveDeliveryUsesConfiguredSharedAdmissionTimeoutBudget() {
+        Duration configuredTimeout = Duration.ofMillis(500);
+        Duration testTimeout = Duration.ofSeconds(5);
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", _ -> { })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              execution:
+                                max-pending-messages: 1
+                                max-in-flight-messages: 1
+                                admission-timeout: %s
+                              connector: test-in
+                        """.formatted(configuredTimeout)),
+                List.of(incoming));
+        start(registry);
+        IncomingConnectorContext context = registry.incomingContext("orders");
+
+        try (ConnectorDeliveryReservation held = context.reserveDelivery()) {
+            FutureTask<MessagingRejectedException> timeoutProbe = new FutureTask<>(
+                    () -> awaitConfiguredTimeout(context, configuredTimeout, testTimeout));
+            MessagingRejectedException timeout = awaitTimeoutProbe(timeoutProbe);
+            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+
+            MessagingRejectedException stickyTimeout = assertThrows(MessagingRejectedException.class,
+                                                                      context::tryReserveDelivery);
+            assertThat(stickyTimeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+        }
+
+        try (ConnectorDeliveryReservation _ = context.reserveDelivery()) {
+            // Reset the expired non-blocking budget and release the reservation.
+        }
+        var available = context.tryReserveDelivery();
+        assertThat(available.isPresent(), is(true));
+        try (ConnectorDeliveryReservation _ = available.orElseThrow()) {
+            // Release the successful non-blocking reservation.
+        }
+    }
+
+    @Test
+    void testTryReservationDoesNotWaitAndBlockingSuccessResetsConcurrentBudget() throws Exception {
+        Duration admissionTimeout = Duration.ofHours(1);
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", _ -> { })),
+                yaml("""
+                        messaging:
+                          max-pending-messages: 1
+                          max-in-flight-messages: 1
+                          admission-timeout: %s
+                        """.formatted(admissionTimeout)),
+                List.of());
+        start(registry);
+        IncomingConnectorContext capacityOwner = registry.incomingContext("orders");
+        IncomingConnectorContext context = registry.incomingContext("orders");
+        AtomicReference<ConnectorDeliveryReservation> held =
+                new AtomicReference<>(capacityOwner.reserveDelivery());
+        AtomicReference<ConnectorDeliveryReservation> blockingResult = new AtomicReference<>();
+        FutureTask<Void> blockingTask = new FutureTask<>(() -> {
+            blockingResult.set(context.reserveDelivery());
+            return null;
+        });
+        Thread blockingThread = Thread.ofVirtual()
+                .name("messaging-blocking-connector-reservation")
+                .unstarted(blockingTask);
+        AtomicReference<Optional<ConnectorDeliveryReservation>> tryResult = new AtomicReference<>();
+        FutureTask<Void> tryTask = new FutureTask<>(() -> {
+            tryResult.set(context.tryReserveDelivery());
+            return null;
+        });
+        Thread tryThread = Thread.ofVirtual()
+                .name("messaging-non-blocking-connector-reservation")
+                .unstarted(tryTask);
+
+        try {
+            blockingThread.start();
+            awaitWaiting(blockingTask, blockingThread, "blocking connector reservation");
+            tryThread.start();
+
+            tryTask.get(5, TimeUnit.SECONDS);
+            assertThat(tryResult.get().isEmpty(), is(true));
+
+            held.getAndSet(null).close();
+            blockingTask.get(5, TimeUnit.SECONDS);
+            blockingResult.getAndSet(null).close();
+        } finally {
+            try {
+                ConnectorDeliveryReservation reservation = held.getAndSet(null);
+                if (reservation != null) {
+                    reservation.close();
+                }
+            } finally {
+                blockingTask.cancel(true);
+                tryTask.cancel(true);
+                blockingThread.interrupt();
+                tryThread.interrupt();
+                try {
+                    join(blockingThread, "blocking reservation thread");
+                } finally {
+                    try {
+                        join(tryThread, "non-blocking reservation thread");
+                    } finally {
+                        try {
+                            ConnectorDeliveryReservation reservation = blockingResult.getAndSet(null);
+                            if (reservation != null) {
+                                reservation.close();
+                            }
+                        } finally {
+                            Optional<ConnectorDeliveryReservation> attempted = tryResult.get();
+                            if (attempted != null && attempted.isPresent()) {
+                                attempted.orElseThrow().close();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void testTryReserveDeliveryStartsBudgetWhenCapacityIsUnavailable() {
+        Duration admissionTimeout = Duration.ofMillis(10);
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", _ -> { })),
+                yaml("""
+                        messaging:
+                          max-pending-messages: 1
+                          max-in-flight-messages: 1
+                          admission-timeout: %s
+                        """.formatted(admissionTimeout)),
+                List.of());
+        start(registry);
+        IncomingConnectorContext capacityOwner = registry.incomingContext("orders");
+        IncomingConnectorContext context = registry.incomingContext("orders");
+
+        try (ConnectorDeliveryReservation _ = capacityOwner.reserveDelivery()) {
+            MessagingRejectedException timeout = awaitConfiguredTimeout(context,
+                                                                         admissionTimeout,
+                                                                         Duration.ofSeconds(5));
+            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+        }
+
+        try (ConnectorDeliveryReservation _ = context.reserveDelivery()) {
+            // A successful blocking reservation resets the expired non-blocking budget.
+        }
+    }
+
+    @Test
+    void testTryReserveDeliveryReportsOwnedShutdown() {
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", _ -> { })),
+                yaml("""
+                        messaging:
+                          admission-timeout: PT0.000000001S
+                        """),
+                List.of());
+        start(registry);
+        IncomingConnectorContext context = registry.incomingContext("orders");
+        registry.close();
+
+        MessagingRejectedException shutdown = assertThrows(MessagingRejectedException.class,
+                                                             context::tryReserveDelivery);
+        assertThat(shutdown.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
+    }
+
+    @Test
+    void testExpiredTryReserveDeliveryBudgetPrecedesShutdown() {
+        Duration admissionTimeout = Duration.ofMillis(10);
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", _ -> { })),
+                yaml("""
+                        messaging:
+                          admission-timeout: %s
+                        """.formatted(admissionTimeout)),
+                List.of());
+        start(registry);
+        IncomingConnectorContext capacityOwner = registry.incomingContext("orders");
+        IncomingConnectorContext context = registry.incomingContext("orders");
+
+        try (ConnectorDeliveryReservation _ = capacityOwner.reserveDelivery()) {
+            MessagingRejectedException timeout = awaitConfiguredTimeout(context,
+                                                                         admissionTimeout,
+                                                                         Duration.ofSeconds(5));
+            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+        }
+        registry.close();
+
+        MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class,
+                                                             context::tryReserveDelivery);
+        assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
+    }
+
+    @Test
+    void testTryReserveDeliveryReportsDispatchMisuseBeforeStartingBudget() {
+        AtomicReference<IncomingConnectorContext> contextReference = new AtomicReference<>();
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", _ -> contextReference.get().tryReserveDelivery())),
+                yaml("""
+                        messaging:
+                          admission-timeout: PT0.000000001S
+                        """),
+                List.of());
+        start(registry);
+        IncomingConnectorContext context = registry.incomingContext("orders");
+        contextReference.set(context);
+
+        MessagingException dispatchMisuse = assertThrows(MessagingException.class,
+                                                           () -> registry.emit("orders", Message.create("test")));
+        assertThat(dispatchMisuse.getCause(), instanceOf(MessagingException.class));
+        assertThat(dispatchMisuse.getCause().getMessage(),
+                   containsString("cannot be reserved from messaging dispatch"));
+        try (ConnectorDeliveryReservation _ = context.tryReserveDelivery().orElseThrow()) {
+            // Dispatch misuse must not start the one-nanosecond timeout budget.
+        }
+    }
+
+    @Test
+    void testCoordinatorKeepsLargeFailureDiagnosticsLocalAndSettlesDeadLetter() throws InterruptedException {
+        int maxPortableHeaderLength = 64;
+        String failureMessage = "credential=top-secret\r\nforged-header=true\n" + "x".repeat(4096);
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector(maxPortableHeaderLength);
+        AtomicInteger attempts = new AtomicInteger();
+        ChannelRegistry registry = registry(List.of(registration("orders", _ -> {
+                                attempts.incrementAndGet();
+                                throw new IllegalStateException(failureMessage);
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          execution:
+                                            queue-capacity: 0
+                                            max-pending-messages: 1
+                                            max-in-flight-messages: 1
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              calls: 2
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+        Message<String> original = Message.builder("order-1")
+                .header("trace-id", "trace-1")
+                .localMetadata(MessageMetadata.builder()
+                                       .set("application.local.delivery", "delivery-1")
+                                       .set(DeadLetterMessage.FAILURE_TYPE_METADATA, "spoofed-type")
+                                       .set(DeadLetterMessage.FAILURE_MESSAGE_METADATA, "spoofed-message")
+                                       .build())
+                .build();
+
+        deliver(incoming.context("orders"), MessageBatch.create(original));
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-2")));
+
+        TestConnectorConfig connectorConfig = incoming.config("orders");
+        assertThat(connectorConfig.config().get("failure.retry.calls").asInt().orElseThrow(), is(2));
+        assertThat(attempts.get(), is(4));
+        assertThat(outgoing.sendCount(), is(2));
+        assertThat(outgoing.messages().size(), is(2));
+        DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
+        assertThat(deadLetter.originalMessage(), sameInstance(original));
+        assertThat(deadLetter.attempts(), is(2));
+        assertThat(deadLetter.failureType(), is(IllegalStateException.class.getName()));
+        assertThat(deadLetter.failureMessage(), is(failureMessage));
+        assertThat(deadLetter.localMetadata().text("application.local.delivery").orElseThrow(), is("delivery-1"));
+        assertThat(deadLetter.localMetadata().text(DeadLetterMessage.FAILURE_TYPE_METADATA).orElseThrow(),
+                   is(IllegalStateException.class.getName()));
+        assertThat(deadLetter.localMetadata().text(DeadLetterMessage.FAILURE_MESSAGE_METADATA).orElseThrow(),
+                   is(failureMessage));
+        assertThat(deadLetter.headers().contains(NON_PORTABLE_FAILURE_TYPE_HEADER), is(false));
+        assertThat(deadLetter.headers().contains(NON_PORTABLE_FAILURE_MESSAGE_HEADER), is(false));
+        assertThat(deadLetter.headers().entries().stream()
+                           .map(MessageHeader::value)
+                           .filter(MessageHeaderValue.TextValue.class::isInstance)
+                           .map(MessageHeaderValue.TextValue.class::cast)
+                           .allMatch(value -> value.value().length() <= maxPortableHeaderLength), is(true));
+        assertThat(deadLetter.headers().entries().stream()
+                           .map(MessageHeader::value)
+                           .filter(MessageHeaderValue.TextValue.class::isInstance)
+                           .map(MessageHeaderValue.TextValue.class::cast)
+                           .noneMatch(value -> value.value().contains("top-secret")), is(true));
+    }
+
+    @Test
+    void testUnlimitedPreDispatchFailureTerminatesAndRetainsCapacityUntilClose() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        AtomicInteger entityCalls = new AtomicInteger();
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
+                                handled.add((String) message.entity());
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          execution:
+                                            queue-capacity: 0
+                                            max-pending-messages: 2
+                                            max-in-flight-messages: 1
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 2147483647
+                                              delay: PT1H
+                                              overall-timeout: PT9223372036.854775807S
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        IncomingConnectorContext context = incoming.context("orders");
+        MessageBatch<String> failedBatch = MessageBatch.create(new Message<>() {
+            @Override
+            public String entity() {
+                entityCalls.incrementAndGet();
+                throw new MessagingException("entity unavailable");
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.builder().add("message-id", "poison-1").build();
+            }
+        });
+        MessageBatch<String> goodBatch = MessageBatch.create(Message.create("good"));
+        IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
+
+        try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
+             ConnectorDelivery delivery = reservation.startFailed(failedBatch, mappingFailure)) {
+            BatchDeliveryException terminalFailure = assertThrows(
+                    BatchDeliveryException.class,
+                    () -> delivery.await(Duration.ofSeconds(2)));
+            assertThat(delivery.isDone(), is(true));
+            assertThat(terminalFailure.batch(), sameInstance(failedBatch));
+            assertThat(terminalFailure.getCause(), sameInstance(mappingFailure));
+            assertThat(handled, is(List.of()));
+            assertThat(entityCalls.get(), is(0));
+
+            try (ConnectorDeliveryReservation blocked = context.reserveDelivery()) {
+                assertThat(blocked.tryStart(goodBatch).isEmpty(), is(true));
+                delivery.close();
+                try (ConnectorDelivery goodDelivery = blocked.tryStart(goodBatch).orElseThrow()) {
+                    assertThat(goodDelivery.await(Duration.ofSeconds(2)), is(true));
+                }
+            }
+        }
+
+        assertThat(handled, is(List.of("good")));
+    }
+
+    @Test
+    void testPreDispatchEntityFailureReachesLocalDeadLetterEnvelopeConsumer() throws InterruptedException {
+        assertPreDispatchEntityFailureReachesLocalConsumer(
+                new GenericType<DeadLetterMessage<String>>() { });
+    }
+
+    @Test
+    void testPreDispatchEntityFailureReachesLocalMessageEnvelopeConsumer() throws InterruptedException {
+        assertPreDispatchEntityFailureReachesLocalConsumer(
+                new GenericType<Message<String>>() { });
+    }
+
+    private void assertPreDispatchEntityFailureReachesLocalConsumer(GenericType<?> envelopeGenericType)
+            throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger entityCalls = new AtomicInteger();
+        Message<String> unavailable = new Message<>() {
+            @Override
+            public String entity() {
+                entityCalls.incrementAndGet();
+                throw new MessagingException("entity unavailable");
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.builder().add("message-id", "poison-1").build();
+            }
+        };
+        AtomicReference<Message<?>> routed = new AtomicReference<>();
+        ConsumerRegistration deadLetterConsumer = registration(
+                "orders-dlq",
+                new GenericType<String>() { },
+                envelopeGenericType,
+                routed::set);
+        ChannelRegistry registry = registry(
+                List.of(registration("orders", _ -> {
+                            throw new AssertionError("Unavailable payload must not reach handlers");
+                        }),
+                        deadLetterConsumer),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                              failure:
+                                retry:
+                                  calls: 1
+                                on-exhausted: DEAD_LETTER
+                                dead-letter:
+                                  channel: orders-dlq
+                        """),
+                List.of(incoming));
+        start(registry);
+        try {
+            IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
+            MessageBatch<String> failedBatch = MessageBatch.create(unavailable);
+            assertThat(entityCalls.get(), is(0));
+
+            deliverFailed(incoming.context("orders"), failedBatch, mappingFailure);
+
+            DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) routed.get();
+            assertThat(deadLetter.originalMessage(), sameInstance(unavailable));
+            assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+            assertThat(entityCalls.get(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testPreDispatchFailureDeadLettersWithoutSyntheticRetriesOrHandlerInvocation() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        AtomicInteger handlerCalls = new AtomicInteger();
+        ChannelRegistry registry = registry(List.of(registration("orders", _ -> {
+                                handlerCalls.incrementAndGet();
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          execution:
+                                            max-pending-messages: 2
+                                            max-in-flight-messages: 2
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              calls: 3
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          execution:
+                                            max-pending-messages: 8
+                                            max-in-flight-messages: 1
+                                          connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+        try {
+            IncomingConnectorContext context = incoming.context("orders");
+            assertThat(context.maxDeliveryMessages(), is(1));
+            Message<String> rejected = Message.builder("unmapped").header("message-id", "poison-1").build();
+            IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
+
+            deliverFailed(context, MessageBatch.create(rejected), mappingFailure);
+
+            assertThat(handlerCalls.get(), is(0));
+            assertThat(outgoing.messages().size(), is(1));
+            DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
+            assertThat(deadLetter.originalMessage(), sameInstance(rejected));
+            assertThat(deadLetter.attempts(), is(1));
+            assertThat(deadLetter.failureType(), is(mappingFailure.getClass().getName()));
+            assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testPreDispatchFailureDropsWithoutInvokingHandlersOrFailingGraph() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
+                                handled.add((String) message.entity());
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DROP
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        IncomingConnectorContext context = incoming.context("orders");
+
+        deliverFailed(context,
+                      MessageBatch.create(Message.create("unmapped")),
+                      new IllegalStateException("message mapping failed"));
+        deliver(context, MessageBatch.create(Message.create("good")));
+
+        assertThat(handled, is(List.of("good")));
+    }
+
+    @Test
+    void testStructuredPreDispatchFailureDeadLettersBeforeDispatchingDeferredSiblings() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        AtomicBoolean failureSettledBeforeDeferred = new AtomicBoolean();
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
+                                handled.add((String) message.entity());
+                                failureSettledBeforeDeferred.compareAndSet(false, outgoing.messages().size() == 1);
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"),
+                                                                 Message.create("unmapped"),
+                                                                 Message.create("third")));
+        IllegalStateException mappingFailure = new IllegalStateException("mapping failed");
+
+        deliverFailed(incoming.context("orders"), root, mixedPreDispatchFailure(root, mappingFailure));
+
+        assertThat(handled, is(List.of("first", "third")));
+        assertThat(failureSettledBeforeDeferred.get(), is(true));
+        assertThat(outgoing.messages().size(), is(1));
+        DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
+        assertThat(deadLetter.originalMessage(), sameInstance(root.get(1)));
+        assertThat(deadLetter.attempts(), is(1));
+        assertThat(deadLetter.failureType(), is(mappingFailure.getClass().getName()));
+        assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+    }
+
+    @Test
+    void testStructuredPreDispatchFailStopsBeforeDeferredSiblings() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
+                                handled.add((String) message.entity());
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"),
+                                                                 Message.create("unmapped"),
+                                                                 Message.create("third")));
+        IllegalStateException mappingFailure = new IllegalStateException("mapping failed");
+
+        BatchDeliveryException terminal = assertThrows(
+                BatchDeliveryException.class,
+                () -> deliverFailed(incoming.context("orders"), root, mixedPreDispatchFailure(root, mappingFailure)));
+
+        assertThat(terminal.batch(), sameInstance(root));
+        assertThat(terminal.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(List.of(BatchItemStatus.NOT_ATTEMPTED,
+                              BatchItemStatus.FAILED,
+                              BatchItemStatus.NOT_ATTEMPTED)));
+        assertThat(terminal.outcome(1).failure().orElseThrow(), sameInstance(mappingFailure));
+        assertThat(handled, is(List.of()));
+    }
+
+    @Test
+    void testAllNotAttemptedPreDispatchFailureDeadLettersAfterOneAttempt() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        AtomicInteger handlerCalls = new AtomicInteger();
+        ChannelRegistry registry = registry(List.of(registration("orders", _ -> {
+                                handlerCalls.incrementAndGet();
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              calls: 2
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"), Message.create("second")));
+        IllegalStateException mappingFailure = new IllegalStateException("mapping failed before dispatch");
+
+        try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
+             ConnectorDelivery delivery = reservation.startFailed(
+                     root,
+                     BatchDeliveryExceptionSupport.notAttempted("Mapping", root, mappingFailure))) {
+            assertThat(delivery.await(Duration.ofSeconds(2)), is(true));
+        }
+
+        assertThat(handlerCalls.get(), is(0));
+        assertThat(outgoing.messages().size(), is(2));
+        for (int i = 0; i < root.size(); i++) {
+            DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().get(i);
+            assertThat(deadLetter.originalMessage(), sameInstance(root.get(i)));
+            assertThat(deadLetter.attempts(), is(1));
+            assertThat(deadLetter.failureType(), is(mappingFailure.getClass().getName()));
+            assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+        }
+    }
+
+    @Test
+    void testCoordinatorDeadLettersCustomMessageImplementations() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        ChannelRegistry registry = registry(List.of(batchRegistration("orders", _ -> {
+                                throw new IllegalStateException("handler failed");
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+        Message<String> first = customMessage("order-1");
+        Message<String> second = customMessage("order-2");
+
+        deliver(incoming.context("orders"), MessageBatch.create(List.of(first, second)));
+
+        assertThat(outgoing.messages().size(), is(2));
+        assertThat(outgoing.messages().stream().allMatch(DeadLetterMessage.class::isInstance), is(true));
+        assertThat(((DeadLetterMessage<?>) outgoing.messages().get(0)).originalMessage(), sameInstance(first));
+        assertThat(((DeadLetterMessage<?>) outgoing.messages().get(1)).originalMessage(), sameInstance(second));
+    }
+
+    @Test
+    void testCoordinatorSettlesAttemptedSubsetBeforeDeferredSubset() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        AtomicBoolean failedSubsetSettledBeforeDeferred = new AtomicBoolean();
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
+                                String entity = (String) message.entity();
+                                handled.add(entity);
+                                if (entity.equals("poison")) {
+                                    throw new IllegalStateException("application failed");
+                                }
+                                if (entity.equals("deferred")) {
+                                    failedSubsetSettledBeforeDeferred.set(outgoing.messages().size() == 1);
+                                }
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("first"),
+                                                                        Message.create("poison"),
+                                                                        Message.create("deferred"))));
+
+        assertThat(handled, is(List.of("first", "poison", "deferred")));
+        assertThat(failedSubsetSettledBeforeDeferred.get(), is(true));
+        assertThat(outgoing.messages().size(), is(1));
+        DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
+        assertThat(deadLetter.entity(), is("poison"));
+        assertThat(deadLetter.failureMessage(), is("application failed"));
+    }
+
+    @Test
+    void testDeferredSubsetRetainsItsPriorFailedAttemptCount() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger dispatches = new AtomicInteger();
+        IllegalStateException processingFailure = new IllegalStateException("failed");
+        ConsumerRegistration source = batchRegistration("orders", batch -> {
+            int dispatch = dispatches.incrementAndGet();
+            if (dispatch == 1) {
+                throw BatchDeliveryExceptionSupport.indeterminate("First attempt", batch, processingFailure);
+            }
+            if (dispatch == 2) {
+                throw new BatchDeliveryException(
+                        "Retry partially deferred",
+                        processingFailure,
+                        batch,
+                        List.of(BatchItemOutcome.indeterminate(0, processingFailure),
+                                BatchItemOutcome.notAttempted(1)));
+            }
+            throw BatchDeliveryExceptionSupport.indeterminate("Deferred attempt", batch, processingFailure);
+        });
+        ChannelRegistry registry = registry(List.of(source),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              calls: 2
+                                            on-exhausted: DROP
+                                    """),
+                            List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("first"),
+                                                                        Message.create("deferred"))));
+
+        assertThat(dispatches.get(), is(3));
+    }
+
+    @Test
+    void testDeferredSubsetRetainsOverallTimeoutBudget() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        Duration overallTimeout = Duration.ofMillis(50);
+        List<List<?>> dispatchedPayloads = new CopyOnWriteArrayList<>();
+        IllegalStateException processingFailure = new IllegalStateException("failed");
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                               .calls(3)
+                               .delay(Duration.ZERO)
+                               .overallTimeout(overallTimeout)
+                               .build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ConsumerRegistration source = batchRegistration("orders", failurePolicy, batch -> {
+            dispatchedPayloads.add(batch.payloads());
+            if (batch.size() == 2) {
+                // Exhaust the shared budget before reporting the first failure, regardless of scheduling delays.
+                awaitElapsed(System.nanoTime(), overallTimeout);
+                throw new BatchDeliveryException(
+                        "Initial attempt partially deferred",
+                        processingFailure,
+                        batch,
+                        List.of(BatchItemOutcome.indeterminate(0, processingFailure),
+                                BatchItemOutcome.notAttempted(1)));
+            }
+            throw BatchDeliveryExceptionSupport.indeterminate("Retry failed", batch, processingFailure);
+        });
+        ChannelRegistry registry = registry(
+                List.of(source),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("first"),
+                                                                        Message.create("deferred"))));
+
+        // The deferred sibling still gets its initial call, but must not receive a fresh retry timeout budget.
+        assertThat(dispatchedPayloads, is(List.of(List.of("first", "deferred"), List.of("deferred"))));
+    }
+
+    @Test
+    void testMultipleSubsetRetriesPreserveRootIdentityAndOutcomeIndexes() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger dispatches = new AtomicInteger();
+        List<MessageBatch<?>> seen = new CopyOnWriteArrayList<>();
+        IllegalStateException firstFailure = new IllegalStateException("first failed");
+        IllegalStateException thirdFailure = new IllegalStateException("third failed");
+        ConsumerRegistration source = batchRegistration("orders", batch -> {
+            seen.add(batch);
+            switch (dispatches.incrementAndGet()) {
+            case 1 -> throw new BatchDeliveryException(
+                    "Initial partial failure",
+                    firstFailure,
+                    batch,
+                    List.of(BatchItemOutcome.succeeded(0),
+                            BatchItemOutcome.indeterminate(1, firstFailure),
+                            BatchItemOutcome.notAttempted(2),
+                            BatchItemOutcome.indeterminate(3, thirdFailure)));
+            case 2 -> throw new BatchDeliveryException(
+                    "Retry retained only third",
+                    thirdFailure,
+                    batch,
+                    List.of(BatchItemOutcome.succeeded(0),
+                            BatchItemOutcome.indeterminate(1, thirdFailure)));
+            default -> {
+            }
+            }
+        });
+        ChannelRegistry registry = registry(List.of(source),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              delay: PT0.001S
+                                              calls: 3
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.<String>builder()
+                .id("root-delivery")
+                .messages(List.of(Message.create("zero"),
+                                  Message.create("one"),
+                                  Message.create("two"),
+                                  Message.create("three")))
+                .build();
+
+        deliver(incoming.context("orders"), root);
+
+        assertThat(seen.stream().map(MessageBatch::id).toList(),
+                   is(List.of("root-delivery", "root-delivery", "root-delivery", "root-delivery")));
+        assertThat(seen.stream().allMatch(batch -> batch == root || batch.isRetainedSubsetOf(root)), is(true));
+        assertThat(seen.stream().map(MessageBatch::payloads).toList(),
+                   is(List.of(List.of("zero", "one", "two", "three"),
+                              List.of("one", "three"),
+                              List.of("three"),
+                              List.of("two"))));
+    }
+
+    @Test
+    void testPartialTerminalDropProcessesDeferredSubset() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
+                                String entity = (String) message.entity();
+                                handled.add(entity);
+                                if (entity.equals("poison")) {
+                                    throw new IllegalStateException("failed");
+                                }
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DROP
+                                    """),
+                            List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("poison"),
+                                                                        Message.create("deferred"))));
+
+        assertThat(handled, is(List.of("poison", "deferred")));
+    }
+
+    @Test
+    void testAllNotAttemptedBatchConsumesPolicyAttempt() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        ConsumerRegistration source = batchRegistration("orders", batch -> {
+            attempts.incrementAndGet();
+            throw BatchDeliveryExceptionSupport.notAttempted(
+                    "Source deferred every item",
+                    batch,
+                    new MessagingException("not admitted"));
+        });
+        ChannelRegistry registry = registry(List.of(source),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DROP
+                                    """),
+                            List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("one"),
+                                                                        Message.create("two"))));
+
+        assertThat(attempts.get(), is(1));
+    }
+
+    @Test
+    void testTerminalFailStopsBeforeDeferredSubsetAndReportsOriginalBatch() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        IllegalStateException processingFailure = new IllegalStateException("poison failed");
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
+                                String entity = (String) message.entity();
+                                handled.add(entity);
+                                if (entity.equals("poison")) {
+                                    throw processingFailure;
+                                }
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"),
+                                                                 Message.create("poison"),
+                                                                 Message.create("deferred")));
+
+        BatchDeliveryException failure = assertThrows(BatchDeliveryException.class,
+                                                       () -> deliver(incoming.context("orders"), root));
+
+        assertThat(failure.batch(), sameInstance(root));
+        assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(List.of(BatchItemStatus.SUCCEEDED,
+                              BatchItemStatus.INDETERMINATE,
+                              BatchItemStatus.NOT_ATTEMPTED)));
+        assertThat(failure.outcome(1).failure().orElseThrow(), sameInstance(processingFailure));
+        assertThat(handled, is(List.of("first", "poison")));
+    }
+
+    @Test
+    void testTryStartTerminalFailureReportsExactRetainedBatch() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        IllegalStateException processingFailure = new IllegalStateException("poison failed");
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = registry(List.of(registration("orders", message -> {
+                                String entity = (String) message.entity();
+                                handled.add(entity);
+                                if (entity.equals("poison")) {
+                                    throw processingFailure;
+                                }
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"),
+                                                                 Message.create("poison"),
+                                                                 Message.create("deferred")));
+
+        BatchDeliveryException failure;
+        try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
+             ConnectorDelivery delivery = reservation.tryStart(root).orElseThrow()) {
+            failure = assertThrows(BatchDeliveryException.class,
+                                   () -> delivery.await(Duration.ofSeconds(2)));
+        }
+
+        assertThat(failure.batch(), sameInstance(root));
+        assertThat(failure.outcomes().stream().map(BatchItemOutcome::index).toList(), is(List.of(0, 1, 2)));
+        assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(List.of(BatchItemStatus.SUCCEEDED,
+                              BatchItemStatus.INDETERMINATE,
+                              BatchItemStatus.NOT_ATTEMPTED)));
+        assertThat(failure.outcome(1).failure().orElseThrow(), sameInstance(processingFailure));
+        assertThat(handled, is(List.of("first", "poison")));
+    }
+
+    @Test
+    void testDefaultRetryCanUseDropDisposition() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        ChannelRegistry registry = registry(List.of(registration("orders", _ -> { })),
+                                            yaml("""
+                                                    messaging:
+                                                      incoming:
+                                                        orders:
+                                                          connector: test-in
+                                                          failure:
+                                                            on-exhausted: DROP
+                                                    """),
+                                            List.of(incoming));
+        try {
+            assertThat(incoming.createdCount(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testImperativeFailureOverridesDoNotRequireRawConfiguration() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        MessagingIncomingConfig channel = MessagingIncomingConfig.builder()
+                .connector("test-in")
+                .channelName("orders")
+                .failure(MessagingFailureConfig.builder()
+                                 .retry(Retry.builder().calls(2).delay(Duration.ZERO).build())
+                                 .onExhausted(FailureDisposition.DROP)
+                                 .build())
+                .build();
+        MessagingConfig config = MessagingConfig.builder()
+                .addConnector(incoming)
+                .incoming(Map.of("orders", channel))
+                .addConsumerRegistration(registration("orders", _ -> {
+                    attempts.incrementAndGet();
+                    throw new IllegalStateException("application failure");
+                }))
+                .buildPrototype();
+        assertThat(channel.config().isEmpty(), is(true));
+
+        ChannelRegistry registry = new ChannelRegistry(config, new MessagingLifecycleGuard());
+        start(registry);
+        try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
+             ConnectorDelivery delivery = reservation.start(MessageBatch.create(Message.create("order-1")))) {
+            assertThat("Typed retry and DROP must complete the delivery", delivery.await(Duration.ofSeconds(2)), is(true));
+        }
+
+        assertThat(attempts.get(), is(2));
+    }
+
+    @Test
+    void testSuppliedRetryInstanceReplacesDeclaredRetryAndExecutesDirectly() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        Retry declared = Retry.builder().calls(1).delay(Duration.ZERO).build();
+        TrackingRetry supplied = new TrackingRetry(Retry.builder().calls(3).delay(Duration.ZERO).build());
+        MessagingIncomingConfig channel = MessagingIncomingConfig.builder()
+                .connector("test-in")
+                .channelName("orders")
+                .failure(MessagingFailureConfig.builder().retry(supplied).build())
+                .build();
+        FailurePolicy declaration = FailurePolicy.builder().retry(declared).build();
+        MessagingConfig config = MessagingConfig.builder()
+                .addConnector(incoming)
+                .incoming(Map.of("orders", channel))
+                .addConsumerRegistration(registration("handler", "orders", declaration, _ -> {
+                    if (attempts.incrementAndGet() == 1) {
+                        throw new IllegalStateException("retry once");
+                    }
+                }))
+                .buildPrototype();
+        ChannelRegistry registry = new ChannelRegistry(config, new MessagingLifecycleGuard());
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+        assertThat(attempts.get(), is(2));
+        assertThat(supplied.invocations.get(), is(1));
+        assertThat(supplied.retryCounter(), is(1L));
+        assertThat(declared.retryCounter(), is(0L));
+        assertThat(channel.failure().retry().orElseThrow(), sameInstance(supplied));
+    }
+
+    @Test
+    void testDistinctCustomRetriesDoNotBecomeEquivalentThroughTheirPrototype() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        Retry delegate = Retry.builder().calls(2).delay(Duration.ZERO).build();
+        TrackingRetry first = new TrackingRetry(delegate);
+        TrackingRetry second = new TrackingRetry(delegate);
+        FailurePolicy firstPolicy = FailurePolicy.builder().retry(first).build();
+        FailurePolicy secondPolicy = FailurePolicy.builder().retry(second).build();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(
+                        List.of(registration("first-handler", "orders", firstPolicy, _ -> { }),
+                                registration("second-handler", "orders", secondPolicy, _ -> { })),
+                        yaml("""
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                """),
+                        List.of(incoming)));
+
+        assertThat(first.prototype(), sameInstance(second.prototype()));
+        assertThat(failure.getMessage(), containsString("conflicting effective failure policies"));
+        assertThat(incoming.createdCount(), is(0));
+        assertThat(first.invocations.get(), is(0));
+        assertThat(second.invocations.get(), is(0));
+    }
+
+    @Test
+    void testConflictingDeclaredFailurePoliciesAreRejectedAfterConfigMerge() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        FailurePolicy firstPolicy = FailurePolicy.builder()
+                .retry(RetryConfig.builder().calls(2).build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        FailurePolicy secondPolicy = FailurePolicy.builder()
+                .retry(RetryConfig.builder().calls(3).build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(
+                        List.of(registration("first-handler", "orders", firstPolicy, _ -> { }),
+                                registration("second-handler", "orders", secondPolicy, _ -> { })),
+                        yaml("""
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                """),
+                        List.of(incoming)));
+
+        assertThat(failure.getMessage(), containsString("Incoming channel orders"));
+        assertThat(failure.getMessage(), containsString("first-handler"));
+        assertThat(failure.getMessage(), containsString("second-handler"));
+        assertThat(incoming.createdCount(), is(0));
+    }
+
+    @Test
+    void testEquivalentBuiltRetryPoliciesDoNotConflict() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        FailurePolicy firstPolicy = FailurePolicy.builder()
+                .retry(retry(Duration.ofMillis(7), 1))
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(deadLetterConfig("orders-dlq"))
+                .build();
+        FailurePolicy secondPolicy = FailurePolicy.builder()
+                .retry(retry(Duration.ofMillis(7), 1))
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(deadLetterConfig("orders-dlq"))
+                .build();
+
+        ChannelRegistry registry = registry(
+                List.of(registration("first-handler", "orders", firstPolicy, _ -> { }),
+                        registration("second-handler", "orders", secondPolicy, _ -> { }),
+                        registration("orders-dlq", _ -> { })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        try {
+            assertThat(incoming.createdCount(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testConfigResolvesDeclaredPolicyConflictAndClearsInheritedDeadLetterChannels() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        FailurePolicy firstPolicy = FailurePolicy.builder()
+                .retry(RetryConfig.builder()
+                               .delay(Duration.ofMillis(7))
+                               .calls(2)
+                               .build())
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(DeadLetterConfig.builder().channel("first-dlq").build())
+                .build();
+        FailurePolicy secondPolicy = FailurePolicy.builder()
+                .retry(RetryConfig.builder()
+                               .delay(Duration.ofMillis(7))
+                               .calls(3)
+                               .build())
+                .onExhausted(FailureDisposition.DEAD_LETTER)
+                .deadLetter(DeadLetterConfig.builder().channel("second-dlq").build())
+                .build();
+
+        ChannelRegistry registry = registry(
+                List.of(registration("first-handler", "orders", firstPolicy, _ -> { }),
+                        registration("second-handler", "orders", secondPolicy, _ -> { })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                              failure:
+                                retry:
+                                  calls: 1
+                                on-exhausted: DROP
+                        """),
+                List.of(incoming));
+        try {
+            assertThat(incoming.createdCount(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testConfiguredRetryReplacesConflictingDeclaredRetryDelays() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        FailurePolicy firstPolicy = FailurePolicy.builder()
+                .retry(Retry.builder().delay(Duration.ofMillis(7)).calls(2).build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        FailurePolicy secondPolicy = FailurePolicy.builder()
+                .retry(Retry.builder().delay(Duration.ofMillis(11)).calls(3).build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("first-handler", "orders", firstPolicy, _ -> {
+                            attempts.incrementAndGet();
+                            throw new IllegalStateException("application failure");
+                        }),
+                        registration("second-handler", "orders", secondPolicy, _ -> { })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                              failure:
+                                retry:
+                                  calls: 1
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+        assertThat(incoming.createdCount(), is(1));
+        assertThat(attempts.get(), is(1));
+    }
+
+    @Test
+    void testDeadLetterRouteFailureIsNotRecursivelyHandled() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        IllegalStateException routeFailure = new IllegalStateException("sink failed");
+        IllegalStateException processingFailure = new IllegalStateException("handler failed");
+        TestOutgoingConnector outgoing = new TestOutgoingConnector(routeFailure);
+        ChannelRegistry registry = registry(List.of(registration("orders", _ -> {
+                                throw processingFailure;
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                      outgoing:
+                                        orders-dlq:
+                                          connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+
+        BatchDeliveryException result = assertThrows(
+                BatchDeliveryException.class,
+                () -> deliver(incoming.context("orders"),
+                              MessageBatch.create(List.of(Message.create("order-1")))));
+
+        assertThat(result.getCause(), sameInstance(routeFailure));
+        assertThat(result.getSuppressed().length, is(1));
+        assertThat(result.getSuppressed()[0], instanceOf(BatchDeliveryException.class));
+        assertThat(outgoing.sendCount(), is(1));
+    }
+
+    @Test
+    void testPartialDeadLetterRouteFailureMapsOutcomesToOriginalBatch() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        IllegalStateException routeFailure = new IllegalStateException("DLQ consumer failed");
+        IllegalStateException processingFailure = new IllegalStateException("handler failed");
+        List<String> routed = new CopyOnWriteArrayList<>();
+        ConsumerRegistration deadLetterConsumer = registration("orders-dlq", message -> {
+            String entity = (String) message.entity();
+            routed.add(entity);
+            if (entity.equals("second")) {
+                throw routeFailure;
+            }
+        });
+        ConsumerRegistration source = batchRegistration(
+                "orders",
+                batch -> {
+                    throw BatchDeliveryExceptionSupport.indeterminate("Source delivery", batch, processingFailure);
+                });
+        ChannelRegistry registry = registry(List.of(source, deadLetterConsumer),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        MessageBatch<String> policyBatch = MessageBatch.create(List.of(Message.create("first"),
+                                                                       Message.create("second"),
+                                                                       Message.create("third")));
+
+        BatchDeliveryException failure = assertThrows(BatchDeliveryException.class,
+                                                       () -> deliver(incoming.context("orders"), policyBatch));
+
+        assertThat(failure.batch(), sameInstance(policyBatch));
+        assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(List.of(BatchItemStatus.SUCCEEDED,
+                              BatchItemStatus.INDETERMINATE,
+                              BatchItemStatus.NOT_ATTEMPTED)));
+        assertThat(failure.outcome(1).failure().orElseThrow(), sameInstance(routeFailure));
+        assertThat(failure.getSuppressed().length, is(1));
+        assertThat(failure.getSuppressed()[0], instanceOf(BatchDeliveryException.class));
+        assertThat(routed, is(List.of("first", "second", "second")));
+    }
+
+    @Test
+    void testErrorIsNotRetriedOrConvertedToDisposition() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        AssertionError expected = new AssertionError("fatal");
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(Retry.builder().calls(3).delay(Duration.ZERO).addApplyOn(Throwable.class).build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("handler", "orders", failurePolicy, _ -> {
+                    attempts.incrementAndGet();
+                    throw expected;
+                })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        AssertionError actual = assertThrows(
+                AssertionError.class,
+                () -> deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1"))));
+
+        assertThat(actual, sameInstance(expected));
+        assertThat(attempts.get(), is(1));
+    }
+
+    @Test
+    void testNestedRejectionDoesNotReplayCompletedFanOut() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger firstAttempts = new AtomicInteger();
+        AtomicInteger secondAttempts = new AtomicInteger();
+        MessagingRejectedException expected = new MessagingRejectedException(
+                "orders",
+                MessagingRejectedException.Reason.TIMEOUT);
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(Retry.builder().calls(3).delay(Duration.ZERO).addApplyOn(Throwable.class).build())
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("first-handler", "orders", failurePolicy,
+                                     _ -> firstAttempts.incrementAndGet()),
+                        registration("second-handler", "orders", failurePolicy, _ -> {
+                            secondAttempts.incrementAndGet();
+                            throw expected;
+                        })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+        try {
+            MessagingRejectedException actual = assertThrows(
+                    MessagingRejectedException.class,
+                    () -> deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1"))));
+
+            assertThat(actual, sameInstance(expected));
+            assertThat(firstAttempts.get(), is(1));
+            assertThat(secondAttempts.get(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testNestedConfiguredSkipDoesNotReplayCompletedFanOut() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger firstAttempts = new AtomicInteger();
+        AtomicInteger secondAttempts = new AtomicInteger();
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                .calls(3)
+                .delay(Duration.ZERO)
+                .addSkipOn(IllegalArgumentException.class)
+                .build();
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(retry)
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("first-handler", "orders", failurePolicy,
+                                     _ -> firstAttempts.incrementAndGet()),
+                        registration("second-handler", "orders", failurePolicy, _ -> {
+                            secondAttempts.incrementAndGet();
+                            throw new IllegalArgumentException("not retryable");
+                        })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+        try {
+            deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+            assertThat(firstAttempts.get(), is(1));
+            assertThat(secondAttempts.get(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testNestedErrorDoesNotReplayCompletedFanOut() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger firstAttempts = new AtomicInteger();
+        AtomicInteger secondAttempts = new AtomicInteger();
+        AssertionError expected = new AssertionError("fatal");
+        MessageBatch<String> batch = MessageBatch.create(Message.create("order-1"));
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(Retry.builder().calls(3).delay(Duration.ZERO).addApplyOn(Throwable.class).build())
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("first-handler", "orders", failurePolicy,
+                                     _ -> firstAttempts.incrementAndGet()),
+                        registration("second-handler", "orders", failurePolicy, _ -> {
+                            secondAttempts.incrementAndGet();
+                            throw new BatchDeliveryException(
+                                    "Nested fatal failure",
+                                    expected,
+                                    batch,
+                                    List.of(BatchItemOutcome.indeterminate(0, expected)));
+                        })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+        try {
+            AssertionError actual = assertThrows(
+                    AssertionError.class,
+                    () -> deliver(incoming.context("orders"), batch));
+
+            assertThat(actual, sameInstance(expected));
+            assertThat(firstAttempts.get(), is(1));
+            assertThat(secondAttempts.get(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testNonRetryableDeliveryUsesDispositionAfterOneAttempt() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                .calls(3)
+                .delay(Duration.ZERO)
+                .applyOn(Set.of(IllegalArgumentException.class))
+                .build();
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(retry)
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("handler", "orders", failurePolicy, _ -> {
+                    attempts.incrementAndGet();
+                    throw new IllegalStateException("not retryable");
+                })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+        assertThat(attempts.get(), is(1));
+    }
+
+    @Test
+    void testConfiguredRetryableApplicationFailureUsesAllCalls() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                .calls(3)
+                .delay(Duration.ZERO)
+                .applyOn(Set.of(IllegalArgumentException.class))
+                .build();
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(retry)
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("handler", "orders", failurePolicy, _ -> {
+                    attempts.incrementAndGet();
+                    throw new IllegalArgumentException("retryable");
+                })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+        assertThat(attempts.get(), is(3));
+    }
+
+    @Test
+    void testCheckedBatchCauseDoesNotMatchDefaultRuntimePolicy() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        IOException applicationFailure = new IOException("not a runtime failure");
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                .calls(3)
+                .delay(Duration.ZERO)
+                .build();
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(retry)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(batchRegistration("orders", failurePolicy, batch -> {
+                    attempts.incrementAndGet();
+                    throw BatchDeliveryExceptionSupport.indeterminate("Application failure", batch, applicationFailure);
+                })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        BatchDeliveryException terminal = assertThrows(
+                BatchDeliveryException.class,
+                () -> deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1"))));
+
+        assertThat(terminal.getCause(), sameInstance(applicationFailure));
+        assertThat(attempts.get(), is(1));
+    }
+
+    @Test
+    void testCheckedBatchCauseMatchesApplyOn() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        IOException applicationFailure = new IOException("retryable");
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                .calls(3)
+                .delay(Duration.ZERO)
+                .applyOn(Set.of(IOException.class))
+                .build();
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(retry)
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(batchRegistration("orders", failurePolicy, batch -> {
+                    attempts.incrementAndGet();
+                    throw BatchDeliveryExceptionSupport.indeterminate("Application failure", batch, applicationFailure);
+                })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+        assertThat(attempts.get(), is(3));
+    }
+
+    @Test
+    void testCheckedBatchCauseMatchesSkipOn() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        IOException applicationFailure = new IOException("not retryable");
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                .calls(3)
+                .delay(Duration.ZERO)
+                .applyOn(Set.of(Throwable.class))
+                .addSkipOn(IOException.class)
+                .build();
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(retry)
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(batchRegistration("orders", failurePolicy, batch -> {
+                    attempts.incrementAndGet();
+                    throw BatchDeliveryExceptionSupport.indeterminate("Application failure", batch, applicationFailure);
+                })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+        assertThat(attempts.get(), is(1));
+    }
+
+    @Test
+    void testRetryTimeoutUsesDispositionWithoutWaiting() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        Retry retry = RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                .calls(3)
+                .delay(Duration.ofSeconds(1))
+                .delayFactor(1)
+                .jitterFactor(0)
+                .overallTimeout(Duration.ofMillis(1))
+                .build();
+        FailurePolicy failurePolicy = FailurePolicy.builder()
+                .retry(retry)
+                .onExhausted(FailureDisposition.DROP)
+                .build();
+        ChannelRegistry registry = registry(
+                List.of(registration("handler", "orders", failurePolicy, _ -> {
+                    attempts.incrementAndGet();
+                    throw new IllegalStateException("retry timeout");
+                })),
+                yaml("""
+                        messaging:
+                          incoming:
+                            orders:
+                              connector: test-in
+                        """),
+                List.of(incoming));
+        start(registry);
+
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
+
+        assertThat(attempts.get(), is(1));
+    }
+
+    @Test
+    void testCancellationStopsUnlimitedRetryAfterHandlerClearsInterrupt() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger attempts = new AtomicInteger();
+        CountDownLatch entered = new CountDownLatch(1);
+        ChannelRegistry registry = registry(List.of(registration("orders", _ -> {
+                                attempts.incrementAndGet();
+                                entered.countDown();
+                                try {
+                                    new CountDownLatch(1).await();
+                                } catch (InterruptedException e) {
+                                    Thread.interrupted();
+                                    throw new IllegalStateException("handler cleared cancellation", e);
+                                }
+                            })),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                    """),
+                            List.of(incoming));
+        start(registry);
+
+        try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
+             ConnectorDelivery delivery = reservation.start(MessageBatch.create(Message.create("order-1")))) {
+            assertThat(entered.await(1, TimeUnit.SECONDS), is(true));
+            delivery.cancel();
+            MessagingRejectedException cancelled = assertThrows(
+                    MessagingRejectedException.class,
+                    () -> delivery.await(Duration.ofSeconds(1)));
+            assertThat(cancelled.reason(), is(MessagingRejectedException.Reason.CANCELLED));
+            assertThat(attempts.get(), is(1));
+        }
+    }
+
+    @Test
+    void testCancellationDuringPartialDeadLetterRouteDoesNotRetryUnresolvedSubset() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        IllegalStateException processingFailure = new IllegalStateException("source failed");
+        CountDownLatch secondEntered = new CountDownLatch(1);
+        List<String> routed = new CopyOnWriteArrayList<>();
+        ConsumerRegistration source = batchRegistration("orders", batch -> {
+            throw BatchDeliveryExceptionSupport.indeterminate("Source delivery", batch, processingFailure);
+        });
+        ConsumerRegistration deadLetter = registration("orders-dlq", message -> {
+            String entity = (String) message.entity();
+            routed.add(entity);
+            if (entity.equals("second")) {
+                secondEntered.countDown();
+                try {
+                    new CountDownLatch(1).await();
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                    throw new IllegalStateException("route cleared cancellation", e);
+                }
+            }
+        });
+        ChannelRegistry registry = registry(List.of(source, deadLetter),
+                            yaml("""
+                                    messaging:
+                                      incoming:
+                                        orders:
+                                          connector: test-in
+                                          failure:
+                                            retry:
+                                              calls: 1
+                                            on-exhausted: DEAD_LETTER
+                                            dead-letter:
+                                              channel: orders-dlq
+                                    """),
+                            List.of(incoming));
+        start(registry);
+
+        try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
+             ConnectorDelivery delivery = reservation.start(
+                     MessageBatch.create(List.of(Message.create("first"),
+                                                 Message.create("second"),
+                                                 Message.create("third"))))) {
+            assertThat(secondEntered.await(1, TimeUnit.SECONDS), is(true));
+            delivery.cancel();
+            MessagingRejectedException cancelled = assertThrows(
+                    MessagingRejectedException.class,
+                    () -> delivery.await(Duration.ofSeconds(1)));
+            assertThat(cancelled.reason(), is(MessagingRejectedException.Reason.CANCELLED));
+            assertThat(routed, is(List.of("first", "second")));
+        }
+    }
+
+    @Test
+    void testUnknownRouteCreatesNoConnectors() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(),
+                                          yaml("""
+                                                  messaging:
+                                                    incoming:
+                                                      first:
+                                                        connector: test-in
+                                                      second:
+                                                        connector: test-in
+                                                        failure:
+                                                          retry:
+                                                            calls: 1
+                                                          on-exhausted: DEAD_LETTER
+                                                          dead-letter:
+                                                            channel: missing
+                                                    outgoing:
+                                                      audit:
+                                                        connector: test-out
+                                                  """),
+                                          List.of(incoming, outgoing)));
+
+        assertThat(failure.getMessage(), containsString("Unknown dead-letter channel missing"));
+        assertThat(incoming.createdCount(), is(0));
+        assertThat(outgoing.createdCount(), is(0));
+        assertThat(incoming.awaitAnyStart(), is(false));
+    }
+
+    @Test
+    void testOutputlessAndSelfRoutesAreRejectedBeforeSourceStarts() throws InterruptedException {
+        TestIncomingConnector outputless = new TestIncomingConnector();
+        IllegalArgumentException outputlessFailure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(),
+                                          yaml("""
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: test-in
+                                                        failure:
+                                                          retry:
+                                                            calls: 1
+                                                          on-exhausted: DEAD_LETTER
+                                                          dead-letter:
+                                                            channel: empty
+                                                      empty:
+                                                        connector: test-in
+                                                  """),
+                                          List.of(outputless)));
+        assertThat(outputlessFailure.getMessage(), containsString("has no outputs"));
+        assertThat(outputless.createdCount(), is(0));
+        assertThat(outputless.awaitAnyStart(), is(false));
+
+        TestIncomingConnector self = new TestIncomingConnector();
+        IllegalArgumentException selfFailure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(registration("orders", _ -> { })),
+                                          yaml("""
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: test-in
+                                                        failure:
+                                                          retry:
+                                                            calls: 1
+                                                          on-exhausted: DEAD_LETTER
+                                                          dead-letter:
+                                                            channel: orders
+                                                  """),
+                                          List.of(self)));
+        assertThat(selfFailure.getMessage(), containsString("must not reference itself"));
+        assertThat(self.createdCount(), is(0));
+        assertThat(self.awaitAnyStart(), is(false));
+    }
+
+    @Test
+    void testCyclicRoutesAreRejectedBeforeSourceStarts() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(
+                        List.of(registration("a", _ -> { }),
+                                registration("b", _ -> { }),
+                                registration("c", _ -> { })),
+                        yaml("""
+                                messaging:
+                                  incoming:
+                                    a:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          calls: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: b
+                                    b:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          calls: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: c
+                                    c:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          calls: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: a
+                                """),
+                        List.of(incoming)));
+
+        assertThat(failure.getMessage(), containsString("Cyclic dead-letter channel route"));
+        assertThat(failure.getMessage(), containsString("a"));
+        assertThat(failure.getMessage(), containsString("b"));
+        assertThat(failure.getMessage(), containsString("c"));
+        assertThat(incoming.createdCount(), is(0));
+        assertThat(incoming.awaitAnyStart(), is(false));
+    }
+
+    @Test
+    void testUnknownConfiguredConnectorIsRejected() {
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        IllegalArgumentException incomingFailure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(),
+                                          yaml("""
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: missing-in
+                                                    outgoing:
+                                                      audit:
+                                                        connector: test-out
+                                                  """),
+                                          List.of(outgoing)));
+        assertThat(incomingFailure.getMessage(), containsString("No configured connector named missing-in"));
+        assertThat(outgoing.createdCount(), is(0));
+
+        IllegalArgumentException outgoingFailure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(),
+                                          yaml("""
+                                                  messaging:
+                                                    outgoing:
+                                                      orders:
+                                                        connector: missing-out
+                                                  """),
+                                          List.of()));
+        assertThat(outgoingFailure.getMessage(), containsString("No configured connector named missing-out"));
+    }
+
+    @Test
+    void testConfiguredIncomingChannelRequiresConnector() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+
+        Errors.ErrorMessagesException failure = assertThrows(
+                Errors.ErrorMessagesException.class,
+                () -> registry(List.of(registration("orders", _ -> { })),
+                                          yaml("""
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        destination: orders
+                                                  """),
+                                          List.of(incoming)));
+
+        assertThat(failure.getMessage(),
+                   containsString("Property \"connector\" must not be null"));
+        assertThat(incoming.createdCount(), is(0));
+    }
+
+    @Test
+    void testConfiguredOutgoingChannelRequiresConnector() {
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+
+        Errors.ErrorMessagesException failure = assertThrows(
+                Errors.ErrorMessagesException.class,
+                () -> registry(List.of(registration("orders", _ -> { })),
+                                          yaml("""
+                                                  messaging:
+                                                    outgoing:
+                                                      orders:
+                                                        destination: orders
+                                                  """),
+                                          List.of(outgoing)));
+
+        assertThat(failure.getMessage(),
+                   containsString("Property \"connector\" must not be null"));
+        assertThat(outgoing.createdCount(), is(0));
+    }
+
+    @Test
+    void testUnsupportedDirectionIsRejectedBeforeChannelCreation() {
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(registration("orders", _ -> { })),
+                                          yaml("""
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: test-out
+                                                  """),
+                                          List.of(outgoing)));
+
+        assertThat(failure.getMessage(), containsString("does not support incoming channel orders"));
+        assertThat(outgoing.createdCount(), is(0));
+    }
+
+    @Test
+    void testDuplicateConnectorInstanceNameIsRejected() {
+        TestOutgoingConnector first = new TestOutgoingConnector();
+        TestOutgoingConnector second = new TestOutgoingConnector();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(), yaml("{}"), List.of(first, second)));
+
+        assertThat(failure.getMessage(), containsString("Duplicate messaging connector name test-out"));
+        assertThat(first.createdCount(), is(0));
+        assertThat(second.createdCount(), is(0));
+    }
+
+    @Test
+    void testBlankConnectorInstanceNameIsRejected() {
+        MessagingConnector connector = new MessagingConnector() {
+            @Override
+            public String type() {
+                return "test";
+            }
+
+            @Override
+            public MessagingConnectorProviderConfig prototype() {
+                return RegistryTestSupport.prototype(" ");
+            }
+
+        };
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(), yaml("{}"), List.of(connector)));
+
+        assertThat(failure.getMessage(), containsString("Messaging connector name must not be blank"));
+    }
+
+    @Test
+    void testIncomingChannelWithoutOutputIsRejectedBeforeConnectorsAreCreated() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(),
+                                          yaml("""
+                                                  messaging:
+                                                    incoming:
+                                                      orders:
+                                                        connector: test-in
+                                                    outgoing:
+                                                      audit:
+                                                        connector: test-out
+                                                  """),
+                                          List.of(incoming, outgoing)));
+
+        assertThat(failure.getMessage(), containsString("Incoming channel orders has no outputs"));
+        assertThat(incoming.createdCount(), is(0));
+        assertThat(outgoing.createdCount(), is(0));
+        assertThat(incoming.awaitAnyStart(), is(false));
+    }
+
+    @Test
+    void testGenericConsumerTypesAreValidatedBeforeDispatch() {
+        AtomicInteger broadDispatches = new AtomicInteger();
+        AtomicInteger keyedDispatches = new AtomicInteger();
+        ConsumerRegistration broad = registration(
+                "orders",
+                new GenericType<Integer>() { },
+                new GenericType<Message<Integer>>() { },
+                _ -> broadDispatches.incrementAndGet());
+        ConsumerRegistration keyed = registration(
+                "orders",
+                new GenericType<Integer>() { },
+                new GenericType<TestKeyedMessage<String, Integer>>() { },
+                _ -> keyedDispatches.incrementAndGet());
+
+        ChannelRegistry registry = registry(List.of(broad, keyed), yaml("{}"), List.of());
+        IllegalArgumentException dispatchFailure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry.emit("orders", Message.create(1)));
+        assertThat(dispatchFailure.getMessage(), containsString(TestKeyedMessage.class.getName()));
+        assertThat(broadDispatches.get(), is(0));
+        assertThat(keyedDispatches.get(), is(0));
+
+        ConsumerRegistration conflictingKeyed = registration(
+                "orders",
+                new GenericType<Integer>() { },
+                new GenericType<TestKeyedMessage<Long, Integer>>() { });
+        IllegalArgumentException envelopeFailure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(keyed, conflictingKeyed), yaml("{}"), List.of()));
+        assertThat(envelopeFailure.getMessage(), containsString("conflicting message envelope types"));
+
+        ConsumerRegistration conflictingSubtype = registration(
+                "orders",
+                new GenericType<Integer>() { },
+                new GenericType<TestKeyedMessageSubtype<Long, Integer>>() { });
+        assertThrows(IllegalArgumentException.class,
+                     () -> registry(List.of(keyed, conflictingSubtype),
+                                               yaml("{}"),
+                                               List.of()));
+
+        ConsumerRegistration stringList = registration(
+                "lists",
+                new GenericType<List<String>>() { },
+                new GenericType<Message<List<String>>>() { });
+        ConsumerRegistration integerList = registration(
+                "lists",
+                new GenericType<List<Integer>>() { },
+                new GenericType<Message<List<Integer>>>() { });
+        IllegalArgumentException payloadFailure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(stringList, integerList), yaml("{}"), List.of()));
+        assertThat(payloadFailure.getMessage(), containsString("conflicting payload types"));
+        assertThat(payloadFailure.getMessage(), containsString("java.util.List<java.lang.String>"));
+        assertThat(payloadFailure.getMessage(), containsString("java.util.List<java.lang.Integer>"));
+    }
+
+    @Test
+    void testDeadLetterTargetRejectsIncompatibleConsumerBeforeConnectorsAreCreated() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        ConsumerRegistration source = registration("orders", _ -> { });
+        ConsumerRegistration incompatibleTarget = registration(
+                "orders-dlq",
+                new GenericType<String>() { },
+                new GenericType<TestSpecialMessage<String>>() { });
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(
+                        List.of(source, incompatibleTarget),
+                        yaml("""
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          calls: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: orders-dlq
+                                  outgoing:
+                                    audit:
+                                      connector: test-out
+                                """),
+                        List.of(incoming, outgoing)));
+
+        assertThat(failure.getMessage(), containsString("cannot accept"));
+        assertThat(failure.getMessage(), containsString(DeadLetterMessage.class.getName()));
+        assertThat(incoming.createdCount(), is(0));
+        assertThat(outgoing.createdCount(), is(0));
+        assertThat(incoming.awaitAnyStart(), is(false));
+    }
+
+    @Test
+    void testDeadLetterTargetRejectsIncompatiblePayloadBeforeConnectorsAreCreated() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        ConsumerRegistration source = registration("orders", _ -> { });
+        ConsumerRegistration incompatibleTarget = registration(
+                "orders-dlq",
+                new GenericType<Integer>() { },
+                new GenericType<DeadLetterMessage<Integer>>() { });
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(
+                        List.of(source, incompatibleTarget),
+                        yaml("""
+                                messaging:
+                                  incoming:
+                                    orders:
+                                      connector: test-in
+                                      failure:
+                                        retry:
+                                          calls: 1
+                                        on-exhausted: DEAD_LETTER
+                                        dead-letter:
+                                          channel: orders-dlq
+                                  outgoing:
+                                    audit:
+                                      connector: test-out
+                                """),
+                        List.of(incoming, outgoing)));
+
+        assertThat(failure.getMessage(), containsString("Dead-letter channel orders-dlq"));
+        assertThat(failure.getMessage(), containsString("payload type java.lang.Integer"));
+        assertThat(failure.getMessage(), containsString("incoming channel orders has payload type java.lang.String"));
+        assertThat(incoming.createdCount(), is(0));
+        assertThat(outgoing.createdCount(), is(0));
+        assertThat(incoming.awaitAnyStart(), is(false));
+    }
+
+    @Test
+    void testRawProducerEnvelopeDoesNotSatisfyParameterizedConsumer() {
+        ConsumerRegistration target = registration(
+                "orders",
+                new GenericType<Integer>() { },
+                new GenericType<TestKeyedMessage<Long, Integer>>() { });
+        EmitterRegistration rawProducer = emitterRegistration(
+                "orders",
+                "publisher#orders",
+                new GenericType<Integer>() { },
+                GenericType.create(TestKeyedMessage.class));
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry(List.of(target),
+                                          List.of(rawProducer),
+                                          yaml("{}"),
+                                          List.of()));
+
+        assertThat(failure.getMessage(), containsString("produces envelope type"));
+        assertThat(failure.getMessage(), containsString("cannot accept"));
+        assertThat(failure.getMessage(), containsString("TestKeyedMessage<java.lang.Long, java.lang.Integer>"));
+    }
+
+    private ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+                                            Config config,
+                                            List<MessagingConnector> connectors) {
+        return registry(consumerRegistrations, List.of(), config, connectors);
+    }
+
+    private ChannelRegistry registry(List<ConsumerRegistration> consumerRegistrations,
+                                            List<EmitterRegistration> emitterRegistrations,
+                                            Config config,
+                                            List<MessagingConnector> connectors) {
+        return registrySupport.registry(consumerRegistrations, emitterRegistrations, config, connectors);
+    }
+
+    private static MessagingRejectedException awaitConfiguredTimeout(IncomingConnectorContext context,
+                                                                      Duration configuredTimeout,
+                                                                      Duration testTimeout) {
+        long started = System.nanoTime();
+        while (true) {
+            if (System.nanoTime() - started >= testTimeout.toNanos()) {
+                throw new AssertionError("Configured admission timeout did not expire within " + testTimeout);
+            }
+            try {
+                var attempt = context.tryReserveDelivery();
+                if (attempt.isPresent()) {
+                    try (ConnectorDeliveryReservation _ = attempt.orElseThrow()) {
+                        throw new AssertionError("Non-blocking reservation succeeded while capacity was held");
+                    }
+                }
+            } catch (MessagingRejectedException e) {
+                assertThat("Reservation timed out before the configured admission budget elapsed",
+                           System.nanoTime() - started,
+                           greaterThanOrEqualTo(configuredTimeout.toNanos()));
+                return e;
+            }
+        }
+    }
+
+    private static MessagingRejectedException awaitTimeoutProbe(FutureTask<MessagingRejectedException> timeoutProbe) {
+        Thread.ofVirtual().name("messaging-admission-timeout-probe").start(timeoutProbe);
+        try {
+            return timeoutProbe.get(10, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            timeoutProbe.cancel(true);
+            throw new AssertionError("Admission timeout probe did not complete within 10 seconds", e);
+        } catch (InterruptedException e) {
+            timeoutProbe.cancel(true);
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting for admission timeout probe", e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw new AssertionError("Admission timeout probe failed", cause);
+        }
+    }
+
+    private static void awaitWaiting(FutureTask<?> task, Thread thread, String operation) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        Thread.State state;
+        do {
+            if (task.isDone()) {
+                throw new AssertionError(operation + " completed instead of waiting");
+            }
+            state = thread.getState();
+            if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
+                return;
+            }
+            Thread.onSpinWait();
+        } while (System.nanoTime() < deadline);
+        throw new AssertionError(operation + " did not enter a waiting state; last state was " + state);
+    }
+
+    private static void awaitElapsed(long started, Duration duration) {
+        long remaining;
+        while ((remaining = duration.toNanos() - (System.nanoTime() - started)) > 0) {
+            try {
+                TimeUnit.NANOSECONDS.sleep(remaining);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Interrupted while waiting for elapsed test time", e);
+            }
+        }
+    }
+
+    private static void join(Thread thread, String operation) {
+        try {
+            thread.join(TimeUnit.SECONDS.toMillis(5));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting for " + operation, e);
+        }
+        if (thread.isAlive()) {
+            throw new AssertionError("Timed out waiting for " + operation);
+        }
+    }
+
+    private static Config yaml(String yaml) {
+        return Config.just(yaml, MediaTypes.APPLICATION_YAML);
+    }
+
+    private void start(ChannelRegistry registry) {
+        startedRegistries.add(registry);
+        registry.start();
+    }
+
+    private static void deliver(IncomingConnectorContext context,
+                                MessageBatch<?> batch) {
+        try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
+             ConnectorDelivery delivery = reservation.start(batch)) {
+            delivery.await();
+        }
+    }
+
+    private static void deliverFailed(IncomingConnectorContext context,
+                                      MessageBatch<?> batch,
+                                      RuntimeException failure) {
+        try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
+             ConnectorDelivery delivery = reservation.startFailed(batch, failure)) {
+            delivery.await();
+        }
+    }
+
+    private static BatchDeliveryException mixedPreDispatchFailure(MessageBatch<?> batch,
+                                                                  RuntimeException mappingFailure) {
+        return new BatchDeliveryException(
+                "Partial mapping failure",
+                mappingFailure,
+                batch,
+                List.of(BatchItemOutcome.notAttempted(0),
+                        BatchItemOutcome.failed(1, mappingFailure),
+                        BatchItemOutcome.notAttempted(2)));
+    }
+
+    private static Message<String> customMessage(String entity) {
+        return new Message<>() {
+            @Override
+            public String entity() {
+                return entity;
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+    }
+
+    private static Retry retry(Duration delay, int calls) {
+        return RetryConfig.builder(FailurePolicy.create().retry().prototype())
+                .delay(delay)
+                .calls(calls)
+                .build();
+    }
+
+    private static DeadLetterConfig deadLetterConfig(String channel) {
+        return DeadLetterConfig.builder().channel(channel).build();
+    }
+
+    private static ConsumerRegistration registration(String channel, Consumer<Message<?>> consumer) {
+        return registration(channel,
+                            new GenericType<String>() { },
+                            new GenericType<Message<String>>() { },
+                            consumer);
+    }
+
+    private static ConsumerRegistration registration(String handlerId,
+                                                     String channel,
+                                                     FailurePolicy failurePolicy,
+                                                     Consumer<Message<?>> consumer) {
+        return registration(handlerId,
+                            channel,
+                            new GenericType<String>() { },
+                            new GenericType<Message<String>>() { },
+                            failurePolicy,
+                            consumer);
+    }
+
+    private static ConsumerRegistration batchRegistration(String channel,
+                                                          Consumer<MessageBatch<?>> consumer) {
+        return batchRegistration(channel, null, consumer);
+    }
+
+    private static ConsumerRegistration batchRegistration(String channel,
+                                                          FailurePolicy failurePolicy,
+                                                          Consumer<MessageBatch<?>> consumer) {
+        return new ConsumerRegistration() {
+            @Override
+            public String channel() {
+                return channel;
+            }
+
+            @Override
+            public GenericType<?> payloadGenericType() {
+                return new GenericType<String>() { };
+            }
+
+            @Override
+            public GenericType<?> envelopeGenericType() {
+                return new GenericType<Message<String>>() { };
+            }
+
+            @Override
+            public Optional<FailurePolicy> declaredFailurePolicy() {
+                return Optional.ofNullable(failurePolicy);
+            }
+
+            @Override
+            public void dispatch(MessageBatch<?> batch) {
+                consumer.accept(batch);
+            }
+        };
+    }
+
+    private static ProcessorRegistration passThroughProcessor(String incoming,
+                                                              String outgoing,
+                                                              AtomicInteger attempts) {
+        return new ProcessorRegistration() {
+            @Override
+            public String handlerId() {
+                return incoming + "->" + outgoing;
+            }
+
+            @Override
+            public String channel() {
+                return incoming;
+            }
+
+            @Override
+            public GenericType<?> payloadGenericType() {
+                return new GenericType<String>() { };
+            }
+
+            @Override
+            public GenericType<?> envelopeGenericType() {
+                return new GenericType<Message<String>>() { };
+            }
+
+            @Override
+            public String outgoingChannel() {
+                return outgoing;
+            }
+
+            @Override
+            public GenericType<?> outgoingPayloadGenericType() {
+                return new GenericType<String>() { };
+            }
+
+            @Override
+            public GenericType<?> outgoingEnvelopeGenericType() {
+                return new GenericType<Message<String>>() { };
+            }
+
+            @Override
+            public MessageBatch<?> process(MessageBatch<?> batch) {
+                attempts.incrementAndGet();
+                return batch;
+            }
+        };
+    }
+
+    private static ConsumerRegistration registration(String channel,
+                                                     GenericType<?> payloadGenericType,
+                                                     GenericType<?> envelopeGenericType) {
+        return registration(channel,
+                            payloadGenericType,
+                            envelopeGenericType,
+                            _ -> { });
+    }
+
+    private static ConsumerRegistration registration(String channel,
+                                                     GenericType<?> payloadGenericType,
+                                                     GenericType<?> envelopeGenericType,
+                                                     Consumer<Message<?>> consumer) {
+        return registration(null,
+                            channel,
+                            payloadGenericType,
+                            envelopeGenericType,
+                            null,
+                            consumer);
+    }
+
+    private static ConsumerRegistration registration(String handlerId,
+                                                     String channel,
+                                                     GenericType<?> payloadGenericType,
+                                                     GenericType<?> envelopeGenericType,
+                                                     FailurePolicy failurePolicy,
+                                                     Consumer<Message<?>> consumer) {
+        return new ConsumerRegistration() {
+            @Override
+            public String handlerId() {
+                return handlerId == null ? ConsumerRegistration.super.handlerId() : handlerId;
+            }
+
+            @Override
+            public String channel() {
+                return channel;
+            }
+
+            @Override
+            public GenericType<?> payloadGenericType() {
+                return payloadGenericType;
+            }
+
+            @Override
+            public GenericType<?> envelopeGenericType() {
+                return envelopeGenericType;
+            }
+
+            @Override
+            public Optional<FailurePolicy> declaredFailurePolicy() {
+                return Optional.ofNullable(failurePolicy);
+            }
+
+            @Override
+            public void dispatch(MessageBatch<?> batch) {
+                for (int i = 0; i < batch.size(); i++) {
+                    try {
+                        consumer.accept(batch.get(i));
+                    } catch (RuntimeException e) {
+                        throw BatchDeliveryExceptionSupport.sequential("Test consumer", batch, i, e);
+                    }
+                }
+            }
+        };
+    }
+
+    private static EmitterRegistration emitterRegistration(String channel,
+                                                           String producerId,
+                                                           GenericType<?> payloadType,
+                                                           GenericType<?> envelopeType) {
+        return new EmitterRegistration() {
+            @Override
+            public String channel() {
+                return channel;
+            }
+
+            @Override
+            public String producerId() {
+                return producerId;
+            }
+
+            @Override
+            public GenericType<?> payloadGenericType() {
+                return payloadType;
+            }
+
+            @Override
+            public GenericType<?> envelopeGenericType() {
+                return envelopeType;
+            }
+        };
+    }
+
+    private interface TestKeyedMessage<K, V> extends Message<V> {
+    }
+
+    private interface TestKeyedMessageSubtype<K, V> extends TestKeyedMessage<K, V> {
+    }
+
+    private interface TestSpecialMessage<T> extends Message<T> {
+    }
+
+    private static final class TrackingRetry implements Retry {
+        private final Retry delegate;
+        private final AtomicInteger invocations = new AtomicInteger();
+
+        private TrackingRetry(Retry delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public RetryConfig prototype() {
+            return delegate.prototype();
+        }
+
+        @Override
+        public String name() {
+            return delegate.name();
+        }
+
+        @Override
+        public long retryCounter() {
+            return delegate.retryCounter();
+        }
+
+        @Override
+        public <T> T invoke(Supplier<? extends T> supplier) {
+            invocations.incrementAndGet();
+            return delegate.invoke(supplier);
+        }
+
+        @Override
+        public <T> T invoke(Function<RetryContext, ? extends T> function, WaitStrategy waitStrategy) {
+            invocations.incrementAndGet();
+            return delegate.invoke(function, waitStrategy);
+        }
+    }
+
+    private record TestConnectorConfig(String channelName,
+                                      String connector,
+                                      Map<String, String> properties,
+                                      Config config) {
+        private static TestConnectorConfig from(MessagingChannelConfig config) {
+            Config source = config.config().orElse(Config.empty()).detach();
+            return new TestConnectorConfig(
+                    config.channelName(),
+                    config.connector(),
+                    Map.copyOf(source.asMap().orElse(Map.of())),
+                    source);
+        }
+    }
+
+    static final class TestIncomingConnector implements MessagingConnector {
+        private final String connectorType;
+        private final Map<String, IncomingConnectorContext> contexts = new ConcurrentHashMap<>();
+        private final Map<String, TestConnectorConfig> configs = new ConcurrentHashMap<>();
+        private final AtomicInteger configCreated = new AtomicInteger();
+        private final AtomicInteger created = new AtomicInteger();
+        private final CountDownLatch anyStart = new CountDownLatch(1);
+
+        private TestIncomingConnector() {
+            this("test-in");
+        }
+
+        private TestIncomingConnector(String connectorType) {
+            this.connectorType = connectorType;
+        }
+
+        @Override
+        public String type() {
+            return "test";
+        }
+
+        @Override
+        public MessagingConnectorProviderConfig prototype() {
+            return RegistryTestSupport.prototype(connectorType);
+        }
+
+        @Override
+        public Optional<IncomingChannel> incoming(MessagingIncomingConfig config) {
+            configCreated.incrementAndGet();
+            TestConnectorConfig connectorConfig = TestConnectorConfig.from(config);
+            created.incrementAndGet();
+            configs.put(connectorConfig.channelName(), connectorConfig);
+            return Optional.of(new IncomingChannel() {
+                private final CountDownLatch stopped = new CountDownLatch(1);
+                private final AtomicBoolean closed = new AtomicBoolean();
+
+                @Override
+                public void run(IncomingConnectorContext context) {
+                    contexts.put(connectorConfig.channelName(), context);
+                    anyStart.countDown();
+                    if (!context.awaitRunning()) {
+                        return;
+                    }
+                    await(stopped, Duration.ofDays(1), "stop");
+                }
+
+                @Override
+                public void drain() {
+                    stopped.countDown();
+                }
+
+                @Override
+                public void forceClose() {
+                    close();
+                }
+
+                @Override
+                public void close() {
+                    if (closed.compareAndSet(false, true)) {
+                        stopped.countDown();
+                    }
+                }
+            });
+        }
+
+        private static void await(CountDownLatch latch, Duration timeout, String operation) {
+            try {
+                if (!latch.await(timeout.toNanos(), TimeUnit.NANOSECONDS)) {
+                    throw new MessagingException("Test incoming connector " + operation + " timed out");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new MessagingException("Test incoming connector " + operation + " was interrupted", e);
+            }
+        }
+
+        private IncomingConnectorContext context(String channel) {
+            IncomingConnectorContext context = contexts.get(channel);
+            if (context == null) {
+                throw new AssertionError("ChannelConnection context is not available; start the registry first");
+            }
+            return context;
+        }
+
+        private TestConnectorConfig config(String channel) {
+            return configs.get(channel);
+        }
+
+        private int createdCount() {
+            return created.get();
+        }
+
+        private int configCreatedCount() {
+            return configCreated.get();
+        }
+
+        private boolean awaitAnyStart() throws InterruptedException {
+            return anyStart.await(100, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    static final class TestOutgoingConnector implements MessagingConnector {
+        private final List<Message<?>> messages = new CopyOnWriteArrayList<>();
+        private final AtomicInteger configCreated = new AtomicInteger();
+        private final AtomicInteger created = new AtomicInteger();
+        private final AtomicInteger sends = new AtomicInteger();
+        private final RuntimeException failure;
+        private final int maxTextHeaderLength;
+
+        private TestOutgoingConnector() {
+            this(null, Integer.MAX_VALUE);
+        }
+
+        private TestOutgoingConnector(RuntimeException failure) {
+            this(failure, Integer.MAX_VALUE);
+        }
+
+        private TestOutgoingConnector(int maxTextHeaderLength) {
+            this(null, maxTextHeaderLength);
+        }
+
+        private TestOutgoingConnector(RuntimeException failure, int maxTextHeaderLength) {
+            this.failure = failure;
+            this.maxTextHeaderLength = maxTextHeaderLength;
+        }
+
+        @Override
+        public String type() {
+            return "test";
+        }
+
+        @Override
+        public MessagingConnectorProviderConfig prototype() {
+            return RegistryTestSupport.prototype("test-out");
+        }
+
+        @Override
+        public Optional<OutgoingChannel> outgoing(MessagingOutgoingConfig config) {
+            configCreated.incrementAndGet();
+            TestConnectorConfig.from(config);
+            created.incrementAndGet();
+            return Optional.of(new OutgoingChannel() {
+                @Override
+                public void start() {
+                }
+
+                @Override
+                public void sendBatch(MessageBatch<?> batch) {
+                    sends.addAndGet(batch.size());
+                    if (failure != null) {
+                        throw failure;
+                    }
+                    for (Message<?> message : batch) {
+                        for (MessageHeader header : message.headers()) {
+                            if (header.value() instanceof MessageHeaderValue.TextValue textValue
+                                    && textValue.value().length() > maxTextHeaderLength) {
+                                throw new MessagingException("Test connector header exceeds transport limit");
+                            }
+                        }
+                    }
+                    messages.addAll(batch.messages());
+                }
+
+                @Override
+                public void forceClose() {
+                }
+
+                @Override
+                public void close() {
+                }
+            });
+        }
+
+        private List<Message<?>> messages() {
+            return List.copyOf(messages);
+        }
+
+        private int sendCount() {
+            return sends.get();
+        }
+
+        private int createdCount() {
+            return created.get();
+        }
+
+        private int configCreatedCount() {
+            return configCreated.get();
+        }
+    }
+}

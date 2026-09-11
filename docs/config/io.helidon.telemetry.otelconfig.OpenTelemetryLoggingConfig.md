@@ -48,10 +48,13 @@ Configuration settings for OpenTelemetry logging
 </tr>
 <tr>
 <td>
+<a id="processors"></a>
+<a href="io.helidon.telemetry.otelconfig.ProcessorConfig.md">
 <code>processors</code>
+</a>
 </td>
 <td>
-<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>Processor<wbr>Config&gt;</code>
 </td>
 <td>Settings for logging processors</td>
 </tr>

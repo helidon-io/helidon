@@ -19,8 +19,10 @@ package io.helidon.codegen.apt;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -47,6 +49,10 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+
+import com.sun.source.tree.ImportTree;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.Trees;
 
 import static io.helidon.common.types.TypeName.createFromGenericDeclaration;
 
@@ -131,6 +137,75 @@ final class AptTypeFactory {
      */
     static Optional<TypeName> createTypeName(Elements elements, Element type) {
         return createTypeName(elements, new HashSet<>(), type);
+    }
+
+    static Optional<TypeName> createTypeName(AptContext ctx, Element type) {
+        return createTypeName(ctx.aptEnv().getElementUtils(), type)
+                .map(it -> resolveImportedTypes(ctx, type, it));
+    }
+
+    static Optional<TypeName> createTypeName(AptContext ctx, Element source, TypeMirror type) {
+        return createTypeName(type)
+                .map(it -> resolveImportedTypes(ctx, source, it));
+    }
+
+    private static TypeName resolveImportedTypes(AptContext ctx, Element source, TypeName typeName) {
+        if (!hasUnqualifiedClass(typeName)) {
+            return typeName;
+        }
+        TreePath path;
+        try {
+            path = Trees.instance(ctx.aptEnv()).getPath(source);
+        } catch (IllegalArgumentException _) {
+            // Compilation-unit trees are not available from every annotation processing implementation.
+            return typeName;
+        }
+        if (path == null) {
+            return typeName;
+        }
+        Map<String, TypeName> imports = new HashMap<>();
+        for (ImportTree imported : path.getCompilationUnit().getImports()) {
+            String name = imported.getQualifiedIdentifier().toString();
+            if (!imported.isStatic() && !name.endsWith(".*")) {
+                TypeName importedType = TypeName.create(name);
+                imports.put(importedType.className(), importedType);
+            }
+        }
+        return imports.isEmpty() ? typeName : resolveImportedTypes(typeName, imports);
+    }
+
+    private static TypeName resolveImportedTypes(TypeName typeName, Map<String, TypeName> imports) {
+        TypeName.Builder builder = TypeName.builder(typeName);
+        if (unqualifiedClass(typeName)) {
+            List<String> enclosingNames = typeName.enclosingNames();
+            String importedName = enclosingNames.isEmpty() ? typeName.className() : enclosingNames.getFirst();
+            TypeName imported = imports.get(importedName);
+            if (imported != null) {
+                List<String> qualifiedEnclosing = new ArrayList<>(imported.enclosingNames());
+                if (!enclosingNames.isEmpty()) {
+                    qualifiedEnclosing.add(imported.className());
+                    qualifiedEnclosing.addAll(enclosingNames.subList(1, enclosingNames.size()));
+                }
+                builder.packageName(imported.packageName()).enclosingNames(qualifiedEnclosing);
+            }
+        }
+        builder.typeArguments(typeName.typeArguments().stream().map(it -> resolveImportedTypes(it, imports)).toList())
+                .upperBounds(typeName.upperBounds().stream().map(it -> resolveImportedTypes(it, imports)).toList())
+                .lowerBounds(typeName.lowerBounds().stream().map(it -> resolveImportedTypes(it, imports)).toList());
+        typeName.componentType().ifPresent(it -> builder.componentType(resolveImportedTypes(it, imports)));
+        return builder.build();
+    }
+
+    private static boolean hasUnqualifiedClass(TypeName typeName) {
+        return unqualifiedClass(typeName)
+                || typeName.typeArguments().stream().anyMatch(AptTypeFactory::hasUnqualifiedClass)
+                || typeName.upperBounds().stream().anyMatch(AptTypeFactory::hasUnqualifiedClass)
+                || typeName.lowerBounds().stream().anyMatch(AptTypeFactory::hasUnqualifiedClass)
+                || typeName.componentType().map(AptTypeFactory::hasUnqualifiedClass).orElse(false);
+    }
+
+    private static boolean unqualifiedClass(TypeName typeName) {
+        return typeName.packageName().isEmpty() && !typeName.primitive() && !typeName.generic() && !typeName.wildcard();
     }
 
     // we must accept `null` elements, until we hide the methods from public

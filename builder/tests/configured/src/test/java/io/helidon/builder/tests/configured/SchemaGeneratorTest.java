@@ -16,6 +16,8 @@
 package io.helidon.builder.tests.configured;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.List;
 
@@ -32,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -50,6 +53,154 @@ class SchemaGeneratorTest {
 
     static final List<String> OPTS = List.of(
             "-Xlint:-deprecation");
+
+    @Test
+    void testImportedSameRoundBlueprintsWithConflictingSimpleNames() throws IOException, ReflectiveOperationException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("com/acme/AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.Map;
+                        import com.acme.spi.ChannelConfig;
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Root configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeConfigBlueprint {
+                            /** @return channel configurations */
+                            @Option.Configured
+                            Map<String, ChannelConfig> channels();
+                        }
+                        """)
+                .addSource("com/acme/spi/ChannelConfigBlueprint.java", """
+                        package com.acme.spi;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Channel configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ChannelConfigBlueprint extends ChannelBaseConfigBlueprint {
+                        }
+                        """)
+                .addSource("com/acme/spi/ChannelBaseConfigBlueprint.java", """
+                        package com.acme.spi;
+
+                        import java.util.Optional;
+                        import com.acme.ExecutionConfig;
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        /** Common channel configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ChannelBaseConfigBlueprint {
+                            /** @return connector name */
+                            @Option.Required
+                            @Option.Configured
+                            String connector();
+
+                            /** @return channel name */
+                            @Option.Required
+                            String channelName();
+
+                            /** @return execution configuration */
+                            @Option.Configured
+                            @Option.DefaultMethod("create")
+                            ExecutionConfig execution();
+
+                            /** @return original configuration */
+                            Optional<Config> config();
+                        }
+                        """)
+                .addSource("com/acme/ExecutionConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Execution configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ExecutionConfigBlueprint {
+                            /** @return queue capacity */
+                            @Option.Configured
+                            @Option.DefaultInt(7)
+                            int queueCapacity();
+                        }
+                        """)
+                .addSource("com/acme/ChannelConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Same-package alternative to the explicitly imported channel configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ChannelConfigBlueprint {
+                        }
+                        """)
+                .addSource("com/acme/spi/ExecutionConfigBlueprint.java", """
+                        package com.acme.spi;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /** Same-package alternative to the explicitly imported execution configuration. */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ExecutionConfigBlueprint {
+                        }
+                        """)
+                .addSource("com/acme/InheritedConfigUsage.java", """
+                        package com.acme;
+
+                        import java.util.List;
+                        import com.acme.spi.ChannelBaseConfig;
+                        import com.acme.spi.ChannelConfig;
+                        import io.helidon.config.Config;
+
+                        public final class InheritedConfigUsage {
+                            public static List<Object> values() {
+                                Config original = Config.empty();
+                                ChannelBaseConfig base = ChannelBaseConfig.builder()
+                                        .config(original)
+                                        .connector("orders-connector")
+                                        .channelName("orders")
+                                        .build();
+                                ChannelConfig channel = ChannelConfig.builder()
+                                        .from(base)
+                                        .execution(ExecutionConfig.builder().queueCapacity(11).build())
+                                        .build();
+                                return List.of(channel.connector(),
+                                               channel.channelName(),
+                                               channel.execution().queueCapacity(),
+                                               channel.config().orElseThrow() == original);
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        String rootConfig = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        String channelConfig = Files.readString(result.sourceOutput().resolve("com/acme/spi/ChannelBaseConfig.java"));
+        String inheritedConfig = Files.readString(result.sourceOutput().resolve("com/acme/spi/ChannelConfig.java"));
+        assertThat(rootConfig, containsString("import com.acme.spi.ChannelConfig;"));
+        assertThat(channelConfig, containsString("import com.acme.ExecutionConfig;"));
+        assertThat(inheritedConfig, containsString("extends ChannelBaseConfig.BuilderBase<BUILDER, PROTOTYPE>"));
+        try (var loader = new URLClassLoader(new URL[] {result.classOutput().toUri().toURL()},
+                                            getClass().getClassLoader())) {
+            Object values = loader.loadClass("com.acme.InheritedConfigUsage").getMethod("values").invoke(null);
+            assertThat(values, is(List.of("orders-connector", "orders", 11, true)));
+        }
+    }
 
     @Test
     void testRoot() throws IOException {
@@ -1651,6 +1802,308 @@ class SchemaGeneratorTest {
                 //...
                 }
                 """));
+    }
+
+    @Test
+    void testConfigFactoryMetadataTypes() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeRetryConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME retry config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeRetryConfigBlueprint {
+
+                            /**
+                             * Number of calls.
+                             *
+                             * @return number of calls
+                             */
+                            @Option.Configured
+                            @Option.DefaultInt(3)
+                            int calls();
+                        }
+                        """)
+                .addSource("AcmeValueBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME value.
+                         */
+                        @Prototype.Blueprint
+                        interface AcmeValueBlueprint extends AcmeRetryConfigBlueprint {
+                        }
+                        """)
+                .addSource("AcmeConfigSupport.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeConfigSupport {
+
+                            @Prototype.ConfigFactoryMethod("retry")
+                            static AcmeRetryConfig createRetry(Config config) {
+                                return AcmeRetryConfig.create(config);
+                            }
+
+                            @Prototype.ConfigFactoryMethod("value")
+                            static AcmeValue createValue(Config config) {
+                                return AcmeValue.builder().build();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeConfigSupport.class)
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * Retry config.
+                             *
+                             * @return retry config
+                             */
+                            @Option.Configured
+                            AcmeRetryConfig retry();
+
+                            /**
+                             * Value.
+                             *
+                             * @return value
+                             */
+                            @Option.Configured
+                            AcmeValue value();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var schema = result.sourceOutput().resolve("com/acme/AcmeConfig.java");
+        assertThat(Files.exists(schema), is(true));
+
+        var actual = Files.readString(schema);
+        assertThat(actual, matches("""
+                //...
+                package com.acme;
+                //...
+                @Configured(
+                    description = "ACME config",
+                    options = {
+                        @ConfiguredOption(key = "retry", description = "Retry config", type = AcmeRetryConfig.class, required = true),
+                        @ConfiguredOption(key = "value", description = "Value", type = AcmeConfigSupport.class, required = true)
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                //...
+                }
+                """));
+        assertThat(actual,
+                   containsString("config.get(\"retry\").as(AcmeConfigSupport::createRetry).ifPresent(this::retry)"));
+        assertThat(actual,
+                   containsString("config.get(\"value\").as(AcmeConfigSupport::createValue).ifPresent(this::value)"));
+
+        var classpathResult = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addClasspathEntry(result.classOutput())
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeClasspathConfigSupport.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeClasspathConfigSupport {
+
+                            @Prototype.ConfigFactoryMethod("retry")
+                            static AcmeRetryConfig createRetry(Config config) {
+                                return AcmeRetryConfig.create(config);
+                            }
+
+                            @Prototype.ConfigFactoryMethod("value")
+                            static AcmeValue createValue(Config config) {
+                                return AcmeValue.builder().build();
+                            }
+                        }
+                        """)
+                .addSource("AcmeClasspathConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME classpath config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeClasspathConfigSupport.class)
+                        interface AcmeClasspathConfigBlueprint {
+
+                            /**
+                             * Retry config.
+                             *
+                             * @return retry config
+                             */
+                            @Option.Configured
+                            AcmeRetryConfig retry();
+
+                            /**
+                             * Value.
+                             *
+                             * @return value
+                             */
+                            @Option.Configured
+                            AcmeValue value();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(classpathResult.success(), is(true));
+        var classpathSchema = classpathResult.sourceOutput().resolve("com/acme/AcmeClasspathConfig.java");
+        assertThat(Files.exists(classpathSchema), is(true));
+
+        var classpathActual = Files.readString(classpathSchema);
+        assertThat(classpathActual, matches("""
+                //...
+                package com.acme;
+                //...
+                @Configured(
+                    description = "ACME classpath config",
+                    options = {
+                        @ConfiguredOption(key = "retry", description = "Retry config", type = AcmeRetryConfig.class, required = true),
+                        @ConfiguredOption(
+                            key = "value",
+                            description = "Value",
+                            type = AcmeClasspathConfigSupport.class,
+                            required = true)
+                    })
+                //...
+                public interface AcmeClasspathConfig extends AcmeClasspathConfigBlueprint, Prototype.Api {
+                //...
+                }
+                """));
+        assertThat(classpathActual,
+                   containsString("config.get(\"value\")"
+                                          + ".as(AcmeClasspathConfigSupport::createValue).ifPresent(this::value)"));
+    }
+
+    @Test
+    void testRejectsBlueprintClass() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("BadBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        @Prototype.Blueprint
+                        final class BadBlueprint {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(false));
+        assertThat(result.diagnostics(), hasItem(containsString(
+                "@Prototype.Blueprint can only be used on interfaces: com.acme.BadBlueprint")));
+    }
+
+    @Test
+    void testInvalidBlueprintNameInConfiguredPrototypeScan() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeValue.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME value.
+                         */
+                        public interface AcmeValue extends Prototype.Api {
+                        }
+                        """)
+                .addSource("AcmeConfigSupport.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeConfigSupport {
+
+                            @Prototype.ConfigFactoryMethod("value")
+                            static AcmeValue createValue(Config config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeConfigSupport.class)
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * Value.
+                             *
+                             * @return value
+                             */
+                            @Option.Configured
+                            AcmeValue value();
+                        }
+                        """)
+                .addSource("Bad.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        @Prototype.Blueprint
+                        interface Bad {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(false));
+        assertThat(result.diagnostics(), hasItem(containsString(
+                "Blueprint interface name must end with Blueprint, this is invalid type: com.acme.Bad")));
     }
 
     @Test

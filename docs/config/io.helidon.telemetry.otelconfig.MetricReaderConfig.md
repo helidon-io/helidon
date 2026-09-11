@@ -52,6 +52,10 @@ Settings for a metric reader
 
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Periodic<wbr>Metric<wbr>Reader<wbr>Config](io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig.md)
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md#readers"><code>telemetry.<wbr>signals.<wbr>metrics.<wbr>readers</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

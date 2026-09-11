@@ -165,7 +165,7 @@ final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                                                                                Element v,
                                                                                Elements elements,
                                                                                boolean varargType) {
-        TypeName type = AptTypeFactory.createTypeName(elements, v).orElse(null);
+        TypeName type = AptTypeFactory.createTypeName(ctx, v).orElse(null);
         TypeMirror typeMirror = null;
         String defaultValue = null;
         List<TypedElementInfo> params = List.of();
@@ -220,14 +220,14 @@ final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             thrownChecked = ee.getThrownTypes()
                     .stream()
                     .filter(it -> isCheckedException(ctx, it))
-                    .flatMap(it -> AptTypeFactory.createTypeName(it).stream())
+                    .flatMap(it -> AptTypeFactory.createTypeName(ctx, v, it).stream())
                     .collect(Collectors.toSet());
 
             var elementTypeParameters = ee.getTypeParameters();
             if (!elementTypeParameters.isEmpty()) {
                 // we need to keep the formal order and number of type parameters; if we cannot create it, just use error
                 elementTypeParameters.stream()
-                        .map(AptTypeFactory::createTypeName)
+                        .map(it -> AptTypeFactory.createTypeName(ctx, it))
                         .flatMap(it -> it.isPresent()
                                 ? it.stream()
                                 : Stream.of(TypeName.createFromGenericDeclaration("error")))
@@ -256,7 +256,7 @@ final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             if (typeMirror instanceof DeclaredType) {
                 List<? extends TypeMirror> args = ((DeclaredType) typeMirror).getTypeArguments();
                 componentTypeNames = args.stream()
-                        .map(AptTypeFactory::createTypeName)
+                        .map(it -> AptTypeFactory.createTypeName(ctx, v, it))
                         .filter(Optional::isPresent)
                         .map(Optional::orElseThrow)
                         .collect(Collectors.toList());
@@ -451,7 +451,8 @@ final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             }
 
             typeElement.getInterfaces().forEach(interfaceTypeMirror -> {
-                TypeName fqInterfaceTypeName = AptTypeFactory.createTypeName(interfaceTypeMirror).orElse(null);
+                TypeName fqInterfaceTypeName = AptTypeFactory.createTypeName(ctx, typeElement, interfaceTypeMirror)
+                        .orElse(null);
 
                 if (fqInterfaceTypeName != null) {
                     TypeName genericInterfaceTypeName = fqInterfaceTypeName.genericTypeName();

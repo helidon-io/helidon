@@ -47,6 +47,7 @@
         <module>codegen</module>
         <module>http</module>
         <module>scheduling</module>
+        <module>messaging</module>
         <module>metrics</module>
         <module>openapi</module>
         <module>tracing</module>
