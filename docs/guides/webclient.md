@@ -72,19 +72,18 @@ Introduction](../modules/webclient.md).
 
 #### Create a sample Helidon project
 
-Generate the project sources using the Helidon Maven archetype. The result is
+Generate the project sources using the Helidon CLI. The result is
 a simple project that can be used for the examples in this guide.
 
-Run the Maven archetype:
+Run the Helidon CLI:
 
 ```shell [Terminal]
-mvn -U archetype:generate -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-se \
-    -DarchetypeVersion=27.0.0-SNAPSHOT \
-    -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-se \
-    -Dpackage=io.helidon.examples.quickstart.se
+helidon init --batch \
+    --flavor SE \
+    --archetype quickstart \
+    --groupid io.helidon.examples \
+    --artifactid helidon-quickstart-se \
+    --package io.helidon.examples.quickstart.se
 ```
 
 You should now have a directory called `helidon-quickstart-se`.

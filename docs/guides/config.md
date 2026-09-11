@@ -54,19 +54,18 @@ documentation.
 
 ### Create a Sample Helidon Project
 
-Use the Helidon Maven archetype to create a simple project that can be used
+Use the Helidon CLI to create a simple project that can be used
 for the examples in this guide.
 
-Run the Maven archetype:
+Run the Helidon CLI:
 
 ```shell [Terminal]
-mvn -U archetype:generate -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-se \
-    -DarchetypeVersion=27.0.0-SNAPSHOT \
-    -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-se \
-    -Dpackage=io.helidon.examples.quickstart.se
+helidon init --batch \
+    --flavor SE \
+    --archetype quickstart \
+    --groupid io.helidon.examples \
+    --artifactid helidon-quickstart-se \
+    --package io.helidon.examples.quickstart.se
 ```
 
 The project will be built and run from the helidon-quickstart-se directory:
