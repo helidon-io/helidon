@@ -58,6 +58,18 @@ class ShutdownCachedInstancesTest {
                                 .isSupplier(true)
                                 .build())
             .build();
+    private static final Lookup INJECTED_LIST_LOOKUP = Lookup.builder(LOOKUP)
+            .dependency(Dependency.builder(INJECTED_LOOKUP.dependency().orElseThrow())
+                                .name("dependencies")
+                                .descriptorConstant("DEPENDENCIES")
+                                .typeName(TypeName.builder(TypeName.create(Supplier.class))
+                                                  .addTypeArgument(TypeName.builder(TypeName.create(List.class))
+                                                                           .addTypeArgument(CONTRACT)
+                                                                           .build())
+                                                  .build())
+                                .cardinality(DependencyCardinality.LIST)
+                                .build())
+            .build();
 
     @Test
     void cleanupSupplierUsesOnlyItsOwnScope() throws InterruptedException {
@@ -343,6 +355,101 @@ class ShutdownCachedInstancesTest {
 
             assertThat("cleanup invocation completed", cleanupInvocations.get(), is(1));
             assertThat("interception wrapper called once", wrapInvocations.get(), is(1));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    void cleanupCanUseInitializedFirstInterceptionWrapperWithUnusedSibling() {
+        ServiceRegistryManager registryManager = registryManager();
+        CoreServiceRegistry registry = (CoreServiceRegistry) registryManager.registry();
+        AtomicInteger wrapInvocations = new AtomicInteger();
+        AtomicInteger cleanupInvocations = new AtomicInteger();
+        Object first = new Object();
+        Object second = new Object();
+        Object wrapped = new Object();
+
+        try (TestScope scope = new TestScope(registry, "initialized-first-interception")) {
+            var factory = new ServicesFactoryInterceptionWrapper<Object>(
+                    () -> List.of(QualifiedInstance.create(first), QualifiedInstance.create(second))) {
+                @Override
+                protected Object wrap(Object originalInstance) {
+                    wrapInvocations.incrementAndGet();
+                    assertThat("only the first factory product is wrapped", originalInstance, sameInstance(first));
+                    return wrapped;
+                }
+            };
+            TestDescriptor dependency = new TestDescriptor("InterceptedServicesFactory", 1, FactoryType.SERVICES,
+                                                            () -> factory, _ -> { });
+            ServiceManager<Object> dependencyManager = manager(registry, scope, dependency);
+            Supplier<Object> dependencySupply = new ServiceSupplies.ServiceSupply<>(INJECTED_LOOKUP,
+                                                                                   List.of(dependencyManager));
+            assertThat("initial lookup returned the first wrapped instance", dependencySupply.get(), sameInstance(wrapped));
+            assertThat("initial lookup left the second wrapper unused", wrapInvocations.get(), is(1));
+            Supplier<List<Object>> dependencyListSupply = new ServiceSupplies.ServiceSupplyList<>(INJECTED_LIST_LOOKUP,
+                                                                                                  List.of(dependencyManager));
+            TestDescriptor cleanup = new TestDescriptor("Cleanup", 2, FactoryType.SERVICE, Object::new, _ -> {
+                assertThat("cleanup uses the first cached wrapped instance", dependencySupply.get(), sameInstance(wrapped));
+                assertThat("cleanup left the second wrapper unused", wrapInvocations.get(), is(1));
+                assertThrows(ScopeNotActiveException.class, dependencyListSupply::get);
+                assertThat("list cleanup did not initialize the unused sibling", wrapInvocations.get(), is(1));
+                cleanupInvocations.incrementAndGet();
+            });
+            new ServiceSupplies.ServiceSupply<>(LOOKUP, List.of(manager(registry, scope, cleanup))).get();
+
+            scope.close();
+
+            assertThat("cleanup invocation completed", cleanupInvocations.get(), is(1));
+            assertThat("only the first wrapper was initialized", wrapInvocations.get(), is(1));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    void cleanupDoesNotSubstituteInitializedSecondInterceptionWrapperForUnusedFirst() {
+        ServiceRegistryManager registryManager = registryManager();
+        CoreServiceRegistry registry = (CoreServiceRegistry) registryManager.registry();
+        AtomicInteger wrapInvocations = new AtomicInteger();
+        AtomicInteger cleanupInvocations = new AtomicInteger();
+        Object first = new Object();
+        Object second = new Object();
+        Object wrapped = new Object();
+
+        try (TestScope scope = new TestScope(registry, "initialized-second-interception")) {
+            var factory = new ServicesFactoryInterceptionWrapper<Object>(
+                    () -> List.of(QualifiedInstance.create(first), QualifiedInstance.create(second))) {
+                @Override
+                protected Object wrap(Object originalInstance) {
+                    wrapInvocations.incrementAndGet();
+                    assertThat("only the second factory product is wrapped", originalInstance, sameInstance(second));
+                    return wrapped;
+                }
+            };
+            TestDescriptor dependency = new TestDescriptor("InterceptedServicesFactory", 1, FactoryType.SERVICES,
+                                                            () -> factory, _ -> { });
+            ServiceManager<Object> dependencyManager = manager(registry, scope, dependency);
+            List<ServiceInstance<Object>> cached = new ServiceSupplies.ServiceInstanceSupplyList<>(LOOKUP,
+                                                                                                   List.of(dependencyManager))
+                    .get();
+            assertThat("both factory products are cached", cached.size(), is(2));
+            assertThat("neither interception wrapper has been initialized", wrapInvocations.get(), is(0));
+            assertThat("second handle returns the wrapped instance", cached.get(1).get(), sameInstance(wrapped));
+            assertThat("first interception wrapper remains unused", wrapInvocations.get(), is(1));
+            Supplier<Object> dependencySupply = new ServiceSupplies.ServiceSupply<>(INJECTED_LOOKUP,
+                                                                                   List.of(dependencyManager));
+            TestDescriptor cleanup = new TestDescriptor("Cleanup", 2, FactoryType.SERVICE, Object::new, _ -> {
+                assertThrows(ScopeNotActiveException.class, dependencySupply::get);
+                assertThat("cleanup did not initialize the first wrapper", wrapInvocations.get(), is(1));
+                cleanupInvocations.incrementAndGet();
+            });
+            new ServiceSupplies.ServiceSupply<>(LOOKUP, List.of(manager(registry, scope, cleanup))).get();
+
+            scope.close();
+
+            assertThat("cleanup invocation completed", cleanupInvocations.get(), is(1));
+            assertThat("only the second wrapper was initialized", wrapInvocations.get(), is(1));
         } finally {
             registryManager.shutdown();
         }

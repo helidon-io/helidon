@@ -90,7 +90,10 @@ class ServiceManager<T> {
             if (lookup.dependency().filter(Dependency::isSupplier).isPresent()
                     && scopedRegistry instanceof ScopedRegistryImpl scopedRegistryImpl) {
                 Optional<List<QualifiedInstance<T>>> instances =
-                        scopedRegistryImpl.cleanupInstances(provider.descriptor(), lookup);
+                        scopedRegistryImpl.<T>cleanupInstances(provider.descriptor(), lookup)
+                                .map(targets -> targets.stream()
+                                        .map(it -> GeneratedService.forCleanup(it, e))
+                                        .toList());
                 if (instances.isPresent()) {
                     Dependency dependency = lookup.dependency().orElseThrow();
                     LOGGER.log(System.Logger.Level.WARNING,

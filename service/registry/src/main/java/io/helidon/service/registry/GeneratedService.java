@@ -37,11 +37,27 @@ public final class GeneratedService {
     private GeneratedService() {
     }
 
-    static boolean initialized(Service.QualifiedInstance<?> qualifiedInstance) {
-        if (qualifiedInstance instanceof InterceptionWrapper.LazyQualifiedInstance<?> lazyInstance) {
-            return lazyInstance.instance.isLoaded();
+    static <T> Service.QualifiedInstance<T> forCleanup(Service.QualifiedInstance<T> qualifiedInstance,
+                                                       ScopeNotActiveException failure) {
+        // Preserve factory result selection without initializing unused interception wrappers during cleanup.
+        if (qualifiedInstance instanceof InterceptionWrapper.LazyQualifiedInstance<?> lazyInstance
+                && !lazyInstance.instance.isLoaded()) {
+            return new Service.QualifiedInstance<>() {
+                @Override
+                public Set<Qualifier> qualifiers() {
+                    return qualifiedInstance.qualifiers();
+                }
+
+                @Override
+                public T get() {
+                    if (!lazyInstance.instance.isLoaded()) {
+                        throw failure;
+                    }
+                    return qualifiedInstance.get();
+                }
+            };
         }
-        return true;
+        return qualifiedInstance;
     }
 
     /**
