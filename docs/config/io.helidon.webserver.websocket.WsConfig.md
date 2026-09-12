@@ -19,6 +19,18 @@ WebSocket protocol configuration
 <tbody>
 <tr>
 <td>
+<code>max-<wbr>buffered-<wbr>message-<wbr>size</code>
+</td>
+<td>
+<code>Size</code>
+</td>
+<td>
+<code>1 Mi<wbr>B</code>
+</td>
+<td>Maximum size of a WebSocket message buffered for delivery to a listener</td>
+</tr>
+<tr>
+<td>
 <code>name</code>
 </td>
 <td>

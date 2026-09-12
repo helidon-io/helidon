@@ -1,8 +1,8 @@
-# io.<wbr>helidon.<wbr>webclient.<wbr>websocket.<wbr>WsClient<wbr>Protocol<wbr>Config
+# io.<wbr>helidon.<wbr>websocket.<wbr>WsProtocol<wbr>Config
 
 ## Description
 
-WebSocket client protocol configuration
+WebSocket protocol configuration available from a <code>Ws<wbr>Session</code>
 
 ## Configuration options
 
@@ -29,33 +29,15 @@ WebSocket client protocol configuration
 </td>
 <td>Maximum size of a WebSocket message buffered for delivery to a listener</td>
 </tr>
-<tr>
-<td>
-<code>sub-<wbr>protocols</code>
-</td>
-<td>
-<code>List&lt;<wbr>String&gt;</code>
-</td>
-<td>
-</td>
-<td>WebSocket sub-protocols requested by the client</td>
-</tr>
-<tr>
-<td>
-<code>name</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-<code>websocket</code>
-</td>
-<td>Name of this protocol configuration</td>
-</tr>
 </tbody>
 </table>
 
 
+
+## Dependent Types
+
+- [io.<wbr>helidon.<wbr>webclient.<wbr>websocket.<wbr>WsClient<wbr>Protocol<wbr>Config](io.helidon.webclient.websocket.WsClientProtocolConfig.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>websocket.<wbr>WsConfig](io.helidon.webserver.websocket.WsConfig.md)
 
 ---
 

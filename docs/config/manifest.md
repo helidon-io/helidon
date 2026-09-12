@@ -190,6 +190,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>webserver.<wbr>Connection<wbr>Config](io.helidon.webserver.ConnectionConfig.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>Error<wbr>Handling](io.helidon.webserver.ErrorHandling.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>Listener<wbr>Config](io.helidon.webserver.ListenerConfig.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>Proxy<wbr>Protocol<wbr>Config](io.helidon.webserver.ProxyProtocolConfig.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>WebServer](io.helidon.webserver.WebServer.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>accesslog.<wbr>Access<wbr>LogFeature](io.helidon.webserver.accesslog.AccessLogFeature.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>concurrency.<wbr>limits.<wbr>Limits<wbr>Feature](io.helidon.webserver.concurrency.limits.LimitsFeature.md)
@@ -228,6 +229,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Static<wbr>Content<wbr>Feature](io.helidon.webserver.staticcontent.StaticContentFeature.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Temporary<wbr>Storage](io.helidon.webserver.staticcontent.TemporaryStorage.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>websocket.<wbr>WsConfig](io.helidon.webserver.websocket.WsConfig.md)
+- [io.<wbr>helidon.<wbr>websocket.<wbr>WsProtocol<wbr>Config](io.helidon.websocket.WsProtocolConfig.md)
 
 ## Provider Types
 
@@ -454,12 +456,16 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>server.<wbr>protocols.<wbr>http11.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config](io.helidon.server.protocols.http11.requestedUriDiscovery.trustedProxies.DenyConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>protocols.<wbr>http2.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Allow<wbr>Config](io.helidon.server.protocols.http2.requestedUriDiscovery.trustedProxies.AllowConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>protocols.<wbr>http2.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config](io.helidon.server.protocols.http2.requestedUriDiscovery.trustedProxies.DenyConfig.md)
+- [io.<wbr>helidon.<wbr>server.<wbr>proxy<wbr>Protocol.<wbr>trusted<wbr>Proxies.<wbr>Allow<wbr>Config](io.helidon.server.proxyProtocol.trustedProxies.AllowConfig.md)
+- [io.<wbr>helidon.<wbr>server.<wbr>proxy<wbr>Protocol.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config](io.helidon.server.proxyProtocol.trustedProxies.DenyConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Allow<wbr>Config](io.helidon.server.requestedUriDiscovery.trustedProxies.AllowConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config](io.helidon.server.requestedUriDiscovery.trustedProxies.DenyConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>protocols.<wbr>http11.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Allow<wbr>Config](io.helidon.server.sockets.protocols.http11.requestedUriDiscovery.trustedProxies.AllowConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>protocols.<wbr>http11.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config](io.helidon.server.sockets.protocols.http11.requestedUriDiscovery.trustedProxies.DenyConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>protocols.<wbr>http2.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Allow<wbr>Config](io.helidon.server.sockets.protocols.http2.requestedUriDiscovery.trustedProxies.AllowConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>protocols.<wbr>http2.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config](io.helidon.server.sockets.protocols.http2.requestedUriDiscovery.trustedProxies.DenyConfig.md)
+- [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>proxy<wbr>Protocol.<wbr>trusted<wbr>Proxies.<wbr>Allow<wbr>Config](io.helidon.server.sockets.proxyProtocol.trustedProxies.AllowConfig.md)
+- [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>proxy<wbr>Protocol.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config](io.helidon.server.sockets.proxyProtocol.trustedProxies.DenyConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Allow<wbr>Config](io.helidon.server.sockets.requestedUriDiscovery.trustedProxies.AllowConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config](io.helidon.server.sockets.requestedUriDiscovery.trustedProxies.DenyConfig.md)
 - [io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>tls.<wbr>private<wbr>Key.<wbr>keystore.<wbr>Cert<wbr>Chain<wbr>Config](io.helidon.server.sockets.tls.privateKey.keystore.CertChainConfig.md)

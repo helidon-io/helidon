@@ -211,7 +211,7 @@ HTTP/2 server configuration
 <td>
 <code>8192</code>
 </td>
-<td>The maximum field section size that the sender is prepared to accept in bytes</td>
+<td>The maximum field section size the server advertises to clients using the HTTP/2 <code>SETTINGS_<wbr>MAX_<wbr>HEADER_<wbr>LIST_<wbr>SIZE</code> setting</td>
 </tr>
 </tbody>
 </table>

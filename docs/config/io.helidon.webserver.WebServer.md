@@ -123,18 +123,6 @@ WebServer configuration bean
 </tr>
 <tr>
 <td>
-<code>enable-<wbr>proxy-<wbr>protocol</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>false</code>
-</td>
-<td>Enable proxy protocol support for this socket</td>
-</tr>
-<tr>
-<td>
 <code>host</code>
 </td>
 <td>
@@ -320,6 +308,20 @@ WebServer configuration bean
 </tr>
 <tr>
 <td>
+<a id="proxy-protocol"></a>
+<a href="io.helidon.webserver.ProxyProtocolConfig.md">
+<code>proxy-<wbr>protocol</code>
+</a>
+</td>
+<td>
+<code>Proxy<wbr>Protocol<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>PROXY protocol configuration</td>
+</tr>
+<tr>
+<td>
 <code>ignore-<wbr>invalid-<wbr>named-<wbr>routing</code>
 </td>
 <td>
@@ -443,10 +445,23 @@ WebServer configuration bean
 <tr>
 <th>Key</th>
 <th>Type</th>
+<th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>enable-<wbr>proxy-<wbr>protocol</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Deprecated PROXY protocol enablement flag for this socket</td>
+</tr>
 <tr>
 <td>
 <a id="connection-config"></a>
@@ -457,6 +472,8 @@ WebServer configuration bean
 <td>
 <code>Connection<wbr>Config</code>
 </td>
+<td>
+</td>
 <td>Configuration of a connection (established from client against our server)</td>
 </tr>
 <tr>
@@ -465,6 +482,8 @@ WebServer configuration bean
 </td>
 <td>
 <code>Integer</code>
+</td>
+<td>
 </td>
 <td>Listener receive buffer size</td>
 </tr>

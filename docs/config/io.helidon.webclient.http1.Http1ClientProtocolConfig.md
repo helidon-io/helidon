@@ -69,18 +69,6 @@ Configuration of an HTTP/1.1 client
 </tr>
 <tr>
 <td>
-<code>max-<wbr>header-<wbr>size</code>
-</td>
-<td>
-<code>Integer</code>
-</td>
-<td>
-<code>16384</code>
-</td>
-<td>Configure the maximum allowed header size of the response</td>
-</tr>
-<tr>
-<td>
 <code>max-<wbr>status-<wbr>line-<wbr>length</code>
 </td>
 <td>
@@ -105,6 +93,18 @@ Configuration of an HTTP/1.1 client
 </tr>
 <tr>
 <td>
+<code>max-<wbr>headers-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>16384</code>
+</td>
+<td>Configure the maximum allowed headers size, which must be greater than <code>0</code></td>
+</tr>
+<tr>
+<td>
 <code>default-<wbr>keep-<wbr>alive</code>
 </td>
 <td>
@@ -118,6 +118,34 @@ Configuration of an HTTP/1.1 client
 </tbody>
 </table>
 
+
+### Deprecated Options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>max-<wbr>header-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>16384</code>
+</td>
+<td>Configure the maximum allowed headers size of the response, which must be greater than <code>0</code></td>
+</tr>
+</tbody>
+</table>
 
 
 ---

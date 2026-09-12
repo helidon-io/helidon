@@ -89,7 +89,7 @@ HTTP/1.1 server configuration
 <td>
 <code>16384</code>
 </td>
-<td>Maximal size of received headers in bytes</td>
+<td>Maximum size of received headers in bytes, which must be greater than <code>0</code></td>
 </tr>
 <tr>
 <td>
