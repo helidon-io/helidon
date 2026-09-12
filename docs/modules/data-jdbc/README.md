@@ -7,6 +7,6 @@ index:
 -->
 # Data JDBC
 
-- [Data JDBC](data-jdbc.md)
+- [Overview](data-jdbc.md)
 - [Declarative Programming Model](declarative.md)
 - [Imperative Programming Model](imperative.md)
