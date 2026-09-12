@@ -182,11 +182,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
-
                 if (http1Config.validatePrologue()) {
                     validatePrologue(prologue);
                 }
-
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 if (http1Config.validateRequestHeaders()) {
                     validateHostHeader(prologue, headers, true);
