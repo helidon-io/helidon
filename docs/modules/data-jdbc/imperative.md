@@ -5,18 +5,18 @@ description: "Use Helidon Data JDBC with the imperative programming model"
 
 ## Overview
 
-In the Data JDBC imperative approach, application code creates each database
-operation through `JdbcClient`. It supplies the SQL, binds parameters, selects
-a result mapping, and invokes a terminal method. Helidon reads the complete
-result before that method returns.
+With the Data JDBC imperative programming model, you create each database
+operation through `JdbcClient`. You supply the SQL, bind parameters, select a
+result mapping, and invoke a terminal method. Helidon reads the complete result
+before that method returns.
 
-Generated repositories use the same public `JdbcClient` API. An application
-can combine both styles. The
-[declarative programming model](declarative.md) works well for a fixed set of
-operations that Helidon can validate during compilation.
+Generated repositories use the same public `JdbcClient` API, so you can combine
+both programming models. Use the
+[declarative programming model](declarative.md) for a fixed set of operations
+that Helidon can validate at compile time.
 
 Add the runtime dependency and JDBC driver described in
-[Maven Coordinates](README.md#maven-coordinates). The imperative programming
+[Maven Coordinates](data-jdbc.md#maven-coordinates). The imperative programming
 model does not require the Data JDBC code generator.
 
 > [!NOTE]
@@ -25,9 +25,9 @@ model does not require the Data JDBC code generator.
 
 ## JDBC Client Configuration
 
-Applications that use the Service Registry normally inject a configured
-client. A registry-managed client is also required for local JDBC transaction
-participation. A standalone client acquires and closes its own connection for
+If your application uses the Service Registry, inject a configured client. A
+registry-managed client is also required to participate in a local JDBC
+transaction. A standalone client acquires and closes its own connection for
 each operation.
 
 ### Injected Clients
@@ -51,16 +51,16 @@ final class ContactStore {
 }
 ```
 
-The `contacts` qualifier matches the configured client name. Use another name
-when a service needs a different database. See
-[Configuration](README.md#configuration) for file-based configuration.
+The `contacts` qualifier matches the configured client name. To inject a
+different client, use its configured name. See
+[Configuration](data-jdbc.md#configuration) for file-based configuration.
 
 Only a client managed by the Service Registry can use the connection associated
 with a local JDBC transaction.
 
 ### Standalone Clients
 
-A standalone client needs exactly one connection source. If your application
+A standalone client requires exactly one connection source. If your application
 owns a `DataSource`, pass it to the builder:
 
 ```java
@@ -70,7 +70,7 @@ JdbcClient jdbcClient = JdbcClient.builder()
 ```
 
 Your application continues to own the `DataSource`. Helidon closes each
-connection that it obtains from the data source.
+connection it obtains from the data source.
 
 You can instead reference an SQL data source available from the Service
 Registry:
@@ -91,14 +91,25 @@ JdbcClient jdbcClient = JdbcClient.builder()
         .build();
 ```
 
+To retain the immutable configuration, build a prototype and pass it to
+`JdbcClient.create`:
+
+```java
+JdbcClientConfig config = JdbcClient.builder()
+        .dataSource(contactsDataSource)
+        .buildPrototype();
+
+JdbcClient jdbcClient = JdbcClient.create(config);
+```
+
 A standalone client acquires and closes a connection for every operation.
-Resolving a named data source does not make the client registry-managed, so a
-standalone client cannot join an annotated transaction.
+Resolving a named data source does not make the client registry-managed. The
+standalone client therefore cannot join an annotated transaction.
 
 ### Programmatic Configuration
 
-In an imperative application, install client configurations before the first
-lookup of `JdbcClientConfig` or `JdbcClient`:
+Install the client configurations before the first lookup of `JdbcClientConfig`
+or `JdbcClient`:
 
 ```java
 JdbcClientConfig contacts = JdbcClient.builder()
@@ -116,13 +127,14 @@ JdbcClientConfig audit = JdbcClient.builder()
 Services.set(JdbcClientConfig.class, contacts, audit);
 ```
 
-One `Services.set` call supplies the complete list. It replaces configurations
-from `application.yaml`; it does not merge with them.
+Pass the complete list of configurations in one `Services.set` call. The call
+replaces the configurations from `application.yaml` rather than merging with
+them.
 
 ## Statement Execution
 
-`JdbcClient.create` starts an operation but does not access the database. Add
-positional bindings and, for a query, select a row mapping. A terminal method
+`JdbcClient.create` starts an operation without accessing the database. Add
+positional bindings and select a row mapping for a query. A terminal method
 executes the statement.
 
 The following query returns zero or one name:
@@ -145,8 +157,12 @@ long updated = jdbcClient.create(
         .execute();
 ```
 
+`execute()` uses the driver's large update count when the driver supports it.
+Otherwise, Data JDBC returns the legacy integer count as a `long`. The fallback
+cannot represent a count outside the integer range.
+
 Pass one SQL statement to `JdbcClient.create`. See
-[SQL Guidelines](README.md#sql-guidelines) for
+[SQL Guidelines](data-jdbc.md#sql-guidelines) for
 safe parameter handling and portable marker syntax.
 
 ## Parameter Binding
@@ -170,8 +186,8 @@ List<String> names = jdbcClient.create("""
 
 Each bind value must be non-null and use a
 [supported scalar type](declarative.md#supported-scalar-types). The imperative
-API does not bind typed null values. When an operation needs SQL `NULL`, include
-`NULL` in the SQL and use a separate statement for that case.
+API does not support typed null bindings. When an operation needs SQL `NULL`,
+include `NULL` in the SQL and use a separate statement for that case.
 
 Bind markers represent values, not SQL structure. Select identifiers,
 operators, and sort directions from values controlled by the application.
@@ -190,8 +206,8 @@ long count = jdbcClient.create("SELECT COUNT(*) FROM CONTACT")
 For scalar mapping, `one()` and `list()` require non-null column values.
 `optional()` returns `Optional.empty()` when no row exists or when the first
 column of the single row is SQL `NULL`. To distinguish those cases, use a
-custom mapper that returns `Optional<T>`; the outer optional then represents
-row presence.
+custom mapper that returns `Optional<T>`. The outer optional then represents row
+presence.
 
 ### Custom Row Mapping
 
@@ -222,8 +238,8 @@ propagated unchanged.
 
 ### Result Cardinality
 
-Complete a query or generated-key operation with the method that matches the
-expected number of rows:
+Complete a query or generated-key operation with the terminal method that
+matches the expected number of rows:
 
 - `one()` requires exactly one row. It throws `NoResultException` for no rows
   and `NonUniqueResultException` for more than one row.
@@ -236,10 +252,10 @@ results in SQL.
 
 ## Return Generated Keys
 
-After an insert or update, call `generatedKeys()`, select a mapper, and invoke a
-result terminal. With no calls to `addColumn`, Helidon requests the driver's
-default keys. Use `addColumn` to request keys by column name when the driver
-supports it:
+After an insert or update, call `generatedKeys()`, select a mapper, and invoke
+the terminal method that matches the expected number of generated key rows. If
+you do not call `addColumn`, Helidon requests the driver's default keys. Use
+`addColumn` to request keys by column name when the driver supports it:
 
 ```java
 long id = jdbcClient.create("INSERT INTO CONTACT (NAME) VALUES (?)")
@@ -271,20 +287,21 @@ or iterators.
 operation are single-use and are not safe for concurrent use. Start each
 operation with a new call to `JdbcClient.create`.
 
-Helidon releases its resources if database access, mapping, or result
-validation fails. See [Errors and JDBC Warnings](README.md#errors-and-jdbc-warnings)
-for diagnostic behavior.
+Helidon releases its resources when database access, mapping, or result
+validation fails. See
+[Errors and JDBC Warnings](data-jdbc.md#errors-and-jdbc-warnings) for diagnostic
+behavior.
 
 ## Transaction Participation
 
 A registry-managed client can participate in a local JDBC transaction when the
-Service Registry invokes the managed service method. Put the transaction
-annotation on a managed service method; direct construction and self-invocation
+Service Registry invokes the managed service method. Place the transaction
+annotation on a managed service method. Direct construction and self-invocation
 do not trigger interception.
 
 In the following method, both statements use the connection associated with
-the transaction. An exception that crosses the method boundary causes Helidon
-to roll back the transaction:
+the transaction. If an exception crosses the method boundary, Helidon rolls
+back the transaction:
 
 ```java
 @Tx.Required
@@ -317,6 +334,6 @@ The transaction is synchronous and remains associated with the thread that
 started it. All operations in the transaction must use the same data source.
 A standalone client remains outside the transaction.
 
-See [Local Transactions](README.md#local-transactions) for propagation and
+See [Local Transactions](data-jdbc.md#local-transactions) for propagation and
 provider restrictions. Keep DDL outside local transactions as described in
-[Schema Management](README.md#schema-management).
+[Schema Management](data-jdbc.md#schema-management).
