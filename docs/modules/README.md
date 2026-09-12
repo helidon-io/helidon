@@ -13,6 +13,7 @@ index:
 - [Config](config/README.md)
 - [CORS](cors.md)
 - [Data](data.md)
+- [Data JDBC](data-jdbc/README.md)
 - [DbClient](dbclient.md)
 - [Discovery](discovery.md)
 - [Fault Tolerance](fault-tolerance.md)
