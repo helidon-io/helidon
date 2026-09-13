@@ -150,27 +150,28 @@ final class AptTypeFactory {
                 default -> throw new IllegalStateException("Unknown primitive type: " + kind);
             };
 
-            return Optional.of(TypeName.create(type));
+            return Optional.of(decorateTypeName(TypeName.create(type), typeMirror, elements));
         }
 
         switch (kind) {
         case VOID -> {
-            return Optional.of(TypeName.create(void.class));
+            return Optional.of(decorateTypeName(TypeName.create(void.class), typeMirror, elements));
         }
         case TYPEVAR -> {
+            var typeVar = (TypeVariable) typeMirror;
+            var typeName = createFromGenericDeclaration(typeVar.asElement().getSimpleName().toString());
             if (!inProgress.add(typeMirror)) {
                 // prevent infinite loop
-                return Optional.of(TypeName.createFromGenericDeclaration(typeMirror.toString()));
+                return Optional.of(decorateTypeName(typeName, typeMirror, elements));
             }
 
             try {
-                var builder = TypeName.builder(createFromGenericDeclaration(typeMirror.toString()));
+                var builder = TypeName.builder(typeName);
 
-                var typeVar = ((TypeVariable) typeMirror);
                 handleBounds(elements, inProgress, typeVar.getUpperBound(), builder::addUpperBound);
                 handleBounds(elements, inProgress, typeVar.getLowerBound(), builder::addLowerBound);
 
-                return Optional.of(builder.build());
+                return Optional.of(decorateTypeName(builder.build(), typeMirror, elements));
             } finally {
                 inProgress.remove(typeMirror);
             }
@@ -185,10 +186,10 @@ final class AptTypeFactory {
             handleBounds(elements, inProgress, vt.getExtendsBound(), builder::addUpperBound);
             handleBounds(elements, inProgress, vt.getSuperBound(), builder::addLowerBound);
 
-            return Optional.of(builder.build());
+            return Optional.of(decorateTypeName(builder.build(), typeMirror, elements));
         }
         case ERROR -> {
-            return Optional.of(TypeName.create(typeMirror.toString()));
+            return Optional.of(decorateTypeName(TypeName.create(typeMirror.toString()), typeMirror, elements));
         }
         // this is most likely a type that is code generated as part of this round, best effort
         case NONE -> {
@@ -201,46 +202,61 @@ final class AptTypeFactory {
 
         if (typeMirror instanceof ArrayType arrayType) {
             TypeName typeName = createTypeName(elements, inProgress, arrayType.getComponentType()).orElseThrow();
-            return Optional.of(TypeName.builder(typeName)
-                                       .componentType(typeName)
-                                       .array(true)
-                                       .build());
+            TypeName arrayName = TypeName.builder(typeName)
+                    .annotations(List.of())
+                    .componentType(typeName)
+                    .array(true)
+                    .build();
+            return Optional.of(decorateTypeName(arrayName, typeMirror, elements));
         }
 
         if (typeMirror instanceof DeclaredType declaredType) {
-            List<TypeName> typeParams = declaredType.getTypeArguments()
-                    .stream()
-                    .map(it -> createTypeName(elements, inProgress, it))
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toList());
-
-            TypeName result = createTypeName(elements, inProgress, declaredType.asElement()).orElse(null);
-
-            if (result == null) {
-                return Optional.empty();
-            }
-
-            var annotationMirrors = declaredType.getAnnotationMirrors();
-            if (!annotationMirrors.isEmpty() && elements != null) {
-                // we cannot do this if elements is null
-                var newResultBuilder = TypeName.builder(result);
-                for (AnnotationMirror annotationMirror : annotationMirrors) {
-                    newResultBuilder.addAnnotation(AptAnnotationFactory.createAnnotation(annotationMirror, elements));
-                }
-                result = newResultBuilder.build();
-            }
-
-            if (typeParams.isEmpty()) {
-                return Optional.ofNullable(result);
-            }
-
             if (!inProgress.add(typeMirror)) {
                 return Optional.empty(); // prevent infinite loop
             }
-            return Optional.of(TypeName.builder(result).typeArguments(typeParams).build());
+            try {
+                List<TypeName> typeParams = declaredType.getTypeArguments()
+                        .stream()
+                        .map(it -> createTypeName(elements, inProgress, it))
+                        .flatMap(Optional::stream)
+                        .collect(Collectors.toList());
+
+                TypeName result = createTypeName(elements, inProgress, declaredType.asElement()).orElse(null);
+
+                if (result == null) {
+                    return Optional.empty();
+                }
+
+                result = decorateTypeName(result, typeMirror, elements);
+
+                if (typeParams.isEmpty()) {
+                    return Optional.of(result);
+                }
+
+                return Optional.of(TypeName.builder(result).typeArguments(typeParams).build());
+            } finally {
+                inProgress.remove(typeMirror);
+            }
         }
 
         throw new IllegalStateException("Unknown type mirror: " + typeMirror);
+    }
+
+    private static TypeName decorateTypeName(TypeName typeName, TypeMirror typeMirror, Elements elements) {
+        if (elements == null) {
+            return typeName;
+        }
+
+        var annotationMirrors = typeMirror.getAnnotationMirrors();
+        if (annotationMirrors.isEmpty()) {
+            return typeName;
+        }
+
+        var builder = TypeName.builder(typeName);
+        for (AnnotationMirror annotationMirror : annotationMirrors) {
+            builder.addAnnotation(AptAnnotationFactory.createAnnotation(annotationMirror, elements));
+        }
+        return builder.build();
     }
 
     private static void handleBounds(Elements elements,
