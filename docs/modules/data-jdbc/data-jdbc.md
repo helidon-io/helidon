@@ -5,12 +5,11 @@ description: "Use the Helidon Data JDBC provider"
 
 ## Overview
 
-Helidon Data JDBC is a Helidon Data provider that executes SQL defined by application 
-using Java Database Connectivity (JDBC) APIs. It binds parameters, maps
-results, and manages the JDBC resources for each operation.
+Helidon Data JDBC executes SQL that your application defines through Java
+Database Connectivity (JDBC) APIs. It binds parameters, maps results, and
+manages the JDBC resources used by each operation.
 
-For brevity, this documentation refers to the Helidon Data JDBC provider as
-Data JDBC.
+This document uses the shorter name Data JDBC for the provider.
 
 Data JDBC does not provide entity management or derive queries from repository
 method names. It supports two programming models:
@@ -22,12 +21,13 @@ method names. It supports two programming models:
   and execute operations directly in application code.
 
 You can combine declarative repository methods with imperative `JdbcClient`
-operations. Both programming models use the same statement execution, result
-mapping, and resource cleanup.
+operations because both programming models share statement execution, result
+mapping, and resource management.
 
-Each Data JDBC operation executes one SQL statement. The provider does not
-initialize the database schema. Create the schema before data operations begin.
-See [Schema Management](#schema-management) for guidance about schema changes.
+Each Data JDBC operation executes one SQL statement. Database schema creation
+remains separate and should be complete before data operations begin.
+[Schema Management](#schema-management) explains how schema changes fit into an
+application using Data JDBC.
 
 > [!NOTE]
 > Helidon Data JDBC is an incubating feature. It is not production ready. Its
@@ -35,9 +35,11 @@ See [Schema Management](#schema-management) for guidance about schema changes.
 
 ## Maven Coordinates
 
-To enable Data JDBC with YAML configuration and MySQL, add the following
-dependencies to your project’s `pom.xml` (see
-[Managing Dependencies](../../dependency-management.md)):
+The following dependencies provide Data JDBC, YAML configuration support, and
+the MySQL JDBC driver. Projects that use the Helidon application parent or
+import `helidon-dependencies` receive the corresponding dependency versions from
+Helidon. For other dependency management options, see
+[Managing Dependencies](../../guides/maven.md#dependency-management).
 
 <!--@mdc ::code-callout -->
 ```xml [pom.xml]
@@ -61,16 +63,19 @@ dependencies to your project’s `pom.xml` (see
 
 ## Configuration
 
-The Service Registry creates `JdbcClient` services from the list under
-`data.clients.jdbc`. Configure exactly one connection source for each client:
-a direct JDBC connection or a registered SQL data source.
+Helidon creates a `JdbcClient` service for each entry under
+`data.clients.jdbc`. A client can use direct JDBC connection properties or
+refer to an SQL data source registered with the Service Registry. An imperative
+application can also create a standalone client from an existing `DataSource`,
+in which case the application continues to own the data source.
+[Standalone Clients](imperative.md#standalone-clients) describes that option.
 
-When your application uses more than one data source, give each client a unique
-name. The direct connection example creates clients named `contacts` and
-`audit`. If you omit `name`, as shown in the registered data source example,
-Helidon registers the client as `@default`. Repositories use the default client
-unless they select another client with `@Jdbc.Client`. Injected clients use the
-configured name as their Service Registry qualifier.
+Client names distinguish configurations when an application connects to more
+than one data source. The direct connection example creates `contacts` and
+`audit` clients. A configuration without a `name` becomes the `@default` client.
+Repositories use this default unless `@Jdbc.Client` selects another client,
+while injected clients use their configured names as Service Registry
+qualifiers.
 
 ### Direct JDBC Connections
 
@@ -94,11 +99,11 @@ data:
           jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
 ```
 
-The connection URL is required. You can omit `jdbc-driver-class-name` when the
-driver registers itself and accepts the configured URL.
+Every direct connection requires a JDBC URL, while the driver class name can be
+omitted when the driver registers itself and recognizes the configured URL.
 
-`data.clients.jdbc` is a list, even if the application defines only one client.
-Use zero-based indexes when you configure the list in a properties file:
+Although `data.clients.jdbc` is a list, it can contain a single client. In a
+properties file, the client indexes begin at zero:
 
 ```properties [application.properties]
 data.clients.jdbc.0.name=contacts
@@ -110,8 +115,12 @@ data.clients.jdbc.0.connection.jdbc-driver-class-name=com.mysql.cj.jdbc.Driver
 
 ### Registered Data Sources
 
-Use a registered SQL data source when components share a data source or
-connection pool. For example, add the HikariCP provider:
+When several components need to share a data source or connection pool, the
+JDBC client can refer to an SQL data source registered with the Service
+Registry. The following example uses the HikariCP provider. Its dependency
+version is supplied by the Helidon application parent or
+`helidon-dependencies`, just like the dependencies shown in
+[Maven Coordinates](#maven-coordinates).
 
 ```xml [pom.xml]
 <dependency>
@@ -120,7 +129,7 @@ connection pool. For example, add the HikariCP provider:
 </dependency>
 ```
 
-Then define the data source and reference its name from the JDBC client:
+Once the data source is registered, its name connects the JDBC client to it:
 
 ```yaml [application.yaml]
 data:
@@ -137,53 +146,59 @@ data:
       - data-source: "pokemon-datasource"
 ```
 
-The `data-source` value must match an SQL data source available from the
-Service Registry. Because the client does not declare a name, Helidon registers
-it as `@default`.
+The `data-source` value identifies an SQL data source in the Service Registry
+and must match its registered name. This example omits the client `name`, so
+Helidon makes the client available as `@default`.
 
-Imperative applications can also configure registry-managed clients in code
-or create standalone clients. See
+Imperative applications can also configure clients managed by the Service
+Registry in code or create standalone clients. These options are described in
 [JDBC Client Configuration](imperative.md#jdbc-client-configuration).
 
 ## SQL Guidelines
 
-Each repository method and each `JdbcClient` terminal method executes one
-prepared SQL statement. The statement must produce the result expected by the
-operation: rows for a query, an update count for an update, or generated keys
-for an update that requests them.
+Each repository method or `JdbcClient` terminal method executes one prepared
+SQL statement. Its result must agree with the operation being performed,
+whether that result consists of rows, an update count, or generated keys.
 
-For a multi-step workflow, use separate operations. Enclose the operations in
-a [local transaction](#local-transactions) when they must be atomic.
+A workflow that spans several statements is represented by several Data JDBC
+operations. When those statements must succeed or fail together, the operations
+can run within a [local transaction](#local-transactions).
 
-Always bind application input. Bind markers represent values only. Select
-table names, column names, operators, sort directions, and other SQL structure
-from an allowlist controlled by the application.
+Values supplied by the application belong in bound parameters, while the SQL
+structure remains under the application's control. Parameter markers can
+represent values, but they cannot represent table names, column names,
+operators, or sort directions. When these structural elements vary, the
+application should select them from values it already recognizes as valid.
 
-Declarative statements accept named markers or positional `?` markers, but not
-both in the same statement. The imperative approach accepts positional markers
-only. See [Statement Parameters](declarative.md#statement-parameters) and
-[Parameter Binding](imperative.md#parameter-binding) for details.
+Declarative statements support either named markers or positional `?` markers
+in a given statement. Imperative statements use positional markers.
+[Statement Parameters](declarative.md#statement-parameters) and
+[Parameter Binding](imperative.md#parameter-binding) explain the two forms.
 
-Data JDBC ignores text that resembles a bind marker in standard string
-literals, quoted identifiers, comments, PostgreSQL escape and dollar-quoted
-strings, and valid Oracle alternative-quoted strings. It preserves doubled
-`??` as driver escape syntax. For portable SQL:
+Data JDBC does not treat text inside standard string literals, quoted
+identifiers, comments, PostgreSQL escape strings, PostgreSQL strings that use
+dollar quoting, or valid Oracle strings that use alternative quoting as
+parameters. It also preserves doubled `??` characters for drivers that use
+them as escape syntax.
 
-- Use doubled apostrophes in ordinary string literals instead of MySQL
-  backslash escapes.
-- Add whitespace after `--` when starting a line comment, and do not nest block
-  comments.
-- Start Oracle `q` and `nq` alternative-quoted literals at a token boundary.
-- Avoid text that resembles a bind marker in SQL Server bracketed identifiers.
-  Data JDBC treats square brackets as ordinary punctuation.
+Portable parsing relies on a few SQL conventions. An ordinary string literal
+represents an apostrophe with two apostrophes instead of a MySQL backslash
+escape. A line comment begins when `--` is followed by whitespace, an ISO
+control character, or the end of the SQL text. Block comments are not nested.
+
+Oracle `q` and `nq` literals begin at a token boundary. SQL Server bracketed
+identifiers require particular care because Data JDBC treats square brackets
+as ordinary punctuation. Text that resembles a parameter marker inside those
+brackets can therefore be recognized as a marker.
 
 ## Local Transactions
 
-Generated repositories and registry-managed `JdbcClient` services can
-participate in Helidon local JDBC transactions. Apply a transaction annotation,
-such as `@Tx.Required`, to a managed service method, or call `Tx.transaction`.
-A standalone client created with `JdbcClient.builder()` always uses its own
-connection and does not join the local transaction.
+Generated repositories and `JdbcClient` services managed by the Service
+Registry can participate in Helidon local JDBC transactions. A transaction can
+begin when a managed service method carries an annotation such as
+`@Tx.Required`, or when the application calls `Tx.transaction`. A standalone
+client created with `JdbcClient.builder()` always uses its own connection and
+does not join the local transaction.
 
 Local JDBC transactions are synchronous and remain associated with the thread
 that starts them. Data JDBC acquires the transaction connection for the first
@@ -192,69 +207,80 @@ source. If an operation selects a second data source, Data JDBC rejects the
 operation before accessing that data source.
 
 When a local transaction is active, `REQUIRED`, `MANDATORY`, and `SUPPORTED`
-operations join it. A failure in a joined operation marks the transaction for
-rollback, even if the caller catches the failure. `NEW` suspends the current
-transaction and starts an independent transaction with its own connection. It
-does not create a savepoint. `UNSUPPORTED` suspends the current transaction and
-runs with a connection owned by the operation in auto-commit mode. Helidon
-resumes the suspended transaction after the operation completes.
+operations join it. A failure in any joined operation marks the transaction for
+rollback, even when the caller catches the exception.
 
-See [Transaction Types and Annotations](../data.md#transaction-types-and-annotations)
-for the available propagation modes.
+A `NEW` operation temporarily suspends the current transaction and starts an
+independent transaction with another connection. It does not create a
+savepoint. An `UNSUPPORTED` operation also suspends the transaction, but
+executes with a connection owned by that operation and with automatic commits
+enabled. Helidon resumes the suspended transaction after either operation
+completes.
+
+[Transaction Types and Annotations](../data.md#transaction-types-and-annotations)
+describes the available propagation modes.
 
 Data JDBC participates only in transactions owned by the local JDBC transaction
 provider. It does not enlist a connection in JTA, XA, or Jakarta Persistence
-resource-local transactions. If another transaction provider is active, the
-JDBC operation fails before acquiring a connection.
+transactions that manage their own local resources. If another transaction
+provider is active, the JDBC operation fails before acquiring a connection.
 
-If a transaction outcome is unknown, check the database before retrying the
-operation. For model-specific guidance, see
+When a transaction outcome is unknown, the application can inspect the database
+state before retrying the operation. Guidance for each programming model is
+available in
 [Transactions](declarative.md#transactions) and
 [Transaction Participation](imperative.md#transaction-participation).
 
 ## Schema Management
 
-Use your database's migration or deployment tools to create and update the
-schema. Run schema changes separately from transactions that modify application
-data.
+Database migration or deployment tools are the preferred way to create and
+update the schema. Keeping schema changes separate from transactions that
+modify application data also avoids differences in how databases commit DDL.
 
 Data JDBC can execute a single DDL statement for limited setup tasks, such as
-creating a test fixture. Run the statement outside a local JDBC transaction.
-Use `@Tx.Never` to reject an active transaction or `@Tx.Unsupported` to suspend
-one while the statement executes.
+creating a test fixture. Such a statement should run outside a local JDBC
+transaction. `@Tx.Never` rejects the operation when a transaction is active,
+while `@Tx.Unsupported` suspends the active transaction until the statement
+finishes.
 
 Some databases implicitly commit DDL and other statements. Because Data JDBC
-does not inspect or classify SQL, a later rollback might not undo those changes.
-Do not use the statement API for commands that control transactions or change
-connection or session state.
+does not inspect or classify SQL, a later rollback might not reverse those
+changes. For the same reason, the statement API is not suitable for SQL that
+controls transactions or changes connection or session state.
 
 ## Database Portability
 
 Data JDBC uses standard JDBC APIs, but SQL syntax, type conversions, generated
-keys, and transaction behavior can vary by database and driver. Test each
-database and driver combination that your application supports.
+keys, and transaction behavior can vary by database and driver. Applications
+should verify each database and driver combination that they support.
 
-Configure pooling, timeouts, and vendor-specific properties through the data
-source, JDBC driver, connection URL, or database. Limit large results in SQL,
-and use deterministic ordering when paging.
+Connection pooling, timeouts, and properties defined by a database vendor are
+configured through the data source, JDBC driver, connection URL, or database.
+Applications can limit large results in SQL and provide deterministic ordering
+for paging.
 
 ## Errors and JDBC Warnings
 
-Data JDBC translates an `SQLException` into a Helidon Data `DataException`.
-The resulting exception can include the SQLSTATE and vendor error code supplied
-by the driver, but it omits SQL text, bind values, credentials, and driver
-messages that might disclose application data. Data JDBC propagates an
-exception from an application-provided `JdbcClient.RowMapper` unchanged.
+Data JDBC converts an `SQLException` to a Helidon Data `DataException`. The
+exception can retain the SQLSTATE and vendor error code reported by the driver.
+It excludes SQL text, bound values, credentials, and driver messages that could
+reveal application data.
 
-Data JDBC does not promote JDBC warnings to exceptions. Use database- or
-driver-specific observability if your application must monitor warnings,
-including read-side data truncation reported as a warning.
+A runtime exception raised by an application `JdbcClient.RowMapper` reaches the
+JDBC operation boundary unchanged. When that failure later crosses a managed
+local transaction boundary, the transaction provider can report a
+`TxException` and retain the mapper exception as its cause.
+
+Data JDBC does not promote JDBC warnings to exceptions. Applications that need
+to monitor warnings can use facilities provided by the database or driver.
+These facilities can also report data truncation that occurs while results are
+read.
 
 ## Parameter Count Cache
 
-`JdbcClient` caches bind-marker counts for SQL that it executes repeatedly. The
-default capacity is 256 statements. Configure the cache for a client under
-`properties.jdbc.parameter-count-cache`:
+`JdbcClient` keeps a bounded cache of parameter counts for SQL that it executes
+repeatedly. The default cache holds entries for 256 statements and can be
+configured under `properties.jdbc.parameter-count-cache`:
 
 ```yaml [application.yaml]
 data:
@@ -269,23 +295,24 @@ data:
               max-sql-length: 8192
 ```
 
-The cache applies to SQL supplied through imperative `JdbcClient` operations.
-Generated repositories determine marker counts at compile time and do not use
-the cache. The cache stores marker counts, not prepared statements. A statement
-longer than `max-sql-length` remains valid, but Helidon does not cache its
-marker count.
+The cache applies only to SQL supplied through imperative `JdbcClient`
+operations. Generated repositories determine parameter counts during
+compilation. The cache contains counts rather than prepared statements, and SQL
+longer than `max-sql-length` remains valid even though its count is not retained.
 
 | Setting | Default | Accepted values |
 |---------|---------|-----------------|
-| `capacity` | `256` | `0` through `4096`, where `0` disables retention. |
-| `max-sql-length` | `4096` | A positive integer that satisfies the combined limit. |
+| `capacity` | `256` | An integer from `0` through `4096`. A value of `0` disables the cache. |
+| `max-sql-length` | `4096` | A positive integer for which the combined cache limit is satisfied. |
 
 The product of `capacity` and `max-sql-length` must not exceed `16,777,216`.
 Helidon validates the combined limit for each client.
 
 ## Next Steps
 
-- Read [Declarative Programming Model](declarative.md) for repository
+From here, continue with the programming model that best fits the application:
+
+- [Declarative Programming Model](declarative.md) explains repository
   definition, result mapping, generated keys, and transactions.
-- Read [Imperative Programming Model](imperative.md) for direct statement
+- [Imperative Programming Model](imperative.md) covers direct statement
   execution and custom row mapping.

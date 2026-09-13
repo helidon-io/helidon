@@ -5,20 +5,20 @@ description: "Use Helidon Data JDBC with the declarative programming model"
 
 ## Overview
 
-With the Data JDBC declarative programming model, you define database
-operations as methods on an annotated Java interface. Each method specifies its
-SQL, parameters, return type, and mapping requirements. Helidon validates the
-contract and generates the repository implementation at compile time.
+The Data JDBC declarative programming model represents database operations as
+methods on an annotated Java interface. Each method describes its SQL,
+parameters, return type, and mapping requirements. Helidon validates this
+contract and generates the repository implementation during compilation.
 
-Generated repositories use the public `JdbcClient` API to execute their
-operations, so you can combine the declarative and imperative programming
-models. Use a repository when a fixed set of SQL operations forms an
-application API and compile-time validation is useful. Use
-[`JdbcClient`](imperative.md) when your application selects SQL at runtime.
+Repositories work well when an application exposes a stable set of SQL
+operations as an application API. Because generated repositories execute
+through the public `JdbcClient` API, the same application can also use the
+[imperative programming model](imperative.md) for SQL selected at runtime.
 
-Before defining a repository, add the runtime dependency and JDBC driver
-described in [Maven Coordinates](data-jdbc.md#maven-coordinates). Configure a
-JDBC client and prepare the database schema.
+Repository development begins with the runtime dependency and JDBC driver
+described in [Maven Coordinates](data-jdbc.md#maven-coordinates). The
+application also needs a configured JDBC client and an available database
+schema.
 
 > [!NOTE]
 > Helidon Data JDBC is an incubating feature. It is not production ready. Its
@@ -26,17 +26,16 @@ JDBC client and prepare the database schema.
 
 ## Annotation Processing
 
-Add the Helidon annotation processor bundle and the Data JDBC code generator to
-the Maven compiler configuration:
+Helidon generates repository implementations during compilation. The Maven
+compiler configuration therefore includes the Helidon annotation processor
+bundle and the Data JDBC code generator:
 
 ```xml [pom.xml]
 <plugin>
   <groupId>org.apache.maven.plugins</groupId>
   <artifactId>maven-compiler-plugin</artifactId>
+  <version>${version.plugin.compiler}</version>
   <configuration>
-    <compilerArgs combine.children="append">
-      <arg>-Ahelidon.api.incubating=warn</arg>
-    </compilerArgs>
     <annotationProcessorPaths>
       <path>
         <groupId>io.helidon.bundles</groupId>
@@ -53,21 +52,39 @@ the Maven compiler configuration:
 </plugin>
 ```
 
-The Helidon API stability processor rejects Incubating API usage by default.
-The `warn` setting permits Data JDBC usage and reports a compiler warning. To
-retain the default policy for other code, apply
-`@SuppressWarnings(Api.SUPPRESS_INCUBATING)` only to the package, type, or
-method that uses Data JDBC. The constant is declared by
-`io.helidon.common.Api`.
+A project that manages the Maven compiler plugin through its parent can omit
+the plugin `version`. A project that imports only `helidon-dependencies` still
+needs to define `version.plugin.compiler` or replace the expression with a
+compatible plugin version. The Helidon dependency BOM manages dependency
+versions, but it does not manage Maven build plugins.
 
-The imperative programming model does not require the Data JDBC code generator.
+Because Data JDBC is incubating, the Helidon API stability processor rejects its
+use unless the project acknowledges that status. The most focused option is
+`@SuppressWarnings(Api.SUPPRESS_INCUBATING)`, which can be placed on each
+package, type, or method that intentionally uses Data JDBC. The constant is
+declared by `io.helidon.common.Api`, and the rest of the project retains the
+default stability checks.
+
+A project that uses incubating APIs throughout can instead configure the
+compiler to report them as warnings:
+
+```xml [pom.xml]
+<compilerArgs combine.children="append">
+  <arg>-Ahelidon.api.incubating=warn</arg>
+</compilerArgs>
+```
+
+The `warn` value reports each use during compilation. A value of `ignore`
+suppresses those reports.
 
 ## Repository Definition
 
-Annotate an interface with `@Data.Repository` and `@Data.Provider("jdbc")`.
-Declare one `@Jdbc.Statement` on each abstract repository method:
+A JDBC repository begins with an interface annotated with `@Data.Repository`
+and `@Data.Provider("jdbc")`. Each abstract method then associates its Java
+contract with one `@Jdbc.Statement`:
 
 ```java
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
 @Data.Repository
 @Data.Provider("jdbc")
 @Jdbc.Client("contacts")
@@ -93,26 +110,24 @@ record Contact(long id, String name) {
 }
 ```
 
-After compilation, obtain the generated implementation from the Service
-Registry:
+Compilation generates the implementation and registers it with the Service
+Registry, where the application can obtain and invoke it:
 
 ```java
 ContactRepository repository = Services.get(ContactRepository.class);
 Optional<Contact> contact = repository.findById(100);
 ```
 
-You can omit `@Data.Provider("jdbc")` when JDBC is the only Data code generator
-on the annotation processor path. If more than one Data code generator is
-present, each generator attempts to generate an implementation for every
-repository that omits `@Data.Provider`. Helidon does not infer the provider from
-the repository shape or its method annotations. Use `@Data.Provider("jdbc")` to
-select Data JDBC.
+`@Data.Provider("jdbc")` can be omitted when JDBC is the only Data code
+generator on the annotation processor path. Keeping it explicit makes the
+provider choice clear and prevents conflicts when another generator is added
+later. Helidon does not infer a provider from repository methods or annotations.
 
 ### JDBC Client Selection
 
-A repository uses the client named `@default` unless the repository interface
-selects another configured client with `@Jdbc.Client`. The `ContactRepository`
-example selects `contacts`. The following repository selects `audit`:
+Without `@Jdbc.Client`, a repository resolves the client registered as
+`@default`. The `ContactRepository` example selects the configured `contacts`
+client, while the following repository selects `audit`:
 
 ```java
 @Data.Repository
@@ -123,55 +138,27 @@ interface AuditRepository {
 }
 ```
 
-The selected client must exist. Helidon does not fall back to `@default` when a
-named client is missing. Configuring one named client does not make that client
-the default. If `contacts` is the only configured client, a repository that
-uses it must still declare `@Jdbc.Client("contacts")`. Use `@Jdbc.Client`, rather
-than `@Data.PersistenceUnit`, for a JDBC repository.
-
-### Repository Interface Inheritance
-
-A JDBC repository does not need a parent interface. You can extend
-`Data.GenericRepository<E, ID>` when its entity and identifier types provide
-useful application metadata:
-
-```java
-@Data.Repository
-@Data.Provider("jdbc")
-interface ContactRepository extends Data.GenericRepository<Contact, Long> {
-
-    @Jdbc.Statement("SELECT ID AS id, NAME AS name FROM CONTACT")
-    List<Contact> findAll();
-}
-```
-
-`Data.GenericRepository` does not add operations or change SQL or mapping.
-Other Helidon Data repository interfaces declare entity operations that the
-JDBC provider does not generate.
-
-Application-defined parent interfaces can contribute annotated methods. They
-can also contribute generic methods whose types the child resolves. Every
-inherited abstract method must declare `@Jdbc.Statement`. Each parameter and
-mapped result must resolve to a concrete supported type. When more than one
-parent contributes a method, Data JDBC uses the most specific override.
-Compilation fails if unrelated parents declare conflicting JDBC or transaction
-annotations for the same method.
+A value supplied to `@Jdbc.Client` must match an available client exactly. A
+named client does not automatically become the default, even when it is the
+only client configured. For example, a repository that uses the sole client
+named `contacts` still declares `@Jdbc.Client("contacts")`. JDBC repositories
+select clients with `@Jdbc.Client`, not `@Data.PersistenceUnit`.
 
 ## Repository Methods
 
-Use these annotations to describe a JDBC repository and its methods:
+The following annotations describe a JDBC repository and its methods:
 
 | Annotation | Purpose |
 |------------|---------|
-| `@Jdbc.Client` | Selects the registry-managed JDBC client for the repository. |
+| `@Jdbc.Client` | Selects the JDBC client managed by the Service Registry. |
 | `@Jdbc.Statement` | Declares the SQL for a method. |
 | `@Jdbc.Execution` | Selects `AUTO`, `QUERY`, or `UPDATE` execution. |
 | `@Jdbc.GeneratedKeys` | Requests generated keys from an update. |
-| `@Jdbc.RowMapper` | Selects an application-provided row mapper service. |
+| `@Jdbc.RowMapper` | Selects a row mapper service supplied by the application. |
 
-Each method executes one SQL statement. Follow the shared
-[SQL guidelines](data-jdbc.md#sql-guidelines) for safe binding and
-portable marker parsing.
+Each method executes one SQL statement. The shared
+[SQL guidelines](data-jdbc.md#sql-guidelines) explain safe binding and portable
+marker parsing.
 
 ### Statement Parameters
 
@@ -195,18 +182,19 @@ Positional `?` markers bind parameters in Java declaration order:
 long updateStatus(String status, long id);
 ```
 
-Use every method parameter in the SQL, and do not mix named and positional
-markers. With positional markers, the number of method parameters must match
-the number of markers. Data JDBC does not expand a collection into an SQL `IN`
-list; declare each marker explicitly.
+Every method parameter corresponds to SQL in the statement, and a statement
+uses either named markers or positional markers rather than mixing the two
+forms. With positional markers, the number of Java parameters must equal the
+number of markers. Collections are not expanded into an SQL `IN` list, so each
+value needs its own declared marker.
 
-Parameters use the [supported scalar types](#supported-scalar-types). A
-reference argument can be `null`. Generated code binds an explicitly typed SQL
-`NULL`. Primitive arguments cannot be null, and repository parameters cannot
-use `Optional`.
+Repository parameters use the [supported scalar types](#supported-scalar-types).
+Reference arguments can be `null`, in which case the generated implementation
+binds SQL `NULL` with the corresponding JDBC type. Primitive parameters cannot
+be null, and repository parameters do not use `Optional`.
 
-Define how null arguments affect each SQL predicate. For example, the following
-method omits its filter when `email` is null:
+SQL continues to determine what a null argument means. In the following
+example, a null `email` removes the filter and allows every row to match:
 
 ```java
 @Jdbc.Statement("""
@@ -217,9 +205,8 @@ method omits its filter when `email` is null:
 List<Contact> findByOptionalEmail(String email);
 ```
 
-When `email` is null, this predicate includes every row. To make a null argument
-match only rows whose `EMAIL` column is SQL `NULL`, express both cases in the
-predicate:
+If a null argument should match only rows where `EMAIL` is SQL `NULL`, the
+predicate can express that distinction explicitly:
 
 ```java
 @Jdbc.Statement("""
@@ -230,12 +217,13 @@ predicate:
 List<Contact> findByNullableEmail(String email);
 ```
 
-Data JDBC binds a typed SQL `NULL`, but it does not change the meaning of the
-SQL predicate.
+Data JDBC supplies the typed SQL `NULL` without changing the predicate's
+meaning.
 
-Binding a value for an SQL `LIKE` predicate does not escape wildcard
-characters. To treat input as literal text, escape the configured escape
-character, `%`, and `_`. The SQL must declare the same escape character:
+Data JDBC passes wildcard characters in a value for an SQL `LIKE` predicate
+without escaping them. When the input represents literal text, the application
+escapes the configured escape character, `%`, and `_`, while the SQL declares
+the same escape character:
 
 ```java
 @Jdbc.Statement("""
@@ -246,13 +234,13 @@ character, `%`, and `_`. The SQL must declare the same escape character:
 List<Contact> findByNamePattern(String pattern);
 ```
 
-In this example, escape `!`, `%`, and `_` with `!` when constructing `pattern`.
-The database determines case sensitivity and collation.
+In this example, `pattern` uses `!` to escape `!`, `%`, and `_`. The database
+determines case sensitivity and collation.
 
 > [!NOTE]
 > Named markers in an inherited method require the original Java parameter
-> names. Compile a separately published parent interface with `-parameters`, or
-> use positional markers in that interface.
+> names. A separately published parent interface must therefore be compiled
+> with `-parameters` unless that interface uses positional markers.
 
 ### Execution Types
 
@@ -266,10 +254,11 @@ from the Java method contract and JDBC annotations, not from SQL keywords.
 | `Optional<T>` or `List<T>` | Query |
 | Supported record or scalar other than primitive `int` or `long` | Query |
 | `@Jdbc.RowMapper` without generated keys | Query |
-| Primitive `int` or `long` without stronger evidence | Ambiguous; declare `QUERY` or `UPDATE`. |
+| Primitive `int` or `long` without stronger evidence | Ambiguous. The method must declare `QUERY` or `UPDATE`. |
 
-Primitive `int` and `long` can represent either a scalar query result or an
-update count. Select the execution type for these methods:
+Because primitive `int` and `long` can represent either a scalar query result
+or an update count, methods returning these types need an explicit execution
+type:
 
 ```java
 @Jdbc.Statement("SELECT COUNT(*) FROM CONTACT")
@@ -285,8 +274,8 @@ Helidon reports ambiguous or incompatible contracts during compilation.
 
 ### Return Types
 
-Queries and generated-key operations support the following result types. `T`
-is a supported scalar, record, or row-mapper result.
+Queries and operations that return generated keys support the following result
+types. `T` is a supported scalar, record, or result produced by a row mapper.
 
 | Return type | Behavior |
 |-------------|----------|
@@ -303,28 +292,26 @@ An ordinary update can return `void`, primitive `int`, or primitive `long`.
 driver. An `int` method fails when the count exceeds the range of `int`.
 
 For an automatically mapped scalar, `Optional.empty()` represents either no
-row or SQL `NULL` in the first column. Return a record with an optional
-component when the application must distinguish row presence from column
-nullability.
+row or SQL `NULL` in the first column. A record with an optional component can
+distinguish row presence from column nullability.
 
 ## Result Mapping
 
-Data JDBC maps query results in three ways. It reads a scalar from the first
-selected column, constructs a flat record from column labels, or calls a row
-mapper supplied by the application.
+Data JDBC can read a scalar from the first selected column, construct a flat
+record from column labels, or delegate the row to a mapper supplied by the
+application. Each physical row is mapped independently.
 
-Data JDBC maps each physical row independently. For a joined or hierarchical
-result, return a flat detached value and aggregate the materialized values in
-your application. You can also use separate repository operations.
+Joined or hierarchical results therefore begin as detached flat values. The
+application can aggregate those values after the result has been materialized
+or obtain related data through separate repository operations.
 
 ### Scalars and Records
 
 Mapping to a required scalar fails when the first column contains SQL `NULL`.
-Use `Optional<S>` for a nullable record component, where `S` is a supported
-scalar.
+A nullable record component uses `Optional<S>`, where `S` is a supported scalar.
 
 Helidon matches column labels to record component names without regard to case
-or column order. Use SQL aliases to make the mapping explicit:
+or column order. SQL aliases make the mapping explicit:
 
 ```java
 record ContactSummary(long id, String name, Optional<String> email) {
@@ -344,9 +331,9 @@ a blank label, Data JDBC uses the physical column name. Mapping also fails if
 the driver provides neither a usable label nor a usable column name.
 
 Record component names must be unique without regard to case. Each component
-must be a supported scalar or `Optional` of a supported scalar. Use a row
-mapper for nested records, mutable classes, and application-specific
-conversions.
+must be a supported scalar or `Optional` of a supported scalar. A row mapper
+handles nested records, mutable classes, and conversions specific to the
+application.
 
 ### Supported Scalar Types
 
@@ -379,23 +366,27 @@ type:
 This mapping applies only to reference parameters because primitive parameters
 cannot be null.
 
-You can use these types for repository parameters, automatic results, generated
-keys, record components, imperative bind values, and typed row reads. For any
-other Java type, store a portable representation and convert it in application
-code or a row mapper.
+These types are available for repository parameters, automatic results,
+generated keys, record components, imperative bind values, and typed row reads.
+Other Java types can be stored in a portable representation and converted by
+application code or a row mapper.
 
 Data JDBC does not map `OffsetTime` or `OffsetDateTime` implicitly because
-databases do not preserve those values consistently. Store the local value and
-offset separately, or store an ISO 8601 value in a character column and
-reconstruct the value in a row mapper.
+databases do not preserve those values consistently. An application can store
+the local value and offset separately, or store an ISO 8601 value in a character
+column and reconstruct the value in a row mapper.
 
 ### Custom Row Mapping
 
-Implement `JdbcClient.RowMapper<T>` when automatic mapping does not fit the
-result. Register the mapper as a Service Registry service, then select it with
-`@Jdbc.RowMapper`:
+A `JdbcClient.RowMapper<T>` can handle a result that does not fit automatic
+scalar or record mapping. The mapper becomes a Service Registry service, and
+`@Jdbc.RowMapper` connects it to a repository method.
+
+Because the mapper implements an incubating Data JDBC API, its class also
+acknowledges that API status:
 
 ```java
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
 @Service.Singleton
 final class ContactLabelMapper implements JdbcClient.RowMapper<ContactLabel> {
 
@@ -411,29 +402,32 @@ final class ContactLabelMapper implements JdbcClient.RowMapper<ContactLabel> {
 Optional<ContactLabel> findLabel(long id);
 ```
 
-When the annotation specifies a mapper class, it selects that exact service
-type. The marker form `@Jdbc.RowMapper` selects a service by the exact
-`JdbcClient.RowMapper<T>` contract and follows normal Service Registry
-preference. Repository activation fails if the requested mapper is unavailable.
+When the annotation names a mapper class, Helidon resolves that exact service
+type. The marker form `@Jdbc.RowMapper` resolves the exact
+`JdbcClient.RowMapper<T>` contract according to normal Service Registry
+preference. Repository activation fails when no suitable mapper is available.
 
-Use `Row.get` for a required column and `Row.optional` for a nullable column.
-Both methods accept a column label or a one-based column index. Column label
-lookup ignores case and fails when the requested label is missing or ambiguous.
-Access by index does not resolve labels, so duplicate labels in other columns
-do not affect it. Read all values before `map` returns. The row is valid only
-during the mapper call and only on the callback thread. Return a non-null value
-that does not depend on the row or its JDBC resources.
+During the callback, `Row.get` reads a required column and `Row.optional` reads
+a nullable column. Both methods accept a column label or an index whose
+numbering begins at one. Column label lookup ignores case and fails when the
+requested label is missing or ambiguous. Access by index does not resolve
+labels, so duplicate labels in other columns do not affect it. The row remains
+valid only for the duration of the callback and only on the callback thread, so
+the mapped result must contain all required values and must not depend on the
+row or its JDBC resources.
 
-A singleton repository can invoke its mapper concurrently. The mapper must
-therefore be stateless or safe for concurrent use. Helidon propagates
-application mapper exceptions unchanged.
+A singleton repository can call its mapper concurrently, so the mapper needs
+to be stateless or otherwise safe for concurrent calls. A runtime exception
+raised by the mapper reaches the repository operation boundary unchanged. If
+the failure then crosses a managed local transaction boundary, the transaction
+provider can report a `TxException` with the mapper exception as its cause.
 
 ## Return Generated Keys
 
-Add `@Jdbc.GeneratedKeys` to an insert or update that returns values generated
-by the database. If the annotation does not list column names, Helidon requests
-the driver's default keys. To request specific columns, list them in the
-annotation:
+An insert or update can return values generated by the database when its method
+declares `@Jdbc.GeneratedKeys`. Without column names in the annotation, Helidon
+requests the driver's default keys. Column names in the annotation identify
+specific keys:
 
 ```java
 @Jdbc.Statement("""
@@ -444,37 +438,69 @@ annotation:
 long addContact(String name, String status);
 ```
 
-Generated keys support the same return types and mapping choices as queries.
-Data JDBC passes requested column names to the driver in declaration order.
-Blank or exact duplicate names cause a compilation error. Data JDBC preserves
-names that differ only by case and lets the driver resolve them. Because driver
-support and column-name handling vary, test generated-key behavior with your
-database and driver.
+Generated keys support the same return types and mapping choices as query
+results. Requested column names are passed to the driver in declaration order.
+Blank names and exact duplicates cause compilation to fail, while names that
+differ only by case are preserved for the driver to resolve. Since driver
+support and handling of column names vary, this behavior should be verified
+with every supported database and driver.
 
 Outside a local transaction, the driver can commit an update before Helidon
-finishes reading and validating its generated keys. Use a local transaction
-when the update and key processing must succeed or fail together. Let failures
-cross the transaction boundary so Helidon can roll back, and do not
-automatically retry after key processing or cleanup fails.
+finishes reading and validating its generated keys. A local transaction keeps
+the update and key processing within the same success or failure boundary. An
+exception from key processing or cleanup has to cross the transaction boundary
+for Helidon to roll back. Such a failure does not establish that a retry is
+safe.
 
 ## Result Handling and Resource Management
 
 Helidon materializes the complete result before a repository method returns and
 closes the result set and statement. Outside a local transaction, Helidon also
 closes the operation's connection. A local transaction retains its connection
-until the transaction completes. Repository methods do not return JDBC-backed
-streams, cursors, or iterators.
+until the transaction completes. Repository methods do not return streams,
+cursors, or iterators that expose JDBC resources.
 
-Data JDBC does not impose a row limit on `List<T>`. Limit potentially large
-results in SQL.
+Data JDBC does not impose a row limit on `List<T>`, so SQL should constrain
+results that could become large.
+
+## Repository Interface Inheritance
+
+A JDBC repository does not need to extend another repository interface.
+Extending `Data.GenericRepository<E, ID>` can provide useful entity and
+identifier metadata, but it does not add operations or change SQL and mapping
+behavior:
+
+```java
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
+@Data.Repository
+@Data.Provider("jdbc")
+interface ContactRepository extends Data.GenericRepository<Contact, Long> {
+
+    @Jdbc.Statement("SELECT ID AS id, NAME AS name FROM CONTACT")
+    List<Contact> findAll();
+}
+```
+
+`Data.GenericRepository` is the only Helidon Data repository parent supported
+by the JDBC provider. A JDBC repository that extends an interface such as
+`Data.BasicRepository`, `Data.CrudRepository`, or `Data.PageableRepository`
+fails during compilation. Those interfaces declare entity operations for which
+the JDBC provider does not generate implementations.
+
+Application interfaces can still contribute JDBC repository methods, including
+generic methods whose types are resolved by the child repository. Every
+inherited abstract method needs a `@Jdbc.Statement`, and its parameter and
+result types must resolve to supported concrete types.
+
+When several parent interfaces contribute the same method, Data JDBC uses the
+most specific override. Compilation fails when unrelated parents declare
+conflicting JDBC or transaction annotations for that method.
 
 ## Transactions
 
 Repository methods can participate in
-[local JDBC transactions](data-jdbc.md#local-transactions). Annotate a repository
-method when one operation requires a specific propagation mode. Place the
-annotation on an application service method when one transaction must contain
-several repository or client operations.
+[local JDBC transactions](data-jdbc.md#local-transactions). A transaction
+annotation on a repository method controls the propagation of that operation:
 
 ```java
 @Tx.Required
@@ -483,11 +509,25 @@ several repository or client operations.
 long updateStatus(long id, String status);
 ```
 
-The Service Registry applies transaction annotations declared on repository
-methods. Because these annotations are retained only in source, redeclare an
-inherited method and its transaction annotation when the parent interface was
-compiled separately. Alternatively, place the annotation on an application
-service method.
+The Service Registry applies the transaction annotation when it invokes the
+generated repository as a managed service. Method transaction annotations are
+retained only in source. When a child repository is compiled separately from
+its parent, the child must redeclare an inherited method and its transaction
+annotation.
 
-Keep DDL outside local transactions. See
-[Schema Management](data-jdbc.md#schema-management).
+Data JDBC also recognizes a transaction annotation declared directly on the
+repository type. This support is currently an interim bridge. Helidon copies
+the annotation to the generated implementation, but it does not search parent
+interfaces for type annotations or resolve competing annotations. It also does
+not define precedence between a type annotation and a method annotation.
+Because the annotation is placed on the generated implementation type, it can
+also affect interception of generated constructors and lifecycle methods.
+
+An application service provides the clearest transaction boundary when several
+repository or client operations must succeed or fail together. Placing the
+transaction annotation on the service method also avoids the current
+inheritance and precedence limitations.
+
+Local transactions are intended for data operations rather than schema changes.
+[Schema Management](data-jdbc.md#schema-management) explains how DDL fits into
+an application that uses local transactions.
