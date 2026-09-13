@@ -10,10 +10,9 @@ through `JdbcClient`. An operation combines SQL, positional parameters, and a
 result mapping, then executes when the application invokes a terminal method.
 Helidon materializes the complete result before that method returns.
 
-Generated repositories use the same public API, so both programming models can
-coexist in one application. The
-[declarative programming model](declarative.md) is useful when Helidon can
-validate a stable set of operations during compilation, while `JdbcClient`
+The imperative and [declarative programming models](declarative.md) can coexist
+in the same application. The declarative model is useful when Helidon can
+validate a predefined set of operations during compilation, while `JdbcClient`
 suits operations whose SQL is selected at runtime.
 
 The imperative model needs the runtime dependency and JDBC driver described in
@@ -97,7 +96,8 @@ JdbcClient jdbcClient = JdbcClient.builder()
         .build();
 ```
 
-An immutable configuration can be retained as a prototype and later passed to
+When an application needs to retain or share an immutable client configuration,
+`buildPrototype()` produces a `JdbcClientConfig` that can later be supplied to
 `JdbcClient.create`:
 
 ```java
@@ -115,7 +115,8 @@ Service Registry, so it remains outside annotated transactions.
 ### Programmatic Configuration
 
 Client configurations can also be supplied in Java. They need to be registered
-before the first lookup of `JdbcClientConfig` or `JdbcClient`:
+before the first lookup of `JdbcClientConfig` or `JdbcClient`. The Service
+Registry rejects a later replacement with `ServiceRegistryException`:
 
 ```java
 JdbcClientConfig contacts = JdbcClient.builder()
@@ -164,9 +165,9 @@ long updated = jdbcClient.create(
         .execute();
 ```
 
-`execute()` uses the driver's large update count when the driver supports it.
-Otherwise, Data JDBC returns the legacy integer count as a `long`. The fallback
-cannot represent a count outside the integer range.
+`execute()` returns the update count as a `long`. With drivers that expose only
+an integer update count, the returned value cannot represent a count outside the
+integer range.
 
 Each operation receives one SQL statement.
 [SQL Guidelines](data-jdbc.md#sql-guidelines) describes safe parameter handling
@@ -245,10 +246,10 @@ Helidon invokes the mapper once for each physical row and does not combine rows
 into an object graph. The mapper returns a value that is independent of the
 JDBC row and its resources.
 
-A runtime exception raised by the mapper reaches the `JdbcClient` terminal
-method unchanged. If the failure then crosses a managed local transaction
-boundary, the transaction provider can report a `TxException` with the mapper
-exception as its cause.
+Outside a local transaction, a runtime exception raised by the mapper passes
+through the `JdbcClient` terminal method unchanged. Inside a managed local
+transaction, the transaction provider can report a `TxException` with the
+mapper exception as its cause.
 
 ### Result Cardinality
 
@@ -266,11 +267,11 @@ results that could become large.
 
 ## Return Generated Keys
 
-Generated keys become available after `generatedKeys()` selects key handling, a
-mapper defines the result, and a terminal method states the expected number of
-key rows. Without `addColumn`, Helidon requests the driver's default keys. Where
-the driver supports named key columns, `addColumn` identifies the requested
-columns:
+After an insert or update, `generatedKeys()` requests the generated keys, `map`
+converts each key row, and `one`, `optional`, or `list` validates and returns the
+expected number of rows. Without `addColumn`, Helidon asks the driver to return
+its default generated keys. Where the driver supports named key columns,
+`addColumn` identifies the requested columns:
 
 ```java
 long id = jdbcClient.create("INSERT INTO CONTACT (NAME) VALUES (?)")
@@ -281,28 +282,30 @@ long id = jdbcClient.create("INSERT INTO CONTACT (NAME) VALUES (?)")
         .one();
 ```
 
-Support for generated keys and handling of column names vary among drivers, so
-applications should verify this behavior with each supported database and
-driver.
+Support for generated keys and handling of column names vary among drivers.
+Verify that each supported database and driver returns the requested generated
+key columns with the expected column names.
 
 When a client owns its connection, the driver can commit the update before
 Helidon finishes reading and validating the keys. An injected client running in
-a local transaction keeps the update and key processing within one success or
-failure boundary. An exception from key processing or cleanup has to cross the
-transaction boundary for Helidon to roll back. Such a failure does not
-establish that a retry is safe.
+a local transaction keeps the update and key processing atomic. If key
+processing or cleanup fails, allow the exception to leave the method that starts
+the transaction so Helidon can roll back. Catching the exception still marks
+the transaction for rollback, but continuing hides the original failure and
+cannot result in a commit. Such a failure does not establish that a retry is
+safe.
 
 ## Resource Management
 
 Helidon materializes each result before returning it and closes the result set
 and prepared statement. Outside a local transaction, Helidon also closes the
-operation's connection. A local transaction retains its connection until the
-transaction completes. The API does not return streams, cursors, or iterators
-that expose JDBC resources.
+connection used by the operation. A local transaction retains its connection
+until the transaction completes. The API does not return streams, cursors, or
+iterators that expose JDBC resources.
 
-`JdbcClient` is safe to share. The statement and result stages created for an
-operation belong to that operation and are not designed for concurrent access.
-A new call to `JdbcClient.create` provides a fresh stage for the next operation.
+`JdbcClient` is safe to share. Each operation begins with a new call to
+`JdbcClient.create`. The statement and result objects belong to one operation
+and cannot be reused or accessed concurrently.
 
 Resources are also released when database access, mapping, or result validation
 fails. [Errors and JDBC Warnings](data-jdbc.md#errors-and-jdbc-warnings)
@@ -311,9 +314,10 @@ describes the resulting diagnostic information.
 ## Transaction Participation
 
 A client obtained from the Service Registry can participate in a local JDBC
-transaction when the registry invokes the managed service method. Transaction
-interception applies to calls made through the managed service, not to direct
-construction or calls from one method to another on the same instance.
+transaction. Transaction annotations take effect when the application invokes
+a service instance obtained from the Service Registry. They do not take effect
+on directly constructed instances or calls from one method to another on the
+same instance.
 
 In the following example, both statements share the connection associated with
 the transaction. If an exception leaves the method, Helidon rolls back their

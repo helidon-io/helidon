@@ -21,8 +21,8 @@ method names. It supports two programming models:
   and execute operations directly in application code.
 
 You can combine declarative repository methods with imperative `JdbcClient`
-operations because both programming models share statement execution, result
-mapping, and resource management.
+operations in the same application. Both models provide consistent result
+mapping, transaction participation, and resource management.
 
 Each Data JDBC operation executes one SQL statement. Database schema creation
 remains separate and should be complete before data operations begin.
@@ -157,18 +157,20 @@ Registry in code or create standalone clients. These options are described in
 ## SQL Guidelines
 
 Each repository method or `JdbcClient` terminal method executes one prepared
-SQL statement. Its result must agree with the operation being performed,
-whether that result consists of rows, an update count, or generated keys.
+SQL statement. A query must produce a result set, even when that result set is
+empty. An ordinary update must produce an update count, and an update configured
+for generated keys must make those keys available through the JDBC driver.
 
 A workflow that spans several statements is represented by several Data JDBC
 operations. When those statements must succeed or fail together, the operations
 can run within a [local transaction](#local-transactions).
 
-Values supplied by the application belong in bound parameters, while the SQL
-structure remains under the application's control. Parameter markers can
-represent values, but they cannot represent table names, column names,
-operators, or sort directions. When these structural elements vary, the
-application should select them from values it already recognizes as valid.
+Values supplied by the application belong in bound parameters, while the
+application controls the SQL structure. Parameter markers can represent values,
+but they cannot represent table names, column names, operators, or sort
+directions. When these structural elements vary, select them from a closed set
+of values defined by the application. Do not construct them directly from
+application input.
 
 Declarative statements support either named markers or positional `?` markers
 in a given statement. Imperative statements use positional markers.
@@ -186,10 +188,12 @@ represents an apostrophe with two apostrophes instead of a MySQL backslash
 escape. A line comment begins when `--` is followed by whitespace, an ISO
 control character, or the end of the SQL text. Block comments are not nested.
 
-Oracle `q` and `nq` literals begin at a token boundary. SQL Server bracketed
-identifiers require particular care because Data JDBC treats square brackets
-as ordinary punctuation. Text that resembles a parameter marker inside those
-brackets can therefore be recognized as a marker.
+Data JDBC recognizes an Oracle `q` or `nq` literal only when its prefix does not
+immediately follow a letter, digit, underscore, or dollar sign. SQL Server
+bracketed identifiers require particular care because Data JDBC treats square
+brackets as ordinary punctuation. A colon or question mark inside a bracketed
+identifier can therefore be interpreted as a parameter marker and cause
+parameter validation or binding to fail.
 
 ## Local Transactions
 
@@ -201,10 +205,9 @@ client created with `JdbcClient.builder()` always uses its own connection and
 does not join the local transaction.
 
 Local JDBC transactions are synchronous and remain associated with the thread
-that starts them. Data JDBC acquires the transaction connection for the first
-JDBC operation and reuses it for subsequent operations against the same data
-source. If an operation selects a second data source, Data JDBC rejects the
-operation before accessing that data source.
+that starts them. All Data JDBC operations in a local transaction must use the
+same data source. An operation that selects another data source fails before
+accessing it.
 
 When a local transaction is active, `REQUIRED`, `MANDATORY`, and `SUPPORTED`
 operations join it. A failure in any joined operation marks the transaction for
@@ -225,9 +228,9 @@ provider. It does not enlist a connection in JTA, XA, or Jakarta Persistence
 transactions that manage their own local resources. If another transaction
 provider is active, the JDBC operation fails before acquiring a connection.
 
-When a transaction outcome is unknown, the application can inspect the database
-state before retrying the operation. Guidance for each programming model is
-available in
+If commit, rollback, or connection cleanup fails and Helidon cannot determine
+the transaction outcome, verify the resulting database state before retrying
+the operation. Guidance for each programming model is available in
 [Transactions](declarative.md#transactions) and
 [Transaction Participation](imperative.md#transaction-participation).
 
@@ -237,16 +240,15 @@ Database migration or deployment tools are the preferred way to create and
 update the schema. Keeping schema changes separate from transactions that
 modify application data also avoids differences in how databases commit DDL.
 
-Data JDBC can execute a single DDL statement for limited setup tasks, such as
-creating a test fixture. Such a statement should run outside a local JDBC
-transaction. `@Tx.Never` rejects the operation when a transaction is active,
-while `@Tx.Unsupported` suspends the active transaction until the statement
-finishes.
+Data JDBC can execute one DDL statement for isolated setup work, such as
+creating a test fixture. It is not a replacement for a database migration or
+deployment tool. Such a statement should run outside a local JDBC transaction.
+`@Tx.Never` rejects the operation when a transaction is active, while
+`@Tx.Unsupported` suspends the active transaction until the statement finishes.
 
-Some databases implicitly commit DDL and other statements. Because Data JDBC
-does not inspect or classify SQL, a later rollback might not reverse those
-changes. For the same reason, the statement API is not suitable for SQL that
-controls transactions or changes connection or session state.
+A database can commit DDL or another command implicitly, so a later rollback
+might not reverse the resulting changes. The statement API is not suitable for
+SQL that controls transactions or changes connection or session state.
 
 ## Database Portability
 
@@ -266,10 +268,10 @@ exception can retain the SQLSTATE and vendor error code reported by the driver.
 It excludes SQL text, bound values, credentials, and driver messages that could
 reveal application data.
 
-A runtime exception raised by an application `JdbcClient.RowMapper` reaches the
-JDBC operation boundary unchanged. When that failure later crosses a managed
-local transaction boundary, the transaction provider can report a
-`TxException` and retain the mapper exception as its cause.
+Outside a local transaction, a runtime exception raised by an application
+`JdbcClient.RowMapper` passes through unchanged. Inside a managed local
+transaction, the transaction provider can report a `TxException` and retain the
+mapper exception as its cause.
 
 Data JDBC does not promote JDBC warnings to exceptions. Applications that need
 to monitor warnings can use facilities provided by the database or driver.
@@ -296,17 +298,15 @@ data:
 ```
 
 The cache applies only to SQL supplied through imperative `JdbcClient`
-operations. Generated repositories determine parameter counts during
-compilation. The cache contains counts rather than prepared statements, and SQL
+operations. It stores parameter counts rather than prepared statements. SQL
 longer than `max-sql-length` remains valid even though its count is not retained.
 
 | Setting | Default | Accepted values |
 |---------|---------|-----------------|
 | `capacity` | `256` | An integer from `0` through `4096`. A value of `0` disables the cache. |
-| `max-sql-length` | `4096` | A positive integer for which the combined cache limit is satisfied. |
+| `max-sql-length` | `4096` | A positive integer for which `capacity` multiplied by `max-sql-length` does not exceed `16,777,216`. |
 
-The product of `capacity` and `max-sql-length` must not exceed `16,777,216`.
-Helidon validates the combined limit for each client.
+Helidon validates this combined limit for each client.
 
 ## Next Steps
 
