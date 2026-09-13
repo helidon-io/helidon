@@ -1,11 +1,11 @@
 <!--@frontmatter
-description: "Helidon Data JDBC"
+description: "Explore the Helidon Data JDBC provider"
 navigation:
   icon: i-lucide-database
 index:
   page: data-jdbc.md
 -->
-# Data JDBC
+# Helidon Data JDBC
 
 - [Overview](data-jdbc.md)
 - [Declarative Programming Model](declarative.md)
