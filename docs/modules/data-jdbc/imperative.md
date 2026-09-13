@@ -314,10 +314,22 @@ describes the resulting diagnostic information.
 ## Transaction Participation
 
 A client obtained from the Service Registry can participate in a local JDBC
-transaction. Transaction annotations take effect when the application invokes
-a service instance obtained from the Service Registry. They do not take effect
-on directly constructed instances or calls from one method to another on the
-same instance.
+transaction. Transaction annotations take effect on intercepted methods of
+service instances obtained from the Service Registry. They do not take effect
+on directly constructed instances.
+
+Within a registry-managed service, a call to another intercepted method on the
+same instance also applies the called method's transaction annotation. For
+example, an internal call to an intercepted `@Tx.New` method starts a new
+transaction, while an internal call to an intercepted `@Tx.Unsupported` method
+suspends the current transaction.
+
+Private methods are not intercepted. A call to a private method stays in the
+caller's transaction context and does not apply the private method's transaction
+annotations. Annotation processing rejects a transaction annotation declared on
+a private method when no interception annotation applies to the service type.
+When the service type carries an interception annotation, private methods are
+excluded from interception and their transaction annotations are ignored.
 
 In the following example, both statements share the connection associated with
 the transaction. If an exception leaves the method, Helidon rolls back their
