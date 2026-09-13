@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.builder.test.testsubjects;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import io.helidon.builder.api.Prototype;
+
+final class ConfigMapSupport {
+    private ConfigMapSupport() {
+    }
+
+    static final class OptionalListDecorator
+            implements Prototype.OptionDecorator<ConfigMap.BuilderBase<?, ?>, Optional<List<String>>> {
+        @Override
+        public void decorate(ConfigMap.BuilderBase<?, ?> builder, Optional<List<String>> values) {
+            if (values.isPresent() && values.orElseThrow().contains("forbidden")) {
+                throw new IllegalArgumentException("Forbidden list item");
+            }
+        }
+    }
+
+    static final class OptionalSetDecorator
+            implements Prototype.OptionDecorator<ConfigMap.BuilderBase<?, ?>, Optional<Set<String>>> {
+        @Override
+        public void decorate(ConfigMap.BuilderBase<?, ?> builder, Optional<Set<String>> values) {
+            if (values.isPresent() && values.orElseThrow().contains("forbidden")) {
+                throw new IllegalArgumentException("Forbidden set item");
+            }
+        }
+    }
+}

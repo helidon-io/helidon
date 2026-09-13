@@ -28,6 +28,7 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenLogger;
 import io.helidon.codegen.JavadocReader;
 import io.helidon.codegen.JavadocWriter;
+import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -42,11 +43,13 @@ import static java.util.function.Predicate.not;
 class SchemaGenerator {
 
     private final CodegenContext ctx;
+    private final RoundContext roundContext;
     private final TypeResolver resolver;
     private final CodegenLogger logger;
 
-    SchemaGenerator(CodegenContext ctx) {
+    SchemaGenerator(CodegenContext ctx, RoundContext roundContext) {
         this.ctx = ctx;
+        this.roundContext = roundContext;
         this.logger = ctx.logger();
         this.resolver = new TypeResolver(ctx);
     }
@@ -416,10 +419,37 @@ class SchemaGenerator {
                         "Unable to resolve: " + lookupName, methodInfo, typeInfo));
     }
 
-    private boolean isPrototyped(TypeName typeName) {
-        return ctx.typeInfo(typeName)
-                .map(it -> resolver.isSubtype(it, Types.RUNTIME_API))
+    private boolean isConfiguredPrototype(TypeName typeName) {
+        var lookup = typeName.genericTypeName().boxed();
+        var typeInfo = roundContext.typeInfo(lookup).orElse(null);
+        if (typeInfo != null) {
+            if (!resolver.isSubtype(typeInfo, Types.PROTOTYPE_API)) {
+                return false;
+            }
+            var blueprint = typeInfo.findAnnotation(Types.GENERATED)
+                    .filter(it -> it.stringValue()
+                            .filter(BuilderCodegen.class.getName()::equals)
+                            .isPresent())
+                    .flatMap(it -> it.stringValue("trigger"))
+                    .map(TypeName::create)
+                    .flatMap(roundContext::typeInfo)
+                    .orElse(null);
+            if (blueprint != null) {
+                return isConfiguredBlueprint(blueprint);
+            }
+        }
+        return roundContext.annotatedTypes(Types.PROTOTYPE_BLUEPRINT)
+                .stream()
+                .filter(it -> it.hasAnnotation(Types.PROTOTYPE_BLUEPRINT))
+                .filter(it -> FactoryPrototypeInfo.generatedTypeName(it).genericTypeName().equals(lookup))
+                .findFirst()
+                .map(this::isConfiguredBlueprint)
                 .orElse(false);
+    }
+
+    private boolean isConfiguredBlueprint(TypeInfo typeInfo) {
+        return typeInfo.hasAnnotation(Types.PROTOTYPE_BLUEPRINT)
+                && typeInfo.hasAnnotation(Types.PROTOTYPE_CONFIGURED);
     }
 
     private TypeName optionTypeName(OptionInfo optionInfo) {
@@ -444,12 +474,14 @@ class SchemaGenerator {
         }
 
         // check configured factory method
-        var configuredDeclaredTypeName = optionInfo.configured()
+        var configuredFactoryMethod = optionInfo.configured()
                 .flatMap(OptionConfigured::factoryMethod)
-                .map(FactoryMethod::declaringType)
                 .orElse(null);
-        if (configuredDeclaredTypeName != null) {
-            return configuredDeclaredTypeName;
+        if (configuredFactoryMethod != null) {
+            if (isConfiguredPrototype(typeName)) {
+                return typeName.boxed();
+            }
+            return configuredFactoryMethod.declaringType();
         }
 
         // check runtime factory method

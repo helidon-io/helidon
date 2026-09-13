@@ -143,6 +143,22 @@ final class FactoryPrototypeInfo {
         return prototype.build();
     }
 
+    static TypeName generatedTypeName(TypeInfo typeInfo) {
+        String typeName = typeInfo.typeName().className();
+        if (typeName.endsWith(BLUEPRINT)) {
+            typeName = typeName.substring(0, typeName.length() - BLUEPRINT.length());
+        } else {
+            throw new CodegenException("Blueprint interface name must end with " + BLUEPRINT
+                                               + ", this is invalid type: " + typeInfo.typeName().fqName(),
+                                       typeInfo);
+        }
+
+        return TypeName.builder(typeInfo.typeName())
+                .enclosingNames(List.of())
+                .className(typeName)
+                .build();
+    }
+
     static List<Annotation> annotations(Annotated it) {
         List<Annotation> annotations = new ArrayList<>();
 
@@ -778,22 +794,6 @@ final class FactoryPrototypeInfo {
         }
 
         return methodNames::contains;
-    }
-
-    private static TypeName generatedTypeName(TypeInfo typeInfo) {
-        String typeName = typeInfo.typeName().className();
-        if (typeName.endsWith(BLUEPRINT)) {
-            typeName = typeName.substring(0, typeName.length() - BLUEPRINT.length());
-        } else {
-            throw new CodegenException("Blueprint interface name must end with " + BLUEPRINT
-                                               + ", this is invalid type: " + typeInfo.typeName().fqName(),
-                                       typeInfo);
-        }
-
-        return TypeName.builder(typeInfo.typeName())
-                .enclosingNames(List.of())
-                .className(typeName)
-                .build();
     }
 
     private static Optional<TypeName> superPrototype(TypeInfo blueprint) {

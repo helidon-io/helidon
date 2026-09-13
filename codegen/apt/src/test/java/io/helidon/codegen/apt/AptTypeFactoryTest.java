@@ -16,6 +16,8 @@
 
 package io.helidon.codegen.apt;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,6 +32,7 @@ import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
 
@@ -195,6 +198,97 @@ class AptTypeFactoryTest {
         });
     }
 
+    @Test
+    void testImportedGeneratedTypesInNestedSignatures() {
+        AtomicReference<TypeInfo> firstRound = new AtomicReference<>();
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new AbstractProcessor() {
+                    @Override
+                    public Set<String> getSupportedAnnotationTypes() {
+                        return Set.of("*");
+                    }
+
+                    @Override
+                    public SourceVersion getSupportedSourceVersion() {
+                        return SourceVersion.latestSupported();
+                    }
+
+                    @Override
+                    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+                        if (roundEnv.processingOver() || firstRound.get() != null) {
+                            return false;
+                        }
+                        AptContext ctx = AptContext.create(processingEnv, Set.of());
+                        TypeElement source = processingEnv.getElementUtils().getTypeElement("com.acme.Caller");
+                        firstRound.set(AptTypeInfoFactory.create(ctx, source, ElementInfoPredicates.ALL_PREDICATE)
+                                               .orElseThrow());
+                        try (var config = processingEnv.getFiler().createSourceFile("com.acme.spi.GeneratedConfig")
+                                     .openWriter();
+                                var container = processingEnv.getFiler().createSourceFile("com.acme.spi.Container")
+                                        .openWriter()) {
+                            config.write("package com.acme.spi; public class GeneratedConfig {}");
+                            container.write("package com.acme.spi; "
+                                                    + "public class Container { public interface Nested {} }");
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                        return false;
+                    }
+                })
+                .addSource("com/acme/Caller.java", """
+                        package com.acme;
+
+                        import java.util.List;
+                        import java.util.Map;
+                        import com.acme.spi.Container;
+                        import com.acme.spi.GeneratedConfig;
+                        import com.acme.spi.T;
+
+                        interface Caller<T extends Comparable<T>> {
+                            Map<String, List<? extends GeneratedConfig[]>> incoming();
+                            List<? super GeneratedConfig> outgoing();
+                            List<? extends T[]> genericArrays();
+                            GeneratedConfig direct();
+                            Container.Nested nested();
+                            String resolved();
+                            T typeVariable();
+                        }
+                        """)
+                .addSource("com/acme/spi/T.java", """
+                        package com.acme.spi;
+
+                        public class T {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        TypeInfo observed = firstRound.get();
+        assertThat(observed, notNullValue());
+        TypedElementInfo incoming = method(observed, "incoming");
+        assertThat(incoming.componentTypes(), is(incoming.typeName().typeArguments()));
+        TypeName array = incoming.typeName().typeArguments().get(1).typeArguments().getFirst().upperBounds().getFirst();
+        assertThat(array.packageName(), is("com.acme.spi"));
+        assertThat(array.className(), is("GeneratedConfig"));
+        assertThat(array.array(), is(true));
+        assertThat(array.componentType().orElseThrow(), is(TypeName.create("com.acme.spi.GeneratedConfig")));
+        TypeName lower = method(observed, "outgoing").typeName().typeArguments().getFirst().lowerBounds().getFirst();
+        assertThat(lower, is(TypeName.create("com.acme.spi.GeneratedConfig")));
+        assertThat(method(observed, "direct").typeName(), is(TypeName.create("com.acme.spi.GeneratedConfig")));
+        assertThat(method(observed, "nested").typeName(), is(TypeName.create("com.acme.spi.Container.Nested")));
+        assertThat(method(observed, "resolved").typeName(), is(TypeName.create(String.class)));
+        TypeName typeVariable = method(observed, "typeVariable").typeName();
+        assertThat(typeVariable.className(), is("T"));
+        assertThat(typeVariable.packageName(), is(""));
+        assertThat(typeVariable.generic(), is(true));
+        TypeName genericArray = method(observed, "genericArrays").typeName()
+                .typeArguments().getFirst().upperBounds().getFirst();
+        assertThat(genericArray.packageName(), is(""));
+        assertThat(genericArray.componentType().orElseThrow().generic(), is(true));
+    }
+
     private static TypeInfo compile(String methods) {
         var typeInfo = new AtomicReference<TypeInfo>();
         var result = TestCompiler.builder()
@@ -296,5 +390,13 @@ class AptTypeFactoryTest {
                   () -> assertThat("type variable array", type.array(), is(false)),
                   () -> assertThat("type variable component", type.componentType().isEmpty(), is(true)),
                   () -> assertAnnotations("type variable " + name, type, annotations));
+    }
+
+    private static TypedElementInfo method(TypeInfo type, String name) {
+        return type.elementInfo().stream()
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(it -> it.elementName().equals(name))
+                .findFirst()
+                .orElseThrow();
     }
 }

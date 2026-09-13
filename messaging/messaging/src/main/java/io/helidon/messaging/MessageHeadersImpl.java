@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.messaging;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+final class MessageHeadersImpl implements MessageHeaders {
+    private static final MessageHeaders EMPTY = new MessageHeadersImpl(List.of());
+
+    private final List<MessageHeader> entries;
+
+    private volatile Map<String, List<MessageHeaderValue>> index;
+
+    private MessageHeadersImpl(List<? extends MessageHeader> entries) {
+        this.entries = List.copyOf(entries);
+        this.index = this.entries.isEmpty() ? Map.of() : null;
+    }
+
+    static MessageHeaders empty() {
+        return EMPTY;
+    }
+
+    static MessageHeaders create(List<? extends MessageHeader> entries) {
+        List<? extends MessageHeader> actualEntries = Objects.requireNonNull(entries);
+        return actualEntries.isEmpty() ? EMPTY : new MessageHeadersImpl(actualEntries);
+    }
+
+    @Override
+    public List<MessageHeader> entries() {
+        return entries;
+    }
+
+    @Override
+    public boolean contains(String name) {
+        String actualName = Objects.requireNonNull(name);
+        return valuesByName().containsKey(actualName);
+    }
+
+    @Override
+    public Optional<MessageHeaderValue> first(String name) {
+        List<MessageHeaderValue> values = all(name);
+        return values.isEmpty() ? Optional.empty() : Optional.of(values.getFirst());
+    }
+
+    @Override
+    public Optional<MessageHeaderValue> last(String name) {
+        List<MessageHeaderValue> values = all(name);
+        return values.isEmpty() ? Optional.empty() : Optional.of(values.getLast());
+    }
+
+    @Override
+    public List<MessageHeaderValue> all(String name) {
+        String actualName = Objects.requireNonNull(name);
+        return valuesByName().getOrDefault(actualName, List.of());
+    }
+
+    @Override
+    public Map<String, List<MessageHeaderValue>> valuesByName() {
+        Map<String, List<MessageHeaderValue>> result = index;
+        if (result == null) {
+            // Concurrent first lookups may build equivalent immutable indexes; publish only complete snapshots.
+            result = MessageHeaders.super.valuesByName();
+            index = result;
+        }
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        return this == object || object instanceof MessageHeadersImpl that && entries.equals(that.entries);
+    }
+
+    @Override
+    public int hashCode() {
+        return entries.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return entries.toString();
+    }
+}
