@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
         <artifactId>helidon-tests-integration-project</artifactId>
-        <version>27.0.0-SNAPSHOT</version>
+        <version>28.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tests-integration-h2spec-client</artifactId>

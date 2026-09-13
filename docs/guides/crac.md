@@ -91,7 +91,7 @@ You should see in the output that Helidon has started with the CRaC feature
 enabled.
 
 ```shell [Terminal]
-Helidon SE 27.0.0-SNAPSHOT features: [CRaC, Config, Encoding, Health, Media, Metrics, Observe, Registry, WebServer]
+Helidon SE 28.0.0-SNAPSHOT features: [CRaC, Config, Encoding, Health, Media, Metrics, Observe, Registry, WebServer]
 [0x3f87bd99] http://0.0.0.0:8080 bound for socket '@default'
 Started all channels in 9 milliseconds. 521 milliseconds since JVM startup. Java 23.0.1
 WEB server is up! http://localhost:8080/simple-greet
