@@ -142,7 +142,7 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
         if (fullBuffer) {
             return BufferUtil.debugDataHex(bytes, offset, offset + length);
         } else {
-            return BufferUtil.debugDataHex(bytes, offset + position, offset + length - position);
+            return BufferUtil.debugDataHex(bytes, offset + position, offset + length);
         }
 
     }

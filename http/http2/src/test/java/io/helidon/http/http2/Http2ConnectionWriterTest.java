@@ -516,6 +516,12 @@ class Http2ConnectionWriterTest {
                     data.rewind();
                     assertThat("binary diagnostics must describe the listener's exact DATA range",
                                data.debugDataBinary(), is(BufferData.create(observed).debugDataBinary()));
+                    BufferData expected = BufferData.create(observed);
+                    data.skip(1);
+                    expected.skip(1);
+                    assertThat("hex diagnostics must include every unread DATA byte",
+                               data.debugDataHex(false), is(expected.debugDataHex(false)));
+                    data.rewind();
                     assertThat("rewinding the listener view must retain its exact range", data.readBytes(), is(observed));
                     data.rewind();
                     observedData.add(observed);

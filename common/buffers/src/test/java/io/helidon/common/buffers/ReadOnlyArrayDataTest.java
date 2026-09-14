@@ -146,6 +146,36 @@ class ReadOnlyArrayDataTest {
     }
 
     @Test
+    void hexDebugHonorsLogicalRangeAndReadPosition() {
+        byte[] data = {90, 91, 1, 2, 3, 4, 92, 93};
+        BufferData buffer = BufferData.createReadOnly(data, 2, 4);
+        String fullRange = BufferData.create(new byte[] {1, 2, 3, 4}).debugDataHex();
+
+        assertThat("hex diagnostics must exclude bytes outside the selected range", buffer.debugDataHex(false), is(fullRange));
+        assertThat(buffer.available(), is(4));
+
+        buffer.skip(1);
+
+        assertThat("hex diagnostics must include all remaining bytes",
+                   buffer.debugDataHex(false),
+                   is(BufferData.create(new byte[] {2, 3, 4}).debugDataHex()));
+        assertThat("full-buffer diagnostics must retain the selected range", buffer.debugDataHex(true), is(fullRange));
+        assertThat("diagnostics must preserve the read position", buffer.available(), is(3));
+
+        buffer.skip(3);
+
+        assertThat("a consumed buffer must not print unread payload bytes",
+                   buffer.debugDataHex(false),
+                   is(BufferData.create(new byte[0]).debugDataHex()));
+        assertThat("full-buffer diagnostics must include consumed bytes", buffer.debugDataHex(true), is(fullRange));
+
+        buffer.rewind();
+
+        assertThat("rewinding must restore the selected range", buffer.debugDataHex(false), is(fullRange));
+        assertThat(buffer.available(), is(4));
+    }
+
+    @Test
     void testDebugData() {
         byte[] test = "Hello World!".getBytes(StandardCharsets.UTF_8);
         ReadOnlyArrayData rad = new ReadOnlyArrayData(test, 1, test.length - 1);
