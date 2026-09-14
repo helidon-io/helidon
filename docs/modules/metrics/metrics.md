@@ -529,8 +529,8 @@ WebServer server = WebServer.builder()
 
 ### HTTP Transport Metrics
 
-Helidon's metrics integrations publish built-in HTTP transport meters in the
-vendor scope using the configured `MeterRegistry`. The WebServer metrics
+Helidon's metrics integrations publish built-in HTTP transport meters using
+the configured `MeterRegistry`. The WebServer metrics
 observer emits `role=server`; the WebClient metrics service emits
 `role=client`. These meters complement request metrics and tracing; they do not
 replace or change either feature.
@@ -571,9 +571,9 @@ Setting `auto-http-metrics.enabled` to `false` disables them, and
 require the metrics observer and the Metrics API itself to be enabled.
 Client-side transport observation is installed when the WebClient metrics
 service is configured; meter publication remains subject to the selected
-registry's metrics, vendor-scope, and per-meter filters.
+registry's metrics and per-meter filters.
 
-Helidon owns these vendor meter names and tag sets, including the backing values
+Helidon owns these meter names and tag sets, including the backing values
 for active gauges. Applications must not pre-register gauges with the same
 meter IDs and tags. Connection and stream IDs, network addresses, paths, SNI
 names, error text, and protocol error codes are deliberately not used as tags,

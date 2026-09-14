@@ -53,54 +53,122 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http3RedirectTest {
     private static final String REDIRECT_PATH = "/redirect";
     private static final String TARGET_PATH = "/target";
+    private static final String PAYLOAD_CONTENT_TYPE = "application/octet-stream";
     private static final byte[] PAYLOAD = "payload".getBytes(StandardCharsets.UTF_8);
 
     @Test
     void shouldReplayMaterializedBodyAfterTemporaryRedirect() throws Exception {
-        assertMaterializedBodyReplayed(Status.TEMPORARY_REDIRECT_307);
+        assertMaterializedBodyReplayed(Method.POST, Status.TEMPORARY_REDIRECT_307);
     }
 
     @Test
     void shouldReplayMaterializedBodyAfterPermanentRedirect() throws Exception {
-        assertMaterializedBodyReplayed(Status.PERMANENT_REDIRECT_308);
+        assertMaterializedBodyReplayed(Method.POST, Status.PERMANENT_REDIRECT_308);
+    }
+
+    @Test
+    void shouldReplayQueryBodyAfterMovedPermanently() throws Exception {
+        assertMaterializedBodyReplayed(Method.QUERY, Status.MOVED_PERMANENTLY_301);
+    }
+
+    @Test
+    void shouldReplayQueryBodyAfterFound() throws Exception {
+        assertMaterializedBodyReplayed(Method.QUERY, Status.FOUND_302);
+    }
+
+    @Test
+    void shouldUseMediaWriterContentTypeForQuery() throws Exception {
+        AtomicReference<String> contentType = new AtomicReference<>();
+        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing
+                .route(Method.QUERY, TARGET_PATH, (request, response) -> {
+                    contentType.set(request.headers().first(HeaderNames.CONTENT_TYPE).orElse(null));
+                    response.send(request.content().as(String.class));
+                }))) {
+            Http3Client client = newClient(environment);
+            try (Http3ClientResponse response = client.method(Method.QUERY)
+                    .uri(TARGET_PATH)
+                    .submit("payload")) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class), is("payload"));
+            } finally {
+                client.closeResource();
+            }
+        }
+        assertThat(contentType.get(), startsWith("text/plain"));
+    }
+
+    @Test
+    void shouldRejectQueryWithoutContentTypeAfterMediaPreparation() throws Exception {
+        AtomicInteger targetCount = new AtomicInteger();
+        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing
+                .route(Method.QUERY, TARGET_PATH, (_, response) -> {
+                    targetCount.incrementAndGet();
+                    response.send();
+                }))) {
+            Http3Client client = strictClientBuilder()
+                    .baseUri(environment.baseUri())
+                    .servicesDiscoverServices(false)
+                    .tls(environment.clientTlsHttp3())
+                    .addService((chain, request) -> {
+                        request.headers().remove(HeaderNames.CONTENT_TYPE);
+                        return chain.proceed(request);
+                    })
+                    .build();
+            try {
+                IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                               () -> client.method(Method.QUERY)
+                                                                       .uri(TARGET_PATH)
+                                                                       .submit("payload"));
+                assertThat(failure.getMessage(), is("Content-Type header is required for method 'QUERY'"));
+            } finally {
+                client.closeResource();
+            }
+        }
+        assertThat(targetCount.get(), is(0));
     }
 
     @Test
     void shouldRewritePostToGetWithoutStaleEntityHeadersAfter302() throws Exception {
-        assertPostRewrittenToGet(executePostRedirect(302, false));
+        assertRewrittenToGet(executeRedirect(Method.POST, 302, false));
     }
 
     @Test
     void shouldRewritePostToGetWithoutStaleEntityHeadersAfter303() throws Exception {
-        assertPostRewrittenToGet(executePostRedirect(303, false));
+        assertRewrittenToGet(executeRedirect(Method.POST, 303, false));
+    }
+
+    @Test
+    void shouldRewriteQueryToGetWithoutStaleEntityHeadersAfter303() throws Exception {
+        assertRewrittenToGet(executeRedirect(Method.QUERY, 303, false));
     }
 
     @Test
     void genericServiceHandoffRewritesPostToGetWithoutStaleEntityHeadersAfter302() throws Exception {
-        assertPostRewrittenToGet(executePostRedirect(302, true));
+        assertRewrittenToGet(executeRedirect(Method.POST, 302, true));
     }
 
     @Test
     void genericServiceHandoffRewritesPostToGetWithoutStaleEntityHeadersAfter303() throws Exception {
-        assertPostRewrittenToGet(executePostRedirect(303, true));
+        assertRewrittenToGet(executeRedirect(Method.POST, 303, true));
     }
 
     @Test
     void shouldPreservePostBodyAndExpectAfter307() throws Exception {
-        assertPostPreserved(executePostRedirect(307, false));
+        assertPostPreserved(executeRedirect(Method.POST, 307, false));
     }
 
     @Test
     void shouldPreservePostBodyAndExpectAfter308() throws Exception {
-        assertPostPreserved(executePostRedirect(308, false));
+        assertPostPreserved(executeRedirect(Method.POST, 308, false));
     }
 
-    private static void assertPostRewrittenToGet(RedirectCaptures captures) {
+    private static void assertRewrittenToGet(RedirectCaptures captures) {
 
         assertRewrittenGet(captures.serviceRequest());
         assertRewrittenGet(captures.wireRequest());
@@ -118,41 +186,73 @@ class Http3RedirectTest {
         assertThat(captures.wireRequest().expectContinue(), is(true));
         assertThat(captures.wireRequest().body(), is(PAYLOAD));
         assertThat(captures.serviceInvocations(), is(2));
+        assertRepresentationHeadersPreserved(captures.serviceRequest());
+        assertRepresentationHeadersPreserved(captures.wireRequest());
     }
 
     @Test
     void shouldRejectOneShotBodyAfterTemporaryRedirect() throws Exception {
-        assertOneShotBodyRejected(Status.TEMPORARY_REDIRECT_307);
+        assertOneShotBodyRejected(Method.POST, Status.TEMPORARY_REDIRECT_307);
     }
 
     @Test
     void shouldRejectOneShotBodyAfterPermanentRedirect() throws Exception {
-        assertOneShotBodyRejected(Status.PERMANENT_REDIRECT_308);
+        assertOneShotBodyRejected(Method.POST, Status.PERMANENT_REDIRECT_308);
+    }
+
+    @Test
+    void shouldRejectOneShotQueryBodyAfterMovedPermanently() throws Exception {
+        assertOneShotBodyRejected(Method.QUERY, Status.MOVED_PERMANENTLY_301);
+    }
+
+    @Test
+    void shouldRejectOneShotQueryBodyAfterFound() throws Exception {
+        assertOneShotBodyRejected(Method.QUERY, Status.FOUND_302);
     }
 
     @Test
     void shouldRejectCrossOriginMaterializedBodyAfterTemporaryRedirect() throws Exception {
-        assertCrossOriginMaterializedBodyRejected(Status.TEMPORARY_REDIRECT_307, true);
+        assertCrossOriginMaterializedBodyRejected(Method.POST, Status.TEMPORARY_REDIRECT_307, true);
     }
 
     @Test
     void shouldRejectCrossOriginMaterializedBodyAfterPermanentRedirect() throws Exception {
-        assertCrossOriginMaterializedBodyRejected(Status.PERMANENT_REDIRECT_308, true);
+        assertCrossOriginMaterializedBodyRejected(Method.POST, Status.PERMANENT_REDIRECT_308, true);
+    }
+
+    @Test
+    void shouldRejectCrossOriginQueryBodyAfterMovedPermanently() throws Exception {
+        assertCrossOriginMaterializedBodyRejected(Method.QUERY, Status.MOVED_PERMANENTLY_301, true);
+    }
+
+    @Test
+    void shouldRejectCrossOriginQueryBodyAfterFound() throws Exception {
+        assertCrossOriginMaterializedBodyRejected(Method.QUERY, Status.FOUND_302, true);
     }
 
     @Test
     void shouldRejectCrossOriginMaterializedBodyWhenHeaderFilteringIsDisabled() throws Exception {
-        assertCrossOriginMaterializedBodyRejected(Status.TEMPORARY_REDIRECT_307, false);
+        assertCrossOriginMaterializedBodyRejected(Method.POST, Status.TEMPORARY_REDIRECT_307, false);
     }
 
     @Test
     void shouldAllowCrossOriginMaterializedBodyAfterTemporaryRedirectWhenEnabled() throws Exception {
-        assertCrossOriginMaterializedBodyAllowed(Status.TEMPORARY_REDIRECT_307);
+        assertCrossOriginMaterializedBodyAllowed(Method.POST, Status.TEMPORARY_REDIRECT_307);
     }
 
     @Test
     void shouldAllowCrossOriginMaterializedBodyAfterPermanentRedirectWhenEnabled() throws Exception {
-        assertCrossOriginMaterializedBodyAllowed(Status.PERMANENT_REDIRECT_308);
+        assertCrossOriginMaterializedBodyAllowed(Method.POST, Status.PERMANENT_REDIRECT_308);
+    }
+
+    @Test
+    void shouldAllowCrossOriginQueryBodyAfterMovedPermanentlyWhenEnabled() throws Exception {
+        assertCrossOriginMaterializedBodyAllowed(Method.QUERY, Status.MOVED_PERMANENTLY_301);
+    }
+
+    @Test
+    void shouldAllowCrossOriginQueryBodyAfterFoundWhenEnabled() throws Exception {
+        assertCrossOriginMaterializedBodyAllowed(Method.QUERY, Status.FOUND_302);
     }
 
     @Test
@@ -975,29 +1075,34 @@ class Http3RedirectTest {
         assertThat(targetRequestCount.get(), is(1));
     }
 
-    private static void assertMaterializedBodyReplayed(Status redirectStatus) throws Exception {
+    private static void assertMaterializedBodyReplayed(Method method, Status redirectStatus) throws Exception {
         AtomicInteger redirectCount = new AtomicInteger();
         AtomicInteger targetCount = new AtomicInteger();
         AtomicReference<byte[]> redirectBody = new AtomicReference<>();
         AtomicReference<byte[]> targetBody = new AtomicReference<>();
+        AtomicReference<String> targetContentType = new AtomicReference<>();
 
         try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing
-                .post(REDIRECT_PATH, (req, res) -> {
+                .route(method, REDIRECT_PATH, (req, res) -> {
                     redirectCount.incrementAndGet();
                     redirectBody.set(req.content().as(byte[].class));
                     res.status(redirectStatus)
                             .header(HeaderNames.LOCATION, "target")
                             .send();
                 })
-                .post(TARGET_PATH, (req, res) -> {
+                .route(method, TARGET_PATH, (req, res) -> {
                     targetCount.incrementAndGet();
                     byte[] body = req.content().as(byte[].class);
                     targetBody.set(body);
+                    targetContentType.set(req.headers().first(HeaderNames.CONTENT_TYPE).orElse(null));
                     res.send(body);
                 }))) {
             Http3Client client = newClient(environment);
             try {
-                try (Http3ClientResponse response = client.post(REDIRECT_PATH).submit(PAYLOAD)) {
+                try (Http3ClientResponse response = client.method(method)
+                        .uri(REDIRECT_PATH)
+                        .header(HeaderNames.CONTENT_TYPE, PAYLOAD_CONTENT_TYPE)
+                        .submit(PAYLOAD)) {
                     assertThat(response.status(), is(Status.OK_200));
                     assertThat(response.protocolId(), is(Http3Client.PROTOCOL_ID));
                     assertThat(response.as(byte[].class), is(PAYLOAD));
@@ -1011,9 +1116,10 @@ class Http3RedirectTest {
         assertThat(targetCount.get(), is(1));
         assertThat(redirectBody.get(), is(PAYLOAD));
         assertThat(targetBody.get(), is(PAYLOAD));
+        assertThat(targetContentType.get(), is(PAYLOAD_CONTENT_TYPE));
     }
 
-    private static RedirectCaptures executePostRedirect(int statusCode, boolean genericClient) throws Exception {
+    private static RedirectCaptures executeRedirect(Method method, int statusCode, boolean genericClient) throws Exception {
         Status redirectStatus = switch (statusCode) {
             case 302 -> Status.FOUND_302;
             case 303 -> Status.SEE_OTHER_303;
@@ -1026,7 +1132,7 @@ class Http3RedirectTest {
         AtomicReference<CapturedRedirectRequest> wireRequest = new AtomicReference<>();
 
         try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing
-                .post(REDIRECT_PATH, (request, response) -> {
+                .route(method, REDIRECT_PATH, (request, response) -> {
                     request.content().as(byte[].class);
                     response.status(redirectStatus)
                             .header(HeaderNames.LOCATION, TARGET_PATH)
@@ -1043,6 +1149,14 @@ class Http3RedirectTest {
                                                                    contentLength,
                                                                    transferEncoding,
                                                                    request.headers().contains(HeaderValues.EXPECT_100),
+                                                                   request.headers().first(HeaderNames.CONTENT_TYPE)
+                                                                           .orElse(null),
+                                                                   request.headers().first(HeaderNames.CONTENT_ENCODING)
+                                                                           .orElse(null),
+                                                                   request.headers().first(HeaderNames.CONTENT_LANGUAGE)
+                                                                           .orElse(null),
+                                                                   request.headers().first(HeaderNames.CONTENT_LOCATION)
+                                                                           .orElse(null),
                                                                    new byte[0]));
                     request.headers().remove(HeaderNames.TRANSFER_ENCODING);
                     if (request.method() == Method.GET) {
@@ -1068,8 +1182,13 @@ class Http3RedirectTest {
                         .addProtocolPreference(Http1Client.PROTOCOL_ID)
                         .build();
                 try {
-                    try (HttpClientResponse response = client.post(REDIRECT_PATH)
+                    try (HttpClientResponse response = client.method(method)
+                            .uri(REDIRECT_PATH)
                             .protocolId(Http3Client.PROTOCOL_ID)
+                            .header(HeaderNames.CONTENT_TYPE, PAYLOAD_CONTENT_TYPE)
+                            .header(HeaderNames.CONTENT_ENCODING, "identity")
+                            .header(HeaderNames.CONTENT_LANGUAGE, "en")
+                            .header(HeaderNames.CONTENT_LOCATION, "/representation")
                             .header(HeaderNames.TRANSFER_ENCODING, "chunked")
                             .header(HeaderValues.EXPECT_100)
                             .sendExpectContinue(true)
@@ -1089,7 +1208,12 @@ class Http3RedirectTest {
                         .addService(service)
                         .build();
                 try {
-                    try (Http3ClientResponse response = client.post(REDIRECT_PATH)
+                    try (Http3ClientResponse response = client.method(method)
+                            .uri(REDIRECT_PATH)
+                            .header(HeaderNames.CONTENT_TYPE, PAYLOAD_CONTENT_TYPE)
+                            .header(HeaderNames.CONTENT_ENCODING, "identity")
+                            .header(HeaderNames.CONTENT_LANGUAGE, "en")
+                            .header(HeaderNames.CONTENT_LOCATION, "/representation")
                             .header(HeaderNames.TRANSFER_ENCODING, "chunked")
                             .header(HeaderValues.EXPECT_100)
                             .sendExpectContinue(true)
@@ -1115,6 +1239,10 @@ class Http3RedirectTest {
                                                 request.headers().first(HeaderNames.CONTENT_LENGTH).orElse(null),
                                                 request.headers().contains(HeaderNames.TRANSFER_ENCODING),
                                                 request.headers().contains(HeaderValues.EXPECT_100),
+                                                request.headers().first(HeaderNames.CONTENT_TYPE).orElse(null),
+                                                request.headers().first(HeaderNames.CONTENT_ENCODING).orElse(null),
+                                                request.headers().first(HeaderNames.CONTENT_LANGUAGE).orElse(null),
+                                                request.headers().first(HeaderNames.CONTENT_LOCATION).orElse(null),
                                                 body));
         response.send("target");
     }
@@ -1124,30 +1252,43 @@ class Http3RedirectTest {
         assertThat(request.contentLength(), anyOf(nullValue(), is("0")));
         assertThat(request.transferEncoding(), is(false));
         assertThat(request.expectContinue(), is(false));
+        assertThat(request.contentType(), is(nullValue()));
+        assertThat(request.contentEncoding(), is(nullValue()));
+        assertThat(request.contentLanguage(), is(nullValue()));
+        assertThat(request.contentLocation(), is(nullValue()));
     }
 
-    private static void assertOneShotBodyRejected(Status redirectStatus) throws Exception {
+    private static void assertRepresentationHeadersPreserved(CapturedRedirectRequest request) {
+        assertThat(request.contentType(), is(PAYLOAD_CONTENT_TYPE));
+        assertThat(request.contentEncoding(), is("identity"));
+        assertThat(request.contentLanguage(), is("en"));
+        assertThat(request.contentLocation(), is("/representation"));
+    }
+
+    private static void assertOneShotBodyRejected(Method method, Status redirectStatus) throws Exception {
         AtomicInteger redirectCount = new AtomicInteger();
         AtomicInteger targetCount = new AtomicInteger();
         AtomicInteger producerCount = new AtomicInteger();
         AtomicReference<byte[]> redirectBody = new AtomicReference<>();
 
         try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing
-                .post(REDIRECT_PATH, (req, res) -> {
+                .route(method, REDIRECT_PATH, (req, res) -> {
                     redirectCount.incrementAndGet();
                     redirectBody.set(req.content().as(byte[].class));
                     res.status(redirectStatus)
                             .header(HeaderNames.LOCATION, "target")
                             .send();
                 })
-                .post(TARGET_PATH, (req, res) -> {
+                .route(method, TARGET_PATH, (req, res) -> {
                     targetCount.incrementAndGet();
                     res.send(req.content().as(byte[].class));
                 }))) {
             Http3Client client = newClient(environment);
             try {
                 IllegalStateException failure = assertThrows(IllegalStateException.class,
-                                                              () -> client.post(REDIRECT_PATH)
+                                                              () -> client.method(method)
+                                                                      .uri(REDIRECT_PATH)
+                                                                      .header(HeaderNames.CONTENT_TYPE, PAYLOAD_CONTENT_TYPE)
                                                                       .outputStream(outputStream -> {
                                                                           producerCount.incrementAndGet();
                                                                           outputStream.write(PAYLOAD);
@@ -1167,17 +1308,18 @@ class Http3RedirectTest {
         assertThat(redirectBody.get(), is(PAYLOAD));
     }
 
-    private static void assertCrossOriginMaterializedBodyRejected(Status redirectStatus,
+    private static void assertCrossOriginMaterializedBodyRejected(Method method,
+                                                                  Status redirectStatus,
                                                                   boolean filterRedirectHeaders) throws Exception {
         AtomicInteger redirectCount = new AtomicInteger();
         AtomicInteger targetCount = new AtomicInteger();
         try (TestEnvironment target = TestEnvironment.createSharedListener(routing -> routing
-                .post(TARGET_PATH, (req, res) -> {
+                .route(method, TARGET_PATH, (req, res) -> {
                     targetCount.incrementAndGet();
                     res.send(req.content().as(byte[].class));
                 }))) {
             try (TestEnvironment source = TestEnvironment.createSharedListener(routing -> routing
-                    .post(REDIRECT_PATH, (req, res) -> {
+                    .route(method, REDIRECT_PATH, (req, res) -> {
                         redirectCount.incrementAndGet();
                         req.content().as(byte[].class);
                         res.status(redirectStatus)
@@ -1191,7 +1333,11 @@ class Http3RedirectTest {
                         .build();
                 try {
                     IllegalStateException failure = assertThrows(IllegalStateException.class,
-                                                                  () -> client.post(REDIRECT_PATH).submit(PAYLOAD));
+                                                                  () -> client.method(method)
+                                                                          .uri(REDIRECT_PATH)
+                                                                          .header(HeaderNames.CONTENT_TYPE,
+                                                                                  PAYLOAD_CONTENT_TYPE)
+                                                                          .submit(PAYLOAD));
                     assertThat(failure.getMessage(), is("Cross-origin redirect with request entity is disabled."));
                 } finally {
                     client.closeResource();
@@ -1203,16 +1349,18 @@ class Http3RedirectTest {
         assertThat(targetCount.get(), is(0));
     }
 
-    private static void assertCrossOriginMaterializedBodyAllowed(Status redirectStatus) throws Exception {
+    private static void assertCrossOriginMaterializedBodyAllowed(Method method, Status redirectStatus) throws Exception {
         AtomicInteger redirectCount = new AtomicInteger();
         AtomicInteger targetCount = new AtomicInteger();
+        AtomicReference<String> targetContentType = new AtomicReference<>();
         try (TestEnvironment target = TestEnvironment.createSharedListener(routing -> routing
-                .post(TARGET_PATH, (req, res) -> {
+                .route(method, TARGET_PATH, (req, res) -> {
                     targetCount.incrementAndGet();
+                    targetContentType.set(req.headers().first(HeaderNames.CONTENT_TYPE).orElse(null));
                     res.send(req.content().as(byte[].class));
                 }))) {
             try (TestEnvironment source = TestEnvironment.createSharedListener(routing -> routing
-                    .post(REDIRECT_PATH, (req, res) -> {
+                    .route(method, REDIRECT_PATH, (req, res) -> {
                         redirectCount.incrementAndGet();
                         req.content().as(byte[].class);
                         res.status(redirectStatus)
@@ -1225,7 +1373,10 @@ class Http3RedirectTest {
                         .followCrossOriginEntityRedirects(true)
                         .build();
                 try {
-                    try (Http3ClientResponse response = client.post(REDIRECT_PATH).submit(PAYLOAD)) {
+                    try (Http3ClientResponse response = client.method(method)
+                            .uri(REDIRECT_PATH)
+                            .header(HeaderNames.CONTENT_TYPE, PAYLOAD_CONTENT_TYPE)
+                            .submit(PAYLOAD)) {
                         assertThat(response.status(), is(Status.OK_200));
                         assertThat(response.as(byte[].class), is(PAYLOAD));
                     }
@@ -1237,6 +1388,7 @@ class Http3RedirectTest {
 
         assertThat(redirectCount.get(), is(1));
         assertThat(targetCount.get(), is(1));
+        assertThat(targetContentType.get(), is(PAYLOAD_CONTENT_TYPE));
     }
 
     private static Http3Client newClient(TestEnvironment environment) {
@@ -1255,6 +1407,10 @@ class Http3RedirectTest {
                                            String contentLength,
                                            boolean transferEncoding,
                                            boolean expectContinue,
+                                           String contentType,
+                                           String contentEncoding,
+                                           String contentLanguage,
+                                           String contentLocation,
                                            byte[] body) {
     }
 }

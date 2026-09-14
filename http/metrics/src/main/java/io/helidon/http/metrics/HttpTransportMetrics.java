@@ -64,7 +64,7 @@ import static java.lang.System.Logger.Level.WARNING;
 /**
  * Metrics API integration for HTTP transport lifecycle observation.
  *
- * <p>The adapter emits the following vendor-scope meters. Timer base units are seconds.
+ * <p>The adapter emits the following meters. Timer base units are seconds.
  * <table>
  *     <caption>HTTP transport meters</caption>
  *     <tr><th>Name</th><th>Type</th><th>Tags</th><th>Meaning</th></tr>
@@ -102,7 +102,7 @@ import static java.lang.System.Logger.Level.WARNING;
  * names declared by the observer. Additional stable transport and protocol identifiers are used as tag values.
  * Connection or stream IDs, addresses, paths, SNI names, error text, and protocol error codes are not tags.
  *
- * <p>The adapter owns these vendor meter IDs. In particular, applications must not pre-register gauges with the same
+ * <p>The adapter owns these meter IDs. In particular, applications must not pre-register gauges with the same
  * IDs and tags because the Metrics API does not expose an existing gauge's backing value for safe adoption. Configured
  * registry wrappers retain their own filtering, listeners, and clock. Wrappers share lifecycle state only when their
  * returned meters expose the same native delegate identity.
@@ -140,7 +140,6 @@ public final class HttpTransportMetrics {
     static final String STREAMS_CLOSED = "http.streams.closed";
     static final String STREAMS_DURATION = "http.streams.duration";
 
-    private static final String VENDOR = Meter.Scope.VENDOR;
     private static final String UNKNOWN_PROTOCOL = "";
     private static final int MAX_PENDING_PROVIDER_ACTIONS = 1024;
     private static final System.Logger LOGGER = System.getLogger(HttpTransportMetrics.class.getName());
@@ -311,7 +310,6 @@ public final class HttpTransportMetrics {
                 key.name,
                 tags,
                 () -> registry.getOrCreate(Gauge.builder(key.name, value, GaugeValue::get)
-                                                     .scope(VENDOR)
                                                      .tags(tags)
                                                      .description(description)),
                 meterRegistrations,
@@ -326,7 +324,6 @@ public final class HttpTransportMetrics {
                 name,
                 tags,
                 () -> registry.getOrCreate(Counter.builder(name)
-                                                   .scope(VENDOR)
                                                    .tags(tags)
                                                    .description(description)),
                 meterRegistrations,
@@ -340,7 +337,6 @@ public final class HttpTransportMetrics {
                 name,
                 tags,
                 () -> registry.getOrCreate(Timer.builder(name)
-                                                 .scope(VENDOR)
                                                  .tags(tags)
                                                  .baseUnit(TimeUnit.SECONDS)
                                                  .description(description)),
@@ -788,7 +784,7 @@ public final class HttpTransportMetrics {
                                              Set<MeterRegistration> registrations,
                                              GaugeRegistration gaugeRegistration) {
             Map<String, String> tagValues = tagMap(tags);
-            boolean enabled = registry.isMeterEnabled(name, tagValues, Optional.of(VENDOR));
+            boolean enabled = registry.isMeterEnabled(name, tagValues);
             GaugeKey gaugeKey = gaugeRegistration == null ? null : gaugeRegistration.key;
             MeterKey meterKey = new MeterKey(name, Map.copyOf(tagValues));
             if (gaugeRegistration != null) {
@@ -814,7 +810,7 @@ public final class HttpTransportMetrics {
                 M recovered = null;
                 if (enabled) {
                     try {
-                        Optional<M> registered = vendorMeter(registry, meterType, name, tags);
+                        Optional<M> registered = registeredMeter(registry, meterType, name, tags);
                         if (registered.isPresent()) {
                             LOGGER.log(WARNING,
                                        "Meter registry callback failed after registering an HTTP transport meter",
@@ -840,9 +836,6 @@ public final class HttpTransportMetrics {
             }
             if (!enabled) {
                 return meter;
-            }
-            if (meter.scope().filter(VENDOR::equals).isEmpty()) {
-                throw new IllegalStateException("HTTP transport meter must use vendor scope");
             }
             Object meterIdentity = Objects.requireNonNull(meter.unwrap(Object.class), "meter delegate");
             Meter.Type type = meter.type();
@@ -896,15 +889,14 @@ public final class HttpTransportMetrics {
             }
         }
 
-        private static <M extends Meter> Optional<M> vendorMeter(MeterRegistry registry,
-                                                                 Class<M> meterType,
-                                                                 String name,
-                                                                 Iterable<Tag> tags) {
+        private static <M extends Meter> Optional<M> registeredMeter(MeterRegistry registry,
+                                                                     Class<M> meterType,
+                                                                     String name,
+                                                                     Iterable<Tag> tags) {
             Map<String, String> expectedTags = new HashMap<>();
             tags.forEach(tag -> expectedTags.put(tag.key(), tag.value()));
-            for (Meter candidate : registry.meters(List.of(VENDOR))) {
-                if (candidate.scope().filter(VENDOR::equals).isEmpty()
-                        || !candidate.id().name().equals(name)
+            for (Meter candidate : registry.meters()) {
+                if (!candidate.id().name().equals(name)
                         || !candidate.id().tagsMap().equals(expectedTags)) {
                     continue;
                 }
@@ -1098,10 +1090,10 @@ public final class HttpTransportMetrics {
                         }
                         if (!removed) {
                             try {
-                                Optional<Meter> registered = vendorMeter(registration.registry,
-                                                                        Meter.class,
-                                                                        meter.id().name(),
-                                                                        meter.id().tags());
+                                Optional<Meter> registered = registeredMeter(registration.registry,
+                                                                            Meter.class,
+                                                                            meter.id().name(),
+                                                                            meter.id().tags());
                                 removed = registered.isEmpty()
                                         || registered.map(candidate -> candidate.unwrap(Object.class)
                                         != nativeIdentity).orElse(true);

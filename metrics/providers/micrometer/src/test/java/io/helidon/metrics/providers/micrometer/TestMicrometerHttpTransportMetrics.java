@@ -384,38 +384,35 @@ class TestMicrometerHttpTransportMetrics {
     }
 
     @Test
-    void recoveryDoesNotAdoptApplicationMeterWithVendorId() {
+    void recoveryDoesNotAdoptMeterWithDifferentTags() {
         MeterRegistry registry = MeterRegistry.create();
-        List<Tag> tags = List.of(Tag.create("role", "server"),
+        List<Tag> tags = List.of(Tag.create("role", "client"),
                                  Tag.create("transport", "tcp"),
                                  Tag.create("handshake", "none"));
-        Counter applicationCounter = registry.getOrCreate(Counter.builder("http.connections.opened")
-                                                                  .scope(Meter.Scope.APPLICATION)
-                                                                  .tags(tags));
-        applicationCounter.increment(7);
+        Counter unrelatedCounter = registry.getOrCreate(Counter.builder("http.connections.opened")
+                                                                .tags(tags));
+        unrelatedCounter.increment(7);
         Object delegate = registry.unwrap(Object.class);
         TestRegistry failingRegistry = new TestRegistry(registry);
         failingRegistry.lookupOverrideName = "http.connections.opened";
-        failingRegistry.lookupOverride = applicationCounter;
+        failingRegistry.lookupOverride = unrelatedCounter;
         failingRegistry.remainingRegistrationFailures = 1;
         failingRegistry.failingRegistration = meter -> meter.id().name().equals("http.connections.opened")
-                && meter.scope().orElse("").equals(Meter.Scope.VENDOR);
+                && meter.id().tagsMap().get("role").equals("server");
         HttpTransportMetrics.Lease observer = HttpTransportMetrics.acquire(failingRegistry);
 
         try {
             observer.connectionOpened(SERVER, TRANSPORT_TCP, NONE).close(NORMAL);
             observer.close();
 
-            io.micrometer.core.instrument.Counter retainedApplicationCounter =
-                    nativeOpenedCounterForScope(delegate, Meter.Scope.APPLICATION);
-            assertThat(retainedApplicationCounter, is(sameInstance(applicationCounter.unwrap(Object.class))));
-            assertThat(retainedApplicationCounter.count(), is(7.0));
+            io.micrometer.core.instrument.Counter retainedCounter = nativeOpenedCounterForRole(delegate, "client");
+            assertThat(retainedCounter, is(sameInstance(unrelatedCounter.unwrap(Object.class))));
+            assertThat(retainedCounter.count(), is(7.0));
             await(() -> failingRegistry.remainingRegistrationFailures == 0);
-            assertEventuallyNull(() -> nativeOpenedCounterForScope(delegate, Meter.Scope.VENDOR));
+            assertEventuallyNull(() -> nativeOpenedCounterForRole(delegate, "server"));
         } finally {
             observer.close();
-            registry.remove("http.connections.opened", tags, Meter.Scope.APPLICATION);
-            registry.remove("http.connections.opened", tags, Meter.Scope.VENDOR);
+            registry.remove("http.connections.opened", tags);
         }
     }
 
@@ -738,10 +735,10 @@ class TestMicrometerHttpTransportMetrics {
                 .counter();
     }
 
-    private static io.micrometer.core.instrument.Counter nativeOpenedCounterForScope(Object registry, String scope) {
+    private static io.micrometer.core.instrument.Counter nativeOpenedCounterForRole(Object registry, String role) {
         return ((io.micrometer.core.instrument.MeterRegistry) registry)
                 .find("http.connections.opened")
-                .tags("role", "server", "transport", "tcp", "handshake", "none", "scope", scope)
+                .tags("role", role, "transport", "tcp", "handshake", "none")
                 .counter();
     }
 
@@ -828,7 +825,7 @@ class TestMicrometerHttpTransportMetrics {
 
         @Override
         public List<Meter> meters() {
-            return delegate.meters();
+            return hideMeters ? List.of() : delegate.meters();
         }
 
         @Override
