@@ -42,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 /**
  * Real-driver contract for every scalar supported by the imperative JDBC client.
  */
-@SuppressWarnings("helidon:api:preview")
 public abstract class AbstractJdbcScalarContract {
     private static final String UPDATE_SQL = """
             UPDATE SCALAR_VALUE

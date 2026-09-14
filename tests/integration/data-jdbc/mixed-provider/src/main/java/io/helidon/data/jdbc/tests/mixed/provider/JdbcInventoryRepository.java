@@ -26,7 +26,6 @@ import io.helidon.data.jdbc.Jdbc;
 @Data.Repository
 @Data.Provider("jdbc")
 @Jdbc.Client("mixed")
-@SuppressWarnings("helidon:api:preview")
 public interface JdbcInventoryRepository {
 
     /**

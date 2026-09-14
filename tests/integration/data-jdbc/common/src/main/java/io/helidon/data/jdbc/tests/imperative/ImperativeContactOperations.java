@@ -28,7 +28,6 @@ import io.helidon.service.registry.Service;
 /**
  * Uses the public JDBC client from an imperative application service.
  */
-@SuppressWarnings("helidon:api:preview")
 @Service.Singleton
 public final class ImperativeContactOperations implements ContactOperations {
     private static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.generated-key-column";

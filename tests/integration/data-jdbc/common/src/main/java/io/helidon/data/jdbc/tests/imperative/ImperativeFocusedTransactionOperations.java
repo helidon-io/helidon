@@ -25,7 +25,6 @@ import io.helidon.transaction.Tx;
 /**
  * Exercises focused transaction behavior through the public imperative JDBC client.
  */
-@SuppressWarnings("helidon:api:preview")
 @Service.Singleton
 public final class ImperativeFocusedTransactionOperations implements FocusedTransactionOperations {
     private final JdbcClient client;

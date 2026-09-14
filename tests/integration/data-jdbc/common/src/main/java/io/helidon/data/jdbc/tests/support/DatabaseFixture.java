@@ -28,7 +28,6 @@ import io.helidon.service.registry.Service;
 /**
  * Resets portable application data and inspects committed state outside the adapter under test.
  */
-@SuppressWarnings("helidon:api:preview")
 @Service.Singleton
 public final class DatabaseFixture {
     private final JdbcClient client;

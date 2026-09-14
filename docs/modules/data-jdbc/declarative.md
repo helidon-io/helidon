@@ -291,6 +291,13 @@ types. `T` is a supported scalar, record, or result produced by a row mapper.
 | `Optional<T>` | Accepts zero or one row. |
 | `List<T>` | Returns all rows as an immutable list in JDBC encounter order. |
 
+`List<T>` is the only supported return type for multiple rows. The declared
+return type must be exactly `List<T>`. A repository method cannot return a
+`java.util.Collection`, `java.util.Map`, or `java.util.stream.BaseStream`
+implementation or subtype instead. These types also cannot serve as the mapped
+type `T` within `Optional<T>` or `List<T>`. Supplying a row mapper does not make
+any of these return types valid.
+
 A method returning `T` throws `NoResultException` when no row exists. Both `T`
 and `Optional<T>` throw `NonUniqueResultException` when more than one row
 exists.
@@ -389,6 +396,12 @@ column and reconstruct the value in a row mapper.
 A `JdbcClient.RowMapper<T>` can handle a result that does not fit automatic
 scalar or record mapping. The mapper becomes a Service Registry service, and
 `@Jdbc.RowMapper` connects it to a repository method.
+
+A row mapper controls how a single row is converted. It does not change the
+supported repository return types. Its result type must follow the restrictions
+in [Return Types](#return-types). A mapper can produce an application type that
+holds detached collection or map data. The mapped result itself cannot be a
+`Collection`, `Map`, or `BaseStream` implementation or subtype.
 
 Because the mapper implements an incubating Data JDBC API, its class also
 acknowledges that API status:

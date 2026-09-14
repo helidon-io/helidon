@@ -33,7 +33,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Executes Oracle alternative-quoted literals through the imperative client.
  */
-@SuppressWarnings("helidon:api:preview")
 @Testcontainers(disabledWithoutDocker = true)
 class OracleImperativeAlternativeQuoteTest {
     @Container
