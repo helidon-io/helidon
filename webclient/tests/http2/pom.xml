@@ -29,7 +29,7 @@
     <description>WebClient HTTP/2 tests</description>
 
     <properties>
-        <jetty.h2c.peer.version>11.0.18</jetty.h2c.peer.version>
+        <jetty.h2c.peer.version>12.0.36</jetty.h2c.peer.version>
     </properties>
 
     <dependencies>
