@@ -58,8 +58,7 @@ class Http3RedirectionProcessor {
                     ClientUri redirectSourceUri = ClientUri.create(clientResponse.lastEndpointUri());
                     ClientUri redirectUri = clientRequest.resolveRedirectUri(redirectSourceUri, redirectedUri);
 
-                    if (clientResponse.status() == Status.TEMPORARY_REDIRECT_307
-                            || clientResponse.status() == Status.PERMANENT_REDIRECT_308) {
+                    if (keepsMethodAndEntity(clientRequest.method(), clientResponse.status())) {
                         if (!bodyToBeSent.canStartAttempt()) {
                             throw new IllegalStateException("HTTP/3 cannot replay a one-shot request body after redirect status "
                                                                     + clientResponse.status().code() + ".");
@@ -90,5 +89,14 @@ class Http3RedirectionProcessor {
         } finally {
             requestBody.cancelIfUnattached();
         }
+    }
+
+    private static boolean keepsMethodAndEntity(Method method, Status status) {
+        int statusCode = status.code();
+        return statusCode == Status.TEMPORARY_REDIRECT_307.code()
+                || statusCode == Status.PERMANENT_REDIRECT_308.code()
+                || (Method.QUERY.equals(method)
+                        && (statusCode == Status.MOVED_PERMANENTLY_301.code()
+                        || statusCode == Status.FOUND_302.code()));
     }
 }
