@@ -830,23 +830,29 @@ class HttpClientRequestProtocolCacheTest {
     }
 
     @Test
-    void shouldRetainExplicitHeaderWhenDroppingEntityOnSeeOther() {
+    void shouldRetainOrdinaryHeadersWhenDroppingEntityOnSeeOther() {
         TestContext context = TestContext.create();
         context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
         context.dynamic().redirectOnce(Status.SEE_OTHER_303);
 
         try (HttpClientResponse response = context.request(Method.POST)
                 .header(HeaderNames.CONTENT_TYPE, "application/custom")
+                .header(HeaderNames.ACCEPT, "application/json")
                 .followRedirects(true)
                 .submit("payload")) {
             assertThat(response.status(), is(Status.OK_200));
         }
 
         assertThat(context.dynamic().submittedHeaders().size(), is(2));
-        assertThat(context.dynamic().submittedHeaders().get(1)
+        assertThat(context.dynamic().submittedHeaders().get(0)
                            .first(HeaderNames.CONTENT_TYPE)
                            .orElseThrow(),
                    is("application/custom"));
+        assertThat(context.dynamic().submittedHeaders().get(1).contains(HeaderNames.CONTENT_TYPE), is(false));
+        assertThat(context.dynamic().submittedHeaders().get(1)
+                           .first(HeaderNames.ACCEPT)
+                           .orElseThrow(),
+                   is("application/json"));
     }
 
     @Test

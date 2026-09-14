@@ -360,8 +360,12 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                     + maxRedirects() + ") reached.");
         }
 
-        boolean preserveMethod = status == Status.TEMPORARY_REDIRECT_307
-                || status == Status.PERMANENT_REDIRECT_308;
+        int statusCode = status.code();
+        boolean preserveMethod = statusCode == Status.TEMPORARY_REDIRECT_307.code()
+                || statusCode == Status.PERMANENT_REDIRECT_308.code()
+                || (Method.QUERY.equals(method())
+                        && (statusCode == Status.MOVED_PERMANENTLY_301.code()
+                        || statusCode == Status.FOUND_302.code()));
         ClientUri redirectUri = resolveRedirectUri(sourceUri, location);
         if (preserveMethod && !body.canStartAttempt()) {
             throw new IllegalStateException("Cannot replay a one-shot request body after redirect status "
@@ -390,6 +394,12 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                 && redirectRequest.preparedEntityHeaders.body() == body) {
             redirectRequest.preparedEntityHeaders.application().rollback(redirectRequest.headers());
             redirectRequest.preparedEntityHeaders = null;
+        }
+        if (!preserveMethod) {
+            redirectRequest.headers().remove(HeaderNames.CONTENT_TYPE);
+            redirectRequest.headers().remove(HeaderNames.CONTENT_ENCODING);
+            redirectRequest.headers().remove(HeaderNames.CONTENT_LANGUAGE);
+            redirectRequest.headers().remove(HeaderNames.CONTENT_LOCATION);
         }
         redirectRequest.skipUriEncoding(false);
         redirectRequest.redirectCount = redirectCount + 1;

@@ -50,7 +50,7 @@ import io.helidon.metrics.api.Tag;
 
 import io.micrometer.core.instrument.Gauge;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.NORMAL;
@@ -81,26 +81,34 @@ class TestMicrometerHttpTransportMetrics {
                                                                     "http.streams.closed",
                                                                     "http.streams.duration");
 
-    @BeforeAll
-    static void initializeMetricsProvider() {
-        MetricsFactory.getInstance().globalRegistry();
+    private MicrometerMetricsFactory metricsFactory;
+    private MeterRegistry meterRegistry;
+
+    @BeforeEach
+    void initializeMetricsProvider() {
+        metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+        meterRegistry = metricsFactory.globalRegistry();
     }
 
     @AfterEach
     void releasesAllHttpTransportMeters() {
-        io.micrometer.core.instrument.MeterRegistry registry =
-                (io.micrometer.core.instrument.MeterRegistry) MeterRegistry.create().unwrap(Object.class);
-        await(() -> registry.getMeters().stream()
-                .noneMatch(meter -> TRANSPORT_METER_NAMES.contains(meter.getId().getName())));
-        assertThat(registry.getMeters().stream()
-                           .noneMatch(meter -> TRANSPORT_METER_NAMES.contains(meter.getId().getName())),
-                   is(true));
+        try {
+            io.micrometer.core.instrument.MeterRegistry registry =
+                    meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            await(() -> registry.getMeters().stream()
+                    .noneMatch(meter -> TRANSPORT_METER_NAMES.contains(meter.getId().getName())));
+            assertThat(registry.getMeters().stream()
+                               .noneMatch(meter -> TRANSPORT_METER_NAMES.contains(meter.getId().getName())),
+                       is(true));
+        } finally {
+            metricsFactory.close();
+        }
     }
 
     @Test
     void sharesMetersAcrossWrappersForOneMicrometerRegistry() {
-        MeterRegistry firstRegistry = MeterRegistry.create();
-        MeterRegistry secondRegistry = MeterRegistry.create();
+        MeterRegistry firstRegistry = new TestRegistry(meterRegistry);
+        MeterRegistry secondRegistry = new TestRegistry(meterRegistry);
         Object delegate = firstRegistry.unwrap(Object.class);
         assertThat(delegate, instanceOf(io.micrometer.core.instrument.MeterRegistry.class));
         assertThat(secondRegistry.unwrap(Object.class), sameInstance(delegate));
@@ -127,8 +135,8 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void retainsCumulativeMetersForIdleWrapperLease() {
-        MeterRegistry firstRegistry = MeterRegistry.create();
-        MeterRegistry secondRegistry = MeterRegistry.create();
+        MeterRegistry firstRegistry = new TestRegistry(meterRegistry);
+        MeterRegistry secondRegistry = new TestRegistry(meterRegistry);
         Object delegate = firstRegistry.unwrap(Object.class);
         assertThat(secondRegistry.unwrap(Object.class), sameInstance(delegate));
         HttpTransportMetrics.Lease first = HttpTransportMetrics.acquire(firstRegistry);
@@ -146,8 +154,8 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void sharesGaugeDuringConcurrentFirstRegistration() {
-        MeterRegistry firstRegistry = MeterRegistry.create();
-        MeterRegistry secondRegistry = MeterRegistry.create();
+        MeterRegistry firstRegistry = new TestRegistry(meterRegistry);
+        MeterRegistry secondRegistry = new TestRegistry(meterRegistry);
         Object delegate = firstRegistry.unwrap(Object.class);
         assertThat(delegate, instanceOf(io.micrometer.core.instrument.MeterRegistry.class));
         assertThat(secondRegistry.unwrap(Object.class), sameInstance(delegate));
@@ -183,8 +191,8 @@ class TestMicrometerHttpTransportMetrics {
     @Test
     void preservesConfigurationAcrossWrappersForOneMicrometerRegistry() {
         Config disabledConfig = Config.just(ConfigSources.create(Map.of("enabled", "false")));
-        MeterRegistry disabledRegistry = MeterRegistry.create(MetricsConfig.create(disabledConfig));
-        MeterRegistry enabledRegistry = MeterRegistry.create();
+        MeterRegistry disabledRegistry = new TestRegistry(meterRegistry, MetricsConfig.create(disabledConfig));
+        MeterRegistry enabledRegistry = new TestRegistry(meterRegistry);
         Object delegate = disabledRegistry.unwrap(Object.class);
         assertThat(delegate, instanceOf(io.micrometer.core.instrument.MeterRegistry.class));
         assertThat(enabledRegistry.unwrap(Object.class), sameInstance(delegate));
@@ -211,8 +219,8 @@ class TestMicrometerHttpTransportMetrics {
     @Test
     void preservesDisabledWrapperAfterTransientEnablementFailure() {
         Config disabledConfig = Config.just(ConfigSources.create(Map.of("enabled", "false")));
-        MeterRegistry disabledRegistry = MeterRegistry.create(MetricsConfig.create(disabledConfig));
-        MeterRegistry enabledRegistry = MeterRegistry.create();
+        MeterRegistry disabledRegistry = new TestRegistry(meterRegistry, MetricsConfig.create(disabledConfig));
+        MeterRegistry enabledRegistry = new TestRegistry(meterRegistry);
         TestRegistry failingDisabledRegistry = new TestRegistry(disabledRegistry);
         Object delegate = disabledRegistry.unwrap(Object.class);
         assertThat(enabledRegistry.unwrap(Object.class), sameInstance(delegate));
@@ -242,7 +250,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void completesAfterGaugeRemovalFailure() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry failingRegistry = new TestRegistry(registry);
         failingRegistry.failGaugeRemovals = true;
         Object delegate = registry.unwrap(Object.class);
@@ -273,7 +281,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void retainsGaugeCandidateAfterAddedListenerFailure() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry failingRegistry = new TestRegistry(registry);
         failingRegistry.failNextRegistration = true;
         failingRegistry.failingRegistration = meter -> meter.id().name().equals("http.connections.active")
@@ -292,7 +300,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void removesGaugeAfterAddedListenerFailureWithoutRetry() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry failingRegistry = new TestRegistry(registry);
         failingRegistry.failNextRegistration = true;
         failingRegistry.failingRegistration = meter -> meter.id().name().equals("http.connections.active")
@@ -307,7 +315,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void removesCounterAfterAddedListenerFailureWithoutRetry() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry failingRegistry = new TestRegistry(registry);
         failingRegistry.failNextRegistration = true;
         failingRegistry.failingRegistration = meter -> meter.id().name().equals("http.connections.opened");
@@ -322,7 +330,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void keepsProtocolGaugeTransactionalAfterRegistrationFailure() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry failingRegistry = new TestRegistry(registry);
         failingRegistry.failNextRegistration = true;
         failingRegistry.failingRegistration = meter -> meter.id().name().equals("http.connections.active")
@@ -342,7 +350,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void keepsStreamGaugeTransactionalAfterRegistrationFailure() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry failingRegistry = new TestRegistry(registry);
         failingRegistry.failNextRegistration = true;
         failingRegistry.failingRegistration = meter -> meter.id().name().equals("http.streams.active");
@@ -363,7 +371,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void completesConnectionStateAfterChildMeterFailure() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry failingRegistry = new TestRegistry(registry);
         Object delegate = registry.unwrap(Object.class);
         HttpTransportMetrics.Lease observer = HttpTransportMetrics.acquire(failingRegistry);
@@ -385,7 +393,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void recoveryDoesNotAdoptMeterWithDifferentTags() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         List<Tag> tags = List.of(Tag.create("role", "client"),
                                  Tag.create("transport", "tcp"),
                                  Tag.create("handshake", "none"));
@@ -418,12 +426,12 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void allowsAddListenerToReenterTransportMetricsFromAnotherThread() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry reentrantRegistry = new TestRegistry(registry);
         AtomicBoolean firstRegistration = new AtomicBoolean(true);
         AtomicBoolean completedDuringCallback = new AtomicBoolean();
         AtomicReference<CompletableFuture<Void>> nestedRegistration = new AtomicReference<>();
-        MeterRegistry nestedRegistry = MeterRegistry.create();
+        MeterRegistry nestedRegistry = new TestRegistry(registry);
         reentrantRegistry.registrationCallback = meter -> {
             if (!meter.id().name().equals("http.connections.opened")
                     || !firstRegistration.compareAndSet(true, false)) {
@@ -470,7 +478,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void repeatedRegistrationFailuresUseOneRemovalAttempt() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry failingRegistry = new TestRegistry(registry);
         failingRegistry.hideMeters = true;
         failingRegistry.remainingRegistrationFailures = 6;
@@ -492,7 +500,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void coldGaugeEnablementAndLeaseCleanupStayOffTransportThread() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry blockingRegistry = new TestRegistry(registry);
         CountDownLatch providerEntered = new CountDownLatch(1);
         CountDownLatch releaseProvider = new CountDownLatch(1);
@@ -532,7 +540,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void boundsProviderBacklogWithoutBlockingTransportCallbacks() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry blockingRegistry = new TestRegistry(registry);
         CountDownLatch providerEntered = new CountDownLatch(1);
         CountDownLatch releaseProvider = new CountDownLatch(1);
@@ -581,7 +589,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void admitsCleanupAtNormalProviderActionLimit() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry blockingRegistry = new TestRegistry(registry);
         CountDownLatch providerEntered = new CountDownLatch(1);
         CountDownLatch releaseProvider = new CountDownLatch(1);
@@ -631,7 +639,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void persistentRemovalActivityDoesNotLoopLeaseClose() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry reentrantRegistry = new TestRegistry(registry);
         AtomicInteger removalCallbacks = new AtomicInteger();
         reentrantRegistry.persistentRemovalCallback = true;
@@ -661,7 +669,7 @@ class TestMicrometerHttpTransportMetrics {
 
     @Test
     void allowsRemovalListenerToReenterTransportMetrics() {
-        MeterRegistry registry = MeterRegistry.create();
+        MeterRegistry registry = meterRegistry;
         TestRegistry reentrantRegistry = new TestRegistry(registry);
         reentrantRegistry.removalCallback = () -> {
             try (HttpTransportMetrics.Lease nested = HttpTransportMetrics.acquire(reentrantRegistry)) {
@@ -804,6 +812,7 @@ class TestMicrometerHttpTransportMetrics {
 
     private static final class TestRegistry implements MeterRegistry {
         private final MeterRegistry delegate;
+        private final MetricsConfig metricsConfig;
         private final AtomicInteger countedRemovalAttempts = new AtomicInteger();
         private volatile Predicate<Meter> failingRegistration = ignored -> false;
         private volatile Consumer<Meter> registrationCallback;
@@ -820,7 +829,12 @@ class TestMicrometerHttpTransportMetrics {
         private volatile Runnable removalCallback;
 
         private TestRegistry(MeterRegistry delegate) {
+            this(delegate, MetricsConfig.create());
+        }
+
+        private TestRegistry(MeterRegistry delegate, MetricsConfig metricsConfig) {
             this.delegate = delegate;
+            this.metricsConfig = metricsConfig;
         }
 
         @Override
@@ -849,7 +863,7 @@ class TestMicrometerHttpTransportMetrics {
         }
 
         @Override
-        public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
+        public boolean isMeterEnabled(String name, Map<String, String> tags) {
             Consumer<String> callback = enablementCallback;
             if (callback != null) {
                 callback.accept(name);
@@ -858,7 +872,7 @@ class TestMicrometerHttpTransportMetrics {
                 failNextEnablementName = null;
                 throw new IllegalStateException("Meter enablement failure");
             }
-            return delegate.isMeterEnabled(name, tags, scope);
+            return metricsConfig.isMeterEnabled(name) && delegate.isMeterEnabled(name, tags);
         }
 
         @Override
@@ -867,8 +881,16 @@ class TestMicrometerHttpTransportMetrics {
         }
 
         @Override
+        public MetricsFactory metricsFactory() {
+            return delegate.metricsFactory();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
         public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
-            M meter = delegate.getOrCreate(builder);
+            M meter = metricsConfig.isMeterEnabled(builder.name())
+                    ? delegate.getOrCreate(builder)
+                    : (M) delegate.metricsFactory().noOpMeter(builder);
             Consumer<Meter> callback = registrationCallback;
             if (callback != null) {
                 callback.accept(meter);

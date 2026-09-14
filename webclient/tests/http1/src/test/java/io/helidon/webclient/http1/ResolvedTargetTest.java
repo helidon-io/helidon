@@ -115,7 +115,7 @@ class ResolvedTargetTest {
     }
 
     @Test
-    void genericClientRetargetsAfterAlpnHttp1Discovery() {
+    void genericClientReusesFinalTargetPoolAfterAlpnHttp1Discovery() {
         WebClient client = WebClient.builder()
                 .shareConnectionCache(false)
                 .servicesDiscoverServices(false)
@@ -129,11 +129,15 @@ class ResolvedTargetTest {
                 .build();
 
         try {
+            // Post-service ALPN discovery uses a temporary connection; later requests use the final target's pool.
             String first = client.get().request().as(String.class);
+            String pooled = client.get().request().as(String.class);
             String reused = client.get().request().as(String.class);
 
             assertThat(first, startsWith("final|"));
-            assertThat(reused, is(first));
+            assertThat(pooled, startsWith("final|"));
+            assertThat(pooled, not(is(first)));
+            assertThat(reused, is(pooled));
         } finally {
             client.closeResource();
         }

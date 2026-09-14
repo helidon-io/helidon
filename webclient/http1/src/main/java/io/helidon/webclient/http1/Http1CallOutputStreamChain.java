@@ -603,17 +603,16 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 }
                 clientRequest.deferResponseCookies();
                 if (sendEntity) {
-                    response = (Http1ClientResponseImpl) clientRequest
-                            .outputStreamRedirect(true)
+                    clientRequest.outputStreamRedirect(true)
                             .header(HeaderValues.EXPECT_100)
                             .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
-                            .readTimeout(originalRequest.readContinueTimeout())
-                            .request();
+                            .readTimeout(originalRequest.readContinueTimeout());
+                    response = clientRequest.redirectProbe();
                     if (response.connection() != null) {
                         response.connection().readTimeout(originalRequest.readTimeout());
                     }
                 } else {
-                    response = (Http1ClientResponseImpl) clientRequest.request();
+                    response = clientRequest.redirectProbe();
                 }
                 lastRequest = clientRequest;
                 lastServiceRequest = response.serviceRequest();

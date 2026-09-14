@@ -177,7 +177,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                       Http2Settings clientSettings,
                       Http2StreamWriter writer,
                       ConnectionFlowControl connectionFlowControl,
-                      InboundDataBudget inboundDataBudget,
+                      Http2InboundDataBudget inboundDataBudget,
                       Http2ConnectionChecks connectionAttackVectorMetrics) {
         this(ctx,
              streams,
@@ -208,7 +208,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                       Http2Settings clientSettings,
                       Http2StreamWriter writer,
                       ConnectionFlowControl connectionFlowControl,
-                      InboundDataBudget inboundDataBudget,
+                      Http2InboundDataBudget inboundDataBudget,
                       Http2ConnectionChecks connectionAttackVectorMetrics,
                       Header altSvcHeader) {
         this.ctx = ctx;
@@ -1864,85 +1864,19 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     }
 
     /**
-     * Connection-wide budget for queued DATA. Bytes are the primary memory bound and frames independently guard
-     * against excessive fragmentation.
-     */
-    static final class InboundDataBudget {
-        private final ReentrantLock lock = new ReentrantLock();
-        private final int maxFrames;
-        private final long maxBytes;
-        private int retainedFrames;
-        private long retainedBytes;
-
-        InboundDataBudget(int maxFrames, long maxBytes) {
-            if (maxFrames < 1 || maxBytes < 1) {
-                throw new IllegalArgumentException("Inbound DATA budget limits must be positive.");
-            }
-            this.maxFrames = maxFrames;
-            this.maxBytes = maxBytes;
-        }
-
-        boolean tryAcquire(int bytes) {
-            lock.lock();
-            try {
-                if (retainedFrames >= maxFrames || maxBytes - retainedBytes < bytes) {
-                    return false;
-                }
-                retainedFrames++;
-                retainedBytes += bytes;
-                return true;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        void release(int frames, long bytes) {
-            lock.lock();
-            try {
-                retainedFrames -= frames;
-                retainedBytes -= bytes;
-                if (retainedFrames < 0 || retainedBytes < 0) {
-                    throw new IllegalStateException("Released more queued HTTP/2 DATA than retained.");
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        // Package-private budget accessors are test seams for deterministic accounting assertions.
-        int availableFrames() {
-            lock.lock();
-            try {
-                return maxFrames - retainedFrames;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        long availableBytes() {
-            lock.lock();
-            try {
-                return maxBytes - retainedBytes;
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-    /**
      * Non-blocking connection-to-stream handoff that preserves the original DATA frames.
      */
     static final class InboundDataQueue {
         private final ReentrantLock lock = new ReentrantLock();
         private final Condition dataAvailable = lock.newCondition();
         private final ArrayDeque<DataFrame> queue = new ArrayDeque<>();
-        private final InboundDataBudget budget;
+        private final Http2InboundDataBudget budget;
         private DataFrame inFlight;
         private boolean finished;
         private boolean terminalDelivered;
         private boolean aborted;
 
-        InboundDataQueue(InboundDataBudget budget) {
+        InboundDataQueue(Http2InboundDataBudget budget) {
             this.budget = budget;
         }
 

@@ -188,10 +188,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 if (http1Config.validatePrologue()) {
                     validatePrologue(prologue);
                 }
-                if (!protocolSelected) {
-                    HttpTransportObserverSupport.connection(ctx).protocolSelected(PROTOCOL_HTTP_1_1);
-                    protocolSelected = true;
-                }
+                selectHttp1Protocol();
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 if (http1Config.validateRequestHeaders()) {
                     validateHostHeader(prologue, headers, true);
@@ -368,6 +365,13 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             writer.writeNow(BufferData.create(CONTINUE_100));
         } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write continue", e);
+        }
+    }
+
+    private void selectHttp1Protocol() {
+        if (!protocolSelected) {
+            HttpTransportObserverSupport.connection(ctx).protocolSelected(PROTOCOL_HTTP_1_1);
+            protocolSelected = true;
         }
     }
 
