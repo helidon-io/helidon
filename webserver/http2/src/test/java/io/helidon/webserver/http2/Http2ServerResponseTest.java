@@ -72,6 +72,24 @@ class Http2ServerResponseTest {
                                                                   Status.NOT_MODIFIED_304);
 
     @Test
+    void bufferedEntityPreservesSelectedRange() {
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.GET, ContentEncodingContext.create());
+        byte[] entity = "prefix-entity-suffix".getBytes(StandardCharsets.UTF_8);
+
+        response.send(entity, 7, 6);
+
+        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+        var responseEntity = ArgumentCaptor.forClass(BufferData.class);
+        verify(stream).writeHeadersWithData(responseHeaders.capture(), eq(6), responseEntity.capture(), eq(true));
+        BufferData data = responseEntity.getValue();
+        assertThat(responseHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(6L));
+        assertThat(new String(data.readBytes(), StandardCharsets.UTF_8), is("entity"));
+        data.rewind();
+        assertThat(new String(data.readBytes(), StandardCharsets.UTF_8), is("entity"));
+    }
+
+    @Test
     void headRejectsEntityBeforeSendingResponse() {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);

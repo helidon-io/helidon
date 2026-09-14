@@ -35,6 +35,8 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -45,6 +47,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -470,6 +473,169 @@ class Http2ConnectionWriterTest {
         verify(dataWriter).writeNow(any(BufferData.class));
         verify(flowControl).cut(frame);
         verify(flowControl).decrementWindowSize(data.length);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 2, 4})
+    void bufferedDataPreservesReadOnlyRangeAcrossFlowControlWindows(int initialWindow) {
+        byte[] bytes = {90, 91, 1, 2, 3, 4, 92, 93};
+        BufferData source = BufferData.createReadOnly(bytes, 1, 5);
+        source.skip(1);
+        Http2FrameData frame = new Http2FrameData(Http2FrameHeader.create(4,
+                                                                          Http2FrameTypes.DATA,
+                                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                          1),
+                                                  source);
+        AtomicInteger remainingWindow = new AtomicInteger(initialWindow);
+        FlowControl.Outbound flowControl = flowControl();
+        when(flowControl.cut(any(Http2FrameData.class)))
+                .thenAnswer(invocation -> ((Http2FrameData) invocation.getArgument(0)).cut(remainingWindow.get()));
+        doAnswer(invocation -> {
+            int decrement = invocation.getArgument(0);
+            remainingWindow.addAndGet(-decrement);
+            return null;
+        }).when(flowControl).decrementWindowSize(anyInt());
+        doAnswer(_ -> {
+            remainingWindow.set(4 - initialWindow);
+            return null;
+        }).when(flowControl).blockTillUpdate();
+
+        List<byte[]> observedData = new ArrayList<>();
+        Http2FrameListener listener = new Http2FrameListener() {
+            private boolean dataFrame;
+
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                dataFrame = header.type() == Http2FrameType.DATA;
+            }
+
+            @Override
+            public void frame(SocketContext ctx, int streamId, BufferData data) {
+                if (dataFrame) {
+                    byte[] observed = data.readBytes();
+                    data.rewind();
+                    assertThat("rewinding the listener view must retain its exact range", data.readBytes(), is(observed));
+                    data.rewind();
+                    observedData.add(observed);
+                }
+            }
+        };
+        RecordingDataWriter dataWriter = new RecordingDataWriter();
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of(listener));
+        AtomicInteger completions = new AtomicInteger();
+
+        int written = writer.writeHeaders(headers(),
+                                          1,
+                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                          frame,
+                                          flowControl,
+                                          () -> {
+                                              assertThat("source must be consumed before completion", source.available(), is(0));
+                                              assertThat("flow-control debit must precede completion", remainingWindow.get(), is(0));
+                                              assertThat("transport must complete before callback", dataWriter.writes.isEmpty(), is(false));
+                                              completions.incrementAndGet();
+                                          });
+
+        byte[] wire = combineWrites(dataWriter.writes);
+        List<CapturedFrame> frames = parseFrames(wire);
+        List<CapturedFrame> dataFrames = frames.stream()
+                .filter(it -> it.header().type() == Http2FrameType.DATA)
+                .toList();
+        assertThat("only the selected response range reaches the transport",
+                   combineWrites(dataFrames.stream().map(CapturedFrame::data).toList()),
+                   is(new byte[] {1, 2, 3, 4}));
+        assertThat("listeners must see the same response range", combineWrites(observedData), is(new byte[] {1, 2, 3, 4}));
+        assertThat("END_STREAM belongs only to the final DATA frame",
+                   dataFrames.stream().filter(it -> it.header().flags(Http2FrameTypes.DATA).endOfStream()).count(),
+                   is(1L));
+        assertThat(dataFrames.getLast().header().flags(Http2FrameTypes.DATA).endOfStream(), is(true));
+        assertThat(written, is(wire.length));
+        assertThat(completions.get(), is(1));
+        verify(flowControl, times(initialWindow == 4 ? 0 : 1)).blockTillUpdate();
+    }
+
+    @Test
+    void mutableDataRemainsIsolatedDuringSynchronousWrite() {
+        byte[] bytes = {90, 1, 2, 3, 4, 91};
+        BufferData source = BufferData.create(bytes, 1, 4);
+        Http2FrameData frame = new Http2FrameData(Http2FrameHeader.create(4,
+                                                                          Http2FrameTypes.DATA,
+                                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                          1),
+                                                  source);
+        DataWriter dataWriter = mock(DataWriter.class);
+        AtomicReference<byte[]> wire = new AtomicReference<>();
+        doAnswer(invocation -> {
+            assertThat("mutable source must be consumed before transport write", source.available(), is(0));
+            bytes[1] = 99;
+            wire.set(((BufferData) invocation.getArgument(0)).readBytes());
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+
+        int written = writer.writeData(frame, flowControl(), () -> { });
+
+        List<CapturedFrame> frames = parseFrames(wire.get());
+        assertThat(frames.size(), is(1));
+        assertThat("mutable caller storage must remain isolated from the transport", frames.getFirst().data(),
+                   is(new byte[] {1, 2, 3, 4}));
+        assertThat(written, is(wire.get().length));
+    }
+
+    @Test
+    void sequentialBufferedResponsesPreservePayloadsAndHeaderSnapshots() {
+        List<BufferData> observedHeaders = new ArrayList<>();
+        List<byte[]> headerSnapshots = new ArrayList<>();
+        Http2FrameListener listener = new Http2FrameListener() {
+            private boolean headersFrame;
+
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                headersFrame = header.type() == Http2FrameType.HEADERS;
+            }
+
+            @Override
+            public void frame(SocketContext ctx, int streamId, BufferData data) {
+                if (headersFrame) {
+                    observedHeaders.add(data);
+                    headerSnapshots.add(data.readBytes());
+                    data.rewind();
+                }
+            }
+        };
+        RecordingDataWriter dataWriter = new RecordingDataWriter();
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of(listener));
+        byte[] bytes = {90, 1, 2, 3, 91};
+
+        for (int streamId : List.of(1, 3)) {
+            bytes[1] = (byte) streamId;
+            BufferData source = BufferData.createReadOnly(bytes, 1, 3);
+            Http2FrameData frame = new Http2FrameData(Http2FrameHeader.create(3,
+                                                                              Http2FrameTypes.DATA,
+                                                                              Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                              streamId),
+                                                      source);
+            WritableHeaders<?> responseHeaders = WritableHeaders.create();
+            responseHeaders.set(HeaderNames.SERVER, "response-" + streamId);
+            writer.writeHeaders(Http2Headers.create(responseHeaders).status(Status.OK_200),
+                                streamId,
+                                Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                frame,
+                                flowControl());
+            assertThat("each response must consume its own source", source.available(), is(0));
+        }
+        bytes[1] = 99;
+
+        assertThat(dataWriter.writes.size(), is(2));
+        for (int i = 0; i < dataWriter.writes.size(); i++) {
+            List<CapturedFrame> frames = parseFrames(dataWriter.writes.get(i));
+            assertThat(frames.size(), is(2));
+            assertThat(frames.getLast().header().streamId(), is(2 * i + 1));
+            assertThat("later source reuse must not affect a completed response", frames.getLast().data(),
+                       is(new byte[] {(byte) (2 * i + 1), 2, 3}));
+            assertThat("reusing the encoder buffer must not change a previous header snapshot",
+                       observedHeaders.get(i).rewind().readBytes(), is(headerSnapshots.get(i)));
+        }
     }
 
     @Test

@@ -256,12 +256,12 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 BufferData[] batch = writableFrame != null
                         && headerBuffer.available() <= maxFrameSize
                         && headerBuffer.available() <= MAX_BATCHED_FRAME_PAYLOAD_LENGTH
-                        ? new BufferData[2]
+                        ? new BufferData[4]
                         : null;
                 bytesWritten = noLockWriteEncodedHeaders(streamId, flags, maxFrameSize, batch);
                 if (windowUpdateWriteScheduled.get()) {
                     if (batch != null) {
-                        writer.writeNow(batch[0]);
+                        writer.writeNow(BufferData.create(batch[0], batch[1]));
                     }
                     noLockDrainWindowUpdates();
                     if (splitFrames.length == 1) {
@@ -276,7 +276,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                         }
                     } else {
                         if (writableFrame != null) {
-                            batch[1] = noLockFrameBuffer(writableFrame);
+                            noLockFrameBuffers(writableFrame, batch, 2);
                         }
                         writer.writeNow(BufferData.create(batch));
                         if (writableFrame != null) {
@@ -519,19 +519,33 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     }
 
     private BufferData noLockFrameBuffer(Http2FrameData frame) {
+        BufferData headerData = noLockFrameHeader(frame);
+        return frame.header().length() == 0 ? headerData : BufferData.create(headerData, noLockFrameData(frame));
+    }
+
+    private void noLockFrameBuffers(Http2FrameData frame, BufferData[] batch, int offset) {
+        batch[offset] = noLockFrameHeader(frame);
+        batch[offset + 1] = frame.header().length() == 0 ? BufferData.empty() : noLockFrameData(frame);
+    }
+
+    private BufferData noLockFrameHeader(Http2FrameData frame) {
         Http2FrameHeader frameHeader = frame.header();
         int streamId = frameHeader.streamId();
         listener.frameHeader(ctx, streamId, frameHeader);
 
         BufferData headerData = frameHeader.write();
         listener.frameHeader(ctx, streamId, headerData);
+        return headerData;
+    }
 
-        if (frameHeader.length() == 0) {
-            return headerData;
-        }
-        BufferData data = frame.data().copy();
-        listener.frame(ctx, streamId, data);
-        return BufferData.create(headerData, data);
+    private BufferData noLockFrameData(Http2FrameData frame) {
+        // writeNow consumes the frame before returning, while streamLock still protects the batch.
+        // Read-only DATA can share its backing bytes; other sources retain the defensive-copy fallback.
+        BufferData data = frame.header().type() == Http2FrameType.DATA
+                ? BufferData.readOnlySlice(frame.data(), frame.data().available())
+                : frame.data().copy();
+        listener.frame(ctx, frame.header().streamId(), data);
+        return data;
     }
 
     private int noLockWriteHeaders(Http2Headers headers,
@@ -611,7 +625,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         if (batch == null) {
             noLockWrite(frame);
         } else {
-            batch[0] = noLockFrameBuffer(frame);
+            noLockFrameBuffers(frame, batch, 0);
         }
     }
 
