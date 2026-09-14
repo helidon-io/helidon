@@ -133,6 +133,12 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
         if (preserveEntity && !previousBody.earlyHeaderChanges().isEmpty()) {
             preparedEntityHeaders = previousBody.earlyHeaderChanges().apply(headers());
         }
+        if (!preserveEntity) {
+            headers().remove(HeaderNames.CONTENT_TYPE);
+            headers().remove(HeaderNames.CONTENT_ENCODING);
+            headers().remove(HeaderNames.CONTENT_LANGUAGE);
+            headers().remove(HeaderNames.CONTENT_LOCATION);
+        }
         headers().remove(HeaderNames.CONTENT_LENGTH);
         headers().remove(HeaderNames.TRANSFER_ENCODING);
         headers().remove(HeaderNames.EXPECT);
@@ -411,6 +417,9 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
                                                                                    Math.max(1,
                                                                                             Math.min(desiredBuffer,
                                                                                                      maximum)));
+        if (serviceRequest.method() == Method.QUERY && !serviceRequest.headers().contains(HeaderNames.CONTENT_TYPE)) {
+            throw new IllegalArgumentException("Content-Type header is required for method '" + Method.QUERY + "'");
+        }
         if (serviceApplication == null || requestBody.terminalHeaderChanges().isEmpty()) {
             return;
         }
