@@ -118,6 +118,34 @@ class ReadOnlyArrayDataTest {
     }
 
     @Test
+    void binaryDebugHonorsLogicalRangeAndReadPosition() {
+        byte[] data = {90, 91, 1, 2, 3, 4, 92, 93};
+        BufferData buffer = BufferData.createReadOnly(data, 2, 4);
+        String fullRange = BufferData.create(new byte[] {1, 2, 3, 4}).debugDataBinary();
+
+        assertThat("binary diagnostics must exclude bytes outside the selected range", buffer.debugDataBinary(), is(fullRange));
+        assertThat("diagnostics must not consume the buffer", buffer.available(), is(4));
+
+        buffer.skip(1);
+
+        assertThat("binary diagnostics must include all remaining bytes",
+                   buffer.debugDataBinary(),
+                   is(BufferData.create(new byte[] {2, 3, 4}).debugDataBinary()));
+        assertThat("diagnostics must preserve the read position", buffer.available(), is(3));
+
+        buffer.skip(3);
+
+        assertThat("a consumed buffer must not print payload bytes",
+                   buffer.debugDataBinary(),
+                   is(BufferData.create(new byte[0]).debugDataBinary()));
+
+        buffer.rewind();
+
+        assertThat("rewinding must restore the selected range", buffer.debugDataBinary(), is(fullRange));
+        assertThat(buffer.available(), is(4));
+    }
+
+    @Test
     void testDebugData() {
         byte[] test = "Hello World!".getBytes(StandardCharsets.UTF_8);
         ReadOnlyArrayData rad = new ReadOnlyArrayData(test, 1, test.length - 1);

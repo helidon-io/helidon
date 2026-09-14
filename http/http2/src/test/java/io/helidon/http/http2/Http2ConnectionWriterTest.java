@@ -514,6 +514,8 @@ class Http2ConnectionWriterTest {
                 if (dataFrame) {
                     byte[] observed = data.readBytes();
                     data.rewind();
+                    assertThat("binary diagnostics must describe the listener's exact DATA range",
+                               data.debugDataBinary(), is(BufferData.create(observed).debugDataBinary()));
                     assertThat("rewinding the listener view must retain its exact range", data.readBytes(), is(observed));
                     data.rewind();
                     observedData.add(observed);
