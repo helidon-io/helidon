@@ -24,7 +24,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Helidon Messaging")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path("Messaging")
-@Features.Preview
 module io.helidon.messaging {
     requires transitive io.helidon.common;
     requires io.helidon.common.context;
