@@ -80,9 +80,9 @@ cd helidon-quickstart-mp
 
 Helidon has an internal configuration, so you are not required to provide any
 configuration data for your application, though in practice you most likely
-would. By default, that configuration can be overridden from three sources:
-system properties, environment variables, and the contents of
-`META-INF/microprofile-config.properties`. For example, if you specify a custom
+would. By default, that configuration can be overridden from system properties,
+environment variables, `META-INF/microprofile-config.properties`, and
+`application.yaml` on the classpath. For example, if you specify a custom
 server port in `META-INF/microprofile-config.properties` then your server will
 listen on that port.
 
@@ -152,9 +152,10 @@ precedence order:
 
 1.  Java system properties
 2.  Environment variables
-3.  Properties specified in `META-INF/microprofile-config.properties`
+3.  Properties specified in `META-INF/microprofile-config.properties` and
+    `application.yaml` on the classpath (both use ordinal 100)
 
-Each of these sources specify configuration properties in Java Property format
+System properties and environment variables use Java Property format
 (key/value), like `color=red`. If any of the Helidon required properties are not
 specified in one of these source, like `server.port`, then Helidon will use a
 default value.

@@ -42,6 +42,7 @@ configuration:
 | System properties                         | A mutable source that uses `System.getProperties()` to obtain configuration values.                                                                   |
 | Environment variables                     | An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the MicroProfile Config specification. |
 | `META-INF/microprofile-config.properties` | The properties config source as defined by MicroProfile Config specification.                                                                         |
+| `application.yaml`                        | Helidon extension. Loaded from the classpath when `helidon-config-yaml-mp` is present (included by `helidon-microprofile-config`). Default ordinal is 100. |
 
 MicroProfile Config uses `ConfigSource` SPI to load configuration data, either
 from default configuration sources or from custom `ConfigSource` located by Java
@@ -84,6 +85,7 @@ The default MicroProfile Config Sources ordering is:
 - System properties (ordinal=400)
 - Environment variables (ordinal=300)
 - /META-INF/microprofile-config.properties (ordinal=100)
+- `application.yaml` on the classpath (ordinal=100, Helidon)
 
 Each Config Source has an ordinal that determines the priority of the Config
 Source. A Config Source with higher ordinal has higher priority as compared to
@@ -93,6 +95,8 @@ value is 100.
 
 > [!NOTE]
 > In MP, the ordering is not defined for sources that have the same ordinal.
+> Both `application.yaml` and `microprofile-config.properties` use ordinal 100,
+> so if the same key exists in both files, the winning value is not guaranteed.
 
 This helps to customize the configuration of Config Sources using external
 Config Source if an external Config Source has higher ordinal values than the
@@ -147,7 +151,7 @@ The following configuration sources can be used to retrieve the configuration:
 | `Map<String, String>` | Creates the source from a Map with `MpConfigSources.create(Map)`.                                         |
 | `Properties`          | Creates the source directly from Properties with `MpConfigSources.create(Properties)`.                    |
 | File on classpath     | Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`.          |
-| YAML                  | Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`. |
+| YAML                  | Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`. A classpath `application.yaml` is also discovered automatically, see [MicroProfile Config Sources](#microprofile-config-sources). |
 
 See [manual setup of config][manual-setup-of] section for more information.
 
