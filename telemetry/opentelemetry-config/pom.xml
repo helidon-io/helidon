@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.telemetry</groupId>
         <artifactId>helidon-telemetry-project</artifactId>
-        <version>4.5.0-SNAPSHOT</version>
+        <version>4.5.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
@@ -52,6 +52,10 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
@@ -137,6 +141,11 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

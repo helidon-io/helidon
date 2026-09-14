@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,9 @@ class CachedHandlerJar implements CachedHandler {
         if (method == Method.GET) {
             try {
                 if (path != null && Files.exists(path)) {
-                    FileBasedContentHandler.send(request, response, path);
+                    try (var channel = Files.newByteChannel(path)) {
+                        FileBasedContentHandler.send(request, response, channel);
+                    }
                     return true;
                 }
             } catch (IOException e) {

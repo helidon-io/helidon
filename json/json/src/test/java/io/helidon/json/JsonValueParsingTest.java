@@ -16,8 +16,11 @@
 
 package io.helidon.json;
 
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -25,6 +28,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class JsonValueParsingTest {
+    private static final String SYNTHETIC_PADDING = "x".repeat(480);
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
@@ -67,6 +71,17 @@ class JsonValueParsingTest {
         assertThat(jsonValue.asObject().containsKey("test"), is(true));
         assertThat(jsonValue.asObject().stringValue("test").orElseThrow(), is(expected));
         assertThat(jsonValue.asObject().containsKey("missing"), is(false));
+    }
+
+    @Test
+    public void testJsonObjectInputStreamStringValueEndingAtDefaultBufferBoundary() {
+        String json = "{\"syntheticPadding\":\"" + SYNTHETIC_PADDING + "\",\"after\":\"ok\"}";
+        JsonParser parser = JsonParser.create(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        JsonValue jsonValue = parser.readJsonValue();
+
+        assertThat(jsonValue.type(), is(JsonValueType.OBJECT));
+        assertThat(jsonValue.asObject().stringValue("syntheticPadding").orElseThrow(), is(SYNTHETIC_PADDING));
+        assertThat(jsonValue.asObject().stringValue("after").orElseThrow(), is("ok"));
     }
 
     @ParameterizedTest

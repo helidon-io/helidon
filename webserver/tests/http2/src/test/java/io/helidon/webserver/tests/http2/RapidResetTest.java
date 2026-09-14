@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ class RapidResetTest {
                 BufferData data = reader.readBuffer(frameHeader.length());
                 if (frameHeader.type() == Http2FrameType.GO_AWAY) {
                     Http2GoAway http2GoAway = Http2GoAway.create(data);
-                    gotGoAway.complete(http2GoAway.errorCode().name() + " - " + new String(data.readBytes()));
+                    gotGoAway.complete(http2GoAway.errorCode().name() + " - " + http2GoAway.details());
                     break;
                 }
             }
@@ -147,6 +147,7 @@ class RapidResetTest {
                 h2Headers.method(Method.GET);
                 h2Headers.path(clientUri.path().path());
                 h2Headers.scheme(clientUri.scheme());
+                h2Headers.authority(clientUri.authority());
 
                 dataWriter.writeHeaders(h2Headers,
                                         streamId,

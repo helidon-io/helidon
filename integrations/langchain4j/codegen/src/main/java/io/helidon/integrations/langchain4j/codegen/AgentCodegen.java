@@ -153,9 +153,10 @@ class AgentCodegen implements CodegenExtension {
                 .addContent(".createAgenticSystem(")
                 .addContent(agentInterfaceType)
                 .addContent(".class, ")
-                .addContent("configuredModel, ")
-                .addContent("this")
-                .addContentLine("::configureSubAgents);")
+                .addContent("configuredModel, new ")
+                .addContent(LC_AGENTIC_SERVICES)
+                .addContent(".AgentConfigurator(this")
+                .addContentLine("::configureSubAgents, null, null));")
                 .addContentLine("")
         );
 

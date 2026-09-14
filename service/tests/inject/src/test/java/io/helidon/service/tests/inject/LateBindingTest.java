@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.service.tests.inject;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Weighted;
 import io.helidon.service.registry.GlobalServiceRegistry;
@@ -206,6 +208,30 @@ public class LateBindingTest {
             LateBindingTypes.Contract contract = registry.getNamed(LateBindingTypes.Contract.class, "named");
             assertThat(contract.message(), is("named"));
             contract = Services.getNamed(LateBindingTypes.Contract.class, "named");
+            assertThat(contract.message(), is("named"));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testLateBindingContractNamedReleasesWriteLock() throws Exception {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry registry = manager.registry();
+        GlobalServiceRegistry.registry(registry);
+        try {
+            Services.setNamed(LateBindingTypes.Contract.class, new LateBindingTypes.ServiceProvider("named"), "named");
+
+            CompletableFuture<LateBindingTypes.Contract> lookup = new CompletableFuture<>();
+            Thread.startVirtualThread(() -> {
+                try {
+                    lookup.complete(registry.getNamed(LateBindingTypes.Contract.class, "named"));
+                } catch (Throwable e) {
+                    lookup.completeExceptionally(e);
+                }
+            });
+
+            LateBindingTypes.Contract contract = lookup.get(5, TimeUnit.SECONDS);
             assertThat(contract.message(), is("named"));
         } finally {
             manager.shutdown();

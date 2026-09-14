@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.http;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
@@ -41,5 +42,25 @@ class HeaderValuesTest {
         assertThat(connectionClose.name().toLowerCase(Locale.ROOT), is("connection"));
         assertThat(connectionClose.headerName(), is(HeaderNames.CONNECTION));
         assertThat(connectionClose.get(), is("close"));
+    }
+
+    @Test
+    void testLatin1ValueBytes() {
+        String value = "\u0080value\u00ff";
+        byte[] expected = value.getBytes(StandardCharsets.ISO_8859_1);
+
+        assertThat(HeaderValues.create("Name", value).valueBytes(), is(expected));
+        assertThat(HeaderValues.createCached("Name", value).valueBytes(), is(expected));
+        assertThat(HeaderValues.createCached(HeaderNames.create("Name"), true, true, value).valueBytes(), is(expected));
+    }
+
+    @Test
+    void testRejectsNonLatin1ValueBytes() {
+        String value = "invalid\u0100value";
+
+        assertThrows(IllegalArgumentException.class, () -> HeaderValues.create("Name", value).valueBytes());
+        assertThrows(IllegalArgumentException.class, () -> HeaderValues.createCached("Name", value));
+        assertThrows(IllegalArgumentException.class,
+                     () -> HeaderValues.createCached(HeaderNames.create("Name"), true, true, value));
     }
 }

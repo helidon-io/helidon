@@ -26,7 +26,7 @@ import static java.util.Collections.singletonList;
 /**
  * Provides configuration key aliases in an attempt to map to legal environment variable names.
  * <p>
- * The <a href="https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc">
+ * The <a href="https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_environment_variables_mapping_rules">
  * MP config specification</a> describes the environment variables {@code ConfigSource} as follows:
  * <pre>
  * Some operating systems allow only alphabetic characters or an underscore, _, in environment variables. Other

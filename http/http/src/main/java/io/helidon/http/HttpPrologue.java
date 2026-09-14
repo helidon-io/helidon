@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,13 +71,13 @@ public class HttpPrologue {
                          UriPath uriPath,
                          UriQuery uriQuery,
                          UriFragment uriFragment) {
-        this.rawProtocol = rawProtocol;
-        this.protocol = protocol;
-        this.protocolVersion = protocolVersion;
-        this.method = httpMethod;
-        this.uriPath = uriPath;
-        this.rawQuery = uriQuery.rawValue();
-        this.rawFragment = uriFragment.hasValue() ? uriFragment.rawValue() : null;
+        this(rawProtocol,
+             protocol,
+             protocolVersion,
+             httpMethod,
+             uriPath,
+             uriQuery.isEmpty() ? null : uriQuery.rawValue(),
+             uriFragment.hasValue() ? uriFragment.rawValue() : null);
 
         this.fragment = uriFragment;
         this.query = uriQuery;
@@ -203,6 +203,32 @@ public class HttpPrologue {
     }
 
     /**
+     * Create a prologue with a different path, preserving the query delimiter and fragment.
+     *
+     * @param uriPath resolved path
+     * @return prologue with the provided path
+     */
+    public HttpPrologue withUriPath(UriPath uriPath) {
+        Objects.requireNonNull(uriPath, "URI path must not be null");
+        return copy(rawProtocol, protocol, protocolVersion, method, uriPath);
+    }
+
+    /**
+     * Create a prologue with different protocol values, preserving the path, query delimiter, method, and fragment.
+     *
+     * @param rawProtocol raw protocol string
+     * @param protocol protocol
+     * @param protocolVersion protocol version
+     * @return prologue with the provided protocol values
+     */
+    public HttpPrologue withProtocol(String rawProtocol, String protocol, String protocolVersion) {
+        Objects.requireNonNull(rawProtocol, "Raw protocol must not be null");
+        Objects.requireNonNull(protocol, "Protocol must not be null");
+        Objects.requireNonNull(protocolVersion, "Protocol version must not be null");
+        return copy(rawProtocol, protocol, protocolVersion, method, uriPath);
+    }
+
+    /**
      * Query of the request.
      *
      * @return query
@@ -212,6 +238,17 @@ public class HttpPrologue {
             query = rawQuery == null ? UriQuery.empty() : UriQuery.create(rawQuery);
         }
         return query;
+    }
+
+    /**
+     * Whether the request target contains a query delimiter.
+     * <p>
+     * This returns {@code true} even when the raw query is empty, for example for a request target ending in {@code ?}.
+     *
+     * @return whether the request target contains a query delimiter
+     */
+    public boolean hasQuery() {
+        return rawQuery != null;
     }
 
     /**
@@ -228,7 +265,7 @@ public class HttpPrologue {
 
     @Override
     public int hashCode() {
-        return Objects.hash(protocol, protocolVersion, method, uriPath, query(), fragment());
+        return Objects.hash(protocol, protocolVersion, method, uriPath, hasQuery(), query(), fragment());
     }
 
     @Override
@@ -244,8 +281,9 @@ public class HttpPrologue {
                 && Objects.equals(this.protocolVersion, that.protocolVersion())
                 && Objects.equals(this.method, that.method())
                 && Objects.equals(this.uriPath, that.uriPath())
-                && Objects.equals(this.query, that.query())
-                && Objects.equals(this.fragment, that.fragment());
+                && this.hasQuery() == that.hasQuery()
+                && Objects.equals(this.query(), that.query())
+                && Objects.equals(this.fragment(), that.fragment());
     }
 
     @Override
@@ -257,5 +295,22 @@ public class HttpPrologue {
                 + "uriPath=" + uriPath + ", "
                 + "query=" + query() + ", "
                 + "fragment=" + fragment() + ']';
+    }
+
+    private HttpPrologue copy(String rawProtocol,
+                              String protocol,
+                              String protocolVersion,
+                              Method method,
+                              UriPath uriPath) {
+        HttpPrologue prologue = new HttpPrologue(rawProtocol,
+                                                 protocol,
+                                                 protocolVersion,
+                                                 method,
+                                                 uriPath,
+                                                 rawQuery,
+                                                 rawFragment);
+        prologue.query = query;
+        prologue.fragment = fragment;
+        return prologue;
     }
 }

@@ -57,11 +57,16 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
          *
          * @return the built instance
          */
-        CrossOriginConfig get() {
+        CrossOriginConfig get(boolean mappedEnabled) {
             if (crossOriginConfig == null) {
-                crossOriginConfig = builder.build();
+                crossOriginConfig = builder.build(mappedEnabled);
+            } else {
+                CrossOriginConfig.Builder.validateCredentialsOrigins(mappedEnabled,
+                                                                     crossOriginConfig.isEnabled(),
+                                                                     crossOriginConfig.allowCredentials(),
+                                                                     crossOriginConfig.allowOrigins());
             }
-           return crossOriginConfig;
+            return crossOriginConfig;
         }
 
         @Override
@@ -76,7 +81,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
         buildables = builder.builders;
 
         // Force building to prevent any changes to the underlying builders that could cause surprising behavior later.
-        buildables.forEach((path, b) -> b.get());
+        buildables.forEach((path, b) -> b.get(isEnabled));
     }
 
     /**
@@ -152,7 +157,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
             @Override
             public Map.Entry<String, CrossOriginConfig> next() {
                 Map.Entry<String, Buildable> next = it.next();
-                return new AbstractMap.SimpleEntry<>(next.getKey(), next.getValue().get());
+                return new AbstractMap.SimpleEntry<>(next.getKey(), next.getValue().get(isEnabled));
             }
         };
     }
@@ -162,7 +167,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
      * @param consumer accepts the path and the {@code CrossOriginConfig} for processing
      */
     public void forEach(BiConsumer<String, CrossOriginConfig> consumer) {
-        buildables.forEach((path, buildable) -> consumer.accept(path, buildable.get()));
+        buildables.forEach((path, buildable) -> consumer.accept(path, buildable.get(isEnabled)));
     }
 
     /**
@@ -173,7 +178,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
      */
     public CrossOriginConfig get(String pathPattern) {
         Buildable b = buildables.get(pathPattern);
-        return b == null ? null : b.get();
+        return b == null ? null : b.get(isEnabled);
     }
 
     /**
@@ -246,6 +251,14 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
         public Builder put(String path, CrossOriginConfig.Builder builder) {
             builders.put(path, new Buildable(builder));
             return this;
+        }
+
+        Optional<Boolean> enabled() {
+            return enabledOpt;
+        }
+
+        void forEachBuilder(BiConsumer<String, CrossOriginConfig.Builder> consumer) {
+            builders.forEach((path, buildable) -> consumer.accept(path, buildable.builder));
         }
 
         /**

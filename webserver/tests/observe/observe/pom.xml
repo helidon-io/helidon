@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver.tests.observe</groupId>
         <artifactId>helidon-webserver-tests-observe-project</artifactId>
-        <version>4.5.0-SNAPSHOT</version>
+        <version>4.5.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver-observe-tests-observe</artifactId>
@@ -51,6 +51,11 @@
         <dependency>
             <groupId>io.helidon.webserver.observe</groupId>
             <artifactId>helidon-webserver-observe-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-encryption</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>

@@ -1,0 +1,67 @@
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>config.<wbr>vault.<wbr>Config<wbr>Vault<wbr>Provider
+
+## Description
+
+Secrets and Encryption provider using just configuration
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>legacy-<wbr>fallback</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Temporary rolling-upgrade option to retry decryption with the alternate encrypted value format after primary decryption fails</td>
+</tr>
+<tr>
+<td>
+<code>legacy-<wbr>encryption</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Temporary rolling-upgrade option to write encrypted data using the legacy encrypted value format</td>
+</tr>
+<tr>
+<td>
+<code>master-<wbr>password</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>Configure master password used for encryption/decryption</td>
+</tr>
+</tbody>
+</table>
+
+
+
+## Usages
+
+- <a href="io.helidon.security.spi.SecurityProvider.md#config-vault"><code>security.<wbr>providers.<wbr>config-<wbr>vault</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#config-vault"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>config-<wbr>vault</code></a>
+
+---
+
+See the [manifest](manifest.md) for all available types.

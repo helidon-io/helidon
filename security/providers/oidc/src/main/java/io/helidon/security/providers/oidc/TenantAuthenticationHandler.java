@@ -34,6 +34,7 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
@@ -43,8 +44,11 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.SetCookie;
 import io.helidon.http.Status;
+import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -69,6 +73,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.PkceChallengeMethod;
+import io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy;
 import io.helidon.security.providers.oidc.common.Tenant;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.security.util.TokenHandler;
@@ -95,15 +100,28 @@ class TenantAuthenticationHandler {
     private final TenantConfig tenantConfig;
     private final Tenant tenant;
     private final boolean useJwtGroups;
+    private final String jwtGroupsPath;
+    private final String jwtGroupsSeparator;
     private final BiFunction<SignedJwt, Errors.Collector, Errors.Collector> jwtValidator;
     private final BiConsumer<StringBuilder, String> scopeAppender;
     private final Pattern attemptPattern;
 
     TenantAuthenticationHandler(OidcConfig oidcConfig, Tenant tenant, boolean useJwtGroups, boolean optional) {
+        this(oidcConfig, tenant, useJwtGroups, OidcProvider.DEFAULT_JWT_GROUPS_PATH, null, optional);
+    }
+
+    TenantAuthenticationHandler(OidcConfig oidcConfig,
+                                Tenant tenant,
+                                boolean useJwtGroups,
+                                String jwtGroupsPath,
+                                String jwtGroupsSeparator,
+                                boolean optional) {
         this.oidcConfig = oidcConfig;
         this.tenant = tenant;
         this.tenantConfig = tenant.tenantConfig();
         this.useJwtGroups = useJwtGroups;
+        this.jwtGroupsPath = jwtGroupsPath;
+        this.jwtGroupsSeparator = jwtGroupsSeparator;
         this.optional = optional;
 
         attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
@@ -200,23 +218,23 @@ class TenantAuthenticationHandler {
                 }
             }
             if (oidcConfig.useCookie() && idToken.isEmpty()) {
-                // only do this for cookies
-                Optional<String> cookie = oidcConfig.idTokenCookieHandler()
-                        .findCookie(providerRequest.env().headers());
-                if (cookie.isPresent()) {
-                    try {
+                try {
+                    // only do this for cookies
+                    Optional<String> cookie = oidcConfig.idTokenCookieHandler()
+                            .findCookie(providerRequest.env().headers());
+                    if (cookie.isPresent()) {
                         String idTokenValue = cookie.get();
                         return validateIdToken(tenantId, providerRequest, idTokenValue);
-                    } catch (Exception e) {
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            LOGGER.log(System.Logger.Level.DEBUG, "Invalid id token in cookie", e);
-                        }
-                        return errorResponse(providerRequest,
-                                             Status.UNAUTHORIZED_401,
-                                             null,
-                                             "Invalid id token",
-                                             tenantId);
                     }
+                } catch (Exception e) {
+                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                        LOGGER.log(System.Logger.Level.DEBUG, "Invalid id token in cookie", e);
+                    }
+                    return errorResponse(providerRequest,
+                                         Status.UNAUTHORIZED_401,
+                                         null,
+                                         "Invalid id token",
+                                         tenantId);
                 }
             }
         } catch (SecurityException e) {
@@ -263,13 +281,13 @@ class TenantAuthenticationHandler {
 
             if (oidcConfig.useCookie()) {
                 if (token.isEmpty()) {
-                    // only do this for cookies
-                    Optional<String> cookie = oidcConfig.tokenCookieHandler()
-                            .findCookie(providerRequest.env().headers());
-                    if (cookie.isEmpty()) {
-                        missingLocations.add("cookie");
-                    } else {
-                        try {
+                    try {
+                        // only do this for cookies
+                        Optional<String> cookie = oidcConfig.tokenCookieHandler()
+                                .findCookie(providerRequest.env().headers());
+                        if (cookie.isEmpty()) {
+                            missingLocations.add("cookie");
+                        } else {
                             String tokenValue = cookie.get();
                             String decodedJson = new String(Base64.getDecoder().decode(tokenValue), StandardCharsets.UTF_8);
                             JsonObject jsonObject = JsonParser.create(decodedJson).readJsonObject();
@@ -297,16 +315,16 @@ class TenantAuthenticationHandler {
                                                        providerRequest,
                                                        accessToken,
                                                        idToken);
-                        } catch (Exception e) {
-                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                LOGGER.log(System.Logger.Level.DEBUG, "Invalid access token in cookie", e);
-                            }
-                            return errorResponse(providerRequest,
-                                                 Status.UNAUTHORIZED_401,
-                                                 null,
-                                                 "Invalid access token",
-                                                 tenantId);
                         }
+                    } catch (Exception e) {
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            LOGGER.log(System.Logger.Level.DEBUG, "Invalid access token in cookie", e);
+                        }
+                        return errorResponse(providerRequest,
+                                             Status.UNAUTHORIZED_401,
+                                             null,
+                                             "Invalid access token",
+                                             tenantId);
                     }
                 }
             }
@@ -361,9 +379,13 @@ class TenantAuthenticationHandler {
         if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
             String origUri = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(origUri);
-            if (redirectAttempt >= oidcConfig.maxRedirects()) {
-                return errorResponseNoRedirect(code, description, status);
+            RedirectAttemptCounterStrategy counterStrategy = oidcConfig.redirectAttemptCounterStrategy();
+            int redirectAttempt = 0;
+            if (counterStrategy != RedirectAttemptCounterStrategy.NONE) {
+                redirectAttempt = redirectAttempt(providerRequest, tenantId, origUri);
+                if (redirectAttempt >= oidcConfig.maxRedirects()) {
+                    return errorResponseNoRedirect(code, description, status, tenantId, origUri);
+                }
             }
             String state = generateRandomString();
             String pkceVerifier = oidcConfig.pkceEnabled() ? generateCodeVerifier() : "";
@@ -388,6 +410,11 @@ class TenantAuthenticationHandler {
             scopeString = URLEncoder.encode(scopes.toString(), StandardCharsets.UTF_8);
 
             String authorizationEndpoint = tenant.authorizationEndpointUri();
+            String authorizationQuery = URI.create(authorizationEndpoint).getRawQuery();
+            String querySeparator = "?";
+            if (authorizationQuery != null) {
+                querySeparator = authorizationQuery.isEmpty() || authorizationQuery.endsWith("&") ? "" : "&";
+            }
             String nonce = UUID.randomUUID().toString();
             String redirectUri;
             if (DEFAULT_TENANT_ID.equals(tenantId)) {
@@ -397,7 +424,7 @@ class TenantAuthenticationHandler {
                                              + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantId));
             }
 
-            String queryString = "?" + "client_id=" + tenantConfig.clientId() + "&"
+            String queryString = querySeparator + "client_id=" + tenantConfig.clientId() + "&"
                     + "response_type=code&"
                     + "redirect_uri=" + redirectUri + "&"
                     + "scope=" + scopeString + "&"
@@ -421,13 +448,19 @@ class TenantAuthenticationHandler {
 
             String stateBase64 = Base64.getEncoder().encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
             SetCookie cookie = oidcConfig.stateCookieHandler().createCookie(stateBase64).build();
+            List<String> responseCookies = new ArrayList<>();
+            responseCookies.add(cookie.toString());
+            if (counterStrategy == RedirectAttemptCounterStrategy.COOKIE) {
+                responseCookies.add(RedirectAttemptCookie.create(oidcConfig, tenantId, origUri, redirectAttempt + 1)
+                                            .toString());
+            }
 
             // must redirect
             return AuthenticationResponse
                     .builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                     .statusCode(Status.TEMPORARY_REDIRECT_307.code())
-                    .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookie.toString())
+                    .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), responseCookies)
                     .description("Redirecting to identity server: " + description)
                     .responseHeader("Location", authorizationEndpoint + queryString)
                     .build();
@@ -463,31 +496,60 @@ class TenantAuthenticationHandler {
     }
 
     private AuthenticationResponse errorResponseNoRedirect(String code, String description, Status status) {
+        return errorResponseNoRedirect(code, description, status, null, null);
+    }
+
+    private AuthenticationResponse errorResponseNoRedirect(String code,
+                                                           String description,
+                                                           Status status,
+                                                           String tenantId,
+                                                           String state) {
         if (optional) {
-            return AuthenticationResponse.builder()
+            return noRedirectResponse(AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
-                    .description(description)
-                    .build();
+                    .description(description), tenantId, state);
         }
         if (null == code) {
-            return AuthenticationResponse.builder()
+            return noRedirectResponse(AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(Status.UNAUTHORIZED_401.code())
                     .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(),
                                     "Bearer realm=\"" + tenantConfig.realm() + "\"")
-                    .description(description)
-                    .build();
+                    .description(description), tenantId, state);
         } else {
-            return AuthenticationResponse.builder()
+            return noRedirectResponse(AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(status.code())
                     .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), errorHeader(code, description))
-                    .description(description)
-                    .build();
+                    .description(description), tenantId, state);
         }
     }
 
-    private int redirectAttempt(String state) {
+    private AuthenticationResponse noRedirectResponse(AuthenticationResponse.Builder builder,
+                                                      String tenantId,
+                                                      String state) {
+        if (oidcConfig.redirectAttemptCounterStrategy() == RedirectAttemptCounterStrategy.COOKIE && state != null) {
+            builder.responseHeader(HeaderNames.SET_COOKIE.defaultCase(),
+                                   RedirectAttemptCookie.remove(oidcConfig, tenantId, state).toString());
+        }
+        return builder.build();
+    }
+
+    int redirectAttempt(ProviderRequest providerRequest, String tenantId, String state) {
+        RedirectAttemptCounterStrategy strategy = oidcConfig.redirectAttemptCounterStrategy();
+        switch (strategy) {
+        case NONE:
+            return 0;
+        case PARAM:
+            return redirectAttemptParam(state);
+        case COOKIE:
+            return redirectAttemptCookie(providerRequest, tenantId, state);
+        default:
+            throw new IllegalStateException("Unsupported redirect attempt counter strategy: " + strategy);
+        }
+    }
+
+    private int redirectAttemptParam(String state) {
         if (state.contains("?")) {
             // there are parameters
             Matcher matcher = attemptPattern.matcher(state);
@@ -499,6 +561,26 @@ class TenantAuthenticationHandler {
         return 1;
     }
 
+    private int redirectAttemptCookie(ProviderRequest providerRequest, String tenantId, String state) {
+        return RedirectAttemptCookie.find(oidcConfig, providerRequest.env().headers(), tenantId, state)
+                .map(this::parseRedirectAttemptCookie)
+                .orElse(0);
+    }
+
+    private int parseRedirectAttemptCookie(String value) {
+        try {
+            int attempt = Integer.parseInt(value);
+            if (attempt > 0) {
+                return attempt;
+            }
+            LOGGER.log(System.Logger.Level.DEBUG, "Invalid OIDC redirect attempt cookie value");
+            return oidcConfig.maxRedirects();
+        } catch (NumberFormatException e) {
+            LOGGER.log(System.Logger.Level.DEBUG, "Invalid OIDC redirect attempt cookie value", e);
+            return oidcConfig.maxRedirects();
+        }
+    }
+
     private String errorHeader(String code, String description) {
         return "Bearer realm=\"" + tenantConfig.realm() + "\", error=\"" + code + "\", error_description=\"" + description + "\"";
     }
@@ -507,18 +589,21 @@ class TenantAuthenticationHandler {
         List<String> origUri = providerRequest.env().headers()
                 .getOrDefault(Security.HEADER_ORIG_URI, List.of());
 
-        if (origUri.isEmpty()) {
-            URI targetUri = providerRequest.env().targetUri();
-            String query = targetUri.getQuery();
-            String path = targetUri.getPath();
-            if (query == null || query.isEmpty()) {
-                return path;
-            } else {
-                return path + "?" + query;
+        if (!origUri.isEmpty()) {
+            Optional<String> localUri = OidcUtil.localRedirectUri(origUri.getFirst());
+            if (localUri.isPresent()) {
+                return localUri.get();
             }
         }
 
-        return origUri.getFirst();
+        URI targetUri = providerRequest.env().targetUri();
+        String query = targetUri.getRawQuery();
+        String path = targetUri.getRawPath();
+        if (query == null || query.isEmpty()) {
+            return path;
+        } else {
+            return path + "?" + query;
+        }
     }
 
     private String encode(String state) {
@@ -784,7 +869,16 @@ class TenantAuthenticationHandler {
         if (errors.isValid() && validationErrors.isValid()) {
 
             errors.log(LOGGER);
-            Subject subject = buildSubject(jwt, signedJwt, idToken);
+            Subject subject;
+            try {
+                subject = buildSubject(jwt, signedJwt, idToken);
+            } catch (JwtException e) {
+                return errorResponse(providerRequest,
+                                     Status.UNAUTHORIZED_401,
+                                     "invalid_token",
+                                     e.getMessage(),
+                                     tenantId);
+            }
 
             Set<String> scopes = subject.grantsByType("scope")
                     .stream()
@@ -805,11 +899,12 @@ class TenantAuthenticationHandler {
                         .status(SecurityResponse.SecurityStatus.SUCCESS)
                         .user(subject);
 
-                if (cookies.isEmpty()) {
+                List<String> responseCookies = successCookies(cookies, providerRequest, tenantId);
+                if (responseCookies.isEmpty()) {
                     return response.build();
                 } else {
                     return response
-                            .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookies)
+                            .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), responseCookies)
                             .build();
                 }
             } else {
@@ -833,7 +928,21 @@ class TenantAuthenticationHandler {
         }
     }
 
-    private Subject buildSubject(Jwt jwt, SignedJwt signedJwt, Jwt idToken) {
+    List<String> successCookies(List<String> cookies, ProviderRequest providerRequest, String tenantId) {
+        if (oidcConfig.redirectAttemptCounterStrategy() != RedirectAttemptCounterStrategy.COOKIE) {
+            return cookies;
+        }
+        String originalUri = origUri(providerRequest);
+        if (RedirectAttemptCookie.find(oidcConfig, providerRequest.env().headers(), tenantId, originalUri).isEmpty()) {
+            return cookies;
+        }
+        List<String> responseCookies = new ArrayList<>(cookies);
+        responseCookies.add(RedirectAttemptCookie.remove(oidcConfig, tenantId, originalUri).toString());
+        return responseCookies;
+    }
+
+    // Package-private to allow focused tests to exercise subject construction without invoking remote OIDC flows.
+    Subject buildSubject(Jwt jwt, SignedJwt signedJwt, Jwt idToken) {
         Principal principal = buildPrincipal(jwt, idToken);
 
         TokenCredential.Builder builder = TokenCredential.builder();
@@ -849,8 +958,7 @@ class TenantAuthenticationHandler {
                 .addPublicCredential(TokenCredential.class, builder.build());
 
         if (useJwtGroups) {
-            Optional<List<String>> userGroups = jwt.userGroups();
-            userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
+            jwtGroups(jwt).forEach(group -> subjectBuilder.addGrant(Role.create(group)));
         }
 
         Optional<List<String>> scopes = jwt.scopes();
@@ -861,6 +969,50 @@ class TenantAuthenticationHandler {
 
         return subjectBuilder.build();
 
+    }
+
+    private List<String> jwtGroups(Jwt jwt) {
+        if (OidcProvider.DEFAULT_JWT_GROUPS_PATH.equals(jwtGroupsPath)) {
+            return jwt.userGroups().orElse(List.of());
+        }
+        return jwtGroupsClaim(jwt)
+                .map(this::toGroups)
+                .orElse(List.of());
+    }
+
+    private Optional<JsonValue> jwtGroupsClaim(Jwt jwt) {
+        String[] pathSegments = jwtGroupsPath.split("/");
+        Optional<JsonValue> currentValue = jwt.payloadClaimValue(pathSegments[0]);
+        for (int i = 1; i < pathSegments.length; i++) {
+            String pathSegment = pathSegments[i];
+            currentValue = currentValue
+                    .filter(it -> it instanceof JsonObject)
+                    .flatMap(it -> it.asObject().value(pathSegment));
+        }
+        return currentValue;
+    }
+
+    private List<String> toGroups(JsonValue claimValue) {
+        if (claimValue instanceof JsonArray groups) {
+            return groups.values()
+                    .stream()
+                    .map(this::toGroup)
+                    .toList();
+        }
+        String group = toGroup(claimValue);
+        if (jwtGroupsSeparator == null) {
+            return List.of(group);
+        }
+        return Stream.of(group.split(Pattern.quote(jwtGroupsSeparator)))
+                .filter(it -> !it.isBlank())
+                .toList();
+    }
+
+    private String toGroup(JsonValue groupValue) {
+        if (groupValue instanceof JsonString group) {
+            return group.value();
+        }
+        throw new JwtException("Invalid value. Expecting a string or string array for key " + jwtGroupsPath);
     }
 
     private Principal buildPrincipal(Jwt accessToken, Jwt idToken) {

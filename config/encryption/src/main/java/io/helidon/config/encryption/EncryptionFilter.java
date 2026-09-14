@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ import io.helidon.config.spi.ConfigFilter;
  * <p>
  * Password in properties must be stored as follows:
  * <ul>
+ * <li>${ENC=base64} - encrypted password using a master password and versioned envelope (must be provided to prime
+ * through configuration, system property or environment variable)</li>
  * <li>${GCM=base64} - encrypted password using a master password (must be provided to prime through configuration, system
  * property or environment variable)</li>
  * <li>${RSA=base64} - encrypted password using a public key (private key must be available to Prime instance,
@@ -46,6 +48,7 @@ import io.helidon.config.spi.ConfigFilter;
  * </ul>
  * Example:
  * <pre>
+ * new_google_client_secret=${ENC=mYRkg+4Q4hua1kvpCCI2hg==}
  * google_client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
  * service_password=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
  * another_password=${service_password}
@@ -59,6 +62,7 @@ import io.helidon.config.spi.ConfigFilter;
  */
 public final class EncryptionFilter implements ConfigFilter {
     static final String PREFIX_GCM = "${GCM=";
+    static final String PREFIX_ENC = "${ENC=";
     static final String PREFIX_RSA = "${RSA-P=";
     private static final System.Logger LOGGER = System.getLogger(EncryptionFilter.class.getName());
     private static final String PREFIX_ALIAS = "${ALIAS=";
@@ -72,6 +76,7 @@ public final class EncryptionFilter implements ConfigFilter {
     private final ConfigFilter clearFilter;
     private final ConfigFilter rsaFilter;
     private final ConfigFilter aesFilter;
+    private final ConfigFilter encFilter;
     private final ConfigFilter aliasFilter;
 
     private EncryptionFilter(Builder builder, Config config) {
@@ -100,6 +105,7 @@ public final class EncryptionFilter implements ConfigFilter {
         ConfigFilter noOp = (key, stringValue) -> stringValue;
 
         aesFilter = (null == masterPassword ? noOp : (key, stringValue) -> decryptAes(masterPassword, stringValue));
+        encFilter = this::decryptAesEnvelope;
         rsaFilter = (null == privateKey ? noOp : (key, stringValue) -> decryptRsa(privateKey, stringValue));
         clearFilter = this::clearText;
         aliasFilter = (key, stringValue) -> aliased(stringValue, config);
@@ -159,6 +165,7 @@ public final class EncryptionFilter implements ConfigFilter {
             value = clearFilter.apply(key, value);
             value = rsaFilter.apply(key, value);
             value = aesFilter.apply(key, value);
+            value = encFilter.apply(key, value);
         } while (!processedValues.contains(value));
 
         return value;
@@ -214,6 +221,27 @@ public final class EncryptionFilter implements ConfigFilter {
             } catch (ConfigEncryptionException e) {
                 LOGGER.log(Level.TRACE, () -> "Failed to decrypt " + value, e);
                 return value;
+            }
+        }
+
+        return value;
+    }
+
+    private String decryptAesEnvelope(Config.Key key, String value) {
+        if (value.startsWith(PREFIX_ENC)) {
+            if (!value.endsWith("}")) {
+                throw new ConfigEncryptionException("Key \"" + key + "\" has an invalid encrypted value");
+            }
+            if (masterPassword == null) {
+                throw new ConfigEncryptionException("Key \"" + key
+                                                            + "\" is encrypted, but master password is not configured");
+            }
+
+            String b64Value = removePlaceholder(PREFIX_ENC, value);
+            try {
+                return EncryptionUtil.decryptAesEnvelope(masterPassword, b64Value);
+            } catch (ConfigEncryptionException e) {
+                throw new ConfigEncryptionException("Failed to decrypt encrypted value for key \"" + key + "\"", e);
             }
         }
 

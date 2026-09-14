@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
@@ -35,7 +37,6 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
-import io.helidon.common.mapper.MapperException;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
@@ -63,6 +64,10 @@ import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrader;
+import io.helidon.webserver.http1.spi.Http1UpgradeResult;
+import io.helidon.webserver.http1.spi.Http1UpgradeRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 
@@ -105,6 +110,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
     private volatile Thread myThread;
     private volatile boolean canRun = true;
+    private volatile boolean closeInterrupt;
     private volatile boolean currentlyReadingPrologue;
     private volatile ZonedDateTime lastRequestTimestamp;
     private volatile ServerConnection upgradeConnection;
@@ -171,6 +177,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 if (http1Config.validateRequestHeaders()) {
                     validateHostHeader(prologue, headers, http1Config.validateRequestHostHeader());
                 }
+                headers.remove(X_HELIDON_CN);
                 ctx.remotePeer().tlsCertificates()
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));
@@ -189,50 +196,93 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 }
 
                 if (canUpgrade && headers.contains(HeaderNames.UPGRADE)) {
-                    if (!upgradeHasEntity(headers)) {
+                    if (upgradeHasEntity(headers)) {
+                        ctx.log(LOGGER, DEBUG, "Protocol upgrade for a request with a payload ignored");
+                    } else {
                         Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(HeaderNames.UPGRADE).get());
                         if (upgrader != null) {
-                            ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
-                            // upgrader may decide not to upgrade this connection
-                            if (upgradeConnection != null) {
-                                if (LOGGER.isLoggable(TRACE)) {
-                                    LOGGER.log(TRACE, "Connection upgrade using " + upgradeConnection);
+                            if (upgrader instanceof Http1RoutedUpgrader routedUpgrader) {
+                                Optional<Http1RoutedUpgrade> routedUpgrade =
+                                        Objects.requireNonNull(routedUpgrader.routedUpgrade(ctx, prologue, headers));
+                                if (routedUpgrade.isPresent()) {
+                                    if (!(routing instanceof Http1UpgradeRouting upgradeRouting)) {
+                                        throw new IllegalStateException("HTTP routing does not support routed protocol upgrade");
+                                    }
+                                    LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
+                                    if (outcome.disposition() != LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
+                                        throw tooManyConcurrentRequests();
+                                    }
+                                    LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
+                                    LimitAlgorithm.Token permit = accepted.token();
+                                    ServerConnection routedUpgradeConnection = null;
+                                    boolean routeNormally = false;
+                                    boolean keepConnectionOpen = true;
+                                    boolean permitCompleted = false;
+                                    try {
+                                        this.lastRequestTimestamp = DateTime.timestamp();
+                                        Http1ServerRequest request = createNoEntityRequest(prologue, headers, accepted);
+                                        Http1ServerResponse response = createResponse(request, !headers.containsToken(
+                                                HeaderValues.CONNECTION_CLOSE));
+                                        Http1UpgradeResult upgradeResult = Objects.requireNonNull(upgradeRouting.routeUpgrade(
+                                                ctx, request, response, response, routedUpgrade.get()));
+                                        Http1UpgradeResult.Kind upgradeKind = upgradeResult.kind();
+                                        routedUpgradeConnection = switch (upgradeKind) {
+                                        case UPGRADED -> upgradeResult.connection()
+                                                    .orElseThrow(() -> new IllegalStateException(
+                                                            "Routed upgrade result must include an upgraded connection"));
+                                        case RESPONDED, NOT_APPLICABLE -> null;
+                                        default -> throw new IllegalStateException("Unknown routed upgrade result kind");
+                                        };
+                                        routeNormally = upgradeKind == Http1UpgradeResult.Kind.NOT_APPLICABLE;
+                                        keepConnectionOpen = upgradeKind != Http1UpgradeResult.Kind.RESPONDED
+                                                || response.keepConnectionOpen();
+                                        permit.success();
+                                        permitCompleted = true;
+                                        this.lastRequestTimestamp = DateTime.timestamp();
+                                        if (!keepConnectionOpen) {
+                                            flushBeforeClose();
+                                        }
+                                    } catch (Throwable e) {
+                                        if (!permitCompleted) {
+                                            permit.dropped();
+                                        }
+                                        throw e;
+                                    }
+                                    if (!keepConnectionOpen) {
+                                        return;
+                                    }
+                                    if (routedUpgradeConnection != null) {
+                                        handleUpgradeConnection(limit, routedUpgradeConnection);
+                                        return;
+                                    }
+                                    if (!routeNormally) {
+                                        continue;
+                                    }
                                 }
-                                this.upgradeConnection = upgradeConnection;
-                                // this will block until the connection terminates
-                                upgradeConnection.handle(limit);
-                                return;
+                            } else {
+                                ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
+                                // upgrader may decide not to upgrade this connection
+                                if (upgradeConnection != null) {
+                                    handleUpgradeConnection(limit, upgradeConnection);
+                                    return;
+                                }
                             }
                         }
-                    } else {
-                        ctx.log(LOGGER, DEBUG, "Protocol upgrade for a request with a payload ignored");
                     }
                 }
 
                 LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
-                    LimitAlgorithm.Token permit = accepted.token();
-
-                    try {
-                        this.lastRequestTimestamp = DateTime.timestamp();
-                        route(prologue, headers, accepted);
-                        permit.success();
-                        this.lastRequestTimestamp = DateTime.timestamp();
-                    } catch (Throwable e) {
-                        permit.dropped();
-                        throw e;
+                    if (!routeWithPermit(prologue, headers, accepted)) {
+                        return;
                     }
                 } else {
-                    ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
-                    throw RequestException.builder()
-                            .setKeepAlive(false)
-                            .status(Status.SERVICE_UNAVAILABLE_503)
-                            .type(EventType.OTHER)
-                            .message("Too Many Concurrent Requests")
-                            .build();
+                    throw tooManyConcurrentRequests();
                 }
             }
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            throw new CloseConnectionException("Connection closed by client", e);
         } catch (CloseConnectionException e) {
             throw e;
         } catch (BadRequestException e) {
@@ -272,8 +322,12 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         ctx.log(LOGGER, TRACE, "Requested connection close, interrupt: %s", interrupt);
         // either way, finish
         this.canRun = false;
+        if (interrupt) {
+            this.closeInterrupt = true;
+        }
 
-        if (upgradeConnection == null) {
+        ServerConnection currentUpgradeConnection = upgradeConnection;
+        if (currentUpgradeConnection == null) {
             if (interrupt) {
                 // interrupt regardless of current state
                 if (myThread != null) {
@@ -285,13 +339,45 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 myThread.interrupt();
             }
         } else {
-            upgradeConnection.close(interrupt);
+            currentUpgradeConnection.close(interrupt);
         }
     }
 
     void reset() {
         currentEntitySize = 0;
         currentEntitySizeRead = 0;
+    }
+
+    // Package-private for deterministic tests of immediate 100-Continue writer failures.
+    void writeContinue() {
+        try {
+            writer.writeNow(BufferData.create(CONTINUE_100));
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write continue", e);
+        }
+    }
+
+    private void handleUpgradeConnection(Limit limit, ServerConnection upgradeConnection) throws InterruptedException {
+        if (LOGGER.isLoggable(TRACE)) {
+            LOGGER.log(TRACE, "Connection upgrade using " + upgradeConnection);
+        }
+        this.upgradeConnection = upgradeConnection;
+        if (!canRun) {
+            upgradeConnection.close(closeInterrupt);
+            return;
+        }
+        // this will block until the connection terminates
+        upgradeConnection.handle(limit);
+    }
+
+    private RequestException tooManyConcurrentRequests() {
+        ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
+        return RequestException.builder()
+                .setKeepAlive(false)
+                .status(Status.SERVICE_UNAVAILABLE_503)
+                .type(EventType.OTHER)
+                .message("Too Many Concurrent Requests")
+                .build();
     }
 
     /**
@@ -303,8 +389,14 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
      * @return whether to accept or reject the upgrade
      */
     static boolean upgradeHasEntity(WritableHeaders<?> headers) {
-        return headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO)
-                || headers.contains(HeaderNames.TRANSFER_ENCODING);
+        if (headers.contains(HeaderNames.TRANSFER_ENCODING)) {
+            return true;
+        }
+        try {
+            return headers.contentLength().orElse(0) > 0;
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
     }
 
     static void validateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers, boolean fullValidation) {
@@ -449,6 +541,37 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         UriValidator.validateNonIpLiteral(hostString);
     }
 
+    private boolean routeWithPermit(HttpPrologue prologue,
+                                    WritableHeaders<?> headers,
+                                    LimitAlgorithm.Outcome.Accepted accepted) {
+        LimitAlgorithm.Token permit = accepted.token();
+        boolean permitCompleted = false;
+        try {
+            this.lastRequestTimestamp = DateTime.timestamp();
+            boolean keepConnectionOpen = route(prologue, headers, accepted);
+            permit.success();
+            permitCompleted = true;
+            this.lastRequestTimestamp = DateTime.timestamp();
+            if (!keepConnectionOpen) {
+                flushBeforeClose();
+            }
+            return keepConnectionOpen;
+        } catch (Throwable e) {
+            if (!permitCompleted) {
+                permit.dropped();
+            }
+            throw e;
+        }
+    }
+
+    private void flushBeforeClose() {
+        try {
+            writer.flush();
+        } catch (RuntimeException e) {
+            throw new CloseConnectionException("Failed to flush closing response", e);
+        }
+    }
+
     private BufferData readEntityFromPipeline(HttpPrologue prologue, WritableHeaders<?> headers) {
         if (currentEntitySize == -1) {
             // chunked
@@ -502,9 +625,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         return buffer;
     }
 
-    private void route(HttpPrologue prologue,
-                       WritableHeaders<?> headers,
-                       LimitAlgorithm.Outcome limitOutcome) {
+    private boolean route(HttpPrologue prologue,
+                          WritableHeaders<?> headers,
+                          LimitAlgorithm.Outcome limitOutcome) {
         EntityStyle entity = EntityStyle.NONE;
 
         if (headers.contains(HeaderNames.TRANSFER_ENCODING)) {
@@ -512,47 +635,32 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             entity = EntityStyle.CHUNKED;
             this.currentEntitySize = -1;
         } else if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
+            long contentLength;
             try {
-                this.currentEntitySize = headers.get(HeaderNames.CONTENT_LENGTH).get(long.class);
-                if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
-                    throw RequestException.builder()
-                            .type(EventType.BAD_REQUEST)
-                            .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
-                            .request(DirectTransportRequest.create(prologue, headers))
-                            .setKeepAlive(false)
-                            .build();
-                }
-                entity = currentEntitySize == 0 ? EntityStyle.NONE : EntityStyle.LENGTH;
-            } catch (MapperException e) {
+                contentLength = headers.contentLength().orElse(0);
+            } catch (NumberFormatException e) {
+                throw invalidRequestFraming(prologue, headers, "Content length is not a number");
+            } catch (IllegalArgumentException e) {
+                throw invalidRequestFraming(prologue, headers, e.getMessage());
+            }
+            this.currentEntitySize = contentLength;
+            if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
                 throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
+                        .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
                         .request(DirectTransportRequest.create(prologue, headers))
-                        .message("Content length is not a number")
-                        .cause(e)
+                        .setKeepAlive(false)
                         .build();
             }
+            entity = currentEntitySize == 0 ? EntityStyle.NONE : EntityStyle.LENGTH;
         }
-        requestId++;
-
         if (entity == EntityStyle.NONE) {
-            Http1ServerRequest request = Http1ServerRequest.create(ctx,
-                                                                   routing.security(),
-                                                                   prologue,
-                                                                   headers,
-                                                                   requestId,
-                                                                   limitOutcome);
-
-            Http1ServerResponse response = new Http1ServerResponse(ctx,
-                                                                   sendListener,
-                                                                   writer,
-                                                                   request,
-                                                                   !headers.containsToken(HeaderValues.CONNECTION_CLOSE),
-                                                                   http1Config.sendKeepAliveHeader(),
-                                                                   http1Config.validateResponseHeaders());
+            Http1ServerRequest request = createNoEntityRequest(prologue, headers, limitOutcome);
+            Http1ServerResponse response = createResponse(request, !headers.containsToken(HeaderValues.CONNECTION_CLOSE));
 
             routing.route(ctx, request, response);
             // we have handled a request without request entity
-            return;
+            return response.keepConnectionOpen();
         }
 
         boolean expectContinue = false;
@@ -560,11 +668,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // Expect: 100-continue
         if (headers.containsToken(HeaderValues.EXPECT_100)) {
             if (this.http1Config.continueImmediately()) {
-                try {
-                    writer.writeNow(BufferData.create(CONTINUE_100));
-                } catch (UncheckedIOException e) {
-                    throw new ServerConnectionException("Failed to write continue", e);
-                }
+                writeContinue();
             }
             expectContinue = true;
         }
@@ -599,6 +703,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         }
 
         CountDownLatch entityReadLatch = new CountDownLatch(1);
+        requestId++;
         Http1ServerRequest request = Http1ServerRequest.create(ctx,
                                                                this,
                                                                http1Config,
@@ -611,14 +716,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                entityReadLatch,
                                                                () -> this.readEntityFromPipeline(prologue, headers),
                                                                limitOutcome);
-        Http1ServerResponse response = new Http1ServerResponse(ctx,
-                                                               sendListener,
-                                                               writer,
-                                                               request,
-                                                               !request.headers()
-                                                                       .containsToken(HeaderValues.CONNECTION_CLOSE),
-                                                               http1Config.sendKeepAliveHeader(),
-                                                               http1Config.validateResponseHeaders());
+        Http1ServerResponse response = createResponse(request,
+                                                      !request.headers().containsToken(HeaderValues.CONNECTION_CLOSE));
 
         routing.route(ctx, request, response);
 
@@ -633,10 +732,33 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     .cause(e)
                     .build();
         }
+        return response.keepConnectionOpen();
+    }
+
+    private Http1ServerRequest createNoEntityRequest(HttpPrologue prologue,
+                                                     WritableHeaders<?> headers,
+                                                     LimitAlgorithm.Outcome limitOutcome) {
+        requestId++;
+        return Http1ServerRequest.create(ctx,
+                                         routing.security(),
+                                         prologue,
+                                         headers,
+                                         requestId,
+                                         limitOutcome);
+    }
+
+    private Http1ServerResponse createResponse(Http1ServerRequest request, boolean keepAlive) {
+        return new Http1ServerResponse(ctx,
+                                       sendListener,
+                                       writer,
+                                       request,
+                                       keepAlive,
+                                       http1Config.sendKeepAliveHeader(),
+                                       http1Config.validateResponseHeaders());
     }
 
     private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response, CountDownLatch entityReadLatch) {
-        if (response.headers().containsToken(HeaderValues.CONNECTION_CLOSE) || request.content().consumed()) {
+        if (!response.keepConnectionOpen() || request.content().consumed()) {
             // we do not care about request entity if connection is getting closed
             entityReadLatch.countDown();
             return;

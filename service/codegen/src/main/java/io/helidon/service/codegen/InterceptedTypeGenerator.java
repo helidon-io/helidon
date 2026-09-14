@@ -113,7 +113,8 @@ class InterceptedTypeGenerator {
                         String invokeLine = invoker
                                 + ".invoke("
                                 + info.parameterArguments()
-                                .stream().map(TypedElementInfo::elementName)
+                                .stream()
+                                .map(InterceptedTypeGenerator::invokerArgument)
                                 .collect(Collectors.joining(", "))
                                 + ");";
                         // body of the method
@@ -146,6 +147,42 @@ class InterceptedTypeGenerator {
 
                     }));
 
+        }
+    }
+
+    static void generateDelegateMethods(ClassModel.Builder classModel, List<MethodDefinition> interceptedMethods) {
+        for (MethodDefinition interceptedMethod : interceptedMethods) {
+            TypedElementInfo info = interceptedMethod.info();
+
+            classModel.addMethod(method -> method
+                    .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                    .name(interceptedMethod.delegateName())
+                    .returnType(info.typeName())
+                    .update(it -> info.parameterArguments().forEach(arg -> it.addParameter(param -> param.type(arg.typeName())
+                            .name(arg.elementName()))))
+                    .update(it -> {
+                        if (!interceptedMethod.exceptionTypes().isEmpty()) {
+                            for (TypeName exceptionType : interceptedMethod.exceptionTypes()) {
+                                it.addThrows(exceptionType, "thrown by intercepted method");
+                            }
+                        }
+                    })
+                    .update(it -> {
+                        String invokeLine = "super."
+                                + info.elementName()
+                                + "("
+                                + info.parameterArguments()
+                                .stream()
+                                .map(TypedElementInfo::elementName)
+                                .collect(Collectors.joining(", "))
+                                + ");";
+                        if (interceptedMethod.isVoid()) {
+                            it.addContentLine(invokeLine);
+                        } else {
+                            it.addContent("return ")
+                                    .addContentLine(invokeLine);
+                        }
+                    }));
         }
     }
 
@@ -257,6 +294,7 @@ class InterceptedTypeGenerator {
 
         generateConstructor(classModel);
 
+        generateDelegateMethods(classModel, interceptedMethods);
         generateInterceptedMethods(classModel, interceptedMethods);
 
         return classModel;
@@ -266,6 +304,13 @@ class InterceptedTypeGenerator {
         return TypeName.builder(INTERCEPT_INVOKER)
                 .addTypeArgument(type.boxed())
                 .build();
+    }
+
+    private static String invokerArgument(TypedElementInfo arg) {
+        if (arg.typeName().array()) {
+            return "(Object) " + arg.elementName();
+        }
+        return arg.elementName();
     }
 
     private void generateConstructor(ClassModel.Builder classModel) {
@@ -328,13 +373,8 @@ class InterceptedTypeGenerator {
             for (int i = 0; i < sortedMethods.size(); i++) {
                 TypedElements.ElementMeta elementMeta = sortedMethods.get(i);
 
-                List<Annotation> elementAnnotations = new ArrayList<>(elementMeta.element().annotations());
-                addInterfaceAnnotations(elementAnnotations, elementMeta.abstractMethods());
-
-                TypedElementInfo typedElementInfo = TypedElementInfo.builder()
-                        .from(elementMeta.element())
-                        .annotations(elementAnnotations)
-                        .build();
+                TypedElementInfo typedElementInfo = TypedElements.mergeAbstractMethods(elementMeta.element(),
+                                                                                       elementMeta.abstractMethods());
 
                 String constantName = "METHOD_" + toConstantName(ctx.uniqueName(typeInfo, elementMeta.element()));
                 String invokerName = typedElementInfo.elementName() + "_" + i + "_invoker";
@@ -349,21 +389,9 @@ class InterceptedTypeGenerator {
             return result;
         }
 
-        private static void addInterfaceAnnotations(List<Annotation> elementAnnotations,
-                                                    List<TypedElements.DeclaredElement> declaredElements) {
-
-            for (TypedElements.DeclaredElement declaredElement : declaredElements) {
-                declaredElement.element()
-                        .annotations()
-                        .forEach(it -> addInterfaceAnnotation(elementAnnotations, it));
-            }
+        String delegateName() {
+            return "helidonInject__" + invokerName.substring(0, invokerName.length() - "_invoker".length());
         }
 
-        private static void addInterfaceAnnotation(List<Annotation> elementAnnotations, Annotation annotation) {
-            // only add if not already there
-            if (!elementAnnotations.contains(annotation)) {
-                elementAnnotations.add(annotation);
-            }
-        }
     }
 }

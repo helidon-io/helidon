@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci;
 
+import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
@@ -45,6 +46,7 @@ import static org.hamcrest.Matchers.not;
 This class MUST be in the same package, to be able to reset OciConfig before each test
  */
 class AuthenticationDetailsProvidersTest {
+    private static final URI UNREACHABLE_IMDS = URI.create("http://metadata.invalid/opc/v2/");
     private static final TypeName INSTANCE_PRINCIPAL_METHOD_IMPL = TypeName.create(
             "io.helidon.integrations.oci.authentication.instance.AuthenticationMethodInstancePrincipal");
     private static final TypeName RESOURCE_PRINCIPAL_METHOD_IMPL = TypeName.create(
@@ -54,7 +56,9 @@ class AuthenticationDetailsProvidersTest {
     private ServiceRegistry registry;
 
     void setUp(Config config) {
-        OciConfigProvider.config(OciConfig.create(config.get("helidon.oci")));
+        OciConfigProvider.config(OciConfig.builder(OciConfig.create(config.get("helidon.oci")))
+                                         .imdsBaseUri(UNREACHABLE_IMDS)
+                                         .build());
         registryManager = ServiceRegistryManager.create();
         registry = registryManager.registry();
     }

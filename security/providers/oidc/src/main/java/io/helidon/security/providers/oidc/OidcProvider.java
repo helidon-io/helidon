@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -79,6 +80,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  */
 public final class OidcProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(OidcProvider.class.getName());
+    static final String DEFAULT_JWT_GROUPS_PATH = "groups";
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -87,6 +89,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final boolean propagate;
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
+    private final String jwtGroupsPath;
+    private final String jwtGroupsSeparator;
     private final LruCache<String, TenantAuthenticationHandler> tenantAuthHandlers = LruCache.create();
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
@@ -94,6 +98,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         this.oidcConfig = builder.oidcConfig;
         this.propagate = builder.propagate && (oidcOutboundConfig.hasOutbound());
         this.useJwtGroups = builder.useJwtGroups;
+        this.jwtGroupsPath = builder.jwtGroupsPath;
+        this.jwtGroupsSeparator = builder.jwtGroupsSeparator;
         this.outboundConfig = oidcOutboundConfig;
 
         tenantConfigFinders = List.copyOf(builder.tenantConfigFinders);
@@ -160,23 +166,49 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     private AuthenticationResponse authenticateWithTenant(String tenantId, ProviderRequest providerRequest) {
-        Optional<TenantAuthenticationHandler> tenantHandler = tenantAuthHandlers.get(tenantId);
-        if (tenantHandler.isPresent()) {
-            return tenantHandler.get().authenticate(tenantId, providerRequest);
-        } else {
-            TenantConfig possibleConfig = tenantConfigFinders.stream()
-                    .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
-                    .flatMap(Optional::stream)
-                    .findFirst()
-                    .orElse(oidcConfig.tenantConfig(tenantId));
-            Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
-            TenantAuthenticationHandler handler = new TenantAuthenticationHandler(oidcConfig,
-                                                                                  tenant,
-                                                                                  useJwtGroups,
-                                                                                  optional);
-            return tenantAuthHandlers.computeValue(tenantId, () -> Optional.of(handler)).get()
-                    .authenticate(tenantId, providerRequest);
+        return cachedTenantAuthenticationHandler(tenantId)
+                .map(handler -> handler.authenticate(tenantId, providerRequest))
+                .orElseGet(this::unknownTenantResponse);
+    }
+
+    private Optional<TenantAuthenticationHandler> cachedTenantAuthenticationHandler(String tenantId) {
+        Optional<TenantAuthenticationHandler> cachedHandler = tenantAuthHandlers.get(tenantId);
+        if (cachedHandler.isPresent()) {
+            return cachedHandler;
         }
+        return TenantConfigResolver.resolve(tenantConfigFinders, oidcConfig, tenantId)
+                .flatMap(this::cachedTenantAuthenticationHandler);
+    }
+
+    private Optional<TenantAuthenticationHandler> cachedTenantAuthenticationHandler(
+            TenantConfigResolver.ResolvedTenantConfig resolvedTenant) {
+        return tenantAuthHandlers.computeValue(
+                resolvedTenant.cacheKey(),
+                () -> Optional.of(tenantAuthenticationHandler(resolvedTenant.tenantConfig())));
+    }
+
+    private TenantAuthenticationHandler tenantAuthenticationHandler(TenantConfig tenantConfig) {
+        Tenant tenant = Tenant.create(oidcConfig, tenantConfig);
+        return new TenantAuthenticationHandler(oidcConfig,
+                                               tenant,
+                                               useJwtGroups,
+                                               jwtGroupsPath,
+                                               jwtGroupsSeparator,
+                                               optional);
+    }
+
+    private AuthenticationResponse unknownTenantResponse() {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description("Tenant configuration is not available")
+                    .build();
+        }
+        return AuthenticationResponse.builder()
+                .status(SecurityResponse.SecurityStatus.FAILURE)
+                .statusCode(Status.UNAUTHORIZED_401.code())
+                .description("Tenant configuration is not available")
+                .build();
     }
 
     private String findTenantIdFromRedirects(ProviderRequest providerRequest) {
@@ -324,6 +356,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         // for outbound calls, unless it is the same audience
         private Boolean propagate;
         private boolean useJwtGroups = true;
+        private String jwtGroupsPath = DEFAULT_JWT_GROUPS_PATH;
+        private String jwtGroupsSeparator;
         private OutboundConfig outboundConfig;
         private Config config = Config.empty();
         private TokenHandler defaultOutboundHandler = TokenHandler.builder()
@@ -422,6 +456,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 }
             }
             config.get("use-jwt-groups").asBoolean().ifPresent(this::useJwtGroups);
+            config.get("jwt-groups-path").asString().ifPresent(this::jwtGroupsPath);
+            config.get("jwt-groups-separator").asString().ifPresent(this::jwtGroupsSeparator);
             config.get("discover-tenant-config-providers").asBoolean().ifPresent(this::discoverTenantConfigProviders);
             config.get("discover-tenant-id-providers").asBoolean().ifPresent(this::discoverTenantIdProviders);
             return this;
@@ -490,6 +526,43 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         public Builder useJwtGroups(boolean useJwtGroups) {
             this.useJwtGroups = useJwtGroups;
             return this;
+        }
+
+        /**
+         * Path to the JWT payload claim containing the groups to add as role grants.
+         * The default path is {@code groups}. Nested object claims can be configured with slash-separated path segments,
+         * such as {@code realm/groups}.
+         *
+         * @param jwtGroupsPath JWT groups claim path
+         * @return updated builder instance
+         */
+        @ConfiguredOption("groups")
+        public Builder jwtGroupsPath(String jwtGroupsPath) {
+            this.jwtGroupsPath = requireText(jwtGroupsPath, "JWT groups path");
+            return this;
+        }
+
+        /**
+         * Separator used to split a string claim value into multiple groups.
+         * This is used only when {@link #jwtGroupsPath(String)} configures a custom path other than {@code groups}.
+         * The default {@code groups} claim keeps the standard OIDC JWT behavior.
+         * Setting this property without changing the JWT groups path has no effect.
+         *
+         * @param jwtGroupsSeparator separator for string-valued custom groups claim
+         * @return updated builder instance
+         */
+        @ConfiguredOption
+        public Builder jwtGroupsSeparator(String jwtGroupsSeparator) {
+            this.jwtGroupsSeparator = requireText(jwtGroupsSeparator, "JWT groups separator");
+            return this;
+        }
+
+        private static String requireText(String value, String description) {
+            Objects.requireNonNull(value, description + " must not be null");
+            if (value.isEmpty()) {
+                throw new IllegalArgumentException(description + " must not be empty");
+            }
+            return value;
         }
 
         /**

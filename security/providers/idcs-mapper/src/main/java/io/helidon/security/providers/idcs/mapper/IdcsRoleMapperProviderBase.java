@@ -23,9 +23,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
@@ -39,6 +41,7 @@ import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.security.AuthenticationResponse;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
@@ -100,7 +103,6 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      */
     protected IdcsRoleMapperProviderBase(Builder<?> builder) {
         this.oidcConfig = builder.oidcConfig;
-        this.oidcConfig.tokenEndpointUri(); //Remove once IDCS is rewritten to be lazily loaded
         this.defaultIdcsSubjectType = builder.defaultIdcsSubjectType;
         if (builder.supportedTypes.isEmpty()) {
             this.supportedTypes.add(SubjectType.USER);
@@ -402,11 +404,23 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         private final WebClient webClient;
         private final URI tokenEndpointUri;
         private final Duration tokenRefreshSkew;
+        private final String clientId;
+        private final String clientSecret;
 
         protected AppToken(WebClient webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
+            this(webClient, tokenEndpointUri, tokenRefreshSkew, null, null);
+        }
+
+        protected AppToken(WebClient webClient,
+                           URI tokenEndpointUri,
+                           Duration tokenRefreshSkew,
+                           String clientId,
+                           String clientSecret) {
             this.webClient = webClient;
             this.tokenEndpointUri = tokenEndpointUri;
             this.tokenRefreshSkew = tokenRefreshSkew;
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
         }
 
         protected Optional<String> getToken(RoleMapTracing tracing) {
@@ -468,17 +482,33 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
                     .uri(tokenEndpointUri)
                     .header(HeaderValues.ACCEPT_JSON);
 
+            if (clientId != null && clientSecret != null) {
+                request.property(EndpointConfig.PROPERTY_OUTBOUND_ID, clientId)
+                        .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, clientSecret);
+            }
+
             try (HttpClientResponse response = request.submit(params)) {
                 if (response.status().family() == Status.Family.SUCCESSFUL) {
+                    String accessToken;
                     try {
                         JsonObject jsonObject = response.as(JsonObject.class);
-                        String accessToken = jsonObject.stringValue(ACCESS_TOKEN_KEY).orElseThrow();
-                        LOGGER.log(Level.TRACE, () -> "Access token: " + accessToken);
+                        accessToken = jsonObject.stringValue(ACCESS_TOKEN_KEY).orElseThrow();
+                        LOGGER.log(Level.TRACE, () -> "IDCS application access token obtained; received token had "
+                                + accessToken.length() + " characters");
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
+                                + "groups from IDCS. Failed with exception:  Failed to read JSON from response",
+                                   e);
+                        return new AppTokenData();
+                    }
+
+                    try {
                         SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
                         return new AppTokenData(accessToken, signedJwt.getJwt());
                     } catch (Exception e) {
                         LOGGER.log(Level.WARNING, "Failed to obtain access token for application to read "
-                                + "groups from IDCS. Failed with exception:  Failed to read JSON from response",
+                                + "groups from IDCS. Access token is not a valid JWT; "
+                                + "received token had " + accessToken.length() + " characters",
                                    e);
                     }
                 } else {
@@ -499,6 +529,47 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
                            e);
             }
             return new AppTokenData();
+        }
+    }
+
+    /**
+     * Shares each initialization attempt with concurrent callers. A successful value remains cached, while a failed
+     * attempt is shared by its callers and replaced so a later call can retry.
+     *
+     * @param <T> type of the initialized value
+     */
+    static final class RetryableLazyValue<T> {
+        private final Supplier<T> supplier;
+        private final AtomicReference<LazyValue<Outcome<T>>> attempt;
+
+        RetryableLazyValue(Supplier<T> supplier) {
+            this.supplier = Objects.requireNonNull(supplier);
+            this.attempt = new AtomicReference<>(newAttempt());
+        }
+
+        T get() {
+            LazyValue<Outcome<T>> currentAttempt = attempt.get();
+            Outcome<T> outcome = currentAttempt.get();
+            RuntimeException failure = outcome.failure();
+            if (failure == null) {
+                return outcome.value();
+            }
+
+            attempt.compareAndSet(currentAttempt, newAttempt());
+            throw failure;
+        }
+
+        private LazyValue<Outcome<T>> newAttempt() {
+            return LazyValue.create(() -> {
+                try {
+                    return new Outcome<>(supplier.get(), null);
+                } catch (RuntimeException e) {
+                    return new Outcome<>(null, e);
+                }
+            });
+        }
+
+        private record Outcome<T>(T value, RuntimeException failure) {
         }
     }
 

@@ -56,6 +56,11 @@ public class ValidationExtensionProvider implements RegistryCodegenExtensionProv
     }
 
     @Override
+    public boolean supportsServiceContractAnnotations() {
+        return true;
+    }
+
+    @Override
     public RegistryCodegenExtension create(RegistryCodegenContext codegenContext) {
         return new ValidationExtension(codegenContext);
     }

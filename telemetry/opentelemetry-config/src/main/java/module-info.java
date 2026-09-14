@@ -58,6 +58,7 @@ module io.helidon.telemetry.otelconfig {
     requires static io.opentelemetry.exporter.otlp;
     requires static io.opentelemetry.exporter.zipkin;
     requires io.opentelemetry.common;
+    requires io.helidon.logging.common;
 
     exports io.helidon.telemetry.otelconfig;
 

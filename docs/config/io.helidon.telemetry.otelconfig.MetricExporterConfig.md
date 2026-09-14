@@ -1,0 +1,215 @@
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Exporter<wbr>Config
+
+## Description
+
+OpenTelemetry metric exporter settings
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>headers</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
+</td>
+<td>
+</td>
+<td>Headers added to each export message</td>
+</tr>
+<tr>
+<td>
+<a id="memory-mode"></a>
+<a href="io.opentelemetry.sdk.common.export.MemoryMode.md">
+<code>memory-<wbr>mode</code>
+</a>
+</td>
+<td>
+<code>Memory<wbr>Mode</code>
+</td>
+<td>
+</td>
+<td>Memory mode</td>
+</tr>
+<tr>
+<td>
+<code>temporality-<wbr>preference</code>
+</td>
+<td>
+<code>Custom<wbr>Methods</code>
+</td>
+<td>
+</td>
+<td>Preferred output aggregation technique (how transmitted values reflect the values recorded locally), configurable as a <code>io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Temporality<wbr>Preference<wbr>Type</code> value: <code>CUMULATIVE,<wbr> DELTA,<wbr> LOWMEMORY</code></td>
+</tr>
+<tr>
+<td>
+<a id="internal-telemetry-version"></a>
+<a href="io.opentelemetry.sdk.common.InternalTelemetryVersion.md">
+<code>internal-<wbr>telemetry-<wbr>version</code>
+</a>
+</td>
+<td>
+<code>Internal<wbr>Telemetry<wbr>Version</code>
+</td>
+<td>
+</td>
+<td>Self-monitoring telemetry OpenTelemetry should collect</td>
+</tr>
+<tr>
+<td>
+<a id="certificate"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>certificate</code>
+</a>
+</td>
+<td>
+<code>Resource</code>
+</td>
+<td>
+</td>
+<td>Trusted certificates</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.telemetry.otelconfig.MetricExporterType.md">
+<code>type</code>
+</a>
+</td>
+<td>
+<code>Metric<wbr>Exporter<wbr>Type</code>
+</td>
+<td>
+<code>OTLP</code>
+</td>
+<td>Metric exporter type</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+</td>
+<td>Exporter timeout</td>
+</tr>
+<tr>
+<td>
+<code>connect-<wbr>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+</td>
+<td>Connection timeout</td>
+</tr>
+<tr>
+<td>
+<code>endpoint</code>
+</td>
+<td>
+<code>URI</code>
+</td>
+<td>
+</td>
+<td>Endpoint of the collector to which the exporter should transmit</td>
+</tr>
+<tr>
+<td>
+<code>protocol</code>
+</td>
+<td>
+<code>Custom<wbr>Methods</code>
+</td>
+<td>
+<code>DEFAULT</code>
+</td>
+<td>Exporter protocol type</td>
+</tr>
+<tr>
+<td>
+<a id="client-key"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>client.<wbr>key</code>
+</a>
+</td>
+<td>
+<code>Resource</code>
+</td>
+<td>
+</td>
+<td>TLS client key</td>
+</tr>
+<tr>
+<td>
+<code>default-<wbr>histogram-<wbr>aggregation</code>
+</td>
+<td>
+<code>Custom<wbr>Methods</code>
+</td>
+<td>
+</td>
+<td>Preferred default histogram aggregation technique, configurable as <code>io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Default<wbr>Histogram<wbr>Aggregation<wbr>Config</code></td>
+</tr>
+<tr>
+<td>
+<a id="client-certificate"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>client.<wbr>certificate</code>
+</a>
+</td>
+<td>
+<code>Resource</code>
+</td>
+<td>
+</td>
+<td>TLS certificate</td>
+</tr>
+<tr>
+<td>
+<a id="compression"></a>
+<a href="io.helidon.telemetry.otelconfig.CompressionType.md">
+<code>compression</code>
+</a>
+</td>
+<td>
+<code>Compression<wbr>Type</code>
+</td>
+<td>
+</td>
+<td>Compression the exporter uses</td>
+</tr>
+<tr>
+<td>
+<code>retry-<wbr>policy</code>
+</td>
+<td>
+<code>Custom<wbr>Methods</code>
+</td>
+<td>
+</td>
+<td>Retry policy</td>
+</tr>
+</tbody>
+</table>
+
+
+
+---
+
+See the [manifest](manifest.md) for all available types.

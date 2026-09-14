@@ -25,7 +25,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>4.5.0-SNAPSHOT</version>
+        <version>4.5.5-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -75,7 +75,7 @@
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.0.13</version.lib.microprofile-cdi-tck>
         <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
-        <version.lib.jsoup>1.15.3</version.lib.jsoup>
+        <version.lib.jsoup>1.23.1</version.lib.jsoup>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
@@ -106,7 +106,6 @@
         <version.lib.maven.plugin.api>3.9.15</version.lib.maven.plugin.api>
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
         <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
-        <version.lib.groovy>2.4.16</version.lib.groovy>
         <version.lib.nimbus.jose.jwt>10.4</version.lib.nimbus.jose.jwt>
         <!--
         !Version statement! - end
@@ -129,7 +128,7 @@
         <version.plugin.helidon-build-tools>4.0.26</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.install>3.1.2</version.plugin.install>
-        <version.plugin.invoker>3.2.2</version.plugin.invoker>
+        <version.plugin.invoker>3.10.1</version.plugin.invoker>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>${version.lib.jandex}</version.plugin.jandex>
         <version.plugin.jar>3.3.0</version.plugin.jar>
@@ -146,7 +145,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>12.2.1</version.plugin.dependency-check>
+        <version.plugin.dependency-check>13.0.0</version.plugin.dependency-check>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -667,19 +666,10 @@
                         <skipTestScope>true</skipTestScope>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-                        <excludes>
-                            <!-- Exclude stuff we do not deploy -->
-                            <exclude>io.helidon.tracing:helidon-tracing-tests</exclude>
-                            <exclude>io.helidon.config.tests*</exclude>
-                            <exclude>io.helidon.test*</exclude>
-                            <exclude>io.helidon.examples*</exclude>
-                            <exclude>io.helidon.microprofile.tests*</exclude>
-                            <!-- This should be excluded by above, but for some reason it persists -->
-                            <exclude>org.testng:testng</exclude>
-                        </excludes>
+                        <!-- Bump up from 24 to 72 to reduce token use -->
+                        <ossIndexAnalyzerCacheValidForHours>72</ossIndexAnalyzerCacheValidForHours>
                         <formats>
                             <format>HTML</format>
-                            <format>CSV</format>
                         </formats>
                         <suppressionFiles>
                             <!--suppress UnresolvedMavenProperty -->
@@ -902,13 +892,6 @@
                             <goal>install</goal>
                         </goals>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.codehaus.groovy</groupId>
-                            <artifactId>groovy</artifactId>
-                            <version>${version.lib.groovy}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.antlr</groupId>
@@ -1458,7 +1441,35 @@
             </modules>
         </profile>
         <profile>
+            <id>invoker-split-repository</id>
+            <activation>
+                <property>
+                    <name>aether.enhancedLocalRepository.split</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-invoker-plugin</artifactId>
+                            <configuration>
+                                <properties>
+                                    <aether.enhancedLocalRepository.split>true</aether.enhancedLocalRepository.split>
+                                    <aether.enhancedLocalRepository.localPrefix>${aether.enhancedLocalRepository.localPrefix}</aether.enhancedLocalRepository.localPrefix>
+                                </properties>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
             <id>javadoc</id>
+            <modules>
+                <module>javadocs</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
@@ -1564,7 +1575,7 @@
             <id>release</id>
             <modules>
                 <module>archetypes</module>
-                <module>docs</module>
+                <module>javadocs</module>
             </modules>
             <build>
                 <plugins>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.cors;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
@@ -132,6 +133,153 @@ public class CrossOriginConfigTest {
         assertThat(b.maxAgeSeconds(), is(-1L));
 
         assertThat(m.get("/cors3"), nullValue());
+    }
+
+    @Test
+    void testWildcardCredentialsRejected() {
+        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
+                                                                     () -> CrossOriginConfig.builder()
+                                                                             .allowCredentials(true)
+                                                                             .build());
+
+        assertThat(exception.getMessage(), is("CORS cannot allow credentials with wildcard origins"));
+    }
+
+    @Test
+    void testWildcardCredentialsConfigRejected() {
+        Config config = Config.create(ConfigSources.create(Map.of("allow-credentials", "true")));
+
+        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
+                                                                     () -> CrossOriginConfig.create(config));
+
+        assertThat(exception.getMessage(), is("CORS cannot allow credentials with wildcard origins"));
+    }
+
+    @Test
+    void testDisabledWildcardCredentialsAllowed() {
+        CrossOriginConfig config = CrossOriginConfig.builder()
+                .enabled(false)
+                .allowCredentials(true)
+                .build();
+
+        assertThat(config.isEnabled(), is(false));
+        assertThat(config.allowCredentials(), is(true));
+        assertThat(config.allowOrigins(), arrayContaining(CrossOriginConfig.Builder.ALLOW_ALL));
+    }
+
+    @Test
+    void testMappedWildcardCredentialsRejected() {
+        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
+                                                                     () -> MappedCrossOriginConfig.builder()
+                                                                             .put("/test",
+                                                                                  CrossOriginConfig.builder()
+                                                                                          .allowCredentials(true))
+                                                                             .build());
+
+        assertThat(exception.getMessage(), is("CORS cannot allow credentials with wildcard origins"));
+    }
+
+    @Test
+    void testDisabledMappedWildcardCredentialsAllowed() {
+        MappedCrossOriginConfig.Builder builder = MappedCrossOriginConfig.builder()
+                .enabled(false)
+                .put("/test", CrossOriginConfig.builder()
+                        .allowCredentials(true));
+        MappedCrossOriginConfig config = builder.build();
+
+        assertThat(config.isEnabled(), is(false));
+        assertThat(config.get("/test").allowCredentials(), is(true));
+        assertThat(config.get("/test").allowOrigins(), arrayContaining(CrossOriginConfig.Builder.ALLOW_ALL));
+
+        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
+                                                                     () -> builder.enabled(true).build());
+
+        assertThat(exception.getMessage(), is("CORS cannot allow credentials with wildcard origins"));
+    }
+
+    @Test
+    void testDisabledAggregatorWildcardCredentialsAllowed() {
+        Aggregator.Builder builder = Aggregator.builder()
+                .enabled(false)
+                .allowCredentials(true);
+        Aggregator aggregator = builder.build();
+
+        assertThat(aggregator.isEnabled(), is(false));
+        assertThat(aggregator.isActive(), is(false));
+
+        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
+                                                                     () -> builder.enabled(true).build());
+
+        assertThat(exception.getMessage(), is("CORS cannot allow credentials with wildcard origins"));
+    }
+
+    @Test
+    void testDisabledMappedConfigWildcardCredentialsAggregatorAllowed() {
+        Config config = Config.create(ConfigSources.create(Map.of(
+                "enabled", "false",
+                "paths.0.path-pattern", "/test",
+                "paths.0.allow-credentials", "true")));
+        Aggregator.Builder builder = Aggregator.builder()
+                .config(config);
+        Aggregator aggregator = builder.build();
+
+        assertThat(aggregator.isEnabled(), is(false));
+        assertThat(aggregator.isActive(), is(false));
+
+        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
+                                                                     () -> builder.enabled(true).build());
+
+        assertThat(exception.getMessage(), is("CORS cannot allow credentials with wildcard origins"));
+    }
+
+    @Test
+    void testApiDisabledBeforeSimpleConfigWildcardCredentialsAllowed() {
+        Config config = Config.create(ConfigSources.create(Map.of("allow-credentials", "true")));
+        Aggregator aggregator = Aggregator.builder()
+                .enabled(false)
+                .config(config)
+                .build();
+
+        assertThat(aggregator.isEnabled(), is(false));
+        assertThat(aggregator.isActive(), is(false));
+    }
+
+    @Test
+    void testApiDisabledAfterSimpleConfigWildcardCredentialsAllowed() {
+        Config config = Config.create(ConfigSources.create(Map.of("allow-credentials", "true")));
+        Aggregator aggregator = Aggregator.builder()
+                .config(config)
+                .enabled(false)
+                .build();
+
+        assertThat(aggregator.isEnabled(), is(false));
+        assertThat(aggregator.isActive(), is(false));
+    }
+
+    @Test
+    void testApiDisabledBeforeMappedConfigWildcardCredentialsAllowed() {
+        Config config = Config.create(ConfigSources.create(Map.of(
+                "paths.0.path-pattern", "/test",
+                "paths.0.allow-credentials", "true")));
+        Aggregator aggregator = Aggregator.builder()
+                .enabled(false)
+                .config(config)
+                .build();
+
+        assertThat(aggregator.isEnabled(), is(false));
+        assertThat(aggregator.isActive(), is(false));
+    }
+
+    @Test
+    void testExplicitConfigEnabledStillWins() {
+        Config config = Config.create(ConfigSources.create(Map.of("enabled", "true")));
+        Aggregator aggregator = Aggregator.builder()
+                .enabled(false)
+                .config(config)
+                .build();
+
+        assertThat(aggregator.isEnabled(), is(true));
+        assertThat(aggregator.isActive(), is(true));
     }
 
     @Test

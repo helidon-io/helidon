@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,7 +190,7 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
 
     private static Collection<URL> resources(String name) {
         try {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            ClassLoader cl = contextClassLoader();
             Map<String, URL> urls = new HashMap<>();
             cl.getResources(name).asIterator()
                     .forEachRemaining(u -> urls.put(u.toString(), u));
@@ -199,6 +199,11 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
             throw new UncheckedIOException(String.format(
                     "Failed to read '%s' from classpath", name), e);
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? HelidonTestConfigSynthetic.class.getClassLoader() : classLoader;
     }
 
     private record ConfigSourceWrapper(ConfigSource delegate) implements ConfigSource {

@@ -86,7 +86,7 @@ class CmDocCodegenTest {
     }
 
     @Test
-    void testUnderscoreFileNames() throws Exception {
+    void testDottedFileNames() throws Exception {
         var testDir = testDir("underscore-file-names");
         var outputDir = generate(testDir);
         assertThat(outputDir, isDirectory(testDir.resolve("expected")));

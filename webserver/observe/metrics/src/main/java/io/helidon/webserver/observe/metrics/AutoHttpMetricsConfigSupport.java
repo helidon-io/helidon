@@ -24,6 +24,9 @@ import io.helidon.http.Method;
 
 class AutoHttpMetricsConfigSupport {
 
+    static final List<String> DEFAULT_KNOWN_METHODS = List.of(
+            "CONNECT", "DELETE", "GET", "HEAD", "LIST", "OPTIONS", "PATCH", "POST", "PUT", "TRACE");
+
     private static final List<AutoHttpMetricsPathConfig> MEASUREMENT_DISABLED_HELIDON_ENDPOINTS = List.of(
             disabled("/metrics/*"),
             disabled("/observe/*"),

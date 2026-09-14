@@ -163,6 +163,68 @@ class TypeHierarchyTest {
     }
 
     @Test
+    void mergeHierarchyAnnotationsIncludesGenericContractTypeUseAnnotations() {
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        TypeName typeVariable = TypeName.createFromGenericDeclaration("T");
+        TypeName contractType = TypeName.create("io.helidon.codegen.test.GenericContract");
+        TypeName declaredContract = TypeName.builder(contractType)
+                .addTypeParameter("T")
+                .addTypeArgument(typeVariable)
+                .build();
+        TypeName implementedContract = TypeName.builder(contractType)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        TypeName annotatedList = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeName.builder(typeVariable)
+                                         .addAnnotation(notBlank)
+                                         .build())
+                .build();
+        TypeName plainList = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        TypedElementInfo contractMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(AccessModifier.PUBLIC)
+                .elementName("validate")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("value")
+                                              .typeName(annotatedList)
+                                              .build())
+                .build();
+        TypeInfo contract = TypeInfo.builder()
+                .typeName(implementedContract)
+                .declaredType(declaredContract)
+                .kind(ElementKind.INTERFACE)
+                .addElementInfo(contractMethod)
+                .build();
+        TypedElementInfo implementationMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(AccessModifier.PUBLIC)
+                .elementName("validate")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("value")
+                                              .typeName(plainList)
+                                              .build())
+                .build();
+        TypeInfo implementation = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.GenericImplementation"))
+                .kind(ElementKind.CLASS)
+                .addInterfaceTypeInfo(contract)
+                .addElementInfo(implementationMethod)
+                .build();
+
+        TypedElementInfo merged = TypeHierarchy.mergeHierarchyAnnotations(implementation, implementationMethod);
+
+        TypeName mergedType = merged.parameterArguments().getFirst().typeName();
+        assertThat(mergedType.typeArguments().getFirst().annotations(), hasItem(notBlank));
+        assertThat(TypeHierarchy.nestedAnnotations(CTX, implementation), hasItem(NOT_BLANK));
+    }
+
+    @Test
     void nestedAnnotationsDoNotMergeHierarchyAnnotationsIntoGeneratedTypes() {
         Annotation notBlank = Annotation.create(NOT_BLANK);
         TypeName annotatedList = TypeName.builder(TypeNames.LIST)

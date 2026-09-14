@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 
@@ -171,6 +172,49 @@ class StreamBufferTest {
         assertThat(result.get(0, JsonNull.instance()).asString().value(), is("first"));
         assertThat(result.get(1, JsonNull.instance()).asString().value(), is("second"));
         assertThat(result.get(2, JsonNull.instance()).asString().value(), is("third"));
+    }
+
+    @Test
+    public void testStreamParserWithShortInputStreamReads() {
+        assertThat(readJsonValueOneByteAtATime("true").asBoolean().value(), is(true));
+        assertThat(readJsonValueOneByteAtATime("false").asBoolean().value(), is(false));
+        assertThat(readJsonValueOneByteAtATime("null").type(), is(JsonValueType.NULL));
+        assertThat(readJsonValueOneByteAtATime("\"\\u0041\"").asString().value(), is("A"));
+        assertThat(readJsonValueOneByteAtATime("\"€😀\"").asString().value(), is("€😀"));
+    }
+
+    private static JsonValue readJsonValueOneByteAtATime(String json) {
+        return JsonParser.create(new OneByteAtATimeInputStream(json), 6)
+                .readJsonValue();
+    }
+
+    private static class OneByteAtATimeInputStream extends InputStream {
+        private final byte[] bytes;
+        private int index;
+
+        OneByteAtATimeInputStream(String json) {
+            this.bytes = json.getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public int read() {
+            if (index == bytes.length) {
+                return -1;
+            }
+            return bytes[index++] & 0xFF;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) {
+            if (len == 0) {
+                return 0;
+            }
+            if (index == bytes.length) {
+                return -1;
+            }
+            b[off] = bytes[index++];
+            return 1;
+        }
     }
 
 }

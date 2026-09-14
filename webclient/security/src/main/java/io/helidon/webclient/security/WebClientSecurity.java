@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.webclient.security;
 
 import java.lang.System.Logger.Level;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -133,15 +135,23 @@ public class WebClientSecurity implements WebClientService {
         OutboundSecurityClientBuilder clientBuilder;
 
         try {
+            UriQuery query = request.uri().query();
+            URI targetUri = request.uri().toUri();
             SecurityEnvironment.Builder outboundEnv = context.env()
                     .derive()
                     .clearHeaders()
                     .clearQueryParams();
 
-            outboundEnv.method(request.method().text())
+            outboundEnv.transport(request.uri().scheme())
+                    .method(request.method().text())
                     .path(request.uri().path().path())
-                    .targetUri(request.uri().toUri())
-                    .queryParams(request.uri().query());
+                    .targetUri(targetUri)
+                    .queryParams(query)
+                    .requestedMethod(request.method().text())
+                    .requestedPath(request.uri().path())
+                    .requestedQuery(request.uri().hasQuery()
+                                            ? Optional.of(request.uri().requestTargetQuery())
+                                            : Optional.empty());
 
             request.headers()
                     .stream()
@@ -199,7 +209,7 @@ public class WebClientSecurity implements WebClientService {
             ClientRequestHeaders clientHeaders = request.headers();
             for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE, "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                    LOGGER.log(Level.TRACE, "    + Header value(s) redacted");
                 }
 
                 //replace existing

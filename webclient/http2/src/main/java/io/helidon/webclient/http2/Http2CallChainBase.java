@@ -17,6 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -30,10 +31,12 @@ import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
@@ -126,13 +129,30 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                 this.response = result.response();
                 return doProceed(serviceRequest, result.response());
             }
-        } catch (StreamTimeoutException e){
+        } catch (StreamTimeoutException e) {
             //This request was waiting for 100 Continue, but it was very likely not supported by the server.
             //Do not remove connection from the cache in that case.
             if (!clientRequest().outputStreamRedirect()) {
                 http2Client.connectionCache().remove(connectionKey);
+                closeFailedStream(result);
             }
             throw e;
+        } catch (RuntimeException e) {
+            closeFailedStream(result);
+            throw e;
+        }
+    }
+
+    private void closeFailedStream(Http2ConnectionAttemptResult result) {
+        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
+            Http2ClientStream failedStream = result.stream();
+            try {
+                failedStream.cancel();
+            } catch (RuntimeException ignored) {
+                // Preserve the original request failure; close still releases the reserved stream slot.
+            } finally {
+                failedStream.close();
+            }
         }
     }
 
@@ -142,6 +162,14 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
 
     Status responseStatus() {
         return responseStatus;
+    }
+
+    boolean hasRequestEntity() {
+        return false;
+    }
+
+    Object requestEntity() {
+        return null;
     }
 
     CompletableFuture<WebClientServiceResponse> whenComplete() {
@@ -184,9 +212,16 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest, Http2ClientStream stream) {
-        Http2Headers headers = stream.readHeaders();
+        return readResponse(serviceRequest, stream, null);
+    }
 
-        ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
+    protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
+                                                    Http2ClientStream stream,
+                                                    Duration readTimeout) {
+        Http2Headers headers = readHeaders(stream, readTimeout);
+
+        ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders(),
+                                                                              clientConfig.mediaTypeParserMode());
         this.responseStatus = headers.status();
 
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
@@ -216,6 +251,39 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return serviceResponse;
     }
 
+    static Http2Headers readHeaders(Http2ClientStream stream) {
+        return readHeaders(stream, null);
+    }
+
+    static Http2Headers readHeaders(Http2ClientStream stream, Duration readTimeout) {
+        try {
+            Http2Headers headers = readTimeout == null ? stream.readHeaders() : stream.readHeaders(readTimeout);
+            stream.finishNoContent();
+            return headers;
+        } catch (Http2Exception e) {
+            resetAndClose(stream, e);
+            throw e;
+        }
+    }
+
+    static Status waitFor100Continue(Http2ClientStream stream) {
+        return waitFor100Continue(stream, null);
+    }
+
+    static Status waitFor100Continue(Http2ClientStream stream, Duration readContinueTimeout) {
+        try {
+            return stream.waitFor100Continue(readContinueTimeout);
+        } catch (Http2Exception e) {
+            resetAndClose(stream, e);
+            throw e;
+        }
+    }
+
+    private static void resetAndClose(Http2ClientStream stream, Http2Exception e) {
+        stream.close();
+        stream.reset(e.code());
+    }
+
     private static ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders, HttpClientConfig clientConfig) {
         ContentEncodingContext encodingSupport = clientConfig.contentEncoding();
         if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(CONTENT_ENCODING)) {
@@ -230,7 +298,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     protected static Http2Headers prepareHeaders(Method method, ClientRequestHeaders headers, ClientUri uri) {
         Http2Headers h2Headers = Http2Headers.create(headers);
         h2Headers.method(method);
-        h2Headers.path(uri.pathWithQueryAndFragment());
+        h2Headers.path(requestTarget(uri));
         h2Headers.scheme(uri.scheme());
 
         return h2Headers;
@@ -242,6 +310,21 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
 
     protected Http2ClientRequestImpl clientRequest() {
         return clientRequest;
+    }
+
+    protected void stream(Http2ClientStream stream) {
+        this.stream = stream;
+    }
+
+    private static String requestTarget(ClientUri uri) {
+        String requestTarget = uri.pathWithQueryAndFragment();
+        var fragment = uri.fragment();
+        if (!fragment.hasValue()) {
+            return requestTarget;
+        }
+        String rawFragment = fragment.rawValue();
+        int fragmentLength = requestTarget.endsWith(rawFragment) ? rawFragment.length() : fragment.value().length();
+        return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
     }
 
     void closeResponse() {
@@ -276,7 +359,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         public void accept(Header httpHeader) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG,
-                           "HTTP/2 request contains wrong header, removing {0}", httpHeader);
+                           "HTTP/2 request contains wrong header, removing {0}",
+                           LogFormatter.escape(httpHeader.name()));
             }
         }
     }

@@ -1,0 +1,570 @@
+<!--@frontmatter
+description: "MicroProfile Health"
+navigation:
+  icon: i-lucide-heart
+-->
+# Health
+
+## Overview
+
+Microservices expose their health status primarily so external tools (for
+example, an orchestrator such as Kubernetes) can monitor each service and take
+action, such as restarting a service instance if it has failed or temporarily
+shunting traffic away from the instance if the service is unable to process
+incoming requests normally.
+
+## Maven Coordinates
+
+To enable MicroProfile Health add the [helidon-microprofile
+bundle](introduction.md) dependency to your project’s `pom.xml` (see [Managing
+Dependencies](../dependency-management.md)).
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.microprofile.bundles</groupId>
+  <artifactId>helidon-microprofile</artifactId>
+</dependency>
+```
+
+MicroProfile Health is already included in the bundle.
+
+If full control over the dependencies is required, and you want to minimize the
+quantity of the dependencies - `Helidon MicroProfile Core bundle` should be
+used. In this case the following dependencies should be included in your
+project’s `pom.xml`:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.microprofile.bundles</groupId>
+  <artifactId>helidon-microprofile-core</artifactId>
+</dependency>
+```
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.microprofile.health</groupId>
+  <artifactId>helidon-microprofile-health</artifactId>
+</dependency>
+```
+
+To enable built-in health checks add the following dependency (or use the
+[helidon-microprofile bundle](introduction.md) )
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.health</groupId>
+  <artifactId>helidon-health-checks</artifactId>
+</dependency>
+```
+
+## Usage
+
+Helidon implements [MicroProfile Health][microprofile-hea] Specification. The
+spec prescribes how external tools probe a service’s health checks and how you
+implement health checks as part of your microservice that are specific to your
+service’s needs.
+
+### Concepts - Liveness, Readiness, and Startup Checks
+
+MicroProfile Health supports three types of health checks:
+
+- *Liveness* checks report whether the runtime environment in which the service
+  is running is sufficient to support the work the service performs. The
+  environment is beyond the control of the service itself and typically cannot
+  improve without outside intervention. If a microservice instance reports a
+  `DOWN` liveness check, it should never report `UP` later. It will need to be
+  stopped and a replacement instance created.
+- *Readiness* checks report whether the service is *currently* capable of
+  performing its work. A service that reports `DOWN` for its readiness cannot
+  *at the moment* do its job, but at some future point it might become able to
+  do so without requiring a restart.
+- *Startup* checks indicate whether the service has started to the point where
+  liveness and readiness checks even make sense. A service reporting `DOWN` for
+  a startup check is still initializing itself and normally will report `UP`
+  soon, assuming it is able to start successfully.
+
+## REST Endpoints
+
+A MicroProfile-compliant service reports its health via known REST endpoints.
+Helidon MP provides these endpoints automatically as part of every MP
+microservice that includes health support..
+
+External management tools (or `curl` or browsers) retrieve health checks using
+the REST endpoints in the table below which summarizes the types of health
+checks in MicroProfile Health. Responses from the health endpoints report `200`
+(OK), `204` (no content), or `503` (service unavailable) depending on the
+outcome of running the health checks. HTTP `GET` responses include JSON content
+showing the detailed results of all the health checks which the server executed
+after receiving the request. HTTP `HEAD` requests return only the status with no
+payload.
+
+Types of Health Checks
+
+| Type      | Meaning                                                                                              | REST endpoint     | Kubernetes response on failure                                                                                                                                      |
+|-----------|------------------------------------------------------------------------------------------------------|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| liveness  | whether the runtime environment is suitable                                                          | `/health/live`    | Restarts container.                                                                                                                                                 |
+| readiness | whether the microservice is currently capable of doing its work                                      | `/health/ready`   | Diverts requests away from the instance; periodically rechecks readiness and resumes traffic once the microservice reports itself as ready.                         |
+| startup   | whether the microservice has initialized to the point where liveness and readiness checks might pass | `/health/started` | Treats the instance as still starting up; does not check liveness or readiness until the startup probe reports success or times out according to its configuration. |
+
+## Configuration
+
+Health checks may be configured using the following properties.
+
+The class responsible for configuration is:
+
+### Configuration options
+
+<!--@include ../config/io.helidon.webserver.observe.health.HealthObserver.md#configuration-options delim=--- offset=1 collapseTables=10 -->
+See [Configuration options][io-helidon-webse].
+<!--/include-->
+
+
+Properties may be set in `application.yaml` or in
+`microprofile-config.properties`, in both cases using the `health` prefix.
+
+For example, you can specify a custom port and root context for the root health
+endpoint path. However, you cannot use different ports, such as
+<http://localhost:8080/myhealth> and <http://localhost:8081/myhealth/live>.
+Likewise, you cannot use different paths, such as <http://localhost:8080/health>
+and <http://localhost:8080/probe/live>. The example below will change the root
+path.
+
+Create a file named `microprofile-config.properties` in the resources/META-INF
+directory with the following contents:
+
+<!--@mdc ::code-callout -->
+```properties [microprofile-config.properties]
+health.endpoint=/myhealth  #<1>
+```
+1. The `endpoint` setting specifies the root path for the health endpoint.
+<!--@mdc :: -->
+
+### Built-In Health Checks
+
+You can use Helidon-provided health checks to report various common health check
+statuses:
+
+<table>
+<thead>
+<tr>
+<th>Built-in health check</th>
+<th>Health check name</th>
+<th>Javadoc</th>
+<th>Config properties (within <code>server.features.observe.observers.health</code>)</th>
+<th>Default config value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>deadlock detection</td>
+<td><code>deadlock</code></td>
+<td><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td rowspan="2">available disk space</td>
+<td rowspan="2"><code>diskSpace</code></td>
+<td rowspan="2"><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></td>
+<td><code>helidon.health.diskSpace.thresholdPercent</code></td>
+<td><code>99.999</code></td>
+</tr>
+<tr>
+<td><code>helidon.health.diskSpace.path</code></td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td>available heap memory</td>
+<td><code>heapMemory</code></td>
+<td><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/HeapMemoryHealthCheck.html"><code>HeapMemoryHealthCheck</code></a></td>
+<td><code>helidon.health.heapMemory.thresholdPercent</code></td>
+<td><code>98</code></td>
+</tr>
+</tbody>
+</table>
+
+> [!NOTE]
+> Helidon cannot support the indicated health checks in the GraalVM native image
+> environment, so with native image those health checks do not appear in the
+> health output.
+
+Simply adding the built-in health check dependency is sufficient to register all
+the built-in health checks automatically. If you want to use only some of the
+built-in checks in your application, you can disable automatic discovery of the
+built-in health checks and register only the ones you want.
+
+By setting the config properties listed in the table you can influence the
+behavior of the health checks.
+
+Further, you can suppress one or more health checks by setting the configuration
+item `server.features.observe.observers.health.exclude` to a comma-separated
+list of the health check names you want to exclude. The table above lists the
+names for the built-in health checks.
+
+## Examples
+
+Generate Helidon MP Quickstart project following these
+[instructions](guides/quickstart.md).
+
+### Using the Built-In Health Checks
+
+Helidon has a set of built-in health checks that can report various conditions:
+
+- deadlock detection
+- available disk space
+- available heap memory
+
+The following example will demonstrate how to use the built-in health checks.
+These examples are all executed from the root directory of your project
+(helidon-quickstart-mp).
+
+Include the built-in health checks dependency in your pom.xml:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.health</groupId>
+  <artifactId>helidon-health-checks</artifactId>
+</dependency>
+```
+
+Build the application, then run it:
+
+```shell [Terminal]
+mvn package
+java -jar target/helidon-quickstart-mp.jar
+```
+
+Verify the health endpoint in a new terminal window:
+
+```shell [Terminal]
+curl http://localhost:8080/health
+```
+
+<!--@mdc ::code-collapse -->
+```json [Response]
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "deadlock",
+      "status": "UP"
+    },
+    {
+      "name": "diskSpace",
+      "status": "UP",
+      "data": {
+        "free": "325.54 GB",
+        "freeBytes": 349543358464,
+        "percentFree": "69.91%",
+        "total": "465.63 GB",
+        "totalBytes": 499963174912
+      }
+    },
+    {
+      "name": "heapMemory",
+      "status": "UP",
+      "data": {
+        "free": "230.87 MB",
+        "freeBytes": 242085696,
+        "max": "3.56 GB",
+        "maxBytes": 3817865216,
+        "percentFree": "98.90%",
+        "total": "271.00 MB",
+        "totalBytes": 284164096
+      }
+    }
+  ]
+}
+```
+<!--@mdc :: -->
+
+### Custom Liveness Health Checks
+
+You can create application-specific custom health checks and integrate them with
+Helidon using CDI. The following example shows how to add a custom liveness
+health check.
+
+Create a new GreetLivenessCheck class with the following content:
+
+<!--@mdc ::code-callout -->
+```java
+@Liveness // <1>
+@ApplicationScoped // <2>
+public class GreetLivenessCheck implements HealthCheck {
+
+    @Override
+    public HealthCheckResponse call() {
+        return HealthCheckResponse.named("LivenessCheck")  // <3>
+                .up()
+                .withData("time", System.currentTimeMillis())
+                .build();
+    }
+}
+```
+1. Annotation indicating this is a liveness health check.
+2. Annotation indicating this is a bean instantiated once per application (in
+   Helidon this means just once per runtime).
+3. Build the HealthCheckResponse with status `UP` and the current time.
+<!--@mdc :: -->
+
+Build and run the application, then verify the custom liveness health endpoint:
+
+```shell [Terminal]
+curl http://localhost:8080/health/live
+```
+
+```json [Response]
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "LivenessCheck",
+      "status": "UP",
+      "data": {
+        "time": 1566338255331
+      }
+    }
+  ]
+}
+```
+
+### Custom Readiness Health Checks
+
+You can add a readiness check to indicate that the application is ready to be
+used. In this example, the server will wait five seconds before it becomes
+ready.
+
+Create a new GreetReadinessCheck class with the following content:
+
+<!--@mdc ::code-callout -->
+```java
+@Readiness // <1>
+@ApplicationScoped
+public class GreetReadinessCheck implements HealthCheck {
+    private final AtomicLong readyTime = new AtomicLong(0);
+
+    @Override
+    public HealthCheckResponse call() {
+        return HealthCheckResponse.named("ReadinessCheck")  // <2>
+                .status(isReady())
+                .withData("time", readyTime.get())
+                .build();
+    }
+
+    public void onStartUp(
+            @Observes @Initialized(ApplicationScoped.class) Object init) {
+        readyTime.set(System.currentTimeMillis()); // <3>
+    }
+
+    private boolean isReady() { // <4>
+        return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 5;
+    }
+}
+```
+1. Annotation indicating that this is a readiness health check.
+2. Build the `HealthCheckResponse` with status `UP` after five seconds, else
+   `DOWN`.
+3. Record the time at startup.
+4. Become ready after 5 seconds.
+<!--@mdc :: -->
+
+Build and run the application. Issue the curl command with -v within five
+seconds, and you will see that the application is not ready:
+
+```shell [Terminal]
+curl -v  http://localhost:8080/health/ready
+```
+
+<!--@mdc ::code-callout -->
+```log [Response]
+< HTTP/1.1 503 Service Unavailable # <1>
+```
+1. The HTTP status is `503` since the application is not ready.
+<!--@mdc :: -->
+
+```json [Response]
+{
+  "status": "DOWN",
+  "checks": [
+    {
+      "name": "ReadinessCheck",
+      "status": "DOWN",
+      "data": {
+        "time": 1566399775700
+      }
+    }
+  ]
+}
+```
+
+After five seconds you will see the application is ready:
+
+```shell [Terminal]
+curl -v http://localhost:8080/health/ready
+```
+
+<!--@mdc ::code-callout -->
+```log [Response]
+< HTTP/1.1 200 OK # <1>
+```
+1. The HTTP status is `200` indicating that the application is ready.
+<!--@mdc :: -->
+
+```json [Response]
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "ReadinessCheck",
+      "status": "UP",
+      "data": {
+        "time": 1566399775700
+      }
+    }
+  ]
+}
+```
+
+Full example code is available [here][here].
+
+### Custom Startup Health Checks
+
+You can add a startup check to indicate whether or not the application has
+initialized to the point that the other health checks make sense. In this
+example, the server will wait eight seconds before it declares itself started.
+
+Create a new GreetStartedCheck class with the following content:
+
+<!--@mdc ::code-callout -->
+```java
+@Startup // <1>
+@ApplicationScoped
+public class GreetStartedCheck implements HealthCheck {
+    private final AtomicLong readyTime = new AtomicLong(0);
+
+    @Override
+    public HealthCheckResponse call() {
+        return HealthCheckResponse.named("StartedCheck")  // <2>
+                .status(isStarted())
+                .withData("time", readyTime.get())
+                .build();
+    }
+
+    public void onStartUp(
+            @Observes @Initialized(ApplicationScoped.class) Object init) {
+        readyTime.set(System.currentTimeMillis()); // <3>
+    }
+
+    private boolean isStarted() { // <4>
+        return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 8;
+    }
+}
+```
+1. Annotation indicating that this is a startup health check.
+2. Build the `HealthCheckResponse` with status `UP` after eight seconds, else
+   `DOWN`.
+3. Record the time at startup of Helidon; the application will declare itself as
+   started eight seconds later.
+4. Become ready after 5 seconds.
+<!--@mdc :: -->
+
+Build and run the application. Issue the curl command with -v within five
+seconds, and you will see that the application has not yet started:
+
+```shell [Terminal]
+curl -v  http://localhost:8080/health/started
+```
+
+<!--@mdc ::code-callout -->
+```log [Response]
+< HTTP/1.1 503 Service Unavailable # <1>
+```
+1. The HTTP status is `503` since the application has not started.
+<!--@mdc :: -->
+
+```json [Response]
+{
+  "status": "DOWN",
+  "checks": [
+    {
+      "name": "StartedCheck",
+      "status": "DOWN",
+      "data": {
+        "time": 1566399775700
+      }
+    }
+  ]
+}
+```
+
+After eight seconds you will see the application has started:
+
+```shell [Terminal]
+curl -v http://localhost:8080/health/started
+```
+
+<!--@mdc ::code-callout -->
+```log [Response]
+< HTTP/1.1 200 OK # <1>
+```
+1. The HTTP status is `200` indicating that the application is started.
+<!--@mdc :: -->
+
+```json [Response]
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "StartedCheck",
+      "status": "UP",
+      "data": {
+        "time": 1566399775700
+      }
+    }
+  ]
+}
+```
+
+When using the health check URLs, you can get the following health check data:
+
+- liveness only - <http://localhost:8080/health/live>
+- readiness only - <http://localhost:8080/health/ready>
+- startup checks only - <http://localhost:8080/health/started>
+- all health check data - <http://localhost:8080/health>
+
+Get all the health check data, including custom data:
+
+```shell [Terminal]
+curl http://localhost:8080/health
+```
+
+```json [Response]
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "LivenessCheck",
+      "status": "UP",
+      "data": {
+        "time": 1566403431536
+      }
+    }
+  ]
+}
+```
+
+Full example code is available [here][here].
+
+## Reference
+
+- [Helidon MicroProfile Health Javadoc][helidon-micropro]
+- [Helidon Built-in Checks Javadoc][helidon-built-in]
+- [MicroProfile Health Specification][microprofile-hea]
+- [MicroProfile Health on GitHub][microprofile-hea-2]
+
+[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
+[here]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile
+[helidon-micropro]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.health/module-summary.html
+[helidon-built-in]: https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/module-summary.html
+[microprofile-hea-2]: https://github.com/eclipse/microprofile-health
+[io-helidon-webse]: ../config/io.helidon.webserver.observe.health.HealthObserver.md#configuration-options

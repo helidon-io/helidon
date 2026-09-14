@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,15 +109,26 @@ class Http2ClientConnectionHandler {
             Http2ClientConnection conn = activeConnection.updateAndGet(c -> c != null && c.closed() ? null : c);
             Http2ClientStream stream;
             if (conn == null) {
-                conn = createConnection(http2Client, request, initialUri);
+                try {
+                    conn = createConnection(http2Client, request, initialUri);
+                } catch (Http1FallbackResponse e) {
+                    return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response());
+                }
                 // we must assume that a new connection can handle a new stream
-                stream = conn.createStream(request);
+                stream = createStreamOnNewConnection(http2Client, conn, request);
             } else {
-                stream = conn.tryStream(request);
+                stream = conn.tryStream(request,
+                                        http2Client.clientConfig(),
+                                        http2Client.sendListener(),
+                                        http2Client.recvListener());
                 if (stream == null) {
                     // either the connection is closed, or it ran out of streams
-                    conn = createConnection(http2Client, request, initialUri);
-                    stream = conn.createStream(request);
+                    try {
+                        conn = createConnection(http2Client, request, initialUri);
+                    } catch (Http1FallbackResponse e) {
+                        return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response());
+                    }
+                    stream = createStreamOnNewConnection(http2Client, conn, request);
                 }
             }
 
@@ -179,10 +190,12 @@ class Http2ClientConnectionHandler {
                 return http2(http2Client, request, initialUri);
             }
             // attempt an upgrade to HTTP/2
+            // Keep h2c upgrade redirects visible so the call chain can apply entity replay policy.
             UpgradeResponse upgradeResponse = http1Request(webClient, request, initialUri)
                     .header(UPGRADE_HEADER)
                     .header(CONNECTION_UPGRADE_HEADER)
                     .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade(http2Client.protocolConfig()))
+                    .followRedirects(false)
                     .upgrade("h2c");
             if (upgradeResponse.isUpgraded()) {
                 result.set(Result.HTTP_2);
@@ -223,7 +236,7 @@ class Http2ClientConnectionHandler {
     }
 
     private Http1ClientRequest http1Request(WebClient webClient, Http2ClientRequestImpl request, ClientUri initialUri) {
-        return webClient.client(Http1Client.PROTOCOL)
+        Http1ClientRequest http1Request = webClient.client(Http1Client.PROTOCOL)
                 .method(request.method())
                 .uri(initialUri)
                 .keepAlive(request.keepAlive())
@@ -231,9 +244,15 @@ class Http2ClientConnectionHandler {
                 .skipUriEncoding(request.skipUriEncoding())
                 .tls(request.tls())
                 .readTimeout(request.readTimeout())
+                .readContinueTimeout(request.readContinueTimeout())
                 .proxy(request.proxy())
                 .maxRedirects(request.maxRedirects())
                 .followRedirects(request.followRedirects());
+        request.sendExpectContinue().ifPresent(http1Request::sendExpectContinue);
+        // This is a manual HTTP/2-to-HTTP/1 request copy used for h2c probing/fallback. Properties carry internal
+        // redirect state, including whether a previous redirect already crossed an origin boundary.
+        request.properties().forEach(http1Request::property);
+        return http1Request;
     }
 
     private Http2ClientConnection createConnection(Http2ClientImpl http2Client,
@@ -261,17 +280,24 @@ class Http2ClientConnectionHandler {
                     usedConnection = Http2ClientConnection.create(http2Client, connection, true);
                 } else {
                     // attempt an upgrade to HTTP/2
+                    // Keep h2c upgrade redirects visible so the call chain can apply entity replay policy.
                     UpgradeResponse upgradeResponse = http1Request(webClient, request, requestUri)
                             .header(UPGRADE_HEADER)
                             .header(CONNECTION_UPGRADE_HEADER)
                             .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade(protocolConfig))
+                            .followRedirects(false)
                             .upgrade("h2c");
                     if (upgradeResponse.isUpgraded()) {
                         result.set(Result.HTTP_2);
                         connection = upgradeResponse.connection();
                         usedConnection = Http2ClientConnection.create(http2Client, connection, false);
                     } else {
-                        try (HttpClientResponse response = upgradeResponse.response()) {
+                        HttpClientResponse response = upgradeResponse.response();
+                        if (request.followRedirects() && RedirectionProcessor.redirectionStatusCode(response.status())) {
+                            // Surface redirect responses instead of treating them as unexpected upgrade failures.
+                            throw new Http1FallbackResponse(response);
+                        }
+                        try (response) {
                             if (LOGGER.isLoggable(TRACE)) {
                                 upgradeResponse.connection().helidonSocket()
                                         .log(LOGGER, TRACE, "Failed to upgrade to HTTP/2");
@@ -294,6 +320,27 @@ class Http2ClientConnectionHandler {
         return usedConnection;
     }
 
+    private Http2ClientStream createStreamOnNewConnection(Http2ClientImpl http2Client,
+                                                          Http2ClientConnection connection,
+                                                          Http2ClientRequestImpl request) {
+        try {
+            return connection.createStream(request,
+                                           http2Client.clientConfig(),
+                                           http2Client.sendListener(),
+                                           http2Client.recvListener());
+        } catch (RuntimeException e) {
+            discardConnection(connection);
+            throw e;
+        }
+    }
+
+    private void discardConnection(Http2ClientConnection connection) {
+        activeConnection.compareAndSet(connection, null);
+        allConnections.remove(connection);
+        h2ConnByConn.values().remove(connection);
+        connection.close();
+    }
+
     private ClientConnection connectClient(WebClient webClient, List<String> alpn) {
         return TcpClientConnection.create(webClient,
                                           connectionKey,
@@ -307,5 +354,17 @@ class Http2ClientConnectionHandler {
                                               }
                                           })
                 .connect();
+    }
+
+    private static class Http1FallbackResponse extends RuntimeException {
+        private final HttpClientResponse response;
+
+        private Http1FallbackResponse(HttpClientResponse response) {
+            this.response = response;
+        }
+
+        private HttpClientResponse response() {
+            return response;
+        }
     }
 }

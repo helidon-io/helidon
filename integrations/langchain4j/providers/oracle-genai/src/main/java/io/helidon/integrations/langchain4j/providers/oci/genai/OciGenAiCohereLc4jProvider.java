@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.generativeaiinference.GenerativeAiInferenceClient;
 import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiCohereChatModel;
-import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiCohereStreamingChatModel;
 
-@AiProvider.ModelConfig(OciGenAiCohereChatModel.class)
-@AiProvider.ModelConfig(OciGenAiCohereStreamingChatModel.class)
+@AiProvider.ModelConfig(
+        value = OciGenAiCohereChatModel.class,
+        skip = "genAiAsyncClient\\(com\\.oracle\\.bmc\\.generativeaiinference\\.GenerativeAiInferenceAsyncClient\\)")
 @Prototype.CustomMethods(OciFactoryMethods.class)
-interface OciGenAiCohereLc4jProvider {
+interface OciGenAiCohereLc4jProvider extends AiProvider.ModelLifecycle {
 
     /**
      * OCI LLM Model name or OCID.
@@ -75,4 +75,17 @@ interface OciGenAiCohereLc4jProvider {
     @Option.Configured
     @Option.RegistryService
     Optional<GenerativeAiInferenceClient> genAiClient();
+
+    /**
+     * Disables automatic model close because LangChain4j does not track active synchronous calls, so close can race
+     * an operation. This also leaves internally created clients open; callers using one must close the model
+     * explicitly after all operations complete and before registry shutdown starts.
+     *
+     * @return always {@code false}
+     */
+    @Override
+    default boolean closeModelOnShutdown() {
+        // LangChain4j does not account for synchronous calls in its model lifecycle yet.
+        return false;
+    }
 }

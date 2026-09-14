@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.security.jwt;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.security.jwt.jwk.Jwk;
@@ -24,9 +27,11 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -187,5 +192,150 @@ public class SignedJwtTest {
     @Test
     public void testWrongToken() {
         assertThrows(Errors.ErrorMessagesException.class, () -> SignedJwt.parseToken(WRONG_TOKEN));
+    }
+
+    @Test
+    public void testInvalidJwtFormatDoesNotRevealToken() {
+        String token = "opaque-secret-access-token";
+
+        JwtException exception = assertThrows(JwtException.class, () -> SignedJwt.parseToken(token));
+        assertThat(exception.getMessage(), is("Not a JWT token"));
+        assertThat(exception.getMessage(), not(containsString(token)));
+
+        JwtHeaders headers = JwtHeaders.builder().algorithm("none").build();
+        exception = assertThrows(JwtException.class, () -> SignedJwt.parseToken(headers, token));
+        assertThat(exception.getMessage(), is("Not a JWT token"));
+        assertThat(exception.getMessage(), not(containsString(token)));
+
+        exception = assertThrows(JwtException.class, () -> JwtHeaders.parseToken(token));
+        assertThat(exception.getMessage(), is("Not a JWT token"));
+        assertThat(exception.getMessage(), not(containsString(token)));
+    }
+
+    @Test
+    public void testInvalidJwtSegmentsDoNotRevealTokenParts() {
+        String validHeader = base64Url(JwtHeaders.builder().algorithm("none").build().headerJsonObject().toString());
+        String validPayload = base64Url("{}");
+        String validSignature = "AA";
+        String header = "secret=jwtHeader";
+        String payload = "secret=jwtPayload";
+        String signature = "secret=jwtSignature";
+        String headerToken = header + "." + validPayload + "." + validSignature;
+
+        Errors.ErrorMessagesException exception =
+                assertThrows(Errors.ErrorMessagesException.class, () -> SignedJwt.parseToken(headerToken));
+        assertRedactedError(exception, JwtTokenPart.JWT_HEADER, headerToken, header);
+
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> JwtHeaders.parseToken(headerToken));
+        assertRedactedError(exception, JwtTokenPart.JWT_HEADER, headerToken, header);
+
+        String payloadToken = validHeader + "." + payload + "." + validSignature;
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> SignedJwt.parseToken(payloadToken));
+        assertRedactedError(exception, JwtTokenPart.JWT_PAYLOAD, payloadToken, payload);
+
+        JwtHeaders headers = JwtHeaders.builder().algorithm("none").build();
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> SignedJwt.parseToken(headers, payloadToken));
+        assertRedactedError(exception, JwtTokenPart.JWT_PAYLOAD, payloadToken, payload);
+
+        String signatureToken = validHeader + "." + validPayload + "." + signature;
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> SignedJwt.parseToken(signatureToken));
+        assertRedactedError(exception, JwtTokenPart.JWT_SIGNATURE, signatureToken, signature);
+
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> SignedJwt.parseToken(headers, signatureToken));
+        assertRedactedError(exception, JwtTokenPart.JWT_SIGNATURE, signatureToken, signature);
+    }
+
+    @Test
+    public void testInvalidJwtJsonDoesNotRevealTokenParts() {
+        String headerSecret = "secret-jwt-header";
+        String payloadSecret = "secret-jwt-payload";
+        String header = base64Url(headerSecret);
+        String payload = base64Url(payloadSecret);
+        String validHeader = base64Url(JwtHeaders.builder().algorithm("none").build().headerJsonObject().toString());
+
+        Errors.ErrorMessagesException exception =
+                assertThrows(Errors.ErrorMessagesException.class, () -> JwtHeaders.parseToken(header + ".payload.signature"));
+        assertRedactedError(exception, JwtTokenPart.JWT_HEADER, header, headerSecret);
+
+        String token = validHeader + "." + payload + ".";
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> SignedJwt.parseToken(token));
+        assertRedactedError(exception, JwtTokenPart.JWT_PAYLOAD, token, payload, payloadSecret);
+
+        JwtHeaders headers = JwtHeaders.builder().algorithm("none").build();
+        exception = assertThrows(Errors.ErrorMessagesException.class, () -> SignedJwt.parseToken(headers, token));
+        assertRedactedError(exception, JwtTokenPart.JWT_PAYLOAD, token, payload, payloadSecret);
+    }
+
+    @Test
+    public void testInvalidHeaderClaimDoesNotRevealJsonValue() {
+        String secret = "secret-jwt-header-claim";
+        String header = base64Url("{\"alg\":{\"secret\":\"" + secret + "\"}}");
+        String token = header + ".payload.signature";
+
+        JwtException exception = assertThrows(JwtException.class, () -> JwtHeaders.parseToken(token));
+
+        assertThat(exception.getMessage(), containsString("Header claim \"alg\" should have been a String"));
+        assertDoesNotContain(exception.getMessage(), token, header, secret);
+    }
+
+    @Test
+    public void testInvalidKnownPayloadClaimDoesNotRevealClaimValue() {
+        String secret = "secret+jwt+at+hash";
+        String header = base64Url(JwtHeaders.builder().algorithm("none").build().headerJsonObject().toString());
+        String payload = base64Url("{\"at_hash\":\"" + secret + "\"}");
+        String token = header + "." + payload + ".";
+        SignedJwt signedJwt = SignedJwt.parseToken(token);
+
+        JwtException exception = assertThrows(JwtException.class, signedJwt::getJwt);
+
+        assertThat(exception.getMessage(), containsString("Claim \"at_hash\" is not a base64-url encoded value"));
+        assertDoesNotContain(exception.getMessage(), token, payload, secret);
+    }
+
+    @Test
+    public void testInvalidMaterializedPayloadClaimsDoNotRevealClaimValues() {
+        assertInvalidMaterializedPayloadClaimDoesNotRevealValue("profile",
+                                                               "secret jwt profile",
+                                                               "Claim \"profile\" is not a valid URI");
+        assertInvalidMaterializedPayloadClaimDoesNotRevealValue("birthday",
+                                                               "secret-jwt-birthday",
+                                                               "Claim \"birthday\" is not a valid date");
+        assertInvalidMaterializedPayloadClaimDoesNotRevealValue("zoneinfo",
+                                                               "secret-jwt-zone",
+                                                               "Claim \"zoneinfo\" is not a valid time zone");
+    }
+
+    private static String base64Url(String value) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static void assertInvalidMaterializedPayloadClaimDoesNotRevealValue(String claim,
+                                                                               String secret,
+                                                                               String expectedMessage) {
+        String header = base64Url(JwtHeaders.builder().algorithm("none").build().headerJsonObject().toString());
+        String payload = base64Url("{\"" + claim + "\":\"" + secret + "\"}");
+        String token = header + "." + payload + ".";
+        SignedJwt signedJwt = SignedJwt.parseToken(token);
+
+        JwtException exception = assertThrows(JwtException.class, signedJwt::getJwt);
+
+        assertThat(exception.getMessage(), containsString(expectedMessage));
+        assertThat(exception.getCause(), is(nullValue()));
+        assertDoesNotContain(exception.getMessage(), token, payload, secret);
+    }
+
+    private static void assertRedactedError(Errors.ErrorMessagesException exception,
+                                            JwtTokenPart tokenPart,
+                                            String... values) {
+        assertThat(exception.getMessage(), containsString(tokenPart.text()));
+        assertThat(exception.getMessages().size(), is(1));
+        assertThat(exception.getMessages().get(0).getSource(), is(tokenPart));
+        assertDoesNotContain(exception.getMessage(), values);
+    }
+
+    private static void assertDoesNotContain(String message, String... values) {
+        for (String value : values) {
+            assertThat(message, not(containsString(value)));
+        }
     }
 }

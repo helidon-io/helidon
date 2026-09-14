@@ -18,7 +18,7 @@ package io.helidon.webclient.http1;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.Size;
+import io.helidon.http.HttpConfig;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
@@ -27,12 +27,17 @@ import io.helidon.webclient.spi.ProtocolConfig;
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
-interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
+interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig {
     @Override
     default String type() {
         return Http1ProtocolProvider.CONFIG_KEY;
     }
 
+    /**
+     * Name of this protocol configuration.
+     *
+     * @return protocol configuration name
+     */
     @Option.Configured
     @Option.Default(Http1ProtocolProvider.CONFIG_KEY)
     @Override
@@ -65,38 +70,4 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultInt(256)
     int maxStatusLineLength();
-
-    /**
-     * Configure the maximum size allowed for an entity that can be explicitly
-     * buffered by the application by calling {@link io.helidon.http.media.ReadableEntity#buffer}.
-     *
-     * @return maximum size for a buffered entity
-     */
-    @Option.Configured
-    @Option.Default("64 KB")
-    Size maxBufferedEntitySize();
-
-    /**
-     * Sets whether the request header format is validated or not.
-     * <p>
-     *     Defaults to {@code false} as user has control on the header creation.
-     * </p>
-     *
-     * @return whether request header validation should be enabled
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(false)
-    boolean validateRequestHeaders();
-
-    /**
-     * Sets whether the response header format is validated or not.
-     * <p>
-     *     Defaults to {@code true}.
-     * </p>
-     *
-     * @return whether response header validation should be enabled
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(true)
-    boolean validateResponseHeaders();
 }

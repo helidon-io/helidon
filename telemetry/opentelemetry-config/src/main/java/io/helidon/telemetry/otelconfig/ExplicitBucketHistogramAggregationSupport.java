@@ -23,6 +23,14 @@ import io.opentelemetry.sdk.metrics.internal.view.ExplicitBucketHistogramAggrega
 
 class ExplicitBucketHistogramAggregationSupport {
 
+    private ExplicitBucketHistogramAggregationSupport() {
+    }
+
+    /**
+     * Helidon-supplied default value for {@code recordMinMax} for backward compatibility.
+     */
+    static final boolean DEFAULT_RECORD_MIN_MAX = true;
+
     static class CustomMethods {
 
         /**
@@ -35,7 +43,8 @@ class ExplicitBucketHistogramAggregationSupport {
         static Aggregation aggregation(ExplicitBucketHistogramAggregationConfig config) {
             return config.bucketBoundaries().isEmpty()
                     ? ExplicitBucketHistogramAggregation.getDefault()
-                    : ExplicitBucketHistogramAggregation.create(config.bucketBoundaries());
+                    : ExplicitBucketHistogramAggregation.create(config.bucketBoundaries(),
+                                                                config.recordMinMax());
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,28 @@ class RedirectionProcessor {
             && status.family() == Status.Family.REDIRECTION;
     }
 
+    static boolean keepsMethodAndEntity(Status status) {
+        int statusCode = status.code();
+        return statusCode == Status.TEMPORARY_REDIRECT_307.code()
+                || statusCode == Status.PERMANENT_REDIRECT_308.code();
+    }
+
+    static void validateEntityRedirect(Http1ClientRequestImpl request,
+                                       Status status,
+                                       ClientUri redirectUri,
+                                       byte[] entity) {
+        if (keepsMethodAndEntity(status)
+                && entity.length > 0
+                && !request.canReplayEntityTo(redirectUri)) {
+            throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
+        }
+    }
+
+    static IllegalStateException maxRedirectsReached(int maxRedirects) {
+        return new IllegalStateException("Maximum number of request redirections ("
+                                                 + maxRedirects + ") reached.");
+    }
+
     static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, byte[] entity) {
         return invokeWithFollowRedirects(request, 0, entity);
     }
@@ -45,12 +67,17 @@ class RedirectionProcessor {
         Http1ClientRequestImpl clientRequest = request;
         //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
         byte[] entityToBeSent = entity;
-        for (int i = initial; i < request.maxRedirects(); i++) {
+        int followedRedirects = initial;
+        while (true) {
             Http1ClientResponseImpl clientResponse = clientRequest.invokeRequestWithEntity(entityToBeSent);
             if (!redirectionStatusCode(clientResponse.status())) {
                 return clientResponse;
             }
             try (clientResponse) {
+                if (followedRedirects >= request.maxRedirects()) {
+                    throw maxRedirectsReached(request.maxRedirects());
+                }
+                followedRedirects++;
                 if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
                     throw new IllegalStateException("There is no " + HeaderNames.LOCATION
                                                             + " header present in the response! "
@@ -72,24 +99,24 @@ class RedirectionProcessor {
                     redirectUri.port(resolvedUri.port());
                 }
                 //Method and entity is required to be the same as with original request with 307 and 308 requests
-                if (clientResponse.status() == Status.TEMPORARY_REDIRECT_307
-                        || clientResponse.status() == Status.PERMANENT_REDIRECT_308) {
+                validateEntityRedirect(clientRequest, clientResponse.status(), redirectUri, entityToBeSent);
+                if (keepsMethodAndEntity(clientResponse.status())) {
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                clientRequest.method(),
                                                                redirectUri,
-                                                               request.properties());
+                                                               request.properties(),
+                                                               true);
                 } else {
                     //It is possible to change to GET and send no entity with all other redirect codes
                     entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                Method.GET,
                                                                redirectUri,
-                                                               request.properties());
+                                                               request.properties(),
+                                                               false);
                 }
             }
         }
-        throw new IllegalStateException("Maximum number of request redirections ("
-                                                + request.maxRedirects() + ") reached.");
     }
 
 }

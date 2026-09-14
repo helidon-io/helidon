@@ -15,6 +15,7 @@
  */
 package io.helidon.common;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -64,6 +65,22 @@ public interface LruCache<K, V> {
      * @return value if present or empty
      */
     Optional<V> get(K key);
+
+    /**
+     * Get a value from the cache without marking it as recently used.
+     * Custom implementations may not support this operation.
+     *
+     * @param key          key to retrieve
+     * @param defaultValue value to return if the key is not present
+     * @return cached value if present, otherwise {@code defaultValue}
+     * @throws NullPointerException if {@code key} or {@code defaultValue} is {@code null}
+     * @throws UnsupportedOperationException if this cache does not support peeking
+     */
+    default V peek(K key, V defaultValue) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(defaultValue);
+        throw new UnsupportedOperationException("Peeking is not supported by this cache");
+    }
 
     /**
      * Remove a value from the cache.

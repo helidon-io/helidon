@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
@@ -79,6 +80,19 @@ public class DateTimeTest {
         assertThat(DateTime.parse("Tue, 3 Jun 2008 11:05:30 GMT"), is(ZDT));
         assertThat(DateTime.parse("Tuesday, 03-Jun-08 11:05:30 GMT"), is(ZDT));
         assertThat(DateTime.parse("Tue Jun  3 11:05:30 2008"), is(ZDT));
+    }
+
+    @Test
+    public void parseUsesReferenceTimeForRfc850Year() {
+        ZonedDateTime referenceTime = ZonedDateTime.of(2076, 6, 8, 18, 32, 30, 0, ZoneId.of("Z"));
+
+        assertThat(DateTime.parse("Monday, 08-Jun-76 18:32:30 GMT", referenceTime), is(referenceTime));
+    }
+
+    @Test
+    public void parseRejectsNullReferenceTime() {
+        assertThrows(NullPointerException.class,
+                     () -> DateTime.parse("Tuesday, 03-Jun-08 11:05:30 GMT", null));
     }
 
 }

@@ -23,6 +23,13 @@ import io.opentelemetry.sdk.metrics.Aggregation;
 import io.opentelemetry.sdk.metrics.internal.view.Base2ExponentialHistogramAggregation;
 
 class Base2ExponentialHistogramAggregationSupport {
+    /**
+     * Helidon-supplied default value for {@code recordMinMax} for backward compatibility.
+     */
+    static final boolean DEFAULT_RECORD_MIN_MAX = true;
+
+    private Base2ExponentialHistogramAggregationSupport() {
+    }
 
     static class BuilderDecorator implements Prototype.BuilderDecorator<Base2ExponentialHistogramAggregationConfig.BuilderBase<?, ?>> {
 
@@ -53,7 +60,8 @@ class Base2ExponentialHistogramAggregationSupport {
         static Aggregation aggregation(Base2ExponentialHistogramAggregationConfig config) {
             return config.maxBuckets().isPresent()
                     ? Base2ExponentialHistogramAggregation.create(config.maxBuckets().get(),
-                                                                  config.maxScale().get())
+                                                                  config.maxScale().get(),
+                                                                  config.recordMinMax())
                     : Base2ExponentialHistogramAggregation.getDefault();
         }
     }

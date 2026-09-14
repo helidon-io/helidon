@@ -28,7 +28,8 @@ Each `CorsPathConfig` can configure (see `io.helidon.webserver.cors.CorsPathConf
 - `allow-headers`: a set of header names (case-insensitive) - which headers will be sent from the script with a different origin 
 - `allow-methods`: a set of method names (case-sensitive) - which methods are allowed for this path (only if both path-pattern and method match will this be used)
 - `expose-headers`: a set of header names (case-insensitive) - which headers may be exposed from the response to the script with a different origin
-- `allow-credentials`: boolean - whether to add credentials (such as cookies) to requests from a script from a different origin
+- `allow-credentials`: boolean - whether to add credentials (such as cookies) to requests from a script from a different
+  origin; cannot be enabled with wildcard origins in an enabled CORS configuration
 - `max-age`: duration - how long is this response valid
 
 
@@ -90,7 +91,8 @@ Pre flight validation sequence:
 
 The pre-flight response setup sequence:
 
-1. If we allow credentials, send `Access-Control-Allow-Credentials: true` and (fetch spec, section 3.2.5):
+1. If we allow credentials, which requires non-wildcard allowed origins, send `Access-Control-Allow-Credentials: true`
+   and (fetch spec, section 3.2.5):
    - send `Access-Control-Allow-Origin` with the requested origin
    - send `Access-Control-Allow-Methods` with the requested method
    - send `Vary: Origin`
@@ -112,7 +114,7 @@ The flight validation sequence:
 
 The flight response setup sequence:
 
-1. If we allow credentials
+1. If we allow credentials, which requires non-wildcard allowed origins
    - send `Access-Control-Allow-Credentials: true` header
    - send `Access-Control-Allow-Origin` header configured to the origin from request
    - send `Vary: Origin` header

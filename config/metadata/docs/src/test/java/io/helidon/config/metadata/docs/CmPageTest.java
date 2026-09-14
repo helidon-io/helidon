@@ -18,6 +18,10 @@ package io.helidon.config.metadata.docs;
 
 import java.util.List;
 
+import io.helidon.config.metadata.docs.CmPage.Row;
+import io.helidon.config.metadata.docs.CmPage.Table;
+import io.helidon.config.metadata.docs.CmPage.Tables;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,16 +34,12 @@ class CmPageTest {
 
     @Test
     void testTablesIsEmpty() {
-        var empty = table();
-        var nonEmpty = table(new CmPage.Row("key", "", "", "description", "", ""));
+        var empty = new Table(List.of(), false, false);
+        var nonEmpty = new Table(List.of(new Row("key", "", "", "description", "", "")), false, false);
 
-        assertThat(new CmPage.Tables(empty, empty, empty).isEmpty(), is(true));
-        assertThat(new CmPage.Tables(nonEmpty, empty, empty).isEmpty(), is(false));
-        assertThat(new CmPage.Tables(empty, nonEmpty, empty).isEmpty(), is(false));
-        assertThat(new CmPage.Tables(empty, empty, nonEmpty).isEmpty(), is(false));
-    }
-
-    static CmPage.Table table(CmPage.Row... rows) {
-        return new CmPage.Table(List.of(rows), false, false);
+        assertThat(new Tables(empty, empty, empty).isEmpty(), is(true));
+        assertThat(new Tables(nonEmpty, empty, empty).isEmpty(), is(false));
+        assertThat(new Tables(empty, nonEmpty, empty).isEmpty(), is(false));
+        assertThat(new Tables(empty, empty, nonEmpty).isEmpty(), is(false));
     }
 }

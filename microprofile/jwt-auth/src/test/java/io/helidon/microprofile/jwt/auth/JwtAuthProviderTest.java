@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -45,16 +48,20 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkOctet;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
+import jakarta.enterprise.inject.spi.DeploymentException;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.Claims;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -66,13 +73,97 @@ public class JwtAuthProviderTest {
     private static final String WRONG_TOKEN =
             "yJ4NXQjUzI1NiI6IlZjeXl1TVdxSGp4UjRVNmYzOTV3YmhUZXNZRmFaWXFSbDdBbUxjZE5sNXciLCJ4NXQiOiJTdEZFTlFaM2NMNndQaHFxODZnVmJTTG54TkUiLCJraWQiOiJTSUdOSU5HX0tFWSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJIU01BcHAtY2xpZW50X0FQUElEIiwidXNlci50ZW5hbnQubmFtZSI6ImlkY3MtNzNmYTNlZDY5ZTgxNDFhN2I5MDFmYWY3Zjg3M2U3OGUiLCJzdWJfbWFwcGluZ2F0dHIiOiJ1c2VyTmFtZSIsImlzcyI6Imh0dHBzOlwvXC9pZGVudGl0eS5vcmFjbGVjbG91ZC5jb21cLyIsInRva190eXBlIjoiQVQiLCJjbGllbnRfaWQiOiJIU01BcHAtY2xpZW50X0FQUElEIiwiYXVkIjoiaHR0cDpcL1wvc2NhMDBjangudXMub3JhY2xlLmNvbTo3Nzc3Iiwic3ViX3R5cGUiOiJjbGllbnQiLCJzY29wZSI6InVybjpvcGM6cmVzb3VyY2U6Y29uc3VtZXI6OmFsbCIsImNsaWVudF90ZW5hbnRuYW1lIjoiaWRjcy03M2ZhM2VkNjllODE0MWE3YjkwMWZhZjdmODczZTc4ZSIsImV4cCI6MTU1MDU5NTk0MiwiaWF0IjoxNTUwNTA5NTQyLCJ0ZW5hbnRfaXNzIjoiaHR0cHM6XC9cL2lkY3MtNzNmYTNlZDY5ZTgxNDFhN2I5MDFmYWY3Zjg3M2U3OGUuaWRlbnRpdHkuYzlkZXYxLm9jOXFhZGV2LmNvbSIsImNsaWVudF9ndWlkIjoiN2JmZDM3MjM1ZGY3NDVjNDg5ZjYxZDM1ZTYzZGQ4ZmUiLCJjbGllbnRfbmFtZSI6IkhTTUFwcC1jbGllbnQiLCJ0ZW5hbnQiOiJpZGNzLTczZmEzZWQ2OWU4MTQxYTdiOTAxZmFmN2Y4NzNlNzhlIiwianRpIjoiYzRkNjlhZjUtOGQ4OC00N2Q2LTkzMDctN2RjMmI3NWY4MDQyIn0.ZsngUzzso_sW6rMg3jB-lueiC2sknIDRlgvjumMjp5rRSdLux2X4XZIm2Oa15JbcrnC6I4sgqB0xU1Wte-TW4hbBDLFhaJKYKiNaHBE0L7J73ZK7ITg7dORKkyjLrofGt0m8Rse1OlE9AWevz-l27gtQMO_mctGfHri2BxiMbSN1HwOjWW3kGoqPgCJZJfh2TiFlocEpsXDH4qB1qwhuIoT91gw3kIJlQov0_a9uGEepMU_RWMRjVZCIvuV2hPq_mdeWy2IhkHPxq422CLZ9MDOfbv8F6dY6DralCH4mmKbGM3dbqpZokWQxXG7LG9vWX1PFWw0N9clYHJ4QqBJ4pA";
 
+    private static JwkKeys signKeys;
     private static JwkKeys verifyKeys;
 
     @BeforeAll
     public static void initClass() {
+        signKeys = JwkKeys.builder()
+                .resource(Resource.create("sign-jwk.json"))
+                .build();
+
         verifyKeys = JwkKeys.builder()
                 .resource(Resource.create("verify-jwk.json"))
                 .build();
+    }
+
+    @Test
+    public void testCustomJwtGroupsPath() {
+        JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("jwt-custom-groups"));
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .addPayloadClaim("permissions", List.of("inventory:read", "inventory:write"))
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(mockRequest(signedJwt.tokenContent()));
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        Subject subject = authenticationResponse.user().orElseThrow();
+        assertThat(subject.grants(Role.class), hasItems(Role.create("inventory:read"), Role.create("inventory:write")));
+
+        JsonWebTokenImpl principal = (JsonWebTokenImpl) subject.principal();
+        Set<String> groups = principal.getClaim(Claims.groups.name());
+        assertThat(groups, hasItems("inventory:read", "inventory:write"));
+    }
+
+    @Test
+    public void testCustomJwtGroupsPathWithSeparator() {
+        JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("jwt-custom-groups-separated"));
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .addPayloadClaim("permissions", "inventory:read,inventory:write")
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(mockRequest(signedJwt.tokenContent()));
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        Subject subject = authenticationResponse.user().orElseThrow();
+        assertThat(subject.grants(Role.class), hasItems(Role.create("inventory:read"), Role.create("inventory:write")));
+
+        JsonWebTokenImpl principal = (JsonWebTokenImpl) subject.principal();
+        Set<String> groups = principal.getClaim(Claims.groups.name());
+        assertThat(groups, hasItems("inventory:read", "inventory:write"));
+    }
+
+    @Test
+    public void testInvalidCustomJwtGroupsPathFailsAuthentication() {
+        JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("jwt-custom-groups"));
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("jwt.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .addPayloadClaim("permissions", 42)
+                .build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(mockRequest(signedJwt.tokenContent()));
+
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
     }
 
     @Test
@@ -104,6 +195,87 @@ public class JwtAuthProviderTest {
         when(atnRequest.endpointConfig()).thenReturn(ec);
 
         AuthenticationResponse authenticationResponse = provider.authenticate(atnRequest);
+
+        assertThat(authenticationResponse.service(), is(Optional.empty()));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+    }
+
+    @Test
+    public void testMissingExpectedIssuerFailsFast() {
+        DeploymentException exception = assertThrows(DeploymentException.class, () -> JwtAuthProvider.builder()
+                .verifyJwk(Resource.create("verify-jwk.json"))
+                .defaultKeyId("verify-rsa")
+                .addExpectedAudience("audience.application.id")
+                .build());
+
+        assertThat(exception.getMessage(), containsString(JwtAuthProvider.CONFIG_EXPECTED_ISSUER));
+    }
+
+    @Test
+    public void testMissingExpectedIssuerFailsFastFromConfig() {
+        ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        org.eclipse.microprofile.config.Config mpConfig = resolver.getBuilder()
+                .withSources(MpConfigSources.create(Map.of("mp.jwt.verify.publickey.location", "verify-jwk.json")))
+                .build();
+        Config providerConfig = Config.builder()
+                .sources(ConfigSources.create(Map.of(
+                        "mp-jwt-auth.atn-token.jwt-audience", "audience.application.id",
+                        "mp-jwt-auth.atn-token.default-key-id", "verify-rsa")))
+                .build()
+                .get("mp-jwt-auth");
+
+        try {
+            resolver.registerConfig(mpConfig, classLoader);
+
+            DeploymentException exception = assertThrows(DeploymentException.class, () -> JwtAuthProvider.create(providerConfig));
+
+            assertThat(exception.getMessage(), containsString(JwtAuthProvider.CONFIG_EXPECTED_ISSUER));
+        } finally {
+            resolver.releaseConfig(mpConfig);
+            resolver.getConfig(classLoader);
+        }
+    }
+
+    @Test
+    public void testMissingExpectedIssuerAllowedWhenAuthenticationDisabled() {
+        JwtAuthProvider provider = JwtAuthProvider.builder()
+                .authenticate(false)
+                .verifyJwk(Resource.create("verify-jwk.json"))
+                .defaultKeyId("verify-rsa")
+                .addExpectedAudience("audience.application.id")
+                .build();
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(mock(ProviderRequest.class));
+
+        assertThat(authenticationResponse.service(), is(Optional.empty()));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+    }
+
+    @Test
+    public void testRejectsUnexpectedIssuer() {
+        JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
+        JwkKeys signKeys = JwkKeys.builder()
+                .resource(Resource.create("sign-jwk.json"))
+                .build();
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.builder()
+                .subject("user1-id")
+                .preferredUsername("user1")
+                .issuer("unexpected.example.com")
+                .algorithm(JwkRSA.ALG_RS256)
+                .keyId("verify-rsa")
+                .issueTime(now)
+                .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
+                .build();
+
+        SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());
+        signedJwt.verifySignature(verifyKeys).checkValid();
+
+        AuthenticationResponse authenticationResponse = provider.authenticate(mockRequest(signedJwt.tokenContent()));
 
         assertThat(authenticationResponse.service(), is(Optional.empty()));
         assertThat(authenticationResponse.user(), is(Optional.empty()));

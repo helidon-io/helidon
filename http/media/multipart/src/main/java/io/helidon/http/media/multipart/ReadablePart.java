@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,14 @@ public interface ReadablePart extends ReadableEntity {
 
     /**
      * File name of this part if defined in part {@code Content-Disposition}.
+     * <p>
+     * The returned filename is percent-decoded and contains only the final path
+     * segment. Invalid filenames, such as an empty segment, {@code .},
+     * {@code ..}, or names containing control characters, are rejected.
+     * </p>
      *
      * @return file name if defined
+     * @throws IllegalArgumentException if the filename is malformed or unsafe
      */
     Optional<String> fileName();
 

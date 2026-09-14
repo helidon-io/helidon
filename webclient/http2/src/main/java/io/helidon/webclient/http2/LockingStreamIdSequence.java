@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,24 @@ public class LockingStreamIdSequence {
 
     private final AtomicInteger streamIdSeq = new AtomicInteger(0);
     private final Lock lock = new ReentrantLock();
+
+    /**
+     * Create a new locking stream ID sequence.
+     *
+     * @deprecated use {@link #create()} instead
+     */
+    @Deprecated(forRemoval = true, since = "4.5.0")
+    public LockingStreamIdSequence() {
+    }
+
+    /**
+     * Create a new locking stream ID sequence.
+     *
+     * @return a new locking stream ID sequence
+     */
+    public static LockingStreamIdSequence create() {
+        return new LockingStreamIdSequence();
+    }
 
     int lockAndNext() {
         lock.lock();

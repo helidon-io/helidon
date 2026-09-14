@@ -70,6 +70,7 @@ public interface CorsSetter<T> {
 
     /**
      * Sets the allow credentials flag.
+     * Cannot be enabled with wildcard origins in an enabled CORS configuration.
      *
      * @param allowCredentials the allow credentials flag
      * @return updated setter

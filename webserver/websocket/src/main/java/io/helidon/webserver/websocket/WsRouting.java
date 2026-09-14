@@ -18,6 +18,7 @@ package io.helidon.webserver.websocket;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.http.HttpPrologue;
@@ -81,14 +82,20 @@ public class WsRouting implements Routing {
      * @return found route
      */
     public WsRoute findRoute(HttpPrologue prologue) {
+        return findRouteIfPresent(prologue)
+                .orElseThrow(() -> new NotFoundException("No WebSocket route available for " + prologue));
+    }
+
+    // Finds a matching route without throwing so upgrade requests can fall back to HTTP routing cheaply.
+    Optional<WsRoute> findRouteIfPresent(HttpPrologue prologue) {
         for (WsRoute route : routes) {
             PathMatchers.MatchResult accepts = route.accepts(prologue);
             if (accepts.accepted()) {
-                return route;
+                return Optional.of(route);
             }
         }
 
-        throw new NotFoundException("No WebSocket route available for " + prologue);
+        return Optional.empty();
     }
 
     /**

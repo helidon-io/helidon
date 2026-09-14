@@ -113,10 +113,19 @@ public class Aggregator {
         @Override
         public Aggregator build() {
             if (pathlessCrossOriginConfigMatchable != null) {
-                addPathlessCrossOrigin(pathlessCrossOriginConfigMatchable.get());
+                addPathlessCrossOrigin(pathlessCrossOriginConfigMatchable.get(isEnabled));
             }
             if (requestDefaultBehaviorIfNone && crossOriginConfigMatchables.isEmpty()) {
-                addPathlessCrossOrigin(CrossOriginConfig.builder().build());
+                addPathlessCrossOrigin(CrossOriginConfig.builder().build(isEnabled));
+            }
+            if (isEnabled) {
+                for (CrossOriginConfigMatchable matchable : crossOriginConfigMatchables) {
+                    CrossOriginConfig crossOriginConfig = matchable.get();
+                    CrossOriginConfig.Builder.validateCredentialsOrigins(true,
+                                                                         crossOriginConfig.isEnabled(),
+                                                                         crossOriginConfig.allowCredentials(),
+                                                                         crossOriginConfig.allowOrigins());
+                }
             }
             return new Aggregator(this);
         }
@@ -131,14 +140,16 @@ public class Aggregator {
                 if (pathsNode.exists()) {
                     ConfigValue<MappedCrossOriginConfig.Builder> configValue = config.as(MappedCrossOriginConfig::builder);
                     if (configValue.isPresent()) {
-                        MappedCrossOriginConfig mappedCrossOriginConfig = configValue.get().build();
-                        mappedCrossOriginConfig.forEach(this::addCrossOrigin);
+                        MappedCrossOriginConfig.Builder mappedCrossOriginConfigBuilder = configValue.get();
+                        mappedCrossOriginConfigBuilder.enabled().ifPresent(value -> isEnabled = value);
+                        mappedCrossOriginConfigBuilder.forEachBuilder(this::addCrossOrigin);
                     }
                 } else {
                     ConfigValue<CrossOriginConfig.Builder> configValue = config.as(CrossOriginConfig::builder);
                     if (configValue.isPresent()) {
-                        CrossOriginConfig crossOriginConfig = configValue.get().build();
-                        addPathlessCrossOrigin(crossOriginConfig);
+                        CrossOriginConfig.Builder crossOriginConfigBuilder = configValue.get();
+                        config.get("enabled").asBoolean().ifPresent(value -> isEnabled = value);
+                        addPathlessCrossOrigin(crossOriginConfigBuilder);
                     }
                 }
             }
@@ -155,24 +166,24 @@ public class Aggregator {
             if (config.exists()) {
                 ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.as(MappedCrossOriginConfig::builder);
                 if (mappedConfigValue.isPresent()) {
-                    MappedCrossOriginConfig mapped = mappedConfigValue.get().build();
+                    MappedCrossOriginConfig.Builder mapped = mappedConfigValue.get();
                     /*
                      * Merge the newly-provided config with what we've assembled so far. We do not merge the config for a given path;
                      * we add paths that are not already present and override paths that are there.
                      */
                     AtomicBoolean foundCrossOrigin = new AtomicBoolean();
-                    mapped.forEach((k, v) -> {
+                    mapped.forEachBuilder((k, v) -> {
                         addCrossOrigin(k, v);
                         foundCrossOrigin.set(true);
                     });
 
-                    isEnabled = mapped.isEnabled();
+                    mapped.enabled().ifPresent(value -> isEnabled = value);
                     /*
                      * If the config just set enabled to true without specifying any cross-origin set-up, create a wildcarded
                      * default one.
                      */
                     if (!foundCrossOrigin.get()) {
-                        addPathlessCrossOrigin(CrossOriginConfig.builder().build());
+                        addPathlessCrossOrigin(CrossOriginConfig.builder());
                     }
                 }
             }
@@ -191,6 +202,11 @@ public class Aggregator {
             return this;
         }
 
+        private Builder addCrossOrigin(String pathPattern, CrossOriginConfig.Builder crossOriginConfigBuilder) {
+            crossOriginConfigMatchables.add(new BuildableCrossOriginConfigMatchable(pathPattern, crossOriginConfigBuilder));
+            return this;
+        }
+
         Builder requestDefaultBehaviorIfNone() {
             requestDefaultBehaviorIfNone = true;
             return this;
@@ -204,6 +220,11 @@ public class Aggregator {
          */
         public Builder addPathlessCrossOrigin(CrossOriginConfig crossOrigin) {
             crossOriginConfigMatchables.add(new FixedCrossOriginConfigMatchable(PATHLESS_KEY, crossOrigin));
+            return this;
+        }
+
+        private Builder addPathlessCrossOrigin(CrossOriginConfig.Builder crossOriginConfigBuilder) {
+            crossOriginConfigMatchables.add(new BuildableCrossOriginConfigMatchable(PATHLESS_KEY, crossOriginConfigBuilder));
             return this;
         }
 
@@ -380,8 +401,17 @@ public class Aggregator {
         }
 
         CrossOriginConfig get() {
+            return get(true);
+        }
+
+        CrossOriginConfig get(boolean owningConfigEnabled) {
             if (config == null) {
-                config = builder.build();
+                config = builder.build(owningConfigEnabled);
+            } else {
+                CrossOriginConfig.Builder.validateCredentialsOrigins(owningConfigEnabled,
+                                                                     config.isEnabled(),
+                                                                     config.allowCredentials(),
+                                                                     config.allowOrigins());
             }
             return config;
         }

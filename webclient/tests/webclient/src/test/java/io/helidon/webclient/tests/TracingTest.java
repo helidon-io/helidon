@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,8 +107,8 @@ class TracingTest extends TestParent {
                 .build();
 
         try (Http1ClientResponse response = client.get("/error").request()) {
-            // we must fully read entity, as otherwise tracing does not finish
-            String ignored = response.entity().as(String.class);
+            // we must fully consume entity if present, as otherwise tracing does not finish
+            response.entity().consume();
         }
 
         List<MockSpan> mockSpans = mockTracer.finishedSpans();

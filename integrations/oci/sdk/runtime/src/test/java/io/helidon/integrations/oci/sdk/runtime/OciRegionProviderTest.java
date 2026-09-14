@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.integrations.oci.sdk.runtime;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.AccessModifier;
@@ -32,19 +31,17 @@ import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
-import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import com.oracle.bmc.Region;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("removal")
 class OciRegionProviderTest {
@@ -77,12 +74,6 @@ class OciRegionProviderTest {
                 OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
         resetWith(config, ServiceRegistryConfig.create());
 
-        Supplier<Region> regionSupplier = registryManager
-                .registry()
-                .supply(Lookup.builder().addContract(Region.class).build());
-        assertThrows(ServiceRegistryException.class,
-                     regionSupplier::get);
-
         TypeName regionType = TypeName.create(Region.class);
 
         Lookup query = Lookup.create(
@@ -113,5 +104,13 @@ class OciRegionProviderTest {
 
         assertThat(region, is(Region.US_PHOENIX_1));
         assertThat(qualifiers, contains(Qualifier.createNamed(Region.US_PHOENIX_1.getRegionId())));
+    }
+
+    @Test
+    void toRegionFromNamedProfile() {
+        assertThat(OciRegionProvider.toRegionFromNamedProfile(null), is(nullValue()));
+        assertThat(OciRegionProvider.toRegionFromNamedProfile(""), is(nullValue()));
+        assertThat(OciRegionProvider.toRegionFromNamedProfile("unknown-region"), is(nullValue()));
+        assertThat(OciRegionProvider.toRegionFromNamedProfile("us-phoenix-1"), is(Region.US_PHOENIX_1));
     }
 }

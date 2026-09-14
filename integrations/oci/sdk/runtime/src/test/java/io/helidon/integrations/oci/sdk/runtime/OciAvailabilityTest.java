@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
-import java.util.Objects;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -30,7 +28,9 @@ class OciAvailabilityTest {
 
     @Test
     void isRunningOnOci() {
-        OciConfig ociConfigBean = Objects.requireNonNull(OciExtension.ociConfig());
+        OciConfig ociConfigBean = OciConfig.builder()
+                .imdsHostName("metadata.invalid")
+                .build();
         assertThat(OciAvailabilityDefault.runningOnOci(ociConfigBean),
                                  is(false));
     }

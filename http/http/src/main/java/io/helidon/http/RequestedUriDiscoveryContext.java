@@ -467,8 +467,8 @@ public interface RequestedUriDiscoveryContext {
                                                                 String requestPath) {
                 // With X-Forwarded-* headers, the X-Forwarded-Host and X-Forwarded-Proto headers appear only once, indicating
                 // the host and protocol supposedly requested by the original client as seen by the proxy which received the
-                // original request. To trust those single values, we need to trust all the X-Forwarded-For instances except
-                // the very first one (the original client itself).
+                // original request. To trust those single values, we need at least one proxy entry in X-Forwarded-For
+                // beyond the original client, and we need to trust all such proxy entries.
                 boolean discovered = false;
                 String scheme = null;
                 String host = null;
@@ -476,8 +476,8 @@ public interface RequestedUriDiscoveryContext {
                 String path = null;
 
                 List<String> xForwardedFors = headers.values(HeaderNames.X_FORWARDED_FOR);
-                boolean areProxiesTrusted = !xForwardedFors.isEmpty();
-                if (!xForwardedFors.isEmpty()) {
+                boolean areProxiesTrusted = xForwardedFors.size() > 1;
+                if (areProxiesTrusted) {
                     // Intentionally skip the first X-Forwarded-For value. That is the originating client, and as such it
                     // is not a proxy and we do not need to check its trustworthiness.
                     for (int i = 1; i < xForwardedFors.size(); i++) {

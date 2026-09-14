@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,10 @@ import io.helidon.common.LazyValue;
 
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporterBuilder;
 
+/**
+ * Compatibility support for the deprecated OpenTelemetry Zipkin exporter.
+ */
+@SuppressWarnings({"deprecation", "removal"})
 class ZipkinExporterConfigSupport {
 
     private ZipkinExporterConfigSupport() {

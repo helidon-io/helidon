@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public record Http2GoAway(int lastStreamId, Http2ErrorCode errorCode, String det
         int lastStreamId = BufferData.toInt31(frame.readInt32());
         int errorCode = frame.readInt32();
         Http2ErrorCode code = Http2ErrorCode.get(errorCode);
-        String details = frame.debugDataHex(false);
+        String details = frame.readString(frame.available(), StandardCharsets.UTF_8);
         return new Http2GoAway(lastStreamId, code, details);
     }
 

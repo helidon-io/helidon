@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ public interface Http2FrameListener {
     /**
      * Create a new composite listener.
      *
-     * @param sendFrameListeners list of listener to use
+     * @param frameListeners list of listener to use
      * @return a new composite listener
      */
-    static Http2FrameListener create(List<Http2FrameListener> sendFrameListeners) {
-        return Http2FrameListenerUtil.toSingleListener(sendFrameListeners);
+    static Http2FrameListener create(List<Http2FrameListener> frameListeners) {
+        return Http2FrameListenerUtil.toSingleListener(frameListeners);
     }
 
     /**

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.5.0-SNAPSHOT</version>
+        <version>4.5.5-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-all</artifactId>
@@ -307,6 +307,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
             <artifactId>helidon-microprofile-grpc-tracing</artifactId>
         </dependency>
         <dependency>
@@ -576,6 +580,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-jsonp</artifactId>
         </dependency>
         <dependency>
@@ -697,6 +705,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.lra</groupId>
             <artifactId>helidon-microprofile-lra</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.lra</groupId>
+            <artifactId>helidon-microprofile-lra-testing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.lra</groupId>
@@ -1057,6 +1069,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http-http1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http-http2</artifactId>
         </dependency>
         <dependency>
@@ -1126,6 +1142,10 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-grpc-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

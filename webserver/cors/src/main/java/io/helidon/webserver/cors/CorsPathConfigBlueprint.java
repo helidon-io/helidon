@@ -119,6 +119,7 @@ interface CorsPathConfigBlueprint {
      * Whether to allow credentials.
      * <p>
      * If enabled, this will be used in {@value io.helidon.http.HeaderNames#ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME} header.
+     * Credentials cannot be used with wildcard origins in an enabled CORS configuration.
      *
      * @return whether to allow credentials, defaults to {@code false}
      */

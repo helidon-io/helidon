@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 package io.helidon.microprofile.lra;
 
 import java.lang.System.Logger.Level;
+import java.lang.annotation.Annotation;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -30,14 +32,17 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
+import io.helidon.tracing.Span;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.lra.LRAResponse;
+import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
@@ -51,6 +56,9 @@ class NonJaxRsResource {
 
     private static final System.Logger LOGGER = System.getLogger(NonJaxRsResource.class.getName());
     private static final String LRA_PARTICIPANT = "lra-participant";
+    private static final String URL_QUERY = "url.query";
+    private static final String REDACTED_CAPABILITY_QUERY =
+            NonJaxRsCallbackAuthenticator.CAPABILITY_QUERY_PARAMETER + "=[REDACTED]";
     private static final HeaderName LRA_HTTP_CONTEXT_HEADER = HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
     private static final HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER = HeaderNames.create(LRA.LRA_HTTP_ENDED_CONTEXT_HEADER);
     private static final HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER = HeaderNames.create(LRA.LRA_HTTP_PARENT_CONTEXT_HEADER);
@@ -67,14 +75,17 @@ class NonJaxRsResource {
             );
 
     private final ParticipantService participantService;
+    private final NonJaxRsCallbackAuthenticator callbackAuthenticator;
     private final String contextPath;
 
     @Inject
     NonJaxRsResource(ParticipantService participantService,
+                     NonJaxRsCallbackAuthenticator callbackAuthenticator,
                      @ConfigProperty(name = CONFIG_CONTEXT_PATH_KEY,
                                      defaultValue = CONTEXT_PATH_DEFAULT) String contextPath,
                      Config config) {
         this.participantService = participantService;
+        this.callbackAuthenticator = callbackAuthenticator;
         this.contextPath = contextPath;
     }
 
@@ -88,6 +99,13 @@ class NonJaxRsResource {
     }
 
     private void handleRequest(ServerRequest req, ServerResponse res) {
+        List<String> capabilities = req.query()
+                .all(NonJaxRsCallbackAuthenticator.CAPABILITY_QUERY_PARAMETER, List::of);
+        if (!capabilities.isEmpty()) {
+            req.context().get(Span.class)
+                    .ifPresent(span -> span.tag(URL_QUERY, REDACTED_CAPABILITY_QUERY));
+        }
+
         HttpPrologue prologue = req.prologue();
 
         if (LOGGER.isLoggable(Level.DEBUG)) {
@@ -112,6 +130,11 @@ class NonJaxRsResource {
         String method = path.get("methodName");
         String type = path.get("type");
 
+        if (!callbackAuthenticator.authenticate(capabilities, lraId, type, fqdn, method)) {
+            res.status(Status.FORBIDDEN_403).send();
+            return;
+        }
+
         try {
             handleRequest(req, res, type, fqdn, method, lraId, parentId, propagatedHeaders);
         } catch (Exception e) {
@@ -128,20 +151,25 @@ class NonJaxRsResource {
                                URI lraId,
                                URI parentId,
                                PropagatedHeaders propagatedHeaders) {
-        switch (type) {
-        case "compensate", "complete", "forget" -> {
-            Optional<?> result = participantService.invoke(fqdn, method, lraId, parentId, propagatedHeaders);
+        Optional<Class<? extends Annotation>> callbackAnnotation =
+                Optional.ofNullable(ParticipantImpl.NON_JAX_RS_PARTICIPANT_CALLBACKS.get(type));
+        if (callbackAnnotation.isEmpty()) {
+            LOGGER.log(Level.ERROR, "Unexpected non Jax-Rs LRA compensation type "
+                    + type + ": " + req.path().absolute().path());
+            res.status(Status.NOT_FOUND_404).send();
+            return;
+        }
+
+        Class<? extends Annotation> annotation = callbackAnnotation.get();
+        Optional<?> result;
+        if (annotation == AfterLRA.class) {
+            LRAStatus status = LRAStatus.valueOf(req.content().as(String.class));
+            result = participantService.invoke(fqdn, method, annotation, lraId, status, propagatedHeaders);
             result.ifPresentOrElse(r -> sendResult(res, r),
                                    res::send);
-        }
-        case "afterlra" -> {
-            LRAStatus status = LRAStatus.valueOf(req.content().as(String.class));
-            Optional<?> result = participantService.invoke(fqdn, method, lraId, status, propagatedHeaders);
-            result.ifPresentOrElse(r -> sendResult(res, r),
-                                         res::send);
-        }
-        case "status" -> {
-            Optional<?> result = participantService.invoke(fqdn, method, lraId, null, propagatedHeaders);
+            return;
+        } else if (annotation == org.eclipse.microprofile.lra.annotation.Status.class) {
+            result = participantService.invoke(fqdn, method, annotation, lraId, null, propagatedHeaders);
             result.ifPresentOrElse(
                     r -> sendResult(res, r),
                     // If the participant has already responded successfully
@@ -149,13 +177,12 @@ class NonJaxRsResource {
                     // then it MAY report 410 Gone HTTP status code
                     // or in the case of non-JAX-RS method returning ParticipantStatus null.
                     () -> res.status(Status.GONE_410).send());
+            return;
         }
-        default -> {
-            LOGGER.log(Level.ERROR, "Unexpected non Jax-Rs LRA compensation type "
-                    + type + ": " + req.path().absolute().path());
-            res.status(Status.NOT_FOUND_404).send();
-        }
-        }
+
+        result = participantService.invoke(fqdn, method, annotation, lraId, parentId, propagatedHeaders);
+        result.ifPresentOrElse(r -> sendResult(res, r),
+                               res::send);
     }
 
     private void sendError(URI lraId, ServerRequest req, ServerResponse res, Throwable t) {
@@ -166,7 +193,11 @@ class NonJaxRsResource {
                                + "LRA id: " + lraId,
                        t);
         }
-        res.send(t);
+        if (t instanceof WebApplicationException wae) {
+            sendResponse(res, wae.getResponse());
+        } else {
+            res.send(t);
+        }
     }
 
     private void sendResult(ServerResponse res, Object result) {

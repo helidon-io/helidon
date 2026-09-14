@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class HelidonTestConfig extends HelidonTestConfigDelegate {
     private volatile Config delegate;
 
     HelidonTestConfig(HelidonTestInfo<?> testInfo) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ClassLoader cl = contextClassLoader();
         ConfigProviderResolver resolver = ConfigProviderResolver.instance();
 
         originalConfig = resolver.getConfig(cl);
@@ -93,8 +93,13 @@ class HelidonTestConfig extends HelidonTestConfigDelegate {
      * Restore the original config.
      */
     void restore() {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ClassLoader cl = contextClassLoader();
         ConfigProviderResolver resolver = ConfigProviderResolver.instance();
         resolver.registerConfig(originalConfig, cl);
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? HelidonTestConfig.class.getClassLoader() : classLoader;
     }
 }

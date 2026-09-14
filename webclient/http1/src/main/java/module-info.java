@@ -31,6 +31,7 @@ module io.helidon.webclient.http1 {
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
+    requires io.helidon.http.http1;
     requires transitive io.helidon.webclient.api;
 
     exports io.helidon.webclient.http1;

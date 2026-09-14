@@ -17,6 +17,8 @@
 package io.helidon.config;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -379,12 +381,26 @@ class ConfigMapperManager implements ConfigMapper {
                 return mapper1;
             }
 
-            if (!genericType.isClass()) {
-                return Optional.empty();
-            }
-
             // third try the specific class map
             Class<?> rawType = genericType.rawType();
+
+            if (!genericType.isClass()) {
+                if (!Map.class.equals(rawType)) {
+                    return Optional.empty();
+                }
+
+                Type type = genericType.type();
+                if (!(type instanceof ParameterizedType parameterizedType)) {
+                    return Optional.empty();
+                }
+
+                Type[] typeArguments = parameterizedType.getActualTypeArguments();
+                if (typeArguments.length != 2
+                        || !String.class.equals(typeArguments[0])
+                        || !String.class.equals(typeArguments[1])) {
+                    return Optional.empty();
+                }
+            }
 
             Function<Config, ?> configConverter = provider.mappers().get(rawType);
 

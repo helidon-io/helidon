@@ -44,6 +44,7 @@ import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.socket.TlsNioSocket;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.InterruptableTask;
@@ -114,43 +115,49 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public final void run() {
         String channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
+        boolean setupComplete = false;
 
-        // proxy protocol before SSL handshake
-        if (listenerConfig.enableProxyProtocol()) {
-            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
-            try {
-                proxyProtocolData = handler.get();
-            } catch (RuntimeException e) {
-                if (LOGGER.isLoggable(TRACE)) {
-                    LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
+        try {
+            // proxy protocol before SSL handshake
+            if (listenerConfig.enableProxyProtocol()) {
+                ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
+                try {
+                    proxyProtocolData = handler.get();
+                } catch (RuntimeException e) {
+                    if (LOGGER.isLoggable(TRACE)) {
+                        LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
+                    }
+                    return;
                 }
-                closeChannel(channelId);
+            }
+
+            // handle SSL and init helidonSocket, reader and writer
+            try {
+                helidonSocket = createSocket(tls, socket, channelId);
+
+                reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
+                writer = SocketWriter.create(listenerContext.executor(),
+                                             helidonSocket,
+                                             listenerConfig.writeQueueLength(),
+                                             listenerConfig.smartAsyncWrites());
+            } catch (RuntimeException e) {
+                // these exceptions are thrown to the executor service
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+                }
+                return;
+            } catch (Exception e) {
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+                }
                 return;
             }
-        }
-
-        // handle SSL and init helidonSocket, reader and writer
-        try {
-            helidonSocket = createSocket(tls, socket, channelId);
-
-            reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
-            writer = SocketWriter.create(listenerContext.executor(),
-                                         helidonSocket,
-                                         listenerConfig.writeQueueLength(),
-                                         listenerConfig.smartAsyncWrites());
-        } catch (RuntimeException e) {
-            // these exceptions are thrown to the executor service
-            if (LOGGER.isLoggable(TRACE)) {
-                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+            setupComplete = true;
+        } finally {
+            if (!setupComplete) {
+                connectionSemaphore.release();
+                closeChannel(channelId);
             }
-            closeChannel(channelId);
-            return;
-        } catch (Exception e) {
-            if (LOGGER.isLoggable(TRACE)) {
-                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
-            }
-            closeChannel(channelId);
-            return;
         }
 
         // connection handling
@@ -193,6 +200,12 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         } catch (CloseConnectionException e) {
             // end of request stream - safe to close the connection, as it was requested by our client
             helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
+        } catch (DataReader.InsufficientDataAvailableException | SocketWriterException e) {
+            // the connection ended while reading or writing data
+            helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            helidonSocket.log(LOGGER, TRACE, "connection interrupted", e);
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof SocketException) {
                 // socket exception - the socket failed, probably killed by OS, proxy or client
@@ -204,8 +217,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
             // connection has finished the loop of handling, release the semaphore
-            connectionSemaphore.release();
             activeConnections.remove(socketsId);
+            connectionSemaphore.release();
             writer.close();
             closeChannel(channelId);
         }
@@ -352,8 +365,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             Iterator<ServerConnectionSelector> iterator = providerCandidates.iterator();
             if (!iterator.hasNext()) {
                 helidonSocket.log(LOGGER, DEBUG, "Could not find a suitable connection provider. "
-                                + "initial connection buffer (may be empty if no providers exist):\n%s",
-                        currentBuffer.debugDataHex(false));
+                                + "initial connection buffer bytes=%d",
+                        currentBuffer.available());
                 return null;
             }
 
@@ -363,7 +376,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 int expectedBytes = candidate.bytesToIdentifyConnection();
 
                 ServerConnectionSelector.Support supports;
-                if (expectedBytes == 0 || expectedBytes < currentBuffer.available()) {
+                if (expectedBytes == 0 || expectedBytes <= currentBuffer.available()) {
                     supports = candidate.supports(currentBuffer);
                 } else {
                     // we need more data, let's keep this provider for now
@@ -396,8 +409,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 helidonSocket.log(LOGGER,
                         DEBUG,
                         "Could not find a suitable connection provider. "
-                                + "initial connection buffer (may be empty if no providers exist):\n%s",
-                        currentBuffer.debugDataHex(true));
+                                + "initial connection buffer bytes=%d",
+                        currentBuffer.available());
 
                 return null;
             }

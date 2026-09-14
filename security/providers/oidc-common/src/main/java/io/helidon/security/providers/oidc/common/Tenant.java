@@ -17,6 +17,7 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
 import io.helidon.json.JsonObject;
@@ -105,19 +106,27 @@ public class Tenant {
                 .or(() -> oidcMetadata.getString("issuer"))
                 .orElse(null);
 
+        URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
+        if (!tenantConfig.validateJwtWithJwk()) {
+            metaKey = resolveMetaKey("introspection_endpoint", serverType, identityUri);
+            introspectUri = oidcMetadata.getOidcEndpoint(collector,
+                                                         introspectUri,
+                                                         metaKey,
+                                                         "/oauth2/v1/introspect");
+        }
+
         collector.collect().checkValid();
         WebClientConfig.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
 
         if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
+            HttpBasicAuthProvider.Builder httpBasicAuthBuilder = HttpBasicAuthProvider.builder()
+                    .addOutboundTarget(outboundTarget("oidc-token", tokenEndpointUri, tenantConfig));
 
-            HttpBasicAuthProvider httpBasicAuth = HttpBasicAuthProvider.builder()
-                    .addOutboundTarget(OutboundTarget.builder("oidc")
-                                               .addHost("*")
-                                               .customObject(HttpBasicOutboundConfig.class,
-                                                             HttpBasicOutboundConfig.create(tenantConfig.clientId(),
-                                                                                            tenantConfig.clientSecret()))
-                                               .build())
-                    .build();
+            if (introspectUri != null) {
+                httpBasicAuthBuilder.addOutboundTarget(outboundTarget("oidc-introspect", introspectUri, tenantConfig));
+            }
+
+            HttpBasicAuthProvider httpBasicAuth = httpBasicAuthBuilder.build();
             Security tokenOutboundSecurity = Security.builder()
                     .addOutboundSecurityProvider(httpBasicAuth)
                     .build();
@@ -154,14 +163,6 @@ public class Tenant {
             }
             return JwkKeys.builder().build();
         });
-        URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
-        if (!tenantConfig.validateJwtWithJwk()) {
-            metaKey = resolveMetaKey("introspection_endpoint", serverType, identityUri);
-            introspectUri = oidcMetadata.getOidcEndpoint(collector,
-                                                         introspectUri,
-                                                         metaKey,
-                                                         "/oauth2/v1/introspect");
-        }
         return new Tenant(tenantConfig,
                           tokenEndpointUri,
                           authorizationEndpointUri,
@@ -170,6 +171,24 @@ public class Tenant {
                           appWebClient,
                           signJwk,
                           introspectUri);
+    }
+
+    private static OutboundTarget outboundTarget(String name, URI endpointUri, TenantConfig tenantConfig) {
+        String scheme = endpointUri.getScheme();
+        String host = endpointUri.getHost();
+        if (scheme == null || host == null) {
+            throw new SecurityException("OIDC endpoint URI must be absolute with scheme and host when using "
+                                                + OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC);
+        }
+        String path = endpointUri.getPath();
+        return OutboundTarget.builder(name)
+                .addTransport(scheme)
+                .addHost(host)
+                .addPath(Pattern.quote(path == null || path.isEmpty() ? "/" : path))
+                .addMethod("POST")
+                .customObject(HttpBasicOutboundConfig.class,
+                              HttpBasicOutboundConfig.create(tenantConfig.clientId(), tenantConfig.clientSecret()))
+                .build();
     }
 
     private static String resolveMetaKey(String metaKey, String serverType, URI identityUri) {
@@ -228,6 +247,9 @@ public class Tenant {
 
     /**
      * Client with configured proxy and security.
+     * When token endpoint authentication is {@link OidcConfig.ClientAuthentication#CLIENT_SECRET_BASIC},
+     * client credentials are scoped to POST requests on the token endpoint scheme, host, and path and, when JWT
+     * introspection is used, to POST requests on the introspection endpoint scheme, host, and path.
      *
      * @return client for communicating with OIDC identity server
      */

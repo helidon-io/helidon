@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.notNullValue;
 class ImageModelConfigTest {
     public static final String MODEL_NAME = "test-image-model";
 
+    @SuppressWarnings("deprecation")
     @Test
     void testDefaultRoot() {
         var config = OpenAiImageModelConfig.create(
@@ -50,6 +51,14 @@ class ImageModelConfigTest {
         assertThat(config.size().get(), is("size"));
         assertThat(config.quality().isPresent(), is(true));
         assertThat(config.quality().get(), is("quality"));
+        assertThat(config.background().isPresent(), is(true));
+        assertThat(config.background().get(), is("transparent"));
+        assertThat(config.outputFormat().isPresent(), is(true));
+        assertThat(config.outputFormat().get(), is("png"));
+        assertThat(config.outputCompression().isPresent(), is(true));
+        assertThat(config.outputCompression().get(), is(80));
+        assertThat(config.moderation().isPresent(), is(true));
+        assertThat(config.moderation().get(), is("low"));
         assertThat(config.style().isPresent(), is(true));
         assertThat(config.style().get(), is("style"));
         assertThat(config.user().isPresent(), is(true));
@@ -67,5 +76,28 @@ class ImageModelConfigTest {
         assertThat(config.customHeaders().size(), is(2));
         assertThat(config.customHeaders().get("header1"), is(equalTo("value1")));
         assertThat(config.customHeaders().get("header2"), is(equalTo("value2")));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testLegacyOptionsRemainCompatible() {
+        var config = OpenAiImageModelConfig.builder()
+                .apiKey("api-key")
+                .httpClientBuilderDiscoverServices(false)
+                .style("style")
+                .responseFormat("response-format")
+                .build();
+
+        assertThat(config.style().orElseThrow(), is("style"));
+        assertThat(config.responseFormat().orElseThrow(), is("response-format"));
+        assertThat(config.configuredBuilder().build(), is(notNullValue()));
+
+        var clearedConfig = OpenAiImageModelConfig.builder(config)
+                .clearStyle()
+                .clearResponseFormat()
+                .build();
+
+        assertThat(clearedConfig.style().isEmpty(), is(true));
+        assertThat(clearedConfig.responseFormat().isEmpty(), is(true));
     }
 }

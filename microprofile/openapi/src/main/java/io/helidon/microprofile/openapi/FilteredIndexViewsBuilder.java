@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -304,7 +304,7 @@ class FilteredIndexViewsBuilder {
         for (String path : paths) {
             Enumeration<URL> urls;
             try {
-                urls = Thread.currentThread().getContextClassLoader().getResources(path);
+                urls = contextClassLoader().getResources(path);
                 while (urls.hasMoreElements()) {
                     result.add(urls.nextElement());
                 }
@@ -313,6 +313,11 @@ class FilteredIndexViewsBuilder {
             }
         }
         return result;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? FilteredIndexViewsBuilder.class.getClassLoader() : classLoader;
     }
 
     private static class FilteringOpenApiConfigImpl extends OpenApiConfigImpl {

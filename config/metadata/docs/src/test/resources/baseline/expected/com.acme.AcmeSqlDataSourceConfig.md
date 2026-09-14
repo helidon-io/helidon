@@ -1,0 +1,54 @@
+# com.<wbr>acme.<wbr>Acme<wbr>SqlData<wbr>Source<wbr>Config
+
+## Description
+
+ACME SQL data source configuration
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>max-<wbr>pool-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>20</code>
+</td>
+<td>Maximum pool size</td>
+</tr>
+<tr>
+<td>
+<code>url</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>JDBC URL</td>
+</tr>
+</tbody>
+</table>
+
+
+
+## Usages
+
+- <a href="io.helidon.data.SourcesConfig.md#sql"><code>data.<wbr>sources.<wbr>sql</code></a>
+
+---
+
+See the [manifest](manifest.md) for all available types.

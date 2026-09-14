@@ -11,7 +11,9 @@ The following modules for handling config metadata exist:
 - `io.helidon.config.metadata:helidon-config-metadata`: annotations to add to non-Blueprint types to generate documentation
 - `io.helidon.config.metadata:helidon-config-metadata-codegen`: code generator that reads annotations and creates `config-metadata.json`
 - `io.helidon.config:helidon-config-metadata-processor`: deprecated processor that does the same as `codegen` above
-- `io.helidon.config.metadata:helidon-config-metadata-docs`: code generator that reads `config.metadata.json` and generates Helidon `.adoc` files that are part of Helidon Config reference documentation
+- `io.helidon.config.metadata:helidon-config-metadata-docs`: code generator
+  that reads `config.metadata.json` and generates Markdown files that are part
+  of the Helidon Config reference documentation
 
 For Maven compatibility in Helidon 4.x, the legacy `io.helidon.config:helidon-config-metadata` coordinates relocate to `io.helidon.config.metadata:helidon-config-metadata`.
 
@@ -109,7 +111,7 @@ There are two ways to do this:
 1. go to the `config/metadata/docs` directory, and run `mvn compile exec:exec`
 2. go to the `docs` directory, and run `mvn package -Pconfigdoc`
 
-In both cases, all dependencies from `all/pom.xml` except for `helidon-logging-log4j` and `helidon-logging-slf4j` are analyzed, and documentation is updated in `docs/src/main/asciidoc/config`.
+In both cases, all dependencies from `all/pom.xml` except for `helidon-logging-log4j` and `helidon-logging-slf4j` are analyzed, and documentation is updated in `docs/config`.
 Please check the output of, as there may be warnings that point out a possible problem (such as a file that exists, but is not backed by any `config-metadata.json`).
 
 ## Output file format

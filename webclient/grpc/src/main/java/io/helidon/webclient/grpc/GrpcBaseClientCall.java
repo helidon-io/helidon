@@ -162,8 +162,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         ClientUri clientUri = nextClientUri();
         ClientConnection clientConnection = clientConnection(clientUri);
         socket = clientConnection.helidonSocket();
-        connection = Http2ClientConnection.create((Http2ClientImpl) grpcClient.http2Client(),
-                                                  clientConnection, true);
+        Http2ClientImpl http2Client = (Http2ClientImpl) grpcClient.http2Client();
+        connection = Http2ClientConnection.create(http2Client, clientConnection, true);
 
         // note that settings from connection may not be initialized at this time
         // given that Http2ClientConnection.create() above runs asynchronously
@@ -193,8 +193,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                         return config.readTimeout().orElse(config.protocolConfig().pollWaitTime());
                     }
                 },
-                null,       // Http2ClientConfig
-                connection.streamIdSequence());
+                http2Client.prototype(),
+                connection.streamIdSequence(),
+                http2Client);
 
         // start streaming threads
         startStreamingThreads();

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2024, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,28 +48,11 @@ version() {
 HELIDON_VERSION=$(version "${WS_DIR}/bom/pom.xml")
 readonly HELIDON_VERSION
 
-# If needed we clone the helidon-examples repo
-if [ ! -d "${WS_DIR}/helidon-examples" ]; then
-  echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
-  git clone --branch dev-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
+git clone --branch helidon-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
 
-  # If in a tag, update the version on the fly
-  if [ -n "$(git tag --points-at HEAD)" ] ; then
-    "${WS_DIR}/helidon-examples"/etc/scripts/update-version.sh "${HELIDON_VERSION}"
-  fi
-fi
-
-HELIDON_VERSION_IN_EXAMPLES=$(version "${WS_DIR}/helidon-examples/pom.xml")
-readonly HELIDON_VERSION_IN_EXAMPLES
-
-# Make sure the helidon version from the example repo aligns with this repository
-if [ "${HELIDON_VERSION}" != "${HELIDON_VERSION_IN_EXAMPLES}" ]; then
-  printf "The Helidon version in this repository (%s) does not match the Helidon version in %s (%s)\n" \
-    "${HELIDON_VERSION}" \
-    "${WS_DIR}/helidon-examples" \
-    "${HELIDON_VERSION_IN_EXAMPLES}"
-  exit 1
-fi
+echo "Updating helidon.version in examples to ${HELIDON_VERSION}"
+"${WS_DIR}/helidon-examples"/etc/scripts/update-version.sh "${HELIDON_VERSION}"
 
 # shellcheck disable=SC2086
 mvn ${MVN_ARGS} \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package io.helidon.jersey.connector;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -43,6 +45,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientRequest;
 import org.glassfish.jersey.client.ClientResponse;
@@ -284,6 +287,17 @@ class HelidonConnector implements Connector {
     @Override
     public ClientResponse apply(ClientRequest request) {
         HttpClientResponse httpResponse;
+        if (request.hasEntity()) {
+            // Jersey multipart writers generate the boundary during serialization, after WebClient maps the headers.
+            MediaType mediaType = request.getMediaType();
+            if (mediaType != null
+                    && "multipart".equalsIgnoreCase(mediaType.getType())
+                    && !mediaType.getParameters().containsKey("boundary")) {
+                Map<String, String> parameters = new HashMap<>(mediaType.getParameters());
+                parameters.put("boundary", "Boundary_" + UUID.randomUUID());
+                request.type(new MediaType(mediaType.getType(), mediaType.getSubtype(), parameters));
+            }
+        }
         HttpClientRequest httpRequest = mapRequest(request);
 
         if (request.hasEntity()) {

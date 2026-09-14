@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>4.5.0-SNAPSHOT</version>
+        <version>4.5.5-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-bom</artifactId>
@@ -31,7 +31,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>4.5.0-SNAPSHOT</helidon.version>
+        <helidon.version>4.5.5-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -129,6 +129,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile.grpc</groupId>
                 <artifactId>helidon-microprofile-grpc-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -792,6 +797,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.dbclient</groupId>
+                <artifactId>helidon-dbclient-json</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.dbclient</groupId>
                 <artifactId>helidon-dbclient-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1440,6 +1450,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.http</groupId>
+                <artifactId>helidon-http-http1</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.http</groupId>
                 <artifactId>helidon-http-http2</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1526,6 +1541,11 @@
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-grpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-grpc-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

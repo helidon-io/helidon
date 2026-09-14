@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,14 @@ public final class GraphQlConstants {
      * Default error message to return for unchecked exceptions and errors.
      */
     public static final String DEFAULT_ERROR_MESSAGE = "Server Error";
+    /**
+     * Default maximum query depth.
+     */
+    public static final int DEFAULT_MAX_QUERY_DEPTH = 100;
+    /**
+     * Default maximum query complexity.
+     */
+    public static final int DEFAULT_MAX_QUERY_COMPLEXITY = 1000;
 
     // forbid instantiation
     private GraphQlConstants() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,6 +141,13 @@ class ReadablePartNoLength extends ReadablePartAbstract {
 
         @Override
         public long skip(long n) {
+            if (n <= 0) {
+                return 0;
+            }
+            ensureBuffer();
+            if (finished) {
+                return 0;
+            }
             int toSkip = (int) Math.min(n, nextBuffer.available());
 
             nextBuffer.skip(toSkip);
@@ -159,7 +166,7 @@ class ReadablePartNoLength extends ReadablePartAbstract {
         }
 
         private void ensureBuffer() {
-            if (nextBuffer == null || nextBuffer.consumed()) {
+            while (!finished && (nextBuffer == null || nextBuffer.consumed())) {
                 this.nextBuffer = readBuffer();
                 if (trailingEol) {
                     // skip it, as it will be part of next buffer

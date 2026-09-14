@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,3 +28,18 @@ security:
     token-endpoint-uri: "http://identity.oracle.com/tokens"
     authorization-endpoint-uri: "http://identity.oracle.com/authorization"
     introspect-endpoint-uri: "http://identity.oracle.com/introspect"
+  oidc-custom-groups:
+    identity-uri: "https://identity.oracle.com"
+    client-id: "client-id-value"
+    client-secret: "client-secret-value"
+    frontend-uri: "http://something:7001"
+    oidc-metadata-well-known: false
+    token-endpoint-uri: "http://identity.oracle.com/tokens"
+    authorization-endpoint-uri: "http://identity.oracle.com/authorization"
+    validate-jwt-with-jwk: true
+    token-signature-validation: false
+    check-audience: false
+    header-use: true
+    cookie-use: false
+    jwt-groups-path: "realm_access/roles"
+    jwt-groups-separator: ","

@@ -1,0 +1,66 @@
+# io.<wbr>helidon.<wbr>helidon.<wbr>oci.<wbr>Authentication<wbr>Config
+
+## Description
+
+Configuration for helidon.oci.authentication
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="config"></a>
+<a href="io.helidon.integrations.oci.ConfigMethodConfig.md">
+<code>config</code>
+</a>
+</td>
+<td>
+<code>Config<wbr>Method<wbr>Config</code>
+</td>
+<td>Config method configuration (if provided and used)</td>
+</tr>
+<tr>
+<td>
+<a id="config-file"></a>
+<a href="io.helidon.integrations.oci.ConfigFileMethodConfig.md">
+<code>config-<wbr>file</code>
+</a>
+</td>
+<td>
+<code>Config<wbr>File<wbr>Method<wbr>Config</code>
+</td>
+<td>Config file method configuration (if provided and used)</td>
+</tr>
+<tr>
+<td>
+<a id="session-token"></a>
+<a href="io.helidon.integrations.oci.SessionTokenMethodConfig.md">
+<code>session-<wbr>token</code>
+</a>
+</td>
+<td>
+<code>Session<wbr>Token<wbr>Method<wbr>Config</code>
+</td>
+<td>Session token method configuration (if provided and used)</td>
+</tr>
+</tbody>
+</table>
+
+
+
+## Usages
+
+- <a href="io.helidon.integrations.oci.OciConfig.md#authentication"><code>helidon.<wbr>oci.<wbr>authentication</code></a>
+
+---
+
+See the [manifest](manifest.md) for all available types.

@@ -133,6 +133,8 @@ public final class Cors {
 
     /**
      * Whether to allow credentials.
+     * <p>
+     * Credentials cannot be enabled when allowed origins contain {@link Cors#ALLOW_ALL}.
      */
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)

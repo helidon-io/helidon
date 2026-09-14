@@ -27,6 +27,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BufferDataTest {
     static Stream<TestContext> initParams() {
@@ -147,6 +148,42 @@ class BufferDataTest {
         expected = 42;
         buffer.clear();
         assertThat(buffer.readHpackInt(42, 8), is(expected));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void testRejectsOverflowingHpackInt(TestContext context) {
+        BufferData buffer = context.bufferData();
+        buffer.write(0xff)
+                .write(0xff)
+                .write(0xff)
+                .write(0xff)
+                .write(0x08);
+
+        assertThrows(IllegalArgumentException.class, () -> buffer.readHpackInt(0xff, 7));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void testRejectsTooLongHpackInt(TestContext context) {
+        BufferData buffer = context.bufferData();
+        buffer.write(0x80)
+                .write(0x80)
+                .write(0x80)
+                .write(0x80)
+                .write(0x80)
+                .write(0x00);
+
+        assertThrows(IllegalArgumentException.class, () -> buffer.readHpackInt(0xff, 7));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void testRejectsTruncatedHpackInt(TestContext context) {
+        BufferData buffer = context.bufferData();
+        buffer.write(0x80);
+
+        assertThrows(IllegalArgumentException.class, () -> buffer.readHpackInt(0xff, 7));
     }
 
     @ParameterizedTest

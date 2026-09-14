@@ -35,7 +35,9 @@ import io.helidon.common.features.api.HelidonFlavor;
  * <p>
  * To enable interception of validated methods, the method, its parameter, or a generic type argument must be annotated with
  * one of the constraints in {@link io.helidon.validation.Validation} class, or the {@link io.helidon.validation.Validation.Valid}
- * annotation, and the same codegen module must be on the annotation processor path.
+ * annotation, and the same codegen module must be on the annotation processor path. For registry-managed services and
+ * service factories, these annotations may also be declared on non-private instance methods of implemented service contracts.
+ * Validation is applied to instances obtained from the service registry; directly constructed instances are not intercepted.
  * <p>
  * The constraints are grouped (through container classes) based on types that can be constrained.
  * Some constraints are for convenience - such as {@link io.helidon.validation.Validation.Integer.Max} and

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -160,6 +160,10 @@
                                 <value>io.helidon.http.HeaderValues</value>
                                 <value>io.helidon.webserver.staticcontent.StaticContentService</value>
                             </list>
+                            <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
+                                <value>io.helidon.common.media.type.MediaTypes</value>
+                                <value>io.helidon.http.Method</value>
+                            </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value order="1"><![CDATA[.any("/", (req, res) -> {
                     res.status(Status.MOVED_PERMANENTLY_301);
@@ -177,6 +181,23 @@
     void testFileService() {
         try (Http1ClientResponse response = client.get("/api").request()) {
             assertThat(response.status(), is(Status.OK_200));
+        }
+    }
+
+    @Test
+    void testFileServiceRejectsUnsafeFileName() {
+        try (Http1ClientResponse response = client.method(Method.POST)
+                .uri("/api")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="file[]"; filename="file%0aname.txt"\r
+                            Content-Type: text/plain\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """)) {
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
         }
     }
 ]]></value>

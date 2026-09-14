@@ -20,6 +20,7 @@ security:
             roles: ["user"]
     - jwt:
         allow-impersonation: true
+        authenticate: false
         atn-token:
           # we are not interested in inbound tokens
           verify-signature: false

@@ -17,6 +17,7 @@ package io.helidon.dbclient.mongodb;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,9 +34,12 @@ import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementBase;
 import io.helidon.dbclient.DbStatementParameters;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 import com.mongodb.client.MongoDatabase;
-import jakarta.json.Json;
 import org.bson.Document;
 
 import static io.helidon.dbclient.mongodb.MongoDbStatement.MongoOperation.COMMAND;
@@ -56,7 +60,7 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
     /**
      * Empty JSON object.
      */
-    static final Document EMPTY = Document.parse(Json.createObjectBuilder().build().toString());
+    static final Document EMPTY = new Document();
 
     /**
      * Operation JSON parameter name.
@@ -122,6 +126,20 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
             return StatementParsers.namedParser(statement, prepareNamedParameters(named)).convert();
         }
         return statement;
+    }
+
+    @Override
+    public S params(Object... parameters) {
+        if (parameters.length == 1) {
+            Object parameter = parameters[0];
+            if (parameter instanceof JsonObject jsonObject) {
+                return paramsJsonObject(jsonObject);
+            }
+            if (parameter instanceof JsonArray jsonArray) {
+                return paramsJsonArray(jsonArray);
+            }
+        }
+        return params(Arrays.asList(parameters));
     }
 
     private Map<String, Object> prepareNamedParameters(DbNamedStatementParameters named) {
@@ -194,6 +212,17 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
         return normalized;
     }
 
+    private S paramsJsonObject(JsonObject parameters) {
+        parameters.keysAsStrings()
+                .forEach(name -> addParam(name, parameters.value(name).orElse(JsonNull.instance())));
+        return identity();
+    }
+
+    private S paramsJsonArray(JsonArray parameters) {
+        parameters.values().forEach(this::addParam);
+        return identity();
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> mappedValue(Object value) {
         Class<Object> valueClass = (Class<Object>) value.getClass();
@@ -225,6 +254,7 @@ abstract class MongoDbStatement<S extends DbStatement<S>> extends DbStatementBas
                 || value instanceof Boolean
                 || value instanceof Character
                 || value instanceof Enum<?>
+                || value instanceof JsonValue
                 || value instanceof jakarta.json.JsonValue;
     }
 

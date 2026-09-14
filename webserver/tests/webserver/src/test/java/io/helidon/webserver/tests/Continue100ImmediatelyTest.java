@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.Status;
+import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.Handler;
@@ -98,6 +99,11 @@ class Continue100ImmediatelyTest {
                                 .build())
                 .build();
 
+        wsb.writeQueueLength(2);
+        wsb.smartAsyncWrites(true);
+        wsb.errorHandling(ErrorHandling.builder()
+                                  .includeEntity(true)
+                                  .build());
         wsb.addConnectionSelector(http1);
     }
 

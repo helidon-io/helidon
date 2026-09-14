@@ -18,9 +18,12 @@ package io.helidon.webclient.http2;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
@@ -30,6 +33,9 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 
 class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse>
         implements Http2ClientRequest, Http2StreamConfig, FullClientRequest<Http2ClientRequest> {
+    // RFC 9110, section 8.1: these define the replayed representation data's format and encoding.
+    private static final Set<HeaderName> REPRESENTATION_HEADERS = Set.of(HeaderNames.CONTENT_TYPE,
+                                                                         HeaderNames.CONTENT_ENCODING);
 
     private final Http2ClientImpl http2Client;
     private int priority = 16;
@@ -44,7 +50,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(http2Client, delegate, method, clientUri, properties, null);
+        this(http2Client, delegate, method, clientUri, properties, null, false);
     }
 
     private Http2ClientRequestImpl(Http2ClientImpl http2Client,
@@ -52,15 +58,17 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                    Method method,
                                    ClientUri clientUri,
                                    Map<String, String> properties,
-                                   ClientUri redirectSourceUri) {
+                                   ClientUri redirectSourceUri,
+                                   boolean crossOriginRedirect) {
         super(http2Client.clientConfig(),
-                http2Client.webClient().cookieManager(),
-                Http2Client.PROTOCOL_ID,
-                method,
-                clientUri,
-                null,
-                properties,
-                redirectSourceUri);
+              http2Client.webClient().cookieManager(),
+              Http2Client.PROTOCOL_ID,
+              method,
+              clientUri,
+              delegate == null ? null : delegate.sendExpectContinue().orElse(null),
+              properties,
+              redirectSourceUri,
+              crossOriginRedirect);
 
         this.http2Client = http2Client;
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
@@ -71,8 +79,15 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     Http2ClientRequestImpl(Http2ClientRequestImpl request,
                            Method method,
                            ClientUri clientUri,
-                           Map<String, String> properties) {
-        this(request.http2Client, request.delegate, method, clientUri, properties, request.resolvedUri());
+                           Map<String, String> properties,
+                           boolean preserveEntity) {
+        this(request.http2Client,
+             request.delegate,
+             method,
+             clientUri,
+             properties,
+             request.resolvedUri(),
+             request.crossesRedirectOriginBoundary(clientUri));
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
@@ -83,7 +98,12 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.flowControlTimeout(request.flowControlTimeout);
         this.requestPrefetch(request.requestPrefetch);
         this.readTimeout(request.readTimeout());
+        this.readContinueTimeout(request.readContinueTimeout());
+        request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         this.outputStreamRedirect(request.outputStreamRedirect);
+        if (preserveEntity) {
+            REPRESENTATION_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
+        }
     }
 
     @Override
@@ -174,6 +194,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }
 
+    boolean canReplayEntityTo(ClientUri requestUri) {
+        return clientConfig().followCrossOriginEntityRedirects() || !crossesRedirectOriginBoundary(requestUri);
+    }
+
     Http2ClientResponseImpl invokeEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
@@ -219,7 +243,9 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                            serviceResponse.connection(),
                                            complete,
                                            callChain::closeResponse,
-                                           http2Client.protocolConfig().maxBufferedEntitySize().toBytes());
+                                           http2Client.protocolConfig().maxBufferedEntitySize().toBytes(),
+                                           callChain.hasRequestEntity(),
+                                           callChain.requestEntity());
 
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
-import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 
 import jakarta.ws.rs.WebApplicationException;
@@ -64,9 +63,7 @@ class LraAnnotationHandler implements AnnotationHandler {
     @Override
     public void handleJaxRsBefore(ContainerRequestContext reqCtx, ResourceInfo resourceInfo) {
         Method method = resourceInfo.getResourceMethod();
-        URI baseUri = reqCtx.getUriInfo().getBaseUri();
         PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(reqCtx.getHeaders());
-        Participant participant = participantService.participant(baseUri, resourceInfo.getResourceClass());
         Optional<URI> existingLraId = getLraContext(reqCtx);
         long timeLimit = Duration.of(annotation.timeLimit(), annotation.timeUnit()).toMillis();
         String clientId = method.getDeclaringClass().getName() + "#" + method.getName();
@@ -84,7 +81,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                     } else {
                         lraId = start(clientId, propagatedHeaders, timeLimit);
                     }
-                    join(reqCtx, lraId, propagatedHeaders, timeLimit, participant);
+                    join(reqCtx, lraId, propagatedHeaders, timeLimit, resourceInfo);
                     setLraContext(reqCtx, lraId);
                     break;
                 case NEVER:
@@ -101,7 +98,7 @@ class LraAnnotationHandler implements AnnotationHandler {
                 case SUPPORTS:
                     if (existingLraId.isPresent()) {
                         lraId = existingLraId.get();
-                        join(reqCtx, lraId, propagatedHeaders, timeLimit, participant);
+                        join(reqCtx, lraId, propagatedHeaders, timeLimit, resourceInfo);
                         setLraContext(reqCtx, lraId);
                     }
                     break;
@@ -116,14 +113,14 @@ class LraAnnotationHandler implements AnnotationHandler {
                 case REQUIRED:
                     if (existingLraId.isPresent()) {
                         lraId = existingLraId.get();
-                        join(reqCtx, lraId, propagatedHeaders, timeLimit, participant);
+                        join(reqCtx, lraId, propagatedHeaders, timeLimit, resourceInfo);
                         setLraContext(reqCtx, lraId);
                         break;
                     }
                     // non-existing lra, fall through to requires_new
                 case REQUIRES_NEW:
                     lraId = start(clientId, propagatedHeaders, timeLimit);
-                    join(reqCtx, lraId, propagatedHeaders, timeLimit, participant);
+                    join(reqCtx, lraId, propagatedHeaders, timeLimit, resourceInfo);
                     setLraContext(reqCtx, lraId);
                     break;
                 default:
@@ -182,7 +179,10 @@ class LraAnnotationHandler implements AnnotationHandler {
                       URI lraId,
                       PropagatedHeaders propagatedHeaders,
                       long timeLimit,
-                      Participant participant) {
+                      ResourceInfo resourceInfo) {
+        var participant = participantService.participant(reqCtx.getUriInfo().getBaseUri(),
+                                                         resourceInfo.getResourceClass(),
+                                                         lraId);
         callCoordinator(() -> coordinatorClient.join(lraId, propagatedHeaders, timeLimit, participant))
                 .ifPresent(uri -> reqCtx.getHeaders().add(LRA_HTTP_RECOVERY_HEADER, uri.toASCIIString()));
     }

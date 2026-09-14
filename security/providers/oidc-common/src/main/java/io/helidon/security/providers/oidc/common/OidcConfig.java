@@ -254,8 +254,12 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * <tr>
  *     <td>redirect-attempt-param</td>
  *     <td>{@value DEFAULT_ATTEMPT_PARAM}</td>
- *     <td>Query parameter holding the number of times we redirected to an identity server. Customizable to prevent
- *     conflicts with application parameters</td>
+ *     <td>Redirect attempt query parameter name, or cookie name prefix for cookie-based counters.</td>
+ * </tr>
+ * <tr>
+ *     <td>redirect-attempt-counter-strategy</td>
+ *     <td>{@link RedirectAttemptCounterStrategy#PARAM}</td>
+ *     <td>Strategy used to count redirects to an identity server.</td>
  * </tr>
  * <tr>
  *     <td>max-redirects</td>
@@ -275,20 +279,46 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-enabled}</td>
- *     <td>Depends on other configuration</td>
- *     <td>Whether cookies should be encrypted. Will be enabled if logout is enabled.</td>
+ *     <td>{@code true}</td>
+ *     <td>Whether the access token cookie should be encrypted.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code cookie-compression-enabled}</td>
+ *     <td>{@code true} when the top-level server type is IDCS, {@code false} otherwise</td>
+ *     <td>Whether the access token cookie should be GZIP-compressed when this reduces its size.
+ *     Compression is applied before encryption when encryption is enabled.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code cookie-compression-id-enabled}</td>
+ *     <td>{@code true} when the top-level server type is IDCS, {@code false} otherwise</td>
+ *     <td>Whether the ID token cookie should be GZIP-compressed when this reduces its size.
+ *     Compression is applied before encryption when encryption is enabled.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-password}</td>
  *     <td>Generated for this service (as a file)</td>
  *     <td>Encryption password to be used for symmetric cipher. Must be the same for all services that are intended
- *     to share a cookie as a form of authentication</td>
+ *     to share a cookie as a form of authentication. If encrypted cookies are enabled and this option and
+ *     {@code cookie-encryption-name} are not configured, Helidon creates or reads a fallback
+ *     {@code .helidon-oidc-secret} file in the current working directory.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-name}</td>
  *     <td>&nbsp;</td>
  *     <td>Name of encryption configuration in {@link io.helidon.security.Security}. If used, security must be registered
  *     in curent context or in global context (this is done automatically in Helidon MP).</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code legacy-cookie-encryption}</td>
+ *     <td>{@code false}</td>
+ *     <td>Temporary rolling-upgrade option to write unversioned password-based encrypted OIDC cookies with the legacy
+ *     PBKDF2 iteration count. Leave disabled for steady-state deployments.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code legacy-cookie-fallback}</td>
+ *     <td>{@code false}</td>
+ *     <td>Temporary rolling-upgrade option to retry password-based encrypted OIDC cookie decryption with the alternate
+ *     cookie format after primary decryption fails. Disable after legacy cookies expire.</td>
  * </tr>
  * <tr>
  *     <td>{@code logout-endpoint-uri}</td>
@@ -370,6 +400,7 @@ public final class OidcConfig extends TenantConfigImpl {
     static final boolean DEFAULT_FORCE_HTTPS_REDIRECTS = false;
     static final Duration DEFAULT_TOKEN_REFRESH_SKEW = Duration.ofSeconds(5);
     static final boolean DEFAULT_RELATIVE_URIS = false;
+    static final boolean DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED = false;
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
     static final String TENANT_IDENT = "name";
@@ -389,12 +420,14 @@ public final class OidcConfig extends TenantConfigImpl {
     private final String frontendUri;
     private final boolean redirect;
     private final String redirectAttemptParam;
+    private final RedirectAttemptCounterStrategy redirectAttemptCounterStrategy;
     private final int maxRedirects;
     private final URI postLogoutUri;
     private final CrossOriginConfig crossOriginConfig;
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
     private final boolean relativeUris;
+    private final boolean fallbackToDefaultTenantEnabled;
     private final WebClient webClient;
     private final Supplier<WebClientConfig.Builder> webClientBuilderSupplier;
     private final LazyValue<Tenant> defaultTenant;
@@ -427,6 +460,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.postLogoutUri = builder.postLogoutUri;
         this.redirect = builder.redirect;
         this.redirectAttemptParam = builder.redirectAttemptParam;
+        this.redirectAttemptCounterStrategy = builder.redirectAttemptCounterStrategy;
         this.maxRedirects = builder.maxRedirects;
         this.forceHttpsRedirects = builder.forceHttpsRedirects;
         this.crossOriginConfig = builder.crossOriginConfig;
@@ -434,6 +468,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.tenantConfigurations = Map.copyOf(builder.tenantConfigurations);
         this.webClient = builder.webClient;
         this.relativeUris = builder.relativeUris;
+        this.fallbackToDefaultTenantEnabled = builder.fallbackToDefaultTenantEnabled;
 
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
@@ -697,14 +732,17 @@ public final class OidcConfig extends TenantConfigImpl {
         return redirect;
     }
 
-    /**
-     * Name of the parameter used in state passed to OIDC to store the number of attempted redirects.
-     * This is to prevent infinite redirects.
-     *
-     * @return name of the query parameter
+    /** Name used by the redirect attempt query parameter, or as the cookie name prefix for cookie-based counters.
+     * @return name of the query parameter or cookie name prefix
      */
     public String redirectAttemptParam() {
         return redirectAttemptParam;
+    }
+    /** Strategy used to count redirects to an identity server.
+     * @return redirect attempt counter strategy
+     */
+    public RedirectAttemptCounterStrategy redirectAttemptCounterStrategy() {
+        return redirectAttemptCounterStrategy;
     }
 
     /**
@@ -762,6 +800,15 @@ public final class OidcConfig extends TenantConfigImpl {
      */
     public WebClient appWebClient() {
         return defaultTenant.get().appWebClient();
+    }
+
+    /**
+     * Whether unknown tenant ids fall back to the default tenant.
+     *
+     * @return whether unknown tenant ids use default tenant configuration
+     */
+    public boolean fallbackToDefaultTenantEnabled() {
+        return fallbackToDefaultTenantEnabled;
     }
 
     /**
@@ -1001,6 +1048,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private String frontendUri;
         private boolean redirect = DEFAULT_REDIRECT;
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
+        private RedirectAttemptCounterStrategy redirectAttemptCounterStrategy = RedirectAttemptCounterStrategy.PARAM;
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
         private URI postLogoutUri;
         private CrossOriginConfig crossOriginConfig;
@@ -1025,6 +1073,7 @@ public final class OidcConfig extends TenantConfigImpl {
                 .encryptionEnabled(true)
                 .cookieName(DEFAULT_TENANT_COOKIE_NAME);
         private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
+                .encryptionEnabled(true)
                 .cookieName(DEFAULT_COOKIE_NAME);
         private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
                 .encryptionEnabled(true)
@@ -1041,7 +1090,10 @@ public final class OidcConfig extends TenantConfigImpl {
                 .build();
         private boolean useCookie = DEFAULT_COOKIE_USE;
         private boolean cookieSameSiteDefault = true;
+        private boolean cookieCompressionConfigured;
+        private boolean cookieCompressionIdConfigured;
         private boolean relativeUris = DEFAULT_RELATIVE_URIS;
+        private boolean fallbackToDefaultTenantEnabled = DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED;
         private boolean tokenSignatureValidation = true;
         private boolean idTokenSignatureValidation = true;
         private boolean accessTokenIpCheck = true;
@@ -1061,6 +1113,12 @@ public final class OidcConfig extends TenantConfigImpl {
         @Override
         public OidcConfig build() {
             buildConfiguration();
+            if (!cookieCompressionConfigured) {
+                tokenCookieBuilder.compressionEnabled("idcs".equals(serverType()));
+            }
+            if (!cookieCompressionIdConfigured) {
+                idTokenCookieBuilder.compressionEnabled("idcs".equals(serverType()));
+            }
 
             Errors.Collector collector = Errors.collector();
             if (useCookie && logoutEnabled) {
@@ -1075,6 +1133,7 @@ public final class OidcConfig extends TenantConfigImpl {
                                             + "is set as an outbound type and \"idcs\" is the server type");
                 }
             }
+            redirectAttemptCounterStrategy.validateRedirectAttemptParam(redirectAttemptParam, collector);
 
             // second set of validations
             collector.collect().checkValid();
@@ -1177,7 +1236,9 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("cookie-same-site").asString().ifPresent(this::cookieSameSite);
             // encryption of cookies
             config.get("cookie-encryption-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabled);
+            config.get("cookie-compression-enabled").asBoolean().ifPresent(this::cookieCompressionEnabled);
             config.get("cookie-encryption-id-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledIdToken);
+            config.get("cookie-compression-id-enabled").asBoolean().ifPresent(this::cookieCompressionEnabledIdToken);
             config.get("cookie-encryption-tenant-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledTenantName);
             config.get("cookie-encryption-refresh-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledRefreshToken);
             config.get("cookie-encryption-state-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledState);
@@ -1185,6 +1246,8 @@ public final class OidcConfig extends TenantConfigImpl {
                     .map(String::toCharArray)
                     .ifPresent(this::cookieEncryptionPassword);
             config.get("cookie-encryption-name").asString().ifPresent(this::cookieEncryptionName);
+            config.get("legacy-cookie-encryption").asBoolean().ifPresent(this::legacyCookieEncryption);
+            config.get("legacy-cookie-fallback").asBoolean().ifPresent(this::legacyCookieFallback);
 
             // our application
             config.get("redirect-uri").asString().ifPresent(this::redirectUri);
@@ -1195,8 +1258,11 @@ public final class OidcConfig extends TenantConfigImpl {
 
             config.get("redirect").asBoolean().ifPresent(this::redirect);
             config.get("redirect-attempt-param").asString().ifPresent(this::redirectAttemptParam);
+            config.get("redirect-attempt-counter-strategy").as(RedirectAttemptCounterStrategy.class)
+                    .ifPresent(this::redirectAttemptCounterStrategy);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
+            config.get("fallback-to-default-tenant-enabled").asBoolean().ifPresent(this::fallbackToDefaultTenantEnabled);
 
             config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
@@ -1224,9 +1290,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Amount of time access token should be refreshed before its expiration time.
-         * Default is 5 seconds.
-         *
+         * Amount of time access token should be refreshed before expiration.
          * @param tokenRefreshSkew time to refresh token before expiration
          * @return updated builder
          */
@@ -1237,12 +1301,9 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Assign cross-origin resource sharing settings.
-         *
          * @param crossOriginConfig cross-origin settings to apply to the redirect endpoint
          * @return updated builder instance
-         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
-         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
-         *  server feature
+         * @deprecated use config based CORS setup or the {@code io.helidon.webserver.cors.CorsFeature} server feature
          */
         @SuppressWarnings("removal")
         @Deprecated(forRemoval = true, since = "4.4.0")
@@ -1254,11 +1315,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Whether to enable logout support.
-         * When logout is enabled, we use two cookies (User token and user ID token) and we expose
-         * an endpoint {@link #logoutUri(String)} that can be used to log the user out from Helidon session
-         * and also from OIDC session (uses {@link #logoutEndpointUri(java.net.URI)} on OIDC server).
-         * Logout support is disabled by default.
-         *
          * @param logoutEnabled whether to enable logout
          * @return updated builder instance
          */
@@ -1268,12 +1324,8 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * By default, the client should redirect to the identity server for the user to log in.
-         * This behavior can be overridden by setting redirect to false. When token is not present in the request, the client
-         * will not redirect and just return appropriate error response code.
-         *
-         * @param redirect Whether to redirect to OIDC server in case the request does not contain sufficient information to
-         *                 authenticate the user, defaults to true
+         * Whether to redirect to OIDC server when authentication information is missing.
+         * @param redirect whether to redirect
          * @return updated builder instance
          */
         @ConfiguredOption("false")
@@ -1284,8 +1336,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Full URI of this application that is visible from user browser.
-         * Used to redirect request back from identity server after successful login.
-         *
          * @param uri the frontend URI, such as "http://my.server.com/myApp
          * @return updated builder instance
          */
@@ -1297,8 +1347,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Force HTTPS for redirects to identity provider.
-         * Defaults to {@code false}.
-         *
          * @param forceHttpsRedirects flag to redirect with https
          * @return updated builder instance
          */
@@ -1309,12 +1357,18 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Can be set to {@code true} to force the use of relative URIs in all requests,
-         * regardless of the presence or absence of proxies or no-proxy lists. By default,
-         * requests that use the Proxy will have absolute URIs. Set this flag to {@code true}
-         * if the host is unable to accept absolute URIs.
-         * Defaults to {@value #DEFAULT_RELATIVE_URIS}.
-         *
+         * Whether unknown tenant ids should use default tenant configuration.
+         * @param enabled whether unknown tenant ids fall back to default tenant
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder fallbackToDefaultTenantEnabled(boolean enabled) {
+            this.fallbackToDefaultTenantEnabled = enabled;
+            return this;
+        }
+
+        /**
+         * Whether to force relative URIs in all requests.
          * @param relativeUris relative URIs flag
          * @return updated builder instance
          * @deprecated use OIDC webclient configuration instead. See {@link #webclient(Consumer)}
@@ -1377,17 +1431,23 @@ public final class OidcConfig extends TenantConfigImpl {
             return this;
         }
 
-        /**
-         * Configure the parameter used to store the number of attempts in redirect.
-         * <p>
-         * Defaults to {@value #DEFAULT_ATTEMPT_PARAM}
-         *
-         * @param paramName name of the parameter used in the state parameter
+        /** Configure the redirect attempt query parameter and cookie name prefix.
+         * @param paramName name of the parameter or cookie name prefix
          * @return updated builder instance
          */
         @ConfiguredOption(value = DEFAULT_ATTEMPT_PARAM)
         public Builder redirectAttemptParam(String paramName) {
             this.redirectAttemptParam = paramName;
+            return this;
+        }
+
+        /** Configure the strategy used to count redirects to an identity server.
+         * @param strategy redirect attempt counter strategy
+         * @return updated builder instance
+         */
+        @ConfiguredOption(value = "PARAM")
+        public Builder redirectAttemptCounterStrategy(RedirectAttemptCounterStrategy strategy) {
+            this.redirectAttemptCounterStrategy = Objects.requireNonNull(strategy);
             return this;
         }
 
@@ -1408,8 +1468,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Proxy protocol to use when proxy is used.
-         * Defaults to {@value DEFAULT_PROXY_PROTOCOL}.
-         *
          * @param protocol protocol to use (such as https)
          * @return updated builder instance
          * @deprecated use proxy configuration on the webclient. See {@link #webclient(Consumer)}
@@ -1422,9 +1480,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Proxy host to use. When defined, triggers usage of proxy for HTTP requests.
-         * Setting to empty String has the same meaning as setting to null - disables proxy.
-         *
+         * Proxy host to use.
          * @param proxyHost host of the proxy
          * @return updated builder instance
          * @see #proxyProtocol(String)
@@ -1444,8 +1500,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         /**
          * Proxy port.
-         * Defaults to {@value DEFAULT_PROXY_PORT}
-         *
          * @param proxyPort port of the proxy server to use
          * @return updated builder instance
          * @deprecated use proxy configuration on the webclient. See {@link #webclient(Consumer)}
@@ -1544,7 +1598,9 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param cookieEncryptionName name of the encryption configuration in security used to encrypt/decrypt cookies
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(description = "Name of the encryption configuration available through Security encryption. "
+                + "If configured and encryption is enabled for any cookie, Security must be registered in the global "
+                + "or current context.")
         public Builder cookieEncryptionName(String cookieEncryptionName) {
             this.tokenCookieBuilder.encryptionName(cookieEncryptionName);
             this.idTokenCookieBuilder.encryptionName(cookieEncryptionName);
@@ -1557,11 +1613,16 @@ public final class OidcConfig extends TenantConfigImpl {
         /**
          * Master password for encryption/decryption of cookies. This must be configured to the same value on each microservice
          * using the cookie.
+         * If encrypted cookies are enabled and this method and {@link #cookieEncryptionName(String)} are not used,
+         * Helidon creates or reads a fallback {@code .helidon-oidc-secret} file in the current working directory.
          *
          * @param cookieEncryptionPassword encryption password
          * @return updated builder
          */
-        @ConfiguredOption
+        @ConfiguredOption(description = "Master password for encryption/decryption of cookies. Configure the same value "
+                + "on each service that shares encrypted cookies. If encrypted cookies are enabled and neither this "
+                + "option nor cookie-encryption-name is configured, Helidon creates or reads .helidon-oidc-secret in "
+                + "the current working directory.")
         public Builder cookieEncryptionPassword(char[] cookieEncryptionPassword) {
             this.tokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
             this.idTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
@@ -1572,16 +1633,78 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Whether to encrypt token cookie created by this microservice.
+         * Whether password-based encrypted OIDC cookies should be written without a version byte and with the legacy
+         * PBKDF2 iteration count.
+         * This can be enabled during rolling upgrades so upgraded nodes continue creating cookies that older nodes can
+         * decrypt. Leave disabled for steady-state deployments and reset to {@code false} after all nodes run the new
+         * version. This setting does not affect named Security encryption configured with
+         * {@link #cookieEncryptionName(String)}.
          * Defaults to {@code false}.
          *
-         * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
-         *                                OIDC server {@code false}
+         * @param legacyCookieEncryption whether cookies should be written with legacy password-based encryption
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "false")
+        @ConfiguredOption("false")
+        public Builder legacyCookieEncryption(boolean legacyCookieEncryption) {
+            this.tokenCookieBuilder.legacyCookieEncryption(legacyCookieEncryption);
+            this.idTokenCookieBuilder.legacyCookieEncryption(legacyCookieEncryption);
+            this.tenantCookieBuilder.legacyCookieEncryption(legacyCookieEncryption);
+            this.refreshTokenCookieBuilder.legacyCookieEncryption(legacyCookieEncryption);
+            this.stateCookieBuilder.legacyCookieEncryption(legacyCookieEncryption);
+            return this;
+        }
+
+        /**
+         * Whether password-based encrypted OIDC cookies should retry decryption with the alternate cookie format after
+         * primary decryption fails. This can be enabled after a rolling upgrade to accept older unversioned legacy
+         * cookies until they expire, or while legacy writes must read versioned current cookies. Leave disabled for
+         * steady-state deployments and reset to {@code false} after legacy cookies expire. This setting does not affect
+         * named Security encryption configured with
+         * {@link #cookieEncryptionName(String)}.
+         * Defaults to {@code false}.
+         *
+         * @param legacyCookieFallback whether legacy cookie decryption fallback should be enabled
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder legacyCookieFallback(boolean legacyCookieFallback) {
+            this.tokenCookieBuilder.legacyCookieFallback(legacyCookieFallback);
+            this.idTokenCookieBuilder.legacyCookieFallback(legacyCookieFallback);
+            this.tenantCookieBuilder.legacyCookieFallback(legacyCookieFallback);
+            this.refreshTokenCookieBuilder.legacyCookieFallback(legacyCookieFallback);
+            this.stateCookieBuilder.legacyCookieFallback(legacyCookieFallback);
+            return this;
+        }
+
+        /**
+         * Whether to encrypt token cookie created by this microservice.
+         * Defaults to {@code true}.
+         *
+         * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or left unencrypted
+         *                                {@code false}
+         * @return updated builder instance
+         */
+        @ConfiguredOption(value = "true")
         public Builder cookieEncryptionEnabled(boolean cookieEncryptionEnabled) {
             this.tokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
+            return this;
+        }
+
+        /**
+         * Whether to GZIP-compress the access token cookie when this reduces its size.
+         * When encryption is enabled, compression is applied before encryption.
+         * Defaults to {@code true} when the top-level {@code server-type} is {@code idcs}, and to {@code false}
+         * otherwise. Disabling compression affects newly written cookies only; compressed cookies remain readable.
+         *
+         * @param cookieCompressionEnabled whether the access token cookie should be compressed
+         * @return updated builder instance
+         */
+        @ConfiguredOption(value = "true if server-type is idcs; false otherwise",
+                          description = "Whether to GZIP-compress the access token cookie when this "
+                                  + "reduces its size.")
+        public Builder cookieCompressionEnabled(boolean cookieCompressionEnabled) {
+            this.tokenCookieBuilder.compressionEnabled(cookieCompressionEnabled);
+            this.cookieCompressionConfigured = true;
             return this;
         }
 
@@ -1596,6 +1719,25 @@ public final class OidcConfig extends TenantConfigImpl {
         @ConfiguredOption(key = "cookie-encryption-id-enabled", value = "true")
         public Builder cookieEncryptionEnabledIdToken(boolean cookieEncryptionEnabled) {
             this.idTokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
+            return this;
+        }
+
+        /**
+         * Whether to GZIP-compress the ID token cookie when this reduces its size.
+         * When encryption is enabled, compression is applied before encryption.
+         * Defaults to {@code true} when the top-level {@code server-type} is {@code idcs}, and to {@code false}
+         * otherwise. Disabling compression affects newly written cookies only; compressed cookies remain readable.
+         *
+         * @param cookieCompressionEnabled whether the ID token cookie should be compressed
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "cookie-compression-id-enabled",
+                          value = "true if server-type is idcs; false otherwise",
+                          description = "Whether to GZIP-compress the ID token cookie when this "
+                                  + "reduces its size.")
+        public Builder cookieCompressionEnabledIdToken(boolean cookieCompressionEnabled) {
+            this.idTokenCookieBuilder.compressionEnabled(cookieCompressionEnabled);
+            this.cookieCompressionIdConfigured = true;
             return this;
         }
 

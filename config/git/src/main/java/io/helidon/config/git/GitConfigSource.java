@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -72,6 +73,7 @@ public class GitConfigSource extends AbstractConfigSource
     private final String branch;
 
     private Path directory;
+    private Path repositoryRoot;
     private Path targetPath;
     private Repository repository;
 
@@ -109,12 +111,15 @@ public class GitConfigSource extends AbstractConfigSource
 
     @Override
     public void init(ConfigContext context) {
+        Objects.requireNonNull(context, "context");
         try {
             init();
-            targetPath = directory.resolve(endpoint.path());
+            repositoryRoot = directory.toRealPath();
+            targetPath = resolveInRepository(repositoryRoot, endpoint.path());
         } catch (IOException | GitAPIException | JGitInternalException e) {
+            String repository = uri == null ? directory.toString() : uri.toASCIIString();
             throw new ConfigException(String.format("Cannot initialize repository '%s' in local temp dir %s",
-                                                    uri.toASCIIString(),
+                                                    repository,
                                                     directory.toString()),
                                       e);
         }
@@ -173,16 +178,19 @@ public class GitConfigSource extends AbstractConfigSource
         } catch (GitAPIException e) {
             LOGGER.log(Level.WARNING, "Pull failed.", e);
         }
-        return FileSourceHelper.isModified(targetPath, stamp);
+        return existingRepositoryPath(targetPath, endpoint.path())
+                .map(path -> FileSourceHelper.isModified(path, stamp))
+                .orElse(true);
     }
 
     @Override
     public Optional<Content> load() throws ConfigException {
-        if (!Files.exists(targetPath)) {
+        Optional<Path> existingPath = existingRepositoryPath(targetPath, endpoint.path());
+        if (existingPath.isEmpty()) {
             return Optional.empty();
         }
 
-        return FileSourceHelper.readDataAndDigest(targetPath)
+        return FileSourceHelper.readDataAndDigest(existingPath.get())
                 .map(dad -> Content.builder()
                         .data(new ByteArrayInputStream(dad.data()))
                         .stamp(dad.digest())
@@ -193,12 +201,15 @@ public class GitConfigSource extends AbstractConfigSource
     @Override
     public Function<String, Optional<InputStream>> relativeResolver() {
         return it -> {
-            Path path = targetPath.getParent().resolve(it);
-            if (Files.exists(path) && Files.isReadable(path) && !Files.isDirectory(path)) {
+            Path path = resolveInRepository(targetPath.getParent(), it);
+            Optional<Path> existingPath = existingRepositoryPath(path, it);
+            if (existingPath.isPresent()
+                    && Files.isReadable(existingPath.get())
+                    && !Files.isDirectory(existingPath.get())) {
                 try {
-                    return Optional.of(Files.newInputStream(path));
+                    return Optional.of(Files.newInputStream(existingPath.get()));
                 } catch (IOException e) {
-                    throw new ConfigException("Failed to read configuration from path: " + path.toAbsolutePath(), e);
+                    throw new ConfigException("Failed to read configuration from path: " + existingPath.get(), e);
                 }
             } else {
                 return Optional.empty();
@@ -209,6 +220,37 @@ public class GitConfigSource extends AbstractConfigSource
     @Override
     public Optional<MediaType> mediaType() {
         return super.mediaType();
+    }
+
+    private Path resolveInRepository(Path base, String configuredPath) {
+        Path path = Path.of(configuredPath);
+        if (path.isAbsolute()) {
+            throw new ConfigException("Git configuration path must be relative: " + configuredPath);
+        }
+
+        Path resolved = base.resolve(path).normalize();
+        if (!resolved.startsWith(repositoryRoot)) {
+            throw new ConfigException("Git configuration path must stay inside the repository: " + configuredPath);
+        }
+        return resolved;
+    }
+
+    private Optional<Path> existingRepositoryPath(Path path, String configuredPath) {
+        if (!Files.exists(path)) {
+            return Optional.empty();
+        }
+
+        Path realPath;
+        try {
+            realPath = path.toRealPath();
+        } catch (IOException e) {
+            throw new ConfigException("Failed to resolve git configuration path: " + configuredPath, e);
+        }
+
+        if (!realPath.startsWith(repositoryRoot)) {
+            throw new ConfigException("Git configuration path must stay inside the repository: " + configuredPath);
+        }
+        return Optional.of(realPath);
     }
 
     private void init() throws IOException, GitAPIException {

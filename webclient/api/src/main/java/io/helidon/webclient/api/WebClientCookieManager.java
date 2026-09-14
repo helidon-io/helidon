@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,15 +110,30 @@ public class WebClientCookieManager extends CookieManager implements RuntimeType
      * @param requestHeaders client request headers
      */
     public void request(ClientUri uri, ClientRequestHeaders requestHeaders) {
+        request(uri, requestHeaders, true);
+    }
+
+    /**
+     * Add stored cookies to request headers.
+     * <p>
+     * See {@link #get}.
+     *
+     * @param uri                   the uri
+     * @param requestHeaders        client request headers
+     * @param includeDefaultCookies whether default cookies should be included
+     */
+    void request(ClientUri uri, ClientRequestHeaders requestHeaders, boolean includeDefaultCookies) {
         try {
             if (acceptCookies) {
                 Map<String, List<String>> cookieMap = super.get(uri.toUri(), Map.of());
                 List<String> cookies = cookieMap.get(COOKIE);
-                cookies.addAll(defaultCookies);
+                if (includeDefaultCookies) {
+                    cookies.addAll(defaultCookies);
+                }
                 if (!cookies.isEmpty()) {
                     requestHeaders.add(HeaderNames.COOKIE, cookies.toArray(new String[0]));
                 }
-            } else if (!defaultCookies.isEmpty()) {
+            } else if (includeDefaultCookies && !defaultCookies.isEmpty()) {
                 requestHeaders.add(HeaderNames.COOKIE, defaultCookies.toArray(new String[0]));
             }
         } catch (IOException e) {

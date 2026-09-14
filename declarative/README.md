@@ -65,7 +65,7 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 | LRA              | `LRA`                                | `Lra` cannot be freed                                     |
 | Transactions     | `Tx`                                 | `Transaction` is the interface                            |
 | Service Registry | `Service`, `Interception`            | OK                                                        |
-| Validation       | `Validation`, `Check`                | OK                                                        |
+| Validation       | `Validation`                         | OK                                                        |
 
 ## Integrations
 
@@ -357,14 +357,16 @@ Both features require code-generation.
 Type validation code-generation of type validators is triggered by the presence of the `@Validation.Validated` annotation on a type.
 
 Method validation code-generation of interceptors is triggered by the presence of an annotation "meta-annotated"
-with `@Validation.Constraint` on a method, its parameter, or type arguments of its parameters or return type.
-In addition the `Check.Valid` annotation also triggers code-generation, and can be used to validate against a type validator
+with `@Validation.Constraint` on a service method, its implemented service-contract method, its parameter, or type
+arguments of its parameters or return type.
+In addition the `@Validation.Valid` annotation also triggers code-generation, and can be used to validate against a type validator
 mentioned above.
 
 ### Declaration
 
 Annotations:
-- All annotations from `io.helidon.validation.Check` class to trigger validation using an interceptor
+- All built-in constraint annotations from `io.helidon.validation.Validation` to trigger validation using an interceptor
+- `@Validation.Valid` - to trigger validation against a generated type validator
 - `@Validation.Validated` - on a type to generate type validator for a type
 
 ### Configuration
@@ -388,8 +390,7 @@ The type validation works as follows:
 3. the type validator validates the type and returns response with possible constraint violations
 
 Important types:
-- `Check` - a container class for all constraint annotations
-- `Validation` - a container class for validation annotations that are not constraints
+- `Validation` - a container class for validation annotations and built-in constraint annotations
 - `ValidationException` - throws when validation fails in an interceptor
 - `Validator` - programmatic API to validate instances and their properties (only for validated types), can be obtained from service registry
 - `ConstraintValidatorProvider` - service registry service that validates a single constraint annotation type
@@ -399,10 +400,16 @@ Important types:
 Supported concepts:
 - any service method annotated with a constraint annotation will be intercepted and validated
 - any service method that has parameters with at least one constraint annotation will be intercepted and validated
-- for identification of "what to validate", `@Check.Valid` is a constraint annotation
-- annotations on type arguments of method parameters and method return type are supported, as long as they are on 
-    `Optional`, `Map`, `Collection` - i.e. `List<@Check.Valid String>` will trigger an interceptor and will be validated
-- types annotated with `@Validation.Validated` will be validated when used in a method or constructor that uses `@Check.Valid` on the typed parameter
+- any service method that implements a non-private service-contract method with constraint annotations or `@Validation.Valid`
+    will be intercepted and validated
+- services returned by registry-managed factories such as `Supplier`, `Service.ServicesFactory`,
+    `Service.InjectionPointFactory`, and `Service.QualifiedFactory` follow the same service-contract validation rules
+- `@Validation.Valid` identifies what to validate using a generated type validator
+- annotations on method parameter and return types are supported on nested `Optional`, `Collection`, `List`, `Set`, `Map`
+    key/value types, array component types, and wildcard bounds - i.e. `List<@Validation.Valid MyType>` will trigger an
+    interceptor and will be validated
+- types annotated with `@Validation.Validated` will be validated when used in a method or constructor that uses
+    `@Validation.Valid` on the typed parameter
 - same rules as for generation of interceptors apply for type validation: constraints are honored, including getters,
     fields, and type arguments
 - a user may create a "compound annotation" - an annotation that has one or more constraint annotations, these will be honored as

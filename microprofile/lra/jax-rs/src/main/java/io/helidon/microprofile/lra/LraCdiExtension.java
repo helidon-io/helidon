@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ import org.eclipse.microprofile.lra.annotation.Forget;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.Status;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
+import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.CompositeIndex;
 import org.jboss.jandex.DotName;
@@ -93,16 +94,17 @@ public class LraCdiExtension implements Extension {
             AfterLRA.class,
             Complete.class,
             Compensate.class,
-            Forget.class
+            Forget.class,
+            Status.class
     );
-
-    private static final Set<Class<? extends Annotation>> EXCLUDED_ANNOTATIONS = Set.of(PUT.class, Path.class);
 
     private final Set<Class<?>> beanTypesWithCdiLRAMethods = new HashSet<>();
     private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
     private final Indexer indexer;
     private final ClassLoader classLoader;
     private final Config config;
+    private boolean hasNonJaxRsParticipantMethods;
+    private boolean hasLeaveParticipantMethods;
     private IndexView index;
 
 
@@ -112,7 +114,7 @@ public class LraCdiExtension implements Extension {
     public LraCdiExtension() {
         config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(CONFIG_PREFIX);
         indexer = new Indexer();
-        classLoader = Thread.currentThread().getContextClassLoader();
+        classLoader = contextClassLoader();
         // Needs to be always indexed
         Set.of(LRA.class,
                 AfterLRA.class,
@@ -148,6 +150,7 @@ public class LraCdiExtension implements Extension {
                 CoordinatorLocatorService.class,
                 HandlerService.class,
                 InspectionService.class,
+                NonJaxRsCallbackAuthenticator.class,
                 NonJaxRsResource.class,
                 ParticipantService.class
         )
@@ -173,9 +176,8 @@ public class LraCdiExtension implements Extension {
                 .filter(m -> m.getAnnotations().stream()
                         .map(Annotation::annotationType)
                         .anyMatch(EXPECTED_ANNOTATIONS::contains))
-                .filter(m -> m.getAnnotations().stream()
-                        .map(Annotation::annotationType)
-                        .noneMatch(EXCLUDED_ANNOTATIONS::contains))
+                .filter(m -> ParticipantImpl.isNonJaxRsParticipantMethod(annotatedType.getJavaClass(),
+                                                                         m.getJavaMember()))
                 .forEach(m -> {
                     List<? extends AnnotatedParameter<?>> parameters = m.getParameters();
                     if (parameters.size() > 2) {
@@ -200,8 +202,37 @@ public class LraCdiExtension implements Extension {
     }
 
     private void cdiLRABeanReferences(@Observes ProcessManagedBean<?> event) {
-        if (beanTypesWithCdiLRAMethods.contains(event.getBean().getBeanClass())) {
-            lraCdiBeanReferences.put(event.getBean().getBeanClass(), event.getBean());
+        AnnotatedType<?> annotatedType = event.getAnnotatedBeanClass();
+        Class<?> beanClass = event.getBean().getBeanClass();
+        if (beanTypesWithCdiLRAMethods.contains(beanClass)) {
+            lraCdiBeanReferences.put(beanClass, event.getBean());
+            if (!hasLeaveParticipantMethods) {
+                List<Class<?>> participantTypes = new ArrayList<>();
+                Set<Class<?>> inspectedTypes = new HashSet<>();
+                participantTypes.add(beanClass);
+                for (int i = 0; i < participantTypes.size() && !hasLeaveParticipantMethods; i++) {
+                    Class<?> participantType = participantTypes.get(i);
+                    if (!inspectedTypes.add(participantType)) {
+                        continue;
+                    }
+                    hasLeaveParticipantMethods = Stream.of(participantType.getDeclaredMethods())
+                            .filter(method -> method.isAnnotationPresent(Leave.class))
+                            .anyMatch(method -> ParticipantImpl.jaxRsMethod(beanClass, method).isPresent());
+                    Class<?> superClass = participantType.getSuperclass();
+                    if (superClass != null) {
+                        participantTypes.add(superClass);
+                    }
+                    participantTypes.addAll(List.of(participantType.getInterfaces()));
+                }
+            }
+        }
+        if (!hasNonJaxRsParticipantMethods) {
+            hasNonJaxRsParticipantMethods = annotatedType.getMethods().stream()
+                    .filter(m -> m.getAnnotations().stream()
+                            .map(Annotation::annotationType)
+                            .anyMatch(EXPECTED_ANNOTATIONS::contains))
+                    .anyMatch(m -> ParticipantImpl.isNonJaxRsParticipantMethod(annotatedType.getJavaClass(),
+                                                                               m.getJavaMember()));
         }
     }
 
@@ -211,6 +242,19 @@ public class LraCdiExtension implements Extension {
             @Initialized(ApplicationScoped.class) Object event,
             BeanManager beanManager) {
 
+        if (lraCdiBeanReferences.isEmpty()) {
+            return;
+        }
+
+        if (hasNonJaxRsParticipantMethods) {
+            resolve(NonJaxRsCallbackAuthenticator.class, beanManager).validateConfiguration();
+        }
+        if (hasNonJaxRsParticipantMethods || hasLeaveParticipantMethods) {
+            resolve(ParticipantService.class, beanManager).validateConfiguration();
+        }
+        if (!hasNonJaxRsParticipantMethods) {
+            return;
+        }
         NonJaxRsResource nonJaxRsResource = resolve(NonJaxRsResource.class, beanManager);
         HttpService nonJaxRsParticipantService = nonJaxRsResource.createNonJaxRsParticipantResource();
         beanManager.getExtension(ServerCdiExtension.class)
@@ -336,5 +380,10 @@ public class LraCdiExtension implements Extension {
             throw new DeploymentException("Instance of bean " + bean.getName() + " not found");
         }
         return (T) instance;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? LraCdiExtension.class.getClassLoader() : classLoader;
     }
 }

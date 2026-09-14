@@ -28,6 +28,8 @@ module io.helidon.config.encryption {
 
     requires static io.helidon.common.features.api;
 
+    requires io.helidon.common.buffers;
+
     requires transitive io.helidon.common.crypto;
     requires transitive io.helidon.common.pki; // for RSA encrypted keys
     requires transitive io.helidon.config;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.microprofile.grpc.server;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
@@ -50,10 +52,25 @@ public class GrpcMpCdiExtension implements Extension {
 
     private Config config;
 
+    /**
+     * Create a gRPC MP CDI extension.
+     */
+    public GrpcMpCdiExtension() {
+    }
+
     private void discoverRoutes(@Observes @Initialized(ApplicationScoped.class) Object event, BeanManager beanManager) {
         config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
-        GrpcRouting.Builder routingBuilder = GrpcRouting.builder();
-        loadExtensions(beanManager, config, routingBuilder);        // load first for interceptors
+        List<GrpcMpExtension> extensions = new ArrayList<>();
+        HelidonServiceLoader.create(ServiceLoader.load(GrpcMpExtension.class))
+                .forEach(extensions::add);
+        beanManager.createInstance()
+                .select(GrpcMpExtension.class)
+                .stream()
+                .forEach(extensions::add);
+
+        GrpcRouting.Builder routingBuilder = GrpcRouting.builder()
+                .config(config);
+        loadExtensions(beanManager, config, routingBuilder, extensions);        // load first for interceptors
         discoverGrpcRouting(beanManager, routingBuilder);
         ServerCdiExtension extension = beanManager.getExtension(ServerCdiExtension.class);
         extension.addRouting(routingBuilder);
@@ -142,10 +159,12 @@ public class GrpcMpCdiExtension implements Extension {
      * @param beanManager the {@link BeanManager}
      * @param config the Helidon configuration
      * @param routingBuilder the {@link GrpcRouting.Builder}
+     * @param extensions discovered gRPC MP extensions
      */
     private void loadExtensions(BeanManager beanManager,
                                 Config config,
-                                GrpcRouting.Builder routingBuilder) {
+                                GrpcRouting.Builder routingBuilder,
+                                List<GrpcMpExtension> extensions) {
         GrpcMpContext context = new GrpcMpContext() {
             @Override
             public Config config() {
@@ -163,11 +182,7 @@ public class GrpcMpCdiExtension implements Extension {
             }
         };
 
-        HelidonServiceLoader.create(ServiceLoader.load(GrpcMpExtension.class))
-                .forEach(ext -> ext.configure(context));
-        beanManager.createInstance()
-                .select(GrpcMpExtension.class)
-                .stream()
+        extensions.stream()
                 .forEach(ext -> ext.configure(context));
     }
 }

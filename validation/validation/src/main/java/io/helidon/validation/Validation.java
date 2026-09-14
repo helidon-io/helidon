@@ -77,6 +77,9 @@ public final class Validation {
      * Mark an element as validated even when no explicit constraints are added on it to validate
      * the nested object structure.
      * <p>
+     * Cascaded validation is skipped when the annotated value is {@code null}. To reject a {@code null} value,
+     * annotate the element with {@link io.helidon.validation.Validation.NotNull} as well.
+     * <p>
      * Each object must be annotated with {@link io.helidon.validation.Validation.Validated}, as otherwise
      * we cannot know what to do (Helidon only supports build-time generated validations, we do not use
      * reflection to analyze types).

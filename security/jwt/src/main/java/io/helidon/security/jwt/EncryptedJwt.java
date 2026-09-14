@@ -69,8 +69,9 @@ public final class EncryptedJwt {
 
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
 
+    // Delimiter-exclusive possessive groups keep rejection of malformed input linear.
     private static final Pattern JWE_PATTERN = Pattern
-            .compile("(^[\\S]+)\\.([\\S]+)\\.([\\S]+)\\.([\\S]+)\\.([\\S]+$)");
+            .compile("([^\\s.]++)\\.([^\\s.]++)\\.([^\\s.]++)\\.([^\\s.]++)\\.([^\\s.]++)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
@@ -163,7 +164,7 @@ public final class EncryptedJwt {
             JwtHeaders header = JwtHeaders.parseBase64(headerBase64, collector);
             return parse(token, collector, header, encryptedKeyBase64, ivBase64, payloadBase64, authTagBase64);
         } else {
-            throw new JwtException("Not a JWE token: " + token);
+            throw new JwtException("Not a JWE token");
         }
     }
 
@@ -197,7 +198,7 @@ public final class EncryptedJwt {
 
             return parse(token, collector, header, encryptedKeyBase64, ivBase64, payloadBase64, authTagBase64);
         } else {
-            throw new JwtException("Not a JWE token: " + token);
+            throw new JwtException("Not a JWE token");
         }
     }
 
@@ -233,10 +234,10 @@ public final class EncryptedJwt {
                                       String ivBase64,
                                       String payloadBase64,
                                       String authTagBase64) {
-        byte[] encryptedKey = decodeBytes(encryptedKeyBase64, collector, "JWE encrypted key");
-        byte[] iv = decodeBytes(ivBase64, collector, "JWE initialization vector");
-        byte[] encryptedPayload = decodeBytes(payloadBase64, collector, "JWE payload");
-        byte[] authTag = decodeBytes(authTagBase64, collector, "JWE authentication tag");
+        byte[] encryptedKey = decodeBytes(encryptedKeyBase64, collector, JwtTokenPart.JWE_ENCRYPTED_KEY);
+        byte[] iv = decodeBytes(ivBase64, collector, JwtTokenPart.JWE_INITIALIZATION_VECTOR);
+        byte[] encryptedPayload = decodeBytes(payloadBase64, collector, JwtTokenPart.JWE_PAYLOAD);
+        byte[] authTag = decodeBytes(authTagBase64, collector, JwtTokenPart.JWE_AUTHENTICATION_TAG);
 
         // if failed, do not continue
         collector.collect().checkValid();
@@ -280,11 +281,11 @@ public final class EncryptedJwt {
         return URL_ENCODER.encodeToString(bytes);
     }
 
-    private static byte[] decodeBytes(String base64, Errors.Collector collector, String description) {
+    private static byte[] decodeBytes(String base64, Errors.Collector collector, JwtTokenPart tokenPart) {
         try {
             return URL_DECODER.decode(base64);
         } catch (Exception e) {
-            collector.fatal(base64, description + " is not a base64 encoded string.");
+            collector.fatal(tokenPart, tokenPart.text() + " is not a base64 encoded string.");
             return null;
         }
     }
@@ -358,6 +359,9 @@ public final class EncryptedJwt {
         if (alg != null) {
             try {
                 supportedAlgorithm = SupportedAlgorithm.getValue(alg);
+                if (supportedAlgorithm == SupportedAlgorithm.RSA1_5) {
+                    errors.fatal("Value of the claim alg not supported. alg: " + alg);
+                }
             } catch (IllegalArgumentException e) {
                 errors.fatal("Value of the claim alg not supported. alg: " + alg);
             }
@@ -558,6 +562,9 @@ public final class EncryptedJwt {
 
         @Override
         public EncryptedJwt build() {
+            if (algorithm == SupportedAlgorithm.RSA1_5) {
+                throw new JwtException("JWE key encryption algorithm is not supported: " + algorithm);
+            }
             headersBuilder.algorithm(algorithm.toString());
             headersBuilder.encryption(encryption.toString());
             headersBuilder.contentType("JWT");
@@ -607,9 +614,7 @@ public final class EncryptedJwt {
     }
 
     /**
-     * Supported RSA cipher for content key encryption.
-     *
-     * This cipher is using private key to decrypt encrypted content key with it.
+     * Supported RSA key management algorithms for content key encryption.
      */
     public enum SupportedAlgorithm {
 
@@ -626,8 +631,11 @@ public final class EncryptedJwt {
                      "RSA/ECB/OAEPWithSHA-256AndMGF1Padding",
                      new OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT)),
         /**
-         * RSA1_5 declares that RSA/ECB/PKCS1Padding cipher will be used for content key encryption.
+         * Legacy RSA/ECB/PKCS1Padding key management algorithm retained for source compatibility.
+         *
+         * @deprecated RSA1_5 is no longer supported for JWE key management.
          */
+        @Deprecated(since = "4.5.0", forRemoval = true)
         RSA1_5("RSA1_5", "RSA/ECB/PKCS1Padding", null);
 
         private final String algorithmName;

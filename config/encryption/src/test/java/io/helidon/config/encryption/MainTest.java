@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test Main class (cli).
@@ -61,6 +62,68 @@ public class MainTest {
         assertThat(orig, is(secret));
 
         Main.main(args);
+    }
+
+    @Test
+    public void testEncEncryption() {
+        String masterPassword = "BigMasterPassowrd!!!";
+        String secret = "some secret to encrypt";
+        String[] args = new String[] {"enc", masterPassword, secret, "600000"};
+
+        Main.EncryptionCliProcessor ecp = new Main.EncryptionCliProcessor();
+        ecp.parse(args);
+        assertThat(ecp.getAlgorithm(), is(Main.Algorithm.enc));
+        assertThat(ecp.getMasterPassword(), is(masterPassword));
+        assertThat(ecp.getAesIterations(), is(600000));
+        assertThat(ecp.getSecret(), is(secret));
+
+        String encrypted = ecp.encrypt();
+
+        assertAll(
+                () -> assertThat("Encrypted string should contain enc prefix: " + encrypted,
+                                 encrypted.startsWith(EncryptionFilter.PREFIX_ENC)),
+                () -> assertThat("Encrypted string should contain suffix \"}\": " + encrypted, encrypted.endsWith("}"))
+        );
+
+        String orig = EncryptionUtil.decryptAesEnvelope(ecp.getMasterPassword().toCharArray(),
+                                                        encrypted.substring(EncryptionFilter.PREFIX_ENC.length(),
+                                                                            encrypted.length() - 1));
+
+        assertThat(orig, is(secret));
+    }
+
+    @Test
+    public void testEncEncryptionRejectsTooFewIterations() {
+        String[] args = new String[] {"enc", "BigMasterPassowrd!!!", "some secret to encrypt", "599999"};
+
+        Main.EncryptionCliProcessor ecp = new Main.EncryptionCliProcessor();
+        Main.ValidationException exception = assertThrows(Main.ValidationException.class, () -> ecp.parse(args));
+
+        assertThat(exception.getMessage(), is("PBKDF2 iterations must be between 600000 and 10000000, but was 599999"));
+    }
+
+    @Test
+    public void testGcmEncryptionAlias() {
+        String masterPassword = "BigMasterPassowrd!!!";
+        String secret = "some secret to encrypt";
+        String[] args = new String[] {"gcm", masterPassword, secret};
+
+        Main.EncryptionCliProcessor ecp = new Main.EncryptionCliProcessor();
+        ecp.parse(args);
+        assertThat(ecp.getAlgorithm(), is(Main.Algorithm.gcm));
+
+        String encrypted = ecp.encrypt();
+        assertAll(
+                () -> assertThat("Encrypted string should contain gcm prefix: " + encrypted,
+                                 encrypted.startsWith(EncryptionFilter.PREFIX_GCM)),
+                () -> assertThat("Encrypted string should contain suffix \"}\": " + encrypted, encrypted.endsWith("}"))
+        );
+
+        String orig = EncryptionUtil.decryptAes(ecp.getMasterPassword().toCharArray(),
+                                                encrypted.substring(EncryptionFilter.PREFIX_GCM.length(),
+                                                                    encrypted.length() - 1));
+
+        assertThat(orig, is(secret));
     }
 
     @Test

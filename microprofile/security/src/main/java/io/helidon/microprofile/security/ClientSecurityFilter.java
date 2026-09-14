@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.microprofile.security;
 
 import java.lang.System.Logger.Level;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
@@ -112,16 +114,28 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         Optional<String> explicitProvider = property(requestContext, String.class, ClientSecurity.PROPERTY_PROVIDER);
 
         try {
+            URI requestUri = requestContext.getUri();
+            String method = requestContext.getMethod();
+            String path = requestUri.getPath();
+            String rawPath = requestUri.getRawPath();
+            String rawQuery = requestUri.getRawQuery();
             SecurityEnvironment.Builder outboundEnv = securityContext.env()
                                                                      .derive()
                                                                      .clearHeaders()
                                                                      .clearQueryParams();
 
-            outboundEnv.method(requestContext.getMethod())
-                       .path(requestContext.getUri().getPath())
-                       .targetUri(requestContext.getUri())
+            outboundEnv.method(method)
+                       .path(path)
+                       .targetUri(requestUri)
                        .headers(requestContext.getStringHeaders())
-                       .queryParams(UriQuery.create(requestContext.getUri()));
+                       .queryParams(UriQuery.create(requestUri))
+                       .requestedMethod(method)
+                       .requestedPath(rawPath == null || rawPath.isEmpty()
+                                              ? UriPath.root()
+                                              : UriPath.create(rawPath))
+                       .requestedQuery(rawQuery == null
+                                               ? Optional.empty()
+                                               : Optional.of(UriQuery.create(rawQuery)));
 
             EndpointConfig.Builder outboundEp = securityContext.endpointConfig().derive();
 

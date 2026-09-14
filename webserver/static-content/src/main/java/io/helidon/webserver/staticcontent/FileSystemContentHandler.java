@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
@@ -38,6 +39,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
     private final AtomicBoolean populatedInMemoryCache = new AtomicBoolean();
     private final Path root;
+    // The configured location is pinned for the handler instance lifetime, including stop/start cycles.
+    private final AtomicReference<Path> realRoot = new AtomicReference<>();
     private final Set<String> cacheInMemory;
 
     FileSystemContentHandler(FileSystemHandlerConfig config) {
@@ -59,6 +62,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
     @Override
     public void beforeStart() {
+        realRoot();
         if (populatedInMemoryCache.compareAndSet(false, true)) {
             for (String resource : cacheInMemory) {
                 try {
@@ -74,6 +78,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        super.releaseCache();
     }
 
     @Override
@@ -121,6 +126,9 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             // not caching 404
             return false;
         }
+        if (contentPath(path).isEmpty()) {
+            return false;
+        }
 
         // we know the file exists, though it may be a directory
         // First doHandle a directory case
@@ -149,7 +157,6 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                     // Or redirect to slash ended
                     String redirectLocation = rawPath + "/";
                     CachedHandlerRedirect handler = new CachedHandlerRedirect(redirectLocation);
-                    cacheHandler(requestedResource, handler);
                     return handler.handle(handlerCache(), method, req, res, requestedResource);
                 }
             }
@@ -158,7 +165,10 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         CachedHandler handler = new CachedHandlerPath(path,
                                                       detectType(fileName(path)),
                                                       FileBasedContentHandler::lastModified,
-                                                      ServerResponseHeaders::lastModified);
+                                                      ServerResponseHeaders::lastModified,
+                                                      this::contentPath,
+                                                      false,
+                                                      it -> Optional.ofNullable(realRoot.get()));
         cacheHandler(requestedResource, handler);
         return handler.handle(handlerCache(), method, req, res, requestedResource);
     }
@@ -172,14 +182,10 @@ class FileSystemContentHandler extends FileBasedContentHandler {
           - content
          */
         Path path = requestedPath(resource);
-        if (!path.startsWith(root)) {
-            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it is not within"
-                    + " the root directory.");
-            return;
-        }
-
-        if (!Files.exists(path)) {
-            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it does not exist");
+        Optional<Path> realPath = contentPath(path);
+        if (realPath.isEmpty()) {
+            LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it does not exist"
+                    + " or is not within the root directory.");
             return;
         }
 
@@ -190,7 +196,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                         // we need to use forward slash even on Windows
                         String childResource = root.relativize(child).toString().replace('\\', '/');
                         try {
-                            addToInMemoryCache(childResource, child);
+                            addToInMemoryCache(childResource);
                         } catch (IOException e) {
                             LOGGER.log(Level.WARNING, "File " + child + " cannot be added to in memory cache", e);
                         }
@@ -198,13 +204,21 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                 });
             }
         } else {
-            addToInMemoryCache(resource, path);
+            Path resolvedPath = realPath.get();
+            Path currentRealRoot = realRoot.get();
+            if (currentRealRoot == null
+                    || Files.isSymbolicLink(root)
+                    || !root.relativize(path).equals(currentRealRoot.relativize(resolvedPath))) {
+                LOGGER.log(Level.WARNING, "File " + resource + " cannot be added to in memory cache, as it uses a"
+                        + " symbolic link.");
+                return;
+            }
+            byte[] fileBytes = FileBasedContentHandler.readAllBytes(resolvedPath, false, currentRealRoot);
+            cacheInMemory(resource,
+                          detectType(fileName(path)),
+                          fileBytes,
+                          lastModified(resolvedPath, false, currentRealRoot));
         }
-    }
-
-    private void addToInMemoryCache(String resource, Path path) throws IOException {
-        byte[] fileBytes = Files.readAllBytes(path);
-        cacheInMemory(resource, detectType(fileName(path)), fileBytes, lastModified(path));
     }
 
     private Path requestedPath(String requestedPath) {
@@ -212,5 +226,44 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             return root;
         }
         return root.resolve(requestedPath).toAbsolutePath().normalize();
+    }
+
+    private Optional<Path> contentPath(Path path) {
+        if (!path.startsWith(root) || !Files.exists(path)) {
+            return Optional.empty();
+        }
+
+        try {
+            Optional<Path> maybeRealRoot = realRoot();
+            if (maybeRealRoot.isEmpty()) {
+                return Optional.empty();
+            }
+            Path currentRealRoot = maybeRealRoot.get();
+            Path expectedPath = currentRealRoot.resolve(root.relativize(path)).normalize();
+            Path expectedRealPath = expectedPath.toRealPath();
+            Path realPath = path.toRealPath();
+            if (expectedRealPath.startsWith(currentRealRoot) && realPath.equals(expectedRealPath)) {
+                return Optional.of(realPath);
+            }
+            return Optional.empty();
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Path> realRoot() {
+        Path currentRealRoot = realRoot.get();
+        if (currentRealRoot != null) {
+            return Optional.of(currentRealRoot);
+        }
+        try {
+            Path resolvedRoot = root.toRealPath();
+            if (realRoot.compareAndSet(null, resolvedRoot)) {
+                return Optional.of(resolvedRoot);
+            }
+            return Optional.ofNullable(realRoot.get());
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
     }
 }

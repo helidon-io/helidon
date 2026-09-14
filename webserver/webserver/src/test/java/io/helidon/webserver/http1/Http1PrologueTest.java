@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -71,5 +72,165 @@ class Http1PrologueTest {
             assertThat(e.safeMessage(), is(true));
             assertThat(e.getMessage(), containsString("HTTP 1.0 is not supported"));
         }
+    }
+
+    @Test
+    void testRelativeOriginFormIsBadRequest() {
+        DataReader reader = DataReader.create(() -> "GET boards/ HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue p = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, p::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+        assertThat(e.getMessage(), containsString("Relative path in HTTP request-target"));
+    }
+
+    @Test
+    void testQueryOnlyOriginFormIsBadRequest() {
+        DataReader reader = DataReader.create(() -> "GET ?q=1 HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue p = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, p::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+        assertThat(e.getMessage(), containsString("Relative path in HTTP request-target"));
+    }
+
+    @Test
+    void testAsteriskFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "OPTIONS * HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.OPTIONS));
+        assertThat(prologue.uriPath().rawPath(), is("*"));
+        assertThat(prologue.uriPath().path(), is("*"));
+        assertThat(prologue.uriPath().absolute().path(), is("/"));
+        assertThat(prologue.uriPath().segments().size(), is(1));
+        assertThat(prologue.uriPath().segments().get(0).value(), is("*"));
+    }
+
+    @Test
+    void testAsteriskFormRequiresOptions() {
+        assertInvalidRequestTarget("GET * HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testAsteriskFormRejectsFragment() {
+        assertInvalidRequestTarget("OPTIONS *#fragment HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testAsteriskFormDoesNotAllowQuery() {
+        assertInvalidRequestTarget("OPTIONS *?q=1 HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testConnectRequiresAuthorityForm() {
+        assertInvalidRequestTarget("CONNECT boards/ HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testConnectRejectsInvalidPort() {
+        assertAll(
+                () -> assertInvalidRequestTarget("CONNECT example.com:0 HTTP/1.1\r\n"),
+                () -> assertInvalidRequestTarget("CONNECT example.com:65536 HTTP/1.1\r\n"),
+                () -> assertInvalidRequestTarget("CONNECT example.com:2147483648 HTTP/1.1\r\n"));
+    }
+
+    @Test
+    void testConnectAuthorityFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "CONNECT example.com:65535 HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.CONNECT));
+        assertThat(prologue.uriPath().rawPath(), is("example.com:65535"));
+        assertThat(prologue.uriPath().path(), is("example.com:65535"));
+        assertThat(prologue.uriPath().absolute().path(), is("/"));
+    }
+
+    @Test
+    void testConnectAuthorityFormPreservesRawAndDecodedValues() {
+        assertConnectAuthorityPath("example%2Ecom:443", "example.com:443");
+        assertConnectAuthorityPath("example+service:443", "example+service:443");
+        assertConnectAuthorityPath("m%C3%BCnich.example:443", "münich.example:443");
+        assertConnectAuthorityPath("example%40service:443", "example@service:443");
+    }
+
+    @Test
+    void testConnectAuthorityFormRejectsFragment() {
+        assertInvalidRequestTarget("CONNECT example.com:443#fragment HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testConnectRegNameAuthorityFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "CONNECT example_host:443 HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.uriPath().rawPath(), is("example_host:443"));
+    }
+
+    @Test
+    void testConnectIpLiteralAuthorityFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "CONNECT [2001:db8::1]:443 HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.uriPath().rawPath(), is("[2001:db8::1]:443"));
+    }
+
+    @Test
+    void testConnectIpFutureIsNotImplemented() {
+        assertUnsupportedRequestTarget("CONNECT [Vf.foo-bar]:443 HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testConnectRejectsInvalidIpLiteralAuthorityForm() {
+        assertInvalidRequestTarget("CONNECT [1:2:3]:443 HTTP/1.1\r\n");
+        assertInvalidRequestTarget("CONNECT [1.2.3.4]:443 HTTP/1.1\r\n");
+        assertInvalidRequestTarget("CONNECT [1:2:3:4:5:6:010.000.000.001]:443 HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testAbsoluteFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "GET http://example.com/boards/ HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.GET));
+        assertThat(prologue.uriPath().path(), is("/boards/"));
+    }
+
+    private static void assertInvalidRequestTarget(String requestLine) {
+        DataReader reader = DataReader.create(() -> requestLine.getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue prologue = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, prologue::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+    }
+
+    private static void assertConnectAuthorityPath(String requestTarget, String expectedPath) {
+        DataReader reader = DataReader.create(() -> ("CONNECT " + requestTarget + " HTTP/1.1\r\n")
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.uriPath().rawPath(), is(requestTarget));
+        assertThat(prologue.uriPath().path(), is(expectedPath));
+        assertThat(prologue.uriPath().absolute().path(), is("/"));
+    }
+
+    private static void assertUnsupportedRequestTarget(String requestLine) {
+        DataReader reader = DataReader.create(() -> requestLine.getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue prologue = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, prologue::readPrologue);
+
+        assertThat(e.status(), is(Status.NOT_IMPLEMENTED_501));
+        assertThat(e.eventType(), is(DirectHandler.EventType.OTHER));
     }
 }

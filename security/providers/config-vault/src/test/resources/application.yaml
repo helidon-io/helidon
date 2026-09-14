@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,17 @@ app:
 
 security:
   providers:
-    - config-vault:
+    - name: "config-vault"
+      config-vault:
         master-password: "very much secret"
+    - name: "config-vault-fallback"
+      config-vault:
+        master-password: "very much secret"
+        legacy-fallback: true
+    - name: "config-vault-legacy"
+      config-vault:
+        master-password: "very much secret"
+        legacy-encryption: true
   secrets:
     - name: "password"
       provider: "config-vault"
@@ -34,3 +43,26 @@ security:
       provider: "config-vault"
       config:
         password: "override"
+    - name: "config-vault-provider-fallback"
+      provider: "config-vault-fallback"
+    - name: "config-vault-entry-fallback"
+      provider: "config-vault"
+      config:
+        legacy-fallback: true
+    - name: "config-vault-override-fallback"
+      provider: "config-vault"
+      config:
+        password: "override"
+        legacy-fallback: true
+    - name: "config-vault-provider-legacy"
+      provider: "config-vault-legacy"
+    - name: "config-vault-entry-legacy-fallback"
+      provider: "config-vault"
+      config:
+        legacy-encryption: true
+        legacy-fallback: true
+    - name: "config-vault-override-legacy"
+      provider: "config-vault"
+      config:
+        password: "override"
+        legacy-encryption: true

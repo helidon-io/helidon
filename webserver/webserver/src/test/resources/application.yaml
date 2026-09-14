@@ -31,7 +31,7 @@ server:
       protocols:
         http_1_1:
           validate-request-headers: false
-          validate-response-headers: true
+          validate-response-headers: false
           send-keep-alive-header: false
           validate-path: false
           max-prologue-length: 81

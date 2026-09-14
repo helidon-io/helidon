@@ -29,6 +29,16 @@ import io.helidon.service.registry.Service;
 
 /**
  * APIs to define a declarative server endpoint.
+ * <p>
+ * Declarative response metadata, such as {@link Status}, {@link Header}, {@link ComputedHeader}, and
+ * {@link io.helidon.http.Http.Produces}, is configured on {@link ServerResponse} by generated routing code.
+ * For endpoint methods that accept {@link ServerResponse}, generated code configures this metadata before invoking the
+ * method, so it is available to {@link ServerResponse#outputStream()} and other response-handling APIs.
+ * For endpoint methods that do not accept {@link ServerResponse}, generated code configures this metadata after the
+ * method returns and before the generated response is sent.
+ * <p>
+ * Declarative response metadata has the same lifecycle as metadata configured imperatively on {@link ServerResponse}:
+ * it remains on the current response unless later route or error handling changes it.
  */
 @Api.Preview
 public final class RestServer {
@@ -47,7 +57,7 @@ public final class RestServer {
     }
 
     /**
-     * Definition of an outbound header (sent with every response).
+     * Definition of outbound response header metadata.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Repeatable(Headers.class)
@@ -75,7 +85,7 @@ public final class RestServer {
     @Documented
     public @interface Headers {
         /**
-         * Headers to add to request.
+         * Headers to add to response.
          *
          * @return headers
          */
@@ -83,7 +93,7 @@ public final class RestServer {
     }
 
     /**
-     * Definition of an outbound header (sent with every request).
+     * Definition of computed outbound response header metadata.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Documented
@@ -112,7 +122,7 @@ public final class RestServer {
     @Documented
     public @interface ComputedHeaders {
         /**
-         * Headers to add to request.
+         * Headers to add to response.
          *
          * @return headers
          */
@@ -137,12 +147,17 @@ public final class RestServer {
     }
 
     /**
-     * Status that should be returned. Only use when not setting it explicitly.
-     * If an exception is thrown from the method, status is determined based on
-     * error handling.
+     * HTTP status to configure for a declarative server response.
      * <p>
-     * You can use {@code _CODE} constants from {@link io.helidon.http.Status} for
-     * {@link #value()}.
+     * For endpoint methods that accept {@link ServerResponse}, generated code configures this status before invoking
+     * the method. The configured status has the same lifecycle as status set imperatively through
+     * {@link ServerResponse#status(io.helidon.http.Status)}: it remains on the response unless later route or error
+     * handling changes it.
+     * <p>
+     * For methods that do not accept {@link ServerResponse}, generated code configures this status after the method
+     * returns and before the generated response is sent.
+     * <p>
+     * You can use {@code _CODE} constants from {@link io.helidon.http.Status} for {@link #value()}.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Documented

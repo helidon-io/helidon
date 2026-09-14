@@ -25,6 +25,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.testing.junit5.MatcherWithRetry;
 
+import org.hamcrest.Matcher;
+
 import static org.hamcrest.Matchers.hasSize;
 
 /**
@@ -62,6 +64,14 @@ class TestLogHandler extends Handler implements AutoCloseable {
         var result = MatcherWithRetry.assertThatWithRetry("Logged messages",
                                                           () -> List.copyOf(messages),
                                                           hasSize(expectedCount));
+        messages.clear();
+        return result;
+    }
+
+    List<String> messages(Matcher<Iterable<? super String>> matcher) {
+        var result = MatcherWithRetry.assertThatWithRetry("Logged messages",
+                                                          () -> List.copyOf(messages),
+                                                          matcher);
         messages.clear();
         return result;
     }

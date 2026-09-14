@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,10 +112,6 @@ class MethodInvoker implements FtSupplier<Object> {
      */
     private final AtomicBoolean fallbackCalled = new AtomicBoolean(false);
     /**
-     * Helper to properly propagate active request scope to other threads.
-     */
-    private final RequestScopeHelper requestScopeHelper;
-    /**
      * FT handler for this invoker.
      */
     private final FtHandlerTyped<Object> handler;
@@ -156,8 +152,7 @@ class MethodInvoker implements FtSupplier<Object> {
         this.helidonContext = Contexts.context().orElseGet(Context::create);
 
         // Create method state using CCL to support multiples apps (like in TCKs)
-        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-        Objects.requireNonNull(ccl);
+        ClassLoader ccl = contextClassLoader();
         MethodStateKey methodStateKey = new MethodStateKey(ccl, context.getTarget().getClass(), method);
         this.methodState = METHOD_STATES.computeIfAbsent(methodStateKey, key -> {
             MethodState methodState = new MethodState();
@@ -174,10 +169,6 @@ class MethodInvoker implements FtSupplier<Object> {
 
         // Create a new method handler to ensure correct context in fallback
         handler = createMethodHandler(methodState);
-
-        // Gather information about current request scope if active
-        requestScopeHelper = new RequestScopeHelper();
-        requestScopeHelper.saveScope();
 
         registerMetrics();
     }
@@ -333,6 +324,8 @@ class MethodInvoker implements FtSupplier<Object> {
     }
 
     private CompletableFuture<Object> callSupplierNewThread(FtSupplier<Object> supplier) {
+        RequestScopeHelper requestScopeHelper = new RequestScopeHelper();
+        requestScopeHelper.saveScope();
         FtSupplier<Object> wrappedSupplier = requestScopeHelper.wrapInScope(supplier);
 
         // Call supplier in new thread
@@ -675,6 +668,11 @@ class MethodInvoker implements FtSupplier<Object> {
         } finally {
             methodState.lock.unlock();
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? MethodInvoker.class.getClassLoader() : classLoader;
     }
 
     /**

@@ -16,13 +16,9 @@
 
 package io.helidon.config.metadata.docs;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -35,14 +31,12 @@ import javax.lang.model.SourceVersion;
  * Config docs names.
  */
 final class CmDocNames {
-    private final MessageDigest digest;
     private final Set<String> typeNames = new LinkedHashSet<>();
     private final Set<String> fileNames = new LinkedHashSet<>();
     private final Map<String, String> anchors = new HashMap<>();
     private final Map<String, Set<String>> anchorsByFileName = new HashMap<>();
 
     CmDocNames(String... initialFileNames) {
-        digest = initDigest();
         fileNames.addAll(List.of(initialFileNames));
     }
 
@@ -75,7 +69,7 @@ final class CmDocNames {
     String anchor(String fileName, String key, String identity) {
         var anchorKey = "%s#%s#%s".formatted(fileName, key, identity);
         return anchors.computeIfAbsent(anchorKey, ignored -> {
-            var base = "a" + hash(anchorKey).substring(0, 8) + "-" + sanitizeAnchor(key);
+            var base = sanitizeAnchor(key);
             var usedAnchors = anchorsByFileName.computeIfAbsent(fileName, ignoredFileName -> new LinkedHashSet<>());
             if (usedAnchors.add(base)) {
                 return base;
@@ -87,10 +81,6 @@ final class CmDocNames {
                 }
             }
         });
-    }
-
-    private String hash(String input) {
-        return HexFormat.of().formatHex(digest.digest(input.getBytes(StandardCharsets.UTF_8)));
     }
 
     private static String uniqueName(String preferredName, Set<String> usedNames) {
@@ -195,18 +185,10 @@ final class CmDocNames {
     }
 
     private static String normalizedFileName(String value) {
-        var normalized = value.replaceAll("[^A-Za-z0-9]+", "_")
+        var normalized = value.replaceAll("[^A-Za-z0-9._-]+", "_")
                 .replaceAll("_+", "_")
                 .replaceAll("^_+", "")
                 .replaceAll("_+$", "");
         return normalized.isBlank() ? "config" : normalized;
-    }
-
-    private static MessageDigest initDigest() {
-        try {
-            return MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
-        }
     }
 }

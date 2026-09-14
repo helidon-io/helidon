@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,14 @@
 package io.helidon.dbclient.mongodb;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.dbclient.mongodb.StatementParsers.NamedParser;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +51,28 @@ public class StatementParsersTest {
         NamedParser parser = new NamedParser(stmtIn, mapping);
         String stmtOut = parser.convert();
         assertThat(stmtOut, is(stmtExp));
+    }
+
+    @Test
+    void testStatementWithHelidonJsonNamedParameter() {
+        JsonObject pokemon = JsonObject.builder()
+                .set("id", 25)
+                .set("name", "Pika\"chu")
+                .build();
+        NamedParser parser = new NamedParser("{ pokemon: $pokemon }", Map.of("pokemon", pokemon));
+
+        assertThat(parser.convert(), is("{ pokemon: {\"id\":25,\"name\":\"Pika\\\"chu\"} }"));
+    }
+
+    @Test
+    void testStatementWithHelidonJsonIndexedParameter() {
+        JsonArray team = JsonArray.create(
+                JsonString.create("Bulbasaur"),
+                JsonNumber.create(4));
+
+        String stmtOut = StatementParsers.indexedParser("{ team: ? }", List.of(team)).convert();
+
+        assertThat(stmtOut, is("{ team: [\"Bulbasaur\",4] }"));
     }
 
 }

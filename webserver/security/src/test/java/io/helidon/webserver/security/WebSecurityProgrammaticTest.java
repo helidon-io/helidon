@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver.security;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.helidon.common.context.Contexts;
@@ -31,8 +32,11 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for {@link SecurityHttpFeature}.
@@ -75,6 +79,7 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                         .get("/noRoles", SecurityFeature.secure())
                         .get("/user/*", SecurityFeature.rolesAllowed("user"))
                         .get("/admin", SecurityFeature.rolesAllowed("admin"))
+                        .get("/secureHandlerAdmin", SecurityFeature.secure(), SecureHandler.authorize("admin"))
                         .get("/deny", SecurityFeature.rolesAllowed("deny"), (req, res) -> {
                             res.status(Status.INTERNAL_SERVER_ERROR_500);
                             res.send("Should not get here, this role doesn't exist");
@@ -92,5 +97,11 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                                     .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                                     .orElse("Security context is null"));
                         }));
+    }
+
+    @Test
+    void secureHandlerChecksRoleHintAfterAuthorization() {
+        testProtected("/secureHandlerAdmin", "jack", "jackIsGreat", Set.of("user", "admin"), Set.of());
+        testForbidden("/secureHandlerAdmin", "jill", "password");
     }
 }

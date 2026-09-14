@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,6 +116,8 @@ interface LookupBlueprint {
      * If configured, the lookup will return service factories of the
      * chosen types.
      * If no factory types are defined, service instances are returned.
+     * Factory types alone do not expose hidden raw factory-provider descriptors; use a service type or a contract when
+     * the factory provider itself is requested.
      * <p>
      * Otherwise only service factories of the chosen types are returned, as follows:
      * <ul>
@@ -163,13 +165,16 @@ interface LookupBlueprint {
      */
     default boolean matches(ServiceInfo serviceInfo) {
         if (this == LookupSupport.CustomMethods.EMPTY) {
-            return !serviceInfo.isAbstract();
+            return !serviceInfo.isAbstract() && !hiddenFactoryProviderDescriptor(serviceInfo);
         }
 
         boolean matches = matches(serviceInfo.serviceType(), this.serviceType());
+        if (matches && this.serviceType().isEmpty() && hiddenFactoryProviderDescriptor(serviceInfo)) {
+            matches = !this.contracts().isEmpty();
+        }
         if (matches && this.serviceType().isEmpty()) {
             matches = serviceInfo.contracts().containsAll(this.contracts())
-                    || this.contracts().contains(ResolvedType.create(serviceInfo.serviceType()))
+                    || matchesConcreteServiceType(serviceInfo)
                     || serviceInfo.factoryContracts().containsAll(this.contracts());
         }
         matches = matches
@@ -208,6 +213,12 @@ interface LookupBlueprint {
         return matches;
     }
 
+    private boolean hiddenFactoryProviderDescriptor(ServiceInfo serviceInfo) {
+        return serviceInfo.contracts().isEmpty()
+                && serviceInfo.factoryType() != FactoryType.NONE
+                && serviceInfo.factoryType() != FactoryType.SERVICE;
+    }
+
     /**
      * Determines whether the provided qualifiers are matched by this lookup criteria.
      *
@@ -234,6 +245,10 @@ interface LookupBlueprint {
             return true;
         }
         return Objects.equals(src, criteria.get());
+    }
+
+    private boolean matchesConcreteServiceType(ServiceInfo serviceInfo) {
+        return this.contracts().contains(ResolvedType.create(serviceInfo.serviceType()));
     }
 
     private boolean matchesProviderTypes(Set<FactoryType> providerTypes, FactoryType providerType) {

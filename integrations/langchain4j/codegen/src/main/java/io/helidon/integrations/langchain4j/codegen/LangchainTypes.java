@@ -39,6 +39,7 @@ final class LangchainTypes {
     static final TypeName MODEL_CONFIGS_TYPE = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.ModelConfigs");
     static final TypeName MODEL_CONFIG_KEY_TYPE = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.ConfigKey");
     static final TypeName MODEL_DEFAULT_WEIGHT = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.DefaultWeight");
+    static final TypeName MODEL_LIFECYCLE = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.ModelLifecycle");
     static final TypeName MODEL_NESTED_CONFIG = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.NestedConfig");
     static final TypeName MODEL_CUSTOM_FACTORIES =
             TypeName.create("io.helidon.integrations.langchain4j.AiProvider.CustomModelFactories");
@@ -66,6 +67,8 @@ final class LangchainTypes {
     static final TypeName LC_CHAT_MEMORY_WINDOW = TypeName.create("dev.langchain4j.memory.chat.MessageWindowChatMemory");
     static final TypeName LC_HTTP_CLIENT_BUILDER = TypeName.create("dev.langchain4j.http.client.HttpClientBuilder");
     static final TypeName LC_CHAT_MODEL_LISTENER = TypeName.create("dev.langchain4j.model.chat.listener.ChatModelListener");
+    static final TypeName LC_EMBEDDING_MODEL_LISTENER =
+            TypeName.create("dev.langchain4j.model.embedding.listener.EmbeddingModelListener");
     static final TypeName LC_DEF_REQUEST_PARAMS = TypeName.create("dev.langchain4j.model.chat.request.ChatRequestParameters");
     static final TypeName LC_TOOL_PROVIDER = TypeName.create("dev.langchain4j.service.tool.ToolProvider");
     static final TypeName LC_MCP_TOOL_PROVIDER = TypeName.create("dev.langchain4j.mcp.McpToolProvider");
@@ -73,6 +76,7 @@ final class LangchainTypes {
     static final TypeName LC_AGENTIC_SERVICES = TypeName.create("dev.langchain4j.agentic.AgenticServices");
     static final TypeName LC_DECLARATIVE_AGENT_CREATION_CONTEXT = TypeName.create(
             "dev.langchain4j.agentic.AgenticServices.DeclarativeAgentCreationContext");
+    static final TypeName EXECUTOR_SERVICE = TypeName.create("java.util.concurrent.ExecutorService");
 
     static final TypeName SVC_SERVICES_FACTORY = TypeName.create("io.helidon.service.registry.Service.ServicesFactory");
     static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");

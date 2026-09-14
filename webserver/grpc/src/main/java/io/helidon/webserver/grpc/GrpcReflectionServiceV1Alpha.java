@@ -53,12 +53,12 @@ class GrpcReflectionServiceV1Alpha implements GrpcService {
      * Caches FileDescriptorProto representations as byte strings to avoid serialization
      * on every reflection request.
      */
-    private static final Map<String, ByteString> FILE_DESCRIPTOR_CACHE = new ConcurrentHashMap<>();
+    private final Map<String, ByteString> fileDescriptorCache = new ConcurrentHashMap<>();
 
-    private final String socket;
+    private final List<GrpcRouting> grpcRoutings;
 
-    GrpcReflectionServiceV1Alpha(String socket) {
-        this.socket = socket;
+    GrpcReflectionServiceV1Alpha(List<GrpcRouting> grpcRoutings) {
+        this.grpcRoutings = grpcRoutings;
     }
 
     @Override
@@ -107,8 +107,6 @@ class GrpcReflectionServiceV1Alpha implements GrpcService {
     }
 
     private ServerReflectionResponse listServices() {
-        List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
-
         ListServiceResponse.Builder builder = ListServiceResponse.newBuilder();
         for (GrpcRouting grpcRouting : grpcRoutings) {
             for (GrpcRoute grpcRoute : grpcRouting.routes()) {
@@ -121,12 +119,11 @@ class GrpcReflectionServiceV1Alpha implements GrpcService {
     private ServerReflectionResponse findFile(ServerReflectionRequest req) {
         String fileName = req.getFileByFilename();
         String cachedFileNameKey = "/" + fileName;      // not a legal identifier
-        ByteString byteString = FILE_DESCRIPTOR_CACHE.get(cachedFileNameKey);
+        ByteString byteString = fileDescriptorCache.get(cachedFileNameKey);
         if (byteString != null) {
             return fileDescResponse(byteString);
         }
 
-        List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
         for (GrpcRouting grpcRouting : grpcRoutings) {
             for (GrpcRoute grpcRoute : grpcRouting.routes()) {
                 ServerReflectionResponse res = findFile(grpcRoute.proto(), fileName, new HashSet<>());
@@ -158,12 +155,11 @@ class GrpcReflectionServiceV1Alpha implements GrpcService {
 
     private ServerReflectionResponse findSymbol(ServerReflectionRequest req) {
         String symbol = req.getFileContainingSymbol();
-        ByteString byteString = FILE_DESCRIPTOR_CACHE.get(symbol);
+        ByteString byteString = fileDescriptorCache.get(symbol);
         if (byteString != null) {
             return fileDescResponse(byteString);
         }
 
-        List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
         for (GrpcRouting grpcRouting : grpcRoutings) {
             for (GrpcRoute grpcRoute : grpcRouting.routes()) {
                 Descriptors.FileDescriptor fileDesc = grpcRoute.proto();
@@ -198,12 +194,11 @@ class GrpcReflectionServiceV1Alpha implements GrpcService {
         String type = req.getFileContainingExtension().getContainingType();
         int number = req.getFileContainingExtension().getExtensionNumber();
         String cachedFileNameKey = number + type;      // not a legal identifier
-        ByteString byteString = FILE_DESCRIPTOR_CACHE.get(cachedFileNameKey);
+        ByteString byteString = fileDescriptorCache.get(cachedFileNameKey);
         if (byteString != null) {
             return fileDescResponse(byteString);
         }
 
-        List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
         for (GrpcRouting grpcRouting : grpcRoutings) {
             for (GrpcRoute grpcRoute : grpcRouting.routes()) {
                 Descriptors.FileDescriptor fileDesc = grpcRoute.proto();
@@ -228,7 +223,7 @@ class GrpcReflectionServiceV1Alpha implements GrpcService {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        ByteString cachedValue = FILE_DESCRIPTOR_CACHE.putIfAbsent(symbol, byteString);
+        ByteString cachedValue = fileDescriptorCache.putIfAbsent(symbol, byteString);
         return fileDescResponse(cachedValue != null ? cachedValue : byteString);
     }
 

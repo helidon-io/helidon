@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,10 @@ public interface Counter extends Meter {
 
     /**
      * Creates a new builder for a counter.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#counterBuilder(String)} on the {@link MetricsFactory} instance used by
+     * the application.
+     * </p>
      *
      * @param name counter name
      * @return new builder

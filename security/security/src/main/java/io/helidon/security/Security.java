@@ -71,7 +71,11 @@ import io.helidon.tracing.Tracer;
 public interface Security {
     /**
      * Integration should add a special header to each request. The value will contain the original
-     * URI as was issued - for HTTP this is the relative URI including query parameters.
+     * URI as was issued - for HTTP this is the root-relative URI path, starting with {@code /}, optionally followed by
+     * query parameters.
+     * <p>
+     * Integrations should not include a scheme, authority, or backslash in this value. Providers that use this value as a
+     * redirect target may ignore values that are not local root-relative paths and fall back to the request target URI.
      */
     String HEADER_ORIG_URI = "X_ORIG_URI_HEADER";
 

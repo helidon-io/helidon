@@ -38,8 +38,8 @@ public interface Metrics {
      * Returns the global meter registry.
      *
      * @return the global meter registry
-     * @deprecated global instances are deprecated in general, and {@link io.helidon.service.registry.Services} can be used
-     * to get such an instance; until these methods are removed, the behavior may differ
+     * @deprecated use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)} instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
     static MeterRegistry globalRegistry() {
@@ -51,7 +51,8 @@ public interface Metrics {
      *
      * @param metricsConfig metrics config
      * @return new meter registry
-     * @deprecated use {@link io.helidon.metrics.api.MeterRegistry#create(MetricsConfig)} instead
+     * @deprecated use {@link MetricsFactory#createMeterRegistry(MetricsConfig)} on the application's
+     * {@link MetricsFactory} instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
     static MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
@@ -63,7 +64,8 @@ public interface Metrics {
      * config.
      *
      * @return new meter registry
-     * @deprecated use {@link MeterRegistry#create()} instead
+     * @deprecated use {@link MetricsFactory#createMeterRegistry(MetricsConfig)} with {@link MetricsConfig#create()} on
+     * the application's {@link MetricsFactory} instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
     static MeterRegistry createMeterRegistry() {
@@ -222,7 +224,8 @@ public interface Metrics {
      * @param key   tag key
      * @param value tag value
      * @return new tag
-     * @deprecated use {@link io.helidon.metrics.api.Tag#create(String, String)} instead
+     * @deprecated use {@link MetricsFactory#tagCreate(String, String)} on the application's {@link MetricsFactory}
+     * instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
     static io.helidon.metrics.api.Tag tag(String key, String value) {
@@ -235,7 +238,8 @@ public interface Metrics {
      *
      * @param keyValuePairs pairs of tag name/tag value pairs
      * @return tags corresponding to the tag name/tag value pairs
-     * @deprecated use {@link io.helidon.metrics.api.Tag#create(String, String)} instead
+     * @deprecated use {@link MetricsFactory#tagCreate(String, String)} on the application's {@link MetricsFactory}
+     * instead
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
     static Iterable<io.helidon.metrics.api.Tag> tags(String... keyValuePairs) {

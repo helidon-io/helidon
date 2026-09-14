@@ -204,12 +204,17 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
             if (Files.exists(file)) {
                 return Files.readString(file);
             } else {
-                try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
+                try (InputStream is = contextClassLoader().getResourceAsStream(path)) {
                     return is != null ? new String(is.readAllBytes(), StandardCharsets.UTF_8) : null;
                 }
             }
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? OpenApiFeature.class.getClassLoader() : classLoader;
     }
 }

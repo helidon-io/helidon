@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,11 +126,75 @@ class ContentDispositionTest {
     }
 
     @Test
+    void testFilenameWithDirectoryPathUsesOnlyTerminalComponent() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=%2e%2e%2f%2e%2e%2fetc%2fpasswd");
+        assertThat(cd.type(), is(equalTo("inline")));
+        assertThat(cd.filename().isPresent(), is(equalTo(true)));
+        assertThat(cd.filename().get(), is(equalTo("passwd")));
+        assertThat(cd.parameters(), is(notNullValue()));
+        assertThat(cd.parameters().size(), is(equalTo(1)));
+    }
+
+    @Test
+    void testFilenameWithRawDirectoryPathUsesOnlyTerminalComponent() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=../../etc/passwd");
+        assertThat(cd.type(), is(equalTo("inline")));
+        assertThat(cd.filename().isPresent(), is(equalTo(true)));
+        assertThat(cd.filename().get(), is(equalTo("passwd")));
+        assertThat(cd.parameters(), is(notNullValue()));
+        assertThat(cd.parameters().size(), is(equalTo(1)));
+    }
+
+    @Test
+    void testFilenameWithEncodedBackslashUsesOnlyTerminalComponent() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=%2e%2e%5c%2e%2e%5cpasswd");
+        assertThat(cd.type(), is(equalTo("inline")));
+        assertThat(cd.filename().isPresent(), is(equalTo(true)));
+        assertThat(cd.filename().get(), is(equalTo("passwd")));
+        assertThat(cd.parameters(), is(notNullValue()));
+        assertThat(cd.parameters().size(), is(equalTo(1)));
+    }
+
+    @Test
+    void testFilenameWithControlCharacterRejected() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=file%0aname.txt");
+        assertThrows(IllegalArgumentException.class, cd::filename);
+    }
+
+    @Test
+    void testFilenameWithEmptyQuotedValueRejected() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=\"\"");
+        assertThrows(IllegalArgumentException.class, cd::filename);
+    }
+
+    @Test
+    void testFilenameWithEmptyFinalSegmentRejected() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=path%2f");
+        assertThrows(IllegalArgumentException.class, cd::filename);
+    }
+
+    @Test
+    void testFilenameWithDotFinalSegmentRejected() {
+        ContentDisposition dot = ContentDisposition.parse("inline; filename=%2e");
+        ContentDisposition dotDot = ContentDisposition.parse("inline; filename=%2e%2e");
+        ContentDisposition pathDotDot = ContentDisposition.parse("inline; filename=path%2f%2e%2e");
+        assertThrows(IllegalArgumentException.class, dot::filename);
+        assertThrows(IllegalArgumentException.class, dotDot::filename);
+        assertThrows(IllegalArgumentException.class, pathDotDot::filename);
+    }
+
+    @Test
+    void testMalformedQuotedFilenameWithBackslashRunRejected() {
+        ContentDisposition cd = ContentDisposition.parse("inline; filename=\"" + "\\".repeat(8_192));
+        assertThrows(IllegalArgumentException.class, cd::filename);
+    }
+
+    @Test
     void testFilenameWithBackslash() {
         ContentDisposition cd = ContentDisposition.parse("inline; filename=\"C:\\index.html\"");
         assertThat(cd.type(), is(equalTo("inline")));
         assertThat(cd.filename().isPresent(), is(equalTo(true)));
-        assertThat(cd.filename().get(), is(equalTo("C:\\index.html")));
+        assertThat(cd.filename().get(), is(equalTo("index.html")));
         assertThat(cd.parameters(), is(notNullValue()));
         assertThat(cd.parameters().size(), is(equalTo(1)));
     }

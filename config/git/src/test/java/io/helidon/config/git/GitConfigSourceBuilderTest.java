@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystemException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
@@ -30,6 +34,7 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MetaConfig;
+import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 import org.eclipse.jgit.api.Git;
@@ -40,7 +45,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 
 import static io.helidon.config.PollingStrategies.regular;
@@ -50,6 +54,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link GitConfigSourceBuilder}.
@@ -99,6 +105,41 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         return Paths.get(git.getRepository().getWorkTree().getAbsolutePath()).toUri().toString();
     }
 
+    private static ConfigContext configContext() {
+        return mock(ConfigContext.class);
+    }
+
+    private static void createSymbolicLink(Path link, Path target) throws IOException {
+        try {
+            Files.createSymbolicLink(link, target);
+        } catch (UnsupportedOperationException e) {
+            assumeTrue(false, "Symbolic links are not available: " + e.getMessage());
+        } catch (FileSystemException e) {
+            String reason = e.getReason();
+            if (reason != null
+                    && (reason.contains("not supported")
+                            || reason.contains("Operation not permitted")
+                            || reason.contains("privilege"))) {
+                assumeTrue(false, "Symbolic links are not available: " + e.getMessage());
+            }
+            throw e;
+        }
+    }
+
+    @Test
+    public void testInitRejectsNullContext() throws Exception {
+        try (GitConfigSource source = GitConfigSource
+                .builder()
+                .path("application.properties")
+                .uri(URI.create(fileUri()))
+                .parser(ConfigParsers.properties())
+                .build()) {
+
+            NullPointerException npe = assertThrows(NullPointerException.class, () -> source.init(null));
+            assertThat(npe.getMessage(), is("context"));
+        }
+    }
+
     @Test
     public void testMaster() throws Exception {
         try (GitConfigSource source = GitConfigSource
@@ -107,7 +148,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .uri(URI.create(fileUri()))
                 .build()) {
 
-            source.init(null);
+            source.init(configContext());
 
             ObjectNode root = ConfigParsers.properties().parse(source.load().get());
 
@@ -124,7 +165,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .branch("test")
                 .build()) {
 
-            source.init(null);
+            source.init(configContext());
 
             ObjectNode root = ConfigParsers.properties().parse(source.load().get());
 
@@ -145,7 +186,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                         .parser(ConfigParsers.properties())
                         .build()) {
 
-            source.init(null);
+            source.init(configContext());
 
             assertThat(tempDir.toPath().resolve("application.properties").toFile().exists(), is(true));
         }
@@ -161,9 +202,157 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .parser(ConfigParsers.properties())
                 .build()) {
 
-            source.init(null);
+            source.init(configContext());
 
             assertThat(tempDir.toPath().resolve("application.properties").toFile().exists(), is(true));
+        }
+    }
+
+    @Test
+    public void testDirectoryTraversalRejected() throws IOException {
+        Path cloneDir = Files.createDirectory(tempDir.toPath().resolve("clone"));
+        Path escapedDir = Files.createDirectory(tempDir.toPath().resolve("escaped"));
+        Path escapedFile = escapedDir.resolve("outside.properties");
+
+        Files.writeString(escapedFile, "proof=outside\n", StandardCharsets.UTF_8);
+
+        ConfigException ce = assertThrows(ConfigException.class, () -> {
+            try (GitConfigSource source = GitConfigSource
+                    .builder()
+                    .path("../escaped/outside.properties")
+                    .uri(URI.create(fileUri()))
+                    .directory(cloneDir)
+                    .parser(ConfigParsers.properties())
+                    .build()) {
+                source.init(configContext());
+                source.load();
+            }
+        });
+        assertThat(ce.getMessage(), startsWith("Git configuration path must stay inside the repository:"));
+    }
+
+    @Test
+    public void testDirectoryAbsolutePathRejected() throws IOException {
+        Path cloneDir = Files.createDirectory(tempDir.toPath().resolve("clone"));
+        Path escapedFile = Files.writeString(tempDir.toPath().resolve("outside.properties"),
+                                            "proof=outside\n",
+                                            StandardCharsets.UTF_8);
+
+        ConfigException ce = assertThrows(ConfigException.class, () -> {
+            try (GitConfigSource source = GitConfigSource
+                    .builder()
+                    .path(escapedFile.toString())
+                    .uri(URI.create(fileUri()))
+                    .directory(cloneDir)
+                    .parser(ConfigParsers.properties())
+                    .build()) {
+                source.init(configContext());
+                source.load();
+            }
+        });
+        assertThat(ce.getMessage(), startsWith("Git configuration path must be relative:"));
+    }
+
+    @Test
+    public void testDirectorySymlinkInsideRepository() throws Exception {
+        Path cloneDir = Files.createDirectory(tempDir.toPath().resolve("clone"));
+
+        try (Git clone = Git.cloneRepository()
+                .setURI(fileUri())
+                .setDirectory(cloneDir.toFile())
+                .call()) {
+            Files.writeString(cloneDir.resolve("linked-target.properties"), "proof=inside\n", StandardCharsets.UTF_8);
+            createSymbolicLink(cloneDir.resolve("linked.properties"), Path.of("linked-target.properties"));
+
+            try (GitConfigSource source = GitConfigSource
+                    .builder()
+                    .path("linked.properties")
+                    .directory(cloneDir)
+                    .parser(ConfigParsers.properties())
+                    .build()) {
+                source.init(configContext());
+
+                ObjectNode root = ConfigParsers.properties().parse(source.load().get());
+                assertThat(root.get("proof"), valueNode("inside"));
+            }
+        }
+    }
+
+    @Test
+    public void testDirectorySymlinkTraversalRejected() throws Exception {
+        Path cloneDir = Files.createDirectory(tempDir.toPath().resolve("clone"));
+        Path escapedFile = Files.writeString(tempDir.toPath().resolve("outside.properties"),
+                                            "proof=outside\n",
+                                            StandardCharsets.UTF_8);
+
+        try (Git clone = Git.cloneRepository()
+                .setURI(fileUri())
+                .setDirectory(cloneDir.toFile())
+                .call()) {
+            Path link = cloneDir.resolve("linked.properties");
+            createSymbolicLink(link, escapedFile);
+
+            try (GitConfigSource source = GitConfigSource
+                    .builder()
+                    .path("linked.properties")
+                    .directory(cloneDir)
+                    .parser(ConfigParsers.properties())
+                    .build()) {
+                source.init(configContext());
+
+                ConfigException ce = assertThrows(ConfigException.class, source::load);
+                assertThat(ce.getMessage(), startsWith("Git configuration path must stay inside the repository:"));
+            }
+        }
+    }
+
+    @Test
+    public void testRelativeTraversalRejected() throws Exception {
+        Path cloneDir = Files.createDirectory(tempDir.toPath().resolve("clone"));
+        Path escapedDir = Files.createDirectory(tempDir.toPath().resolve("escaped"));
+
+        Files.writeString(escapedDir.resolve("outside.properties"), "proof=outside\n", StandardCharsets.UTF_8);
+
+        try (GitConfigSource source = GitConfigSource
+                .builder()
+                .path("application.properties")
+                .uri(URI.create(fileUri()))
+                .directory(cloneDir)
+                .parser(ConfigParsers.properties())
+                .build()) {
+            source.init(configContext());
+
+            ConfigException ce = assertThrows(ConfigException.class,
+                                              () -> source.relativeResolver().apply("../escaped/outside.properties"));
+            assertThat(ce.getMessage(), startsWith("Git configuration path must stay inside the repository:"));
+        }
+    }
+
+    @Test
+    public void testRelativeSymlinkTraversalRejected() throws Exception {
+        Path cloneDir = Files.createDirectory(tempDir.toPath().resolve("clone"));
+        Path escapedFile = Files.writeString(tempDir.toPath().resolve("outside.properties"),
+                                            "proof=outside\n",
+                                            StandardCharsets.UTF_8);
+
+        try (Git clone = Git.cloneRepository()
+                .setURI(fileUri())
+                .setDirectory(cloneDir.toFile())
+                .call()) {
+            createSymbolicLink(cloneDir.resolve("linked.properties"), escapedFile);
+
+            try (GitConfigSource source = GitConfigSource
+                    .builder()
+                    .path("application.properties")
+                    .directory(cloneDir)
+                    .parser(ConfigParsers.properties())
+                    .build()) {
+                source.init(configContext());
+
+                ConfigException ce = assertThrows(ConfigException.class,
+                                                  () -> source.relativeResolver().apply("linked.properties"));
+                assertThat(ce.getMessage(), startsWith("Git configuration path must stay inside the repository:"));
+            }
         }
     }
 
@@ -178,7 +367,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                     .directory(tempDir.toPath())
                     .parser(ConfigParsers.properties())
                     .build()
-                    .init(null);
+                    .init(configContext());
         });
 
         assertThat(ce.getMessage(),
@@ -210,7 +399,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .pollingStrategy(regular(Duration.ofMillis(50)).build())
                 .build()) {
 
-            source.init(null);
+            source.init(configContext());
 
             Optional<ObjectNode> root = source.load().map(ConfigParsers.properties()::parse);
 
@@ -231,7 +420,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                         .directory(tempDir.toPath())
                         .build()) {
 
-            source.init(null);
+            source.init(configContext());
 
             assertThat(source.description(), is(String.format("GitConfig[%s|%s#application.conf]", tempDir, fileUri())));
         }

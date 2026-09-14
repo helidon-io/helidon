@@ -87,6 +87,16 @@ class DeclarativeMetricsTest {
     }
 
     @Test
+    @Order(5)
+    void testInheritedCounted() {
+        var response = client.get("/endpoint/inherited-counted").request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("inherited counted"));
+    }
+
+    @Test
+    @Order(6)
     void testMetricsObserver() {
         var response = client.get("/observe/metrics")
                 .header(HeaderValues.ACCEPT_JSON)
@@ -110,5 +120,15 @@ class DeclarativeMetricsTest {
                 .orElse(null);
         assertThat(gauge, notNullValue());
         assertThat(gauge.intValue(), is(42));
+
+        BigDecimal inheritedCounted = appMetrics.numberValue("inherited-counted;application=MyNiceApp;endpoint=TestEndpoint")
+                .orElse(null);
+        assertThat(inheritedCounted, notNullValue());
+        assertThat(inheritedCounted.intValue(), is(1));
+
+        BigDecimal inheritedGauge = appMetrics.numberValue("inherited-gauge;application=MyNiceApp;endpoint=TestEndpoint")
+                .orElse(null);
+        assertThat(inheritedGauge, notNullValue());
+        assertThat(inheritedGauge.intValue(), is(43));
     }
 }

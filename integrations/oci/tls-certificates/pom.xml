@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.integrations.oci</groupId>
         <artifactId>helidon-integrations-oci-project</artifactId>
-        <version>4.5.0-SNAPSHOT</version>
+        <version>4.5.5-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -79,6 +79,10 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-key-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-configurable</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.fault-tolerance</groupId>
@@ -191,7 +195,6 @@
                         <CA_OCID>SETME</CA_OCID>
                         <SERVER_CERT_OCID>SETME</SERVER_CERT_OCID>
                         <SERVER_KEY_OCID>SETME</SERVER_KEY_OCID>
-                        <oci.real.usage>false</oci.real.usage>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

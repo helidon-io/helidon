@@ -25,22 +25,20 @@ import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.json.JsonException;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.jsonrpc.core.JsonRpcResult;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.spi.Source;
 
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
-
-import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
-
 /**
  * An implementation of JSON-RPC client response.
  */
 class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
-    private static final JsonObject EMPTY_JSON_OBJECT = JSON_BUILDER_FACTORY.createObjectBuilder().build();
+    private static final JsonObject EMPTY_JSON_OBJECT = JsonObject.empty();
 
     private final HttpClientResponse delegate;
     private JsonObject jsonObject;
@@ -56,22 +54,21 @@ class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
 
     @Override
     public Optional<JsonValue> rpcId() {
-        JsonValue id = asJsonObject().get("id");
-        return Optional.ofNullable(id);
+        return asJsonObject().value("id");
     }
 
     @Override
     public Optional<JsonRpcResult> result() {
-        JsonValue result = asJsonObject().get("result");
-        return result == null ? Optional.empty() : Optional.of(JsonRpcResult.create(result));
+        return asJsonObject().value("result")
+                .map(JsonRpcResult::create);
     }
 
     @Override
     public Optional<JsonRpcError> error() {
         try {
-            JsonObject error = asJsonObject().getJsonObject("error");
-            return Optional.ofNullable(error == null ? null : JsonRpcError.create(error));
-        } catch (ClassCastException e) {
+            return asJsonObject().objectValue("error")
+                    .map(JsonRpcError::create);
+        } catch (JsonException e) {
             return Optional.empty();
         }
     }

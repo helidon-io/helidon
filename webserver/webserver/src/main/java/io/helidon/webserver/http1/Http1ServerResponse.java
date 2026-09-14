@@ -36,6 +36,7 @@ import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
@@ -46,11 +47,12 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
+import io.helidon.webserver.http1.spi.Http1UpgradeResponse;
 
 /**
  * An HTTP/1 server response.
  */
-class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
+class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implements Http1UpgradeResponse {
     private static final System.Logger LOGGER = System.getLogger(Http1ServerResponse.class.getName());
     private static final byte[] HTTP_BYTES = "HTTP/1.1 ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
@@ -68,14 +70,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private final ServerResponseTrailers trailers;
     private final boolean keepAlive;
     private final boolean sendKeepAliveHeader;
+    private final boolean validateHeaders;
 
+    private boolean keepConnectionOpen;
     private boolean streamingEntity;
     private boolean isSent;
     private ClosingBufferedOutputStream outputStream;
     private long bytesWritten;
     private String streamResult = "";
     private boolean isNoEntityStatus;
-    private final boolean validateHeaders;
 
     private UnaryOperator<OutputStream> outputStreamFilter;
 
@@ -95,6 +98,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
         this.keepAlive = keepAlive;
+        this.keepConnectionOpen = keepAlive;
         this.sendKeepAliveHeader = sendKeepAliveHeader;
         this.validateHeaders = validateHeaders;
     }
@@ -168,7 +172,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         if (isNoEntityStatus) {
             if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
                 headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-            } else if (headers.get(HeaderNames.CONTENT_LENGTH).getLong() > 0L) {
+            } else if (headers.contentLength().orElse(0) > 0L) {
                 throw new IllegalStateException("Cannot set status to " + status + " with header "
                                                         + HeaderNames.CONTENT_LENGTH + " greater than zero");
             }
@@ -254,6 +258,48 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
+    public void send(Status status) {
+        status(Objects.requireNonNull(status));
+        send();
+    }
+
+    @Override
+    public void sendSwitchingProtocols(Headers requiredHeaders) {
+        Objects.requireNonNull(requiredHeaders);
+        if (isSent) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (streamingEntity) {
+            throw new IllegalStateException("Cannot switch protocols after requesting output stream.");
+        }
+
+        status(Status.SWITCHING_PROTOCOLS_101);
+        headers.from(requiredHeaders);
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+        beforeSend();
+        headers.from(requiredHeaders);
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+
+        sendListener.status(ctx, Status.SWITCHING_PROTOCOLS_101);
+        sendListener.headers(ctx, headers);
+
+        BufferData responseBuffer = BufferData.growing(256);
+        nonEntityBytes(headers, Status.SWITCHING_PROTOCOLS_101, responseBuffer, true, false, validateHeaders);
+        bytesWritten = responseBuffer.available();
+        isSent = true;
+        request.reset();
+        sendListener.data(ctx, responseBuffer);
+        try {
+            dataWriter.writeNow(responseBuffer);
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write switching protocols response", e);
+        }
+        afterSend();
+    }
+
+    @Override
     public ServerResponseTrailers trailers() {
         if (request.headers().containsToken(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
             return trailers;
@@ -282,6 +328,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             return false;
         }
         headers.clear();
+        keepConnectionOpen = keepAlive;
         streamingEntity = false;
         outputStream = null;
         return true;
@@ -411,6 +458,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         // give some space for code and headers + entity
         BufferData responseBuffer = BufferData.growing(256 + length);
 
+        keepConnectionOpen = resolveKeepConnectionOpen();
         nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, sendKeepAliveHeader, validateHeaders);
         if (forcedChunkedEncoding) {
             byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
@@ -466,11 +514,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             encodedOutputStream = contentEncode(outputStream);
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
-        return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+        OutputStream result = outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+        keepConnectionOpen = resolveKeepConnectionOpen();
+        return result;
     }
 
     boolean keepConnectionOpen() {
-        return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
+        return keepConnectionOpen;
     }
 
     private static Status noEntityInternalError(Status status) {
@@ -485,6 +535,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         return code == Status.NO_CONTENT_204.code()
                 || code == Status.RESET_CONTENT_205.code()
                 || code == Status.NOT_MODIFIED_304.code();
+    }
+
+    private boolean resolveKeepConnectionOpen() {
+        return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
     }
 
     static class BlockingOutputStream extends OutputStream {

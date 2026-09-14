@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,25 +21,33 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2Headers;
 
 class StreamBuffer {
 
     private final Lock streamLock = new ReentrantLock();
     private final Semaphore dequeSemaphore = new Semaphore(1);
-    private final Queue<Http2FrameData> buffer = new ArrayDeque<>();
+    private final Queue<InboundItem> buffer = new ArrayDeque<>();
     private final Http2ClientStream stream;
     private final int streamId;
+    private final AtomicInteger unprocessedDataLength = new AtomicInteger();
+    private volatile RuntimeException failure;
 
     StreamBuffer(Http2ClientStream stream, int streamId) {
         this.stream = stream;
         this.streamId = streamId;
     }
 
-    Http2FrameData poll(Duration timeout) {
+    InboundItem poll(Duration timeout) {
+        RuntimeException failure = this.failure;
+        if (failure != null) {
+            throw failure;
+        }
         try {
             // Block deque thread when queue is empty
             // avoid CPU burning
@@ -51,6 +59,10 @@ class StreamBuffer {
         }
         try {
             streamLock.lock();
+            failure = this.failure;
+            if (failure != null) {
+                throw failure;
+            }
             return buffer.poll();
         } finally {
             streamLock.unlock();
@@ -58,13 +70,65 @@ class StreamBuffer {
     }
 
     void push(Http2FrameData frameData) {
+        push(new InboundData(frameData));
+    }
+
+    void pushTrailers(Http2Headers headers, boolean endOfStream) {
+        push(new InboundTrailers(headers, endOfStream));
+    }
+
+    private void push(InboundItem item) {
         try {
             streamLock.lock();
-            buffer.add(frameData);
+            buffer.add(item);
+            if (item instanceof InboundData inboundData) {
+                unprocessedDataLength.addAndGet(inboundData.frameData().header().length());
+            }
         } finally {
             streamLock.unlock();
             // Release deque threads
             dequeSemaphore.release();
         }
+    }
+
+    void fail(RuntimeException failure) {
+        try {
+            streamLock.lock();
+            if (this.failure == null) {
+                this.failure = failure;
+            }
+        } finally {
+            streamLock.unlock();
+            dequeSemaphore.release();
+        }
+    }
+
+    int failAndDiscard(RuntimeException failure) {
+        int discardedDataLength;
+        try {
+            streamLock.lock();
+            if (this.failure == null) {
+                this.failure = failure;
+            }
+            discardedDataLength = unprocessedDataLength.getAndSet(0);
+            buffer.clear();
+        } finally {
+            streamLock.unlock();
+            dequeSemaphore.release();
+        }
+        return discardedDataLength;
+    }
+
+    void dataProcessed(int dataLength) {
+        unprocessedDataLength.addAndGet(-dataLength);
+    }
+
+    sealed interface InboundItem permits InboundData, InboundTrailers {
+    }
+
+    record InboundData(Http2FrameData frameData) implements InboundItem {
+    }
+
+    record InboundTrailers(Http2Headers trailers, boolean endOfStream) implements InboundItem {
     }
 }

@@ -60,6 +60,7 @@ class DeclarativeHttpTest {
     @BeforeEach
     void beforeEach() {
         SomeEntryPointInterceptor.reset();
+        InheritedFtEndpoint.reset();
     }
 
     @Test
@@ -84,6 +85,17 @@ class DeclarativeHttpTest {
         var all = typedClient.greetings();
 
         assertThat(all, hasItem(is(new GreetingDto("Hello"))));
+    }
+
+    @Test
+    void testInheritedClientRetry() {
+        InheritedFtClient typedClient = registry.get(Lookup.builder()
+                                                              .addContract(InheritedFtClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
+
+        assertThat(typedClient.retry(), is("retried"));
+        assertThat(InheritedFtEndpoint.calls(), is(2));
     }
 
     @Test
@@ -218,6 +230,26 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testServerResponseOutputStream() {
+        try (var response = client.get("/greet/output-stream").request()) {
+            assertThat(response.status(), is(Status.CREATED_201));
+            assertThat(response.headers().contentType().orElseThrow().text(), is("text/plain"));
+            assertThat(response.headers().get(HeaderNames.create("X-Stream")).get(), is("true"));
+            assertThat(response.entity().as(String.class), is("streamed"));
+        }
+    }
+
+    @Test
+    void testInputStreamServerResponseEcho() {
+        String entity = "echoed entity";
+        var response = client.post("/greet/input-stream-output-stream")
+                .submit(entity, String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is(entity));
+    }
+
+    @Test
     void testQueryParamEmptyStringPreserved() {
         try (var response = client.get("/greet/query-param")
                 .queryParam("param", "")
@@ -290,5 +322,23 @@ class DeclarativeHttpTest {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("hello"));
+    }
+
+    @Test
+    void testInputStreamEntityEcho() {
+        var response = client.post("/greet/input-stream")
+                .submit("hello", String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("hello"));
+    }
+
+    @Test
+    void testInputStreamEntityEmptyContentLengthFailure() {
+        var response = client.post("/greet/input-stream")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        assertThat(response.entity(), is("Entity inputStream is not present in the request."));
     }
 }

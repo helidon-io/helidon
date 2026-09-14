@@ -29,7 +29,7 @@ import javax.net.ssl.X509TrustManager;
 import io.grpc.ManagedChannel;
 import io.opentelemetry.api.metrics.MeterProvider;
 import io.opentelemetry.exporter.internal.grpc.GrpcExporterBuilder;
-import io.opentelemetry.sdk.internal.StandardComponentId;
+import io.opentelemetry.sdk.common.internal.StandardComponentId;
 
 import static io.opentelemetry.api.internal.Utils.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -47,22 +47,21 @@ public final class JaegerGrpcSpanExporterBuilder {
   private static final String GRPC_SERVICE_NAME = "jaeger.api_v2.CollectorService";
 
   // Visible for testing
-  static final String GRPC_ENDPOINT_PATH = "/" + GRPC_SERVICE_NAME + "/PostSpans";
+  private static final String GRPC_FULL_METHOD_NAME = GRPC_SERVICE_NAME + "/PostSpans";
 
   private static final String DEFAULT_ENDPOINT_URL = "http://localhost:14250";
   private static final URI DEFAULT_ENDPOINT = URI.create(DEFAULT_ENDPOINT_URL);
   private static final long DEFAULT_TIMEOUT_SECS = 10;
 
-  private final GrpcExporterBuilder<PostSpansRequestMarshaler> delegate;
+  private final GrpcExporterBuilder delegate;
 
   JaegerGrpcSpanExporterBuilder() {
     delegate =
-        new GrpcExporterBuilder<>(
+        new GrpcExporterBuilder(
                 StandardComponentId.ExporterType.OTLP_GRPC_SPAN_EXPORTER,
-                DEFAULT_TIMEOUT_SECS,
+                Duration.ofSeconds(DEFAULT_TIMEOUT_SECS),
                 DEFAULT_ENDPOINT,
-                () -> MarshalerCollectorServiceGrpc::newFutureStub,
-                GRPC_ENDPOINT_PATH);
+                GRPC_FULL_METHOD_NAME);
   }
 
   /**
@@ -120,7 +119,7 @@ public final class JaegerGrpcSpanExporterBuilder {
   public JaegerGrpcSpanExporterBuilder setTimeout(long timeout, TimeUnit unit) {
     requireNonNull(unit, "unit");
     checkArgument(timeout >= 0, "timeout must be non-negative");
-    delegate.setTimeout(timeout, unit);
+    delegate.setTimeout(Duration.ofNanos(unit.toNanos(timeout)));
     return this;
   }
 

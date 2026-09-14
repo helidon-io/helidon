@@ -210,6 +210,77 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <cve>CVE-2019-3826</cve>
 </suppress>
 
+<!-- False Positive.
+     This CVE is against prometheus server (not client libraries).
+ -->
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient.*@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: prometheus-metrics-core-1.3.10.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus-metrics-.*@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: micrometer-registry-prometheus-1.15.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-registry-prometheus.*@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+</suppress>
+
+<!-- False Positives.
+     These are confusing prometheus simple client tracer for otel with OTel dotnet, Go, python
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2026-40894</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2026-39882</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2026-41078</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2023-47108</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2023-45142</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: simpleclient_tracer_otel-0.16.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel.*@.*$</packageUrl>
+    <cve>CVE-2023-43810</cve>
+</suppress>
+
 <!-- False Positives.
      This CVE is against the XML Database component of Oracle Database Server.
      The below are client libraries for XML and XML JDBC support.
@@ -278,6 +349,50 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*$</packageUrl>
    <cve>CVE-2026-1337</cve>
 </suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.1-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: neo4j-bolt-connection-1.0.0.jar
+    file name: neo4j-bolt-connection-netty-1.0.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: neo4j-bolt-connection-1.0.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*@.*$</packageUrl>
+    <cve>CVE-2026-1471</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: neo4j-bolt-connection-1.0.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.1-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*@.*$</packageUrl>
+    <cve>CVE-2026-1471</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.1-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+</suppress>
+
 
 <!-- 
      This CVE is old and was fixed in Kotlin 1.4.21. The CPE recently changed in NVD.
@@ -374,6 +489,93 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/org\.codehaus\.plexus/plexus-utils@.*$</packageUrl>
     <cve>CVE-2025-67030</cve>
+</suppress>
+
+<!-- False Positive
+     This CVE is againt Netty 4.2 not 4.1. The CVE references the class io.netty.handler.codec.http3.QpackDecoder
+     which is in Netty's HTTP3 support. Netty 4.1 does not have this class (nor does Netty 4.1 have HTTP3 support).
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: netty-transport-4.1.133.Final.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.netty/netty-.*@.*$</packageUrl>
+    <cve>CVE-2026-42582</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: netty-transport-4.1.136.Final.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.netty/netty-.*@.*$</packageUrl>
+    <cve>CVE-2026-56816</cve>
+</suppress>
+
+<!-- False Positive
+     These CVEs are against GraphQL, not dataloader.
+     https://github.com/dependency-check/DependencyCheck/issues/8387
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: java-dataloader-3.3.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.graphql-java/java-dataloader@.*$</packageUrl>
+    <cve>CVE-2022-37734</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: java-dataloader-3.3.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.graphql-java/java-dataloader@.*$</packageUrl>
+    <cve>CVE-2023-28867</cve>
+</suppress>
+<!-- Under dispute
+     These CVEs are being disputed. For details see:
+     https://github.com/HdrHistogram/HdrHistogram/issues/222
+     https://github.com/HdrHistogram/HdrHistogram/issues/221
+     https://github.com/HdrHistogram/HdrHistogram/issues/220
+     https://github.com/HdrHistogram/HdrHistogram/issues/218
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14683</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14685</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14686</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14684</vulnerabilityName>
+</suppress>
+
+<!--
+  This CVE only applies when using the KAPT incremental build cache (typically with Gradle).
+  We do not use Kotlin nor the Kotlin Compiler or KAPT at build time. Kotlin would only be
+  present as a transitive runtime dependencies in the form of kotlin-stdlib,
+  kotlin-stdlib-common or kotlin-stdlib-jdk8.
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: kotlin-stdlib-1.9.10.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*@.*$</packageUrl>
+    <cve>CVE-2026-53914</cve>
 </suppress>
 
 

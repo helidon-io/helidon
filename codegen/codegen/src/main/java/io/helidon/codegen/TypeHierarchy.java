@@ -35,7 +35,6 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.common.types.TypeNames.GENERATED;
 import static io.helidon.common.types.TypeNames.INHERITED;
-import static java.util.function.Predicate.not;
 
 /**
  * Utilities for type hierarchy.
@@ -556,6 +555,27 @@ public final class TypeHierarchy {
             return;
         }
 
+        Map<String, TypeName> substitutions = new LinkedHashMap<>();
+        List<TypeName> typeArguments = type.typeName().typeArguments();
+        if (!typeArguments.isEmpty()) {
+            List<String> typeParameters = type.declaredType().typeParameters();
+            if (typeParameters.isEmpty()) {
+                typeParameters = type.declaredType()
+                        .typeArguments()
+                        .stream()
+                        .filter(TypeName::generic)
+                        .map(TypeName::className)
+                        .toList();
+            }
+
+            for (int i = 0; i < typeArguments.size() && i < typeParameters.size(); i++) {
+                String typeParameter = typeParameters.get(i);
+                int boundStart = typeParameter.indexOf(' ');
+                substitutions.put(boundStart > 0 ? typeParameter.substring(0, boundStart) : typeParameter,
+                                  typeArguments.get(i));
+            }
+        }
+
         inherited(
                 type,
                 method,
@@ -563,12 +583,19 @@ public final class TypeHierarchy {
                         .stream()
                         .map(TypedElementInfo::typeName)
                         .collect(Collectors.toUnmodifiableList()),
-                currentPackage)
+                currentPackage,
+                substitutions)
                 .ifPresent(collected::add);
 
-        type.superTypeInfo().ifPresent(it -> collectInheritedMethods(processed, collected, it, method, currentPackage));
+        type.superTypeInfo()
+                .map(it -> substituteTypeParameters(it, substitutions))
+                .ifPresent(it -> collectInheritedMethods(processed, collected, it, method, currentPackage));
         for (TypeInfo typeInfo : type.interfaceTypeInfo()) {
-            collectInheritedMethods(processed, collected, typeInfo, method, currentPackage);
+            collectInheritedMethods(processed,
+                                    collected,
+                                    substituteTypeParameters(typeInfo, substitutions),
+                                    method,
+                                    currentPackage);
         }
     }
 
@@ -584,20 +611,47 @@ public final class TypeHierarchy {
     private static Optional<TypedElementInfo> inherited(TypeInfo type,
                                                         TypedElementInfo method,
                                                         List<TypeName> arguments,
-                                                        String currentPackage) {
+                                                        String currentPackage,
+                                                        Map<String, TypeName> substitutions) {
 
         String methodName = method.elementName();
-        // we look only for exact match (including types)
-        Optional<TypedElementInfo> found = type.elementInfo()
-                .stream()
-                .filter(ElementInfoPredicates::isMethod)
-                .filter(not(ElementInfoPredicates::isPrivate))
-                .filter(ElementInfoPredicates.elementName(methodName))
-                .filter(ElementInfoPredicates.hasParams(arguments))
-                .findFirst();
+        for (TypedElementInfo superMethod : type.elementInfo()) {
+            if (!ElementInfoPredicates.isMethod(superMethod)
+                    || ElementInfoPredicates.isPrivate(superMethod)
+                    || !methodName.equals(superMethod.elementName())) {
+                continue;
+            }
 
-        if (found.isPresent()) {
-            TypedElementInfo superMethod = found.get();
+            List<TypedElementInfo> parameters = superMethod.parameterArguments();
+            if (parameters.size() != arguments.size()) {
+                continue;
+            }
+
+            Map<String, TypeName> methodSubstitutions = substitutions;
+            if (!superMethod.typeParameters().isEmpty() && !substitutions.isEmpty()) {
+                methodSubstitutions = new LinkedHashMap<>(substitutions);
+                superMethod.typeParameters()
+                        .stream()
+                        .map(TypeName::className)
+                        .forEach(methodSubstitutions::remove);
+            }
+
+            List<TypedElementInfo> substitutedParameters = new ArrayList<>(parameters.size());
+            boolean sameSignature = true;
+            for (int i = 0; i < parameters.size(); i++) {
+                TypedElementInfo parameter = parameters.get(i);
+                TypeName parameterType = substituteTypeParameters(parameter.typeName(), methodSubstitutions);
+                if (!arguments.get(i).equals(parameterType)) {
+                    sameSignature = false;
+                    break;
+                }
+                substitutedParameters.add(TypedElementInfo.builder(parameter)
+                                                  .typeName(parameterType)
+                                                  .build());
+            }
+            if (!sameSignature) {
+                continue;
+            }
 
             // method has same signature, but is package local and is in a different package
             boolean realOverride = superMethod.accessModifier() != AccessModifier.PACKAGE_PRIVATE
@@ -605,11 +659,68 @@ public final class TypeHierarchy {
 
             if (realOverride) {
                 // this is a valid method that the type overrides
-                return Optional.of(superMethod);
+                return Optional.of(TypedElementInfo.builder(superMethod)
+                                           .typeName(substituteTypeParameters(superMethod.typeName(), methodSubstitutions))
+                                           .parameterArguments(substitutedParameters)
+                                           .build());
             }
         }
 
         return Optional.empty();
+    }
+
+    private static TypeInfo substituteTypeParameters(TypeInfo type, Map<String, TypeName> substitutions) {
+        if (substitutions.isEmpty()) {
+            return type;
+        }
+        return TypeInfo.builder(type)
+                .typeName(substituteTypeParameters(type.typeName(), substitutions))
+                .build();
+    }
+
+    private static TypeName substituteTypeParameters(TypeName typeName, Map<String, TypeName> substitutions) {
+        if (substitutions.isEmpty()) {
+            return typeName;
+        }
+
+        TypeName replacement = typeName.generic()
+                && !typeName.array()
+                && typeName.typeArguments().isEmpty()
+                && typeName.lowerBounds().isEmpty()
+                && typeName.upperBounds().isEmpty()
+                && typeName.componentType().isEmpty()
+                ? substitutions.get(typeName.className())
+                : null;
+        if (replacement != null) {
+            List<Annotation> annotations = new ArrayList<>(replacement.annotations());
+            typeName.annotations().forEach(it -> addAnnotationIfAbsent(annotations, it));
+            List<Annotation> inheritedAnnotations = new ArrayList<>(replacement.inheritedAnnotations());
+            typeName.inheritedAnnotations().forEach(it -> addAnnotationIfAbsent(inheritedAnnotations, it));
+            return TypeName.builder(replacement)
+                    .annotations(annotations)
+                    .inheritedAnnotations(inheritedAnnotations)
+                    .build();
+        }
+
+        TypeName.Builder builder = TypeName.builder(typeName)
+                .typeArguments(typeName.typeArguments()
+                                       .stream()
+                                       .map(it -> substituteTypeParameters(it, substitutions))
+                                       .toList())
+                .lowerBounds(typeName.lowerBounds()
+                                     .stream()
+                                     .map(it -> substituteTypeParameters(it, substitutions))
+                                     .toList())
+                .upperBounds(typeName.upperBounds()
+                                     .stream()
+                                     .map(it -> substituteTypeParameters(it, substitutions))
+                                     .toList());
+
+        typeName.componentType()
+                .map(it -> substituteTypeParameters(it, substitutions))
+                .ifPresent(builder::componentType);
+
+        return builder.build();
     }
 
 }

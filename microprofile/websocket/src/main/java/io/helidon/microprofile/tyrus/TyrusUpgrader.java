@@ -25,25 +25,32 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.RequestException;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrader;
+import io.helidon.webserver.http1.spi.Http1UpgradeResponse;
+import io.helidon.webserver.http1.spi.Http1UpgradeResult;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.websocket.WsConfig;
 import io.helidon.webserver.websocket.WsUpgrader;
@@ -61,9 +68,9 @@ import org.glassfish.tyrus.spi.WebSocketEngine;
 /**
  * Tyrus connection upgrade provider.
  */
-@Weight(Weighted.DEFAULT_WEIGHT + 100)      // higher than base class
-public class TyrusUpgrader extends WsUpgrader {
+public class TyrusUpgrader extends WsUpgrader implements Http1RoutedUpgrader {
     private static final System.Logger LOGGER = System.getLogger(TyrusUpgrader.class.getName());
+    private static final HeaderName WS_ACCEPT = HeaderNames.create("Sec-WebSocket-Accept");
 
     private final EngineHolder engine = new EngineHolder();
 
@@ -83,14 +90,54 @@ public class TyrusUpgrader extends WsUpgrader {
 
     @Override
     public ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers) {
-        // Check required header
-        String wsKey;
-        if (headers.contains(WS_KEY)) {
-            wsKey = headers.get(WS_KEY).get();
-        } else {
-            // this header is required
+        Optional<PreparedUpgrade> prepared = prepareUpgrade(ctx, prologue, headers);
+        if (prepared.isEmpty()) {
             return null;
         }
+        return prepared.get().upgrade();
+    }
+
+    @Override
+    public Optional<Http1RoutedUpgrade> routedUpgrade(ConnectionContext ctx,
+                                                     HttpPrologue prologue,
+                                                     WritableHeaders<?> headers) {
+        return prepareUpgrade(ctx, prologue, headers)
+                .map(prepared -> (response, requestHeaders) -> prepared.upgrade(response, requestHeaders));
+    }
+
+    private Optional<PreparedUpgrade> prepareUpgrade(ConnectionContext ctx,
+                                                     HttpPrologue prologue,
+                                                     Headers headers) {
+        // Initialize path and queryString
+        String path = prologue.uriPath().path();
+        UriQuery query = prologue.query();
+
+        // Check if this a Tyrus route exists
+        TyrusRouting routing = ctx.router()
+                .routing(TyrusRouting.class, null);
+        if (routing == null) {
+            return Optional.empty();
+        }
+        TyrusRoute route = routing.findRoute(prologue);
+        if (route == null) {
+            return Optional.empty();
+        }
+
+        if (prologue.method() != Method.GET) {
+            throw RequestException.builder()
+                    .type(DirectHandler.EventType.BAD_REQUEST)
+                    .message("WebSocket upgrade must use GET")
+                    .build();
+        }
+
+        // Check required header
+        if (!headers.contains(WS_KEY)) {
+            throw RequestException.builder()
+                    .type(DirectHandler.EventType.BAD_REQUEST)
+                    .message("Missing Sec-WebSocket-Key header")
+                    .build();
+        }
+        String wsKey = headers.get(WS_KEY).get();
 
         // Verify protocol version
         String version;
@@ -107,54 +154,115 @@ public class TyrusUpgrader extends WsUpgrader {
                     .build();
         }
 
-        // Initialize path and queryString
-        String path = prologue.uriPath().path();
-        UriQuery query = prologue.query();
-
-        // Check if this a Tyrus route exists
-        TyrusRouting routing = ctx.router()
-                .routing(TyrusRouting.class, null);
-        if (routing == null) {
-            return null;
-        }
-        TyrusRoute route = routing.findRoute(prologue);
-        if (route == null) {
-            return null;
-        }
-
         // Validate origin
-        if (!anyOrigin()) {
-            if (headers.contains(HeaderNames.ORIGIN)) {
-                String origin = headers.get(HeaderNames.ORIGIN).get();
-                if (!origins().contains(origin)) {
-                    throw RequestException.builder()
-                            .message("Invalid Origin")
-                            .type(DirectHandler.EventType.FORBIDDEN)
-                            .build();
-                }
+        if (headers.contains(HeaderNames.ORIGIN)) {
+            validateOrigin(headers, headers.get(HeaderNames.ORIGIN).get());
+        }
+
+        return Optional.of(new PreparedUpgrade(ctx, prologue, headers, routing, query, path, wsKey, version));
+    }
+
+    private ServerResponseHeaders handshakeHeaders(ConnectionContext ctx, String wsKey) {
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        responseHeaders.set(HeaderValues.create(HeaderNames.CONNECTION, "Upgrade"));
+        responseHeaders.set(HeaderValues.create(HeaderNames.UPGRADE, "websocket"));
+        responseHeaders.set(HeaderValues.create(WS_ACCEPT, hash(ctx, wsKey)));
+        return responseHeaders;
+    }
+
+    private final class PreparedUpgrade {
+        private final ConnectionContext ctx;
+        private final HttpPrologue prologue;
+        private final Headers headers;
+        private final TyrusRouting routing;
+        private final UriQuery query;
+        private final String path;
+        private final String wsKey;
+        private final String version;
+
+        private PreparedUpgrade(ConnectionContext ctx,
+                                HttpPrologue prologue,
+                                Headers headers,
+                                TyrusRouting routing,
+                                UriQuery query,
+                                String path,
+                                String wsKey,
+                                String version) {
+            this.ctx = ctx;
+            this.prologue = prologue;
+            this.headers = headers;
+            this.routing = routing;
+            this.query = query;
+            this.path = path;
+            this.wsKey = wsKey;
+            this.version = version;
+        }
+
+        ServerConnection upgrade() {
+            TyrusHandshake handshake = handshake();
+            WebSocketEngine.UpgradeInfo upgradeInfo = handshake.upgradeInfo();
+            if (upgradeInfo.getStatus() == WebSocketEngine.UpgradeStatus.NOT_APPLICABLE) {
+                return null;
             }
+            if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
+                throw rejectedHandshakeException(handshake.upgradeResponse(), handshake.responseHeaders());
+            }
+
+            // todo support subprotocols (must be provided by route)
+            // Sec-WebSocket-Protocol: sub-protocol (list provided in PROTOCOL header, separated by comma space
+            DataWriter dataWriter = ctx.dataWriter();
+            BufferData responseData = BufferData.growing(128);
+            responseData.write("HTTP/1.1 101 Switching Protocols\r\n".getBytes(StandardCharsets.US_ASCII));
+            handshakeHeaders(ctx, wsKey).forEach(header -> header.writeHttp1Header(responseData));
+            responseData.write("\r\n".getBytes(StandardCharsets.US_ASCII));
+            dataWriter.write(responseData);
+
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Upgraded to websocket version " + version);
+            }
+            return new TyrusConnection(ctx, prologue, upgradeInfo);
         }
 
-        // Protocol handshake with Tyrus
-        TyrusHandshake handshake = protocolHandshake(routing, headers, query, path);
-        WebSocketEngine.UpgradeInfo upgradeInfo = handshake.upgradeInfo();
-        if (upgradeInfo.getStatus() == WebSocketEngine.UpgradeStatus.NOT_APPLICABLE) {
-            return null;
-        }
-        if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
-            throw rejectedHandshakeException(handshake.upgradeResponse(), handshake.responseHeaders());
+        Http1UpgradeResult upgrade(Http1UpgradeResponse response, Headers requestHeaders) {
+            if (!isWebSocketUpgrade(requestHeaders)) {
+                return Http1UpgradeResult.notApplicable();
+            }
+
+            Optional<PreparedUpgrade> finalPrepared = prepareUpgrade(ctx, prologue, requestHeaders);
+            if (finalPrepared.isEmpty()) {
+                return Http1UpgradeResult.notApplicable();
+            }
+
+            PreparedUpgrade prepared = finalPrepared.get();
+            TyrusHandshake handshake = prepared.handshake();
+            WebSocketEngine.UpgradeInfo upgradeInfo = handshake.upgradeInfo();
+            if (upgradeInfo.getStatus() == WebSocketEngine.UpgradeStatus.NOT_APPLICABLE) {
+                return Http1UpgradeResult.notApplicable();
+            }
+            if (upgradeInfo.getStatus() != WebSocketEngine.UpgradeStatus.SUCCESS) {
+                throw rejectedHandshakeException(handshake.upgradeResponse(), handshake.responseHeaders());
+            }
+
+            TyrusUpgradeResponse upgradeResponse = handshake.upgradeResponse();
+            if (upgradeResponse.getStatus() != Status.SWITCHING_PROTOCOLS_101.code()) {
+                handshake.responseHeaders().forEach(response.headers()::set);
+                response.send(Status.create(upgradeResponse.getStatus(), upgradeResponse.getReasonPhrase()));
+                return Http1UpgradeResult.responded();
+            }
+
+            // todo support subprotocols (must be provided by route)
+            // Sec-WebSocket-Protocol: sub-protocol (list provided in PROTOCOL header, separated by comma space
+            response.sendSwitchingProtocols(handshakeHeaders(ctx, prepared.wsKey));
+
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Upgraded to websocket version " + prepared.version);
+            }
+            return Http1UpgradeResult.upgraded(new TyrusConnection(ctx, prologue, upgradeInfo));
         }
 
-        // todo support subprotocols (must be provided by route)
-        // Sec-WebSocket-Protocol: sub-protocol (list provided in PROTOCOL header, separated by comma space
-        DataWriter dataWriter = ctx.dataWriter();
-        String switchingProtocols = SWITCHING_PROTOCOL_PREFIX + hash(ctx, wsKey) + SWITCHING_PROTOCOLS_SUFFIX;
-        dataWriter.write(BufferData.create(switchingProtocols.getBytes(StandardCharsets.US_ASCII)));
-
-        if (LOGGER.isLoggable(Level.DEBUG)) {
-            LOGGER.log(Level.DEBUG, "Upgraded to websocket version " + version);
+        private TyrusHandshake handshake() {
+            return protocolHandshake(routing, headers, query, path);
         }
-        return new TyrusConnection(ctx, prologue, upgradeInfo);
     }
 
     @Override
@@ -163,7 +271,7 @@ public class TyrusUpgrader extends WsUpgrader {
     }
 
     TyrusHandshake protocolHandshake(TyrusRouting routing,
-                                     WritableHeaders<?> headers,
+                                     Headers headers,
                                      UriQuery uriQuery,
                                      String path) {
         LOGGER.log(Level.DEBUG, "Initiating WebSocket handshake with Tyrus...");
@@ -181,7 +289,7 @@ public class TyrusUpgrader extends WsUpgrader {
                 .build();
         headers.forEach(e -> requestContext.getHeaders().put(e.name(), List.of(e.values())));
 
-        // Use Tyrus to process a WebSocket upgrade request
+        // Protocol handshake with Tyrus
         final TyrusUpgradeResponse upgradeResponse = new TyrusUpgradeResponse();
         final WebSocketEngine.UpgradeInfo upgradeInfo = engine.get(routing).upgrade(requestContext, upgradeResponse);
 

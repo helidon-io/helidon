@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -260,10 +260,12 @@ interface ListenerConfigBlueprint {
     SocketOptions connectionOptions();
 
     /**
-     * Limits the number of connections that can be opened at a single point in time.
+     * Limits the number of connection permits that this listener may reserve before accepting sockets.
+     * A permit is acquired before each accept attempt and released after the accepted connection finishes,
+     * or immediately if the accepted socket cannot be configured or submitted to the connection executor.
      * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
      *
-     * @return number of TCP connections that can be opened to this listener, regardless of protocol
+     * @return pre-accept TCP connection admission capacity for this listener, regardless of protocol
      */
     @Option.Configured
     @Option.DefaultInt(-1)

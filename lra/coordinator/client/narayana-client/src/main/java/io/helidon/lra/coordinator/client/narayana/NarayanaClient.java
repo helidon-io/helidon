@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,7 +202,7 @@ public class NarayanaClient implements CoordinatorClient {
                               Participant p) {
         String links = compensatorLinks(p);
 
-        logF("Joining LRA {0} with links: {1}", lraId, links);
+        logF("Joining participant with LRA {0}", lraId);
         return retry.invoke(() -> {
             var req = prepareWebClient(lraId)
                     .put()
@@ -367,4 +367,3 @@ public class NarayanaClient implements CoordinatorClient {
         }
     }
 }
-

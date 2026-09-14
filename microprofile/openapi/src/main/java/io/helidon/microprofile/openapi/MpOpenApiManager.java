@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ final class MpOpenApiManager implements OpenApiManager<OpenAPI> {
 
     @Override
     public OpenAPI load(String content) {
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader contextClassLoader = contextClassLoader();
         OpenApiDocument.INSTANCE.reset();
         OpenApiDocument.INSTANCE.config(openApiConfig);
         OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(openApiConfig, contextClassLoader));
@@ -151,5 +151,10 @@ final class MpOpenApiManager implements OpenApiManager<OpenAPI> {
                                              annotatedTypes,
                                              managerConfig.indexPaths(),
                                              managerConfig.useJaxRsSemantics()).buildViews();
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? MpOpenApiManager.class.getClassLoader() : classLoader;
     }
 }

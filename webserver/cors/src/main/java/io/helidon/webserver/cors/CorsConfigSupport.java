@@ -16,6 +16,8 @@
 package io.helidon.webserver.cors;
 
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
@@ -23,6 +25,8 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.Method;
 
 class CorsConfigSupport {
+    private CorsConfigSupport() {
+    }
 
     static class BuilderDecorator implements Prototype.BuilderDecorator<CorsConfig.BuilderBase<?, ?>> {
         BuilderDecorator() {
@@ -32,6 +36,14 @@ class CorsConfigSupport {
         public void decorate(CorsConfig.BuilderBase<?, ?> builder) {
             addDefaults(builder);
             resolveEnabled(builder);
+            if (builder.enabled().orElse(false)) {
+                Set<String> usedPatterns = new HashSet<>();
+                for (CorsPathConfig path : builder.paths()) {
+                    if (path.enabled() && usedPatterns.add(path.pathPattern())) {
+                        validateCredentialsOrigins(true, path.allowCredentials(), path.allowOrigins());
+                    }
+                }
+            }
         }
 
         private void resolveEnabled(CorsConfig.BuilderBase<?, ?> builder) {
@@ -72,6 +84,16 @@ class CorsConfigSupport {
              */
         }
 
+    }
+
+    static void validateCredentialsOrigins(boolean enabled, boolean allowCredentials, Iterable<String> allowOrigins) {
+        if (enabled && allowCredentials) {
+            for (String allowOrigin : allowOrigins) {
+                if (Cors.ALLOW_ALL.equals(allowOrigin)) {
+                    throw new IllegalArgumentException("CORS cannot allow credentials with wildcard origins");
+                }
+            }
+        }
     }
 
     static final class PathCustomMethods {

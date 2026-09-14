@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ public interface DataListener<T> {
      * @param ctx context
      * @param data byte array
      * @param position position within the byte array
-     * @param offset number of bytes
+     * @param length number of bytes
      */
-    default void data(T ctx, byte[] data, int position, int offset) {
+    default void data(T ctx, byte[] data, int position, int length) {
     }
 }

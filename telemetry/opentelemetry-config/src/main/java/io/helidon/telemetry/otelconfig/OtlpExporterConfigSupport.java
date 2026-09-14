@@ -44,6 +44,7 @@ import io.opentelemetry.sdk.logs.export.LogRecordExporter;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
 class OtlpExporterConfigSupport {
+    private static final System.Logger LOGGER = System.getLogger(OtlpExporterConfigSupport.class.getName());
 
     private OtlpExporterConfigSupport() {
     }
@@ -59,6 +60,7 @@ class OtlpExporterConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod
+        @SuppressWarnings({"deprecation", "removal"})
         static SpanExporter createSpanExporter(Config config) {
             SpanExporterConfig exporterConfig = SpanExporterConfig.create(config);
 
@@ -114,7 +116,12 @@ class OtlpExporterConfigSupport {
             };
         }
 
+        @Deprecated(since = "4.5.4", forRemoval = true)
+        @SuppressWarnings({"deprecation", "removal"})
         static ZipkinSpanExporter createZipkinSpanExporter(Config config) {
+            LOGGER.log(System.Logger.Level.WARNING,
+                       "The OpenTelemetry Zipkin exporter is deprecated and is removed in Helidon 27 because "
+                               + "OpenTelemetry stopped publishing it in 1.65.0. Migrate to the OTLP exporter.");
             ZipkinSpanExporterBuilder builder = ZipkinSpanExporter.builder();
 
             var zipkinConfig = ZipkinExporterConfig.create(config);

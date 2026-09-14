@@ -16,7 +16,6 @@
 
 package io.helidon.security.providers.httpauth;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -90,9 +89,25 @@ public class ConfigUserStore implements SecureUserStore {
      */
     @Configured
     public static class ConfigUser implements User {
-        private final Set<String> roles = new LinkedHashSet<>();
-        private String login;
-        private char[] password;
+        private final Set<String> roles;
+        private final String login;
+        private final char[] password;
+
+        /**
+         * Create a new empty user.
+         *
+         * @deprecated use {@link #create(Config)} instead
+         */
+        @Deprecated(since = "4.5.0", forRemoval = true)
+        public ConfigUser() {
+            this("", new char[0], List.of());
+        }
+
+        private ConfigUser(String login, char[] password, List<String> roles) {
+            this.login = login;
+            this.password = password;
+            this.roles = new LinkedHashSet<>(roles);
+        }
 
         /**
          * Create a new user from configuration.
@@ -109,13 +124,11 @@ public class ConfigUserStore implements SecureUserStore {
                           description = "List of roles the user is in")
         // method must be public so the annotation processor sees it
         public static ConfigUser create(Config config) {
-            ConfigUser cu = new ConfigUser();
+            String login = config.get("login").asString().get();
+            char[] password = config.get("password").asString().orElse("").toCharArray();
+            List<String> roles = config.get("roles").asList(String.class).orElse(List.of());
 
-            cu.login = config.get("login").asString().get();
-            cu.password = config.get("password").asString().orElse("").toCharArray();
-            cu.roles.addAll(config.get("roles").asList(String.class).orElse(List.of()));
-
-            return cu;
+            return new ConfigUser(login, password, roles);
         }
 
         @Override
@@ -124,8 +137,31 @@ public class ConfigUserStore implements SecureUserStore {
         }
 
         @Override
-        public boolean isPasswordValid(char[] password) {
-            return Arrays.equals(this.password, password);
+        public boolean isPasswordValid(char[] passwordA) {
+            if (passwordA == null) {
+                return false;
+            }
+
+            char[] passwordB = this.password;
+
+            if (passwordB.length == 0) {
+                return passwordA.length == 0;
+            }
+
+            int actualLength = passwordA.length;
+            if (actualLength == 0) {
+                return false;
+            }
+
+            int expectedLength = passwordB.length;
+            int diff = actualLength - expectedLength;
+
+            for (int i = 0; i < expectedLength; i++) {
+                int actualIndex = ((i - actualLength) >>> 31) * i;
+                diff |= passwordA[actualIndex] ^ passwordB[i];
+            }
+
+            return diff == 0;
         }
 
         @Override

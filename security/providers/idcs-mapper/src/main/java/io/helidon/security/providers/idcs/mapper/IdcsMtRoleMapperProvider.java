@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -64,12 +65,15 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
 
     private static final System.Logger LOGGER = System
             .getLogger(IdcsMtRoleMapperProvider.class.getName());
+    private static final Pattern TENANT_ID_PATTERN =
+            Pattern.compile("[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?");
 
     private final TokenHandler idcsTenantTokenHandler;
     private final TokenHandler idcsAppNameTokenHandler;
     private final EvictableCache<MtCacheKey, List<Grant>> cache;
     private final MultitenancyEndpoints multitenantEndpoints;
-    private final ConcurrentHashMap<String, AppToken> tokenCache = new ConcurrentHashMap<>();
+    private final RetryableLazyValue<WebClient> appWebClient;
+    private final ConcurrentHashMap<String, RetryableLazyValue<AppToken>> tokenCache = new ConcurrentHashMap<>();
 
     /**
      * Configure instance from any descendant of
@@ -83,6 +87,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         this.idcsTenantTokenHandler = builder.idcsTenantTokenHandler;
         this.idcsAppNameTokenHandler = builder.idcsAppNameTokenHandler;
         this.cache = builder.cache;
+        this.appWebClient = new RetryableLazyValue<>(builder.oidcConfig()::appWebClient);
         if (null == builder.multitentantEndpoints) {
             this.multitenantEndpoints = new DefaultMultitenancyEndpoints(builder.oidcConfig());
         } else {
@@ -206,7 +211,14 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     protected Optional<IdcsMtContext> extractIdcsMtContext(Subject subject, ProviderRequest request) {
         return idcsTenantTokenHandler.extractToken(request.env().headers())
                 .flatMap(tenant -> idcsAppNameTokenHandler.extractToken(request.env().headers())
-                        .map(app -> new IdcsMtContext(tenant, app)));
+                        .map(app -> new IdcsMtContext(validateTenantId(tenant), app)));
+    }
+
+    private static String validateTenantId(String tenantId) {
+        if (!TENANT_ID_PATTERN.matcher(tenantId).matches()) {
+            throw new SecurityException("Invalid IDCS tenant id");
+        }
+        return tenantId;
     }
 
     /**
@@ -279,10 +291,26 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      */
     protected Optional<String> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
-        return tokenCache.computeIfAbsent(idcsTenantId, key -> new AppToken(oidcConfig().appWebClient(),
-                                                                            multitenantEndpoints.tokenEndpoint(idcsTenantId),
-                                                                            oidcConfig().tokenRefreshSkew()))
-                .getToken(tracing);
+        RetryableLazyValue<AppToken> appToken = tokenCache.computeIfAbsent(
+                idcsTenantId,
+                key -> new RetryableLazyValue<>(() -> createAppToken(key)));
+        return appToken.get().getToken(tracing);
+    }
+
+    private AppToken createAppToken(String idcsTenantId) {
+        URI tokenEndpoint = multitenantEndpoints.tokenEndpoint(idcsTenantId);
+        OidcConfig oidcConfig = oidcConfig();
+
+        if (oidcConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC
+                && multitenantEndpoints.useClientCredentials(idcsTenantId, tokenEndpoint)) {
+            return new AppToken(appWebClient.get(),
+                                tokenEndpoint,
+                                oidcConfig.tokenRefreshSkew(),
+                                oidcConfig.clientId(),
+                                oidcConfig.clientSecret());
+        }
+
+        return new AppToken(oidcConfig.generalWebClient(), tokenEndpoint, oidcConfig.tokenRefreshSkew());
     }
 
     /**
@@ -321,6 +349,20 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          * @return URI for the tenant
          */
         URI tokenEndpoint(String tenantId);
+
+        /**
+         * Whether client credentials may be attached to a token request for the resolved endpoint.
+         * The default preserves the legacy custom endpoint behavior. Custom endpoint implementations
+         * should override this method to return {@code true} only for endpoints they have validated as
+         * trusted for the provided tenant.
+         *
+         * @param tenantId id of tenant to get the endpoint for
+         * @param tokenEndpoint resolved token endpoint
+         * @return whether client credentials may be attached
+         */
+        default boolean useClientCredentials(String tenantId, URI tokenEndpoint) {
+            return true;
+        }
     }
 
     /**
@@ -329,7 +371,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      * @param <B> type of a descendant of this builder
      */
     @Configured(prefix = IdcsRoleMapperProviderService.PROVIDER_CONFIG_KEY,
-                description = "Multitenant IDCS role mapping provider",
+                description = "Multitenant IDCS role mapping provider. With default endpoint resolution, the first "
+                        + "identity URI host label and extracted tenant IDs must be single DNS labels: 1 to 63 "
+                        + "alphanumeric or hyphen characters, with no leading or trailing hyphen.",
                 provides = {SecurityProvider.class, SubjectMappingProvider.class})
     public static class Builder<B extends Builder<B>>
             extends IdcsRoleMapperProviderBase.Builder<Builder<B>>
@@ -383,11 +427,16 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         /**
          * Configure token handler for IDCS Tenant ID.
          * By default the header {@value IdcsMtRoleMapperProvider#IDCS_TENANT_HEADER} is used.
+         * The extracted tenant ID must be a single DNS label: 1 to 63 alphanumeric or hyphen characters,
+         * with no leading or trailing hyphen. Invalid tenant IDs fail before endpoint resolution.
          *
          * @param idcsTenantTokenHandler new token handler to extract IDCS tenant ID
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "idcs-tenant-handler")
+        @ConfiguredOption(key = "idcs-tenant-handler",
+                          description = "Token handler for an IDCS tenant ID. The extracted tenant ID must be a single "
+                                  + "DNS label: 1 to 63 alphanumeric or hyphen characters, with no leading or "
+                                  + "trailing hyphen. Invalid tenant IDs fail before endpoint resolution.")
         public B idcsTenantTokenHandler(TokenHandler idcsTenantTokenHandler) {
             this.idcsTenantTokenHandler = idcsTenantTokenHandler;
             return me;
@@ -425,11 +474,10 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     protected static class DefaultMultitenancyEndpoints implements MultitenancyEndpoints {
         private final String idcsInfraTenantId;
         private final String idcsInfraHostName;
+        private final String idcsInfraHostSuffix;
         private final String urlPrefix;
         private final String assertUrlSuffix;
         private final String tokenUrlSuffix;
-        private final WebClient appClient;
-        private final WebClient generalClient;
 
         // we want to cache endpoints for each tenant
         private final ConcurrentHashMap<String, URI> assertEndpointCache = new ConcurrentHashMap<>();
@@ -449,17 +497,16 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
             idcsInfraHostName = config.identityUri().getHost();
             int index = idcsInfraHostName.indexOf('.');
 
-            if (index == -1) {
+            if (index <= 0) {
                 throw new SecurityException("Configuration of multitenant IDCS is invalid. The identity host name should be "
                                                     + "'tenant-id.identityServer' but is " + idcsInfraHostName);
             }
 
-            idcsInfraTenantId = idcsInfraHostName.substring(0, index);
+            idcsInfraTenantId = validateTenantId(idcsInfraHostName.substring(0, index));
+            idcsInfraHostSuffix = idcsInfraHostName.substring(index);
             urlPrefix = config.identityUri().getScheme() + "://";
             this.assertUrlSuffix = "/admin/v1/Asserter";
             this.tokenUrlSuffix = "/oauth2/v1/token?IDCS_CLIENT_TENANT=";
-            this.generalClient = config.generalWebClient();
-            this.appClient = config.appWebClient();
         }
 
         @Override
@@ -471,7 +518,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         public URI assertEndpoint(String tenantId) {
             return assertEndpointCache.computeIfAbsent(tenantId, theKey -> {
                 String url = urlPrefix
-                        + idcsInfraHostName.replaceAll(idcsInfraTenantId, tenantId)
+                        + tenantHost(tenantId)
                         + assertUrlSuffix;
 
                 LOGGER.log(Level.TRACE, () -> "MT Asserter endpoint: " + url);
@@ -484,13 +531,23 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         public URI tokenEndpoint(String tenantId) {
             return tokenEndpointCache.computeIfAbsent(tenantId, theKey -> {
                 String url = urlPrefix
-                        + idcsInfraHostName.replaceAll(idcsInfraTenantId, tenantId)
+                        + tenantHost(tenantId)
                         + tokenUrlSuffix
                         + idcsInfraTenantId;
                 LOGGER.log(Level.TRACE, () -> "MT Token endpoint: " + url);
 
                 return URI.create(url);
             });
+        }
+
+        @Override
+        public boolean useClientCredentials(String tenantId, URI tokenEndpoint) {
+            String tokenHost = tokenEndpoint.getHost();
+            return tokenHost != null && tokenHost.equalsIgnoreCase(tenantHost(tenantId));
+        }
+
+        private String tenantHost(String tenantId) {
+            return validateTenantId(tenantId) + idcsInfraHostSuffix;
         }
     }
 

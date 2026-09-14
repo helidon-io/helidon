@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -41,73 +42,49 @@ final class DateTimeHelper {
     static final DateTimeFormatter RFC_850_DATE_TIME;
     static final DateTimeFormatter ASCTIME_DATE_TIME;
 
+    private static final Map<Long, String> MONTH_NAME_3D = Map.ofEntries(Map.entry(1L, "Jan"),
+                                                                          Map.entry(2L, "Feb"),
+                                                                          Map.entry(3L, "Mar"),
+                                                                          Map.entry(4L, "Apr"),
+                                                                          Map.entry(5L, "May"),
+                                                                          Map.entry(6L, "Jun"),
+                                                                          Map.entry(7L, "Jul"),
+                                                                          Map.entry(8L, "Aug"),
+                                                                          Map.entry(9L, "Sep"),
+                                                                          Map.entry(10L, "Oct"),
+                                                                          Map.entry(11L, "Nov"),
+                                                                          Map.entry(12L, "Dec"));
+    private static final Map<Long, String> DAY_OF_WEEK_FULL = Map.of(1L, "Monday",
+                                                                     2L, "Tuesday",
+                                                                     3L, "Wednesday",
+                                                                     4L, "Thursday",
+                                                                     5L, "Friday",
+                                                                     6L, "Saturday",
+                                                                     7L, "Sunday");
+    private static final Map<Long, String> DAY_OF_WEEK_3D = Map.of(1L, "Mon",
+                                                                   2L, "Tue",
+                                                                   3L, "Wed",
+                                                                   4L, "Thu",
+                                                                   5L, "Fri",
+                                                                   6L, "Sat",
+                                                                   7L, "Sun");
+
     private static volatile ZonedDateTime time;
     private static volatile String rfc1123String;
     private static volatile byte[] http1valueBytes;
 
     static {
-        Map<Long, String> monthName3d = Map.ofEntries(Map.entry(1L, "Jan"),
-                                                        Map.entry(2L, "Feb"),
-                                                        Map.entry(3L, "Mar"),
-                                                        Map.entry(4L, "Apr"),
-                                                        Map.entry(5L, "May"),
-                                                        Map.entry(6L, "Jun"),
-                                                        Map.entry(7L, "Jul"),
-                                                        Map.entry(8L, "Aug"),
-                                                        Map.entry(9L, "Sep"),
-                                                        Map.entry(10L, "Oct"),
-                                                        Map.entry(11L, "Nov"),
-                                                        Map.entry(12L, "Dec"));
+        RFC_850_DATE_TIME = rfc850DateTime(LocalDate.now().minusYears(50).getYear());
 
         // manually code maps to ensure correct data always used
         // (locale data can be changed by application code)
-        Map<Long, String> dayOfWeekFull = Map.of(1L, "Monday",
-                                                 2L, "Tuesday",
-                                                 3L, "Wednesday",
-                                                 4L, "Thursday",
-                                                 5L, "Friday",
-                                                 6L, "Saturday",
-                                                 7L, "Sunday");
-        RFC_850_DATE_TIME = new DateTimeFormatterBuilder()
-                .parseCaseInsensitive()
-                .parseLenient()
-                .optionalStart()
-                .appendText(DAY_OF_WEEK, dayOfWeekFull)
-                .appendLiteral(", ")
-                .optionalEnd()
-                .appendValue(DAY_OF_MONTH, 2, 2, SignStyle.NOT_NEGATIVE)
-                .appendLiteral('-')
-                .appendText(MONTH_OF_YEAR, monthName3d)
-                .appendLiteral('-')
-                .appendValueReduced(YEAR, 2, 2, LocalDate.now().minusYears(50).getYear())
-                .appendLiteral(' ')
-                .appendValue(HOUR_OF_DAY, 2)
-                .appendLiteral(':')
-                .appendValue(MINUTE_OF_HOUR, 2)
-                .optionalStart()
-                .appendLiteral(':')
-                .appendValue(SECOND_OF_MINUTE, 2)
-                .optionalEnd()
-                .appendLiteral(' ')
-                .appendOffset("+HHMM", "GMT")
-                .toFormatter();
-
-        // manually code maps to ensure correct data always used
-        // (locale data can be changed by application code)
-        Map<Long, String> dayOfWeek3d = Map.of(1L, "Mon",
-                                               2L, "Tue",
-                                               3L, "Wed",
-                                               4L, "Thu",
-                                               5L, "Fri",
-                                               6L, "Sat",
-                                               7L, "Sun");
         ASCTIME_DATE_TIME = new DateTimeFormatterBuilder()
                 .parseCaseInsensitive()
                 .parseLenient()
                 .optionalStart()
-                .appendText(DAY_OF_WEEK, dayOfWeek3d)
+                .appendText(DAY_OF_WEEK, DAY_OF_WEEK_3D)
                 .appendLiteral(' ')
-                .appendText(MONTH_OF_YEAR, monthName3d)
+                .appendText(MONTH_OF_YEAR, MONTH_NAME_3D)
                 .appendLiteral(' ')
                 .padNext(2)
                 .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
@@ -146,6 +123,49 @@ final class DateTimeHelper {
                 return ZonedDateTime.parse(text, ASCTIME_DATE_TIME);
             }
         }
+    }
+
+    static ZonedDateTime parse(String text, ZonedDateTime referenceTime) {
+        Objects.requireNonNull(referenceTime, "Reference time must not be null");
+
+        try {
+            return ZonedDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME);
+        } catch (DateTimeParseException pe) {
+            try {
+                // RFC850 uses a two-digit year, so resolve its 100-year window against the validation time.
+                return ZonedDateTime.parse(text, rfc850DateTime(referenceTime.minusYears(50).getYear()));
+            } catch (DateTimeParseException pe2) {
+                return ZonedDateTime.parse(text, ASCTIME_DATE_TIME);
+            }
+        }
+    }
+
+    private static DateTimeFormatter rfc850DateTime(int baseYear) {
+        // manually code maps to ensure correct data always used
+        // (locale data can be changed by application code)
+        return new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .parseLenient()
+                .optionalStart()
+                .appendText(DAY_OF_WEEK, DAY_OF_WEEK_FULL)
+                .appendLiteral(", ")
+                .optionalEnd()
+                .appendValue(DAY_OF_MONTH, 2, 2, SignStyle.NOT_NEGATIVE)
+                .appendLiteral('-')
+                .appendText(MONTH_OF_YEAR, MONTH_NAME_3D)
+                .appendLiteral('-')
+                .appendValueReduced(YEAR, 2, 2, baseYear)
+                .appendLiteral(' ')
+                .appendValue(HOUR_OF_DAY, 2)
+                .appendLiteral(':')
+                .appendValue(MINUTE_OF_HOUR, 2)
+                .optionalStart()
+                .appendLiteral(':')
+                .appendValue(SECOND_OF_MINUTE, 2)
+                .optionalEnd()
+                .appendLiteral(' ')
+                .appendOffset("+HHMM", "GMT")
+                .toFormatter();
     }
 
     static ZonedDateTime timestamp() {

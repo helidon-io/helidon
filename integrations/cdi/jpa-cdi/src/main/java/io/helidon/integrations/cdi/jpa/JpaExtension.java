@@ -859,7 +859,7 @@ public class JpaExtension implements Extension {
         // Next, and most commonly, load all META-INF/persistence.xml resources with JAXB, and turn them into
         // PersistenceUnitInfo instances, and add beans for all of them as well as their associated PersistenceProviders
         // (if applicable).
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = contextClassLoader();
         Enumeration<URL> urls = classLoader.getResources("META-INF/persistence.xml");
         if (urls != null && urls.hasMoreElements()) {
             processImplicits = false;
@@ -1106,7 +1106,7 @@ public class JpaExtension implements Extension {
                 Class<? extends Annotation> transactionScopedAnnotationClass =
                     (Class<? extends Annotation>) Class.forName("jakarta.transaction.TransactionScoped",
                                                                 true,
-                                                                Thread.currentThread().getContextClassLoader());
+                                                                contextClassLoader());
                 temp = transactionScopedAnnotationClass;
             } catch (ClassNotFoundException classNotFoundException) {
                 // This will not happen if this.transactionsSupported is true, or else CDI's exclusion mechanisms are
@@ -2030,7 +2030,7 @@ public class JpaExtension implements Extension {
                         try {
                             ClassLoader classLoader = persistenceUnitInfo.getClassLoader();
                             if (classLoader == null) {
-                                classLoader = Thread.currentThread().getContextClassLoader();
+                                classLoader = contextClassLoader();
                             }
                             assert classLoader != null;
                             @SuppressWarnings("unchecked")
@@ -2065,6 +2065,11 @@ public class JpaExtension implements Extension {
                 emfProxy.isOpen();
             }
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? JpaExtension.class.getClassLoader() : classLoader;
     }
 
 }

@@ -16,17 +16,29 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.net.InetAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Base64Value;
+import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.crypto.CryptoException;
+import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webserver.WebServer;
 
 import jakarta.json.Json;
@@ -37,6 +49,7 @@ import static io.helidon.security.providers.oidc.common.BaseBuilder.DEFAULT_TIME
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_ATTEMPT_PARAM;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_COOKIE_NAME;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_COOKIE_USE;
+import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_FORCE_HTTPS_REDIRECTS;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_HEADER_USE;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_LOGOUT_URI;
@@ -47,16 +60,28 @@ import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_REDIR
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_REDIRECT_URI;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_RELATIVE_URIS;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_TOKEN_REFRESH_SKEW;
+import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
+import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.PARAM;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link OidcConfig}.
  */
 class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
+    private static final String COOKIE_VALUE = "cookieValue";
+    private static final String COOKIE_ENCRYPTION_PASSWORD = "test-password";
+    private static final byte CURRENT_VERSION = 1;
+    private static final byte[] CURRENT_VERSION_HEADER = {CURRENT_VERSION};
+    private static final int CURRENT_NUMBER_OF_ITERATIONS = 600_000;
+    private static final int LEGACY_NUMBER_OF_ITERATIONS = 10_000;
+    private static final String LEGACY_ENCRYPTED_COOKIE =
+            "9WmBEiNX4CF9l4lj+1axdgAAAAySayWBmiIG5e2hIYy7ilR2iML6S+qvr2M4U7593tCWI/SjCZsZ2XQ=";
 
     private final OidcConfig oidcConfig;
 
@@ -106,9 +131,14 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Cookie name", tokenCookieHandler.cookieName(), is(DEFAULT_COOKIE_NAME)),
                 () -> assertThat("Realm", config.realm(), is(OidcConfig.Builder.DEFAULT_REALM)),
                 () -> assertThat("Redirect Attempt Parameter", config.redirectAttemptParam(), is(DEFAULT_ATTEMPT_PARAM)),
+                () -> assertThat("Redirect Attempt Counter Strategy",
+                                 config.redirectAttemptCounterStrategy(), is(PARAM)),
                 () -> assertThat("Max Redirects", config.maxRedirects(), is(DEFAULT_MAX_REDIRECTS)),
                 () -> assertThat("Client Timeout", config.clientTimeout(), is(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))),
                 () -> assertThat("Force HTTPS Redirects", config.forceHttpsRedirects(), is(DEFAULT_FORCE_HTTPS_REDIRECTS)),
+                () -> assertThat("Fallback to default tenant",
+                                 config.fallbackToDefaultTenantEnabled(),
+                                 is(DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED)),
                 () -> assertThat("Token Refresh Skew", config.tokenRefreshSkew(), is(DEFAULT_TOKEN_REFRESH_SKEW)),
                 // cookie options should be separated by space as defined by the specification
                 () -> assertThat("Cookie options", tokenCookieHandler.createCookieOptions(), is("; Path=/; HttpOnly; SameSite=Lax")),
@@ -118,6 +148,59 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Client without authentication", config.generalWebClient(), notNullValue()),
                 () -> assertThat("Client with authentication", config.appWebClient(), notNullValue()),
                 () -> assertThat("JWK Keys", config.signJwk(), notNullValue()));
+    }
+
+    @Test
+    void testFallbackToDefaultTenantFromBuilder() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .fallbackToDefaultTenantEnabled(true)
+                .build();
+
+        assertThat(config.fallbackToDefaultTenantEnabled(), is(true));
+    }
+
+    @Test
+    void testRedirectAttemptCounterStrategyFromBuilder() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptCounterStrategy(COOKIE)
+                .build();
+
+        assertThat(config.redirectAttemptCounterStrategy(), is(COOKIE));
+    }
+
+    @Test
+    void testCookieStrategyRejectsInvalidRedirectAttemptCookiePrefix() {
+        assertThrows(Errors.ErrorMessagesException.class,
+                     () -> OidcConfig.builder()
+                             .identityUri(URI.create("https://identity.oracle.com"))
+                             .clientId("client-id-value")
+                             .clientSecret("client-secret-value")
+                             .oidcMetadataWellKnown(false)
+                             .redirectAttemptParam("foo[]")
+                             .redirectAttemptCounterStrategy(COOKIE)
+                             .build());
+    }
+
+    @Test
+    void testParamStrategyAllowsQueryStyleRedirectAttemptParam() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptParam("foo[]")
+                .redirectAttemptCounterStrategy(PARAM)
+                .build();
+
+        assertThat(config.redirectAttemptParam(), is("foo[]"));
     }
 
     @Test
@@ -198,6 +281,244 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
     }
 
     @Test
+    void testTokenCookieEncryptedByDefault() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .build();
+        OidcCookieHandler cookieHandler = config.tokenCookieHandler();
+        String cookieValue = cookieHandler.createCookie(COOKIE_VALUE).build().value();
+        String cookieHeader = cookieHandler.cookieName() + "=" + cookieValue;
+
+        assertAll("token cookie encrypted by default",
+                  () -> assertThat("Encrypted cookie should not expose the token value",
+                                   cookieValue,
+                                   not(COOKIE_VALUE)),
+                  () -> assertThat(cookieHandler.findCookie(Map.of("Cookie", List.of(cookieHeader))),
+                                   is(Optional.of(COOKIE_VALUE))));
+    }
+
+    @Test
+    void testTokenCookieCompressionDefaultsAndOverrides() {
+        String largeCookieValue =
+                "eyJhY2Nlc3NUb2tlbiI6ImV5SnliMnhsY3lJNld5SmhaRzFwYmlJc0luVnpaWElpWFgwPSJ9".repeat(45);
+        OidcConfig idcsDefault = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("server-type", "idcs")))
+                                .build())
+                .build();
+        OidcConfig defaultServerDefault = cookieCompressionConfigBuilder()
+                .build();
+        OidcConfig idcsDisabled = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("server-type", "idcs",
+                                                                     "cookie-compression-enabled", "false")))
+                                .build())
+                .build();
+        OidcConfig defaultServerEnabled = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("cookie-compression-enabled", "true")))
+                                .build())
+                .build();
+        String idcsDefaultCookie = idcsDefault.tokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String defaultServerDefaultCookie = defaultServerDefault.tokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String idcsDisabledCookie = idcsDisabled.tokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String defaultServerEnabledCookie = defaultServerEnabled.tokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+
+        assertAll("token cookie compression defaults and overrides",
+                  () -> assertThat("IDCS should enable compression by default",
+                                   idcsDefaultCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("The default server type should disable compression by default",
+                                   defaultServerDefaultCookie.length() > 4096,
+                                   is(true)),
+                  () -> assertThat("IDCS should honor an explicit compression opt-out",
+                                   idcsDisabledCookie.length() > 4096,
+                                   is(true)),
+                  () -> assertThat("The default server type should honor explicit compression",
+                                   defaultServerEnabledCookie.length() < 4096,
+                                   is(true)));
+    }
+
+    @Test
+    void testIdTokenCookieCompressionDefaultsAndOverrides() {
+        String largeCookieValue = largeIdTokenValue();
+        String largeAccessCookieValue =
+                "eyJhY2Nlc3NUb2tlbiI6ImV5SnliMnhsY3lJNld5SmhaRzFwYmlJc0luVnpaWElpWFgwPSJ9".repeat(45);
+        OidcConfig idcsDefault = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("server-type", "idcs")))
+                                .build())
+                .build();
+        OidcConfig defaultServerDefault = cookieCompressionConfigBuilder()
+                .build();
+        OidcConfig idcsDisabled = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("server-type", "idcs",
+                                                                     "cookie-compression-id-enabled", "false")))
+                                .build())
+                .build();
+        OidcConfig defaultServerEnabled = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("cookie-compression-id-enabled", "true")))
+                                .build())
+                .build();
+        OidcConfig idcsAccessCompressionDisabled = cookieCompressionConfigBuilder()
+                .cookieCompressionEnabled(false)
+                .serverType("idcs")
+                .build();
+        OidcConfig idcsIdEncryptionDisabled = cookieCompressionConfigBuilder()
+                .cookieEncryptionEnabledIdToken(false)
+                .serverType("idcs")
+                .build();
+        String idcsDefaultCookie = idcsDefault.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String defaultServerDefaultCookie = defaultServerDefault.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String idcsDisabledCookie = idcsDisabled.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String defaultServerEnabledCookie = defaultServerEnabled.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String idcsAccessCompressionDisabledCookie = idcsAccessCompressionDisabled.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String idcsIdCompressionDisabledAccessCookie = idcsDisabled.tokenCookieHandler()
+                .createCookie(largeAccessCookieValue)
+                .build()
+                .toString();
+        OidcCookieHandler idcsIdEncryptionDisabledHandler = idcsIdEncryptionDisabled.idTokenCookieHandler();
+        String idcsIdEncryptionDisabledCookie = idcsIdEncryptionDisabledHandler
+                .createCookie(largeCookieValue)
+                .build()
+                .value();
+
+        assertAll("ID token cookie compression defaults and overrides",
+                  () -> assertThat("IDCS should enable ID token compression by default",
+                                   idcsDefaultCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("The default server type should disable ID token compression by default",
+                                   defaultServerDefaultCookie.length() > 4096,
+                                   is(true)),
+                  () -> assertThat("IDCS should honor an explicit ID token compression opt-out",
+                                   idcsDisabledCookie.length() > 4096,
+                                   is(true)),
+                  () -> assertThat("The default server type should honor explicit ID token compression",
+                                   defaultServerEnabledCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("Access token compression should not control ID token compression",
+                                   idcsAccessCompressionDisabledCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("ID token compression should not control access token compression",
+                                   idcsIdCompressionDisabledAccessCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("ID token compression should work when ID token encryption is disabled",
+                                   idcsIdEncryptionDisabledCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat(idcsIdEncryptionDisabledHandler
+                                           .findCookie(Map.of("Cookie",
+                                                              List.of(idcsIdEncryptionDisabledHandler.cookieName()
+                                                                              + "=" + idcsIdEncryptionDisabledCookie))),
+                                   is(Optional.of(largeCookieValue))));
+    }
+
+    @Test
+    void testTokenCookieEncryptionCanBeDisabled() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .cookieEncryptionEnabled(false)
+                .build();
+        OidcCookieHandler cookieHandler = config.tokenCookieHandler();
+        String cookieValue = cookieHandler.createCookie(COOKIE_VALUE).build().value();
+        String cookieHeader = cookieHandler.cookieName() + "=" + cookieValue;
+
+        assertAll("token cookie encryption opt-out",
+                  () -> assertThat("Unencrypted cookie should preserve existing opt-out behavior",
+                                   cookieValue,
+                                   is(COOKIE_VALUE)),
+                  () -> assertThat(cookieHandler.findCookie(Map.of("Cookie", List.of(cookieHeader))),
+                                   is(Optional.of(COOKIE_VALUE))));
+    }
+
+    @Test
+    void testLegacyCookieEncryptionFromBuilderConfig() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("cookie-encryption-enabled", "true",
+                                                                     "cookie-encryption-password",
+                                                                     COOKIE_ENCRYPTION_PASSWORD,
+                                                                     "legacy-cookie-encryption", "true")))
+                                .build())
+                .build();
+
+        for (OidcCookieHandler cookieHandler : cookieHandlers(config)) {
+            String encrypted = cookieHandler.createCookie(COOKIE_VALUE).build().value();
+
+            assertAll("legacy cookie encryption from config for " + cookieHandler.cookieName(),
+                      () -> assertThat(legacyCipher()
+                                               .decrypt(Base64Value.createFromEncoded(encrypted))
+                                               .toDecodedString(),
+                                       is(COOKIE_VALUE)),
+                      () -> assertThrows(CryptoException.class,
+                                         () -> currentCipher().decrypt(Base64Value.createFromEncoded(encrypted))));
+        }
+    }
+
+    @Test
+    void testLegacyCookieFallbackFromBuilderConfig() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("cookie-encryption-enabled", "true",
+                                                                     "cookie-encryption-password",
+                                                                     COOKIE_ENCRYPTION_PASSWORD,
+                                                                     "legacy-cookie-fallback", "true")))
+                                .build())
+                .build();
+
+        for (OidcCookieHandler cookieHandler : cookieHandlers(config)) {
+            Optional<String> cookie = cookieHandler
+                    .findCookie(Map.of("Cookie", List.of(cookieHandler.cookieName() + "=" + LEGACY_ENCRYPTED_COOKIE)));
+
+            assertThat(cookieHandler.cookieName(), cookie, is(Optional.of(COOKIE_VALUE)));
+        }
+    }
+
+    @Test
     void testOptionalAudience() {
         OidcConfig config = OidcConfig.builder()
                 .identityUri(URI.create("http://localhost/identity"))
@@ -218,6 +539,157 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .checkAudience(false)
                 .build();
         assertThat(config.checkAudience(), is(false));
+    }
+
+    @Test
+    void testClientCredentialsSentOnlyToConfiguredHost() {
+        AtomicReference<String> expectedHostAuthorization = new AtomicReference<>();
+        AtomicReference<String> introspectHostAuthorization = new AtomicReference<>();
+        AtomicReference<String> otherHostAuthorization = new AtomicReference<>();
+        WebServer expectedServer = null;
+        WebServer introspectServer = null;
+        WebServer otherServer = null;
+
+        try {
+            expectedServer = authCapturingServer(expectedHostAuthorization);
+            introspectServer = authCapturingServer(introspectHostAuthorization);
+            otherServer = authCapturingServer(otherHostAuthorization);
+
+            String expectedBaseUri = "http://identity.example.test:" + expectedServer.port();
+            String introspectBaseUri = "http://introspect.example.test:" + introspectServer.port();
+            String otherBaseUri = "http://other.example.test:" + otherServer.port();
+
+            OidcConfig config = OidcConfig.builder()
+                    .identityUri(URI.create(expectedBaseUri + "/identity"))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .oidcMetadataWellKnown(false)
+                    .validateJwtWithJwk(false)
+                    .tokenEndpointUri(URI.create(expectedBaseUri + "/tokens.v1"))
+                    .authorizationEndpointUri(URI.create(expectedBaseUri + "/authorization"))
+                    .introspectEndpointUri(URI.create(introspectBaseUri + "/introspect.v1"))
+                    .serverType("idcs")
+                    .webclient(it -> it.dnsResolver((hostname, dnsAddressLookup) -> InetAddress.getLoopbackAddress()))
+                    .build();
+
+            post(config, URI.create(expectedBaseUri + "/tokens.v1"));
+            post(config, URI.create(introspectBaseUri + "/introspect.v1"));
+            post(config, URI.create(otherBaseUri + "/tokens"));
+
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            assertThat(expectedHostAuthorization.get(), is(expectedAuthorization));
+            assertThat(introspectHostAuthorization.get(), is(expectedAuthorization));
+            assertThat(otherHostAuthorization.get(), nullValue());
+
+            expectedHostAuthorization.set(null);
+            introspectHostAuthorization.set(null);
+
+            post(config, URI.create(expectedBaseUri + "/tokensXv1"));
+            post(config, URI.create(expectedBaseUri + "/introspect.v1"));
+            post(config, URI.create(expectedBaseUri + "/other"));
+            post(config, URI.create(introspectBaseUri + "/introspectXv1"));
+            post(config, URI.create(introspectBaseUri + "/tokens"));
+
+            assertThat(expectedHostAuthorization.get(), nullValue());
+            assertThat(introspectHostAuthorization.get(), nullValue());
+
+            OidcConfig httpsTokenConfig = OidcConfig.builder()
+                    .identityUri(URI.create("https://identity.example.test:" + expectedServer.port() + "/identity"))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .oidcMetadataWellKnown(false)
+                    .tokenEndpointUri(URI.create("https://identity.example.test:" + expectedServer.port() + "/tokens"))
+                    .authorizationEndpointUri(URI.create("https://identity.example.test:" + expectedServer.port()
+                                                                 + "/authorization"))
+                    .serverType("idcs")
+                    .webclient(it -> it.dnsResolver((hostname, dnsAddressLookup) -> InetAddress.getLoopbackAddress()))
+                    .build();
+
+            expectedHostAuthorization.set(null);
+
+            post(httpsTokenConfig, URI.create(expectedBaseUri + "/tokens"));
+
+            assertThat(expectedHostAuthorization.get(), nullValue());
+        } finally {
+            stop(expectedServer);
+            stop(introspectServer);
+            stop(otherServer);
+        }
+    }
+
+    @Test
+    void testClientCredentialsSentToMetadataIntrospectionHost() {
+        AtomicReference<String> tokenHostAuthorization = new AtomicReference<>();
+        AtomicReference<String> introspectHostAuthorization = new AtomicReference<>();
+        AtomicReference<String> otherHostAuthorization = new AtomicReference<>();
+        JsonObject[] metadataHolder = new JsonObject[1];
+        WebServer tokenServer = null;
+        WebServer introspectServer = null;
+        WebServer otherServer = null;
+        WebServer metadataServer = null;
+
+        try {
+            tokenServer = authCapturingServer(tokenHostAuthorization);
+            introspectServer = authCapturingServer(introspectHostAuthorization);
+            otherServer = authCapturingServer(otherHostAuthorization);
+            metadataServer = WebServer.builder()
+                    .host(InetAddress.getLoopbackAddress().getHostAddress())
+                    .routing(routing -> routing
+                            .get("/.well-known/openid-configuration", (req, res) -> res.send(metadataHolder[0])))
+                    .build()
+                    .start();
+
+            String metadataBaseUri = "http://metadata.example.test:" + metadataServer.port();
+            String tokenBaseUri = "http://token.example.test:" + tokenServer.port();
+            String introspectBaseUri = "http://introspect.example.test:" + introspectServer.port();
+            String otherBaseUri = "http://other.example.test:" + otherServer.port();
+
+            metadataHolder[0] = JsonParser.create("{"
+                                                          + "\"token_endpoint\":\"" + tokenBaseUri + "/tokens\","
+                                                          + "\"authorization_endpoint\":\"" + tokenBaseUri + "/authorization\","
+                                                          + "\"end_session_endpoint\":\"" + tokenBaseUri + "/logout\","
+                                                          + "\"issuer\":\"" + tokenBaseUri + "\","
+                                                          + "\"introspection_endpoint\":\"" + introspectBaseUri
+                                                          + "/introspect\""
+                                                          + "}")
+                    .readJsonObject();
+
+            OidcConfig config = OidcConfig.builder()
+                    .identityUri(URI.create(metadataBaseUri))
+                    .clientSecret("client-secret")
+                    .clientId("client-id")
+                    .validateJwtWithJwk(false)
+                    .serverType("idcs")
+                    .webclient(it -> it.dnsResolver((hostname, dnsAddressLookup) -> InetAddress.getLoopbackAddress()))
+                    .build();
+
+            post(config, URI.create(tokenBaseUri + "/tokens"));
+            post(config, URI.create(introspectBaseUri + "/introspect"));
+            post(config, URI.create(otherBaseUri + "/tokens"));
+
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            assertThat(tokenHostAuthorization.get(), is(expectedAuthorization));
+            assertThat(introspectHostAuthorization.get(), is(expectedAuthorization));
+            assertThat(otherHostAuthorization.get(), nullValue());
+
+            tokenHostAuthorization.set(null);
+            introspectHostAuthorization.set(null);
+
+            post(config, URI.create(tokenBaseUri + "/introspect"));
+            post(config, URI.create(introspectBaseUri + "/tokens"));
+
+            assertThat(tokenHostAuthorization.get(), nullValue());
+            assertThat(introspectHostAuthorization.get(), nullValue());
+        } finally {
+            stop(metadataServer);
+            stop(tokenServer);
+            stop(introspectServer);
+            stop(otherServer);
+        }
     }
 
     @Test
@@ -271,6 +743,75 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                   () -> assertThat(config.oidcMetadataJsonObject(), is(metadata)),
                   () -> assertThat(config.oidcMetadata(), notNullValue()),
                   () -> assertThat(config.oidcMetadata().getString("issuer"), is("https://identity.oracle.com")));
+    }
+
+    private static WebServer authCapturingServer(AtomicReference<String> authorization) {
+        return WebServer.builder()
+                .host(InetAddress.getLoopbackAddress().getHostAddress())
+                .routing(routing -> routing
+                        .any((req, res) -> {
+                            authorization.set(req.headers()
+                                                      .first(HeaderNames.AUTHORIZATION)
+                                                      .orElse(null));
+                            res.send("{}");
+                        }))
+                .build()
+                .start();
+    }
+
+    private static void stop(WebServer server) {
+        if (server != null) {
+            server.stop();
+        }
+    }
+
+    private static void post(OidcConfig config, URI uri) {
+        try (HttpClientResponse response = config.appWebClient()
+                .post()
+                .uri(uri)
+                .submit("")) {
+            response.as(String.class);
+        }
+    }
+
+    private static List<OidcCookieHandler> cookieHandlers(OidcConfig config) {
+        return List.of(config.tokenCookieHandler(),
+                       config.idTokenCookieHandler(),
+                       config.tenantCookieHandler(),
+                       config.refreshTokenCookieHandler(),
+                       config.stateCookieHandler());
+    }
+
+    private static OidcConfig.Builder cookieCompressionConfigBuilder() {
+        return OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray());
+    }
+
+    private static String largeIdTokenValue() {
+        return "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
+                + "eyJhdWQiOiJjbGllbnQtaWQiLCJpc3MiOiJodHRwczovL2lkZW50aXR5Lm9yYWNsZS5jb20iLCJzdWIiOiJ1c2VyIn0"
+                .repeat(40)
+                + "."
+                + "c2lnbmF0dXJlLWJ5dGVz".repeat(20);
+    }
+
+    private static SymmetricCipher currentCipher() {
+        return SymmetricCipher.builder()
+                .password(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .numberOfIterations(CURRENT_NUMBER_OF_ITERATIONS)
+                .additionalAuthenticatedData(CURRENT_VERSION_HEADER)
+                .build();
+    }
+
+    private static SymmetricCipher legacyCipher() {
+        return SymmetricCipher.builder()
+                .password(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .numberOfIterations(LEGACY_NUMBER_OF_ITERATIONS)
+                .build();
     }
 
     @Test

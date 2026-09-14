@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HttpMediaType;
@@ -41,11 +40,6 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
 @Deprecated(since = "4.1.2", forRemoval = true)
 class OutputStreamSseSink implements SseSink {
 
-    /**
-     * Type of SSE event sinks.
-     */
-    public static final GenericType<DataWriterSseSink> TYPE = GenericType.create(DataWriterSseSink.class);
-
     private static final byte[] SSE_NL = "\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_ID = "id:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
@@ -56,7 +50,9 @@ class OutputStreamSseSink implements SseSink {
     private final Runnable closeRunnable;
     private final OutputStream outputStream;
 
-    OutputStreamSseSink(ServerResponse serverResponse, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable) {
+    OutputStreamSseSink(ServerResponse serverResponse,
+                        BiConsumer<Object, MediaType> eventConsumer,
+                        Runnable closeRunnable) {
         // Verify response has no status or content type
         HttpMediaType ct = serverResponse.headers().contentType().orElse(null);
         if (serverResponse.status().code() != Status.OK_200.code()
@@ -79,27 +75,30 @@ class OutputStreamSseSink implements SseSink {
         try {
             Optional<String> comment = sseEvent.comment();
             if (comment.isPresent()) {
-                outputStream.write(SSE_COMMENT);
-                outputStream.write(comment.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                byte[] commentBytes = comment.get().getBytes(StandardCharsets.UTF_8);
+                SseFields.writeMultiLineField(outputStream, SSE_COMMENT, commentBytes);
             }
             Optional<String> id = sseEvent.id();
             if (id.isPresent()) {
-                outputStream.write(SSE_ID);
-                outputStream.write(id.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                SseFields.writeSingleLineField(outputStream, SSE_ID, id.get());
             }
             Optional<String> name = sseEvent.name();
             if (name.isPresent()) {
-                outputStream.write(SSE_EVENT);
-                outputStream.write(name.get().getBytes(StandardCharsets.UTF_8));
-                outputStream.write(SSE_NL);
+                SseFields.writeSingleLineField(outputStream, SSE_EVENT, name.get());
             }
             Object data = sseEvent.data();
             if (data != SseEvent.NO_DATA) {
-                outputStream.write(SSE_DATA);
-                eventConsumer.accept(data, sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN));
-                outputStream.write(SSE_NL);
+                MediaType mediaType = sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN);
+                if (data instanceof byte[] bytes) {
+                    SseFields.writeMultiLineField(outputStream, SSE_DATA, bytes);
+                } else if (data instanceof String str && mediaType.equals(MediaTypes.TEXT_PLAIN)) {
+                    SseFields.writeMultiLineField(outputStream, SSE_DATA, str.getBytes(StandardCharsets.UTF_8));
+                } else {
+                    // Preserve the deprecated media callback for values that require response media writers.
+                    outputStream.write(SSE_DATA);
+                    eventConsumer.accept(data, mediaType);
+                    outputStream.write(SSE_NL);
+                }
             }
             outputStream.write(SSE_NL);
             outputStream.flush();

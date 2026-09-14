@@ -53,9 +53,6 @@ nb-configuration.xml
 .classpath
 .factorypath
 
-# Asciidoctor
-.asciidoctor/
-
 # Vim
 *.swp
 
@@ -85,6 +82,7 @@ package-lock.json
 RUNTIMEDB/
 docs/se/config/images
 .helidon-oidc-secret
+.helidon-oidc-secret.*.tmp
 
 # Baseline results for regression tests
 jmh-baseline.json

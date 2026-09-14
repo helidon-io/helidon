@@ -17,6 +17,7 @@
 package io.helidon.webserver.http1;
 
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
@@ -25,12 +26,14 @@ import java.util.function.UnaryOperator;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.ServerRequestEntity;
 
@@ -66,6 +69,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         // if not expecting continue, then we must expect the entity is being sent, and so we also treat it as if continue
         // was sent
         this.continueSent = continueImmediately || !expectContinue;
+        var listenerCtx = ctx.listenerContext();
         // we need the same entity instance every time the entity() method is called
         this.entity = LazyValue.create(() -> ServerRequestEntity.create(this::trySend100,
                                                                         streamFilter,
@@ -73,7 +77,8 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
                                                                         it -> readEntityFromPipeline.get(),
                                                                         entityReadLatch::countDown,
                                                                         headers,
-                                                                        ctx.listenerContext().mediaContext(),
+                                                                        listenerCtx.mediaContext(),
+                                                                        listenerCtx.config().maxPayloadSize(),
                                                                         http1Config.maxBufferedEntitySize().toBytes()));
     }
 
@@ -109,11 +114,12 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     private void trySend100(boolean drain) {
         if (!continueImmediately && expectContinue && !drain) {
             BufferData buffer = BufferData.create(Http1Connection.CONTINUE_100);
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Status.CONTINUE_100);
-                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send %n%s", buffer.debugDataHex());
+            ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Status.CONTINUE_100.codeText());
+            try {
+                ctx.dataWriter().writeNow(buffer);
+            } catch (SocketWriterException | UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to write continue", e);
             }
-            ctx.dataWriter().writeNow(buffer);
             this.continueSent = true;
         }
     }

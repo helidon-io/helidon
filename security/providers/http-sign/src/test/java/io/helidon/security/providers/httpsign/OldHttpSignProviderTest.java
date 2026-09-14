@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,17 @@
 package io.helidon.security.providers.httpsign;
 
 import java.net.URI;
-import java.time.Duration;
+import java.nio.file.Paths;
+import java.time.ZoneId;
+import java.time.temporal.ChronoField;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.Keys;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
@@ -31,11 +35,15 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
+import io.helidon.security.SecurityTime;
 import io.helidon.security.Subject;
+import io.helidon.security.providers.common.OutboundConfig;
+import io.helidon.security.providers.common.OutboundTarget;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.security.providers.httpsign.SignedHeadersConfig.REQUEST_TARGET;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,6 +55,7 @@ import static org.mockito.Mockito.when;
  * Unit test for {@link HttpSignProvider}.
  */
 abstract class OldHttpSignProviderTest {
+    private static final String INBOUND_DATE = "Sun, 08 Jun 2014 18:32:30 GMT";
 
     abstract HttpSignProvider getProvider();
 
@@ -54,24 +63,31 @@ abstract class OldHttpSignProviderTest {
     void testInboundSignatureRsa() {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        headers.put("Signature",
-                    List.of("keyId=\"rsa-key-12345\",algorithm=\"rsa-sha256\",headers=\"date "
-                                                     + "host (request-target) authorization\","
-                                                     + "signature=\"Rm5PjuUdJ927esGQ2gm/6QBEM9IM7J5qSZuP8NV8+GXUf"
-                                                     + "boUV6ST2EYLYniFGt5/3BO/2+vqQdqezdTVPr/JCwqBx+9T9ZynG7YqRj"
-                                                     + "KvXzcmvQOu5vQmCK5x/HR0fXU41Pjq+jywsD0k6KdxF6TWr6tvWRbwFet"
-                                                     + "+YSb0088o/65Xeqghw7s0vShf7jPZsaaIHnvM9SjWgix9VvpdEn4NDvqh"
-                                                     + "ebieVD3Swb1VG5+/7ECQ9VAlX30U5/jQ5hPO3yuvRlg5kkMjJiN7tf/68"
-                                                     + "If/5O2Z4H+7VmW0b1U69/JoOQJA0av1gCX7HVfa/YTCxIK4UFiI6h963q"
-                                                     + "2x7LSkqhdWGA==\""));
         headers.put("host", List.of("example.org"));
-        headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("date", List.of(INBOUND_DATE));
         headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
 
         HttpSignProvider provider = getProvider();
 
         SecurityContext context = mock(SecurityContext.class);
-        SecurityEnvironment se = SecurityEnvironment.builder()
+        SecurityEnvironment signingEnv = SecurityEnvironment.builder(inboundTime())
+                .path("/my/resource")
+                .headers(headers)
+                .build();
+        Keys keyConfig = Keys.builder()
+                .keystore(keystore -> keystore
+                        .keystore(Resource.create(Paths.get("src/test/resources/keystore.p12")))
+                        .passphrase("password")
+                        .keyAlias("myPrivateKey"))
+                .build();
+        headers.put("Signature",
+                    List.of(signatureHeader(signingEnv,
+                                            OutboundTargetDefinition.builder("rsa-key-12345")
+                                                    .signedHeaders(signedHeaders())
+                                                    .privateKeyConfig(keyConfig)
+                                                    .build(),
+                                            true)));
+        SecurityEnvironment se = SecurityEnvironment.builder(inboundTime())
                 .path("/my/resource")
                 .headers(headers)
                 .build();
@@ -101,18 +117,25 @@ abstract class OldHttpSignProviderTest {
     void testInboundSignatureHmac() {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        headers.put("Signature",
-                    List.of("keyId=\"myServiceKeyId\",algorithm=\"hmac-sha256\",headers=\"date host (request-target) "
-                                            + "authorization\","
-                                            + "signature=\"0BcQq9TckrtGvlpHiMxNqMq0vW6dPVTGVDUVDrGwZyI=\""));
         headers.put("host", List.of("example.org"));
-        headers.put("date", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));
+        headers.put("date", List.of(INBOUND_DATE));
         headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
 
         HttpSignProvider provider = getProvider();
 
         SecurityContext context = mock(SecurityContext.class);
-        SecurityEnvironment se = SecurityEnvironment.builder()
+        SecurityEnvironment signingEnv = SecurityEnvironment.builder(inboundTime())
+                .path("/my/resource")
+                .headers(headers)
+                .build();
+        headers.put("Signature",
+                    List.of(signatureHeader(signingEnv,
+                                            OutboundTargetDefinition.builder("myServiceKeyId")
+                                                    .hmacSecret("MyPasswordForHmac")
+                                                    .signedHeaders(signedHeaders())
+                                                    .build(),
+                                            true)));
+        SecurityEnvironment se = SecurityEnvironment.builder(inboundTime())
                 .path("/my/resource")
                 .headers(headers)
                 .build();
@@ -135,6 +158,64 @@ abstract class OldHttpSignProviderTest {
                     assertThat(principal.getName(), is("aSetOfTrustedServices"));
                     assertThat(principal.abacAttribute(HttpSignProvider.ATTRIB_NAME_KEY_ID), is(Optional.of("myServiceKeyId")));
                 }, () -> fail("User must be filled"));
+    }
+
+    @Test
+    void testInboundSignatureHmacFixedHeader() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        headers.put("host", List.of("example.org"));
+        headers.put("date", List.of(INBOUND_DATE));
+        headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+        headers.put("Signature",
+                    List.of("keyId=\"myServiceKeyId\",algorithm=\"hmac-sha256\",headers=\"date host (request-target) "
+                                    + "authorization\","
+                                    + "signature=\"6wEjLXCNKM3xKQzuL/GDmH5qOF465UlQ5skNnKQ/wZw=\""));
+
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.env()).thenReturn(SecurityEnvironment.builder(inboundTime())
+                                      .path("/my/resource")
+                                      .headers(headers)
+                                      .build());
+
+        AuthenticationResponse atnResponse = getProvider().authenticate(request);
+
+        assertThat(atnResponse.description().orElse("Unknown problem"),
+                   atnResponse.status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+    }
+
+    @Test
+    void testInboundSignatureRejectsUnparsableDate() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        headers.put("host", List.of("example.org"));
+        headers.put("date", List.of("not-a-date"));
+        headers.put("authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
+
+        SecurityEnvironment signingEnv = SecurityEnvironment.builder(inboundTime())
+                .path("/my/resource")
+                .headers(headers)
+                .build();
+        headers.put("Signature",
+                    List.of(signatureHeader(signingEnv,
+                                            OutboundTargetDefinition.builder("myServiceKeyId")
+                                                    .hmacSecret("MyPasswordForHmac")
+                                                    .signedHeaders(signedHeaders())
+                                                    .build(),
+                                            true)));
+
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.env()).thenReturn(SecurityEnvironment.builder(inboundTime())
+                                      .path("/my/resource")
+                                      .headers(headers)
+                                      .build());
+
+        AuthenticationResponse atnResponse = getProvider().authenticate(request);
+
+        assertThat(atnResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(atnResponse.description().orElse("Unknown problem"),
+                   containsString("Date header cannot be parsed"));
     }
 
     @Test
@@ -220,6 +301,90 @@ abstract class OldHttpSignProviderTest {
                                 "hmac-sha256",
                                 List.of("date", REQUEST_TARGET, "host"),
                                 "SkeKVi6BoUd2/aUfXyIVIFAKEkKp7sg2KsS1UieB/+E=");
+    }
+
+    @Test
+    void testOutboundAuthorizationCarrierDoesNotSignPreviousAuthorizationHeader() {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("host", List.of("localhost"));
+        headers.put("date", List.of(INBOUND_DATE));
+        headers.put("authorization", List.of("Bearer token"));
+
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.securityContext()).thenReturn(mock(SecurityContext.class));
+
+        HttpSignProvider provider = HttpSignProvider.builder()
+                .addAcceptHeader(HttpSignHeader.AUTHORIZATION)
+                .addInbound(InboundClientDefinition.builder("myServiceKeyId")
+                                    .principalName("aSetOfTrustedServices")
+                                    .hmacSecret("MyPasswordForHmac")
+                                    .build())
+                .outbound(OutboundConfig.builder()
+                                  .addTarget(OutboundTarget.builder("authorization")
+                                                     .addTransport("http")
+                                                     .addHost("localhost")
+                                                     .addPath("/authorization/.*")
+                                                     .customObject(OutboundTargetDefinition.class,
+                                                                   OutboundTargetDefinition.builder("myServiceKeyId")
+                                                                           .header(HttpSignHeader.AUTHORIZATION)
+                                                                           .backwardCompatibleEol(true)
+                                                                           .hmacSecret("MyPasswordForHmac")
+                                                                           .build())
+                                                     .build())
+                                  .build())
+                .backwardCompatibleEol(true)
+                .build();
+        SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
+                .path("/authorization/resource")
+                .targetUri(URI.create("http://localhost/authorization/resource"))
+                .headers(headers)
+                .build();
+
+        OutboundSecurityResponse response = provider.outboundSecurity(request, outboundEnv, EndpointConfig.create());
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        String authorization = response.requestHeaders().get("Authorization").iterator().next();
+        HttpSignature httpSignature = HttpSignature.fromAuthorizationHeader(authorization.substring("Signature ".length()),
+                                                                            true);
+        assertThat(httpSignature.getHeaders(), is(List.of("date", REQUEST_TARGET, "host")));
+
+        ProviderRequest inboundRequest = mock(ProviderRequest.class);
+        when(inboundRequest.env()).thenReturn(SecurityEnvironment.builder(inboundTime())
+                                             .path("/authorization/resource")
+                                             .headers(response.requestHeaders())
+                                             .build());
+        AuthenticationResponse authentication = provider.authenticate(inboundRequest);
+
+        assertThat(authentication.description().orElse("Unknown problem"),
+                   authentication.status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+    }
+
+    private static String signatureHeader(SecurityEnvironment env,
+                                          OutboundTargetDefinition outboundDefinition,
+                                          boolean backwardCompatibleEol) {
+        return HttpSignature.sign(env, outboundDefinition, new HashMap<>(), backwardCompatibleEol)
+                .toSignatureHeader();
+    }
+
+    private static SignedHeadersConfig signedHeaders() {
+        return SignedHeadersConfig.builder()
+                .defaultConfig(SignedHeadersConfig.HeadersConfig
+                                       .create(List.of("date", "host", REQUEST_TARGET, "authorization")))
+                .build();
+    }
+
+    private static SecurityTime inboundTime() {
+        return SecurityTime.builder()
+                .timeZone(ZoneId.of("GMT"))
+                .value(ChronoField.YEAR, 2014)
+                .value(ChronoField.MONTH_OF_YEAR, 6)
+                .value(ChronoField.DAY_OF_MONTH, 8)
+                .value(ChronoField.HOUR_OF_DAY, 18)
+                .value(ChronoField.MINUTE_OF_HOUR, 32)
+                .value(ChronoField.SECOND_OF_MINUTE, 30)
+                .value(ChronoField.MILLI_OF_SECOND, 0)
+                .build();
     }
 
     private void validateSignatureHeader(

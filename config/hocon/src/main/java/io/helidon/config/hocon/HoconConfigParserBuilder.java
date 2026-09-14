@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,9 @@ import com.typesafe.config.ConfigResolveOptions;
 /**
  * HOCON ConfigParser Builder.
  * <p>
- * {@link Config#resolve() HOCON resolving substitutions support} is by default enabled.
- * {@link ConfigResolveOptions#defaults()} is used to resolve loaded configuration.
- * It is possible to {@link #resolvingEnabled(boolean)}} to disable this feature
- * or specify custom {@link #resolveOptions(ConfigResolveOptions) ConfigResolveOptions} instance.
+ * Full {@link Config#resolve() HOCON substitution resolution} is disabled by default.
+ * It is possible to {@link #resolvingEnabled(boolean)} enable this feature or specify custom
+ * {@link #resolveOptions(ConfigResolveOptions) ConfigResolveOptions}.
  */
 public final class HoconConfigParserBuilder implements Builder<HoconConfigParserBuilder, ConfigParser> {
 
@@ -47,12 +46,13 @@ public final class HoconConfigParserBuilder implements Builder<HoconConfigParser
     }
 
     /**
-     * Enables/disables HOCON resolving substitutions support. Default is {@code false}.
+     * Enables/disables full HOCON substitution resolution support. Default is {@code false}.
      * <p>
-     * Note: Even if you disable substitution at HOCON parsing time, values can still be resolved at a later time by the
-     * Helidon Config system.
+     * When disabled, the parser may still use local HOCON resolution to materialize HOCON merges and self-references
+     * from the parsed source and its includes. Required unresolved substitutions are preserved for later resolution by
+     * the Helidon Config system.
      *
-     * @param enabled use to enable or disable substitution
+     * @param enabled use to enable or disable full substitution resolution
      * @return modified builder instance
      */
     public HoconConfigParserBuilder resolvingEnabled(boolean enabled) {

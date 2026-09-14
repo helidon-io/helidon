@@ -208,6 +208,11 @@ public final class Http {
      * <p>
      * If the method may produce more than one type, the response headers must be crafted by hand. If it produces
      * exactly one type, that type will be set by Helidon on response.
+     * <p>
+     * When used by Helidon declarative server code on an endpoint method that accepts the server response, generated
+     * routing code configures the content type before invoking the method, so it is available to output-stream response
+     * handling. For endpoint methods that do not accept the server response, generated code configures the content type
+     * after the method returns and before the generated response is sent.
      */
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.METHOD)

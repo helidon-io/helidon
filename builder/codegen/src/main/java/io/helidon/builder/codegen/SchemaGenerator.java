@@ -17,6 +17,7 @@ package io.helidon.builder.codegen;
 
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import io.helidon.codegen.CodegenContext;
@@ -65,11 +66,34 @@ class SchemaGenerator {
             builder.property("provides", provides);
         }
 
+        var inherits = inheritedTypes(prototypeInfo);
+        if (!inherits.isEmpty()) {
+            builder.property("inherits", inherits);
+        }
+
         var options = options(prototypeInfo, handlers);
         if (!options.isEmpty()) {
             builder.property("options", options);
         }
         return builder.build();
+    }
+
+    private List<TypeName> inheritedTypes(PrototypeInfo prototypeInfo) {
+        var inherits = new LinkedHashSet<TypeName>();
+        for (var superType : prototypeInfo.superTypes()) {
+            if (superType.equals(Types.PROTOTYPE_API) || superType.className().endsWith("Blueprint")) {
+                continue;
+            }
+            var superTypeInfo = ctx.typeInfo(superType.genericTypeName());
+            if (superTypeInfo.map(it -> it.hasAnnotation(Types.CONFIGURED)
+                    || resolver.typeHierarchy(it)
+                            .stream()
+                            .anyMatch(ancestor -> ancestor.hasAnnotation(Types.PROTOTYPE_CONFIGURED)))
+                    .orElse(true)) {
+                inherits.add(superTypeInfo.map(TypeInfo::typeName).orElse(superType));
+            }
+        }
+        return new ArrayList<>(inherits);
     }
 
     private List<TypeName> providedTypes(PrototypeInfo prototypeInfo) {

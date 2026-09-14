@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.security.util.AbacSupport;
 
-class ProviderRequestImpl implements ProviderRequest {
+class ProviderRequestImpl extends ProviderRequest {
     private static final System.Logger LOGGER = System.getLogger(ProviderRequestImpl.class.getName());
 
     private final Map<String, AbacSupport> contextRoot = new HashMap<>();
@@ -79,7 +79,7 @@ class ProviderRequestImpl implements ProviderRequest {
      * @param key    key of the attribute
      * @return value of the attribute if found
      */
-    static Optional<Object> getValue(Object object, String key) {
+    public static Optional<Object> getValue(Object object, String key) {
         // use getter, public field
         // first check if a public field with the name exists
         Class<?> aClass = object.getClass();

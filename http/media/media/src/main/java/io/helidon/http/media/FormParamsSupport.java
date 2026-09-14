@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -315,7 +315,9 @@ public class FormParamsSupport implements MediaSupport {
                 Parameters.Builder builder = Parameters.builder("form-params");
                 String encodedString = new String(stream.readAllBytes(), charset);
                 if (logger.isLoggable(System.Logger.Level.DEBUG)) {
-                    logger.log(System.Logger.Level.DEBUG, "Reading encoded form parameters: {0}", encodedString);
+                    logger.log(System.Logger.Level.DEBUG,
+                               "Reading encoded form parameters, characters: {0}",
+                               encodedString.length());
                 }
                 Matcher matcher = pattern.matcher(encodedString);
                 while (matcher.find()) {

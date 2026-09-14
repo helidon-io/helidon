@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package io.helidon.security;
 import java.net.URI;
 import java.util.Optional;
 
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.security.providers.ProviderForTesting;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -120,5 +123,101 @@ public class SecurityTest {
                 .buildAndGet();
 
         assertThat(response.status().isSuccess(), is(true));
+    }
+
+    @Test
+    public void testRequestedValuesDefaultFromEnvironment() {
+        SecurityEnvironment env = SecurityEnvironment.builder(security.serverTime())
+                .method("POST")
+                .path("/test")
+                .queryParams(UriQuery.create("first=second"))
+                .build();
+
+        assertThat(env.requestedMethod(), is("POST"));
+        assertThat(env.requestedPath().rawPath(), is("/test"));
+        assertThat(env.requestedQuery().orElseThrow().rawValue(), is("first=second"));
+    }
+
+    @Test
+    public void testRequestedQueryPreservesEmptyQueryDelimiter() {
+        SecurityEnvironment env = SecurityEnvironment.builder(security.serverTime())
+                .path("/test")
+                .queryParams(UriQuery.create("first=second"))
+                .requestedQuery(Optional.of(UriQuery.empty()))
+                .build();
+
+        assertThat(env.requestedQuery().isPresent(), is(true));
+        assertThat(env.requestedQuery().orElseThrow().rawValue(), is(""));
+    }
+
+    @Test
+    public void testRequestedValuesAreBoundarySnapshot() {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        query.fromQueryString("first=second");
+
+        SecurityEnvironment env = SecurityEnvironment.builder(security.serverTime())
+                .method("GET")
+                .path("/decoded/path")
+                .queryParams(query)
+                .requestedMethod("POST")
+                .requestedPath(UriPath.create("/raw%2Fpath;matrix=value"))
+                .requestedQuery(Optional.of(query))
+                .build();
+
+        query.clear();
+        query.fromQueryString("changed=true");
+
+        assertThat(env.queryParams().rawValue(), is("first=second"));
+        assertThat(env.requestedMethod(), is("POST"));
+        assertThat(env.requestedPath().rawPath(), is("/raw%2Fpath;matrix=value"));
+        assertThat(env.requestedQuery().orElseThrow().rawValue(), is("first=second"));
+    }
+
+    @Test
+    public void testDerivedRequestedValuesDefaultFromOverriddenEnvironment() {
+        SecurityEnvironment source = SecurityEnvironment.builder(security.serverTime())
+                .method("POST")
+                .path("/source")
+                .queryParams(UriQuery.create("source=true"))
+                .requestedMethod("PATCH")
+                .requestedPath(UriPath.create("/raw%2Fsource"))
+                .requestedQuery(Optional.of(UriQuery.empty()))
+                .build();
+
+        SecurityEnvironment derived = source.derive()
+                .method("PUT")
+                .path("/target")
+                .queryParams(UriQuery.create("target=true"))
+                .build();
+
+        assertThat(derived.requestedMethod(), is("PUT"));
+        assertThat(derived.requestedPath().rawPath(), is("/target"));
+        assertThat(derived.requestedQuery().orElseThrow().rawValue(), is("target=true"));
+    }
+
+    @Test
+    public void testDerivedRequestedValuesCanBeExplicitlyPreserved() {
+        SecurityEnvironment source = SecurityEnvironment.builder(security.serverTime())
+                .method("POST")
+                .path("/source")
+                .queryParams(UriQuery.create("source=true"))
+                .requestedMethod("PATCH")
+                .requestedPath(UriPath.create("/raw%2Fsource"))
+                .requestedQuery(Optional.of(UriQuery.empty()))
+                .build();
+
+        SecurityEnvironment derived = source.derive()
+                .method("PUT")
+                .path("/target")
+                .requestedMethod(source.requestedMethod())
+                .requestedPath(source.requestedPath())
+                .requestedQuery(source.requestedQuery())
+                .queryParams(UriQuery.create("target=true"))
+                .build();
+
+        assertThat(derived.requestedMethod(), is("PATCH"));
+        assertThat(derived.requestedPath().rawPath(), is("/raw%2Fsource"));
+        assertThat(derived.requestedQuery().isPresent(), is(true));
+        assertThat(derived.requestedQuery().orElseThrow().rawValue(), is(""));
     }
 }

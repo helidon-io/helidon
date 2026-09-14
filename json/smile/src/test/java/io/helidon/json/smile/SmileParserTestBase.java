@@ -36,6 +36,7 @@ import io.helidon.json.JsonValueType;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -47,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 abstract class SmileParserTestBase {
+
+    private static final int MAX_NESTING_DEPTH = JsonParser.MAX_NESTING_DEPTH;
 
     @FunctionalInterface
     protected interface JsonGeneratorWriter {
@@ -285,6 +288,73 @@ abstract class SmileParserTestBase {
 
         assertThat(result.keys().isEmpty(), is(true));
         assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testReadJsonArrayAllowsDepthBeyondInitialStructureStack() {
+        JsonParser parser = createParser(nestedArrays(65));
+        JsonArray result = parser.readJsonArray();
+
+        assertThat(nestedArrayDepth(result), is(65));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testReadJsonArrayAllowsMaximumDepth() {
+        JsonParser parser = createParser(nestedArrays(MAX_NESTING_DEPTH));
+        JsonArray result = parser.readJsonArray();
+
+        assertThat(nestedArrayDepth(result), is(MAX_NESTING_DEPTH));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testReadJsonArrayRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedArrays(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, parser::readJsonArray);
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
+    }
+
+    @Test
+    public void testReadJsonObjectRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedObjects(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, parser::readJsonObject);
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
+    }
+
+    @Test
+    public void testSkipArrayRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedArrays(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, parser::skip);
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
+    }
+
+    @Test
+    public void testSkipObjectRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedObjects(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, parser::skip);
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
+    }
+
+    @Test
+    public void testTokenIterationRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedArrays(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, () -> {
+            while (parser.hasNext()) {
+                parser.nextToken();
+            }
+        });
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
     }
 
     /*
@@ -1399,6 +1469,52 @@ abstract class SmileParserTestBase {
         byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x03, (byte) 0xFA, 0x30, (byte) 0xFE};
         JsonParser parser = createParser(smileData);
         assertThrows(JsonException.class, parser::readJsonObject);
+    }
+
+    private static byte[] nestedArrays(int depth) {
+        byte[] smileData = new byte[SmileConstants.HEADER_LENGTH + depth + 1 + depth];
+        int index = writeHeader(smileData);
+        for (int i = 0; i < depth; i++) {
+            smileData[index++] = SmileConstants.TOKEN_START_ARRAY;
+        }
+        smileData[index++] = SmileConstants.TOKEN_NULL;
+        for (int i = 0; i < depth; i++) {
+            smileData[index++] = SmileConstants.TOKEN_END_ARRAY;
+        }
+        return smileData;
+    }
+
+    private static byte[] nestedObjects(int depth) {
+        byte[] smileData = new byte[SmileConstants.HEADER_LENGTH + depth * 4 + 1];
+        int index = writeHeader(smileData);
+        for (int i = 0; i < depth; i++) {
+            smileData[index++] = SmileConstants.TOKEN_START_OBJECT;
+            smileData[index++] = (byte) SmileConstants.KEY_SHORT_ASCII_PREFIX;
+            smileData[index++] = (byte) 'a';
+        }
+        smileData[index++] = SmileConstants.TOKEN_NULL;
+        for (int i = 0; i < depth; i++) {
+            smileData[index++] = SmileConstants.TOKEN_END_OBJECT;
+        }
+        return smileData;
+    }
+
+    private static int writeHeader(byte[] smileData) {
+        smileData[0] = SmileConstants.HEADER_0;
+        smileData[1] = SmileConstants.HEADER_1;
+        smileData[2] = SmileConstants.HEADER_2;
+        smileData[3] = 0;
+        return SmileConstants.HEADER_LENGTH;
+    }
+
+    private static int nestedArrayDepth(JsonArray array) {
+        int depth = 1;
+        JsonValue value = array.get(0, JsonNull.instance());
+        while (value.type() == JsonValueType.ARRAY) {
+            depth++;
+            value = value.asArray().get(0, JsonNull.instance());
+        }
+        return depth;
     }
 
     private static int fnv1aHashUtf8(String value) {

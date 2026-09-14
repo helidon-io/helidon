@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,12 @@ public class MongoDbStatementGet extends MongoDbStatement<DbStatementGet> implem
 
     @Override
     public MongoDbStatementGet params(Map<String, ?> parameters) {
+        theQuery.params(parameters);
+        return this;
+    }
+
+    @Override
+    public MongoDbStatementGet params(Object... parameters) {
         theQuery.params(parameters);
         return this;
     }

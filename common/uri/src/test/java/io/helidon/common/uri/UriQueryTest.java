@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.uri;
 
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.List;
 
 import io.helidon.common.mapper.OptionalValue;
 
@@ -25,8 +26,11 @@ import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriQueryTest {
@@ -61,6 +65,40 @@ class UriQueryTest {
         assertThat(uriQuery.all("e"), hasItems("f", "g"));
         assertThat(uriQuery.get("h"), is("xc#e<"));
         assertThat(uriQuery.get("a"), is("b&c=d"));
+    }
+
+    @Test
+    void malformedHexEscapesRemainLiteral() {
+        assertAll(
+                () -> assertThat(UriQuery.create("value=%2G").get("value"), is("%2G")),
+                () -> assertThat(UriQuery.create("value=%G2").get("value"), is("%G2")),
+                () -> assertThat(UriQuery.create("value=%+1").get("value"), is("%+1")),
+                () -> assertThat(UriQuery.create("value=%G%41").get("value"), is("%GA")),
+                () -> assertThat(UriQuery.create("value=%4%41").get("value"), is("%4A")),
+                () -> assertThat(UriQuery.create("value=%%41").get("value"), is("%A")),
+                () -> assertThat(UriQuery.create("%2G=value").get("%2G"), is("value")),
+                () -> assertThat(UriQuery.create("%+1=value").get("%+1"), is("value")),
+                () -> assertThat(UriQuery.create("%G%41=value").get("%GA"), is("value")),
+                () -> assertThat(writeableQuery("value=%2G").get("value"), is("%2G")),
+                () -> assertThat(writeableQuery("value=%G2").get("value"), is("%G2")),
+                () -> assertThat(writeableQuery("value=%+1").get("value"), is("%+1")),
+                () -> assertThat(writeableQuery("value=%G%41").get("value"), is("%GA")),
+                () -> assertThat(writeableQuery("value=%4%41").get("value"), is("%4A")),
+                () -> assertThat(writeableQuery("value=%%41").get("value"), is("%A")),
+                () -> assertThat(writeableQuery("%G2=value").get("%G2"), is("value")),
+                () -> assertThat(writeableQuery("%+1=value").get("%+1"), is("value")),
+                () -> assertThat(writeableQuery("%G%41=value").get("%GA"), is("value")));
+    }
+
+    @Test
+    void incompletePercentEscapesRemainLiteral() {
+        assertAll(
+                () -> assertThat(UriQuery.create("value=%").get("value"), is("%")),
+                () -> assertThat(UriQuery.create("value=%4").get("value"), is("%4")),
+                () -> assertThat(UriQuery.create("%=value").get("%"), is("value")),
+                () -> assertThat(writeableQuery("value=%").get("value"), is("%")),
+                () -> assertThat(writeableQuery("value=%4").get("value"), is("%4")),
+                () -> assertThat(writeableQuery("%4=value").get("%4"), is("value")));
     }
 
     @Test
@@ -102,5 +140,59 @@ class UriQueryTest {
         assertThat(query.getRaw("p3"), is("%2F%2Fv3%2F%2F"));
         assertThat(query.get("p4"), is("a b c"));
         assertThat(query.getRaw("p4"), is("a%20b%20c"));
+    }
+
+    @Test
+    void setReplacesEquivalentEncodedName() {
+        UriQueryWriteable query = writeableQuery("%61=template");
+
+        query.set("a", "request");
+
+        assertThat(query.all("a"), is(List.of("request")));
+        assertThat(query.rawValue(), is("a=request"));
+    }
+
+    @Test
+    void setReplacesMultipleEquivalentEncodedNames() {
+        StringBuilder queryString = new StringBuilder();
+        for (int i = 0; i < 32; i++) {
+            if (!queryString.isEmpty()) {
+                queryString.append('&');
+            }
+            queryString.append("%61").append(i).append("=template");
+        }
+        UriQueryWriteable query = writeableQuery(queryString.toString());
+
+        for (int i = 0; i < 32; i++) {
+            query.set("a" + i, "request" + i);
+        }
+
+        assertThat(query.size(), is(32));
+        for (int i = 0; i < 32; i++) {
+            assertThat(query.getAllRaw("a" + i), is(List.of("request" + i)));
+        }
+        assertThat(query.rawValue(), not(containsString("%61")));
+    }
+
+    @Test
+    void aliasIndexTracksLaterRawUpdates() {
+        UriQueryWriteable query = writeableQuery("%61=template");
+        query.set("a", "request");
+
+        query.fromQueryString("%62=template");
+        query.set("b", "request");
+        query.from(writeableQuery("%63=template"));
+        query.set("c", "request");
+
+        assertThat(query.getAllRaw("a"), is(List.of("request")));
+        assertThat(query.getAllRaw("b"), is(List.of("request")));
+        assertThat(query.getAllRaw("c"), is(List.of("request")));
+        assertThat(query.rawValue(), not(containsString("%")));
+    }
+
+    private static UriQueryWriteable writeableQuery(String queryString) {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        query.fromQueryString(queryString);
+        return query;
     }
 }

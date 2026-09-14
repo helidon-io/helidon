@@ -41,6 +41,8 @@ import org.eclipse.microprofile.config.Config;
  * <p>
  * Password in properties must be stored as follows:
  * <ul>
+ * <li>${ENC=base64} - encrypted password using a master password and versioned envelope (must be provided to prime
+ * through configuration, system property or environment variable)</li>
  * <li>${GCM=base64} - encrypted password using a master password (must be provided to prime through configuration, system
  * property or environment variable)</li>
  * <li>${RSA=base64} - encrypted password using a public key (private key must be available to Prime instance,
@@ -51,6 +53,7 @@ import org.eclipse.microprofile.config.Config;
  * </ul>
  * Example:
  * <pre>
+ * new_google_client_secret=${ENC=mYRkg+4Q4hua1kvpCCI2hg==}
  * google_client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
  * service_password=${RSA-P=mYRkg+4Q4hua1kvpCCI2hg==}
  * another_password=${service_password}
@@ -64,6 +67,7 @@ import org.eclipse.microprofile.config.Config;
  */
 public final class MpEncryptionFilter implements MpConfigFilter {
     static final String PREFIX_GCM = "${GCM=";
+    static final String PREFIX_ENC = "${ENC=";
     static final String PREFIX_RSA = "${RSA-P=";
     private static final System.Logger LOGGER = System.getLogger(MpEncryptionFilter.class.getName());
     private static final String PREFIX_ALIAS = "${ALIAS=";
@@ -77,6 +81,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
     private MpConfigFilter clearFilter;
     private MpConfigFilter rsaFilter;
     private MpConfigFilter aesFilter;
+    private MpConfigFilter encFilter;
     private MpConfigFilter aliasFilter;
 
     /**
@@ -106,6 +111,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
         MpConfigFilter noOp = (key, stringValue) -> stringValue;
 
         aesFilter = (null == masterPassword ? noOp : (key, stringValue) -> decryptAes(masterPassword, stringValue));
+        encFilter = this::decryptAesEnvelope;
         rsaFilter = (null == privateKey ? noOp : (key, stringValue) -> decryptRsa(privateKey, stringValue));
         clearFilter = this::clearText;
         aliasFilter = (key, stringValue) -> aliased(stringValue, config);
@@ -134,6 +140,7 @@ public final class MpEncryptionFilter implements MpConfigFilter {
             value = clearFilter.apply(propertyName, value);
             value = rsaFilter.apply(propertyName, value);
             value = aesFilter.apply(propertyName, value);
+            value = encFilter.apply(propertyName, value);
         } while (!processedValues.contains(value));
 
         return value;
@@ -190,6 +197,27 @@ public final class MpEncryptionFilter implements MpConfigFilter {
             } catch (ConfigEncryptionException e) {
                 LOGGER.log(Level.TRACE, () -> "Failed to decrypt " + value, e);
                 return value;
+            }
+        }
+
+        return value;
+    }
+
+    private String decryptAesEnvelope(String propertyName, String value) {
+        if (value.startsWith(PREFIX_ENC)) {
+            if (!value.endsWith("}")) {
+                throw new ConfigEncryptionException("Key \"" + propertyName + "\" has an invalid encrypted value");
+            }
+            if (masterPassword == null) {
+                throw new ConfigEncryptionException("Key \"" + propertyName
+                                                            + "\" is encrypted, but master password is not configured");
+            }
+
+            String b64Value = removePlaceholder(PREFIX_ENC, value);
+            try {
+                return EncryptionUtil.decryptAesEnvelope(masterPassword, b64Value);
+            } catch (ConfigEncryptionException e) {
+                throw new ConfigEncryptionException("Failed to decrypt encrypted value for key \"" + propertyName + "\"", e);
             }
         }
 

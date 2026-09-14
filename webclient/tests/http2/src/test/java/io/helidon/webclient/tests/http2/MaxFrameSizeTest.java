@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ class MaxFrameSizeTest {
     }
 
     @Test
-    void maxFrameChangeMidConnection() throws InterruptedException {
+    void maxFrameChangeMidConnection() throws InterruptedException, ExecutionException, TimeoutException {
         Http2Client
                 client = Http2Client.builder()
                 .shareConnectionCache(false)
@@ -164,6 +164,7 @@ class MaxFrameSizeTest {
         }
 
         // Trigger server to change MAX_FRAME_SIZE=18_000
+        SETTINGS_ACKED = new CompletableFuture<>();
         try (Http2ClientResponse res = client
                 .method(Method.GET)
                 .path("/trigger-settings")
@@ -172,7 +173,10 @@ class MaxFrameSizeTest {
                 .request()) {
 
             assertThat(res.status(), is(Status.OK_200));
+            assertThat(res.as(String.class), is("Settings size change triggered: 18000"));
         }
+        // Wait for the client SETTINGS ACK before the next request observes the updated frame size.
+        SETTINGS_ACKED.get(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
 
         // Test that the client honors MAX_FRAME_SIZE=18_000
         try (Http2ClientResponse res = client

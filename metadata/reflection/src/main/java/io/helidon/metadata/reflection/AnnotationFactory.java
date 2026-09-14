@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,14 +101,6 @@ public final class AnnotationFactory {
         return Optional.of((T) Proxy.newProxyInstance(classLoader(),
                                                       new Class[] {annotationType},
                                                       new AnnotationInvocationHandler(annotationType, annotation)));
-    }
-
-    private static ClassLoader classLoader() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) {
-            return loader;
-        }
-        return AnnotationFactory.class.getClassLoader();
     }
 
     // basically the same semantics as in `AptAnnotationFactory` (and scan based annotation factory)
@@ -228,6 +220,14 @@ public final class AnnotationFactory {
             return result;
         }
         throw new IllegalArgumentException("Unknown primitive type: " + componentType.getName());
+    }
+
+    private static ClassLoader classLoader() {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader == null) {
+            return AnnotationFactory.class.getClassLoader();
+        }
+        return loader;
     }
 
     private static class AnnotationInvocationHandler implements InvocationHandler {

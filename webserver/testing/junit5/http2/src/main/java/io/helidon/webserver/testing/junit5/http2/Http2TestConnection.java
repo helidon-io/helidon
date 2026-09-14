@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,6 +162,7 @@ public class Http2TestConnection implements AutoCloseable {
         h2Headers.method(method);
         h2Headers.path(path);
         h2Headers.scheme(clientUri().scheme());
+        h2Headers.authority(clientUri().authority());
 
         writer().writeHeaders(h2Headers,
                               streamId,
@@ -262,7 +263,7 @@ public class Http2TestConnection implements AutoCloseable {
 
         Http2GoAway goAway = Http2GoAway.create(frame.data());
         assertThat(goAway.errorCode(), is(errorCode));
-        assertThat(frame.data().readString(frame.data().available()), is(message));
+        assertThat(goAway.details(), is(message));
         return frame;
     }
 

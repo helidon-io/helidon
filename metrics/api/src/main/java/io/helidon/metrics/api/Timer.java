@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,10 @@ public interface Timer extends Meter, HistogramSupport {
 
     /**
      * Creates a builder for a new {@link io.helidon.metrics.api.Timer}.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#timerBuilder(String)} on the {@link MetricsFactory} instance used by
+     * the application.
+     * </p>
      *
      * @param name timer name
      * @return new builder
@@ -40,6 +44,10 @@ public interface Timer extends Meter, HistogramSupport {
 
     /**
      * Starts a timing sample using the default system clock.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#timerStart()} on the {@link MetricsFactory} instance used by the
+     * application.
+     * </p>
      *
      * @return new sample
      */
@@ -49,6 +57,10 @@ public interface Timer extends Meter, HistogramSupport {
 
     /**
      * Starts a timing sample using the clock associated with the specified {@link io.helidon.metrics.api.MeterRegistry}.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#timerStart(MeterRegistry)} on the {@link MetricsFactory} instance used
+     * by the application.
+     * </p>
      *
      * @param registry the meter registry whose clock is to be used for measuring the interval
      * @return new sample with start time recorded
@@ -59,6 +71,10 @@ public interface Timer extends Meter, HistogramSupport {
 
     /**
      * Starts a timing sample using the specified clock.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#timerStart(Clock)} on the {@link MetricsFactory} instance used by the
+     * application.
+     * </p>
      *
      * @param clock a clock to be used
      * @return new sample with start time recorded

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.graphql;
 
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -47,7 +48,10 @@ class GraphQlServiceTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        builder.register(GraphQlService.create(buildSchema()));
+        builder.register(GraphQlService.builder()
+                                 .invocationHandler(InvocationHandler.create(buildSchema()))
+                                 .permitAll(true)
+                                 .build());
     }
 
     @SuppressWarnings("unchecked")

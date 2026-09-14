@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@ package io.helidon.webclient.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.jsonrpc.core.JsonRpcResult;
 import io.helidon.webclient.api.HttpClientResponse;
-
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 
 /**
  * A representation of a JSON-RPC client response.

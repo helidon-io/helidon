@@ -73,7 +73,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * Stream status trailers.
      */
     protected static final Header STREAM_TRAILERS =
-            HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+            HeaderValues.createCached(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
     @SuppressWarnings("rawtypes")
     private static final List<SinkProvider> SINK_PROVIDERS =
             HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
@@ -198,18 +198,27 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
     @Override
     public HttpPrologue reroutePrologue(HttpPrologue prologue) {
+        UriPath uriPath = UriPath.create(reroutePath);
+        if (rerouteQuery == null) {
+            return prologue.withUriPath(uriPath);
+        }
         return HttpPrologue.create(prologue.rawProtocol(),
                                    prologue.protocol(),
                                    prologue.protocolVersion(),
                                    prologue.method(),
-                                   UriPath.create(reroutePath),
-                                   rerouteQuery == null ? prologue.query() : rerouteQuery,
+                                   uriPath,
+                                   rerouteQuery,
                                    prologue.fragment());
     }
 
     @Override
     public boolean isNexted() {
         return nexted;
+    }
+
+    @Override
+    public boolean isResponseHandled() {
+        return hasEntity() || isNexted() || shouldReroute();
     }
 
     @Override

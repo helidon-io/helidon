@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,24 @@ package io.helidon.webserver.http1;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpLogConfig;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 
-import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.TRACE;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Connection listener that logs all exchanged information.
  */
 public class Http1LoggingConnectionListener implements Http1ConnectionListener {
-    private final String prefix;
-    private final System.Logger logger;
+    private static final String LOGGER_NAME = Http1LoggingConnectionListener.class.getName();
+
+    private final io.helidon.http.http1.Http1LoggingConnectionListener delegate;
+
+    private Http1LoggingConnectionListener(io.helidon.http.http1.Http1LoggingConnectionListener delegate) {
+        this.delegate = delegate;
+    }
 
     /**
      * Create a new listener with a prefix (such as {@code send} and {@code recv}).
@@ -38,44 +43,58 @@ public class Http1LoggingConnectionListener implements Http1ConnectionListener {
      * @param prefix prefix to use when logging, also used as a suffix of logger name, to enable separate configuration
      */
     public Http1LoggingConnectionListener(String prefix) {
-        this.prefix = prefix;
-        this.logger = System.getLogger(Http1LoggingConnectionListener.class.getName() + "." + prefix);
+        this(io.helidon.http.http1.Http1LoggingConnectionListener.create(logConfig(),
+                                                                         prefix));
+    }
+
+    /**
+     * Create a new instance with the specified configuration and direction.
+     *
+     * @param logConfig log configuration
+     * @param prefix    usually specifying direction (such as send or recv)
+     * @return a new server connection listener
+     */
+    public static Http1LoggingConnectionListener create(HttpLogConfig logConfig, String prefix) {
+        requireNonNull(logConfig, "logConfig");
+        requireNonNull(prefix, "prefix");
+        HttpLogConfig actualLogConfig = logConfig;
+        if (logConfig.loggerName().isEmpty()) {
+            actualLogConfig = HttpLogConfig.builder(logConfig)
+                    .loggerName(LOGGER_NAME)
+                    .build();
+        }
+        return new Http1LoggingConnectionListener(io.helidon.http.http1.Http1LoggingConnectionListener.create(actualLogConfig,
+                                                                                                              prefix));
     }
 
     @Override
     public void data(ConnectionContext ctx, BufferData data) {
-        if (logger.isLoggable(TRACE)) {
-            ctx.log(logger, TRACE, "%s data:%n%s",
-                    prefix,
-                    data.debugDataHex(true));
-        }
+        delegate.data(ctx, data);
     }
 
     @Override
     public void data(ConnectionContext ctx, byte[] bytes, int offset, int length) {
-        if (logger.isLoggable(TRACE)) {
-            data(ctx, BufferData.create(bytes, offset, length));
-        }
+        delegate.data(ctx, bytes, offset, length);
     }
 
     @Override
     public void prologue(ConnectionContext ctx, HttpPrologue prologue) {
-        ctx.log(logger, DEBUG, "%s prologue: %s",
-                prefix,
-                prologue);
+        delegate.prologue(ctx, prologue);
     }
 
     @Override
     public void headers(ConnectionContext ctx, Headers headers) {
-        ctx.log(logger, DEBUG, "%s headers: %n%s",
-                prefix,
-                headers);
+        delegate.headers(ctx, headers);
     }
 
     @Override
     public void status(ConnectionContext ctx, Status status) {
-        ctx.log(logger, DEBUG, "%s status: %s",
-                prefix,
-                status);
+        delegate.status(ctx, status);
+    }
+
+    private static HttpLogConfig logConfig() {
+        return HttpLogConfig.builder()
+                .loggerName(LOGGER_NAME)
+                .build();
     }
 }

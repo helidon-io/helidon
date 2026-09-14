@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,7 +207,7 @@ enum HeaderNameEnum implements HeaderName {
         static final String CONTENT_ENCODING_NAME = "Content-Encoding";
         static final String CONTENT_LANGUAGE_NAME = "Content-Language";
         static final String CONTENT_LENGTH_NAME = "Content-Length";
-        static final String CONTENT_LOCATION_NAME = "aa";
+        static final String CONTENT_LOCATION_NAME = "Content-Location";
         static final String CONTENT_RANGE_NAME = "Content-Range";
         static final String CONTENT_TYPE_NAME = "Content-Type";
         static final String DATE_NAME = "Date";

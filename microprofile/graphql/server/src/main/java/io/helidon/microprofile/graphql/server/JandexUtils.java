@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ class JandexUtils {
      */
     private List<URL> findIndexFiles(String indexFileName) throws IOException {
         List<URL> result = new ArrayList<>();
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader contextClassLoader = contextClassLoader();
         File file = new File(indexFile);
         if (file.isAbsolute()) {
             result.add(file.toPath().toUri().toURL());
@@ -123,7 +123,6 @@ class JandexUtils {
 
         return result;
     }
-
 
     /**
      * Return a {@link Collection} of {@link Class}es which are implementors of a given class/interface.
@@ -191,5 +190,10 @@ class JandexUtils {
      */
     public String getIndexFile() {
         return indexFile;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? JandexUtils.class.getClassLoader() : classLoader;
     }
 }

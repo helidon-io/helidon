@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Locale;
+import java.util.Optional;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
@@ -28,6 +31,35 @@ import io.helidon.webclient.api.HttpClientRequest;
 class OidcUtil {
 
     private OidcUtil() {
+    }
+
+    static Optional<String> localRedirectUri(String uri) {
+        if (uri == null || uri.isEmpty() || uri.charAt(0) != '/' || uri.startsWith("//") || uri.indexOf('\\') >= 0) {
+            // Reject missing, non-root-relative, scheme-relative, or backslash-containing values.
+            return Optional.empty();
+        }
+        String lowerCaseUri = uri.toLowerCase(Locale.ROOT);
+        if (lowerCaseUri.startsWith("/%2f") || lowerCaseUri.startsWith("/%5c")) {
+            // Reject encoded slash or backslash prefixes that could become non-local after decoding.
+            return Optional.empty();
+        }
+        for (int i = 0; i < uri.length(); i++) {
+            if (Character.isISOControl(uri.charAt(i))) {
+                // Reject control characters that could alter redirect headers or parsing.
+                return Optional.empty();
+            }
+        }
+        try {
+            URI parsedUri = URI.create(uri);
+            if (parsedUri.isAbsolute() || parsedUri.getRawAuthority() != null) {
+                // Reject absolute and authority-bearing URIs; redirects must stay on this origin.
+                return Optional.empty();
+            }
+        } catch (IllegalArgumentException e) {
+            // Reject values that cannot be parsed as a URI.
+            return Optional.empty();
+        }
+        return Optional.of(uri);
     }
 
     static void updateRequest(OidcConfig.RequestType type,

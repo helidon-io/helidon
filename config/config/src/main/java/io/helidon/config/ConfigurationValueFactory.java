@@ -146,7 +146,7 @@ class ConfigurationValueFactory implements Service.QualifiedFactory<Object, Conf
         if (configAtKey.isList()) {
             values = listValues(qualifier, configAtKey, type);
         } else if (configAtKey.exists()) {
-            ConfigValue<?> configValue = configAtKey.as(type.rawType());
+            ConfigValue<?> configValue = configAtKey.as(type);
 
             if (configValue.isEmpty()) {
                 values = List.of();
@@ -157,17 +157,16 @@ class ConfigurationValueFactory implements Service.QualifiedFactory<Object, Conf
         return values;
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private List<QualifiedInstance<Object>> listValues(Qualifier qualifier,
                                                        Config configAtKey,
                                                        GenericType<Object> type) {
-        ConfigValue list = configAtKey.asList(type.rawType());
+        ConfigValue<List<Config>> list = configAtKey.asNodeList();
         if (list.isEmpty()) {
             return List.of();
         }
-        return ((List<Object>) list.get())
+        return list.get()
                 .stream()
-                .map(it -> QualifiedInstance.create(it, qualifier))
+                .map(it -> QualifiedInstance.create(it.as(type).get(), qualifier))
                 .collect(Collectors.toUnmodifiableList());
     }
 

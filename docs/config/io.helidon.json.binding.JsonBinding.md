@@ -1,0 +1,14 @@
+# io.<wbr>helidon.<wbr>json.<wbr>binding.<wbr>Json<wbr>Binding
+
+## Description
+
+Configuration for JSON binding
+
+## Configuration options
+
+
+This config type has no options.
+
+---
+
+See the [manifest](manifest.md) for all available types.

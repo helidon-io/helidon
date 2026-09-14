@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,17 +28,23 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
-import io.helidon.websocket.WsCloseCodes;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.websocket.WsRouting;
+import io.helidon.websocket.WsCloseCodes;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -64,6 +70,12 @@ class WebSocketTest {
     static void router(Router.RouterBuilder<?> router) {
         service = new EchoService();
         router.addRouting(WsRouting.builder().endpoint("/echo", service));
+    }
+
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        server.writeQueueLength(2);
+        server.smartAsyncWrites(true);
     }
 
     @BeforeEach
@@ -176,6 +188,27 @@ class WebSocketTest {
         assertThat(listener.results().statusCode, is(1009));
         assertThat(listener.results().reason, is("Payload too large"));
         isNormalClose = false;
+    }
+
+    @Test
+    void rejectedUpgradeWithCloseClosesConnection() throws Exception {
+        isNormalClose = false;
+        try (SocketHttpClient socketClient = SocketHttpClient.create(port)) {
+            socketClient.requestRaw("""
+                                            GET /echo HTTP/1.1\r
+                                            Host: localhost:%d\r
+                                            Upgrade: websocket\r
+                                            Connection: Upgrade, close\r
+                                            Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r
+                                            Sec-WebSocket-Version: 13\r
+                                            \r
+                                            """.formatted(port));
+
+            String response = socketClient.receive();
+            assertThat(SocketHttpClient.statusFromResponse(response), is(Status.BAD_REQUEST_400));
+            assertThat(SocketHttpClient.headersFromResponse(response), hasHeader(HeaderValues.CONNECTION_CLOSE));
+            socketClient.assertConnectionIsClosed();
+        }
     }
 
     private static class TestListener implements java.net.http.WebSocket.Listener {

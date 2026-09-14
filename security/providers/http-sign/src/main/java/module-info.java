@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ module io.helidon.security.providers.httpsign {
 
     requires io.helidon.common.pki;
     requires io.helidon.common;
+    requires io.helidon.common.uri;
+    requires io.helidon.http;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
 

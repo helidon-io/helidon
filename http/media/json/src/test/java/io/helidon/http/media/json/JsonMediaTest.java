@@ -57,6 +57,7 @@ class JsonMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
     private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
     private static final GenericType<JsonArray> JSON_ARRAY_TYPE = GenericType.create(JsonArray.class);
+    private static final String SYNTHETIC_PADDING = "x".repeat(480);
 
     private final MediaSupport provider;
 
@@ -151,6 +152,25 @@ class JsonMediaTest {
                 .read(JSON_OBJECT_TYPE, is, requestHeaders, responseHeaders);
 
         assertThat(JsonObject.stringValue("title", "wrong"), is("utf-8: řžýčň"));
+    }
+
+    @Test
+    void testReadClientSingleWithStringValueEndingAtBufferBoundary() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_XML);
+        responseHeaders.contentType(MediaTypes.APPLICATION_JSON);
+
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+
+        String json = "{\"syntheticPadding\":\"" + SYNTHETIC_PADDING + "\",\"after\":\"ok\"}";
+        InputStream is = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+        JsonObject jsonObject = res.supplier().get()
+                .read(JSON_OBJECT_TYPE, is, requestHeaders, responseHeaders);
+
+        assertThat(jsonObject.stringValue("syntheticPadding", ""), is(SYNTHETIC_PADDING));
+        assertThat(jsonObject.stringValue("after", ""), is("ok"));
     }
 
     @Test

@@ -16,34 +16,66 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.parameters.Parameters;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
+import io.helidon.json.JsonObject;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.Subject;
+import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
+import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.NONE;
+import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.when;
@@ -53,6 +85,14 @@ import static org.mockito.Mockito.when;
  */
 class OidcFeatureTest {
     private static final String PARAM_NAME = "my-param-attempts";
+    private static final URI DEFAULT_LOGOUT_ENDPOINT = URI.create("http://idp.example.test/logout");
+    private static final String ID_TOKEN = SignedJwt.sign(
+            Jwt.builder()
+                    .algorithm("none")
+                    .addPayloadClaim("padding", "a".repeat(512))
+                    .build(),
+            Jwk.NONE_JWK)
+            .tokenContent();
 
     private final OidcConfig oidcConfig = OidcConfig.builder()
             .clientId("id")
@@ -62,6 +102,7 @@ class OidcFeatureTest {
             .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
             .signJwk(JwkKeys.builder().build())
             .oidcMetadataWellKnown(false)
+            .useCookie(false)
             .build();
     private final OidcConfig oidcConfigCustomParam = OidcConfig.builder()
             .clientId("id")
@@ -73,9 +114,31 @@ class OidcFeatureTest {
             .oidcMetadataWellKnown(false)
             .redirectAttemptParam(PARAM_NAME)
             .build();
+    private final OidcConfig oidcConfigDisabledParam = OidcConfig.builder()
+            .clientId("id")
+            .clientSecret("secret")
+            .identityUri(URI.create("http://localhost:7774/identity"))
+            .tokenEndpointUri(URI.create("http://localhost:7774/token"))
+            .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
+            .signJwk(JwkKeys.builder().build())
+            .oidcMetadataWellKnown(false)
+            .redirectAttemptCounterStrategy(NONE)
+            .build();
+    private final OidcConfig oidcConfigCookieCounter = OidcConfig.builder()
+            .clientId("id")
+            .clientSecret("secret")
+            .identityUri(URI.create("http://localhost:7774/identity"))
+            .tokenEndpointUri(URI.create("http://localhost:7774/token"))
+            .authorizationEndpointUri(URI.create("http://localhost:7774/authorize"))
+            .signJwk(JwkKeys.builder().build())
+            .oidcMetadataWellKnown(false)
+            .redirectAttemptCounterStrategy(COOKIE)
+            .build();
 
     private final OidcFeature oidcFeature = OidcFeature.create(oidcConfig);
     private final OidcFeature oidcFeatureCustomParam = OidcFeature.create(oidcConfigCustomParam);
+    private final OidcFeature oidcFeatureDisabledParam = OidcFeature.create(oidcConfigDisabledParam);
+    private final OidcFeature oidcFeatureCookieCounter = OidcFeature.create(oidcConfigCookieCounter);
     private final OidcProvider provider = OidcProvider.builder()
             .oidcConfig(oidcConfig)
             .outboundConfig(OutboundConfig.builder()
@@ -87,6 +150,142 @@ class OidcFeatureTest {
                                                        .build())
                                     .build())
             .build();
+
+    @Test
+    void testLogoutRejectsInvalidState() throws Exception {
+        String state = "probe%0d%0aX-Reproducer:%20injected";
+        String injectedHeader = "X-Reproducer: injected";
+        String response = logoutResponse(state);
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertThat(response, not(containsString("\r\n" + injectedHeader + "\r\n")));
+    }
+
+    @Test
+    void testLogoutEncodesStateValue() throws Exception {
+        String state = "ok%26post_logout_redirect_uri%3Dhttps%3A%2F%2Fexample.test%2Falternate";
+        String response = logoutResponse(state);
+
+        assertThat(response, startsWith("HTTP/1.1 307"));
+        assertThat(response,
+                   containsString("&state=ok%26post_logout_redirect_uri%3Dhttps%3A%2F%2Fexample.test%2Falternate\r\n"));
+        assertThat(response, not(containsString("&state=ok&post_logout_redirect_uri=https://example.test/alternate")));
+    }
+
+    @Test
+    void testLogoutAppendsParametersToEndpointQuery() throws Exception {
+        String logoutEndpoint = "http://idp.example.test/logout?domain=identity%2Fdomain";
+        String response = logoutResponse("ok", URI.create(logoutEndpoint));
+
+        assertThat(response,
+                   containsString("Location: " + logoutEndpoint
+                                          + "&id_token_hint=" + ID_TOKEN
+                                          + "&post_logout_redirect_uri=http://127.0.0.1:"));
+    }
+
+    @Test
+    void testLogoutRejectsInvalidCompressedIdToken() throws Exception {
+        String injectedHeader = "X-Reproducer: injected";
+        String invalidIdToken = ID_TOKEN + "\r\n" + injectedHeader + "\r\n";
+        String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, invalidIdToken, false);
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\n" + injectedHeader + "\r\n")));
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    @Test
+    void testLogoutRejectsCompressedJweWithTooManySegments() throws Exception {
+        String header = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString("{\"alg\":\"RSA-OAEP\",\"enc\":\"A256GCM\"}"
+                                        .getBytes(StandardCharsets.UTF_8));
+        String invalidJwe = header + ".AA".repeat(20_000);
+        String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, invalidJwe, true);
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    private static void assertLocalOidcCookiesRemoved(String response) {
+        for (String cookieName : List.of(OidcConfig.DEFAULT_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_ID_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_TENANT_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_REFRESH_COOKIE_NAME)) {
+            assertThat(response,
+                       containsString("\r\nSet-Cookie: " + cookieName
+                                              + "=; Expires="));
+        }
+    }
+
+    private static String logoutResponse(String state) throws Exception {
+        return logoutResponse(state, DEFAULT_LOGOUT_ENDPOINT);
+    }
+
+    private static String logoutResponse(String state, URI logoutEndpoint) throws Exception {
+        return logoutResponse(state, logoutEndpoint, ID_TOKEN, true);
+    }
+
+    private static String logoutResponse(String state,
+                                         URI logoutEndpoint,
+                                         String idToken,
+                                         boolean validateResponseHeaders) throws Exception {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://idp.example.test/identity"))
+                .tokenEndpointUri(URI.create("http://idp.example.test/token"))
+                .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
+                .logoutEndpointUri(logoutEndpoint)
+                .signJwk(JwkKeys.builder().build())
+                .oidcMetadataWellKnown(false)
+                .logoutEnabled(true)
+                .logoutUri("/oidc/logout")
+                .postLogoutUri(URI.create("/logged-out"))
+                .cookieEncryptionEnabled(false)
+                .cookieEncryptionEnabledIdToken(false)
+                .cookieCompressionEnabledIdToken(true)
+                .cookieEncryptionEnabledTenantName(false)
+                .cookieEncryptionEnabledRefreshToken(false)
+                .cookieEncryptionEnabledState(false)
+                .build();
+        String idTokenCookie = oidcConfig.idTokenCookieHandler()
+                .createCookie(idToken)
+                .build()
+                .value();
+        assertThat("ID token test cookie should be compressed", idTokenCookie, startsWith("~"));
+
+        WebServer server = WebServer.builder()
+                .port(0)
+                .addConnectionSelector(Http1ConnectionSelector.builder()
+                                               .config(Http1Config.builder()
+                                                               .validateResponseHeaders(validateResponseHeaders)
+                                                               .build())
+                                               .build())
+                .addRouting(HttpRouting.builder()
+                                    .addFeature(OidcFeature.create(oidcConfig)))
+                .build()
+                .start();
+
+        try (Socket socket = new Socket("127.0.0.1", server.port())) {
+            socket.setSoTimeout(5000);
+            OutputStream output = socket.getOutputStream();
+            output.write(("GET /oidc/logout?state=" + state + " HTTP/1.1\r\n"
+                    + "Host: 127.0.0.1:" + server.port() + "\r\n"
+                    + "Cookie: " + oidcConfig.idTokenCookieHandler().cookieName() + "=" + idTokenCookie + "\r\n"
+                    + "Connection: close\r\n"
+                    + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            output.flush();
+            socket.shutdownOutput();
+
+            InputStream input = socket.getInputStream();
+            return new String(input.readAllBytes(), StandardCharsets.ISO_8859_1);
+        } finally {
+            server.stop();
+        }
+    }
 
     @Test
     void testRedirectAttemptNoParams() {
@@ -158,6 +357,72 @@ class OidcFeatureTest {
 
         assertThat(state, not(newState));
         assertThat(newState, endsWith(PARAM_NAME + "=12&b=second"));
+    }
+
+    @Test
+    void testRedirectAttemptCounterDisabled() {
+        String state = "http://localhost:7145/test?a=first&b=second";
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        String newState = oidcFeatureDisabledParam.updateRedirectCounter(request(), responseHeaders, state);
+
+        assertThat(newState, is(state));
+        assertThat(responseHeaders.values(HeaderNames.SET_COOKIE).isEmpty(), is(true));
+    }
+
+    @Test
+    void testRedirectAttemptCookieCounter() {
+        String state = "http://localhost:7145/test?a=first&b=second";
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+
+        String newState = oidcFeatureCookieCounter.updateRedirectCounter(request(), responseHeaders, state);
+
+        assertThat(newState, is(state));
+        assertThat(responseHeaders.values(HeaderNames.SET_COOKIE).isEmpty(), is(true));
+    }
+
+    @Test
+    void testMissingCodeErrorClearsCookieCounter() {
+        String state = "state-123";
+        String originalUri = "/test?resource=a";
+        ServerRequest request = requestWithQuery("error=access_denied&state=" + state,
+                                                 stateCookie(oidcConfigCookieCounter, originalUri, state));
+        ServerResponse response = Mockito.mock(ServerResponse.class);
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        when(response.headers()).thenReturn(responseHeaders);
+        when(response.status(Status.BAD_REQUEST_400)).thenReturn(response);
+
+        oidcFeatureCookieCounter.processError(request, response);
+
+        List<String> cookies = responseHeaders.values(HeaderNames.SET_COOKIE);
+        assertThat(cookies,
+                   hasItem(startsWith(oidcConfigCookieCounter.stateCookieHandler().cookieName() + "=;")));
+        assertThat(cookies,
+                   hasItem(startsWith(RedirectAttemptCookie.name(oidcConfigCookieCounter,
+                                                                 DEFAULT_TENANT_ID,
+                                                                 originalUri) + "=;")));
+    }
+
+    @Test
+    void testPostLoginRedirectFallsBackForNonLocalOriginalUri() throws Exception {
+        String location = callbackLocation(true, "https://example.com/test", DEFAULT_TENANT_ID);
+
+        assertThat(location, is("/index.html?accessToken=access-token&h_ra=1"));
+    }
+
+    @Test
+    void testPostLoginRedirectFallsBackForNonLocalOriginalUriWithTenant() throws Exception {
+        String location = callbackLocation(true, "https://example.com/test", "tenant-one");
+
+        assertThat(location, is("/index.html?accessToken=access-token&h_tenant=tenant-one&h_ra=1"));
+    }
+
+    @Test
+    void testPostLoginRedirectPreservesLocalOriginalUri() throws Exception {
+        String location = callbackLocation(false,
+                                           "/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest",
+                                           DEFAULT_TENANT_ID);
+
+        assertThat(location, is("/raw%2Fpath?return=https%3A%2F%2Fexample.com%2Ftest&h_ra=1"));
     }
 
     @Test
@@ -236,5 +501,131 @@ class OidcFeatureTest {
         assertThat(feature.socketRequired(), is(false));
         assertThat(feature.hashCode(), not(0));
         assertThat(feature.toString(), notNullValue());
+    }
+
+    private ServerRequest request(String... cookies) {
+        ServerRequest request = Mockito.mock(ServerRequest.class);
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        for (String cookie : cookies) {
+            writableHeaders.add(HeaderNames.COOKIE, cookie);
+        }
+        when(request.headers()).thenReturn(ServerRequestHeaders.create(writableHeaders));
+        return request;
+    }
+
+    private ServerRequest requestWithQuery(String query, String... cookies) {
+        ServerRequest request = request(cookies);
+        when(request.query()).thenReturn(UriQuery.create(query));
+        return request;
+    }
+
+    private static String stateCookie(OidcConfig oidcConfig, String originalUri, String state) {
+        JsonObject stateJson = JsonObject.builder()
+                .set("originalUri", originalUri)
+                .set("state", state)
+                .build();
+        String encoded = Base64.getEncoder()
+                .encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
+        return oidcConfig.stateCookieHandler()
+                .createCookie(encoded)
+                .build()
+                .toString();
+    }
+
+    private static String callbackLocation(boolean useParam, String originalUri, String tenantName) throws Exception {
+        AtomicInteger tokenRequestCount = new AtomicInteger();
+        AtomicReference<Parameters> tokenRequestParameters = new AtomicReference<>();
+        WebServer tokenServer = WebServer.builder()
+                .host("localhost")
+                .routing(routing -> routing.post("/token",
+                                                 (req, res) -> {
+                                                     tokenRequestCount.incrementAndGet();
+                                                     tokenRequestParameters.set(req.content().as(Parameters.class));
+                                                     res.header(HeaderValues.CONTENT_TYPE_JSON)
+                                                             .send("{\"access_token\":\"access-token\"}");
+                                                 }))
+                .build()
+                .start();
+
+        try {
+            URI identityUri = URI.create("http://localhost:" + tokenServer.port() + "/identity");
+            URI tokenEndpointUri = URI.create("http://localhost:" + tokenServer.port() + "/token");
+            URI authorizationEndpointUri = URI.create("http://localhost:" + tokenServer.port() + "/authorize");
+            OidcConfig.Builder builder = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(identityUri)
+                    .tokenEndpointUri(tokenEndpointUri)
+                    .authorizationEndpointUri(authorizationEndpointUri)
+                    .signJwk(JwkKeys.builder().build())
+                    .oidcMetadataWellKnown(false)
+                    .useParam(useParam)
+                    .useCookie(false);
+            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                builder.addTenantConfig(TenantConfig.tenantBuilder()
+                                                .name(tenantName)
+                                                .clientId("id")
+                                                .clientSecret("secret")
+                                                .identityUri(identityUri)
+                                                .tokenEndpointUri(tokenEndpointUri)
+                                                .authorizationEndpointUri(authorizationEndpointUri)
+                                                .signJwk(JwkKeys.builder().build())
+                                                .oidcMetadataWellKnown(false)
+                                                .build());
+            }
+            OidcConfig config = builder.build();
+            WebServer callbackServer = WebServer.builder()
+                    .host("localhost")
+                    .routing(routing -> OidcFeature.create(config).setup(routing))
+                    .build()
+                    .start();
+            try {
+                String state = "state-one";
+                String stateJson = JsonObject.builder()
+                        .set("state", state)
+                        .set("originalUri", originalUri)
+                        .build()
+                        .toString();
+                String encodedState = Base64.getEncoder()
+                        .encodeToString(stateJson.getBytes(StandardCharsets.UTF_8));
+                String stateCookie = config.stateCookieHandler().createCookie(encodedState).build().toString();
+                int cookieOptions = stateCookie.indexOf(';');
+                if (cookieOptions > 0) {
+                    stateCookie = stateCookie.substring(0, cookieOptions);
+                }
+
+                String callbackUri = "http://localhost:" + callbackServer.port()
+                        + config.redirectUri()
+                        + "?code=code&state=" + state;
+                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                    callbackUri += "&" + config.tenantParamName() + "=" + tenantName;
+                }
+                String expectedRedirectUri = "http://localhost:" + callbackServer.port() + config.redirectUri();
+                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                    expectedRedirectUri += "?" + config.tenantParamName() + "=" + tenantName;
+                }
+
+                HttpRequest request = HttpRequest.newBuilder(URI.create(callbackUri))
+                        .header(HeaderNames.COOKIE.defaultCase(), stateCookie)
+                        .GET()
+                        .build();
+                HttpResponse<Void> response = HttpClient.newHttpClient()
+                        .send(request, HttpResponse.BodyHandlers.discarding());
+
+                assertThat(response.statusCode(), is(Status.TEMPORARY_REDIRECT_307.code()));
+                Parameters tokenParams = tokenRequestParameters.get();
+                assertThat(tokenRequestCount.get(), is(1));
+                assertThat(tokenParams.first("grant_type").orElseThrow(), is("authorization_code"));
+                assertThat(tokenParams.first("code").orElseThrow(), is("code"));
+                assertThat(tokenParams.first("redirect_uri").orElseThrow(), is(expectedRedirectUri));
+                return response.headers()
+                        .firstValue(HeaderNames.LOCATION.defaultCase())
+                        .orElseThrow();
+            } finally {
+                callbackServer.stop();
+            }
+        } finally {
+            tokenServer.stop();
+        }
     }
 }

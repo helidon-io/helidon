@@ -19,6 +19,7 @@ package io.helidon.config.metadata.codegen;
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -130,7 +131,7 @@ class TypeHandler {
         var typeName = targetTypeInfo.typeName().fqName();
         var description = description(annot, targetTypeInfo, annotatedTypeInfo);
         boolean standalone = annot.booleanValue("root").orElse(false);
-        var inherits = inheritedTypes(annotatedTypeInfo);
+        var inherits = inheritedTypes(annot, annotatedTypeInfo);
         var provides = providedTypes(annot);
         var prefix = annot.stringValue("prefix")
                 .filter(not(String::isBlank))
@@ -433,8 +434,12 @@ class TypeHandler {
         return description;
     }
 
-    private List<String> inheritedTypes(TypeInfo typeInfo) {
-        var inherits = new ArrayList<String>();
+    private List<String> inheritedTypes(Annotation annot, TypeInfo typeInfo) {
+        var inherits = new LinkedHashSet<String>();
+        annot.typeValues("inherits")
+                .ifPresent(it -> it.stream()
+                        .map(TypeName::fqName)
+                        .forEach(inherits::add));
         var ancestors = configuredAncestors(typeInfo);
         for (var ancestor : ancestors) {
             var transitive = configuredAncestors(ancestor);
@@ -442,7 +447,7 @@ class TypeHandler {
                 inherits.add(ancestor.typeName().fqName());
             }
         }
-        return inherits;
+        return new ArrayList<>(inherits);
     }
 
     private Set<TypeInfo> configuredAncestors(TypeInfo typeInfo) {

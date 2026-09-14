@@ -109,4 +109,22 @@ public class ClasspathConfigSourceTest {
 
         assertThat(configSource, notNullValue());
     }
+
+    @Test
+    public void testLoadWithNullContextClassLoader() {
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
+
+        try {
+            Thread.currentThread().setContextClassLoader(null);
+
+            ClasspathConfigSource configSource = ConfigSources.classpath("logging.properties")
+                    .optional()
+                    .build();
+
+            assertThat(configSource.load().get().mediaType(),
+                       optionalValue(is(MediaTypes.TEXT_PROPERTIES)));
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
+    }
 }

@@ -50,6 +50,8 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
 import static java.util.function.Predicate.not;
 
 abstract class IntrospectionBlueprintBuilder {
+    private static final Set<TypeName> MODEL_LISTENER_TYPES = Set.of(LangchainTypes.LC_CHAT_MODEL_LISTENER,
+                                                                     LangchainTypes.LC_EMBEDDING_MODEL_LISTENER);
 
     private final ClassModel.Builder classModel = ClassModel.builder();
     private final ConfigureMethodBuilder confMethodBuilder;
@@ -163,12 +165,15 @@ abstract class IntrospectionBlueprintBuilder {
         if (propType.equals(LangchainTypes.LC_HTTP_CLIENT_BUILDER)) {
             return true;
         }
-        if (propType.equals(LangchainTypes.LC_CHAT_MODEL_LISTENER)) {
+        if (propType.equals(LangchainTypes.EXECUTOR_SERVICE)) {
             return true;
         }
-        if (propType.equals(LIST)
+        if (MODEL_LISTENER_TYPES.contains(propType)) {
+            return true;
+        }
+        if (propType.isList()
                 && propType.typeArguments().size() == 1
-                && propType.typeArguments().getFirst().equals(LangchainTypes.LC_CHAT_MODEL_LISTENER)) {
+                && MODEL_LISTENER_TYPES.contains(propType.typeArguments().getFirst())) {
             return true;
         }
 

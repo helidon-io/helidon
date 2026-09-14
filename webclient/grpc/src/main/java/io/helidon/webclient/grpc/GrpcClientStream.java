@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.helidon.common.socket.SocketContext;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.webclient.http2.Http2ClientConfig;
 import io.helidon.webclient.http2.Http2ClientConnection;
+import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2ClientStream;
 import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.LockingStreamIdSequence;
@@ -31,7 +32,8 @@ class GrpcClientStream extends Http2ClientStream {
                      SocketContext ctx,
                      Http2StreamConfig http2StreamConfig,
                      Http2ClientConfig http2ClientConfig,
-                     LockingStreamIdSequence streamIdSeq) {
-        super(connection, serverSettings, ctx, http2StreamConfig, http2ClientConfig, streamIdSeq);
+                     LockingStreamIdSequence streamIdSeq,
+                     Http2ClientImpl http2Client) {
+        super(connection, serverSettings, ctx, http2StreamConfig, http2ClientConfig, streamIdSeq, http2Client);
     }
 }

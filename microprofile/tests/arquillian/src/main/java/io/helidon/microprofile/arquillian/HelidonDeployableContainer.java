@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -385,7 +385,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             parent = urlClassloader;
         } else {
             urlClassloader = new URLClassLoader(toUrls(classPath), null);
-            parent = Thread.currentThread().getContextClassLoader();
+            parent = contextClassLoader();
         }
 
         context.classLoader = new HelidonContainerClassloader(parent,
@@ -485,7 +485,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 // this must be a jar file (classpath is either jar file or a directory)
                 FileSystem fs;
                 try {
-                    fs = FileSystems.newFileSystem(path, Thread.currentThread().getContextClassLoader());
+                    fs = FileSystems.newFileSystem(path, contextClassLoader());
                     Path mpConfig = fs.getPath(location);
                     if (Files.exists(mpConfig)) {
                         sources.add(MpConfigSources.create(path + "!" + mpConfig, mpConfig));
@@ -670,6 +670,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             return directory.resolve(path.substring(1));
         }
         return directory.resolve(path);
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? HelidonDeployableContainer.class.getClassLoader() : classLoader;
     }
 
     private static class RunContext {
