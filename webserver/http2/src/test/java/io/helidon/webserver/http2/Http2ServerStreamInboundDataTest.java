@@ -37,7 +37,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void frameBudgetIsConnectionWideNonBlockingAndPreservesFrames() throws InterruptedException {
-        var budget = new Http2ServerStream.InboundDataBudget(2, 100);
+        var budget = new Http2InboundDataBudget(2, 100);
         var queue = new Http2ServerStream.InboundDataQueue(budget);
         var peerQueue = new Http2ServerStream.InboundDataQueue(budget);
         Http2FrameHeader firstHeader = header(8);
@@ -75,7 +75,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void byteBudgetIsWeightedAndReleasedForPeers() {
-        var budget = new Http2ServerStream.InboundDataBudget(10, 8);
+        var budget = new Http2InboundDataBudget(10, 8);
         var queue = new Http2ServerStream.InboundDataQueue(budget);
         var peerQueue = new Http2ServerStream.InboundDataQueue(budget);
         Http2FrameHeader fullBudget = header(8);
@@ -96,7 +96,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void abortOwnsQueuedAndInFlightCredit() throws InterruptedException {
-        var budget = new Http2ServerStream.InboundDataBudget(2, 20);
+        var budget = new Http2InboundDataBudget(2, 20);
         var queue = new Http2ServerStream.InboundDataQueue(budget);
         Http2FrameHeader first = header(8);
         Http2FrameHeader second = header(12);
@@ -121,7 +121,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void completionCallbackDoesNotHoldQueueLock() throws InterruptedException {
-        var budget = new Http2ServerStream.InboundDataBudget(1, 8);
+        var budget = new Http2InboundDataBudget(1, 8);
         var queue = new Http2ServerStream.InboundDataQueue(budget);
         assertThat(queue.offer(header(8), BufferData.create(new byte[8])),
                    is(Http2ServerStream.InboundDataQueue.OfferResult.ACCEPTED));
@@ -168,7 +168,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void terminalIsDeliveredOnceAndAbortWakesWaiter() throws InterruptedException {
-        var queue = new Http2ServerStream.InboundDataQueue(new Http2ServerStream.InboundDataBudget(1, 1));
+        var queue = new Http2ServerStream.InboundDataQueue(new Http2InboundDataBudget(1, 1));
         queue.finish();
 
         Http2ServerStream.DataFrame terminal = queue.take();
@@ -201,7 +201,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void connectionWideAbortDrainsStreamsAndWakesWorkers() throws InterruptedException {
-        var budget = new Http2ServerStream.InboundDataBudget(2, 20);
+        var budget = new Http2InboundDataBudget(2, 20);
         var firstQueue = new Http2ServerStream.InboundDataQueue(budget);
         var secondQueue = new Http2ServerStream.InboundDataQueue(budget);
         assertThat(firstQueue.offer(header(8), BufferData.create(new byte[8])),

@@ -617,7 +617,7 @@ class ConnectionStreamTest {
                                                         Http2Settings.builder().build(),
                                                         writer,
                                                         flowControl,
-                                                        new Http2ServerStream.InboundDataBudget(
+                                                        new Http2InboundDataBudget(
                                                                 1024,
                                                                 2L * config.initialWindowSize()),
                                                         new Http2ConnectionChecks(config, mock(Http2Connection.class)));

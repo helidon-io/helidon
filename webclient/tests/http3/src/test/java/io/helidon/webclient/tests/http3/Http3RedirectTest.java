@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
@@ -159,13 +160,42 @@ class Http3RedirectTest {
     }
 
     @Test
+    void genericServiceHandoffPreservesQueryAfter301() throws Exception {
+        assertMethodAndEntityPreserved(executeRedirect(Method.QUERY, 301, true), Method.QUERY);
+    }
+
+    @Test
+    void genericServiceHandoffPreservesQueryAfter302() throws Exception {
+        assertMethodAndEntityPreserved(executeRedirect(Method.QUERY, 302, true), Method.QUERY);
+    }
+
+    @Test
+    void genericServiceHandoffPreservesReplacementRepresentationHeadersAfter303() throws Exception {
+        RedirectCaptures captures = executeRedirect(Method.POST, 303, true, request -> {
+            request.headers().set(HeaderNames.CONTENT_TYPE, "application/service");
+            request.headers().set(HeaderNames.CONTENT_ENCODING, "identity");
+            request.headers().set(HeaderNames.CONTENT_LANGUAGE, "fr");
+            request.headers().set(HeaderNames.CONTENT_LOCATION, "/service-representation");
+        });
+
+        assertRewrittenGet(captures.serviceRequest());
+        assertThat(captures.wireRequest().method(), is(Method.GET));
+        assertThat(captures.wireRequest().body(), is(new byte[0]));
+        assertThat(captures.wireRequest().contentType(), is("application/service"));
+        assertThat(captures.wireRequest().contentEncoding(), is("identity"));
+        assertThat(captures.wireRequest().contentLanguage(), is("fr"));
+        assertThat(captures.wireRequest().contentLocation(), is("/service-representation"));
+        assertThat(captures.serviceInvocations(), is(2));
+    }
+
+    @Test
     void shouldPreservePostBodyAndExpectAfter307() throws Exception {
-        assertPostPreserved(executeRedirect(Method.POST, 307, false));
+        assertMethodAndEntityPreserved(executeRedirect(Method.POST, 307, false), Method.POST);
     }
 
     @Test
     void shouldPreservePostBodyAndExpectAfter308() throws Exception {
-        assertPostPreserved(executeRedirect(Method.POST, 308, false));
+        assertMethodAndEntityPreserved(executeRedirect(Method.POST, 308, false), Method.POST);
     }
 
     private static void assertRewrittenToGet(RedirectCaptures captures) {
@@ -176,11 +206,11 @@ class Http3RedirectTest {
         assertThat(captures.serviceInvocations(), is(2));
     }
 
-    private static void assertPostPreserved(RedirectCaptures captures) {
-        assertThat(captures.serviceRequest().method(), is(Method.POST));
+    private static void assertMethodAndEntityPreserved(RedirectCaptures captures, Method method) {
+        assertThat(captures.serviceRequest().method(), is(method));
         assertThat(captures.serviceRequest().contentLength(), is(Integer.toString(PAYLOAD.length)));
         assertThat(captures.serviceRequest().transferEncoding(), is(false));
-        assertThat(captures.wireRequest().method(), is(Method.POST));
+        assertThat(captures.wireRequest().method(), is(method));
         assertThat(captures.wireRequest().contentLength(), is(Integer.toString(PAYLOAD.length)));
         assertThat(captures.wireRequest().transferEncoding(), is(false));
         assertThat(captures.wireRequest().expectContinue(), is(true));
@@ -1120,7 +1150,16 @@ class Http3RedirectTest {
     }
 
     private static RedirectCaptures executeRedirect(Method method, int statusCode, boolean genericClient) throws Exception {
+        return executeRedirect(method, statusCode, genericClient, _ -> {
+        });
+    }
+
+    private static RedirectCaptures executeRedirect(Method method,
+                                                     int statusCode,
+                                                     boolean genericClient,
+                                                     Consumer<WebClientServiceRequest> redirectService) throws Exception {
         Status redirectStatus = switch (statusCode) {
+            case 301 -> Status.MOVED_PERMANENTLY_301;
             case 302 -> Status.FOUND_302;
             case 303 -> Status.SEE_OTHER_303;
             case 307 -> Status.TEMPORARY_REDIRECT_307;
@@ -1139,7 +1178,7 @@ class Http3RedirectTest {
                             .send();
                 })
                 .get(TARGET_PATH, (request, response) -> captureRedirectRequest(request, response, wireRequest))
-                .post(TARGET_PATH, (request, response) -> captureRedirectRequest(request, response, wireRequest)))) {
+                .route(method, TARGET_PATH, (request, response) -> captureRedirectRequest(request, response, wireRequest)))) {
             WebClientService service = (chain, request) -> {
                 serviceInvocations.incrementAndGet();
                 if (TARGET_PATH.equals(request.uri().path().path())) {
@@ -1165,6 +1204,7 @@ class Http3RedirectTest {
                             request.headers().remove(HeaderNames.CONTENT_LENGTH);
                         }
                     }
+                    redirectService.accept(request);
                 } else {
                     // Transfer-Encoding is retained on the reusable request so the redirect copy must remove it.
                     request.headers().remove(HeaderNames.TRANSFER_ENCODING);

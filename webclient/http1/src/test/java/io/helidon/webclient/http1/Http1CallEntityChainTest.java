@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +43,8 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -115,7 +118,8 @@ class Http1CallEntityChainTest {
         }
 
         @Override
-        protected WebClientServiceResponse invokeServices(WebClientService.WireProtocolChain httpCallChain,
+        protected WebClientServiceResponse invokeServices(WebClient webClient,
+                                                          WebClientService.TransportChain httpCallChain,
                                                           CompletableFuture<WebClientServiceRequest> whenSent,
                                                           CompletableFuture<WebClientServiceResponse> whenComplete,
                                                           ClientUri usedUri,
@@ -182,12 +186,13 @@ class Http1CallEntityChainTest {
         }
 
         @Override
-        protected WebClientServiceResponse invokeServices(WebClientService.WireProtocolChain httpCallChain,
+        protected WebClientServiceResponse invokeServices(WebClient webClient,
+                                                          WebClientService.TransportChain httpCallChain,
                                                           CompletableFuture<WebClientServiceRequest> whenSent,
                                                           CompletableFuture<WebClientServiceResponse> whenComplete,
                                                           ClientUri usedUri,
                                                           Consumer<WebClientServiceRequest> requestPrepare) {
-            WebClientService.WireProtocolChain replacement = new WebClientService.WireProtocolChain() {
+            WebClientService.TransportChain replacement = new WebClientService.TransportChain() {
                 @Override
                 public WebClientServiceResponse proceed(WebClientServiceRequest request) {
                     serviceRequest = request;
@@ -212,8 +217,14 @@ class Http1CallEntityChainTest {
                 public String protocolId() {
                     return httpCallChain.protocolId();
                 }
+
+                @Override
+                public Optional<WebClientProtocolResponse> protocolResponse(WebClientServiceResponse response) {
+                    return Optional.empty();
+                }
             };
-            return super.invokeServices(replacement,
+            return super.invokeServices(webClient,
+                                        replacement,
                                         whenSent,
                                         whenComplete,
                                         usedUri,

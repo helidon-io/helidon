@@ -500,7 +500,7 @@ class Http2ServerStreamSniTest {
                                           windowUpdates,
                                           sniContext(),
                                           List.of(),
-                                          new Http2ServerStream.InboundDataBudget(1024, 16384),
+                                          new Http2InboundDataBudget(1024, 16384),
                                           streamId -> {
                                               activeWhenResetRegistered.set(streams.isActive(streamId));
                                               locallyResetStreams.add(streamId);
@@ -950,7 +950,7 @@ class Http2ServerStreamSniTest {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingStreamWriter writer = new RecordingStreamWriter();
         List<Integer> locallyResetStreams = new ArrayList<>();
-        var budget = new Http2ServerStream.InboundDataBudget(256, 1024);
+        var budget = new Http2InboundDataBudget(256, 1024);
         Http2ServerStream stream = stream(streams,
                                           writer,
                                           new ArrayList<>(),
@@ -1008,7 +1008,7 @@ class Http2ServerStreamSniTest {
         }).when(handler).rstStream(any(Http2RstStream.class));
         when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
         Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> new SubProtocolResult(true, handler);
-        var budget = new Http2ServerStream.InboundDataBudget(1, 1);
+        var budget = new Http2InboundDataBudget(1, 1);
         Http2ServerStream stream = stream(streams,
                                           writer,
                                           new ArrayList<>(),
@@ -1070,7 +1070,7 @@ class Http2ServerStreamSniTest {
                                           new ArrayList<>(),
                                           sniContext(),
                                           List.of(selector),
-                                          new Http2ServerStream.InboundDataBudget(1, 8192),
+                                          new Http2InboundDataBudget(1, 8192),
                                           _ -> { });
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
@@ -1127,7 +1127,7 @@ class Http2ServerStreamSniTest {
                                           new ArrayList<>(),
                                           sniContext(),
                                           List.of(selector),
-                                          new Http2ServerStream.InboundDataBudget(1, 1),
+                                          new Http2InboundDataBudget(1, 1),
                                           _ -> { });
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
@@ -1171,7 +1171,7 @@ class Http2ServerStreamSniTest {
         }).when(handler).rstStream(any(Http2RstStream.class));
         when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
         Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> new SubProtocolResult(true, handler);
-        var budget = new Http2ServerStream.InboundDataBudget(1, 1);
+        var budget = new Http2InboundDataBudget(1, 1);
         Http2ServerStream stream = stream(streams,
                                           writer,
                                           new ArrayList<>(),
@@ -1228,7 +1228,7 @@ class Http2ServerStreamSniTest {
                                           new ArrayList<>(),
                                           sniContext(),
                                           List.of(selector),
-                                          new Http2ServerStream.InboundDataBudget(1, 8192),
+                                          new Http2InboundDataBudget(1, 8192),
                                           _ -> { });
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
@@ -1267,7 +1267,7 @@ class Http2ServerStreamSniTest {
                                           new ArrayList<>(),
                                           sniContext(),
                                           List.of(selector),
-                                          new Http2ServerStream.InboundDataBudget(1, 8192),
+                                          new Http2InboundDataBudget(1, 8192),
                                           _ -> { });
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
@@ -1336,7 +1336,7 @@ class Http2ServerStreamSniTest {
                                           new ArrayList<>(),
                                           sniContext(),
                                           List.of(selector),
-                                          new Http2ServerStream.InboundDataBudget(1, 8192),
+                                          new Http2InboundDataBudget(1, 8192),
                                           _ -> { });
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
@@ -1392,7 +1392,7 @@ class Http2ServerStreamSniTest {
                                           new ArrayList<>(),
                                           sniContext(),
                                           List.of(selector),
-                                          new Http2ServerStream.InboundDataBudget(1, 8192),
+                                          new Http2InboundDataBudget(1, 8192),
                                           _ -> { });
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
@@ -1442,7 +1442,7 @@ class Http2ServerStreamSniTest {
                                           new ArrayList<>(),
                                           sniContext(),
                                           List.of(selector),
-                                          new Http2ServerStream.InboundDataBudget(1, 8192),
+                                          new Http2InboundDataBudget(1, 8192),
                                           _ -> { });
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
@@ -1503,7 +1503,7 @@ class Http2ServerStreamSniTest {
                                           new ArrayList<>(),
                                           sniContext(),
                                           List.of(selector),
-                                          new Http2ServerStream.InboundDataBudget(1, 8192),
+                                          new Http2InboundDataBudget(1, 8192),
                                           _ -> { });
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
@@ -1533,7 +1533,7 @@ class Http2ServerStreamSniTest {
         RecordingStreamWriter writer = new RecordingStreamWriter();
         List<WindowUpdate> windowUpdates = new ArrayList<>();
         List<Integer> locallyResetStreams = new ArrayList<>();
-        var budget = new Http2ServerStream.InboundDataBudget(1, 8192);
+        var budget = new Http2InboundDataBudget(1, 8192);
         Http2SubProtocolSelector.SubProtocolHandler handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
         doThrow(failure).when(handler).init();
         Http2SubProtocolSelector selector = (ctx,
@@ -1636,7 +1636,7 @@ class Http2ServerStreamSniTest {
                       sniContext,
                       resetTracker,
                       subProtocolSelectors,
-                      new Http2ServerStream.InboundDataBudget(1024, 2L * initialWindowSize),
+                      new Http2InboundDataBudget(1024, 2L * initialWindowSize),
                       initialWindowSize);
     }
 
@@ -1645,7 +1645,7 @@ class Http2ServerStreamSniTest {
                                             List<WindowUpdate> windowUpdates,
                                             SniContext sniContext,
                                             List<Http2SubProtocolSelector> subProtocols,
-                                            Http2ServerStream.InboundDataBudget budget,
+                                            Http2InboundDataBudget budget,
                                             IntConsumer locallyResetStreams) {
         return stream(streams,
                       writer,
@@ -1663,7 +1663,7 @@ class Http2ServerStreamSniTest {
                                             SniContext sniContext,
                                             Http2ServerStream.LocallyResetStreamTracker resetTracker,
                                             List<Http2SubProtocolSelector> subProtocols,
-                                            Http2ServerStream.InboundDataBudget budget,
+                                            Http2InboundDataBudget budget,
                                             int initialWindowSize) {
         Http2Config config = Http2Config.builder()
                 .initialWindowSize(initialWindowSize)
