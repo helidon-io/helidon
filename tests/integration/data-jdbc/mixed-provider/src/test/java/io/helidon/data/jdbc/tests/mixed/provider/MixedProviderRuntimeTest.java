@@ -33,7 +33,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * End-to-end mixed-provider application validation.
  */
 @ServerTest
-@SuppressWarnings("helidon:api:preview")
 class MixedProviderRuntimeTest {
 
     private final Http1Client client;

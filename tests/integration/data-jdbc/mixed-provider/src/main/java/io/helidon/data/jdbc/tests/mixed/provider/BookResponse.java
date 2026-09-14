@@ -24,6 +24,5 @@ import io.helidon.json.binding.Json;
  * @param title book title
  */
 @Json.Entity
-@SuppressWarnings("helidon:api:preview")
 public record BookResponse(int id, String title) {
 }

@@ -31,7 +31,6 @@ import io.helidon.transaction.Tx;
 /**
  * Uses the public JDBC client to exercise generated-key mapping variants.
  */
-@SuppressWarnings("helidon:api:preview")
 @Service.Singleton
 public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOperations {
     private static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.generated-key-column";

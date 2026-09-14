@@ -26,6 +26,5 @@ import io.helidon.json.binding.Json;
  * @param available available quantity
  */
 @Json.Entity
-@SuppressWarnings("helidon:api:preview")
 public record InventoryResponse(String access, int id, String name, int available) {
 }

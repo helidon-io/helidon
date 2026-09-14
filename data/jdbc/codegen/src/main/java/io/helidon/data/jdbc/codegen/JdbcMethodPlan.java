@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Stream;
+import java.util.stream.BaseStream;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
@@ -42,9 +42,9 @@ import io.helidon.common.types.TypedElementInfo;
  */
 final class JdbcMethodPlan {
 
-    private static final Set<TypeName> UNSUPPORTED_RESULT_TYPES = Set.of(TypeNames.SET,
-                                                                        TypeNames.MAP,
-                                                                        TypeName.create(Stream.class));
+    private static final Set<TypeName> UNSUPPORTED_RESULT_SUPERTYPES = Set.of(TypeNames.COLLECTION,
+                                                                             TypeNames.MAP,
+                                                                             TypeName.create(BaseStream.class));
 
     private final TypedElementInfo method;
     private final Operation operation;
@@ -127,7 +127,7 @@ final class JdbcMethodPlan {
             operation = Operation.GENERATED_KEYS;
         }
 
-        validateReturn(method, operation, result);
+        validateReturn(method, roundContext.typeHierarchyResolver(), operation, result);
         validateMappedTypeParameters(method, operation, result.mappedType());
         List<String> generatedColumns = generatedColumns(method, generatedKeys);
         Mapping mapping = mapping(method,
@@ -300,10 +300,14 @@ final class JdbcMethodPlan {
      * Validates operation-specific return rules.
      *
      * @param method repository method
+     * @param typeResolver type hierarchy resolver
      * @param operation resolved operation
      * @param result return plan
      */
-    private static void validateReturn(TypedElementInfo method, Operation operation, Return result) {
+    private static void validateReturn(TypedElementInfo method,
+                                       TypeHierarchyResolver typeResolver,
+                                       Operation operation,
+                                       Return result) {
         if (operation == Operation.UPDATE) {
             TypeName type = method.typeName();
             if (!type.equals(TypeNames.PRIMITIVE_VOID)
@@ -316,11 +320,18 @@ final class JdbcMethodPlan {
         if (method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
             throw failure(method, "QUERY and generated keys operations must return a materialized result.");
         }
-        TypeName rawType = result.mappedType().genericTypeName();
-        if (UNSUPPORTED_RESULT_TYPES.contains(rawType)
-                || (result.mappedType().array() && !JdbcScalarTypes.isScalar(result.mappedType()))) {
+        TypeName mappedType = result.mappedType();
+        if (!mappedType.primitive()
+                && !mappedType.array()
+                && UNSUPPORTED_RESULT_SUPERTYPES.stream()
+                        .anyMatch(type -> typeResolver.resolveSupertype(mappedType, type).isPresent())) {
             throw failure(method, "JDBC repositories do not support the return type '"
-                    + result.mappedType().resolvedName() + "'.");
+                    + method.typeName().resolvedName() + "'. The only supported collection return type is "
+                    + "java.util.List<T>. Collection, Map, and Stream types are not supported as row types.");
+        }
+        if (mappedType.array() && !JdbcScalarTypes.isScalar(mappedType)) {
+            throw failure(method, "JDBC repositories do not support the return type '"
+                    + mappedType.resolvedName() + "'.");
         }
     }
 
@@ -454,8 +465,8 @@ final class JdbcMethodPlan {
             validateRecordComponents(method, components);
             return new Mapping(MappingKind.RECORD, components);
         }
-        throw failure(method, "The JDBC result type '" + mappedType.resolvedName()
-                + "' must be scalar, be a record, or declare @Jdbc.RowMapper.");
+        throw failure(method, "The JDBC mapped row type '" + mappedType.resolvedName()
+                + "' must be a supported scalar, be a record, or declare @Jdbc.RowMapper.");
     }
 
     /**

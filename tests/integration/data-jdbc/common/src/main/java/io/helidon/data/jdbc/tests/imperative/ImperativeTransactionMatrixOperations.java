@@ -27,7 +27,6 @@ import io.helidon.transaction.Tx;
 /**
  * Executes the transaction matrix with the public imperative JDBC client.
  */
-@SuppressWarnings("helidon:api:preview")
 @Service.Singleton
 public final class ImperativeTransactionMatrixOperations implements TransactionMatrixOperations {
     private static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.generated-key-column";

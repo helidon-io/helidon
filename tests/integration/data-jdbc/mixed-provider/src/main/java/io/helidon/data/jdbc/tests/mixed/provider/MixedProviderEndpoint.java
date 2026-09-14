@@ -15,7 +15,6 @@
  */
 package io.helidon.data.jdbc.tests.mixed.provider;
 
-import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.data.Data;
 import io.helidon.data.jdbc.JdbcClient;
@@ -26,7 +25,6 @@ import io.helidon.webserver.http.RestServer;
 /**
  * HTTP facade exercising both repository providers and both JDBC API styles.
  */
-@SuppressWarnings(Api.SUPPRESS_INCUBATING)
 @Http.Path("/mixed")
 @Service.Singleton
 @RestServer.Endpoint

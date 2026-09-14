@@ -51,14 +51,14 @@ class JdbcOffsetTemporalGenerationTest {
             assertRejected(javaType,
                            "query-result",
                            "@Jdbc.Statement(\"select VALUE from TEST_VALUE\") " + javaType + " find();",
-                           "The JDBC result type '" + javaType
-                                   + "' must be scalar, be a record, or declare @Jdbc.RowMapper.");
+                           "The JDBC mapped row type '" + javaType
+                                   + "' must be a supported scalar, be a record, or declare @Jdbc.RowMapper.");
             assertRejected(javaType,
                            "generated-key",
                            "@Jdbc.Statement(\"insert into TEST_VALUE default values\") "
                                    + "@Jdbc.GeneratedKeys " + javaType + " insert();",
-                           "The JDBC result type '" + javaType
-                                   + "' must be scalar, be a record, or declare @Jdbc.RowMapper.");
+                           "The JDBC mapped row type '" + javaType
+                                   + "' must be a supported scalar, be a record, or declare @Jdbc.RowMapper.");
             assertRejected(javaType,
                            "record-component",
                            "record Result(" + javaType + " value) {} "

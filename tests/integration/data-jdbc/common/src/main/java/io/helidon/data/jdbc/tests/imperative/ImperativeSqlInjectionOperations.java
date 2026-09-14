@@ -28,7 +28,6 @@ import io.helidon.service.registry.Service;
 /**
  * Uses the public JDBC client to exercise SQL-injection safety with bound values.
  */
-@SuppressWarnings("helidon:api:preview")
 @Service.Singleton
 public final class ImperativeSqlInjectionOperations implements SqlInjectionOperations {
     private static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.generated-key-column";
