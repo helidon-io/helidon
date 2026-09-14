@@ -77,9 +77,9 @@ Open ID Connect configuration
 </tr>
 <tr>
 <td>
-<a id="client-credentials-config"></a>
+<a id="client-credentials"></a>
 <a href="io.helidon.security.providers.oidc.common.ClientCredentialsConfig.md">
-<code>client-<wbr>credentials-<wbr>config</code>
+<code>client-<wbr>credentials</code>
 </a>
 </td>
 <td>
@@ -307,7 +307,7 @@ Open ID Connect configuration
 <code>String</code>
 </td>
 <td>
-<code>JSESSIONID_<wbr>3</code>
+<code>OIDC_<wbr>STATE</code>
 </td>
 <td>The name of the cookie to use for the state storage</td>
 </tr>
