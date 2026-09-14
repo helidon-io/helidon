@@ -25,13 +25,17 @@ Helidon WebClient provides the following features:
   WebClient keeps redirect-sensitive headers stripped for the rest of the
   chain and replaces source-scoped cookies with cookies selected for each
   actual target. By default, WebClient rejects cross-origin `307` and `308`
-  redirects with a request entity, because those status codes would resend the
-  entity to the new origin. Applications can explicitly enable such replay
+  redirects with a request entity, and `301` and `302` redirects for `QUERY`,
+  because these redirects would resend the entity to the new origin.
+  Applications can explicitly enable such replay
   using `follow-cross-origin-entity-redirects`. A one-shot streaming entity
-  cannot be replayed after transmission has begun. For an
-  `Expect: 100-continue` redirect received before transmission, HTTP/1.1 and
-  HTTP/2 can buffer up to `max-in-memory-entity` bytes and send that still-unsent
-  entity to the target.
+  cannot be replayed after transmission has begun. Generic `WebClient` also
+  refuses to invoke a streaming producer again once it has started, even if an
+  early redirect prevented payload transmission. For an `Expect: 100-continue`
+  redirect received before transmission, dedicated `Http1Client` and
+  `Http2Client` instances can continue the same producer, buffering up to
+  `max-in-memory-entity` bytes when needed to send the still-unsent entity to
+  the target.
 
 - **Tracing and security propagation** Automatically propagates the configured
   tracing and security settings of the Helidon WebServer to the WebClient and

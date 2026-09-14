@@ -305,7 +305,7 @@ class Http2ServerStreamObservationTest {
                                            Http2Settings.builder().build(),
                                            writer,
                                            flowControl,
-                                           new Http2ServerStream.InboundDataBudget(16, 65536),
+                                           new Http2InboundDataBudget(16, 65536),
                                            new Http2ConnectionChecks(config, mock(Http2Connection.class)));
         streams.put(new Http2Connection.StreamContext(STREAM_ID, config.initialWindowSize(), stream));
         List<StreamOutcome> outcomes = new ArrayList<>();

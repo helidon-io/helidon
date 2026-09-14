@@ -539,16 +539,25 @@ class Http1ClientTest {
 
     @Test
     void testOutputStreamChainedRedirectsWithCustomReasonPhrases() {
-        try (HttpClientResponse response = injectedHttp1client.put("/redirectChainStart")
+        AtomicInteger producerInvocations = new AtomicInteger();
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .build();
+        try (HttpClientResponse response = client.put("/redirectChainStart")
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
                 .header(REQUEST_METADATA_HEADER, "preserved")
-                .sendExpectContinue(true)
                 .outputStream(output -> {
+                    producerInvocations.incrementAndGet();
                     output.write("Test entity".getBytes(StandardCharsets.UTF_8));
                     output.close();
                 })) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("Test entity"));
+            assertThat("HTTP/1 must continue the original producer across redirects", producerInvocations.get(), is(1));
+        } finally {
+            client.closeResource();
         }
     }
 
@@ -603,16 +612,50 @@ class Http1ClientTest {
     @ParameterizedTest
     @ValueSource(ints = {301, 302})
     void queryRedirectPreservesOutputStreamEntity(int redirectStatus) {
-        try (HttpClientResponse response = injectedHttp1client.method(Method.QUERY)
+        AtomicInteger producerInvocations = new AtomicInteger();
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .build();
+        try (HttpClientResponse response = client.method(Method.QUERY)
                 .uri("/queryRedirect" + redirectStatus)
                 .header(HeaderNames.CONTENT_TYPE, QUERY_CONTENT_TYPE)
                 .outputStream(output -> {
+                    producerInvocations.incrementAndGet();
                     output.write(QUERY_ENTITY.getBytes(StandardCharsets.UTF_8));
                     output.close();
                 })) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(Method.QUERY + ":" + QUERY_CONTENT_TYPE + ":" + QUERY_ENTITY));
+            assertThat("HTTP/1 must continue the original QUERY producer after redirect",
+                       producerInvocations.get(),
+                       is(1));
+        } finally {
+            client.closeResource();
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {301, 302, 307})
+    void genericRedirectRejectsClaimedOutputStreamEntity(int redirectStatus) {
+        AtomicInteger producerInvocations = new AtomicInteger();
+        HttpClientRequest request = injectedHttp1client.method(redirectStatus == 307 ? Method.PUT : Method.QUERY)
+                .uri(redirectStatus == 307 ? "/redirectChainStart" : "/queryRedirect" + redirectStatus)
+                .header(HeaderNames.CONTENT_TYPE, redirectStatus == 307 ? "text/plain" : QUERY_CONTENT_TYPE)
+                .header(REQUEST_METADATA_HEADER, "preserved")
+                .sendExpectContinue(true);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                       () -> request.outputStream(output -> {
+                                                           producerInvocations.incrementAndGet();
+                                                           output.write(QUERY_ENTITY.getBytes(StandardCharsets.UTF_8));
+                                                           output.close();
+                                                       }));
+
+        assertThat(exception.getMessage(), is("Cannot replay a one-shot request body after redirect status "
+                                                     + redirectStatus + "."));
+        assertThat("Generic redirects must not invoke a claimed producer again", producerInvocations.get(), is(1));
     }
 
     @Test

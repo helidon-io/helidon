@@ -466,6 +466,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
+    Http1ClientResponseImpl redirectProbe() {
+        return (Http1ClientResponseImpl) requestWithoutRouteCleanup();
+    }
+
     private Http1ClientResponseImpl invokePreparedEntity(byte[] entity) {
         if (followRedirects()) {
             return RedirectionProcessor.invokeWithFollowRedirects(this, entity);
