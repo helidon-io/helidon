@@ -45,10 +45,10 @@
     </licenses>
 
     <scm>
-        <developerConnection>scm:git:git@github.com:oracle/helidon.git</developerConnection>
-        <connection>scm:git:git@github.com:oracle/helidon.git</connection>
+        <developerConnection>scm:git:git@github.com:helidon-io/helidon.git</developerConnection>
+        <connection>scm:git:git@github.com:helidon-io/helidon.git</connection>
         <tag>HEAD</tag>
-        <url>https://github.com/oracle/helidon</url>
+        <url>https://github.com/helidon-io/helidon</url>
     </scm>
 
     <developers>
