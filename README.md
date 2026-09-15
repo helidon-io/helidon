@@ -20,9 +20,9 @@ Your application is a Java SE program running on the
 new Helidon Níma WebServer that has been written from the ground up to
 use Java 27 virtual threads. With Helidon 27 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
 
-The Helidon SE API in Helidon 4 has changed significantly from Helidon 3. The use of virtual threads has enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Earlier Helidon SE code will require modification to run on these new APIs. For more information see the [Helidon SE Upgrade Guide](https://helidon.io/docs/v4/se/guides/upgrade_4x).
+Upgrading from Helidon 4? See the [Helidon 27 Upgrade Guide](docs/guides/upgrade/27.md) for changes to dependencies, APIs, and application configuration.
 
-New to Helidon? Then jump in and [get started](https://helidon.io/docs/v4/about/prerequisites).
+New to Helidon? Then jump in and [get started](docs/get-started.md).
 
 Java 27 is required to use Helidon 27.
 
@@ -33,7 +33,7 @@ Helidon is available under Apache License 2.0.
 
 ## Documentation
 
-Latest documentation and javadocs are available at <https://helidon.io/docs/latest>.
+Documentation for this version is available in [docs](docs/README.md). The latest released documentation and Javadocs are available at <https://helidon.io/docs/latest>.
 
 Helidon White Paper is available [here](https://www.oracle.com/a/ocom/docs/technical-brief--helidon-report.pdf).
 
