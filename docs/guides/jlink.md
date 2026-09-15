@@ -10,8 +10,8 @@ application using Helidon’s support for the JDK’s `jlink` tool.
 
 ## Introduction
 
-JDK 9 introduced the [`jlink`][jlink] command that supports assembling a set of
-modules and their dependencies into a custom runtime image. The
+The [`jlink`][jlink] command supports assembling a set of modules and their
+dependencies into a custom runtime image. The
 `helidon-maven-plugin` has support for easily creating a custom runtime image
 for your Helidon application resulting in a smaller, better performing runtime.
 
