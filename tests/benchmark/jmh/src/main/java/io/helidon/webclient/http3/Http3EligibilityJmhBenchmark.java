@@ -130,18 +130,26 @@ public class Http3EligibilityJmhBenchmark {
         return session;
     }
 
-    /** Shared bounded cache and client-local TLS compatibility state. */
+    /**
+     * Shared bounded cache and client-local TLS compatibility state.
+     */
     @State(Scope.Benchmark)
     public static class EligibilityState {
-        /** Number of routes retained in the shared session index. */
+        /**
+         * Number of routes retained in the shared session index.
+         */
         @Param({"1000", "10000"})
         public int routeCount;
 
-        /** Number of clients sharing the session index. */
+        /**
+         * Number of clients sharing the session index.
+         */
         @Param({"1", "8"})
         public int clientCount;
 
-        /** Number of request-specific TLS identities retained by each client. */
+        /**
+         * Number of request-specific TLS identities retained by each client.
+         */
         @Param({"1", "8"})
         public int tlsContextsPerClient;
 
@@ -151,7 +159,9 @@ public class Http3EligibilityJmhBenchmark {
         private int[] clientByRoute;
         private int[] tlsByRoute;
 
-        /** Populates all bounded indexes and warms each client-local TLS entry. */
+        /**
+         * Populates all bounded indexes and warms each client-local TLS entry.
+         */
         @Setup(Level.Trial)
         public void setUp() {
             int tlsContextCount = Math.multiplyExact(clientCount, tlsContextsPerClient);
@@ -209,7 +219,9 @@ public class Http3EligibilityJmhBenchmark {
             assertObservableState();
         }
 
-        /** Verifies reads did not change observable session or TLS state. */
+        /**
+         * Verifies reads did not change observable session or TLS state.
+         */
         @TearDown(Level.Trial)
         public void tearDown() {
             assertObservableState();
@@ -260,7 +272,9 @@ public class Http3EligibilityJmhBenchmark {
         }
     }
 
-    /** Shared full session index for the unchanged-generation cold-route path. */
+    /**
+     * Shared full session index for the unchanged-generation cold-route path.
+     */
     @State(Scope.Benchmark)
     public static class ColdRouteState {
         private static final int ROUTE_COUNT = 10_000;
@@ -272,7 +286,9 @@ public class Http3EligibilityJmhBenchmark {
         private int oldestRoute;
         private int nextRoute;
 
-        /** Populates one full TLS bucket with 10,000 independently addressable routes. */
+        /**
+         * Populates one full TLS bucket with 10,000 independently addressable routes.
+         */
         @Setup(Level.Trial)
         public void setUp() {
             tls = Tls.builder().build();
@@ -295,7 +311,9 @@ public class Http3EligibilityJmhBenchmark {
             assertObservableState();
         }
 
-        /** Verifies per-key, route-index, and TLS-index behavior after measured mutations. */
+        /**
+         * Verifies per-key, route-index, and TLS-index behavior after measured mutations.
+         */
         @TearDown(Level.Trial)
         public void tearDown() {
             assertObservableState();
@@ -328,12 +346,16 @@ public class Http3EligibilityJmhBenchmark {
         }
     }
 
-    /** Thread-local route selection without shared benchmark bookkeeping. */
+    /**
+     * Thread-local route selection without shared benchmark bookkeeping.
+     */
     @State(Scope.Thread)
     public static class RouteCursor {
         private int next;
 
-        /** Assigns a distinct initial route to each JMH worker. */
+        /**
+         * Assigns a distinct initial route to each JMH worker.
+         */
         @Setup(Level.Trial)
         public void setUp(ThreadParams threadParams) {
             next = threadParams.getThreadIndex();

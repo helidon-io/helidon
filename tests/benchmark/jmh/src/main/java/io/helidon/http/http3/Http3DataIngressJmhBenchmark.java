@@ -247,7 +247,9 @@ public class Http3DataIngressJmhBenchmark {
         private static final int TRAILER_SIZE = 8;
         private static final byte TRAILER_BYTE = 0x5A;
 
-        /** DATA payload size. */
+        /**
+         * DATA payload size.
+         */
         @Param({"1024", "16384", "1048576"})
         public int payloadSize;
 

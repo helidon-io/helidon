@@ -266,19 +266,33 @@ public class Http3SmallWriteJmhBenchmark {
      * Coupled body and chunk sizes keep the benchmark matrix bounded while covering short and sustained exchanges.
      */
     public enum Shape {
-        /** Eight KiB body written one byte at a time. */
+        /**
+         * Eight KiB body written one byte at a time.
+         */
         SHORT_8K_1(8 * 1024, 1),
-        /** Eight KiB body written 16 bytes at a time. */
+        /**
+         * Eight KiB body written 16 bytes at a time.
+         */
         SHORT_8K_16(8 * 1024, 16),
-        /** Eight KiB body written 256 bytes at a time. */
+        /**
+         * Eight KiB body written 256 bytes at a time.
+         */
         SHORT_8K_256(8 * 1024, 256),
-        /** Eight KiB body written in MTU-adjacent 1200-byte chunks. */
+        /**
+         * Eight KiB body written in MTU-adjacent 1200-byte chunks.
+         */
         SHORT_8K_1200(8 * 1024, 1200),
-        /** Eight KiB body written 4096 bytes at a time. */
+        /**
+         * Eight KiB body written 4096 bytes at a time.
+         */
         SHORT_8K_4096(8 * 1024, 4096),
-        /** Sustained 128 KiB body written in MTU-adjacent 1200-byte chunks. */
+        /**
+         * Sustained 128 KiB body written in MTU-adjacent 1200-byte chunks.
+         */
         SUSTAINED_128K_1200(128 * 1024, 1200),
-        /** Sustained 128 KiB body written 4096 bytes at a time. */
+        /**
+         * Sustained 128 KiB body written 4096 bytes at a time.
+         */
         SUSTAINED_128K_4096(128 * 1024, 4096);
 
         private final int bodySize;

@@ -74,7 +74,9 @@ public class QuicStreamIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class IngressState {
-        /** STREAM payload size. */
+        /**
+         * STREAM payload size.
+         */
         @Param({"1024", "16384", "64000"})
         public int payloadSize;
 

@@ -1616,7 +1616,9 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
      * Explicit TLS server-name policy rejection.
      */
     public static final class RejectedTlsSelectionException extends IllegalArgumentException {
-        /** Whether this rejection sends the TLS server-name alert. */
+        /**
+         * Whether this rejection sends the TLS server-name alert.
+         */
         private final boolean sendUnrecognizedNameAlert;
 
         /**

@@ -108,7 +108,9 @@ public class QuicMaxStreamsJmhBenchmark {
      */
     @State(Scope.Benchmark)
     public static class SharedCreditState {
-        /** Initial remotely initiated stream limit. */
+        /**
+         * Initial remotely initiated stream limit.
+         */
         @Param({"64"})
         public long initialLimit;
 
@@ -129,7 +131,9 @@ public class QuicMaxStreamsJmhBenchmark {
      */
     @State(Scope.Benchmark)
     public static class TwoDirectionPollingState {
-        /** Initial remotely initiated stream limit. */
+        /**
+         * Initial remotely initiated stream limit.
+         */
         @Param({"64"})
         public long initialLimit;
 

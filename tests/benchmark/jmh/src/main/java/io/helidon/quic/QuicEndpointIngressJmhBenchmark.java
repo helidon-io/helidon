@@ -280,23 +280,33 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class DatagramState {
-        /** Endpoint channel strategy. */
+        /**
+         * Endpoint channel strategy.
+         */
         @Param({"NIO_SELECTOR", "VIRTUAL_THREAD"})
         public String strategy;
 
-        /** Executor used to drain the endpoint ingress queue. */
+        /**
+         * Executor used to drain the endpoint ingress queue.
+         */
         @Param({"VIRTUAL_PER_TASK", "PLATFORM_SINGLE"})
         public ExecutorMode executorMode;
 
-        /** Number of registered connection-ID routes. */
+        /**
+         * Number of registered connection-ID routes.
+         */
         @Param({"1", "64", "1024"})
         public int routeCount;
 
-        /** UDP payload size. */
+        /**
+         * UDP payload size.
+         */
         @Param({"64", "1200", "1452"})
         public int packetSize;
 
-        /** Number of datagrams in one measured burst. */
+        /**
+         * Number of datagrams in one measured burst.
+         */
         @Param({"1", "32", "512"})
         public int batchSize;
 
@@ -327,7 +337,9 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class MatchedState extends DatagramState {
-        /** Route access pattern. */
+        /**
+         * Route access pattern.
+         */
         @Param({"HOT", "ROTATING"})
         public RouteAccess routeAccess;
     }
@@ -337,23 +349,33 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class InitialState {
-        /** Endpoint channel strategy. */
+        /**
+         * Endpoint channel strategy.
+         */
         @Param({"NIO_SELECTOR", "VIRTUAL_THREAD"})
         public String strategy;
 
-        /** Executor used to drain the endpoint ingress queue. */
+        /**
+         * Executor used to drain the endpoint ingress queue.
+         */
         @Param({"VIRTUAL_PER_TASK", "PLATFORM_SINGLE"})
         public ExecutorMode executorMode;
 
-        /** Number of registered connection-ID routes. */
+        /**
+         * Number of registered connection-ID routes.
+         */
         @Param({"1", "64", "1024"})
         public int routeCount;
 
-        /** UDP payload size. */
+        /**
+         * UDP payload size.
+         */
         @Param({"1200", "1452"})
         public int packetSize;
 
-        /** Number of datagrams in one measured burst. */
+        /**
+         * Number of datagrams in one measured burst.
+         */
         @Param({"1", "32", "512"})
         public int batchSize;
 
@@ -384,23 +406,33 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class OverloadState {
-        /** Endpoint channel strategy. */
+        /**
+         * Endpoint channel strategy.
+         */
         @Param({"NIO_SELECTOR", "VIRTUAL_THREAD"})
         public String strategy;
 
-        /** Executor used to drain the endpoint ingress queue. */
+        /**
+         * Executor used to drain the endpoint ingress queue.
+         */
         @Param({"VIRTUAL_PER_TASK"})
         public ExecutorMode executorMode;
 
-        /** Number of registered connection-ID routes. */
+        /**
+         * Number of registered connection-ID routes.
+         */
         @Param({"64"})
         public int routeCount;
 
-        /** UDP payload size. */
+        /**
+         * UDP payload size.
+         */
         @Param({"1452"})
         public int packetSize;
 
-        /** Number of datagrams in one offered burst. */
+        /**
+         * Number of datagrams in one offered burst.
+         */
         @Param({"16"})
         public int batchSize;
 
@@ -431,23 +463,33 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class OverloadObservationState {
-        /** Endpoint channel strategy. */
+        /**
+         * Endpoint channel strategy.
+         */
         @Param({"NIO_SELECTOR", "VIRTUAL_THREAD"})
         public String strategy;
 
-        /** Executor used to drain the endpoint ingress queue. */
+        /**
+         * Executor used to drain the endpoint ingress queue.
+         */
         @Param({"VIRTUAL_PER_TASK"})
         public ExecutorMode executorMode;
 
-        /** Number of registered connection-ID routes. */
+        /**
+         * Number of registered connection-ID routes.
+         */
         @Param({"64"})
         public int routeCount;
 
-        /** UDP payload size. */
+        /**
+         * UDP payload size.
+         */
         @Param({"1452"})
         public int packetSize;
 
-        /** Duration of the no-response offer window. */
+        /**
+         * Duration of the no-response offer window.
+         */
         @Param({"100"})
         public int offerMillis;
 
@@ -480,19 +522,27 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Benchmark)
     public static class SharedEndpointState {
-        /** Endpoint channel strategy. */
+        /**
+         * Endpoint channel strategy.
+         */
         @Param({"NIO_SELECTOR", "VIRTUAL_THREAD"})
         public String strategy;
 
-        /** Executor used to drain the endpoint ingress queue. */
+        /**
+         * Executor used to drain the endpoint ingress queue.
+         */
         @Param({"VIRTUAL_PER_TASK", "PLATFORM_SINGLE"})
         public ExecutorMode executorMode;
 
-        /** Total number of registered connection-ID routes. */
+        /**
+         * Total number of registered connection-ID routes.
+         */
         @Param({"64", "1024", "2048"})
         public int routeCount;
 
-        /** UDP payload size. */
+        /**
+         * UDP payload size.
+         */
         @Param({"64", "1200", "1452"})
         public int packetSize;
 
@@ -527,11 +577,15 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class SharedSenderState {
-        /** Number of datagrams in one measured burst. */
+        /**
+         * Number of datagrams in one measured burst.
+         */
         @Param({"1", "32", "512"})
         public int batchSize;
 
-        /** Route access pattern within this worker's route partition. */
+        /**
+         * Route access pattern within this worker's route partition.
+         */
         @Param({"HOT", "ROTATING"})
         public RouteAccess routeAccess;
 
@@ -622,7 +676,9 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Benchmark)
     public static class RawUdpState {
-        /** UDP payload size. */
+        /**
+         * UDP payload size.
+         */
         @Param({"64", "1200", "1452"})
         public int packetSize;
 
@@ -652,7 +708,9 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class RawUdpSenderState {
-        /** Number of datagrams in one measured burst. */
+        /**
+         * Number of datagrams in one measured burst.
+         */
         @Param({"1", "32", "512"})
         public int batchSize;
 
@@ -761,43 +819,63 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class OpenLoopEndpointState {
-        /** Endpoint channel strategy. */
+        /**
+         * Endpoint channel strategy.
+         */
         @Param({"NIO_SELECTOR", "VIRTUAL_THREAD"})
         public String strategy;
 
-        /** Executor used to drain the endpoint ingress queue. */
+        /**
+         * Executor used to drain the endpoint ingress queue.
+         */
         @Param({"VIRTUAL_PER_TASK"})
         public ExecutorMode executorMode;
 
-        /** Number of registered connection-ID routes. */
+        /**
+         * Number of registered connection-ID routes.
+         */
         @Param({"2048"})
         public int routeCount;
 
-        /** UDP payload size. */
+        /**
+         * UDP payload size.
+         */
         @Param({"64", "1452"})
         public int packetSize;
 
-        /** Aggregate scheduled packet rate across all senders during the offer window. */
+        /**
+         * Aggregate scheduled packet rate across all senders during the offer window.
+         */
         @Param({"50000", "75000", "100000", "125000", "150000"})
         public int targetPps;
 
-        /** Number of persistent paced sender threads and sockets. */
+        /**
+         * Number of persistent paced sender threads and sockets.
+         */
         @Param({"1"})
         public int senderCount;
 
-        /** Number of packet buffers rotated by each sender; the endpoint uses one registered route per buffer. */
+        /**
+         * Number of packet buffers rotated by each sender; the endpoint uses one registered route per buffer.
+         */
         @Param({"1"})
         public int senderWorkingSet;
 
-        /** Fixed offer-window duration. */
+        /**
+         * Fixed offer-window duration.
+         */
         @Param({"1000"})
         public int offerMillis;
 
-        /** Fixed post-offer drain duration. */
+        /**
+         * Fixed post-offer drain duration.
+         */
         @Param({"250"})
         public int drainMillis;
 
-        /** End-to-end latency threshold counted as late. */
+        /**
+         * End-to-end latency threshold counted as late.
+         */
         @Param({"1000"})
         public int lateMicros;
 
@@ -906,31 +984,45 @@ public class QuicEndpointIngressJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class OpenLoopRawState {
-        /** UDP payload size. */
+        /**
+         * UDP payload size.
+         */
         @Param({"64", "1452"})
         public int packetSize;
 
-        /** Aggregate scheduled packet rate across all senders during the offer window. */
+        /**
+         * Aggregate scheduled packet rate across all senders during the offer window.
+         */
         @Param({"50000", "75000", "100000", "125000", "150000"})
         public int targetPps;
 
-        /** Number of persistent paced sender threads and sockets. */
+        /**
+         * Number of persistent paced sender threads and sockets.
+         */
         @Param({"1"})
         public int senderCount;
 
-        /** Number of packet buffers rotated by each sender. */
+        /**
+         * Number of packet buffers rotated by each sender.
+         */
         @Param({"1"})
         public int senderWorkingSet;
 
-        /** Fixed offer-window duration. */
+        /**
+         * Fixed offer-window duration.
+         */
         @Param({"1000"})
         public int offerMillis;
 
-        /** Fixed post-offer drain duration. */
+        /**
+         * Fixed post-offer drain duration.
+         */
         @Param({"250"})
         public int drainMillis;
 
-        /** End-to-end latency threshold counted as late. */
+        /**
+         * End-to-end latency threshold counted as late.
+         */
         @Param({"1000"})
         public int lateMicros;
 
@@ -1036,25 +1128,45 @@ public class QuicEndpointIngressJmhBenchmark {
     @AuxCounters(AuxCounters.Type.OPERATIONS)
     @State(Scope.Thread)
     public static class IngressCounters {
-        /** Datagram writes offered to the sending UDP socket. */
+        /**
+         * Datagram writes offered to the sending UDP socket.
+         */
         public long offeredPackets;
-        /** Datagrams accepted by the sending UDP socket. */
+        /**
+         * Datagrams accepted by the sending UDP socket.
+         */
         public long acceptedPackets;
-        /** UDP payload bytes accepted by the sending UDP socket. */
+        /**
+         * UDP payload bytes accepted by the sending UDP socket.
+         */
         public long acceptedBytes;
-        /** Matched datagrams delivered to a registered receiver. */
+        /**
+         * Matched datagrams delivered to a registered receiver.
+         */
         public long routedPackets;
-        /** Datagrams received by the raw UDP control. */
+        /**
+         * Datagrams received by the raw UDP control.
+         */
         public long rawReceivedPackets;
-        /** Connection-ID bytes inspected for datagrams delivered to a registered receiver. */
+        /**
+         * Connection-ID bytes inspected for datagrams delivered to a registered receiver.
+         */
         public long routedConnectionIdBytes;
-        /** Accepted datagrams not routed before the bounded quiet-drain observation ended. */
+        /**
+         * Accepted datagrams not routed before the bounded quiet-drain observation ended.
+         */
         public long unobservedAtDrainEnd;
-        /** Supported Initial datagrams admitted by stateless inspection. */
+        /**
+         * Supported Initial datagrams admitted by stateless inspection.
+         */
         public long admittedPackets;
-        /** Invalid Initial datagrams rejected by stateless inspection. */
+        /**
+         * Invalid Initial datagrams rejected by stateless inspection.
+         */
         public long rejectedPackets;
-        /** Completed endpoint pause/drain/resume cycles. */
+        /**
+         * Completed endpoint pause/drain/resume cycles.
+         */
         public long recoveryCycles;
     }
 
@@ -1062,9 +1174,13 @@ public class QuicEndpointIngressJmhBenchmark {
      * Executor used to drain copied ingress datagrams.
      */
     public enum ExecutorMode {
-        /** Product-representative virtual thread per drain task. */
+        /**
+         * Product-representative virtual thread per drain task.
+         */
         VIRTUAL_PER_TASK,
-        /** Diagnostic single platform thread. */
+        /**
+         * Diagnostic single platform thread.
+         */
         PLATFORM_SINGLE
     }
 
@@ -1072,9 +1188,13 @@ public class QuicEndpointIngressJmhBenchmark {
      * Matched-route access pattern.
      */
     public enum RouteAccess {
-        /** Route every packet to the same connection ID. */
+        /**
+         * Route every packet to the same connection ID.
+         */
         HOT,
-        /** Rotate continuously through every registered connection ID. */
+        /**
+         * Rotate continuously through every registered connection ID.
+         */
         ROTATING
     }
 

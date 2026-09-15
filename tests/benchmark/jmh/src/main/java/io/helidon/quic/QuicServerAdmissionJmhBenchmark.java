@@ -384,10 +384,14 @@ public class QuicServerAdmissionJmhBenchmark {
         return state.dispatched.get();
     }
 
-    /** Near-capacity admission state. */
+    /**
+     * Near-capacity admission state.
+     */
     @State(Scope.Thread)
     public static class AcquireState {
-        /** Pending-handshake capacity. */
+        /**
+         * Pending-handshake capacity.
+         */
         @Param({"1", "256", "1024", "4096"})
         public int pendingLimit;
 
@@ -409,10 +413,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Near-capacity listener-rejection state. */
+    /**
+     * Near-capacity listener-rejection state.
+     */
     @State(Scope.Thread)
     public static class ListenerRejectedState {
-        /** Pending-handshake capacity. */
+        /**
+         * Pending-handshake capacity.
+         */
         @Param({"1", "256", "1024", "4096"})
         public int pendingLimit;
 
@@ -438,10 +446,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Saturated admission state. */
+    /**
+     * Saturated admission state.
+     */
     @State(Scope.Thread)
     public static class RejectedState {
-        /** Pending-handshake capacity. */
+        /**
+         * Pending-handshake capacity.
+         */
         @Param({"1", "256", "1024", "4096"})
         public int pendingLimit;
 
@@ -467,10 +479,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Timer queue with a representative pending-handshake population. */
+    /**
+     * Timer queue with a representative pending-handshake population.
+     */
     @State(Scope.Thread)
     public static class TimerState {
-        /** Number of handshake deadlines already scheduled. */
+        /**
+         * Number of handshake deadlines already scheduled.
+         */
         @Param({"0", "256", "1024", "4096"})
         public int scheduledEvents;
 
@@ -500,10 +516,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** One shared timer queue kept near the configured pending-handshake limit. */
+    /**
+     * One shared timer queue kept near the configured pending-handshake limit.
+     */
     @State(Scope.Benchmark)
     public static class SharedTimerState {
-        /** Pending-handshake capacity. */
+        /**
+         * Pending-handshake capacity.
+         */
         @Param({"256"})
         public int pendingLimit;
 
@@ -552,10 +572,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Batch of handshake deadlines sharing one timer queue. */
+    /**
+     * Batch of handshake deadlines sharing one timer queue.
+     */
     @State(Scope.Thread)
     public static class BatchExpiryState {
-        /** Number of handshake deadlines expiring together. */
+        /**
+         * Number of handshake deadlines expiring together.
+         */
         @Param({"256", "1024", "4096"})
         public int expiringEvents;
 
@@ -601,10 +625,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Shared runtime used to measure complete admitted Initial setup and cleanup. */
+    /**
+     * Shared runtime used to measure complete admitted Initial setup and cleanup.
+     */
     @State(Scope.Benchmark)
     public static class ServerRuntimeState {
-        /** Pending-handshake capacity. */
+        /**
+         * Pending-handshake capacity.
+         */
         @Param({"256"})
         public int pendingLimit;
 
@@ -648,10 +676,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Shared runtime whose owning listener rejects every otherwise admissible Initial. */
+    /**
+     * Shared runtime whose owning listener rejects every otherwise admissible Initial.
+     */
     @State(Scope.Benchmark)
     public static class ListenerRejectedRuntimeState {
-        /** Pending-handshake capacity. */
+        /**
+         * Pending-handshake capacity.
+         */
         @Param({"256"})
         public int pendingLimit;
 
@@ -736,7 +768,9 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Worker-local counters guarding the listener-rejection benchmark boundary. */
+    /**
+     * Worker-local counters guarding the listener-rejection benchmark boundary.
+     */
     @State(Scope.Thread)
     public static class ListenerRejectedInvocationState {
         private int admissions;
@@ -750,10 +784,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Shared runtime retained at its configured pending-handshake limit. */
+    /**
+     * Shared runtime retained at its configured pending-handshake limit.
+     */
     @State(Scope.Benchmark)
     public static class SaturatedServerRuntimeState {
-        /** Pending-handshake capacity. */
+        /**
+         * Pending-handshake capacity.
+         */
         @Param({"256"})
         public int pendingLimit;
 
@@ -783,10 +821,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Worker-local cap-sized pending runtime reused across measured lifecycle operations. */
+    /**
+     * Worker-local cap-sized pending runtime reused across measured lifecycle operations.
+     */
     @State(Scope.Thread)
     public static class CapExpiryState {
-        /** Number of real pending server connections expired together. */
+        /**
+         * Number of real pending server connections expired together.
+         */
         @Param({"256"})
         public int pendingLimit;
 
@@ -819,10 +861,14 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Worker-local client and server for classified full, resumed, and Retry handshake measurements. */
+    /**
+     * Worker-local client and server for classified full, resumed, and Retry handshake measurements.
+     */
     @State(Scope.Thread)
     public static class HandshakeLifecycleState {
-        /** Handshake and address-validation path measured by this worker. */
+        /**
+         * Handshake and address-validation path measured by this worker.
+         */
         @Param({
                 "COLD_NO_RETRY",
                 "COLD_RETRY_TOKEN_DISABLED",
@@ -833,7 +879,9 @@ public class QuicServerAdmissionJmhBenchmark {
         })
         public String scenario;
 
-        /** SHA-256 of the verified source manifest, or the functional-smoke classification. */
+        /**
+         * SHA-256 of the verified source manifest, or the functional-smoke classification.
+         */
         @Param({"functional-smoke"})
         public String sourceIdentity;
 
@@ -1453,7 +1501,9 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** One shared server with one loopback QUIC client runtime per benchmark worker. */
+    /**
+     * One shared server with one loopback QUIC client runtime per benchmark worker.
+     */
     @State(Scope.Benchmark)
     public static class ValidHandshakeState {
         private final AtomicBoolean closed = new AtomicBoolean();
@@ -1583,7 +1633,9 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Worker-local successful-handshake resources cleaned outside the measured interval. */
+    /**
+     * Worker-local successful-handshake resources cleaned outside the measured interval.
+     */
     @State(Scope.Thread)
     public static class ValidHandshakeInvocationState {
         private CompletableFuture<QuicConnection> serverConnectionFuture;
@@ -1640,7 +1692,9 @@ public class QuicServerAdmissionJmhBenchmark {
         }
     }
 
-    /** Thread-local supported Initial packet and source address. */
+    /**
+     * Thread-local supported Initial packet and source address.
+     */
     @State(Scope.Thread)
     public static class ServerInitialState {
         private InetSocketAddress peerAddress;

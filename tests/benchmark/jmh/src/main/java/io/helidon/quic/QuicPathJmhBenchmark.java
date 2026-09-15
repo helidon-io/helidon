@@ -159,7 +159,9 @@ public class QuicPathJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class IngressState {
-        /** Number of independent connections cycled by the benchmark thread. */
+        /**
+         * Number of independent connections cycled by the benchmark thread.
+         */
         @Param({"1", "16"})
         public int connectionCount;
 
@@ -200,11 +202,15 @@ public class QuicPathJmhBenchmark {
      */
     @State(Scope.Benchmark)
     public static class OutboundState {
-        /** Whether the endpoint uses its asynchronous datagram queue. */
+        /**
+         * Whether the endpoint uses its asynchronous datagram queue.
+         */
         @Param({"false", "true"})
         public boolean sendAsync;
 
-        /** Number of independent connections cycled by the benchmark thread. */
+        /**
+         * Number of independent connections cycled by the benchmark thread.
+         */
         @Param({"1", "16"})
         public int connectionCount;
 
@@ -284,21 +290,29 @@ public class QuicPathJmhBenchmark {
         }
     }
 
-    /** Per-thread datagram storage and completion state for a shared endpoint. */
+    /**
+     * Per-thread datagram storage and completion state for a shared endpoint.
+     */
     @State(Scope.Thread)
     public static class OutboundThreadState {
         private final BenchmarkReceiver receiver = new BenchmarkReceiver();
         private final ByteBuffer payload = ByteBuffer.allocateDirect(DATAGRAM_SIZE);
     }
 
-    /** Real packet-space workload for ACK-range and in-flight scaling. */
+    /**
+     * Real packet-space workload for ACK-range and in-flight scaling.
+     */
     @State(Scope.Thread)
     public static class AckState {
-        /** Number of ack-eliciting packets outstanding before each measured ACK. */
+        /**
+         * Number of ack-eliciting packets outstanding before each measured ACK.
+         */
         @Param({"64", "4096"})
         public int inFlightPackets;
 
-        /** Number of ranges in the measured ACK frame. */
+        /**
+         * Number of ranges in the measured ACK frame.
+         */
         @Param({"1", "32"})
         public int ackRangeCount;
 
@@ -365,14 +379,18 @@ public class QuicPathJmhBenchmark {
         }
     }
 
-    /** Recovery generation shared by the normal-send benchmark threads. */
+    /**
+     * Recovery generation shared by the normal-send benchmark threads.
+     */
     @State(Scope.Benchmark)
     public static class PacketSentSharedState {
         private final PacketSpaceManager.PathRecoveryState recoveryState =
                 new PacketSpaceManager.PathRecoveryState(1);
     }
 
-    /** Per-thread packet-space state for normal ack-eliciting send accounting. */
+    /**
+     * Per-thread packet-space state for normal ack-eliciting send accounting.
+     */
     @State(Scope.Thread)
     public static class PacketSentState {
         private final BenchmarkPacket packet = new BenchmarkPacket(0);
@@ -427,7 +445,9 @@ public class QuicPathJmhBenchmark {
         }
     }
 
-    /** Per-thread application packet space for ordered ACK publication. */
+    /**
+     * Per-thread application packet space for ordered ACK publication.
+     */
     @State(Scope.Thread)
     public static class AckPublicationState {
         private PacketSpaceManager packetSpace;

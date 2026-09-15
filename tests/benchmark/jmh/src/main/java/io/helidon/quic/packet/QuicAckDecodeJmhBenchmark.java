@@ -72,7 +72,9 @@ public class QuicAckDecodeJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class DecodeState {
-        /** Frame payload shape. */
+        /**
+         * Frame payload shape.
+         */
         @Param
         public Scenario scenario;
 
@@ -148,17 +150,29 @@ public class QuicAckDecodeJmhBenchmark {
      * Payload shapes covered by the ACK decoder benchmark.
      */
     public enum Scenario {
-        /** One ordinary ACK range. */
+        /**
+         * One ordinary ACK range.
+         */
         ONE_RANGE,
-        /** One ACK frame containing 32 discontiguous ranges. */
+        /**
+         * One ACK frame containing 32 discontiguous ranges.
+         */
         FRAGMENTED_32,
-        /** One ACK frame exactly at the configured limit. */
+        /**
+         * One ACK frame exactly at the configured limit.
+         */
         BOUNDARY_1024,
-        /** One ACK frame containing one range more than the configured limit. */
+        /**
+         * One ACK frame containing one range more than the configured limit.
+         */
         SINGLE_EXCESS_1025,
-        /** Four over-limit ACK and ACK_ECN frames in one packet payload. */
+        /**
+         * Four over-limit ACK and ACK_ECN frames in one packet payload.
+         */
         REPEATED_EXCESS_1025,
-        /** A control payload containing only PING frames. */
+        /**
+         * A control payload containing only PING frames.
+         */
         NON_ACK_32
     }
 

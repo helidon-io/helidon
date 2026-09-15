@@ -144,7 +144,9 @@ public class QuicPacketProtectionJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class HeaderState {
-        /** TLS cipher suite used to protect packet headers. */
+        /**
+         * TLS cipher suite used to protect packet headers.
+         */
         @Param({"TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256"})
         public String cipherSuite;
 
@@ -173,11 +175,15 @@ public class QuicPacketProtectionJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class PacketState {
-        /** TLS cipher suite used to protect packets. */
+        /**
+         * TLS cipher suite used to protect packets.
+         */
         @Param({"TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256"})
         public String cipherSuite;
 
-        /** Complete protected datagram size, including header and authentication tag. */
+        /**
+         * Complete protected datagram size, including header and authentication tag.
+         */
         @Param({"64", "1200", "1452", "65527"})
         public int datagramSize;
 

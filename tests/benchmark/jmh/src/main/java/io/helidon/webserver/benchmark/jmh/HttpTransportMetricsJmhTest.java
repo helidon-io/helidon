@@ -156,19 +156,27 @@ public class HttpTransportMetricsJmhTest {
         }
     }
 
-    /** HTTP/2 transport metrics state. */
+    /**
+     * HTTP/2 transport metrics state.
+     */
     @State(Scope.Benchmark)
     public static class Http2TransportMetricsState extends TransportMetricsState {
-        /** Create HTTP/2 state. */
+        /**
+         * Create HTTP/2 state.
+         */
         public Http2TransportMetricsState() {
             super(PROTOCOL_HTTP_2);
         }
     }
 
-    /** HTTP/3 transport metrics state. */
+    /**
+     * HTTP/3 transport metrics state.
+     */
     @State(Scope.Benchmark)
     public static class Http3TransportMetricsState extends TransportMetricsState {
-        /** Create HTTP/3 state. */
+        /**
+         * Create HTTP/3 state.
+         */
         public Http3TransportMetricsState() {
             super(PROTOCOL_HTTP_3);
         }

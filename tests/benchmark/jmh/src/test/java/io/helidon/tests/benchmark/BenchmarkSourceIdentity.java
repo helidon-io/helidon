@@ -57,10 +57,14 @@ import java.util.stream.Stream;
  * benchmark runtime class path.
  */
 public final class BenchmarkSourceIdentity {
-    /** Expected runtime-class-path digest property passed to every controlled evidence JMH fork. */
+    /**
+     * Expected runtime-class-path digest property passed to every controlled evidence JMH fork.
+     */
     public static final String RUNTIME_CLASSPATH_SHA256_PROPERTY =
             "helidon.benchmark.evidence.runtimeClasspathSha256";
-    /** Root used only to normalize class-path labels while compiling an immutable source snapshot. */
+    /**
+     * Root used only to normalize class-path labels while compiling an immutable source snapshot.
+     */
     public static final String RUNTIME_CLASSPATH_ROOT_PROPERTY =
             "helidon.benchmark.evidence.runtimeClasspathRoot";
 
