@@ -1,6 +1,6 @@
 
 # 1st stage, build the app
-FROM container-registry.oracle.com/java/jdk-no-fee-term:26 AS build
+FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9 AS build
 
 WORKDIR /usr/share
 
@@ -28,7 +28,7 @@ RUN echo "done!"
 
 # 2nd stage, build the final image with the JRI built in the 1st stage
 
-FROM debian:stretch-slim
+FROM container-registry.oracle.com/os/oraclelinux:9-slim
 WORKDIR /helidon
 COPY --from=build /helidon/target/{{artifactId}}-jri ./
 ENTRYPOINT ["/bin/bash", "/helidon/bin/start"]

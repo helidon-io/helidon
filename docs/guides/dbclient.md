@@ -72,7 +72,7 @@ DB Client.
 Create the following files:
 
 ```dockerfile [dockerfile.h2]
-FROM openjdk:11-jre-slim
+FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9
 
 ENV H2_VERSION "1.4.199"
 
