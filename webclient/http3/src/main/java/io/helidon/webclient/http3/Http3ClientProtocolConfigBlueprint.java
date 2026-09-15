@@ -50,8 +50,7 @@ interface Http3ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
     String name();
 
     /**
-     * Common HTTP request-header validation setting, ignored by HTTP/3.
-     * HTTP/3 always validates request field names and values.
+     * Common HTTP request-header validation setting, ignored because HTTP/3 always validates request field names and values.
      *
      * @return configured common HTTP validation setting
      */
@@ -61,8 +60,7 @@ interface Http3ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
     boolean validateRequestHeaders();
 
     /**
-     * Common HTTP response-header validation setting, ignored by HTTP/3.
-     * HTTP/3 always validates response field names and values.
+     * Common HTTP response-header validation setting, ignored because HTTP/3 always validates response field names and values.
      *
      * @return configured common HTTP validation setting
      */

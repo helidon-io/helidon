@@ -27,7 +27,7 @@ HTTP/3 listener protocol configuration
 <td>
 <code>true</code>
 </td>
-<td>Common HTTP response-header validation setting, ignored by HTTP/3</td>
+<td>Common HTTP response-header validation setting, ignored because HTTP/3 always validates response field names and values</td>
 </tr>
 <tr>
 <td>
@@ -89,7 +89,7 @@ HTTP/3 listener protocol configuration
 <td>
 <code>true</code>
 </td>
-<td>Common HTTP request-header validation setting, ignored by HTTP/3</td>
+<td>Common HTTP request-header validation setting, ignored because HTTP/3 always validates request field names and values</td>
 </tr>
 <tr>
 <td>
@@ -137,7 +137,7 @@ HTTP/3 listener protocol configuration
 <td>
 <code>true</code>
 </td>
-<td>Whether to validate path characters and the HTTP/3 <code>:path</code> pseudo-header</td>
+<td>Whether to perform additional URI path validation beyond mandatory HTTP/3 request-target checks</td>
 </tr>
 <tr>
 <td>
