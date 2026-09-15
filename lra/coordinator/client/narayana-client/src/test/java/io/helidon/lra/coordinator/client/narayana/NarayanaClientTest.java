@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.faulttolerance.RetryTimeoutException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
@@ -36,10 +37,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -173,11 +176,8 @@ class NarayanaClientTest {
     void coordinatorRedirectsAreNotFollowed() {
         NarayanaClient client = client(serverUri("/configured"));
 
-        CoordinatorConnectionException exception = assertThrows(CoordinatorConnectionException.class,
-                                                                () -> client.join(serverUri("/configured/redirect"),
-                                                                                  PropagatedHeaders.noop(),
-                                                                                  0,
-                                                                                  PARTICIPANT));
+        CoordinatorConnectionException exception = assertConnectionException(
+                () -> client.join(serverUri("/configured/redirect"), PropagatedHeaders.noop(), 0, PARTICIPANT));
 
         assertThat(exception.status(), is(Status.TEMPORARY_REDIRECT_307.code()));
         assertThat(REDIRECT_TARGET_REACHED.get(), is(false));
@@ -187,9 +187,8 @@ class NarayanaClientTest {
     void closeRedirectsAreNotTreatedAsSuccess() {
         NarayanaClient client = client(serverUri("/configured"));
 
-        CoordinatorConnectionException exception = assertThrows(CoordinatorConnectionException.class,
-                                                                () -> client.close(serverUri("/configured/close-redirect"),
-                                                                                   PropagatedHeaders.noop()));
+        CoordinatorConnectionException exception = assertConnectionException(
+                () -> client.close(serverUri("/configured/close-redirect"), PropagatedHeaders.noop()));
 
         assertThat(exception.status(), is(Status.TEMPORARY_REDIRECT_307.code()));
         assertThat(REDIRECT_TARGET_REACHED.get(), is(false));
@@ -251,10 +250,8 @@ class NarayanaClientTest {
     void ipv6AddressHexDigitsAreCaseInsensitive() {
         NarayanaClient client = client(URI.create("http://[2001:DB8::1]:9/coordinator"));
 
-        CoordinatorConnectionException exception = assertThrows(CoordinatorConnectionException.class,
-                                                                  () -> client.status(
-                                                                          URI.create("http://[2001:db8::1]:9/coordinator/id"),
-                                                                          PropagatedHeaders.noop()));
+        CoordinatorConnectionException exception = assertConnectionException(
+                () -> client.status(URI.create("http://[2001:db8::1]:9/coordinator/id"), PropagatedHeaders.noop()));
 
         assertThat(exception.status(), is(500));
     }
@@ -299,6 +296,13 @@ class NarayanaClientTest {
 
     private static URI serverUri(String path) {
         return URI.create("http://127.0.0.1:" + server.port() + path);
+    }
+
+    private static CoordinatorConnectionException assertConnectionException(Executable executable) {
+        RuntimeException exception = assertThrows(RuntimeException.class, executable);
+        Throwable cause = exception instanceof RetryTimeoutException ? exception.getCause() : exception;
+        assertThat(cause, instanceOf(CoordinatorConnectionException.class));
+        return (CoordinatorConnectionException) cause;
     }
 
     private static void assertRejected(NarayanaClient client, String uri) {

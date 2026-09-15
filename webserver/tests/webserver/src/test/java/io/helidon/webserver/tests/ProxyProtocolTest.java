@@ -37,6 +37,8 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.is;
@@ -189,6 +191,16 @@ class ProxyProtocolTest {
 
     @Test
     void testProxyProtocolV2UnixDoesNotCreateForwardedHeaders() {
+        assertProxyProtocolV2UnixDoesNotCreateForwardedHeaders("/tmp/source");
+    }
+
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Windows paths do not allow control characters")
+    void testProxyProtocolV2UnixWithControlCharactersDoesNotCreateForwardedHeaders() {
+        assertProxyProtocolV2UnixDoesNotCreateForwardedHeaders("/tmp/source\r\nx-forwarded-for: attacker");
+    }
+
+    private void assertProxyProtocolV2UnixDoesNotCreateForwardedHeaders(String source) {
         byte[] header = new byte[16 + 216];
         byte[] prefix = hexFormat.parseHex(V2_PREFIX);
         System.arraycopy(prefix, 0, header, 0, prefix.length);
@@ -196,7 +208,7 @@ class ProxyProtocolTest {
         header[13] = 0x31;            // UNIX family, stream protocol
         header[14] = 0x00;
         header[15] = (byte) 0xD8;     // two 108-byte UNIX paths
-        byte[] sourcePath = "/tmp/source\r\nx-forwarded-for: attacker".getBytes(US_ASCII);
+        byte[] sourcePath = source.getBytes(US_ASCII);
         System.arraycopy(sourcePath, 0, header, 16, sourcePath.length);
         byte[] destPath = "/tmp/destination".getBytes(US_ASCII);
         System.arraycopy(destPath, 0, header, 16 + 108, destPath.length);
