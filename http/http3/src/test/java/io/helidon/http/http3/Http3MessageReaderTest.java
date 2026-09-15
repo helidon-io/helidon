@@ -30,7 +30,6 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.http3.qpack.QpackCodec;
 import io.helidon.quic.SequentialScheduler;
 import io.helidon.quic.VariableLengthEncoder;
 import io.helidon.quic.stream.QuicReceiverStream;

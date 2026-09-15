@@ -14,7 +14,21 @@
  * limitations under the License.
  */
 
-/**
- * QPACK state and helpers for HTTP/3 header compression.
- */
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+class HeaderFieldTest {
+    @Test
+    void shouldRenderNameOnlyText() {
+        assertThat(new QpackCodec.HeaderField(":authority").text(), is(":authority"));
+    }
+
+    @Test
+    void shouldRenderNameAndValueText() {
+        assertThat(new QpackCodec.HeaderField("content-type", "text/plain").text(), is("content-type:text/plain"));
+    }
+}

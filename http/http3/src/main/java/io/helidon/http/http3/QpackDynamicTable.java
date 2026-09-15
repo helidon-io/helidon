@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -119,7 +119,7 @@ final class QpackDynamicTable {
         return -1;
     }
 
-    HeaderField get(long absoluteIndex) {
+    QpackCodec.HeaderField get(long absoluteIndex) {
         if (absoluteIndex < tailAbsoluteIndex || absoluteIndex >= insertCount) {
             throw new IllegalArgumentException("Invalid QPACK dynamic table index: " + absoluteIndex);
         }
@@ -127,7 +127,7 @@ final class QpackDynamicTable {
         return entries.get(head + offset).field();
     }
 
-    HeaderField relativeField(long relativeIndex) {
+    QpackCodec.HeaderField relativeField(long relativeIndex) {
         long absoluteIndex = insertCount - 1 - relativeIndex;
         return get(absoluteIndex);
     }
@@ -144,7 +144,7 @@ final class QpackDynamicTable {
     }
 
     long duplicate(long relativeIndex) {
-        HeaderField field = relativeField(relativeIndex);
+        QpackCodec.HeaderField field = relativeField(relativeIndex);
         return insert(field.name(), field.value(), Long.MAX_VALUE);
     }
 
@@ -162,7 +162,7 @@ final class QpackDynamicTable {
         }
 
         long absoluteIndex = insertCount++;
-        HeaderField field = new HeaderField(name, value);
+        QpackCodec.HeaderField field = new QpackCodec.HeaderField(name, value);
         Entry entry = new Entry(absoluteIndex, field, entrySize);
         entries.add(entry);
         nameIndex.put(name, entry);
@@ -196,7 +196,7 @@ final class QpackDynamicTable {
     }
 
     private void removeFromIndexes(Entry removed) {
-        HeaderField field = removed.field();
+        QpackCodec.HeaderField field = removed.field();
         nameIndex.remove(field.name(), removed);
         Map<String, Entry> values = exactIndex.get(field.name());
         if (values != null && values.remove(field.value(), removed) && values.isEmpty()) {
@@ -204,6 +204,6 @@ final class QpackDynamicTable {
         }
     }
 
-    private record Entry(long absoluteIndex, HeaderField field, long size) {
+    private record Entry(long absoluteIndex, QpackCodec.HeaderField field, long size) {
     }
 }

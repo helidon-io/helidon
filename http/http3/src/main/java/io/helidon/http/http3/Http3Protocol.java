@@ -40,7 +40,6 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.http3.qpack.QpackCodec;
 import io.helidon.quic.VariableLengthEncoder;
 
 /**
