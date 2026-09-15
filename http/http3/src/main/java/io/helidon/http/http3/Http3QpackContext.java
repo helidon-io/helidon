@@ -55,6 +55,7 @@ public final class Http3QpackContext {
      * @param maxHeadersSize hard local decoded-header limit
      * @param connectionFailureHandler connection-owner handler for QPACK connection failure
      * @return new QPACK context
+     * @throws IllegalArgumentException if a local capacity or limit is negative
      */
     public static Http3QpackContext create(long localMaxTableCapacity,
                                            long localBlockedStreams,
@@ -188,6 +189,19 @@ public final class Http3QpackContext {
     }
 
     /**
+     * Sender of QPACK instruction bytes on a unidirectional stream.
+     */
+    @FunctionalInterface
+    public interface InstructionSender {
+        /**
+         * Send bytes on the configured instruction stream.
+         *
+         * @param bytes bytes to send
+         */
+        void send(byte[] bytes);
+    }
+
+    /**
      * QPACK decoder lifecycle owned by one HTTP/3 request or push stream.
      */
     @Api.Internal
@@ -210,7 +224,8 @@ public final class Http3QpackContext {
          */
         public Headers decodeHeaders(BufferData buffer, long maxFieldSectionSize) {
             WritableHeaders<?> headers = WritableHeaders.create();
-            decodeHeaderLines(buffer, maxFieldSectionSize).forEach(headers::add);
+            decodeHeaderLines(buffer, maxFieldSectionSize)
+                    .forEach(header -> QpackCodec.addDecodedHeader(headers, header));
             return headers;
         }
 
@@ -266,19 +281,6 @@ public final class Http3QpackContext {
         public void cancel() {
             delegate.cancel();
         }
-    }
-
-    /**
-     * Sender of QPACK instruction bytes on a unidirectional stream.
-     */
-    @FunctionalInterface
-    public interface InstructionSender {
-        /**
-         * Send bytes on the configured instruction stream.
-         *
-         * @param bytes bytes to send
-         */
-        void send(byte[] bytes);
     }
 
     static final class DecodingInterruptedException extends IllegalStateException {

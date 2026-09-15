@@ -17,7 +17,6 @@
 package io.helidon.http.http3;
 
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -47,8 +46,6 @@ import io.helidon.quic.VariableLengthEncoder;
  */
 @Api.Internal
 public final class Http3Protocol {
-    private static final int MAX_SETTINGS_ENTRIES = 256;
-
     /**
      * HTTP/3 ALPN identifier.
      */
@@ -89,6 +86,8 @@ public final class Http3Protocol {
      * Largest request stream id that can be opened by an HTTP/3 client.
      */
     public static final long MAX_CLIENT_BIDIRECTIONAL_STREAM_ID = (1L << 62) - 4;
+
+    private static final int MAX_SETTINGS_ENTRIES = 256;
     private static final HeaderName PSEUDO_METHOD = HeaderNames.createFromLowercase(":method");
     private static final HeaderName PSEUDO_SCHEME = HeaderNames.createFromLowercase(":scheme");
     private static final HeaderName PSEUDO_AUTHORITY = HeaderNames.createFromLowercase(":authority");
@@ -96,13 +95,6 @@ public final class Http3Protocol {
     private static final HeaderName PSEUDO_STATUS = HeaderNames.createFromLowercase(":status");
 
     private Http3Protocol() {
-    }
-
-    static boolean isReservedHttp2FrameType(long frameType) {
-        return frameType == 0x02
-                || frameType == 0x06
-                || frameType == 0x08
-                || frameType == 0x09;
     }
 
     /**
@@ -339,34 +331,11 @@ public final class Http3Protocol {
         return BufferData.create(header, BufferData.createReadOnly(payload, position, length));
     }
 
-    /**
-     * Encode a complete HTTP/3 response message with QPACK dynamic-table support.
-     *
-     * @param qpackContext per-connection QPACK context
-     * @param streamId     response stream id
-     * @param status       response status code
-     * @param headers      response headers
-     * @param body         response body bytes
-     * @return encoded response bytes
-     */
-    @Api.Internal
-    public static byte[] encodeResponse(Http3QpackContext qpackContext,
-                                        long streamId,
-                                        int status,
-                                        Headers headers,
-                                        byte[] body) {
-        Objects.requireNonNull(qpackContext, "qpackContext");
-        Objects.requireNonNull(headers, "headers");
-        Objects.requireNonNull(body, "body");
-        WritableHeaders<?> writable = WritableHeaders.create(headers);
-        if (!writable.contains(HeaderNames.CONTENT_LENGTH)) {
-            writable.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, body.length));
-        }
-        return encodeMessage(qpackContext,
-                             streamId,
-                             responseHeaders(status, writable),
-                             body,
-                             WritableHeaders.create());
+    static boolean isReservedHttp2FrameType(long frameType) {
+        return frameType == 0x02
+                || frameType == 0x06
+                || frameType == 0x08
+                || frameType == 0x09;
     }
 
     /**
@@ -467,41 +436,127 @@ public final class Http3Protocol {
         }
     }
 
-    static long tryReadVarInt(ByteBuffer buffer) {
-        ByteBuffer duplicate = buffer.duplicate();
-        long value = VariableLengthEncoder.decode(duplicate);
-        if (value < 0) {
-            return -1;
-        }
-        buffer.position(duplicate.position());
-        return value;
-    }
-
     static long tryReadVarInt(BufferData buffer) {
         return VariableLengthEncoder.decode(buffer);
     }
 
-    private static byte[] encodeMessage(Http3QpackContext qpackContext,
-                                        long streamId,
-                                        Iterable<Header> headers,
-                                        byte[] body,
-                                        Headers trailers) {
-        byte[] headersFrame = encodeHeadersFrameOrdered(qpackContext, streamId, headers);
-        byte[] dataFrame = body != null && body.length > 0 ? encodeDataFrame(body) : null;
-        byte[] trailersFrame = trailers != null && trailers.size() > 0
-                ? encodeHeadersFrame(qpackContext, streamId, trailers)
-                : null;
-        BufferData output = BufferData.create(headersFrame.length
-                                                      + (dataFrame == null ? 0 : dataFrame.length)
-                                                      + (trailersFrame == null ? 0 : trailersFrame.length));
-        output.write(headersFrame);
-        if (dataFrame != null) {
-            output.write(dataFrame);
+    static DecodedRequestHead decodeRequestHeaders(Iterable<Header> decodedHeaders) {
+        String method = null;
+        String scheme = null;
+        String authority = null;
+        String path = null;
+        WritableHeaders<?> headers = WritableHeaders.create();
+        Set<String> seenPseudoHeaders = new HashSet<>();
+        boolean regularHeadersSeen = false;
+
+        //= https://www.rfc-editor.org/rfc/rfc9114#section-4.3
+        //# Endpoints MUST treat a request or response that contains undefined
+        //# or invalid pseudo-header fields as malformed.
+        //# All pseudo-header fields MUST appear in the header section before
+        //# regular header fields.
+        //# Any request or response that contains a pseudo-header field that
+        //# appears in a header section after a regular header field MUST be
+        //# treated as malformed.
+        //= https://www.rfc-editor.org/rfc/rfc9114#section-4.3.1
+        //# All HTTP/3 requests MUST include exactly one value for the :method,
+        //# :scheme, and :path pseudo-header fields, unless the request is a
+        //# CONNECT request; see Section 4.4.
+        //= https://www.rfc-editor.org/rfc/rfc9114#section-4.3.1
+        //# An HTTP request that omits mandatory pseudo-header fields or
+        //# contains invalid values for those pseudo-header fields is malformed.
+        for (Header header : decodedHeaders) {
+            String headerName = header.headerName().lowerCase();
+            validateLowercaseHttp3HeaderName(headerName);
+            if (!headerName.startsWith(":")) {
+                regularHeadersSeen = true;
+                QpackCodec.addDecodedHeader(headers, header);
+                continue;
+            }
+            if (regularHeadersSeen) {
+                throw requestMessageError("HTTP/3 pseudo-header field after regular headers: " + headerName);
+            }
+            if (header.valueCount() != 1 || !seenPseudoHeaders.add(headerName)) {
+                throw requestMessageError("Duplicate HTTP/3 pseudo-header field: " + headerName);
+            }
+            String value = header.get();
+            switch (headerName) {
+            case ":method" -> method = value;
+            case ":scheme" -> scheme = value;
+            case ":authority" -> authority = value;
+            case ":path" -> path = value;
+            default -> throw requestMessageError("Prohibited HTTP/3 pseudo-header field: " + headerName);
+            }
         }
-        if (trailersFrame != null) {
-            output.write(trailersFrame);
+        if (method == null) {
+            throw requestMessageError("Missing required HTTP/3 pseudo-header field: :method");
         }
-        return output.readBytes();
+        try {
+            Method.create(method);
+        } catch (IllegalArgumentException e) {
+            throw requestMessageError("Invalid HTTP/3 :method pseudo-header field", e);
+        }
+        List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
+        if (hostValues.size() > 1) {
+            throw requestMessageError("Repeated HTTP/3 Host field");
+        }
+        String host = hostValues.isEmpty() ? null : hostValues.getFirst();
+        UriAuthority normalizedAuthority;
+        try {
+            normalizedAuthority = authority == null || authority.isEmpty() ? null : UriAuthority.create(authority);
+            if (normalizedAuthority != null && host != null) {
+                int defaultPort = switch (Objects.requireNonNullElse(scheme, "").toLowerCase(Locale.ROOT)) {
+                    case "http" -> 80;
+                    case "https" -> 443;
+                    default -> -1;
+                };
+                UriAuthority hostValue = UriAuthority.create(host);
+                if (!normalizedAuthority.host().equals(hostValue.host())
+                        || normalizedAuthority.portOrDefault(defaultPort) != hostValue.portOrDefault(defaultPort)) {
+                    throw requestMessageError("HTTP/3 Host field does not match :authority pseudo-header field");
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            throw requestMessageError("Invalid HTTP/3 Host or :authority field", e);
+        }
+        if (authority == null || authority.isEmpty()) {
+            authority = host;
+            try {
+                normalizedAuthority = authority == null ? null : UriAuthority.create(authority);
+            } catch (IllegalArgumentException e) {
+                throw requestMessageError("Invalid HTTP/3 Host field", e);
+            }
+        }
+        if (Method.CONNECT_NAME.equals(method)) {
+            if (!seenPseudoHeaders.contains(":authority") || authority == null || authority.isEmpty()) {
+                throw requestMessageError("CONNECT request is missing required :authority pseudo-header field");
+            }
+            if (normalizedAuthority == null || !normalizedAuthority.hasPort()) {
+                throw requestMessageError("CONNECT request :authority must contain an explicit port");
+            }
+            if (normalizedAuthority.port() == 0) {
+                throw requestMessageError("CONNECT request :authority port must be between 1 and 65535");
+            }
+            if (scheme != null || path != null) {
+                throw requestMessageError("CONNECT request contains prohibited :scheme or :path pseudo-header field");
+            }
+            return DecodedRequestHead.create(method,
+                                             Optional.empty(),
+                                             authority,
+                                             normalizedAuthority,
+                                             Optional.empty(),
+                                             headers);
+        }
+        if (scheme == null || scheme.isEmpty()
+                || authority == null || authority.isEmpty()
+                || path == null || path.isEmpty()) {
+            throw requestMessageError("Missing required HTTP/3 pseudo-header fields");
+        }
+        return DecodedRequestHead.create(method,
+                                         Optional.of(scheme),
+                                         authority,
+                                         normalizedAuthority,
+                                         Optional.of(path),
+                                         headers);
     }
 
     private static List<Header> requestHeaders(String method,
@@ -600,125 +655,6 @@ public final class Http3Protocol {
     private static void writeFrameHeader(BufferData output, long frameType, int payloadLength) {
         VariableLengthEncoder.encode(output, frameType);
         VariableLengthEncoder.encode(output, payloadLength);
-    }
-
-    static DecodedRequestHead decodeRequestHeaders(Iterable<Header> decodedHeaders) {
-        String method = null;
-        String scheme = null;
-        String authority = null;
-        String path = null;
-        WritableHeaders<?> headers = WritableHeaders.create();
-        Set<String> seenPseudoHeaders = new HashSet<>();
-        boolean regularHeadersSeen = false;
-
-        //= https://www.rfc-editor.org/rfc/rfc9114#section-4.3
-        //# Endpoints MUST treat a request or response that contains undefined
-        //# or invalid pseudo-header fields as malformed.
-        //# All pseudo-header fields MUST appear in the header section before
-        //# regular header fields.
-        //# Any request or response that contains a pseudo-header field that
-        //# appears in a header section after a regular header field MUST be
-        //# treated as malformed.
-        //= https://www.rfc-editor.org/rfc/rfc9114#section-4.3.1
-        //# All HTTP/3 requests MUST include exactly one value for the :method,
-        //# :scheme, and :path pseudo-header fields, unless the request is a
-        //# CONNECT request; see Section 4.4.
-        //= https://www.rfc-editor.org/rfc/rfc9114#section-4.3.1
-        //# An HTTP request that omits mandatory pseudo-header fields or
-        //# contains invalid values for those pseudo-header fields is malformed.
-        for (Header header : decodedHeaders) {
-            String headerName = header.headerName().lowerCase();
-            validateLowercaseHttp3HeaderName(headerName);
-            if (!headerName.startsWith(":")) {
-                regularHeadersSeen = true;
-                headers.add(header);
-                continue;
-            }
-            if (regularHeadersSeen) {
-                throw requestMessageError("HTTP/3 pseudo-header field after regular headers: " + headerName);
-            }
-            if (header.valueCount() != 1 || !seenPseudoHeaders.add(headerName)) {
-                throw requestMessageError("Duplicate HTTP/3 pseudo-header field: " + headerName);
-            }
-            String value = header.get();
-            switch (headerName) {
-            case ":method" -> method = value;
-            case ":scheme" -> scheme = value;
-            case ":authority" -> authority = value;
-            case ":path" -> path = value;
-            default -> throw requestMessageError("Prohibited HTTP/3 pseudo-header field: " + headerName);
-            }
-        }
-        if (method == null) {
-            throw requestMessageError("Missing required HTTP/3 pseudo-header field: :method");
-        }
-        try {
-            Method.create(method);
-        } catch (IllegalArgumentException e) {
-            throw requestMessageError("Invalid HTTP/3 :method pseudo-header field", e);
-        }
-        List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
-        if (hostValues.size() > 1) {
-            throw requestMessageError("Repeated HTTP/3 Host field");
-        }
-        String host = hostValues.isEmpty() ? null : hostValues.getFirst();
-        UriAuthority normalizedAuthority;
-        try {
-            normalizedAuthority = authority == null || authority.isEmpty() ? null : UriAuthority.create(authority);
-            if (normalizedAuthority != null && host != null) {
-                int defaultPort = switch (Objects.requireNonNullElse(scheme, "").toLowerCase(Locale.ROOT)) {
-                    case "http" -> 80;
-                    case "https" -> 443;
-                    default -> -1;
-                };
-                UriAuthority hostValue = UriAuthority.create(host);
-                if (!normalizedAuthority.host().equals(hostValue.host())
-                        || normalizedAuthority.portOrDefault(defaultPort) != hostValue.portOrDefault(defaultPort)) {
-                    throw requestMessageError("HTTP/3 Host field does not match :authority pseudo-header field");
-                }
-            }
-        } catch (IllegalArgumentException e) {
-            throw requestMessageError("Invalid HTTP/3 Host or :authority field", e);
-        }
-        if (authority == null || authority.isEmpty()) {
-            authority = host;
-            try {
-                normalizedAuthority = authority == null ? null : UriAuthority.create(authority);
-            } catch (IllegalArgumentException e) {
-                throw requestMessageError("Invalid HTTP/3 Host field", e);
-            }
-        }
-        if (Method.CONNECT_NAME.equals(method)) {
-            if (!seenPseudoHeaders.contains(":authority") || authority == null || authority.isEmpty()) {
-                throw requestMessageError("CONNECT request is missing required :authority pseudo-header field");
-            }
-            if (normalizedAuthority == null || !normalizedAuthority.hasPort()) {
-                throw requestMessageError("CONNECT request :authority must contain an explicit port");
-            }
-            if (normalizedAuthority.port() == 0) {
-                throw requestMessageError("CONNECT request :authority port must be between 1 and 65535");
-            }
-            if (scheme != null || path != null) {
-                throw requestMessageError("CONNECT request contains prohibited :scheme or :path pseudo-header field");
-            }
-            return DecodedRequestHead.create(method,
-                                             Optional.empty(),
-                                             authority,
-                                             normalizedAuthority,
-                                             Optional.empty(),
-                                             headers);
-        }
-        if (scheme == null || scheme.isEmpty()
-                || authority == null || authority.isEmpty()
-                || path == null || path.isEmpty()) {
-            throw requestMessageError("Missing required HTTP/3 pseudo-header fields");
-        }
-        return DecodedRequestHead.create(method,
-                                         Optional.of(scheme),
-                                         authority,
-                                         normalizedAuthority,
-                                         Optional.of(path),
-                                         headers);
     }
 
     private static void validateLowercaseHttp3HeaderName(String headerName) {

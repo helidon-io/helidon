@@ -69,7 +69,6 @@ public final class Http3MessageReader implements AutoCloseable {
     private final Method requestMethod;
     private final int maxHeadersSize;
     private final int encodedFieldSectionLimit;
-    private final boolean validateHeaderValues;
     private final Http3FrameListener frameListener;
     private final ReadOptions readOptions;
     private final byte[] encodedFrameHeader = new byte[MAX_FRAME_HEADER_SIZE];
@@ -126,7 +125,6 @@ public final class Http3MessageReader implements AutoCloseable {
         this.requestMethod = requestMethod;
         this.maxHeadersSize = maxHeadersSize;
         this.encodedFieldSectionLimit = effectiveEncodedFieldSectionLimit;
-        this.validateHeaderValues = readOptions.validateHeaderValues;
         this.readOptions = readOptions;
         this.frameListener = readOptions.frameListener;
     }
@@ -138,7 +136,6 @@ public final class Http3MessageReader implements AutoCloseable {
      * @param qpackContext connection QPACK context
      * @param context socket context
      * @param maxHeadersSize hard local decoded-header limit
-     * @param validateHeaderValues whether regular header values should be validated
      * @param frameListener frame listener
      * @return request message reader
      */
@@ -146,7 +143,6 @@ public final class Http3MessageReader implements AutoCloseable {
                                              Http3QpackContext qpackContext,
                                              SocketContext context,
                                              int maxHeadersSize,
-                                             boolean validateHeaderValues,
                                              Http3FrameListener frameListener) {
         return new Http3MessageReader(stream,
                                       qpackContext,
@@ -154,7 +150,7 @@ public final class Http3MessageReader implements AutoCloseable {
                                       MessageType.REQUEST,
                                       Method.GET,
                                       maxHeadersSize,
-                                      new ReadOptions(validateHeaderValues, Optional.empty(), frameListener));
+                                      new ReadOptions(Optional.empty(), frameListener));
     }
 
     /**
@@ -164,7 +160,6 @@ public final class Http3MessageReader implements AutoCloseable {
      * @param qpackContext connection QPACK context
      * @param context socket context
      * @param maxHeadersSize hard local decoded-header limit
-     * @param validateHeaderValues whether regular header values should be validated
      * @param readTimeout maximum time to wait for the next request-stream or QPACK input; zero disables the timeout
      * @param frameListener frame listener
      * @return request message reader
@@ -173,7 +168,6 @@ public final class Http3MessageReader implements AutoCloseable {
                                              Http3QpackContext qpackContext,
                                              SocketContext context,
                                              int maxHeadersSize,
-                                             boolean validateHeaderValues,
                                              Duration readTimeout,
                                              Http3FrameListener frameListener) {
         Objects.requireNonNull(readTimeout, "readTimeout");
@@ -186,8 +180,7 @@ public final class Http3MessageReader implements AutoCloseable {
                                       MessageType.REQUEST,
                                       Method.GET,
                                       maxHeadersSize,
-                                      new ReadOptions(validateHeaderValues,
-                                                      readTimeout.isZero()
+                                      new ReadOptions(readTimeout.isZero()
                                                               ? Optional.empty()
                                                               : Optional.of(readTimeout),
                                                       frameListener));
@@ -201,7 +194,6 @@ public final class Http3MessageReader implements AutoCloseable {
      * @param context socket context
      * @param requestMethod request method associated with the response
      * @param maxHeadersSize hard local decoded-header limit
-     * @param validateHeaderValues whether regular header values should be validated
      * @param frameListener frame listener
      * @return response message reader
      */
@@ -210,14 +202,13 @@ public final class Http3MessageReader implements AutoCloseable {
                                               SocketContext context,
                                               Method requestMethod,
                                               int maxHeadersSize,
-                                              boolean validateHeaderValues,
                                               Http3FrameListener frameListener) {
         return response(stream,
                         qpackContext,
                         context,
                         requestMethod,
                         maxHeadersSize,
-                        new ResponseOptions(validateHeaderValues, Optional.empty(), frameListener));
+                        new ResponseOptions(Optional.empty(), frameListener));
     }
 
     /**
@@ -245,6 +236,61 @@ public final class Http3MessageReader implements AutoCloseable {
                                       requestMethod,
                                       maxHeadersSize,
                                       options.readOptions);
+    }
+
+    /**
+     * Validate regular request fields and return the declared content length.
+     * HTTP/3 field syntax, protocol invariants, and content length are always enforced.
+     *
+     * @param headers regular request fields
+     * @return declared content length, if present
+     */
+    public static OptionalLong validateRequestHeaders(Headers headers) {
+        return validateHeaders(headers, HeaderSection.REQUEST);
+    }
+
+    /**
+     * Validate outbound response fields and return the declared content length.
+     *
+     * @param requestMethod request method associated with the response
+     * @param status response status
+     * @param headers regular response fields
+     * @return declared content length, if present
+     */
+    public static OptionalLong validateResponseHeaders(Method requestMethod,
+                                                       Status status,
+                                                       Headers headers) {
+        Objects.requireNonNull(requestMethod, "requestMethod");
+        Http3ResponseSemantics semantics = Http3ResponseSemantics.create(requestMethod, status);
+        if (!semantics.finalResponseAllowed()) {
+            throw new IllegalArgumentException("Final HTTP/3 response status must not be informational: " + status.code());
+        }
+        OptionalLong contentLength = validateHeaders(headers, HeaderSection.RESPONSE);
+        if (contentLength.isPresent() && !semantics.contentLengthAllowed()) {
+            throw new IllegalArgumentException(semantics.tunnel()
+                                                       ? "Successful CONNECT response must not contain Content-Length"
+                                                       : "HTTP " + status.code() + " response must not contain Content-Length");
+        }
+        if (contentLength.isPresent()
+                && semantics.contentLengthMustBeZero()
+                && contentLength.orElseThrow() != 0) {
+            throw new IllegalArgumentException("HTTP 205 response Content-Length must be zero");
+        }
+        if (!semantics.trailersAllowed() && headers.contains(HeaderNames.TRAILER)) {
+            throw new IllegalArgumentException(semantics.tunnel()
+                                                       ? "Successful CONNECT response must not contain Trailer"
+                                                       : "HTTP " + status.code() + " response must not contain Trailer");
+        }
+        return contentLength;
+    }
+
+    /**
+     * Validate trailing fields.
+     *
+     * @param headers trailing fields
+     */
+    public static void validateTrailers(Headers headers) {
+        validateHeaders(headers, HeaderSection.TRAILERS);
     }
 
     /**
@@ -276,19 +322,21 @@ public final class Http3MessageReader implements AutoCloseable {
         Http3Protocol.DecodedRequestHead decoded;
         try {
             decoded = Http3Protocol.decodeRequestHeaders(readInitialFieldSection());
-            contentLength = validateRequestHeaders(decoded.headers(), validateHeaderValues);
+            contentLength = validateRequestHeaders(decoded.headers());
         } catch (IllegalArgumentException e) {
             throw messageError(e.getMessage(), e);
         }
         requestHead = decoded;
         phase = Phase.DATA;
-        frameListener.requestHeaders(context,
-                                     streamId,
-                                     decoded.method(),
-                                     decoded.scheme().orElse(""),
-                                     decoded.authority(),
-                                     decoded.path().orElse(""),
-                                     decoded.headers());
+        if (frameListener.enabled()) {
+            frameListener.requestHeaders(context,
+                                         streamId,
+                                         decoded.method(),
+                                         decoded.scheme().orElse(""),
+                                         decoded.authority(),
+                                         decoded.path().orElse(""),
+                                         decoded.headers());
+        }
         return decoded;
     }
 
@@ -321,7 +369,7 @@ public final class Http3MessageReader implements AutoCloseable {
                     validateLowercaseHeaderName(headerName);
                     if (!headerName.startsWith(":")) {
                         regularHeadersSeen = true;
-                        headers.add(header);
+                        QpackCodec.addDecodedHeader(headers, header);
                         continue;
                     }
                     if (regularHeadersSeen) {
@@ -354,13 +402,14 @@ public final class Http3MessageReader implements AutoCloseable {
                 Http3ResponseSemantics semantics = Http3ResponseSemantics.create(requestMethod, status);
                 decodedContentLength = validateResponseHeaders(status,
                                                                headers,
-                                                               validateHeaderValues,
                                                                semantics);
                 decoded = new ResponseHead(status, headers);
             } catch (IllegalArgumentException e) {
                 throw messageError(e.getMessage(), e);
             }
-            frameListener.responseHeaders(context, streamId, decoded.status().code(), decoded.headers());
+            if (frameListener.enabled()) {
+                frameListener.responseHeaders(context, streamId, decoded.status().code(), decoded.headers());
+            }
             if (decoded.status().family() == Status.Family.INFORMATIONAL) {
                 informationalConsumer.accept(decoded);
                 continue;
@@ -425,7 +474,9 @@ public final class Http3MessageReader implements AutoCloseable {
                     BufferData buffer = input.readBuffer(chunkSize);
                     int dataLength = buffer.available();
                     boolean last = currentFrameLength == dataLength;
-                    frameListener.frameData(context, streamId, dataLength, last);
+                    if (frameListener.enabled()) {
+                        frameListener.frameData(context, streamId, dataLength, last);
+                    }
                     if (frameListener.rawDataEnabled()) {
                         for (int offset = 0; offset < dataLength; offset += MAX_RAW_DATA_CHUNK_SIZE) {
                             int length = Math.min(dataLength - offset, MAX_RAW_DATA_CHUNK_SIZE);
@@ -510,15 +561,6 @@ public final class Http3MessageReader implements AutoCloseable {
                 currentFrameLength = 0;
             }
         }
-    }
-
-    /**
-     * Return whether the reader is positioned at transport end-of-stream with no frame bytes remaining.
-     *
-     * @return whether transport end-of-stream is ready
-     */
-    private boolean endOfStreamReady() {
-        return !entityBufferOutstanding() && currentFrameLength == 0 && input.endOfStreamReady();
     }
 
     /**
@@ -695,94 +737,6 @@ public final class Http3MessageReader implements AutoCloseable {
         };
     }
 
-    /**
-     * Validate regular request fields and return the declared content length.
-     * HTTP/3 protocol invariants and content length are enforced even when optional field-value validation is disabled.
-     *
-     * @param headers regular request fields
-     * @param validateValues whether regular field values should be validated
-     * @return declared content length, if present
-     */
-    public static OptionalLong validateRequestHeaders(Headers headers, boolean validateValues) {
-        return validateHeaders(headers, validateValues, HeaderSection.REQUEST);
-    }
-
-    /**
-     * Validate regular response fields and return the declared content length.
-     * HTTP/3 protocol invariants and content length are enforced even when optional field-value validation is disabled.
-     *
-     * @param status response status
-     * @param headers regular response fields
-     * @param validateValues whether regular field values should be validated
-     * @return declared content length, if present
-     */
-    private static OptionalLong validateResponseHeaders(Status status,
-                                                        Headers headers,
-                                                        boolean validateValues,
-                                                        Http3ResponseSemantics semantics) {
-        Objects.requireNonNull(status, "status");
-        OptionalLong contentLength = validateHeaders(headers,
-                                                     validateValues,
-                                                     HeaderSection.RESPONSE,
-                                                     !semantics.receivedContentLengthIgnored());
-        if (contentLength.isPresent()) {
-            if (!semantics.contentLengthAllowed()) {
-                throw new IllegalArgumentException("HTTP " + status.code() + " response must not contain Content-Length");
-            }
-            if (semantics.contentLengthMustBeZero() && contentLength.orElseThrow() != 0) {
-                throw new IllegalArgumentException("HTTP 205 response Content-Length must be zero");
-            }
-        }
-        return contentLength;
-    }
-
-    /**
-     * Validate outbound response fields and return the declared content length.
-     *
-     * @param requestMethod request method associated with the response
-     * @param status response status
-     * @param headers regular response fields
-     * @param validateValues whether regular field values should be validated
-     * @return declared content length, if present
-     */
-    public static OptionalLong validateResponseHeaders(Method requestMethod,
-                                                       Status status,
-                                                       Headers headers,
-                                                       boolean validateValues) {
-        Objects.requireNonNull(requestMethod, "requestMethod");
-        Http3ResponseSemantics semantics = Http3ResponseSemantics.create(requestMethod, status);
-        if (!semantics.finalResponseAllowed()) {
-            throw new IllegalArgumentException("Final HTTP/3 response status must not be informational: " + status.code());
-        }
-        OptionalLong contentLength = validateHeaders(headers, validateValues, HeaderSection.RESPONSE);
-        if (contentLength.isPresent() && !semantics.contentLengthAllowed()) {
-            throw new IllegalArgumentException(semantics.tunnel()
-                                                       ? "Successful CONNECT response must not contain Content-Length"
-                                                       : "HTTP " + status.code() + " response must not contain Content-Length");
-        }
-        if (contentLength.isPresent()
-                && semantics.contentLengthMustBeZero()
-                && contentLength.orElseThrow() != 0) {
-            throw new IllegalArgumentException("HTTP 205 response Content-Length must be zero");
-        }
-        if (!semantics.trailersAllowed() && headers.contains(HeaderNames.TRAILER)) {
-            throw new IllegalArgumentException(semantics.tunnel()
-                                                       ? "Successful CONNECT response must not contain Trailer"
-                                                       : "HTTP " + status.code() + " response must not contain Trailer");
-        }
-        return contentLength;
-    }
-
-    /**
-     * Validate trailing fields.
-     *
-     * @param headers trailing fields
-     * @param validateValues whether regular field values should be validated
-     */
-    public static void validateTrailers(Headers headers, boolean validateValues) {
-        validateHeaders(headers, validateValues, HeaderSection.TRAILERS);
-    }
-
     @Override
     public void close() {
         if (!closed.compareAndSet(false, true)) {
@@ -807,6 +761,108 @@ public final class Http3MessageReader implements AutoCloseable {
         }
     }
 
+    /**
+     * Validate regular response fields and return the declared content length.
+     * HTTP/3 field syntax, protocol invariants, and content length are always enforced.
+     *
+     * @param status response status
+     * @param headers regular response fields
+     * @return declared content length, if present
+     */
+    private static OptionalLong validateResponseHeaders(Status status,
+                                                        Headers headers,
+                                                        Http3ResponseSemantics semantics) {
+        Objects.requireNonNull(status, "status");
+        OptionalLong contentLength = validateHeaders(headers,
+                                                     HeaderSection.RESPONSE,
+                                                     !semantics.receivedContentLengthIgnored());
+        if (contentLength.isPresent()) {
+            if (!semantics.contentLengthAllowed()) {
+                throw new IllegalArgumentException("HTTP " + status.code() + " response must not contain Content-Length");
+            }
+            if (semantics.contentLengthMustBeZero() && contentLength.orElseThrow() != 0) {
+                throw new IllegalArgumentException("HTTP 205 response Content-Length must be zero");
+            }
+        }
+        return contentLength;
+    }
+
+    private static OptionalLong validateHeaders(Headers headers,
+                                                HeaderSection section) {
+        return validateHeaders(headers, section, true);
+    }
+
+    private static OptionalLong validateHeaders(Headers headers,
+                                                HeaderSection section,
+                                                boolean parseContentLength) {
+        Objects.requireNonNull(headers, "headers");
+        for (Header header : headers) {
+            String headerName = header.headerName().lowerCase();
+            validateLowercaseHeaderName(headerName);
+            if (headerName.startsWith(":")) {
+                throw new IllegalArgumentException("HTTP/3 regular field section contains pseudo-header: " + headerName);
+            }
+            if (CONNECTION_SPECIFIC_HEADERS.contains(headerName)) {
+                throw new IllegalArgumentException("Connection-specific field is prohibited in HTTP/3: " + headerName);
+            }
+            if (HeaderNames.TE.lowerCase().equals(headerName)) {
+                if (section != HeaderSection.REQUEST) {
+                    throw new IllegalArgumentException("TE is only permitted in initial HTTP/3 request fields");
+                }
+                List<String> values = headers.values(HeaderNames.TE);
+                if (values.isEmpty()) {
+                    throw new IllegalArgumentException("HTTP/3 TE field value must be trailers");
+                }
+                for (String value : values) {
+                    if (!"trailers".equalsIgnoreCase(value.trim())) {
+                        throw new IllegalArgumentException("HTTP/3 TE field value must be trailers");
+                    }
+                }
+            }
+            if (section == HeaderSection.TRAILERS
+                    && (HeaderNames.CONTENT_LENGTH.lowerCase().equals(headerName)
+                    || HeaderNames.HOST.lowerCase().equals(headerName)
+                    || HeaderNames.TRAILER.lowerCase().equals(headerName))) {
+                throw new IllegalArgumentException("Field is prohibited in HTTP/3 trailers: " + headerName);
+            }
+            header.validate();
+        }
+        if (section == HeaderSection.TRAILERS) {
+            return OptionalLong.empty();
+        }
+        return parseContentLength ? headers.contentLength() : OptionalLong.empty();
+    }
+
+    private static void validateLowercaseHeaderName(String headerName) {
+        for (int i = 0; i < headerName.length(); i++) {
+            char current = headerName.charAt(i);
+            if (current >= 'A' && current <= 'Z') {
+                throw new IllegalArgumentException("HTTP/3 header field name must be lowercase: " + headerName);
+            }
+        }
+    }
+
+    private static Http3ProtocolException messageError(String message) {
+        return Http3ProtocolException.streamError(Http3ErrorCode.MESSAGE_ERROR, message);
+    }
+
+    private static Http3ProtocolException messageError(String message, Throwable cause) {
+        return Http3ProtocolException.streamError(Http3ErrorCode.MESSAGE_ERROR, message, cause);
+    }
+
+    private static Http3ProtocolException frameError(String message) {
+        return Http3ProtocolException.connectionError(Http3ErrorCode.FRAME_ERROR, message);
+    }
+
+    /**
+     * Return whether the reader is positioned at transport end-of-stream with no frame bytes remaining.
+     *
+     * @return whether transport end-of-stream is ready
+     */
+    private boolean endOfStreamReady() {
+        return !entityBufferOutstanding() && currentFrameLength == 0 && input.endOfStreamReady();
+    }
+
     private List<Header> readInitialFieldSection() {
         for (;;) {
             Optional<FrameHeader> frame = nextFrame();
@@ -818,7 +874,7 @@ public final class Http3MessageReader implements AutoCloseable {
                 return decodeCurrentFieldSection();
             }
             if (header.type() == Http3Protocol.FRAME_DATA) {
-                throw unexpectedMessageFrame(header.type(), "HTTP/3 message received DATA before final HEADERS");
+                throw unexpectedMessageFrame(Http3Protocol.FRAME_DATA, "HTTP/3 message received DATA before final HEADERS");
             }
             if (messageType == MessageType.RESPONSE && header.type() == Http3Protocol.FRAME_PUSH_PROMISE) {
                 rejectDisabledPushPromise();
@@ -834,12 +890,12 @@ public final class Http3MessageReader implements AutoCloseable {
         WritableHeaders<?> decoded = WritableHeaders.create();
         try {
             List<Header> fieldLines = decodeCurrentFieldSection();
-            fieldLines.forEach(decoded::add);
-            validateTrailers(decoded, validateHeaderValues);
+            fieldLines.forEach(header -> QpackCodec.addDecodedHeader(decoded, header));
+            validateTrailers(decoded);
         } catch (IllegalArgumentException e) {
             throw messageError(e.getMessage(), e);
         }
-        if (decoded.size() > 0) {
+        if (decoded.size() > 0 && frameListener.enabled()) {
             frameListener.trailers(context, streamId, decoded);
         }
         trailers = decoded;
@@ -867,7 +923,9 @@ public final class Http3MessageReader implements AutoCloseable {
         int headerLength = decodedType.encodedLength() + decodedLength.encodedLength();
         currentFrameType = frameType;
         currentFrameLength = frameLength;
-        frameListener.frameHeader(context, streamId, frameType, frameLength, headerLength);
+        if (frameListener.enabled()) {
+            frameListener.frameHeader(context, streamId, frameType, frameLength, headerLength);
+        }
         if (frameListener.rawDataEnabled()) {
             byte[] header = new byte[headerLength];
             System.arraycopy(encodedFrameHeader, 0, header, 0, headerLength);
@@ -888,7 +946,9 @@ public final class Http3MessageReader implements AutoCloseable {
                 currentFrameLength -= discarded.length;
             } else {
                 int discarded = input.discardBuffer(chunkSize);
-                frameListener.frameData(context, streamId, discarded, currentFrameLength == discarded);
+                if (frameListener.enabled()) {
+                    frameListener.frameData(context, streamId, discarded, currentFrameLength == discarded);
+                }
                 currentFrameLength -= discarded;
             }
         }
@@ -940,7 +1000,9 @@ public final class Http3MessageReader implements AutoCloseable {
             byte[] remaining = input.readBytes(pushIdLength - 1);
             System.arraycopy(remaining, 0, pushId, 1, remaining.length);
         }
-        frameListener.frameData(context, streamId, pushIdLength, false);
+        if (frameListener.enabled()) {
+            frameListener.frameData(context, streamId, pushIdLength, false);
+        }
         if (frameListener.rawDataEnabled()) {
             frameListener.rawFrameData(context, streamId, pushId, false);
         }
@@ -979,7 +1041,9 @@ public final class Http3MessageReader implements AutoCloseable {
     }
 
     private void notifyFrameData(byte[] data, boolean last) {
-        frameListener.frameData(context, streamId, data.length, last);
+        if (frameListener.enabled()) {
+            frameListener.frameData(context, streamId, data.length, last);
+        }
         if (!frameListener.rawDataEnabled()) {
             return;
         }
@@ -1017,75 +1081,22 @@ public final class Http3MessageReader implements AutoCloseable {
         phase = Phase.FIN;
     }
 
-    private static OptionalLong validateHeaders(Headers headers,
-                                                boolean validateValues,
-                                                HeaderSection section) {
-        return validateHeaders(headers, validateValues, section, true);
+    private enum MessageType {
+        REQUEST,
+        RESPONSE
     }
 
-    private static OptionalLong validateHeaders(Headers headers,
-                                                boolean validateValues,
-                                                HeaderSection section,
-                                                boolean parseContentLength) {
-        Objects.requireNonNull(headers, "headers");
-        for (Header header : headers) {
-            String headerName = header.headerName().lowerCase();
-            validateLowercaseHeaderName(headerName);
-            if (headerName.startsWith(":")) {
-                throw new IllegalArgumentException("HTTP/3 regular field section contains pseudo-header: " + headerName);
-            }
-            if (CONNECTION_SPECIFIC_HEADERS.contains(headerName)) {
-                throw new IllegalArgumentException("Connection-specific field is prohibited in HTTP/3: " + headerName);
-            }
-            if (HeaderNames.TE.lowerCase().equals(headerName)) {
-                if (section != HeaderSection.REQUEST) {
-                    throw new IllegalArgumentException("TE is only permitted in initial HTTP/3 request fields");
-                }
-                List<String> values = headers.values(HeaderNames.TE);
-                if (values.isEmpty()) {
-                    throw new IllegalArgumentException("HTTP/3 TE field value must be trailers");
-                }
-                for (String value : values) {
-                    if (!"trailers".equalsIgnoreCase(value.trim())) {
-                        throw new IllegalArgumentException("HTTP/3 TE field value must be trailers");
-                    }
-                }
-            }
-            if (section == HeaderSection.TRAILERS
-                    && (HeaderNames.CONTENT_LENGTH.lowerCase().equals(headerName)
-                    || HeaderNames.HOST.lowerCase().equals(headerName)
-                    || HeaderNames.TRAILER.lowerCase().equals(headerName))) {
-                throw new IllegalArgumentException("Field is prohibited in HTTP/3 trailers: " + headerName);
-            }
-            if (validateValues) {
-                header.validate();
-            }
-        }
-        if (section == HeaderSection.TRAILERS) {
-            return OptionalLong.empty();
-        }
-        return parseContentLength ? headers.contentLength() : OptionalLong.empty();
+    private enum HeaderSection {
+        REQUEST,
+        RESPONSE,
+        TRAILERS
     }
 
-    private static void validateLowercaseHeaderName(String headerName) {
-        for (int i = 0; i < headerName.length(); i++) {
-            char current = headerName.charAt(i);
-            if (current >= 'A' && current <= 'Z') {
-                throw new IllegalArgumentException("HTTP/3 header field name must be lowercase: " + headerName);
-            }
-        }
-    }
-
-    private static Http3ProtocolException messageError(String message) {
-        return Http3ProtocolException.streamError(Http3ErrorCode.MESSAGE_ERROR, message);
-    }
-
-    private static Http3ProtocolException messageError(String message, Throwable cause) {
-        return Http3ProtocolException.streamError(Http3ErrorCode.MESSAGE_ERROR, message, cause);
-    }
-
-    private static Http3ProtocolException frameError(String message) {
-        return Http3ProtocolException.connectionError(Http3ErrorCode.FRAME_ERROR, message);
+    private enum Phase {
+        INITIAL_HEADERS,
+        DATA,
+        TRAILERS,
+        FIN
     }
 
     /**
@@ -1095,25 +1106,26 @@ public final class Http3MessageReader implements AutoCloseable {
     public static final class ResponseOptions {
         private final ReadOptions readOptions;
 
-        private ResponseOptions(boolean validateHeaderValues,
-                                Optional<Duration> readTimeout,
+        private ResponseOptions(Optional<Duration> readTimeout,
                                 Http3FrameListener frameListener) {
-            this.readOptions = new ReadOptions(validateHeaderValues, readTimeout, frameListener);
+            this.readOptions = new ReadOptions(readTimeout, frameListener);
         }
 
         /**
          * Create timed response read options.
          *
-         * @param validateHeaderValues whether regular header values should be validated
-         * @param readTimeout maximum time to wait for the next response or QPACK input
+         * @param readTimeout maximum time to wait for the next response or QPACK input; must not be negative
          * @param frameListener frame listener
          * @return response read options
+         * @throws IllegalArgumentException if the timeout is negative
          */
-        public static ResponseOptions create(boolean validateHeaderValues,
-                                             Duration readTimeout,
+        public static ResponseOptions create(Duration readTimeout,
                                              Http3FrameListener frameListener) {
-            return new ResponseOptions(validateHeaderValues,
-                                       Optional.of(Objects.requireNonNull(readTimeout, "readTimeout")),
+            Objects.requireNonNull(readTimeout, "readTimeout");
+            if (readTimeout.isNegative()) {
+                throw new IllegalArgumentException("readTimeout must not be negative: " + readTimeout);
+            }
+            return new ResponseOptions(Optional.of(readTimeout),
                                        frameListener);
         }
 
@@ -1156,15 +1168,12 @@ public final class Http3MessageReader implements AutoCloseable {
      * Shared request and response read options.
      */
     static final class ReadOptions {
-        private final boolean validateHeaderValues;
         private final Optional<Duration> readTimeout;
         private final Http3FrameListener frameListener;
         private final CompletableFuture<Void> readTimeoutActivation = new CompletableFuture<>();
 
-        private ReadOptions(boolean validateHeaderValues,
-                            Optional<Duration> readTimeout,
+        private ReadOptions(Optional<Duration> readTimeout,
                             Http3FrameListener frameListener) {
-            this.validateHeaderValues = validateHeaderValues;
             this.readTimeout = Objects.requireNonNull(readTimeout, "readTimeout");
             this.frameListener = Objects.requireNonNull(frameListener, "frameListener");
         }
@@ -1186,24 +1195,6 @@ public final class Http3MessageReader implements AutoCloseable {
                 readTimeoutActivation.complete(null);
             }
         }
-    }
-
-    private enum MessageType {
-        REQUEST,
-        RESPONSE
-    }
-
-    private enum HeaderSection {
-        REQUEST,
-        RESPONSE,
-        TRAILERS
-    }
-
-    private enum Phase {
-        INITIAL_HEADERS,
-        DATA,
-        TRAILERS,
-        FIN
     }
 
     private record FrameHeader(long type, long length) {

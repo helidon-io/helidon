@@ -125,7 +125,6 @@ final class Http3ServerStream implements Runnable {
                                                  serverConnection.qpackContext(),
                                                  serverConnection.connection(),
                                                  config.maxHeadersSize(),
-                                                 config.validateRequestHeaders(),
                                                  requestReadTimeout,
                                                  receiveFrameListener);
     }
@@ -233,7 +232,6 @@ final class Http3ServerStream implements Runnable {
         current = new Http3ServerResponse(context(),
                                           request,
                                           this,
-                                          config.validateResponseHeaders(),
                                           config.responseDispatchWindowSize(),
                                           config.sinkProviders());
         response = current;
@@ -603,8 +601,7 @@ final class Http3ServerStream implements Runnable {
         }
         OptionalLong contentLength = Http3MessageReader.validateResponseHeaders(requestMethod,
                                                                                  status,
-                                                                                 headers,
-                                                                                 config.validateResponseHeaders());
+                                                                                 headers);
         if (bodyAllowed && !semantics.tunnel() && contentLength.isPresent()
                 && contentLength.orElseThrow() != body.length) {
             throw new IllegalArgumentException("Response data length does not match Content-Length");

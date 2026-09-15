@@ -101,13 +101,6 @@ public final class Http3GoAway {
         return type == previous.type && identifier <= previous.identifier;
     }
 
-    private static void requireVarInt(long identifier) {
-        if (identifier < 0 || identifier > VariableLengthEncoder.MAX_ENCODED_INTEGER) {
-            throw new IllegalArgumentException(
-                    "HTTP/3 GOAWAY identifier must be a QUIC variable-length integer: " + identifier);
-        }
-    }
-
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -127,6 +120,13 @@ public final class Http3GoAway {
     @Override
     public String toString() {
         return "Http3GoAway[type=" + type + ", identifier=" + identifier + ']';
+    }
+
+    private static void requireVarInt(long identifier) {
+        if (identifier < 0 || identifier > VariableLengthEncoder.MAX_ENCODED_INTEGER) {
+            throw new IllegalArgumentException(
+                    "HTTP/3 GOAWAY identifier must be a QUIC variable-length integer: " + identifier);
+        }
     }
 
     /**

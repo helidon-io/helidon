@@ -79,6 +79,7 @@ import io.helidon.http.http3.Http3GoAway;
 import io.helidon.http.http3.Http3MessageReader;
 import io.helidon.http.http3.Http3PeerCriticalStreams;
 import io.helidon.http.http3.Http3Protocol;
+import io.helidon.http.http3.Http3ProtocolException;
 import io.helidon.http.http3.Http3QpackContext;
 import io.helidon.http.http3.Http3Settings;
 import io.helidon.http.http3.Http3StreamSupport;
@@ -141,6 +142,7 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http3WebServerIT {
@@ -255,6 +257,149 @@ class Http3WebServerIT {
             assertThat(waitFor(() -> requestStream.stream().rcvErrorCode() == Http3ErrorCode.MESSAGE_ERROR.code(),
                                Duration.ofSeconds(10)),
                        equalTo(true));
+        }
+    }
+
+    @Test
+    void shouldRejectMalformedRequestValuesWhenHeaderValidationIsDisabled() throws Exception {
+        AtomicBoolean routed = new AtomicBoolean();
+        Http3Config config = Http3Config.builder()
+                .validateRequestHeaders(false)
+                .validateResponseHeaders(false)
+                .buildPrototype();
+        try (TestEnvironment environment = TestEnvironment.create(config,
+                                                                   routing -> routing
+                                                                           .get("/alive", (req, res) -> res.send("alive"))
+                                                                           .get("/malformed", (req, res) -> {
+                                                                               routed.set(true);
+                                                                               res.send();
+                                                                           }));
+             LowLevelHttp3Client client = LowLevelHttp3Client.create(environment)) {
+            LowLevelHttp3Client.RequestStream requestStream = client.openRequestStream();
+            requestStream.writer()
+                    .scheduleForWriting(BufferData.create(rawHeadersFrame(List.of(
+                            HeaderValues.create(HeaderNames.createFromLowercase(":method"), "GET"),
+                            HeaderValues.create(HeaderNames.createFromLowercase(":scheme"), "https"),
+                            HeaderValues.create(HeaderNames.createFromLowercase(":authority"), "localhost"),
+                            HeaderValues.create(HeaderNames.createFromLowercase(":path"), "/malformed"),
+                            HeaderValues.create("x-malformed", "before\nafter")))),
+                                        true);
+
+            assertThat("Malformed request field must reset its stream with H3_MESSAGE_ERROR",
+                       waitFor(() -> requestStream.stream().rcvErrorCode() == Http3ErrorCode.MESSAGE_ERROR.code(),
+                               Duration.ofSeconds(10)),
+                       equalTo(true));
+            assertThat(routed.get(), equalTo(false));
+            DecodedResponse followUp = client.get(environment.uri("/alive"));
+            assertThat(followUp.status(), equalTo(200));
+            assertThat(new String(followUp.body(), StandardCharsets.UTF_8), equalTo("alive"));
+        }
+    }
+
+    @Test
+    void shouldRejectMalformedResponseValuesWhenHeaderValidationIsDisabled() throws Exception {
+        try (RawTestEnvironment environment = RawTestEnvironment.create(serverStream -> {
+                 serverStream.writeResponseHeaders(200,
+                                                   headers(HeaderValues.create("x-malformed", "before\nafter")),
+                                                   true);
+                 return Optional.empty();
+             })) {
+            Http3Client client = strictClientBuilder()
+                    .tls(environment.clientTls())
+                    .protocolConfig(Http3ClientProtocolConfig.builder()
+                                            .priorKnowledge(true)
+                                            .validateRequestHeaders(false)
+                                            .validateResponseHeaders(false)
+                                            .build())
+                    .build();
+            try {
+                RuntimeException failure = assertThrows(RuntimeException.class, () -> {
+                    try (Http3ClientResponse response = client.get(environment.uri("/malformed").toString()).request()) {
+                        response.as(String.class);
+                    }
+                });
+
+                Http3ProtocolException protocolFailure = Http3ProtocolException.find(failure)
+                        .orElseThrow(() -> new AssertionError("Missing local HTTP/3 response validation failure", failure));
+                assertThat(protocolFailure.errorCode(), equalTo(Http3ErrorCode.MESSAGE_ERROR));
+                assertThat(protocolFailure.scope(), equalTo(Http3ProtocolException.Scope.STREAM));
+            } finally {
+                client.closeResource();
+            }
+        }
+    }
+
+    @Test
+    void shouldRejectGeneratingMalformedRequestValuesWhenHeaderValidationIsDisabled() throws Exception {
+        AtomicBoolean routed = new AtomicBoolean();
+        try (TestEnvironment environment = TestEnvironment.create(routing -> routing.get("/malformed", (req, res) -> {
+                 routed.set(true);
+                 res.send();
+             }))) {
+            Http3Client client = strictClientBuilder()
+                    .tls(environment.clientTls())
+                    .protocolConfig(Http3ClientProtocolConfig.builder()
+                                            .priorKnowledge(true)
+                                            .validateRequestHeaders(false)
+                                            .validateResponseHeaders(false)
+                                            .build())
+                    .build();
+            try {
+                RuntimeException failure = assertThrows(RuntimeException.class, () -> {
+                    try (Http3ClientResponse response = client.get(environment.uri("/malformed").toString())
+                            .header(HeaderValues.create("x-malformed", "before\nafter"))
+                            .request()) {
+                        response.as(String.class);
+                    }
+                });
+
+                Throwable validationFailure = failure;
+                while (validationFailure.getCause() != null) {
+                    validationFailure = validationFailure.getCause();
+                }
+                assertInstanceOf(IllegalArgumentException.class, validationFailure);
+                assertThat(validationFailure.getMessage(),
+                           containsString("header value is invalid for header 'x-malformed'"));
+                assertThat(routed.get(), equalTo(false));
+            } finally {
+                client.closeResource();
+            }
+        }
+    }
+
+    @Test
+    void shouldRejectGeneratingMalformedResponseValuesWhenHeaderValidationIsDisabled() throws Exception {
+        CompletableFuture<IllegalArgumentException> rejection = new CompletableFuture<>();
+        AtomicBoolean sentAtRejection = new AtomicBoolean();
+        Http3Config config = Http3Config.builder()
+                .validateRequestHeaders(false)
+                .validateResponseHeaders(false)
+                .buildPrototype();
+        try (TestEnvironment environment = TestEnvironment.create(config,
+                                                                   routing -> routing.get("/malformed", (req, res) -> {
+                                                                       res.header(HeaderValues.create("x-malformed",
+                                                                                                     "before\nafter"));
+                                                                       try {
+                                                                           res.send();
+                                                                           rejection.completeExceptionally(new AssertionError(
+                                                                                   "Malformed response field was written"));
+                                                                       } catch (IllegalArgumentException failure) {
+                                                                           sentAtRejection.set(res.isSent());
+                                                                           rejection.complete(failure);
+                                                                           throw failure;
+                                                                       }
+                                                                   }));
+             LowLevelHttp3Client client = LowLevelHttp3Client.create(environment)) {
+            LowLevelHttp3Client.RequestStream requestStream = client.openRequestStream();
+            requestStream.writer().scheduleForWriting(BufferData.create(client.encodeRequestHeaders(requestStream,
+                                                                                                    environment.uri("/malformed"),
+                                                                                                    "GET",
+                                                                                                    headers())),
+                                                      true);
+
+            IllegalArgumentException failure = rejection.get(10, TimeUnit.SECONDS);
+            assertThat(failure.getMessage(), containsString("header value is invalid for header 'x-malformed'"));
+            assertThat(sentAtRejection.get(), equalTo(false));
         }
     }
 
@@ -1969,18 +2114,15 @@ class Http3WebServerIT {
 
                 Map<String, String> connectionTags = Map.of("role", "server",
                                                             "transport", "quic",
-                                                            "protocol", "http/3",
-                                                            "scope", "vendor");
+                                                            "protocol", "http/3");
                 Map<String, String> handshakeTags = Map.of("role", "server",
                                                            "transport", "quic",
                                                            "handshake", "quic-tls",
-                                                           "outcome", "success",
-                                                           "scope", "vendor");
+                                                           "outcome", "success");
                 Map<String, String> streamTags = Map.of("role", "server",
                                                         "protocol", "http/3",
                                                         "direction", "bidi",
-                                                        "initiator", "remote",
-                                                        "scope", "vendor");
+                                                        "initiator", "remote");
                 boolean observed = waitFor(() -> counterMeters(meterRegistry,
                                                                "http.connections.established",
                                                                connectionTags) > 0
@@ -3021,11 +3163,17 @@ class Http3WebServerIT {
                     .build();
             Http3QpackContext qpackContext = createQpackContext();
             QuicClientConnection connection = createConnection(client, environment.securePort, qpackContext);
-            connection.startHandshake().get(20, TimeUnit.SECONDS);
-            QuicStreamWriter controlWriter = primeCriticalStreams
-                    ? primeControlStreams(connection, qpackContext)
-                    : null;
-            return new LowLevelHttp3Client(executor, client, connection, qpackContext, controlWriter);
+            try {
+                connection.startHandshake().get(20, TimeUnit.SECONDS);
+                QuicStreamWriter controlWriter = primeCriticalStreams
+                        ? primeControlStreams(connection, qpackContext)
+                        : null;
+                return new LowLevelHttp3Client(executor, client, connection, qpackContext, controlWriter);
+            } catch (Exception | Error failure) {
+                try (LowLevelHttp3Client _ = new LowLevelHttp3Client(executor, client, connection, qpackContext, null)) {
+                    throw failure;
+                }
+            }
         }
 
         private static Http3QpackContext createQpackContext() {
@@ -3135,7 +3283,6 @@ class Http3WebServerIT {
                                                connection,
                                                requestMethod,
                                                16_384,
-                                               true,
                                                frameListener);
         }
 
@@ -3179,9 +3326,13 @@ class Http3WebServerIT {
         @Override
         public void close() throws Exception {
             try {
-                client.close();
+                qpackContext.close(new IllegalStateException("HTTP/3 test client closed"));
             } finally {
-                executor.close();
+                try {
+                    client.close();
+                } finally {
+                    executor.close();
+                }
             }
         }
 

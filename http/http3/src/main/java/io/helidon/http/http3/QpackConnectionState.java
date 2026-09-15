@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -64,16 +65,16 @@ final class QpackConnectionState {
     private final Map<Long, DecoderStream> decoderStreams = new HashMap<>();
     private final Map<Long, Deque<FieldSection>> blockedSections = new LinkedHashMap<>();
     private final Deque<byte[]> pendingEncoderInstructions = new ArrayDeque<>();
-    private CompletableFuture<Void> decoderProgress = new CompletableFuture<>();
     private final Deque<byte[]> pendingDecoderInstructions = new ArrayDeque<>();
     private final long localMaxTableCapacity;
     private final long localBlockedStreams;
     private final int maxHeadersSize;
     private final int encodedFieldSectionLimit;
-    private final int maxEncoderInstructionSize;
+    private final EncoderInstructionReader encoderInstructionReader;
     private final Consumer<Throwable> connectionFailureHandler;
     private final AtomicReference<Throwable> terminationSelection = new AtomicReference<>();
 
+    private CompletableFuture<Void> decoderProgress = new CompletableFuture<>();
     private Http3QpackContext.InstructionSender encoderInstructionsSender;
     private Http3QpackContext.InstructionSender decoderInstructionsSender;
     private long knownReceivedCount;
@@ -81,7 +82,6 @@ final class QpackConnectionState {
     private int unacknowledgedSectionCount;
     private int pendingEncoderInstructionBytes;
     private int pendingDecoderInstructionBytes;
-    private byte[] pendingEncoderInput = EMPTY_BYTES;
     private byte[] pendingDecoderInput = EMPTY_BYTES;
 
     /**
@@ -102,9 +102,10 @@ final class QpackConnectionState {
         this.localBlockedStreams = localBlockedStreams;
         this.maxHeadersSize = maxHeadersSize;
         this.encodedFieldSectionLimit = Http3QpackContext.encodedFieldSectionLimit(maxHeadersSize);
-        this.maxEncoderInstructionSize = localMaxTableCapacity > (Integer.MAX_VALUE - ENCODER_INSTRUCTION_ENVELOPE) / 4L
+        int maxEncoderInstructionSize = localMaxTableCapacity > (Integer.MAX_VALUE - ENCODER_INSTRUCTION_ENVELOPE) / 4L
                 ? Integer.MAX_VALUE
                 : (int) (localMaxTableCapacity * 4 + ENCODER_INSTRUCTION_ENVELOPE);
+        this.encoderInstructionReader = new EncoderInstructionReader(maxEncoderInstructionSize);
         this.connectionFailureHandler = connectionFailureHandler;
     }
 
@@ -121,6 +122,9 @@ final class QpackConnectionState {
                                        long localBlockedStreams,
                                        int maxHeadersSize,
                                        Consumer<Throwable> connectionFailureHandler) {
+        if (localBlockedStreams < 0) {
+            throw new IllegalArgumentException("localBlockedStreams must not be negative: " + localBlockedStreams);
+        }
         if (maxHeadersSize < 0) {
             throw new IllegalArgumentException("maxHeadersSize must not be negative: " + maxHeadersSize);
         }
@@ -250,10 +254,11 @@ final class QpackConnectionState {
 
             for (Header header : headers) {
                 String name = header.headerName().lowerCase();
+                boolean sensitive = header.sensitive();
                 for (String value : header.allValues()) {
-                    FieldEncoding encoding = chooseFieldEncoding(name, value, referenceLimit);
+                    FieldEncoding encoding = chooseFieldEncoding(name, value, sensitive, referenceLimit);
                     encodings.add(encoding);
-                    if (encoding.kind() != Kind.INDEXED) {
+                    if (!sensitive && encoding.kind() != Kind.INDEXED) {
                         insertionCandidates.add(new QpackCodec.HeaderField(name, value));
                     }
                     if (!encoding.fromStaticTable() && encoding.index() >= 0) {
@@ -283,8 +288,12 @@ final class QpackConnectionState {
                                                                                 encoding.index(),
                                                                                 encoding.fromStaticTable(),
                                                                                 base,
-                                                                                encoding.value());
-                case LITERAL -> QpackCodec.writeLiteralFieldLine(output, encoding.name(), encoding.value());
+                                                                                encoding.value(),
+                                                                                encoding.sensitive());
+                case LITERAL -> QpackCodec.writeLiteralFieldLine(output,
+                                                                 encoding.name(),
+                                                                 encoding.value(),
+                                                                 encoding.sensitive());
                 default -> throw new IllegalStateException("Unexpected field encoding kind: " + encoding.kind().text());
                 }
             }
@@ -330,86 +339,6 @@ final class QpackConnectionState {
         }
     }
 
-    private FieldSection beginFieldSection(DecoderStream stream,
-                                           BufferData buffer,
-                                           long maxFieldSectionSize) {
-        FieldSection section = null;
-        Http3ProtocolException connectionFailure = null;
-        decoderLock.lock();
-        try {
-            ensureOpen();
-            stream.ensureOpen();
-            if (stream.registered && decoderStreams.get(stream.streamId) != stream) {
-                throw new IllegalStateException("QPACK decoder stream state is no longer registered for HTTP/3 stream "
-                                                        + stream.streamId);
-            }
-            try {
-                if (buffer.available() > encodedFieldSectionLimit) {
-                    throw Http3ProtocolException.streamError(
-                            Http3ErrorCode.MESSAGE_ERROR,
-                            "Encoded QPACK field section exceeds the local encoded limit: "
-                                    + buffer.available() + " > " + encodedFieldSectionLimit);
-                }
-                QpackCodec.FieldSectionPrefix prefix = QpackCodec.readFieldSectionPrefix(buffer,
-                                                                                         decoderTable.insertCount(),
-                                                                                         decoderTable.maxEntries());
-                long decodedLimit = maxFieldSectionSize < 0
-                        ? maxHeadersSize
-                        : Math.min(maxFieldSectionSize, maxHeadersSize);
-                section = new FieldSection(stream,
-                                           prefix,
-                                           buffer,
-                                           QpackCodec.fieldSectionSizeTracker(decodedLimit));
-                if (prefix.requiredInsertCount() > decoderTable.insertCount()) {
-                    if (!stream.blockedSections.isEmpty()) {
-                        throw Http3ProtocolException.connectionError(
-                                Http3ErrorCode.QPACK_DECOMPRESSION_FAILED,
-                                "Concurrent blocked QPACK field sections are not allowed on stream " + stream.streamId);
-                    }
-                    Deque<FieldSection> streamSections = blockedSections.get(stream.streamId);
-                    if (streamSections == null) {
-                        if (blockedSections.size() >= localBlockedStreams) {
-                            throw Http3ProtocolException.connectionError(
-                                    Http3ErrorCode.QPACK_DECOMPRESSION_FAILED,
-                                    "Peer exceeded the advertised QPACK blocked-stream limit: " + localBlockedStreams);
-                        }
-                        streamSections = new ArrayDeque<>();
-                        blockedSections.put(stream.streamId, streamSections);
-                    }
-                    streamSections.addLast(section);
-                    stream.blockedSections.addLast(section);
-                    section.completion = new CompletableFuture<>();
-                } else {
-                    connectionFailure = resolveFieldSection(section);
-                }
-            } catch (Http3ProtocolException e) {
-                if (e.scope() != Http3ProtocolException.Scope.CONNECTION) {
-                    throw e;
-                }
-                if (section == null) {
-                    section = new FieldSection(stream, null, null, null);
-                }
-                connectionFailure = e;
-                section.fail(e);
-            } catch (IllegalArgumentException e) {
-                section = new FieldSection(stream, null, null, null);
-                connectionFailure = Http3ProtocolException.connectionError(
-                        Http3ErrorCode.QPACK_DECOMPRESSION_FAILED,
-                        "Malformed QPACK field section",
-                        e);
-                section.fail(connectionFailure);
-            }
-        } finally {
-            decoderLock.unlock();
-        }
-        Objects.requireNonNull(section, "fieldSection");
-        section.publishCompletion();
-        if (connectionFailure != null) {
-            failConnection(connectionFailure);
-        }
-        return section;
-    }
-
     /**
      * Process bytes received on the remote encoder stream.
      *
@@ -425,28 +354,16 @@ final class QpackConnectionState {
             ensureOpen();
             long initialInsertCount = decoderTable.insertCount();
             try {
-                BufferData incoming = BufferData.create(bytes);
-                while (incoming.available() > 0) {
-                    byte[] chunk = new byte[Math.min(incoming.available(), MAX_QPACK_INPUT_CHUNK_SIZE)];
-                    incoming.read(chunk);
-                    pendingEncoderInput = append(pendingEncoderInput, chunk);
-                    int consumed = 0;
-                    while (consumed < pendingEncoderInput.length) {
-                        BufferData buffer = BufferData.createReadOnly(pendingEncoderInput,
-                                                                      consumed,
-                                                                      pendingEncoderInput.length - consumed);
-                        EncoderInstruction instruction = tryReadEncoderInstruction(buffer,
-                                                                                    maxEncoderInstructionSize);
-                        if (instruction == null) {
-                            break;
-                        }
-                        consumed = pendingEncoderInput.length - buffer.available();
+                int offset = 0;
+                while (offset < bytes.length) {
+                    int chunkLength = Math.min(bytes.length - offset, MAX_QPACK_INPUT_CHUNK_SIZE);
+                    BufferData incoming = BufferData.createReadOnly(bytes, offset, chunkLength);
+                    EncoderInstruction instruction;
+                    while ((instruction = encoderInstructionReader.read(incoming)) != null) {
                         applyEncoderInstruction(instruction);
                     }
-                    pendingEncoderInput = remaining(pendingEncoderInput, consumed);
-                    if (pendingEncoderInput.length > maxEncoderInstructionSize) {
-                        throw new IllegalArgumentException("Incomplete QPACK encoder instruction exceeds the local limit");
-                    }
+                    encoderInstructionReader.checkIncompleteSize();
+                    offset += chunkLength;
                 }
                 if (decoderTable.insertCount() > initialInsertCount && !blockedSections.isEmpty()) {
                     var streams = blockedSections.entrySet().iterator();
@@ -566,6 +483,230 @@ final class QpackConnectionState {
         terminate(Objects.requireNonNull(cause, "cause"));
     }
 
+    private static byte[] append(byte[] current, byte[] additional) {
+        if (current.length == 0) {
+            return additional.clone();
+        }
+        byte[] bytes = new byte[current.length + additional.length];
+        System.arraycopy(current, 0, bytes, 0, current.length);
+        System.arraycopy(additional, 0, bytes, current.length, additional.length);
+        return bytes;
+    }
+
+    private static byte[] remaining(byte[] source, int consumed) {
+        if (consumed == 0) {
+            return source;
+        }
+        if (consumed >= source.length) {
+            return EMPTY_BYTES;
+        }
+        byte[] remaining = new byte[source.length - consumed];
+        System.arraycopy(source, consumed, remaining, 0, remaining.length);
+        return remaining;
+    }
+
+    private static DecoderInstruction tryReadDecoderInstruction(BufferData buffer) {
+        if (buffer.available() == 0) {
+            return null;
+        }
+        int first = buffer.get(0) & 0xff;
+        DecoderInstruction instruction;
+        if ((first & 0x80) != 0) {
+            Long streamId = tryReadPrefixedInteger(buffer, 7);
+            if (streamId == null) {
+                return null;
+            }
+            instruction = DecoderInstruction.sectionAcknowledgment(streamId);
+        } else if ((first & 0x40) != 0) {
+            Long streamId = tryReadPrefixedInteger(buffer, 6);
+            if (streamId == null) {
+                return null;
+            }
+            instruction = DecoderInstruction.streamCancellation(streamId);
+        } else {
+            Long increment = tryReadPrefixedInteger(buffer, 6);
+            if (increment == null) {
+                return null;
+            }
+            instruction = DecoderInstruction.insertCountIncrement(increment);
+        }
+        return instruction;
+    }
+
+    private static Long tryReadPrefixedInteger(BufferData buffer, int prefixBits) {
+        if (buffer.available() == 0) {
+            return null;
+        }
+        int mask = (1 << prefixBits) - 1;
+        int first = buffer.read() & 0xff;
+        long value = first & mask;
+        if (value < mask) {
+            return value;
+        }
+        int shift = 0;
+        int continuationBytes = 0;
+        while (true) {
+            if (buffer.available() == 0) {
+                return null;
+            }
+            int next = buffer.read() & 0xff;
+            continuationBytes++;
+            long increment = next & 0x7f;
+            if (shift >= Long.SIZE - 1 || increment > (Long.MAX_VALUE - value) >> shift) {
+                throw new IllegalArgumentException("QPACK prefixed integer exceeds the supported range");
+            }
+            value += increment << shift;
+            if ((next & 0x80) == 0) {
+                return value;
+            }
+            if (continuationBytes >= 10) {
+                throw new IllegalArgumentException("QPACK prefixed integer exceeds the supported encoded length");
+            }
+            shift += 7;
+        }
+    }
+
+    private static byte[] encodeTableCapacityUpdate(long capacity) {
+        BufferData output = BufferData.growing(16);
+        QpackCodec.writePrefixedInteger(output, 5, 0b0010_0000, capacity);
+        return output.readBytes();
+    }
+
+    private static byte[] encodeLiteralInsertion(String name, String value) {
+        BufferData output = BufferData.growing(name.length() + value.length() + 8);
+        QpackCodec.writeString(output, 5, 0b0100_0000, name);
+        QpackCodec.writeString(output, 7, 0, value);
+        return output.readBytes();
+    }
+
+    private static byte[] encodeSectionAcknowledgment(long streamId) {
+        BufferData output = BufferData.growing(16);
+        QpackCodec.writePrefixedInteger(output, 7, 0b1000_0000, streamId);
+        return output.readBytes();
+    }
+
+    private static byte[] encodeStreamCancellation(long streamId) {
+        BufferData output = BufferData.growing(16);
+        QpackCodec.writePrefixedInteger(output, 6, 0b0100_0000, streamId);
+        return output.readBytes();
+    }
+
+    private static byte[] encodeInsertCountIncrement(long increment) {
+        BufferData output = BufferData.growing(16);
+        QpackCodec.writePrefixedInteger(output, 6, 0, increment);
+        return output.readBytes();
+    }
+
+    private static Http3ProtocolException qpackEncoderStreamError(String message) {
+        return Http3ProtocolException.connectionError(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR, message);
+    }
+
+    private static Http3ProtocolException qpackEncoderStreamError(String message, Throwable cause) {
+        return Http3ProtocolException.connectionError(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR, message, cause);
+    }
+
+    private static Http3ProtocolException qpackDecoderStreamError(String message) {
+        return Http3ProtocolException.connectionError(Http3ErrorCode.QPACK_DECODER_STREAM_ERROR, message);
+    }
+
+    private static FieldEncoding[] staticIndexedEncodings() {
+        FieldEncoding[] encodings = new FieldEncoding[QpackStaticTable.size()];
+        for (int i = 0; i < encodings.length; i++) {
+            encodings[i] = FieldEncoding.indexed(i, true);
+        }
+        return encodings;
+    }
+
+    private static RuntimeException uncheckedFailure(String message, Throwable failure) {
+        Objects.requireNonNull(failure, "failure");
+        return switch (failure) {
+            case RuntimeException runtimeException -> runtimeException;
+            case Error error -> throw error;
+            case IOException ioException -> new UncheckedIOException(message, ioException);
+            default -> new IllegalStateException(message, failure);
+        };
+    }
+
+    private FieldSection beginFieldSection(DecoderStream stream,
+                                           BufferData buffer,
+                                           long maxFieldSectionSize) {
+        FieldSection section = null;
+        Http3ProtocolException connectionFailure = null;
+        decoderLock.lock();
+        try {
+            ensureOpen();
+            stream.ensureOpen();
+            if (stream.registered && decoderStreams.get(stream.streamId) != stream) {
+                throw new IllegalStateException("QPACK decoder stream state is no longer registered for HTTP/3 stream "
+                                                        + stream.streamId);
+            }
+            try {
+                if (buffer.available() > encodedFieldSectionLimit) {
+                    throw Http3ProtocolException.streamError(
+                            Http3ErrorCode.MESSAGE_ERROR,
+                            "Encoded QPACK field section exceeds the local encoded limit: "
+                                    + buffer.available() + " > " + encodedFieldSectionLimit);
+                }
+                QpackCodec.FieldSectionPrefix prefix = QpackCodec.readFieldSectionPrefix(buffer,
+                                                                                         decoderTable.insertCount(),
+                                                                                         decoderTable.maxEntries());
+                long decodedLimit = maxFieldSectionSize < 0
+                        ? maxHeadersSize
+                        : Math.min(maxFieldSectionSize, maxHeadersSize);
+                section = new FieldSection(stream,
+                                           prefix,
+                                           buffer,
+                                           QpackCodec.fieldSectionSizeTracker(decodedLimit));
+                if (prefix.requiredInsertCount() > decoderTable.insertCount()) {
+                    if (!stream.blockedSections.isEmpty()) {
+                        throw Http3ProtocolException.connectionError(
+                                Http3ErrorCode.QPACK_DECOMPRESSION_FAILED,
+                                "Concurrent blocked QPACK field sections are not allowed on stream " + stream.streamId);
+                    }
+                    Deque<FieldSection> streamSections = blockedSections.get(stream.streamId);
+                    if (streamSections == null) {
+                        if (blockedSections.size() >= localBlockedStreams) {
+                            throw Http3ProtocolException.connectionError(
+                                    Http3ErrorCode.QPACK_DECOMPRESSION_FAILED,
+                                    "Peer exceeded the advertised QPACK blocked-stream limit: " + localBlockedStreams);
+                        }
+                        streamSections = new ArrayDeque<>();
+                        blockedSections.put(stream.streamId, streamSections);
+                    }
+                    streamSections.addLast(section);
+                    stream.blockedSections.addLast(section);
+                    section.completion = new CompletableFuture<>();
+                } else {
+                    connectionFailure = resolveFieldSection(section);
+                }
+            } catch (Http3ProtocolException e) {
+                if (e.scope() != Http3ProtocolException.Scope.CONNECTION) {
+                    throw e;
+                }
+                if (section == null) {
+                    section = new FieldSection(stream, null, null, null);
+                }
+                connectionFailure = e;
+                section.fail(e);
+            } catch (IllegalArgumentException e) {
+                section = new FieldSection(stream, null, null, null);
+                connectionFailure = Http3ProtocolException.connectionError(
+                        Http3ErrorCode.QPACK_DECOMPRESSION_FAILED,
+                        "Malformed QPACK field section",
+                        e);
+                section.fail(connectionFailure);
+            }
+        } finally {
+            decoderLock.unlock();
+        }
+        Objects.requireNonNull(section, "fieldSection");
+        section.publishCompletion();
+        if (connectionFailure != null) {
+            failConnection(connectionFailure);
+        }
+        return section;
+    }
+
     private void failConnection(Throwable failure) {
         if (terminate(failure)) {
             connectionFailureHandler.accept(failure);
@@ -586,7 +727,7 @@ final class QpackConnectionState {
             decoderInstructionsSender = null;
             pendingEncoderInstructions.clear();
             pendingDecoderInstructions.clear();
-            pendingEncoderInput = EMPTY_BYTES;
+            encoderInstructionReader.clear();
             pendingDecoderInput = EMPTY_BYTES;
             unacknowledgedSections.clear();
             unacknowledgedSectionCount = 0;
@@ -706,198 +847,6 @@ final class QpackConnectionState {
         }
     }
 
-    private static byte[] append(byte[] current, byte[] additional) {
-        if (current.length == 0) {
-            return additional.clone();
-        }
-        byte[] bytes = new byte[current.length + additional.length];
-        System.arraycopy(current, 0, bytes, 0, current.length);
-        System.arraycopy(additional, 0, bytes, current.length, additional.length);
-        return bytes;
-    }
-
-    private static byte[] remaining(byte[] source, int consumed) {
-        if (consumed == 0) {
-            return source;
-        }
-        if (consumed >= source.length) {
-            return EMPTY_BYTES;
-        }
-        byte[] remaining = new byte[source.length - consumed];
-        System.arraycopy(source, consumed, remaining, 0, remaining.length);
-        return remaining;
-    }
-
-    private static EncoderInstruction tryReadEncoderInstruction(BufferData buffer, int maxInstructionSize) {
-        if (buffer.available() == 0) {
-            return null;
-        }
-        int first = buffer.get(0) & 0xff;
-        EncoderInstruction instruction;
-        if ((first & 0x80) != 0) {
-            boolean fromStatic = (first & 0x40) != 0;
-            Long nameIndex = tryReadPrefixedInteger(buffer, 6);
-            if (nameIndex == null) {
-                return null;
-            }
-            String value = tryReadString(buffer, 7, maxInstructionSize);
-            if (value == null) {
-                return null;
-            }
-            instruction = EncoderInstruction.nameReference(nameIndex, fromStatic, value);
-        } else if ((first & 0x40) != 0) {
-            String name = tryReadString(buffer, 5, maxInstructionSize);
-            if (name == null) {
-                return null;
-            }
-            String value = tryReadString(buffer, 7, maxInstructionSize);
-            if (value == null) {
-                return null;
-            }
-            instruction = EncoderInstruction.literal(name, value);
-        } else if ((first & 0x20) != 0) {
-            Long capacity = tryReadPrefixedInteger(buffer, 5);
-            if (capacity == null) {
-                return null;
-            }
-            instruction = EncoderInstruction.capacityUpdate(capacity);
-        } else {
-            Long index = tryReadPrefixedInteger(buffer, 5);
-            if (index == null) {
-                return null;
-            }
-            instruction = EncoderInstruction.duplicate(index);
-        }
-        return instruction;
-    }
-
-    private static DecoderInstruction tryReadDecoderInstruction(BufferData buffer) {
-        if (buffer.available() == 0) {
-            return null;
-        }
-        int first = buffer.get(0) & 0xff;
-        DecoderInstruction instruction;
-        if ((first & 0x80) != 0) {
-            Long streamId = tryReadPrefixedInteger(buffer, 7);
-            if (streamId == null) {
-                return null;
-            }
-            instruction = DecoderInstruction.sectionAcknowledgment(streamId);
-        } else if ((first & 0x40) != 0) {
-            Long streamId = tryReadPrefixedInteger(buffer, 6);
-            if (streamId == null) {
-                return null;
-            }
-            instruction = DecoderInstruction.streamCancellation(streamId);
-        } else {
-            Long increment = tryReadPrefixedInteger(buffer, 6);
-            if (increment == null) {
-                return null;
-            }
-            instruction = DecoderInstruction.insertCountIncrement(increment);
-        }
-        return instruction;
-    }
-
-    private static Long tryReadPrefixedInteger(BufferData buffer, int prefixBits) {
-        if (buffer.available() == 0) {
-            return null;
-        }
-        int mask = (1 << prefixBits) - 1;
-        int first = buffer.read() & 0xff;
-        long value = first & mask;
-        if (value < mask) {
-            return value;
-        }
-        int shift = 0;
-        int continuationBytes = 0;
-        while (true) {
-            if (buffer.available() == 0) {
-                return null;
-            }
-            int next = buffer.read() & 0xff;
-            continuationBytes++;
-            long increment = next & 0x7f;
-            if (shift >= Long.SIZE - 1 || increment > (Long.MAX_VALUE - value) >> shift) {
-                throw new IllegalArgumentException("QPACK prefixed integer exceeds the supported range");
-            }
-            value += increment << shift;
-            if ((next & 0x80) == 0) {
-                return value;
-            }
-            if (continuationBytes >= 10) {
-                throw new IllegalArgumentException("QPACK prefixed integer exceeds the supported encoded length");
-            }
-            shift += 7;
-        }
-    }
-
-    private static String tryReadString(BufferData buffer, int prefixBits, int maxEncodedLength) {
-        if (buffer.available() == 0) {
-            return null;
-        }
-        int first = buffer.get(0) & 0xff;
-        boolean huffman = (first & (1 << prefixBits)) != 0;
-        Long length = tryReadPrefixedInteger(buffer, prefixBits);
-        if (length == null) {
-            return null;
-        }
-        if (length > maxEncodedLength) {
-            throw new IllegalArgumentException("QPACK string exceeds the local encoded-length limit: "
-                                                       + length + " > " + maxEncodedLength);
-        }
-        if (length > buffer.available()) {
-            return null;
-        }
-
-        byte[] bytes = new byte[Math.toIntExact(length)];
-        buffer.read(bytes);
-        return QpackCodec.decodeStringBytes(bytes, huffman);
-    }
-
-    private static byte[] encodeTableCapacityUpdate(long capacity) {
-        BufferData output = BufferData.growing(16);
-        QpackCodec.writePrefixedInteger(output, 5, 0b0010_0000, capacity);
-        return output.readBytes();
-    }
-
-    private static byte[] encodeLiteralInsertion(String name, String value) {
-        BufferData output = BufferData.growing(name.length() + value.length() + 8);
-        QpackCodec.writeString(output, 5, 0b0100_0000, name);
-        QpackCodec.writeString(output, 7, 0, value);
-        return output.readBytes();
-    }
-
-    private static byte[] encodeSectionAcknowledgment(long streamId) {
-        BufferData output = BufferData.growing(16);
-        QpackCodec.writePrefixedInteger(output, 7, 0b1000_0000, streamId);
-        return output.readBytes();
-    }
-
-    private static byte[] encodeStreamCancellation(long streamId) {
-        BufferData output = BufferData.growing(16);
-        QpackCodec.writePrefixedInteger(output, 6, 0b0100_0000, streamId);
-        return output.readBytes();
-    }
-
-    private static byte[] encodeInsertCountIncrement(long increment) {
-        BufferData output = BufferData.growing(16);
-        QpackCodec.writePrefixedInteger(output, 6, 0, increment);
-        return output.readBytes();
-    }
-
-    private static Http3ProtocolException qpackEncoderStreamError(String message) {
-        return Http3ProtocolException.connectionError(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR, message);
-    }
-
-    private static Http3ProtocolException qpackEncoderStreamError(String message, Throwable cause) {
-        return Http3ProtocolException.connectionError(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR, message, cause);
-    }
-
-    private static Http3ProtocolException qpackDecoderStreamError(String message) {
-        return Http3ProtocolException.connectionError(Http3ErrorCode.QPACK_DECODER_STREAM_ERROR, message);
-    }
-
     private Header decodeIndexedFieldLine(FieldSection section) {
         int first = section.buffer.get(0) & 0xff;
         boolean fromStatic = (first & 0x40) != 0;
@@ -929,6 +878,7 @@ final class QpackConnectionState {
 
     private Header decodeLiteralWithNameReference(FieldSection section) {
         int first = section.buffer.get(0) & 0xff;
+        boolean sensitive = (first & 0x20) != 0;
         boolean fromStatic = (first & 0x10) != 0;
         long index = QpackCodec.readPrefixedInteger(section.buffer, 4);
         String name;
@@ -942,10 +892,11 @@ final class QpackConnectionState {
         section.sizeTracker.beginFieldLine();
         section.sizeTracker.consume(name.length());
         String value = QpackCodec.readString(section.buffer, 7, section.sizeTracker);
-        return HeaderValues.create(HeaderNames.createFromLowercase(name), value);
+        return QpackCodec.literalHeader(name, value, sensitive);
     }
 
     private Header decodeLiteralWithPostBaseNameReference(FieldSection section) {
+        boolean sensitive = (section.buffer.get(0) & 0x08) != 0;
         long index = QpackCodec.readPrefixedInteger(section.buffer, 3);
         long absoluteIndex = section.prefix.base() + index;
         section.dynamicReference(absoluteIndex);
@@ -953,15 +904,16 @@ final class QpackConnectionState {
         section.sizeTracker.beginFieldLine();
         section.sizeTracker.consume(name.length());
         String value = QpackCodec.readString(section.buffer, 7, section.sizeTracker);
-        return HeaderValues.create(HeaderNames.createFromLowercase(name), value);
+        return QpackCodec.literalHeader(name, value, sensitive);
     }
 
     private Header decodeLiteralWithLiteralName(BufferData buffer,
                                                 QpackCodec.FieldSectionSizeTracker sizeTracker) {
+        boolean sensitive = (buffer.get(0) & 0x10) != 0;
         sizeTracker.beginFieldLine();
         String name = QpackCodec.readString(buffer, 3, sizeTracker);
         String value = QpackCodec.readString(buffer, 7, sizeTracker);
-        return HeaderValues.create(HeaderNames.createFromLowercase(name), value);
+        return QpackCodec.literalHeader(name, value, sensitive);
     }
 
     private void maybeInsert(String name,
@@ -990,16 +942,17 @@ final class QpackConnectionState {
 
     private FieldEncoding chooseFieldEncoding(String name,
                                               String value,
+                                              boolean sensitive,
                                               long referenceLimit) {
         QpackStaticTable.HeaderIndices staticIndices = QpackStaticTable.indices(name);
-        if (staticIndices != null) {
+        if (!sensitive && staticIndices != null) {
             int staticExact = staticIndices.exactIndex(value);
             if (staticExact >= 0) {
                 return STATIC_INDEXED_ENCODINGS[staticExact];
             }
         }
 
-        if (referenceLimit >= 0) {
+        if (!sensitive && referenceLimit >= 0) {
             long dynamicExact = encoderTable.findExact(name, value, referenceLimit);
             if (dynamicExact >= 0) {
                 return FieldEncoding.indexed(dynamicExact, false);
@@ -1007,25 +960,17 @@ final class QpackConnectionState {
         }
 
         if (staticIndices != null) {
-            return FieldEncoding.nameReference(staticIndices.nameIndex(), true, value);
+            return FieldEncoding.nameReference(staticIndices.nameIndex(), true, value, sensitive);
         }
 
         if (referenceLimit >= 0) {
             long dynamicName = encoderTable.findName(name, referenceLimit);
             if (dynamicName >= 0) {
-                return FieldEncoding.nameReference(dynamicName, false, value);
+                return FieldEncoding.nameReference(dynamicName, false, value, sensitive);
             }
         }
 
-        return FieldEncoding.literal(name, value);
-    }
-
-    private static FieldEncoding[] staticIndexedEncodings() {
-        FieldEncoding[] encodings = new FieldEncoding[QpackStaticTable.size()];
-        for (int i = 0; i < encodings.length; i++) {
-            encodings[i] = FieldEncoding.indexed(i, true);
-        }
-        return encodings;
+        return FieldEncoding.literal(name, value, sensitive);
     }
 
     private void applyEncoderInstruction(EncoderInstruction instruction) {
@@ -1163,14 +1108,248 @@ final class QpackConnectionState {
         }
     }
 
-    private static RuntimeException uncheckedFailure(String message, Throwable failure) {
-        Objects.requireNonNull(failure, "failure");
-        return switch (failure) {
-            case RuntimeException runtimeException -> runtimeException;
-            case Error error -> throw error;
-            case IOException ioException -> new UncheckedIOException(message, ioException);
-            default -> new IllegalStateException(message, failure);
-        };
+    private enum DecoderStreamState {
+        OPEN,
+        COMPLETED,
+        CANCELLED,
+        FAILED
+    }
+
+    private enum FieldSectionState {
+        BLOCKED,
+        DECODED,
+        CANCELLED,
+        FAILED
+    }
+
+    private enum Kind {
+        INDEXED,
+        NAME_REFERENCE,
+        LITERAL;
+
+        private String text() {
+            return name();
+        }
+    }
+
+    private enum EncoderKind {
+        CAPACITY_UPDATE,
+        INSERT_LITERAL,
+        INSERT_NAME_REFERENCE,
+        DUPLICATE;
+
+        private String text() {
+            return name();
+        }
+    }
+
+    private enum DecoderKind {
+        SECTION_ACKNOWLEDGMENT,
+        STREAM_CANCELLATION,
+        INSERT_COUNT_INCREMENT;
+
+        private String text() {
+            return name();
+        }
+    }
+
+    private enum EncoderReadState {
+        INSTRUCTION,
+        ARGUMENT,
+        NAME,
+        VALUE_LENGTH,
+        VALUE
+    }
+
+    /**
+     * Incrementally parses one encoder instruction, retaining only its incomplete string and decoded name.
+     * The incomplete-instruction limit includes all bytes consumed since the instruction started.
+     */
+    private static final class EncoderInstructionReader {
+        private final int maxInstructionSize;
+
+        private EncoderReadState state = EncoderReadState.INSTRUCTION;
+        private EncoderKind kind;
+        private boolean fromStaticTable;
+        private long index;
+        private String name;
+        private long instructionBytes;
+        private boolean integerStarted;
+        private long integerValue;
+        private int integerShift;
+        private int continuationBytes;
+        private boolean huffman;
+        private int stringLength;
+        private int stringOffset;
+        private byte[] stringBytes = EMPTY_BYTES;
+
+        private EncoderInstructionReader(int maxInstructionSize) {
+            this.maxInstructionSize = maxInstructionSize;
+        }
+
+        private EncoderInstruction read(BufferData incoming) {
+            for (;;) {
+                switch (state) {
+                case INSTRUCTION -> {
+                    if (incoming.available() == 0) {
+                        return null;
+                    }
+                    int first = incoming.get(0) & 0xff;
+                    if ((first & 0x80) != 0) {
+                        kind = EncoderKind.INSERT_NAME_REFERENCE;
+                        fromStaticTable = (first & 0x40) != 0;
+                    } else if ((first & 0x40) != 0) {
+                        kind = EncoderKind.INSERT_LITERAL;
+                        huffman = (first & 0x20) != 0;
+                    } else if ((first & 0x20) != 0) {
+                        kind = EncoderKind.CAPACITY_UPDATE;
+                    } else {
+                        kind = EncoderKind.DUPLICATE;
+                    }
+                    state = EncoderReadState.ARGUMENT;
+                }
+                case ARGUMENT -> {
+                    if (!readInteger(incoming, kind == EncoderKind.INSERT_NAME_REFERENCE ? 6 : 5)) {
+                        return null;
+                    }
+                    switch (kind) {
+                    case CAPACITY_UPDATE, DUPLICATE -> {
+                        EncoderInstruction instruction = kind == EncoderKind.CAPACITY_UPDATE
+                                ? EncoderInstruction.capacityUpdate(integerValue)
+                                : EncoderInstruction.duplicate(integerValue);
+                        clear();
+                        return instruction;
+                    }
+                    case INSERT_NAME_REFERENCE -> {
+                        index = integerValue;
+                        state = EncoderReadState.VALUE_LENGTH;
+                    }
+                    case INSERT_LITERAL -> {
+                        beginString(integerValue);
+                        state = EncoderReadState.NAME;
+                    }
+                    default -> throw new IllegalStateException("Unexpected encoder instruction kind: " + kind.text());
+                    }
+                }
+                case NAME -> {
+                    name = readString(incoming);
+                    if (name == null) {
+                        return null;
+                    }
+                    state = EncoderReadState.VALUE_LENGTH;
+                }
+                case VALUE_LENGTH -> {
+                    if (!integerStarted && incoming.available() > 0) {
+                        huffman = (incoming.get(0) & 0x80) != 0;
+                    }
+                    if (!readInteger(incoming, 7)) {
+                        return null;
+                    }
+                    beginString(integerValue);
+                    state = EncoderReadState.VALUE;
+                }
+                case VALUE -> {
+                    String value = readString(incoming);
+                    if (value == null) {
+                        return null;
+                    }
+                    EncoderInstruction instruction = kind == EncoderKind.INSERT_LITERAL
+                            ? EncoderInstruction.literal(name, value)
+                            : EncoderInstruction.nameReference(index, fromStaticTable, value);
+                    clear();
+                    return instruction;
+                }
+                default -> throw new IllegalStateException("Unexpected encoder instruction read state: " + state);
+                }
+            }
+        }
+
+        private boolean readInteger(BufferData incoming, int prefixBits) {
+            if (!integerStarted) {
+                if (incoming.available() == 0) {
+                    return false;
+                }
+                int mask = (1 << prefixBits) - 1;
+                integerValue = incoming.read() & mask;
+                instructionBytes++;
+                if (integerValue < mask) {
+                    return true;
+                }
+                integerStarted = true;
+            }
+            while (incoming.available() > 0) {
+                int next = incoming.read() & 0xff;
+                instructionBytes++;
+                continuationBytes++;
+                long increment = next & 0x7f;
+                if (integerShift >= Long.SIZE - 1 || increment > (Long.MAX_VALUE - integerValue) >> integerShift) {
+                    throw new IllegalArgumentException("QPACK prefixed integer exceeds the supported range");
+                }
+                integerValue += increment << integerShift;
+                if ((next & 0x80) == 0) {
+                    integerStarted = false;
+                    integerShift = 0;
+                    continuationBytes = 0;
+                    return true;
+                }
+                if (continuationBytes >= 10) {
+                    throw new IllegalArgumentException("QPACK prefixed integer exceeds the supported encoded length");
+                }
+                integerShift += 7;
+            }
+            return false;
+        }
+
+        private void beginString(long length) {
+            if (length > maxInstructionSize) {
+                throw new IllegalArgumentException("QPACK string exceeds the local encoded-length limit: "
+                                                           + length + " > " + maxInstructionSize);
+            }
+            stringLength = Math.toIntExact(length);
+            stringOffset = 0;
+        }
+
+        private String readString(BufferData incoming) {
+            int count = Math.min(incoming.available(), stringLength - stringOffset);
+            if (count > 0) {
+                int requiredCapacity = stringOffset + count;
+                if (requiredCapacity > stringBytes.length) {
+                    int capacity = (int) Math.min(stringLength,
+                                                  Math.max(requiredCapacity, Math.max(32L, stringBytes.length * 2L)));
+                    stringBytes = Arrays.copyOf(stringBytes, capacity);
+                }
+                incoming.read(stringBytes, stringOffset, count);
+                stringOffset += count;
+                instructionBytes += count;
+            }
+            if (stringOffset < stringLength) {
+                return null;
+            }
+            String decoded = QpackCodec.decodeStringBytes(BufferData.createReadOnly(stringBytes, 0, stringLength),
+                                                          huffman);
+            stringBytes = EMPTY_BYTES;
+            return decoded;
+        }
+
+        private void checkIncompleteSize() {
+            if (instructionBytes > maxInstructionSize) {
+                throw new IllegalArgumentException("Incomplete QPACK encoder instruction exceeds the local limit");
+            }
+        }
+
+        private void clear() {
+            state = EncoderReadState.INSTRUCTION;
+            kind = null;
+            name = null;
+            instructionBytes = 0;
+            integerStarted = false;
+            integerValue = 0;
+            integerShift = 0;
+            continuationBytes = 0;
+            stringLength = 0;
+            stringOffset = 0;
+            stringBytes = EMPTY_BYTES;
+        }
     }
 
     /**
@@ -1396,66 +1575,22 @@ final class QpackConnectionState {
         }
     }
 
-    private enum DecoderStreamState {
-        OPEN,
-        COMPLETED,
-        CANCELLED,
-        FAILED
-    }
-
-    private enum FieldSectionState {
-        BLOCKED,
-        DECODED,
-        CANCELLED,
-        FAILED
-    }
-
-    private enum Kind {
-        INDEXED,
-        NAME_REFERENCE,
-        LITERAL;
-
-        private String text() {
-            return name();
-        }
-    }
-
-    private enum EncoderKind {
-        CAPACITY_UPDATE,
-        INSERT_LITERAL,
-        INSERT_NAME_REFERENCE,
-        DUPLICATE;
-
-        private String text() {
-            return name();
-        }
-    }
-
-    private enum DecoderKind {
-        SECTION_ACKNOWLEDGMENT,
-        STREAM_CANCELLATION,
-        INSERT_COUNT_INCREMENT;
-
-        private String text() {
-            return name();
-        }
-    }
-
     private record FieldEncoding(Kind kind,
                                  long index,
                                  boolean fromStaticTable,
                                  String name,
-                                 String value) {
+                                 String value,
+                                 boolean sensitive) {
         static FieldEncoding indexed(long index, boolean fromStaticTable) {
-            return new FieldEncoding(Kind.INDEXED, index, fromStaticTable, null, null);
+            return new FieldEncoding(Kind.INDEXED, index, fromStaticTable, null, null, false);
         }
 
-        static FieldEncoding nameReference(long index, boolean fromStaticTable, String value) {
-            return new FieldEncoding(Kind.NAME_REFERENCE, index, fromStaticTable, null, value);
+        static FieldEncoding nameReference(long index, boolean fromStaticTable, String value, boolean sensitive) {
+            return new FieldEncoding(Kind.NAME_REFERENCE, index, fromStaticTable, null, value, sensitive);
         }
 
-        static FieldEncoding literal(String name, String value) {
-            return new FieldEncoding(Kind.LITERAL, -1, false, name, value);
+        static FieldEncoding literal(String name, String value, boolean sensitive) {
+            return new FieldEncoding(Kind.LITERAL, -1, false, name, value, sensitive);
         }
     }
 

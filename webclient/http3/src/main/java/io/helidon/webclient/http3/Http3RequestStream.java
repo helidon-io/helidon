@@ -806,7 +806,7 @@ final class Http3RequestStream {
             if (uri.getRawQuery() != null) {
                 path += "?" + uri.getRawQuery();
             }
-            Http3MessageReader.validateRequestHeaders(request.headers(), request.validateRequestHeaders());
+            Http3MessageReader.validateRequestHeaders(request.headers());
             String authority = Http3Protocol.requestAuthority(uri, request.headers());
             boolean connect = request.method() == Method.CONNECT;
             sendFrameListener.requestHeaders(

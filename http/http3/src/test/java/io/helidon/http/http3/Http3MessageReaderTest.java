@@ -18,15 +18,18 @@ package io.helidon.http.http3;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
@@ -50,7 +53,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldDeliverInformationalResponsesWithoutMergingTheirFields() throws Exception {
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "103"),
                                                                 HeaderValues.create("x-stage", "early")),
                                                    headersFrame(HeaderValues.create(":status", "100"),
@@ -71,7 +73,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldRejectDataBeforeFinalResponseHeaders() {
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    Http3Protocol.encodeDataFrame(new byte[] {'x'}),
                                                    headersFrame(HeaderValues.create(":status", "200")));
 
@@ -91,7 +92,7 @@ class Http3MessageReaderTest {
                 new byte[] {(byte) Http3Protocol.FRAME_HEADERS, 1});
 
         for (byte[] truncatedFrame : truncatedFrames) {
-            Http3MessageReader reader = responseReader(Method.GET, true, truncatedFrame);
+            Http3MessageReader reader = responseReader(Method.GET, truncatedFrame);
 
             Http3ProtocolException failure = assertThrows(
                     Http3ProtocolException.class,
@@ -108,7 +109,7 @@ class Http3MessageReaderTest {
         BufferData frame = BufferData.growing(16);
         VariableLengthEncoder.encode(frame, Http3Protocol.FRAME_HEADERS);
         VariableLengthEncoder.encode(frame, Http3QpackContext.encodedFieldSectionLimit(16) + 1L);
-        Http3MessageReader reader = responseReader(Method.GET, true, 16, frame.readBytes());
+        Http3MessageReader reader = responseReader(Method.GET, 16, frame.readBytes());
 
         Http3ProtocolException failure = assertThrows(
                 Http3ProtocolException.class,
@@ -125,7 +126,6 @@ class Http3MessageReaderTest {
         VariableLengthEncoder.encode(trailers, Http3Protocol.FRAME_HEADERS);
         VariableLengthEncoder.encode(trailers, Http3QpackContext.encodedFieldSectionLimit(64) + 1L);
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    64,
                                                    headersFrame(HeaderValues.create(":status", "200")),
                                                    trailers.readBytes());
@@ -149,7 +149,6 @@ class Http3MessageReaderTest {
                                                                 Http3TestSocketContext.INSTANCE,
                                                                 Method.GET,
                                                                 16_384,
-                                                                true,
                                                                 NO_OP_FRAME_LISTENER);
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
@@ -170,7 +169,6 @@ class Http3MessageReaderTest {
                                                        Http3TestSocketContext.INSTANCE,
                                                        Method.GET,
                                                        -1,
-                                                       true,
                                                        NO_OP_FRAME_LISTENER));
 
         Http3MessageReader.response(stream,
@@ -178,7 +176,6 @@ class Http3MessageReaderTest {
                                     Http3TestSocketContext.INSTANCE,
                                     Method.GET,
                                     16_384,
-                                    true,
                                     NO_OP_FRAME_LISTENER)
                 .close();
     }
@@ -193,7 +190,7 @@ class Http3MessageReaderTest {
                 new InvalidHead("switching protocols", headersFrame(HeaderValues.create(":status", "101"))));
 
         for (InvalidHead invalidHead : invalidHeads) {
-            Http3MessageReader reader = responseReader(Method.GET, true, invalidHead.frame());
+            Http3MessageReader reader = responseReader(Method.GET, invalidHead.frame());
 
             Http3ProtocolException failure = assertThrows(Http3ProtocolException.class,
                                                           () -> reader.readResponseHead(_ -> {
@@ -208,7 +205,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldAcceptContentMatchingDeclaredLength() throws Exception {
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200"),
                                                                 HeaderValues.create(HeaderNames.CONTENT_LENGTH, "4")),
                                                    Http3Protocol.encodeDataFrame("bo".getBytes(StandardCharsets.UTF_8)),
@@ -225,7 +221,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldRejectContentExceedingDeclaredLength() throws Exception {
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200"),
                                                                 HeaderValues.create(HeaderNames.CONTENT_LENGTH, "3")),
                                                    Http3Protocol.encodeDataFrame("body".getBytes(StandardCharsets.UTF_8)));
@@ -241,7 +236,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldReportEntityProtocolFailureToStreamOwner() throws Exception {
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200"),
                                                                 HeaderValues.create(HeaderNames.CONTENT_LENGTH, "1")),
                                                    Http3Protocol.encodeDataFrame("body".getBytes(StandardCharsets.UTF_8)));
@@ -260,7 +254,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldRejectContentShorterThanDeclaredLength() throws Exception {
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200"),
                                                                 HeaderValues.create(HeaderNames.CONTENT_LENGTH, "5")),
                                                    Http3Protocol.encodeDataFrame("body".getBytes(StandardCharsets.UTF_8)));
@@ -284,7 +277,6 @@ class Http3MessageReaderTest {
                                                                 Http3TestSocketContext.INSTANCE,
                                                                 Method.GET,
                                                                 16_384,
-                                                                true,
                                                                 NO_OP_FRAME_LISTENER);
         reader.readResponseHead(_ -> {
         });
@@ -309,7 +301,7 @@ class Http3MessageReaderTest {
             List<Header> headFields = new ArrayList<>();
             headFields.add(HeaderValues.create(":status", response.status()));
             headFields.addAll(response.headers());
-            Http3MessageReader completeReader = responseReader(response.method(), true, headersFrame(headFields));
+            Http3MessageReader completeReader = responseReader(response.method(), headersFrame(headFields));
             completeReader.readResponseHead(_ -> {
             });
 
@@ -317,7 +309,6 @@ class Http3MessageReaderTest {
             assertThat(response.description(), completeReader.readEntityDataWithTrailers(8), is(new byte[0]));
 
             Http3MessageReader dataReader = responseReader(response.method(),
-                                                           true,
                                                            headersFrame(headFields),
                                                            Http3Protocol.encodeDataFrame(new byte[] {'x'}));
             dataReader.readResponseHead(_ -> {
@@ -330,7 +321,6 @@ class Http3MessageReaderTest {
 
             if ("204".equals(response.status()) || "304".equals(response.status())) {
                 Http3MessageReader trailersReader = responseReader(response.method(),
-                                                                   true,
                                                                    headersFrame(headFields),
                                                                    headersFrame(HeaderValues.create("x-trailer", "value")));
                 trailersReader.readResponseHead(_ -> {
@@ -347,7 +337,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldAllowTrailersOnResetContentResponse() throws Exception {
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "205"),
                                                                 HeaderValues.create(HeaderNames.CONTENT_LENGTH, "0")),
                                                    headersFrame(HeaderValues.create("x-trailer", "done")));
@@ -362,7 +351,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldAllowTrailersOnHeadResponse() throws Exception {
         Http3MessageReader reader = responseReader(Method.HEAD,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200"),
                                                                 HeaderValues.create(HeaderNames.CONTENT_LENGTH, "7")),
                                                    headersFrame(HeaderValues.create("x-trailer", "done")));
@@ -378,7 +366,6 @@ class Http3MessageReaderTest {
     void shouldRejectContentLengthForbiddenByResponseStatus() {
         for (String status : List.of("100", "204")) {
             Http3MessageReader reader = responseReader(Method.GET,
-                                                       true,
                                                        headersFrame(HeaderValues.create(":status", status),
                                                                     HeaderValues.create(HeaderNames.CONTENT_LENGTH, "0")));
             Http3ProtocolException failure = assertThrows(Http3ProtocolException.class,
@@ -389,7 +376,6 @@ class Http3MessageReaderTest {
 
         Http3MessageReader resetContent = responseReader(
                 Method.GET,
-                true,
                 headersFrame(HeaderValues.create(":status", "205"),
                              HeaderValues.create(HeaderNames.CONTENT_LENGTH, "1")));
         Http3ProtocolException failure = assertThrows(Http3ProtocolException.class,
@@ -401,7 +387,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldExposeValidTrailers() throws Exception {
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200")),
                                                    Http3Protocol.encodeDataFrame("body".getBytes(StandardCharsets.UTF_8)),
                                                    headersFrame(HeaderValues.create("x-trailer", "done")));
@@ -419,7 +404,6 @@ class Http3MessageReaderTest {
                                          HeaderValues.create("connection", "close"),
                                          HeaderValues.create(HeaderNames.CONTENT_LENGTH, "0"))) {
             Http3MessageReader reader = responseReader(Method.GET,
-                                                       true,
                                                        headersFrame(HeaderValues.create(":status", "200")),
                                                        headersFrame(prohibited));
             reader.readResponseHead(_ -> {
@@ -440,7 +424,6 @@ class Http3MessageReaderTest {
 
         for (byte[] prohibitedFrame : prohibitedFrames) {
             Http3MessageReader reader = responseReader(Method.GET,
-                                                       true,
                                                        headersFrame(HeaderValues.create(":status", "200")),
                                                        headersFrame(HeaderValues.create("x-trailer", "done")),
                                                        prohibitedFrame);
@@ -462,7 +445,6 @@ class Http3MessageReaderTest {
         VariableLengthEncoder.encode(extension, 1);
         extension.write((byte) 42);
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200")),
                                                    headersFrame(HeaderValues.create("x-trailer", "done")),
                                                    extension.readBytes());
@@ -479,7 +461,6 @@ class Http3MessageReaderTest {
         VariableLengthEncoder.encode(pushPromise, Http3Protocol.FRAME_PUSH_PROMISE);
         VariableLengthEncoder.encode(pushPromise, 0);
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200")),
                                                    pushPromise.readBytes());
         reader.readResponseHead(_ -> {
@@ -497,7 +478,7 @@ class Http3MessageReaderTest {
         BufferData pushPromise = BufferData.create(2);
         VariableLengthEncoder.encode(pushPromise, Http3Protocol.FRAME_PUSH_PROMISE);
         VariableLengthEncoder.encode(pushPromise, 0);
-        Http3MessageReader reader = responseReader(Method.GET, true, pushPromise.readBytes());
+        Http3MessageReader reader = responseReader(Method.GET, pushPromise.readBytes());
 
         Http3ProtocolException failure = assertThrows(Http3ProtocolException.class,
                                                       () -> reader.readResponseHead(_ -> {
@@ -521,7 +502,6 @@ class Http3MessageReaderTest {
         VariableLengthEncoder.encode(pushPromise, payload.available());
         pushPromise.write(payload);
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200")),
                                                    pushPromise.readBytes());
         reader.readResponseHead(_ -> {
@@ -541,7 +521,6 @@ class Http3MessageReaderTest {
         VariableLengthEncoder.encode(pushPromise, 1L << 30);
         VariableLengthEncoder.encode(pushPromise, 0);
         Http3MessageReader reader = responseReader(Method.GET,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200")),
                                                    pushPromise.readBytes());
         reader.readResponseHead(_ -> {
@@ -557,7 +536,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldReadSuccessfulConnectDataAndRejectTrailingHeaders() throws Exception {
         Http3MessageReader reader = responseReader(Method.CONNECT,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "200")),
                                                    Http3Protocol.encodeDataFrame("tunnel".getBytes(StandardCharsets.UTF_8)),
                                                    headersFrame(HeaderValues.create("x-trailer", "not-allowed")));
@@ -576,7 +554,6 @@ class Http3MessageReaderTest {
     @Test
     void shouldTreatEverySuccessfulConnectAsATunnel() throws Exception {
         Http3MessageReader reader = responseReader(Method.CONNECT,
-                                                   true,
                                                    headersFrame(HeaderValues.create(":status", "204")),
                                                    Http3Protocol.encodeDataFrame("tunnel".getBytes(StandardCharsets.UTF_8)));
         reader.readResponseHead(_ -> {
@@ -590,7 +567,6 @@ class Http3MessageReaderTest {
     void shouldIgnoreSuccessfulConnectLengthAndTrailerFields() throws Exception {
         Http3MessageReader reader = responseReader(
                 Method.CONNECT,
-                true,
                 headersFrame(HeaderValues.create(":status", "200"),
                              HeaderValues.create(HeaderNames.CONTENT_LENGTH, "invalid"),
                              HeaderValues.create(HeaderNames.CONTENT_LENGTH, "7"),
@@ -616,17 +592,15 @@ class Http3MessageReaderTest {
                     () -> Http3MessageReader.validateResponseHeaders(Method.CONNECT,
                                                                       Status.OK_200,
                                                                       WritableHeaders.create()
-                                                                              .add(header),
-                                                                      true));
+                                                                              .add(header)));
 
             assertThat(header.headerName().lowerCase(), failure.getMessage(), containsString("must not contain"));
         }
     }
 
     @Test
-    void shouldEnforceProtocolFieldsWhenOptionalHeaderValidationIsDisabled() {
+    void shouldRejectConnectionSpecificFields() {
         Http3MessageReader responseReader = responseReader(Method.GET,
-                                                           false,
                                                            headersFrame(HeaderValues.create(":status", "200"),
                                                                         HeaderValues.create("connection", "close")));
 
@@ -645,7 +619,6 @@ class Http3MessageReaderTest {
                                                                       qpackContext(),
                                                                       Http3TestSocketContext.INSTANCE,
                                                                       16_384,
-                                                                      false,
                                                                       NO_OP_FRAME_LISTENER);
 
         Http3ProtocolException requestFailure = assertThrows(Http3ProtocolException.class, requestReader::readRequestHead);
@@ -661,7 +634,7 @@ class Http3MessageReaderTest {
                     .add(HeaderValues.create(HeaderNames.TE, value));
 
             assertThat(value,
-                       Http3MessageReader.validateRequestHeaders(headers, true).isEmpty(),
+                       Http3MessageReader.validateRequestHeaders(headers).isEmpty(),
                        is(true));
         }
 
@@ -669,7 +642,7 @@ class Http3MessageReaderTest {
                 .add(HeaderValues.create(HeaderNames.TE, "trailers"))
                 .add(HeaderValues.create(HeaderNames.TE, "TRAILERS"));
 
-        assertThat(Http3MessageReader.validateRequestHeaders(repeated, true).isEmpty(), is(true));
+        assertThat(Http3MessageReader.validateRequestHeaders(repeated).isEmpty(), is(true));
     }
 
     @Test
@@ -685,7 +658,7 @@ class Http3MessageReaderTest {
 
             IllegalArgumentException failure = assertThrows(
                     IllegalArgumentException.class,
-                    () -> Http3MessageReader.validateRequestHeaders(headers, true),
+                    () -> Http3MessageReader.validateRequestHeaders(headers),
                     value);
 
             assertThat(value, failure.getMessage(), containsString("must be trailers"));
@@ -693,33 +666,167 @@ class Http3MessageReaderTest {
     }
 
     @Test
-    void shouldMakeOnlyRegularValueValidationOptional() throws Exception {
-        Header invalidValue = HeaderValues.create("x-test", "line\nbreak");
-        Http3MessageReader permissive = responseReader(Method.GET,
-                                                       false,
-                                                       headersFrame(HeaderValues.create(":status", "200"), invalidValue));
+    void shouldRejectInvalidFieldSyntaxInEveryReceivedSection() {
+        for (InvalidField invalid : invalidFields()) {
+            Http3MessageReader request = Http3MessageReader.request(
+                    FakeReceiverStream.create(headersFrame(HeaderValues.create(":method", "GET"),
+                                                           HeaderValues.create(":scheme", "https"),
+                                                           HeaderValues.create(":authority", "example.com"),
+                                                           HeaderValues.create(":path", "/"),
+                                                           invalid.header())),
+                    qpackContext(),
+                    Http3TestSocketContext.INSTANCE,
+                    16_384,
+                    NO_OP_FRAME_LISTENER);
+            Http3ProtocolException requestFailure = assertThrows(Http3ProtocolException.class,
+                                                                  request::readRequestHead,
+                                                                  invalid.description());
+            assertThat(invalid.description(), requestFailure.errorCode(), is(Http3ErrorCode.MESSAGE_ERROR));
+            assertThat(invalid.description(), requestFailure.scope(), is(Http3ProtocolException.Scope.STREAM));
 
-        Http3MessageReader.ResponseHead head = permissive.readResponseHead(_ -> {
+            Http3MessageReader response = responseReader(Method.GET,
+                    headersFrame(HeaderValues.create(":status", "200"), invalid.header()));
+            Http3ProtocolException responseFailure = assertThrows(Http3ProtocolException.class,
+                    () -> response.readResponseHead(_ -> {
+                    }), invalid.description());
+            assertThat(invalid.description(), responseFailure.errorCode(), is(Http3ErrorCode.MESSAGE_ERROR));
+            assertThat(invalid.description(), responseFailure.scope(), is(Http3ProtocolException.Scope.STREAM));
+
+            Http3MessageReader trailers = responseReader(Method.GET,
+                    headersFrame(HeaderValues.create(":status", "200")), headersFrame(invalid.header()));
+            trailers.readResponseHead(_ -> {
+            });
+            Http3ProtocolException trailerFailure = assertThrows(Http3ProtocolException.class,
+                    () -> trailers.readEntityDataWithTrailers(8), invalid.description());
+            assertThat(invalid.description(), trailerFailure.errorCode(), is(Http3ErrorCode.MESSAGE_ERROR));
+            assertThat(invalid.description(), trailerFailure.scope(), is(Http3ProtocolException.Scope.STREAM));
+        }
+    }
+
+    @Test
+    void shouldRejectInvalidFieldSyntaxBeforeGeneration() {
+        for (InvalidField invalid : invalidFields()) {
+            WritableHeaders<?> headers = WritableHeaders.create().add(invalid.header());
+            assertThrows(IllegalArgumentException.class,
+                         () -> Http3MessageReader.validateRequestHeaders(headers), invalid.description());
+            assertThrows(IllegalArgumentException.class,
+                         () -> Http3MessageReader.validateResponseHeaders(Method.GET, Status.OK_200, headers),
+                         invalid.description());
+            assertThrows(IllegalArgumentException.class,
+                         () -> Http3MessageReader.validateTrailers(headers), invalid.description());
+        }
+    }
+
+    @Test
+    void shouldAcceptValidFieldOctetsAndEmptyValues() {
+        for (String value : List.of("", "a\tb", "a b", "caf\u00e9", "\u0080\u00ff")) {
+            Http3MessageReader reader = responseReader(Method.GET,
+                    headersFrame(HeaderValues.create(":status", "200"), HeaderValues.create("x-field", value)),
+                    headersFrame(HeaderValues.create("x-trailer", value)));
+            Http3MessageReader.ResponseHead head = reader.readResponseHead(_ -> {
+            });
+            assertThat(head.headers().get(HeaderNames.create("x-field")).get(), is(value));
+            assertThat(reader.readEntityDataWithTrailers(8).length, is(0));
+            assertThat(reader.trailers().get(HeaderNames.create("x-trailer")).get(), is(value));
+        }
+    }
+
+    @Test
+    void shouldPreserveSensitivityWhenCombiningResponseAndTrailerFields() {
+        Header ordinary = HeaderValues.create("x-private", "ordinary");
+        Header sensitive = HeaderValues.create(HeaderNames.create("x-private"), false, true, "secret");
+        Http3MessageReader reader = responseReader(Method.GET,
+                headersFrame(HeaderValues.create(":status", "200"), ordinary, sensitive),
+                headersFrame(ordinary, sensitive));
+
+        Http3MessageReader.ResponseHead head = reader.readResponseHead(_ -> {
         });
-        assertThat(head.headers().first(HeaderNames.create("x-test")), is(Optional.of("line\nbreak")));
 
-        Http3MessageReader validating = responseReader(Method.GET,
-                                                       true,
-                                                       headersFrame(HeaderValues.create(":status", "200"), invalidValue));
-        Http3ProtocolException failure = assertThrows(Http3ProtocolException.class,
-                                                      () -> validating.readResponseHead(_ -> {
-                                                      }));
-        assertThat(failure.errorCode(), is(Http3ErrorCode.MESSAGE_ERROR));
+        assertThat(head.headers().get(ordinary.headerName()).sensitive(), is(true));
+        assertThat(head.headers().get(ordinary.headerName()).allValues(), is(List.of("ordinary", "secret")));
+        assertThat(reader.readEntityDataWithTrailers(8).length, is(0));
+        assertThat(reader.trailers().get(ordinary.headerName()).sensitive(), is(true));
+        assertThat(reader.trailers().get(ordinary.headerName()).allValues(), is(List.of("ordinary", "secret")));
+    }
+
+    @Test
+    void shouldRejectNegativeResponseTimeoutBeforeReading() {
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> Http3MessageReader.ResponseOptions.create(Duration.ofNanos(-1), NO_OP_FRAME_LISTENER));
+
+        assertThat(failure.getMessage(), containsString("readTimeout must not be negative"));
+    }
+
+    @Test
+    void shouldGateRequestResponseAndTrailerCallbacksIndependentlyOfRawBytes() {
+        for (boolean enabled : List.of(false, true)) {
+            RecordingFrameListener listener = new RecordingFrameListener();
+            listener.enabled = enabled;
+            Http3MessageReader request = Http3MessageReader.request(
+                    FakeReceiverStream.create(headersFrame(HeaderValues.create(":method", "GET"),
+                                                           HeaderValues.create(":scheme", "https"),
+                                                           HeaderValues.create(":authority", "example.com"),
+                                                           HeaderValues.create(":path", "/")),
+                                              Http3Protocol.encodeDataFrame(new byte[] {1}),
+                                              headersFrame(HeaderValues.create("x-trailer", "request"))),
+                    qpackContext(), Http3TestSocketContext.INSTANCE, 16_384, listener);
+            request.readRequestHead();
+            assertThat(request.readEntityDataWithTrailers(8), is(new byte[] {1}));
+            assertThat(request.readEntityDataWithTrailers(8).length, is(0));
+
+            Http3MessageReader response = Http3MessageReader.response(
+                    FakeReceiverStream.create(headersFrame(HeaderValues.create(":status", "200")),
+                                              headersFrame(HeaderValues.create("x-trailer", "response"))),
+                    qpackContext(), Http3TestSocketContext.INSTANCE, Method.GET, 16_384, listener);
+            response.readResponseHead(_ -> {
+            });
+            assertThat(response.readEntityDataWithTrailers(8).length, is(0));
+
+            assertThat(listener.decodedEvents, is(enabled ? List.of("request", "trailers", "response", "trailers") : List.of()));
+            assertThat(listener.frameHeaders, is(enabled ? 5 : 0));
+            assertThat(listener.framePayloads, is(enabled ? 5 : 0));
+            assertThat(listener.rawHeaders, is(5));
+            assertThat(listener.rawPayloads, is(5));
+        }
+    }
+
+    @Test
+    void shouldObserveListenerEnablementChangesBetweenFieldSections() {
+        RecordingFrameListener listener = new RecordingFrameListener();
+        Http3MessageReader response = Http3MessageReader.response(
+                FakeReceiverStream.create(headersFrame(HeaderValues.create(":status", "103")),
+                                          headersFrame(HeaderValues.create(":status", "200")),
+                                          headersFrame(HeaderValues.create("x-trailer", "done"))),
+                qpackContext(), Http3TestSocketContext.INSTANCE, Method.GET, 16_384, listener);
+
+        response.readResponseHead(_ -> listener.enabled = true);
+        listener.enabled = false;
+        assertThat(response.readEntityDataWithTrailers(8).length, is(0));
+
+        assertThat(listener.decodedEvents, is(List.of("response")));
+        assertThat(listener.frameHeaders, is(1));
+        assertThat(listener.framePayloads, is(1));
+        assertThat(listener.rawHeaders, is(3));
+        assertThat(listener.rawPayloads, is(3));
+    }
+
+    private static List<InvalidField> invalidFields() {
+        return List.of(new InvalidField("LF", HeaderValues.create("x-test", "line\nbreak")),
+                       new InvalidField("CR", HeaderValues.create("x-test", "line\rbreak")),
+                       new InvalidField("NUL", HeaderValues.create("x-test", "a\u0000b")),
+                       new InvalidField("CTL", HeaderValues.create("x-test", "a\u0001b")),
+                       new InvalidField("DEL", HeaderValues.create("x-test", "a\u007fb")),
+                       new InvalidField("later invalid value", HeaderValues.create("x-test", "valid", "line\nbreak")),
+                       new InvalidField("space in name", HeaderValues.create("x bad", "value")),
+                       new InvalidField("colon in name", HeaderValues.create("x:bad", "value")));
     }
 
     private static Http3MessageReader responseReader(Method requestMethod,
-                                                     boolean validateHeaderValues,
                                                      byte[]... frames) {
-        return responseReader(requestMethod, validateHeaderValues, 16_384, frames);
+        return responseReader(requestMethod, 16_384, frames);
     }
 
     private static Http3MessageReader responseReader(Method requestMethod,
-                                                     boolean validateHeaderValues,
                                                      int maxHeadersSize,
                                                      byte[]... frames) {
         return Http3MessageReader.response(FakeReceiverStream.create(frames),
@@ -727,7 +834,6 @@ class Http3MessageReaderTest {
                                            Http3TestSocketContext.INSTANCE,
                                            requestMethod,
                                            maxHeadersSize,
-                                           validateHeaderValues,
                                            NO_OP_FRAME_LISTENER);
     }
 
@@ -757,6 +863,64 @@ class Http3MessageReaderTest {
     private record BodylessResponse(String description, Method method, String status, List<Header> headers) {
     }
 
+    private record InvalidField(String description, Header header) {
+    }
+
+    private static final class RecordingFrameListener implements Http3FrameListener {
+        private final List<String> decodedEvents = new ArrayList<>();
+        private boolean enabled;
+        private int frameHeaders;
+        private int framePayloads;
+        private int rawHeaders;
+        private int rawPayloads;
+
+        @Override
+        public boolean enabled() {
+            return enabled;
+        }
+
+        @Override
+        public boolean rawDataEnabled() {
+            return true;
+        }
+
+        @Override
+        public void frameHeader(SocketContext context, long streamId, long frameType, long frameLength, int encodedLength) {
+            frameHeaders++;
+        }
+
+        @Override
+        public void frameData(SocketContext context, long streamId, int byteCount, boolean last) {
+            framePayloads++;
+        }
+
+        @Override
+        public void rawFrameHeader(SocketContext context, long streamId, byte[] data) {
+            rawHeaders++;
+        }
+
+        @Override
+        public void rawFrameData(SocketContext context, long streamId, byte[] data, boolean last) {
+            rawPayloads++;
+        }
+
+        @Override
+        public void requestHeaders(SocketContext context, long streamId, String method, String scheme, String authority,
+                                   String path, Headers headers) {
+            decodedEvents.add("request");
+        }
+
+        @Override
+        public void responseHeaders(SocketContext context, long streamId, int status, Headers headers) {
+            decodedEvents.add("response");
+        }
+
+        @Override
+        public void trailers(SocketContext context, long streamId, Headers trailers) {
+            decodedEvents.add("trailers");
+        }
+    }
+
     private static final class FakeReceiverStream implements QuicReceiverStream {
         private final List<BufferData> buffers;
         private final long dataReceived;
@@ -770,15 +934,6 @@ class Http3MessageReaderTest {
                     .filter(it -> it != QuicStreamReader.EOF)
                     .mapToLong(BufferData::available)
                     .sum();
-        }
-
-        private static FakeReceiverStream create(byte[]... frames) {
-            List<BufferData> buffers = new ArrayList<>(frames.length + 1);
-            for (byte[] frame : frames) {
-                buffers.add(BufferData.create(frame));
-            }
-            buffers.add(QuicStreamReader.EOF);
-            return new FakeReceiverStream(buffers);
         }
 
         @Override
@@ -866,6 +1021,15 @@ class Http3MessageReaderTest {
         @Override
         public QuicStream.StreamState state() {
             return receivingState();
+        }
+
+        private static FakeReceiverStream create(byte[]... frames) {
+            List<BufferData> buffers = new ArrayList<>(frames.length + 1);
+            for (byte[] frame : frames) {
+                buffers.add(BufferData.create(frame));
+            }
+            buffers.add(QuicStreamReader.EOF);
+            return new FakeReceiverStream(buffers);
         }
     }
 
