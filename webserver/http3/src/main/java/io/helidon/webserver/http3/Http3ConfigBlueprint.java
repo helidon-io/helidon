@@ -50,8 +50,7 @@ interface Http3ConfigBlueprint extends QuicSubProtocolConfig, HttpConfig {
     String name();
 
     /**
-     * Common HTTP request-header validation setting, ignored by HTTP/3.
-     * HTTP/3 always validates request field names and values.
+     * Common HTTP request-header validation setting, ignored because HTTP/3 always validates request field names and values.
      *
      * @return configured common HTTP validation setting
      */
@@ -61,8 +60,7 @@ interface Http3ConfigBlueprint extends QuicSubProtocolConfig, HttpConfig {
     boolean validateRequestHeaders();
 
     /**
-     * Common HTTP response-header validation setting, ignored by HTTP/3.
-     * HTTP/3 always validates response field names and values.
+     * Common HTTP response-header validation setting, ignored because HTTP/3 always validates response field names and values.
      *
      * @return configured common HTTP validation setting
      */
@@ -128,8 +126,7 @@ interface Http3ConfigBlueprint extends QuicSubProtocolConfig, HttpConfig {
     int responseDispatchWindowSize();
 
     /**
-     * Whether to validate path characters and the HTTP/3 {@code :path} pseudo-header.
-     * Mandatory HTTP/3 pseudo-header validation is not affected by this option.
+     * Whether to perform additional URI path validation beyond mandatory HTTP/3 request-target checks.
      *
      * @return whether to validate request paths
      */

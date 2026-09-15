@@ -125,6 +125,32 @@ Both runners accept `include`, `forks`, `threads`, `warmupIterations`, `warmupMi
 parameters, and dependencies for before/after comparisons, changing only the production implementation being measured.
 Report GC-profiler allocated bytes per operation alongside timing, with distinct numbered result paths for each run.
 
+### HTTP/3 message-head validation
+
+`Http3MessageHeadValidationJmhBenchmark.readRequestHead` and `readResponseHead` measure complete valid head parsing,
+including per-stream reader construction and close, with average time in ns/op and GC-profiler allocation in B/op.
+Inputs use static request pseudo-headers (`GET`, `https`, `/`), a literal `localhost` authority, or static response status
+`200`, plus 4 or 32 regular fields. Regular fields contain `content-length: 0` and literal values of 16 or 256 characters.
+QPACK connection contexts are reused and closed after each trial; input encoding, bodies, and network I/O are excluded.
+There are no invocation setup/teardown hooks contributing allocations outside the timed operation.
+
+```shell
+mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
+    -Dtest=Http3MessageHeadValidationJmhRunnerTest \
+    -Dhttp3.message.head.validation.jmh.headerCount=4,32 \
+    -Dhttp3.message.head.validation.jmh.valueSize=16,256 \
+    -Dhttp3.message.head.validation.jmh.gcProfiler=true \
+    -Dhttp3.message.head.validation.jmh.result=./target/http3-message-head-validation-jmh-1.json test
+```
+
+The runner accepts `include`, `forks`, `threads`, `warmupIterations`, `warmupMillis`, `measurementIterations`,
+`measurementMillis`, `result`, and `output` under the same prefix. The GC profiler is enabled by default. Trial setup
+adapts public reader factories with method handles: old signatures receive `validateHeaderValues=false`, while current
+signatures enforce validation. Use identical benchmark bytecode, inputs, JVM settings, and parameters against each
+production revision; setup logs the input SHA-256 hashes and any legacy factory selection. Differences include all
+message-reader and QPACK changes between those revisions, so they do not isolate validation alone. Use distinct numbered
+result paths for matched local diagnostic runs.
+
 ### JDBC client creation
 
 The JDBC client creation benchmark isolates the statement-stage path before

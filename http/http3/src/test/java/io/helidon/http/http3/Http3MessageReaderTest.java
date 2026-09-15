@@ -704,6 +704,42 @@ class Http3MessageReaderTest {
     }
 
     @Test
+    void shouldRejectInvalidSchemeBeforeReadingRequestHead() {
+        Http3MessageReader request = Http3MessageReader.request(
+                FakeReceiverStream.create(headersFrame(HeaderValues.create(":method", "GET"),
+                                                       HeaderValues.create(":scheme", "https\n"),
+                                                       HeaderValues.create(":authority", "example.com"),
+                                                       HeaderValues.create(":path", "/"))),
+                qpackContext(),
+                Http3TestSocketContext.INSTANCE,
+                16_384,
+                NO_OP_FRAME_LISTENER);
+
+        Http3ProtocolException failure = assertThrows(Http3ProtocolException.class, request::readRequestHead);
+
+        assertThat(failure.errorCode(), is(Http3ErrorCode.MESSAGE_ERROR));
+        assertThat(failure.scope(), is(Http3ProtocolException.Scope.STREAM));
+    }
+
+    @Test
+    void shouldRejectInvalidPathBeforeReadingRequestHead() {
+        Http3MessageReader request = Http3MessageReader.request(
+                FakeReceiverStream.create(headersFrame(HeaderValues.create(":method", "GET"),
+                                                       HeaderValues.create(":scheme", "https"),
+                                                       HeaderValues.create(":authority", "example.com"),
+                                                       HeaderValues.create(":path", "/path\n"))),
+                qpackContext(),
+                Http3TestSocketContext.INSTANCE,
+                16_384,
+                NO_OP_FRAME_LISTENER);
+
+        Http3ProtocolException failure = assertThrows(Http3ProtocolException.class, request::readRequestHead);
+
+        assertThat(failure.errorCode(), is(Http3ErrorCode.MESSAGE_ERROR));
+        assertThat(failure.scope(), is(Http3ProtocolException.Scope.STREAM));
+    }
+
+    @Test
     void shouldRejectInvalidFieldSyntaxBeforeGeneration() {
         for (InvalidField invalid : invalidFields()) {
             WritableHeaders<?> headers = WritableHeaders.create().add(invalid.header());

@@ -4742,89 +4742,89 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         QuicPathManager.SendPermit permit = reservation.orElseThrow();
         boolean transferred = false;
         try {
-        PacketNumberSpace packetNumberSpace = packetSpaceManager.packetNumberSpace();
-        if (packetNumberSpace == PacketNumberSpace.INITIAL && permit.size() < SMALLEST_MAXIMUM_DATAGRAM_SIZE) {
-            // Initial packets are padded to the minimum datagram size, including retransmissions.
-            return false;
-        }
-        long oldPacketNumber = packet.packetNumber();
-
-        long largestAckedPN = packetSpaceManager.largestPeerAcknowledgedPacketNumber();
-        long newPacketNumber = packetSpaceManager.allocateNextPN();
-        int maxDatagramSize = permit.size();
-        QuicConnectionId destinationConnectionId;
-        if (packetNumberSpace == PacketNumberSpace.APPLICATION) {
-            Optional<PeerConnIdManager.PathCidBinding> binding = pathManager.cidBinding(permit);
-            if (binding.isEmpty()) {
+            PacketNumberSpace packetNumberSpace = packetSpaceManager.packetNumberSpace();
+            if (packetNumberSpace == PacketNumberSpace.INITIAL && permit.size() < SMALLEST_MAXIMUM_DATAGRAM_SIZE) {
+                // Initial packets are padded to the minimum datagram size, including retransmissions.
                 return false;
             }
-            destinationConnectionId = binding.orElseThrow().connectionId();
-        } else {
-            destinationConnectionId = peerConnectionId();
-        }
-        int dstIdLength = destinationConnectionId.length();
-        int initialDstIdLength = MAX_CONNECTION_ID_LENGTH; // reserve space for the ID to grow
+            long oldPacketNumber = packet.packetNumber();
 
-        int maxPayloadSize = switch (packetNumberSpace) {
-            case APPLICATION -> QuicPacketEncoder.computeMaxOneRTTPayloadSize(
-                    codingContext,
-                    newPacketNumber,
-                    dstIdLength,
-                    maxDatagramSize,
-                    largestAckedPN);
-            case INITIAL -> QuicPacketEncoder.computeMaxInitialPayloadSize(
-                    codingContext, computePacketNumberLength(newPacketNumber,
-                                                             codingContext.largestAckedPN(PacketNumberSpace.INITIAL)),
-                    ((InitialPacket) packet).tokenLength(),
-                    localConnectionIdOrThrow().length(), initialDstIdLength, maxDatagramSize);
-            case HANDSHAKE -> QuicPacketEncoder.computeMaxHandshakePayloadSize(
-                    codingContext, newPacketNumber, localConnectionIdOrThrow().length(),
-                    dstIdLength, maxDatagramSize);
-            default -> throw new IllegalArgumentException(
-                    "Invalid packet number space: " + packetNumberSpace.text());
-        };
+            long largestAckedPN = packetSpaceManager.largestPeerAcknowledgedPacketNumber();
+            long newPacketNumber = packetSpaceManager.allocateNextPN();
+            int maxDatagramSize = permit.size();
+            QuicConnectionId destinationConnectionId;
+            if (packetNumberSpace == PacketNumberSpace.APPLICATION) {
+                Optional<PeerConnIdManager.PathCidBinding> binding = pathManager.cidBinding(permit);
+                if (binding.isEmpty()) {
+                    return false;
+                }
+                destinationConnectionId = binding.orElseThrow().connectionId();
+            } else {
+                destinationConnectionId = peerConnectionId();
+            }
+            int dstIdLength = destinationConnectionId.length();
+            int initialDstIdLength = MAX_CONNECTION_ID_LENGTH; // reserve space for the ID to grow
 
-        // The new packet may have larger size(), which might no longer fit inside
-        // the maximum datagram size supported on the path. To avoid that, we
-        // strip the padding and old ack frame from the original packet, and
-        // include the new ack frame only if it fits in the available size.
-        LinkedList<QuicFrame> frames = removeOutdatedFrames(packet.frames());
-        int size = frames.stream().mapToInt(QuicFrame::size).sum();
-        int remaining = maxPayloadSize - size;
-        if (remaining < 0) {
-            return false;
-        }
-        AckFrame ack = packetSpaceManager.nextAckFrame(false, remaining).orElse(null);
-        if (ack != null) {
-            frames.addFirst(ack);
-        }
-        QuicPacket retransmitted =
-                switch (packet.packetType()) {
-                    case INITIAL -> encoder.newInitialPacket(localConnectionIdOrThrow(),
-                                                             destinationConnectionId, ((InitialPacket) packet).token(),
-                                                             newPacketNumber, largestAckedPN, frames,
-                                                             codingContext);
-                    case HANDSHAKE -> encoder.newHandshakePacket(localConnectionIdOrThrow(),
-                                                                 destinationConnectionId, newPacketNumber, largestAckedPN,
-                                                                 frames, codingContext, logTag());
-                    case ONERTT -> encoder.newOneRttPacket(
-                            destinationConnectionId, newPacketNumber, largestAckedPN,
-                            frames, codingContext, logTag());
-                    case ZERORTT -> throw new IllegalArgumentException("Cannot retransmit unsupported 0-RTT packet");
-                    default -> throw new IllegalArgumentException("packetType: %s, packet: %s"
-                                                                          .formatted(packet.packetType().text(),
-                                                                                     packet.packetNumber()));
-                };
+            int maxPayloadSize = switch (packetNumberSpace) {
+                case APPLICATION -> QuicPacketEncoder.computeMaxOneRTTPayloadSize(
+                        codingContext,
+                        newPacketNumber,
+                        dstIdLength,
+                        maxDatagramSize,
+                        largestAckedPN);
+                case INITIAL -> QuicPacketEncoder.computeMaxInitialPayloadSize(
+                        codingContext, computePacketNumberLength(newPacketNumber,
+                                                                 codingContext.largestAckedPN(PacketNumberSpace.INITIAL)),
+                        ((InitialPacket) packet).tokenLength(),
+                        localConnectionIdOrThrow().length(), initialDstIdLength, maxDatagramSize);
+                case HANDSHAKE -> QuicPacketEncoder.computeMaxHandshakePayloadSize(
+                        codingContext, newPacketNumber, localConnectionIdOrThrow().length(),
+                        dstIdLength, maxDatagramSize);
+                default -> throw new IllegalArgumentException(
+                        "Invalid packet number space: " + packetNumberSpace.text());
+            };
 
-        logDebug("OUT: retransmitting packet [%s] pn:%s as pn:%s",
-                   packet.packetType(), oldPacketNumber, newPacketNumber);
-        transferred = true;
-        pushDatagram(ProtectionRecord.retransmitting(retransmitted,
-                                                     oldPacketNumber,
-                                                     permit.destination(),
-                                                     permit,
-                                                     this::allocateDatagramForEncryption));
-        return true;
+            // The new packet may have larger size(), which might no longer fit inside
+            // the maximum datagram size supported on the path. To avoid that, we
+            // strip the padding and old ack frame from the original packet, and
+            // include the new ack frame only if it fits in the available size.
+            LinkedList<QuicFrame> frames = removeOutdatedFrames(packet.frames());
+            int size = frames.stream().mapToInt(QuicFrame::size).sum();
+            int remaining = maxPayloadSize - size;
+            if (remaining < 0) {
+                return false;
+            }
+            AckFrame ack = packetSpaceManager.nextAckFrame(false, remaining).orElse(null);
+            if (ack != null) {
+                frames.addFirst(ack);
+            }
+            QuicPacket retransmitted =
+                    switch (packet.packetType()) {
+                        case INITIAL -> encoder.newInitialPacket(localConnectionIdOrThrow(),
+                                                                 destinationConnectionId, ((InitialPacket) packet).token(),
+                                                                 newPacketNumber, largestAckedPN, frames,
+                                                                 codingContext);
+                        case HANDSHAKE -> encoder.newHandshakePacket(localConnectionIdOrThrow(),
+                                                                     destinationConnectionId, newPacketNumber, largestAckedPN,
+                                                                     frames, codingContext, logTag());
+                        case ONERTT -> encoder.newOneRttPacket(
+                                destinationConnectionId, newPacketNumber, largestAckedPN,
+                                frames, codingContext, logTag());
+                        case ZERORTT -> throw new IllegalArgumentException("Cannot retransmit unsupported 0-RTT packet");
+                        default -> throw new IllegalArgumentException("packetType: %s, packet: %s"
+                                                                              .formatted(packet.packetType().text(),
+                                                                                         packet.packetNumber()));
+                    };
+
+            logDebug("OUT: retransmitting packet [%s] pn:%s as pn:%s",
+                       packet.packetType(), oldPacketNumber, newPacketNumber);
+            transferred = true;
+            pushDatagram(ProtectionRecord.retransmitting(retransmitted,
+                                                         oldPacketNumber,
+                                                         permit.destination(),
+                                                         permit,
+                                                         this::allocateDatagramForEncryption));
+            return true;
         } finally {
             if (!transferred) {
                 permit.release();
