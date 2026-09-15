@@ -202,6 +202,11 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
     }
 
     @Override
+    public ClientRequestHeaders normalizedRequestHeaders(ClientRequestHeaders headers) {
+        return Http3RequestHeaders.normalize(headers);
+    }
+
+    @Override
     public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
         ensureOpen();
         Optional<ProxyRoute> selectedProxyRoute = clientRequest.selectedProxyRoute();
@@ -228,7 +233,7 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                 .headers(clientRequest.headers())
                 .fragment(clientUri.fragment());
 
-        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri, request.headers());
+        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri, normalizedRequestHeaders(request.headers()));
         clientRequest.connection().ifPresent(value -> {
             Optional<ClientRequestOrigin> inheritedOrigin = clientRequest.inheritedConnectionOrigin();
             if (inheritedOrigin.isEmpty()) {
@@ -630,10 +635,11 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
     private Http3Discovery.EndpointContextHint endpointContextHint(FullClientRequest<?> clientRequest,
                                                                    ClientUri clientUri,
                                                                    ClientRequestHeaders headers) {
-        ClientRequestOrigin origin = ClientRequestOrigin.create(clientUri, headers);
+        ClientRequestHeaders normalizedHeaders = normalizedRequestHeaders(headers);
+        ClientRequestOrigin origin = ClientRequestOrigin.create(clientUri, normalizedHeaders);
         String scheme = origin.scheme();
         UriAuthority effectiveAuthority = origin.authority();
-        ConnectionKey connectionKey = connectionKey(clientRequest, clientUri, headers);
+        ConnectionKey connectionKey = connectionKey(clientRequest, clientUri, normalizedHeaders);
         return new Http3Discovery.EndpointContextHint(connectionKey,
                                                       protocolConfig,
                                                       scheme,

@@ -49,7 +49,6 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 
 class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3ClientResponse>
         implements Http3ClientRequest, FullClientRequest<Http3ClientRequest> {
-    private static final HeaderName AUTHORITY = HeaderNames.create(":authority");
     private static final HeaderName PROXY_CONNECTION = HeaderNames.create("Proxy-Connection");
 
     private final Http3ClientImpl http3Client;
@@ -126,7 +125,7 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
         priorKnowledge(request.priorKnowledge);
         request.sni().ifPresent(this::sni);
         headers().clear();
-        headers(request.redirectSourceHeaders());
+        headers(normalizedRequestHeaders(request.redirectSourceHeaders()));
         if (request.preparedEntityHeaders != null) {
             request.preparedEntityHeaders.rollback(headers());
         }
@@ -146,9 +145,8 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
                 .equals(ClientRequestOrigin.create(clientUri));
         if (!sameOrigin) {
             headers().remove(HeaderNames.HOST);
-            headers().remove(AUTHORITY);
         }
-        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri, headers());
+        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri, normalizedRequestHeaders(headers()));
         if (sameOrigin) {
             request.address().ifPresent(value -> {
                 var inheritedOrigin = request.inheritedAddressOrigin();
@@ -189,6 +187,11 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
     public Http3ClientRequest priorKnowledge(boolean priorKnowledge) {
         this.priorKnowledge = priorKnowledge;
         return this;
+    }
+
+    @Override
+    protected ClientRequestHeaders normalizedRequestHeaders(ClientRequestHeaders headers) {
+        return Http3RequestHeaders.normalize(headers);
     }
 
     @Override
@@ -440,6 +443,7 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
             request.protocolId("http/1.1");
         }
         ClientUri transportUri = ClientUri.create(serviceRequest.uri()).fragment(UriFragment.empty());
+        ClientRequestHeaders normalizedHeaders = normalizedRequestHeaders(serviceRequest.headers());
         request.headers().clear();
         request.skipUriEncoding(skipUriEncoding())
                 .uri(transportUri)
@@ -450,8 +454,8 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
                 .readContinueTimeout(readContinueTimeout())
                 .proxy(proxy())
                 .tls(tls())
-                .headers(serviceRequest.headers());
-        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(serviceRequest.uri(), serviceRequest.headers());
+                .headers(normalizedHeaders);
+        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(serviceRequest.uri(), normalizedHeaders);
         selectedProxyRoute().ifPresent(value -> {
             var inheritedOrigin = inheritedSelectedProxyRouteOrigin();
             if (inheritedOrigin.isEmpty()) {
@@ -525,7 +529,7 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
 
     ClientRequestHeaders redirectSourceHeaders() {
         return redirectHeadersAfterServices == null
-                ? EntityWriterPreflight.copyOf(headers())
+                ? EntityWriterPreflight.copyOf(normalizedRequestHeaders(headers()))
                 : redirectHeadersAfterServices;
     }
 
