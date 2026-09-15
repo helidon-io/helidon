@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.time.Duration;
@@ -61,6 +62,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 
 class ServerListener implements TransportBindingContext, ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
+    private static final int MAX_EPHEMERAL_BIND_ATTEMPTS = 10;
     // TransportBinding.stop receives the graceful period and may need time after it expires to run forced cleanup.
     private static final long BINDING_FORCE_STOP_COMPLETION_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
 
@@ -75,7 +77,6 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private final Duration gracePeriod;
     private final Timer idleConnectionTimer;
     private final FatalListenerFailureHandler fatalListenerFailureHandler;
-    private final List<TransportBinding> transportBindings;
     private final List<ObserverLifecycle> httpTransportObserverLifecycles;
 
     private final MediaContext mediaContext;
@@ -85,6 +86,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private final Limit requestLimit;
 
     private final AtomicBoolean lifecycleStarted = new AtomicBoolean();
+    private volatile List<TransportBinding> transportBindings;
     private volatile HttpTransportObserver httpTransportObserver = HttpTransportObserver.noop();
     private List<ObserverLifecycle> startedHttpTransportObservers = List.of();
 
@@ -178,17 +180,6 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         this.httpTransportObserverLifecycles = List.copyOf(httpTransportObserverLifecycles);
         this.fatalListenerFailureHandler = Objects.requireNonNull(fatalListenerFailureHandler, "fatalListenerFailureHandler");
         this.transportBindings = planTransportBindings(protocolConfigs);
-        int maxConnections = listenerConfig.maxConnections();
-        long idlePermitBindingCount = transportBindings.stream()
-                .filter(TransportBinding::holdsIdleConnectionPermit)
-                .count();
-        if (maxConnections > 0 && idlePermitBindingCount > maxConnections) {
-            throw new IllegalArgumentException("Listener " + socketName + " has max-connections=" + maxConnections
-                                                       + ", but " + idlePermitBindingCount
-                                                       + " active transport bindings each reserve an idle connection "
-                                                       + "permit. Configure max-connections to at least "
-                                                       + idlePermitBindingCount + " or leave it unlimited.");
-        }
     }
 
     @Override
@@ -454,8 +445,23 @@ class ServerListener implements TransportBindingContext, ListenerContext {
 
         validateBindingCapabilities(activeBindings);
         validateProtocolTransportBindings(protocolConfigs, activeBindings);
+        validateIdleConnectionPermits(activeBindings);
 
         return List.copyOf(activeBindings);
+    }
+
+    private void validateIdleConnectionPermits(List<TransportBinding> bindings) {
+        int maxConnections = listenerConfig.maxConnections();
+        long idlePermitBindingCount = bindings.stream()
+                .filter(TransportBinding::holdsIdleConnectionPermit)
+                .count();
+        if (maxConnections > 0 && idlePermitBindingCount > maxConnections) {
+            throw new IllegalArgumentException("Listener " + socketName + " has max-connections=" + maxConnections
+                                                       + ", but " + idlePermitBindingCount
+                                                       + " active transport bindings each reserve an idle connection "
+                                                       + "permit. Configure max-connections to at least "
+                                                       + idlePermitBindingCount + " or leave it unlimited.");
+        }
     }
 
     private void validateBindingCapabilities(List<TransportBinding> bindings) {
@@ -511,23 +517,8 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     }
 
     private Throwable stopResources(List<TransportBinding> bindings, long stopAtNanos) {
-        Throwable failure = null;
-        List<BindingStop> bindingStops = new ArrayList<>();
-
-        // Stop listening for connections
-        for (TransportBinding binding : bindings) {
-            try {
-                Future<TransportBinding.ShutdownResult> stopFuture = sharedExecutor.submit(() -> stopBinding(binding));
-                bindingStops.add(new BindingStop(binding, stopFuture));
-            } catch (RuntimeException e) {
-                failure = LifecycleFailures.add(failure, stopBindingInline(binding));
-            } catch (Error e) {
-                failure = LifecycleFailures.add(failure, stopBindingInline(binding));
-                failure = LifecycleFailures.add(failure, bindingFailure("stop", binding, e));
-            }
-        }
-        BindingStopResult bindingStopResult = awaitBindingStops(bindingStops, gracePeriod, stopAtNanos);
-        failure = LifecycleFailures.add(failure, bindingStopResult.failure());
+        BindingStopResult bindingStopResult = stopBindings(bindings, stopAtNanos);
+        Throwable failure = bindingStopResult.failure();
 
         if (bindingStopResult.forceSharedExecutorShutdown()) {
             try {
@@ -549,6 +540,25 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         return failure;
     }
 
+    private BindingStopResult stopBindings(List<TransportBinding> bindings, long stopAtNanos) {
+        Throwable failure = null;
+        List<BindingStop> bindingStops = new ArrayList<>();
+
+        for (TransportBinding binding : bindings) {
+            try {
+                Future<TransportBinding.ShutdownResult> stopFuture = sharedExecutor.submit(() -> stopBinding(binding));
+                bindingStops.add(new BindingStop(binding, stopFuture));
+            } catch (RuntimeException e) {
+                failure = LifecycleFailures.add(failure, stopBindingInline(binding));
+            } catch (Error e) {
+                failure = LifecycleFailures.add(failure, stopBindingInline(binding));
+                failure = LifecycleFailures.add(failure, bindingFailure("stop", binding, e));
+            }
+        }
+        BindingStopResult result = awaitBindingStops(bindingStops, gracePeriod, stopAtNanos);
+        return new BindingStopResult(LifecycleFailures.add(failure, result.failure()), result.forceSharedExecutorShutdown());
+    }
+
     private TransportBinding.ShutdownResult stopBinding(TransportBinding binding) {
         return Objects.requireNonNull(binding.stop(gracePeriod), "Transport binding stop result must not be null");
     }
@@ -563,11 +573,59 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     }
 
     private void startIt(BooleanSupplier cancelled, List<TransportBinding> startAttemptedBindings) {
-        for (TransportBinding binding : transportBindings) {
+        for (int attempt = 1; ; attempt++) {
+            RuntimeException collision = null;
+            for (TransportBinding binding : transportBindings) {
+                checkCancelledStartup(cancelled);
+                boolean convergingPort = binding instanceof PortTransportBinding && boundPort().orElse(-1) > 0;
+                startAttemptedBindings.add(binding);
+                try {
+                    binding.start();
+                } catch (RuntimeException e) {
+                    if (attempt == MAX_EPHEMERAL_BIND_ATTEMPTS || !convergingPort || !isEphemeralPortCollision(e)) {
+                        throw e;
+                    }
+                    collision = e;
+                    break;
+                }
+            }
+            if (collision == null) {
+                return;
+            }
             checkCancelledStartup(cancelled);
-            startAttemptedBindings.add(binding);
-            binding.start();
+            BindingStopResult cleanup = stopBindings(startAttemptedBindings, stopAtNanos(gracePeriod));
+            if (cleanup.failure() != null) {
+                collision.addSuppressed(cleanup.failure());
+                throw collision;
+            }
+            if (cleanup.forceSharedExecutorShutdown() || sharedExecutor.isShutdown()) {
+                throw collision;
+            }
+            startAttemptedBindings.clear();
+            // A port selected for one transport can already be occupied by another transport.
+            // Recreate all bindings after releasing the attempt so a new port can be selected.
+            transportBindings = List.of();
+            checkCancelledStartup(cancelled);
+            transportBindings = planTransportBindings(listenerConfig.protocols());
         }
+    }
+
+    private boolean isEphemeralPortCollision(RuntimeException failure) {
+        if (!(configuredAddress instanceof InetSocketAddress address)
+                || address.getPort() != 0
+                || Thread.currentThread().isInterrupted()) {
+            return false;
+        }
+        boolean bindFailure = false;
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause.getSuppressed().length != 0) {
+                return false;
+            }
+            if (cause instanceof BindException) {
+                bindFailure = true;
+            }
+        }
+        return bindFailure;
     }
 
     private void checkCancelledStartup(BooleanSupplier cancelled) {
