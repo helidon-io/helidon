@@ -51,7 +51,6 @@ public class CreateTestApplicationMojo extends CreateApplicationAbstractMojo {
 
     /**
      * Specify where to place generated source files created by annotation processing.
-     * Only applies to JDK 1.6+
      */
     @Parameter(defaultValue = "${project.build.directory}/generated-test-sources/test-annotations")
     private File generatedTestSourcesDirectory;
