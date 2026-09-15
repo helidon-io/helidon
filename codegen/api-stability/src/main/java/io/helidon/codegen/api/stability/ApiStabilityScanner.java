@@ -34,7 +34,6 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
-import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
@@ -105,7 +104,7 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
     private Void visit(TreePath path, Supplier<Void> superCall) {
 
         if (path != null) {
-            var elt = element(path);
+            var elt = trees.getElement(path);
             if (elt instanceof TypeElement || elt instanceof ExecutableElement) {
                 if (checkAnnotation(path, elt, Api.Internal.class, internalApis, SUPPRESS_INTERNAL)) {
                     return null;
@@ -161,7 +160,7 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         while (node != null) {
             switch (node.getLeaf().getKind()) {
             case CLASS, INTERFACE, ENUM, RECORD, ANNOTATION_TYPE, MODULE, PACKAGE -> {
-                var elt = element(node);
+                var elt = trees.getElement(node);
                 if (elt != null) {
                     return sourceRef(node, elt);
                 }
@@ -208,7 +207,7 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
             return null;
         }
         var path = trees.getPath(compilationUnit, tree);
-        return path == null ? null : element(path);
+        return path == null ? null : trees.getElement(path);
     }
 
     /**
@@ -265,7 +264,7 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         while (n != null) {
             switch (n.getLeaf().getKind()) {
             case VARIABLE, METHOD, CLASS, INTERFACE, ENUM, RECORD, ANNOTATION_TYPE, MODULE, PACKAGE -> {
-                var elt = element(n);
+                var elt = trees.getElement(n);
                 if (elt != null) {
                     return elt;
                 }
@@ -276,29 +275,7 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
             }
             n = n.getParentPath();
         }
-        return element(node);
-    }
-
-    private Element element(TreePath path) {
-        /*
-         * JDK 26 javac can report a bogus record canonical constructor error when an annotation
-         * processor asks Trees.getElement for nodes inside record constructors.
-         */
-        return inRecordConstructor(path) ? null : trees.getElement(path);
-    }
-
-    private boolean inRecordConstructor(TreePath path) {
-        var current = path;
-        while (current != null) {
-            if (current.getLeaf() instanceof MethodTree method
-                    && method.getReturnType() == null
-                    && current.getParentPath() != null
-                    && current.getParentPath().getLeaf().getKind() == Tree.Kind.RECORD) {
-                return true;
-            }
-            current = current.getParentPath();
-        }
-        return false;
+        return trees.getElement(node);
     }
 
     record SourceRef(int line,

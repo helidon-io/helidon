@@ -171,17 +171,19 @@ public class ApiStabilityProcessorTest {
     }
 
     @Test
-    void testRecordCompactConstructorCompiles() {
+    void testRecordCompactConstructorScansApis() {
         var result = TestCompiler.builder()
                 .addProcessor(new ApiStabilityProcessor())
                 .addClasspath(Api.class)
                 .currentRelease()
                 .addOption("-Xlint:none")
+                .addSource("PreviewApi.java", apiSource("@Api.Preview", "PreviewApi"))
                 .addSource("Repro.java", """
                         package com.example;
 
                         record Repro(String name) {
                             Repro {
+                                new PreviewApi();
                                 name = name.trim();
                             }
                         }
@@ -190,7 +192,34 @@ public class ApiStabilityProcessorTest {
                 .compile();
 
         assertThat(result.diagnostics().toString(), result.success(), is(true));
-        assertThat(result.diagnostics(), empty());
+        assertThat(result.diagnostics(),
+                   hasItem("warning: /Repro.java:[4,5] com.example.PreviewApi is preview API"));
+    }
+
+    @Test
+    void testRecordCanonicalConstructorScansApis() {
+        var result = TestCompiler.builder()
+                .addProcessor(new ApiStabilityProcessor())
+                .addClasspath(Api.class)
+                .currentRelease()
+                .addOption("-Xlint:none")
+                .addSource("PreviewApi.java", apiSource("@Api.Preview", "PreviewApi"))
+                .addSource("Repro.java", """
+                        package com.example;
+
+                        record Repro(String name) {
+                            Repro(String name) {
+                                new PreviewApi();
+                                this.name = name.trim();
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        assertThat(result.diagnostics(),
+                   hasItem("warning: /Repro.java:[4,5] com.example.PreviewApi is preview API"));
     }
 
     @Test
