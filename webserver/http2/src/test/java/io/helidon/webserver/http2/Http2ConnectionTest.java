@@ -71,6 +71,7 @@ import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.Router;
@@ -1068,11 +1069,7 @@ class Http2ConnectionTest {
                 .when(writer)
                 .writeNow(any(BufferData.class));
 
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
-        when(ctx.dataWriter()).thenReturn(writer);
-        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        ConnectionContext ctx = http2Context(writer);
 
         Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
         connection.pendingPing(Http2Ping.create());
@@ -1145,11 +1142,7 @@ class Http2ConnectionTest {
         Http2Config config = Http2Config.builder()
                 .maxRapidResets(0)
                 .build();
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
-        when(ctx.dataWriter()).thenReturn(writer);
-        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        ConnectionContext ctx = http2Context(writer);
 
         Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
@@ -1241,8 +1234,10 @@ class Http2ConnectionTest {
 
     private static ConnectionContext http2Context(DataWriter writer, DataReader reader) {
         ConnectionContext ctx = mock(ConnectionContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
         when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(listenerContext.config()).thenReturn(ListenerConfig.builder().build());
+        when(ctx.listenerContext()).thenReturn(listenerContext);
         when(ctx.dataWriter()).thenReturn(writer);
         when(ctx.dataReader()).thenReturn(reader);
         return ctx;

@@ -173,6 +173,34 @@ server:
 See [Configuration options][io-helidon-webse].
 <!--/include-->
 
+### HTTP Method Case Parsing
+
+Helidon 4 normalizes inbound HTTP/1.1 and HTTP/2 method names using the
+backward-compatible `Method.create(String)` behavior by default. For example,
+wire text `delete` is exposed as `DELETE` and matches a route registered for
+`DELETE`.
+
+Enable case-sensitive parsing on a listener to preserve the exact method text
+received on the wire:
+
+```yaml [application.yaml]
+server:
+  case-sensitive-methods: true
+```
+
+The option is listener-scoped and defaults to `false`. It can also be set on an
+entry under `server.sockets` without changing other listeners.
+
+This option affects only inbound wire parsing. Configured method values can
+still normalize through existing APIs used by their owning components. With
+case-sensitive parsing enabled, lowercase wire text remains distinct from the
+usual uppercase method even when a separately configured lowercase value is
+normalized.
+
+We recommend enabling `case-sensitive-methods` and updating ordinary built-in
+method names in configuration to their standard uppercase form, such as `GET`
+instead of `get`, to align applications with future Helidon versions.
+
 ## Routing
 
 Routing lets you use request matching criteria to bind requests to a `handler`

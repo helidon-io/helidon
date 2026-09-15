@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpMethodTest {
     private static final Class<Method> CLASS = Method.class;
@@ -47,6 +51,44 @@ class HttpMethodTest {
             .filter(it -> it.getType().equals(String.class))
             .map(Field::getName)
             .collect(Collectors.toSet());
+
+    @Test
+    void compatibleCreationNormalizesMethodName() {
+        assertThat(Method.create("delete"), sameInstance(Method.DELETE));
+        assertThat(Method.create("custom").text(), is("CUSTOM"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"delete", "Delete", "dElEtE"})
+    void caseSensitiveCreationPreservesMethodName(String methodName) {
+        Method method = Method.createCaseSensitive(methodName);
+
+        assertAll(
+                () -> assertThat(method.text(), is(methodName)),
+                () -> assertThat(method, not(sameInstance(Method.DELETE)))
+        );
+    }
+
+    @Test
+    void caseSensitiveCreationUsesCanonicalInstanceForExactKnownMethod() {
+        assertThat(Method.createCaseSensitive("DELETE"), sameInstance(Method.DELETE));
+    }
+
+    @Test
+    void caseSensitiveCreationRejectsNullName() {
+        NullPointerException exception = assertThrows(NullPointerException.class,
+                                                      () -> Method.createCaseSensitive(null));
+
+        assertThat(exception.getMessage(), is("name"));
+    }
+
+    @Test
+    void caseSensitiveCreationRejectsEmptyName() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> Method.createCaseSensitive(""));
+
+        assertThat(exception.getMessage(), is("HTTP method name must not be empty"));
+    }
 
     @Test
     void testAllMethodConstantsAreValid() throws NoSuchFieldException, IllegalAccessException {

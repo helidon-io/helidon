@@ -41,6 +41,11 @@ public class ListenerConfigTest {
     }
 
     @Test
+    void testCaseSensitiveMethodsIsDefaultMethod() throws NoSuchMethodException {
+        assertThat(ListenerConfig.class.getMethod("caseSensitiveMethods").isDefault(), is(true));
+    }
+
+    @Test
     void testUnixBindAddressKeepsConfiguredPath() {
         Config config = Config.just(ConfigSources.create(Map.of("bind-address", "unix:/tmp/server.sock")));
 
@@ -58,6 +63,7 @@ public class ListenerConfigTest {
         assertThat(webServerConfig.writeQueueLength(), is(0));         // default
         assertThat(webServerConfig.writeBufferSize(), is(4096));       // default
         assertThat(webServerConfig.shutdownGracePeriod().toMillis(), is(500L));   // default
+        assertThat(webServerConfig.caseSensitiveMethods(), is(false));
         ListenerConfig listenerConfig2 = webServerConfig.sockets().get("other");
         assertThat(listenerConfig2.writeQueueLength(), is(64));
         assertThat(listenerConfig2.writeBufferSize(), is(1024));
@@ -81,6 +87,15 @@ public class ListenerConfigTest {
         var webServerConfig = WebServer.builder().config(config.get("server3")).buildPrototype();
         ListenerConfig listenerConfig = webServerConfig.sockets().get("grace");
         assertThat(listenerConfig.shutdownGracePeriod().toMillis(), is(2000L));
+    }
+
+    @Test
+    void testCaseSensitiveMethodParsingIsListenerScoped() {
+        Config config = Config.create();
+        var webServerConfig = WebServer.builder().config(config.get("server3")).buildPrototype();
+
+        assertThat(webServerConfig.caseSensitiveMethods(), is(false));
+        assertThat(webServerConfig.sockets().get("grace").caseSensitiveMethods(), is(true));
     }
 
     @Test

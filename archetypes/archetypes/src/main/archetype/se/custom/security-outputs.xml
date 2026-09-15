@@ -54,7 +54,7 @@
                     </list>
                     <list key="paths-config-entries">
                         <value><![CDATA[          - path: "/rest/profile"
-            methods: ["get"]
+            methods: ["GET"]
             authenticate: true
             roles-allowed: ["my_admins"]]]>
                         </value>
@@ -221,7 +221,7 @@ Build and run the application and then try the endpoints:
                     </list>
                     <list key="paths-config-entries">
                         <value><![CDATA[          - path: "/rest/profile"
-            methods: ["get"]
+            methods: ["GET"]
             authenticate: true]]>
                         </value>
                     </list>

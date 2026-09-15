@@ -137,7 +137,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.sendListener = http1Config.compositeSendListener();
         this.reader.listener(recvListener, ctx);
         this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateRequestHeaders());
-        this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
+        this.http1prologue = new Http1Prologue(reader,
+                                               http1Config.maxPrologueLength(),
+                                               http1Config.validatePath(),
+                                               ctx.listenerContext().config().caseSensitiveMethods());
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();

@@ -37,6 +37,7 @@ import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -156,6 +157,58 @@ class Http2HeadersTest {
 
         assertThat(http2Headers.method(), is(Method.GET));
         assertThat("Dynamic table should be empty", dynamicTable.currentTableSize(), is(0));
+    }
+
+    @Test
+    void publicRequestDecoderRetainsCompatibleMethodNormalization() {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Method method = headers(literalWithIndexedName(2, "delete"), dynamicTable).method();
+
+        assertThat(method.text(), is("DELETE"));
+        assertThat(method, sameInstance(Method.DELETE));
+    }
+
+    @Test
+    void caseSensitiveRequestDecoderPreservesMethodText() {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Method method = headers(literalWithIndexedName(2, "delete"), dynamicTable, true).method();
+
+        assertThat(method.text(), is("delete"));
+        assertThat(method, not(sameInstance(Method.DELETE)));
+    }
+
+    @Test
+    void caseSensitiveRequestDecoderPreservesMethodTextAcrossContinuation() {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        BufferData encoded = data(literalWithIndexedName(2, "delete"));
+        byte[] firstBytes = new byte[2];
+        encoded.read(firstBytes);
+        BufferData firstData = BufferData.create(firstBytes);
+        BufferData continuationData = BufferData.create(encoded.readBytes());
+        Http2FrameHeader firstHeader = Http2FrameHeader.create(firstData.available(),
+                                                               Http2FrameTypes.HEADERS,
+                                                               Http2Flag.HeaderFlags.create(0),
+                                                               1);
+        Http2FrameHeader continuationHeader = Http2FrameHeader.create(continuationData.available(),
+                                                                      Http2FrameTypes.CONTINUATION,
+                                                                      Http2Flag.ContinuationFlags.create(
+                                                                              Http2Flag.END_OF_HEADERS),
+                                                                      1);
+
+        Http2Headers headers = Http2Headers.createRequest(Mockito.mock(Http2Stream.class),
+                                                          dynamicTable,
+                                                          Http2HuffmanDecoder.create(),
+                                                          Http2Headers.create(WritableHeaders.create()),
+                                                          Set.of(),
+                                                          ignored -> {
+                                                          },
+                                                          true,
+                                                          new Http2FrameData(firstHeader, firstData),
+                                                          new Http2FrameData(continuationHeader, continuationData));
+
+        assertThat(headers.method().text(), is("delete"));
     }
 
     /*
@@ -567,6 +620,26 @@ class Http2HeadersTest {
                                    dynamicTable,
                                    Http2HuffmanDecoder.create(),
                                    new Http2FrameData(header, data));
+    }
+
+    private Http2Headers headers(String hexEncoded, DynamicTable dynamicTable, boolean caseSensitiveMethods) {
+        BufferData data = data(hexEncoded);
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.HEADERS,
+                                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                                          1);
+
+        Http2Stream stream = Mockito.mock(Http2Stream.class);
+
+        return Http2Headers.createRequest(stream,
+                                          dynamicTable,
+                                          Http2HuffmanDecoder.create(),
+                                          Http2Headers.create(WritableHeaders.create()),
+                                          Set.of(),
+                                          ignored -> {
+                                          },
+                                          caseSensitiveMethods,
+                                          new Http2FrameData(header, data));
     }
 
     private void assertHeaderValueRoundTrip(String value) {

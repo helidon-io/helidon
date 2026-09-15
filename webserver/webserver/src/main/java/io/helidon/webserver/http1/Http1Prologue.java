@@ -85,6 +85,7 @@ public final class Http1Prologue {
     private final DataReader reader;
     private final int maxLength;
     private final boolean validatePath;
+    private final boolean caseSensitiveMethods;
 
     /**
      * Create a new prologue parser.
@@ -94,9 +95,22 @@ public final class Http1Prologue {
      * @param validatePath whether to validate path
      */
     public Http1Prologue(DataReader reader, int maxLength, boolean validatePath) {
+        this(reader, maxLength, validatePath, false);
+    }
+
+    /**
+     * Create a new prologue parser.
+     *
+     * @param reader               data reader
+     * @param maxLength            maximal prologue length
+     * @param validatePath         whether to validate path
+     * @param caseSensitiveMethods whether to preserve the exact request method text
+     */
+    Http1Prologue(DataReader reader, int maxLength, boolean validatePath, boolean caseSensitiveMethods) {
         this.reader = reader;
         this.maxLength = maxLength;
         this.validatePath = validatePath;
+        this.caseSensitiveMethods = caseSensitiveMethods;
     }
 
     /**
@@ -125,21 +139,6 @@ public final class Http1Prologue {
                 .message(message)
                 .safeMessage(false)
                 .build();
-    }
-
-    private static Method readMethod(byte[] bytes, int index, int spaceIndex) {
-        int len = spaceIndex - index;
-        if (len == 3) {
-            if (isGetMethod(bytes, index)) {
-                return Method.GET;
-            }
-            if (isPutMethod(bytes, index)) {
-                return Method.PUT;
-            }
-        } else if (len == 4 && isPostMethod(bytes, index)) {
-            return Method.POST;
-        }
-        return Method.create(new String(bytes, index, len, StandardCharsets.US_ASCII));
     }
 
     private static boolean isGetMethod(byte[] bytes, int index) {
@@ -263,6 +262,22 @@ public final class Http1Prologue {
                 ? requestTarget
                 : URI.create("//" + requestTarget).getAuthority();
         return new AuthorityPath(requestTarget, decoded);
+    }
+
+    private Method readMethod(byte[] bytes, int index, int spaceIndex) {
+        int len = spaceIndex - index;
+        if (len == 3) {
+            if (isGetMethod(bytes, index)) {
+                return Method.GET;
+            }
+            if (isPutMethod(bytes, index)) {
+                return Method.PUT;
+            }
+        } else if (len == 4 && isPostMethod(bytes, index)) {
+            return Method.POST;
+        }
+        String methodName = new String(bytes, index, len, StandardCharsets.US_ASCII);
+        return caseSensitiveMethods ? Method.createCaseSensitive(methodName) : Method.create(methodName);
     }
 
     private HttpPrologue doRead() {

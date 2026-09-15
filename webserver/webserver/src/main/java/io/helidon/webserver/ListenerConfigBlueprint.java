@@ -50,7 +50,7 @@ import io.helidon.webserver.spi.ServerConnectionSelector;
  */
 @Prototype.Configured
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
-@Prototype.IncludeDefaultMethods("proxyProtocol")
+@Prototype.IncludeDefaultMethods({"proxyProtocol", "caseSensitiveMethods"})
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
 interface ListenerConfigBlueprint {
     /**
@@ -74,6 +74,21 @@ interface ListenerConfigBlueprint {
     @Option.Singular
     @Option.Provider(ProtocolConfigProvider.class)
     List<ProtocolConfig> protocols();
+
+    /**
+     * Whether inbound HTTP/1.1 and HTTP/2 request parsers preserve the exact method text received on the wire.
+     * <p>
+     * When disabled, method names use the backward-compatible normalization performed by
+     * {@link io.helidon.http.Method#create(String)}. This option affects only inbound wire parsing. Defaults to
+     * {@code false}.
+     *
+     * @return whether inbound HTTP method parsing is case-sensitive
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    default boolean caseSensitiveMethods() {
+        return false;
+    }
 
     /**
      * Http routing. This will always be added to the resulting {@link io.helidon.webserver.Router}, if defined,

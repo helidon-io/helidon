@@ -206,6 +206,18 @@ Configuration of a server listener (server socket)
 </tr>
 <tr>
 <td>
+<code>case-<wbr>sensitive-<wbr>methods</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Whether inbound HTTP/1.1 and HTTP/2 request parsers preserve the exact method text received on the wire</td>
+</tr>
+<tr>
+<td>
 <a id="error-handling"></a>
 <a href="io.helidon.webserver.ErrorHandling.md">
 <code>error-<wbr>handling</code>

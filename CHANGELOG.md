@@ -11,6 +11,23 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## 4.5.5
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### NOTABLE CHANGES
+
+- WebServer listeners can opt into case-sensitive HTTP/1.1 and HTTP/2 method parsing with
+  `case-sensitive-methods: true`. Compatibility normalization remains the default. We recommend enabling the option and
+  updating ordinary built-in method names in configuration to their standard uppercase form, such as `GET` instead of
+  `get`, to align applications with future Helidon versions.
+
+### CHANGES
+
+- WebServer: Add opt-in case-sensitive inbound HTTP method parsing
+
 ## 4.5.3
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.

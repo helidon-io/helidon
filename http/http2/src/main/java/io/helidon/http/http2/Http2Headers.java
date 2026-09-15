@@ -168,6 +168,40 @@ public class Http2Headers {
                                              Set<HeaderName> ignoredHeaders,
                                              LongConsumer decodedHeaderSizeConsumer,
                                              Http2FrameData... frames) {
+        return createRequest(stream,
+                             table,
+                             huffman,
+                             headers,
+                             ignoredHeaders,
+                             decodedHeaderSizeConsumer,
+                             false,
+                             frames);
+    }
+
+    /**
+     * Create headers from an HTTP request.
+     *
+     * @param stream                    stream that owns these headers
+     * @param table                     dynamic table for this connection
+     * @param huffman                   huffman decoder
+     * @param headers                   HTTP/2 headers
+     * @param ignoredHeaders            decoded header names that must not be added to the result
+     * @param decodedHeaderSizeConsumer consumer of each decoded header field size before ignored-header filtering
+     * @param caseSensitiveMethods      whether to preserve the exact request method text
+     * @param frames                    frames of the headers
+     * @return new headers parsed from the frames
+     * @throws Http2Exception in case of protocol errors
+     */
+    @Api.Internal
+    @SuppressWarnings("checkstyle:ParameterNumber") // keep request decoding allocation-free
+    public static Http2Headers createRequest(Http2Stream stream,
+                                             DynamicTable table,
+                                             Http2HuffmanDecoder huffman,
+                                             Http2Headers headers,
+                                             Set<HeaderName> ignoredHeaders,
+                                             LongConsumer decodedHeaderSizeConsumer,
+                                             boolean caseSensitiveMethods,
+                                             Http2FrameData... frames) {
 
         Objects.requireNonNull(table, "table");
         Objects.requireNonNull(huffman, "huffman");
@@ -178,7 +212,7 @@ public class Http2Headers {
 
         if (frames.length == 0) {
             return create(ServerRequestHeaders.create(WritableHeaders.create()),
-                          new PseudoHeaders());
+                          new PseudoHeaders(caseSensitiveMethods));
         }
 
         // the first frame is the important one
@@ -204,7 +238,7 @@ public class Http2Headers {
             buffers[i] = frame.data();
         }
         BufferData data = BufferData.create(buffers);
-        PseudoHeaders pseudoHeaders = new PseudoHeaders();
+        PseudoHeaders pseudoHeaders = new PseudoHeaders(caseSensitiveMethods);
         boolean lastIsPseudoHeader = true;
 
         while (true) {
@@ -1467,12 +1501,21 @@ public class Http2Headers {
     }
 
     private static class PseudoHeaders {
+        private final boolean caseSensitiveMethods;
         private String authority;
         private Method method;
         private String path;
         private String scheme;
         private Status status;
         private int size;
+
+        private PseudoHeaders() {
+            this(false);
+        }
+
+        private PseudoHeaders(boolean caseSensitiveMethods) {
+            this.caseSensitiveMethods = caseSensitiveMethods;
+        }
 
         public int size() {
             return size;
@@ -1496,7 +1539,7 @@ public class Http2Headers {
         }
 
         void method(String method) {
-            method(Method.create(method));
+            method(caseSensitiveMethods ? Method.createCaseSensitive(method) : Method.create(method));
         }
 
         PseudoHeaders method(Method method) {

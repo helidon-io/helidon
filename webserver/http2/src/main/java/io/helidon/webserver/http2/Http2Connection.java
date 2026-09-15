@@ -157,6 +157,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final DataReader reader;
     private final Http2Settings serverSettings;
     private final boolean sendErrorDetails;
+    private final boolean caseSensitiveMethods;
     private final ConnectionFlowControl flowControl;
     private final WritableHeaders<?> connectionHeaders;
     private final int maxEmptyFrames;
@@ -209,6 +210,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.reader = ctx.dataReader();
         this.sendErrorDetails = http2Config.sendErrorDetails();
+        this.caseSensitiveMethods = ctx.listenerContext().config().caseSensitiveMethods();
         this.maxClientConcurrentStreams = http2Config.maxConcurrentStreams();
         this.maxDroppedHeaderBlockSize = Math.max(http2Config.maxFrameSize(), MIN_HEADER_BLOCK_SIZE);
 
@@ -839,6 +841,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                  Http2Headers.create(connectionHeaders),
                                                  SERVER_CONTROLLED_REQUEST_HEADERS,
                                                  decodedHeaderSizeConsumer,
+                                                 caseSensitiveMethods,
                                                  streamContext.contData());
             endOfStream = streamContext.contHeader().flags(Http2FrameTypes.HEADERS).endOfStream();
             streamContext.clearContinuations();
@@ -852,6 +855,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                      Http2Headers.create(connectionHeaders),
                                                      SERVER_CONTROLLED_REQUEST_HEADERS,
                                                      decodedHeaderSizeConsumer,
+                                                     caseSensitiveMethods,
                                                      new Http2FrameData(frameHeader, inProgressFrame()));
             } finally {
                 streamContext.clearContinuations();
@@ -1015,6 +1019,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                    Http2Headers.create(connectionHeaders),
                                    SERVER_CONTROLLED_REQUEST_HEADERS,
                                    decodedHeaderSizeConsumer(),
+                                   caseSensitiveMethods,
                                    frames);
     }
 

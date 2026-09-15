@@ -22,6 +22,7 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
@@ -97,8 +98,10 @@ class ConnectionConfigTest {
 
     private static ConnectionContext mockContext() {
         ConnectionContext ctx = mock(ConnectionContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
         when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(listenerContext.config()).thenReturn(ListenerConfig.builder().build());
+        when(ctx.listenerContext()).thenReturn(listenerContext);
         return ctx;
     }
 }

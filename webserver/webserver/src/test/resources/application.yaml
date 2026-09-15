@@ -63,6 +63,7 @@ server3:
   sockets:
     - name: "grace"
       shutdown-grace-period: PT2S
+      case-sensitive-methods: true
       proxy-protocol:
         trusted-proxies:
           allow:
