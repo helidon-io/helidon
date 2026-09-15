@@ -37,6 +37,7 @@ import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.ClientAltSvcConfig;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientConnectionTarget;
@@ -175,6 +176,22 @@ class Http2AltSvcClientTest {
             context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
 
             assertThat(context.client.supports(context.request, context.uri), is(HttpClientSpi.SupportLevel.SUPPORTED));
+        }
+    }
+
+    @Test
+    void supportsAlternativeWithAuthorityHeaderWithoutMutatingRequest() {
+        try (TestContext context = TestContext.createHostHeaderSni(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+            ClientRequestHeaders requestHeaders = context.request.headers();
+            requestHeaders.remove(HeaderNames.HOST);
+            requestHeaders.set(Http2Headers.AUTHORITY_NAME, "service.example");
+
+            assertThat(context.client.supports(context.request, context.uri), is(HttpClientSpi.SupportLevel.SUPPORTED));
+            when(context.request.selectedProxyRoute()).thenReturn(Optional.of(context.target.proxyRoute()));
+            assertThat(context.client.supports(context.request, context.uri), is(HttpClientSpi.SupportLevel.SUPPORTED));
+            assertThat(requestHeaders.contains(HeaderNames.HOST), is(false));
+            assertThat(requestHeaders.get(Http2Headers.AUTHORITY_NAME).get(), is("service.example"));
         }
     }
 

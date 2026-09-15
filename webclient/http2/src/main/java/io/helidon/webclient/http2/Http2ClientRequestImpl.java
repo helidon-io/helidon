@@ -134,7 +134,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         headers(request.redirectSourceHeaders());
         sanitizeRedirectHeaders(retainRouting);
         if (retainRouting) {
-            ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri, headers());
+            ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri,
+                                                                          normalizedRequestHeaders(headers()));
             request.address().ifPresent(value -> {
                 var inheritedOrigin = request.inheritedAddressOrigin();
                 if (inheritedOrigin.isEmpty()) {
@@ -180,6 +181,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         }
         handoffProtocolResponseConsumer = null;
         return true;
+    }
+
+    @Override
+    protected ClientRequestHeaders normalizedRequestHeaders(ClientRequestHeaders headers) {
+        return Http2RequestHeaders.normalizedRequestHeaders(headers);
     }
 
     @Override
@@ -324,7 +330,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         }
         if (callChain.rawServiceResponse() == null
                 && canRetainRouting(resolvedUri(), headers(), sourceUri, redirectUri, redirectSecurityState())) {
-            ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(redirectUri, redirectRequest.headers());
+            ClientRequestHeaders targetHeaders = normalizedRequestHeaders(redirectRequest.headers());
+            ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(redirectUri, targetHeaders);
             connection().ifPresent(value -> {
                 var inheritedOrigin = inheritedConnectionOrigin();
                 if (inheritedOrigin.isEmpty()) {
@@ -431,7 +438,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
 
     ClientRequestHeaders redirectSourceHeaders() {
         return redirectHeadersAfterServices == null
-                ? EntityWriterPreflight.copyOf(headers())
+                ? EntityWriterPreflight.copyOf(normalizedRequestHeaders(headers()))
                 : super.redirectSourceHeaders(redirectHeadersAfterServices);
     }
 
@@ -466,8 +473,9 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                             ClientUri targetUri,
                                             RedirectSecurityState securityState) {
         ClientRequestOrigin sourceUriOrigin = ClientRequestOrigin.create(sourceUri);
+        ClientRequestHeaders originHeaders = Http2RequestHeaders.normalizedRequestHeaders(configuredHeaders);
         ClientRequestOrigin configuredEffectiveOrigin = ClientRequestOrigin.create(configuredSourceUri,
-                                                                                    configuredHeaders);
+                                                                                    originHeaders);
         return ClientRequestOrigin.create(configuredSourceUri).equals(sourceUriOrigin)
                 && securityState.lastUriOrigin().orElse(sourceUriOrigin).equals(sourceUriOrigin)
                 && securityState.lastEffectiveOrigin()

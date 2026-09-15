@@ -428,6 +428,47 @@ class Http3ClientTest {
     }
 
     @Test
+    void adaptationUsesAuthorityForInheritedBindingsWithoutChangingSource(@TempDir Path tempDir) {
+        Http3ClientImpl client = (Http3ClientImpl) Http3Client.builder()
+                .baseUri("https://route.invalid")
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .build();
+        try {
+            Http3ClientRequestImpl source = (Http3ClientRequestImpl) client.get("/source");
+            var authority = HeaderNames.create(":authority");
+            source.header(HeaderNames.HOST, "route.invalid");
+            source.header(authority, "effective.invalid");
+            ClientRequestOrigin origin = ClientRequestOrigin.create(ClientUri.create(URI.create("https://effective.invalid")));
+            ClientConnection connection = mock(ClientConnection.class);
+            UnixDomainSocketAddress address = UnixDomainSocketAddress.of(tempDir.resolve("inherited.sock"));
+            ProxyRoute route = mock(ProxyRoute.class);
+            source.inheritedConnection(connection, origin);
+            source.inheritedAddress(address, origin);
+            source.inheritedSelectedProxyRoute(route, origin);
+
+            FullClientRequest<?> adapted = (FullClientRequest<?>) client.clientRequest(source, source.resolvedUri());
+
+            assertThat(adapted.connection().orElseThrow(), sameInstance(connection));
+            assertThat(adapted.address().orElseThrow(), sameInstance(address));
+            assertThat(adapted.selectedProxyRoute().orElseThrow(), sameInstance(route));
+            assertThat(source.headers().get(authority).get(), equalTo("effective.invalid"));
+            assertThat(source.headers().get(HeaderNames.HOST).get(), equalTo("route.invalid"));
+
+            source.header(authority, "other.invalid");
+            FullClientRequest<?> retargeted = (FullClientRequest<?>) client.clientRequest(source, source.resolvedUri());
+
+            assertThat(retargeted.connection().isEmpty(), equalTo(true));
+            assertThat(retargeted.address().isEmpty(), equalTo(true));
+            assertThat(retargeted.selectedProxyRoute().isEmpty(), equalTo(true));
+            assertThat(source.headers().get(authority).get(), equalTo("other.invalid"));
+            assertThat(source.headers().get(HeaderNames.HOST).get(), equalTo("route.invalid"));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
     void explicitProtocolResponseIsIgnoredBeforeTargetOrHeadersAreConsulted() {
         Http3ClientImpl client = (Http3ClientImpl) Http3Client.builder()
                 .baseUri("https://localhost")

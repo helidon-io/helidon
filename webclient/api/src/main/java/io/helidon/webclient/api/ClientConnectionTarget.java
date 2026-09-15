@@ -27,7 +27,6 @@ import io.helidon.common.Api;
 import io.helidon.common.uri.UriAuthority;
 import io.helidon.common.uri.UriHost;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 
 /**
@@ -39,8 +38,6 @@ import io.helidon.http.HeaderNames;
  */
 @Api.Internal
 public final class ClientConnectionTarget {
-    private static final HeaderName AUTHORITY = HeaderNames.create(":authority");
-
     private final ConnectionKey connectionKey;
     private final String scheme;
     private final UriAuthority originAuthorityOverride;
@@ -565,9 +562,7 @@ public final class ClientConnectionTarget {
                                                 String scheme) {
         UriAuthority fallback = canonicalOriginAuthority(connectionKey,
                                                          normalizedAuthority(uri.authority(), scheme));
-        String authority = headers.contains(AUTHORITY)
-                ? headers.get(AUTHORITY).get()
-                : headers.contains(HeaderNames.HOST) ? headers.get(HeaderNames.HOST).get() : null;
+        String authority = headers.contains(HeaderNames.HOST) ? headers.get(HeaderNames.HOST).get() : null;
         if (authority == null) {
             return fallback;
         }
