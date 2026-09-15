@@ -147,7 +147,7 @@ using the provide `start` script:
 If you are building with Java 24 or earlier a Class Data Sharing (CDS) archive
 is also included in your custom image by default. The CDS archive improves your
 application’s startup performance and in-memory footprint. You can learn more
-about Class Data Sharing in the [JDK documentation][jdk-documentatio].
+about Class Data Sharing in the [JDK documentation][jdk-documentation].
 
 If you are building with Java 26 or later an AOT Cache is created instead of a
 CDS archive. The AOT Cache is more advanced than the CDS archive and over time
@@ -200,7 +200,7 @@ You can exercise the application’s endpoints as before.
 Custom runtime images are ideal for use when you want all the runtime
 performance of the JDK JVM in a reasonably compact form.
 
-[jlink]: https://docs.oracle.com/en/java/javase/26/docs/specs/man/jlink.html
+[jlink]: https://docs.oracle.com/en/java/javase/27/docs/specs/man/jlink.html
 [java-27]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-27]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
@@ -208,5 +208,5 @@ performance of the JDK JVM in a reasonably compact form.
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [rpm-based]: https://en.wikipedia.org/wiki/List_of_Linux_distributions#RPM-based
 [debian-based]: https://en.wikipedia.org/wiki/List_of_Linux_distributions#Debian-based
-[jdk-documentatio]: https://docs.oracle.com/en/java/javase/26/vm/class-data-sharing.html
+[jdk-documentation]: https://docs.oracle.com/en/java/javase/27/vm/class-data-sharing.html
 [helidon-maven-pl]: https://github.com/helidon-io/helidon-build-tools/blob/4.0.25/maven-plugins/helidon-maven-plugin/README.md#goal-jlink-image
