@@ -19,6 +19,7 @@ package io.helidon.http.http3.qpack;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * QPACK static-table entries defined for HTTP/3 header compression.
@@ -151,7 +152,7 @@ final class QpackStaticTable {
      * @return exact-match index, or {@code -1} when absent
      */
     public static long indexOf(String name, String value) {
-        HeaderIndices indices = HTTP3_HEADER_INDICES.get(name);
+        HeaderIndices indices = indices(name);
         return indices == null ? -1 : indices.exactIndex(value);
     }
 
@@ -162,12 +163,12 @@ final class QpackStaticTable {
      * @return name index, or {@code -1} when absent
      */
     public static long nameIndex(String name) {
-        HeaderIndices indices = HTTP3_HEADER_INDICES.get(name);
+        HeaderIndices indices = indices(name);
         return indices == null ? -1 : indices.nameIndex();
     }
 
     static HeaderIndices indices(String name) {
-        return HTTP3_HEADER_INDICES.get(name);
+        return HTTP3_HEADER_INDICES.get(Objects.requireNonNull(name));
     }
 
     static int size() {
@@ -189,13 +190,25 @@ final class QpackStaticTable {
         Map<String, HeaderIndices> indices = new HashMap<>();
         mutableIndices.forEach((name, mutable) -> indices.put(
                 name,
-                new HeaderIndices(mutable.nameIndex(), Map.copyOf(mutable.exactIndices()))));
-        return Map.copyOf(indices);
+                new HeaderIndices(mutable.nameIndex(), mutable.exactIndices())));
+        return indices;
     }
 
-    record HeaderIndices(int nameIndex, Map<String, Integer> exactIndices) {
+    static final class HeaderIndices {
+        private final int nameIndex;
+        private final Map<String, Integer> exactIndices;
+
+        private HeaderIndices(int nameIndex, Map<String, Integer> exactIndices) {
+            this.nameIndex = nameIndex;
+            this.exactIndices = exactIndices;
+        }
+
+        int nameIndex() {
+            return nameIndex;
+        }
+
         int exactIndex(String value) {
-            Integer index = exactIndices.get(value);
+            Integer index = exactIndices.get(Objects.requireNonNull(value));
             return index == null ? -1 : index;
         }
     }

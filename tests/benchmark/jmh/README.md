@@ -33,7 +33,7 @@ outside measurement. The two protocols receive the same deterministic sequence o
 non-interned values.
 
 - `hpackIndexedGet` and `qpackIndexedGet` read valid static indexes used for request/response fields and name references.
-  HPACK uses a map; QPACK uses an immutable list. Some indexed entries have different values between protocols.
+  They call each protocol's production indexed lookup. Some indexed entries have different values between protocols.
 - `qpackArrayGetControl` reads a benchmark-only array containing the same QPACK entry objects. This is an array-access
   control, including the same input selection, rather than a replacement production implementation with identical checks.
 - `hpackEncodingLookup` and `qpackEncodingLookup` find an exact match, fall back to a name match, or report a miss.
@@ -45,6 +45,10 @@ non-interned values.
 pseudoheaders that bypass table search, so this case compares lookup primitives, not complete pseudoheader encoding.
 The request/response encoding mixes contain only regular headers. Results are steady-state lookup costs, not request
 latency or protocol throughput predictions.
+
+To compare QPACK lookup implementations, select only `qpackEncodingLookup` and use the same workload and measurement
+settings for both revisions. This keeps the static-table contents fixed; the HPACK/QPACK comparison also varies table
+contents and cannot isolate the cost of a collection implementation.
 
 After preparing current reactor artifacts with the repository's build JDK, run the focused comparison from the root:
 
