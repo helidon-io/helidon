@@ -942,56 +942,6 @@ class Http3ControlStreamSupportTest {
                     .sum();
         }
 
-        private static FakeControlStream create(List<BufferData> data) {
-            List<byte[]> input = new ArrayList<>(data.size());
-            for (BufferData buffer : data) {
-                input.add(buffer.readBytes());
-            }
-            return new FakeControlStream(input, null, -1, false, true, true, null);
-        }
-
-        private static FakeControlStream clientInitiated(List<BufferData> data) {
-            List<byte[]> input = new ArrayList<>(data.size());
-            for (BufferData buffer : data) {
-                input.add(buffer.readBytes());
-            }
-            return new FakeControlStream(input, null, -1, false, false, true, null);
-        }
-
-        private static FakeControlStream pending(List<BufferData> data) {
-            List<byte[]> input = new ArrayList<>(data.size());
-            for (BufferData buffer : data) {
-                input.add(buffer.readBytes());
-            }
-            return new FakeControlStream(input, null, -1, false, true, false, null);
-        }
-
-        private static FakeControlStream resetAfter(List<BufferData> data) {
-            List<byte[]> input = new ArrayList<>(data.size());
-            for (BufferData buffer : data) {
-                input.add(buffer.readBytes());
-            }
-            return new FakeControlStream(input, new IllegalStateException("test reset"), 0x10c, true, true, false, null);
-        }
-
-        private static FakeControlStream connectionClosedAfter(List<BufferData> data) {
-            List<byte[]> input = new ArrayList<>(data.size());
-            for (BufferData buffer : data) {
-                input.add(buffer.readBytes());
-            }
-            return new FakeControlStream(input,
-                                         new IllegalStateException("test connection close"),
-                                         0,
-                                         false,
-                                         true,
-                                         false,
-                                         null);
-        }
-
-        private static FakeControlStream startFailure(RuntimeException failure) {
-            return new FakeControlStream(List.of(), null, -1, false, true, false, failure);
-        }
-
         @Override
         public ReceivingStreamState receivingState() {
             if (disconnected) {
@@ -1086,6 +1036,56 @@ class Http3ControlStreamSupportTest {
             return receiveErrorCode;
         }
 
+        private static FakeControlStream create(List<BufferData> data) {
+            List<byte[]> input = new ArrayList<>(data.size());
+            for (BufferData buffer : data) {
+                input.add(buffer.readBytes());
+            }
+            return new FakeControlStream(input, null, -1, false, true, true, null);
+        }
+
+        private static FakeControlStream clientInitiated(List<BufferData> data) {
+            List<byte[]> input = new ArrayList<>(data.size());
+            for (BufferData buffer : data) {
+                input.add(buffer.readBytes());
+            }
+            return new FakeControlStream(input, null, -1, false, false, true, null);
+        }
+
+        private static FakeControlStream pending(List<BufferData> data) {
+            List<byte[]> input = new ArrayList<>(data.size());
+            for (BufferData buffer : data) {
+                input.add(buffer.readBytes());
+            }
+            return new FakeControlStream(input, null, -1, false, true, false, null);
+        }
+
+        private static FakeControlStream resetAfter(List<BufferData> data) {
+            List<byte[]> input = new ArrayList<>(data.size());
+            for (BufferData buffer : data) {
+                input.add(buffer.readBytes());
+            }
+            return new FakeControlStream(input, new IllegalStateException("test reset"), 0x10c, true, true, false, null);
+        }
+
+        private static FakeControlStream connectionClosedAfter(List<BufferData> data) {
+            List<byte[]> input = new ArrayList<>(data.size());
+            for (BufferData buffer : data) {
+                input.add(buffer.readBytes());
+            }
+            return new FakeControlStream(input,
+                                         new IllegalStateException("test connection close"),
+                                         0,
+                                         false,
+                                         true,
+                                         false,
+                                         null);
+        }
+
+        private static FakeControlStream startFailure(RuntimeException failure) {
+            return new FakeControlStream(List.of(), null, -1, false, true, false, failure);
+        }
+
         private void markDisconnected() {
             disconnected = true;
             disconnectCount++;
@@ -1095,11 +1095,11 @@ class Http3ControlStreamSupportTest {
     private static final class FakeStreamReader extends QuicStreamReader {
         private final FakeControlStream stream;
         private final List<byte[]> buffers;
+        private final SequentialScheduler scheduler;
         private int index;
         private boolean connected;
         private boolean started;
         private boolean failed;
-        private final SequentialScheduler scheduler;
 
         private FakeStreamReader(FakeControlStream stream,
                                  SequentialScheduler scheduler,

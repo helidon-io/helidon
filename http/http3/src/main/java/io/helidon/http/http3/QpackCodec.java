@@ -48,7 +48,7 @@ final class QpackCodec {
         writeFieldSectionPrefix(output, 0, 0, 0);
         for (Header header : headers) {
             for (String value : header.allValues()) {
-                writeLiteralFieldLine(output, header.headerName().lowerCase(), value);
+                writeLiteralFieldLine(output, header.headerName().lowerCase(), value, header.sensitive());
             }
         }
         return output.readBytes();
@@ -73,8 +73,21 @@ final class QpackCodec {
      */
     static Headers decodeHeaders(BufferData buffer, long maxFieldSectionSize) {
         WritableHeaders<?> headers = WritableHeaders.create();
-        decodeHeaderLines(buffer, maxFieldSectionSize).forEach(headers::add);
+        decodeHeaderLines(buffer, maxFieldSectionSize).forEach(header -> addDecodedHeader(headers, header));
         return headers;
+    }
+
+    static void addDecodedHeader(WritableHeaders<?> headers, Header header) {
+        headers.add(header);
+        if (header.sensitive()) {
+            Header aggregate = headers.get(header.headerName());
+            if (!aggregate.sensitive()) {
+                headers.set(HeaderValues.create(aggregate.headerName(),
+                                                 aggregate.changing(),
+                                                 true,
+                                                 aggregate.allValues().toArray(String[]::new)));
+            }
+        }
     }
 
     /**
@@ -185,18 +198,27 @@ final class QpackCodec {
                                               long absoluteIndex,
                                               boolean fromStaticTable,
                                               long base,
-                                              String value) {
+                                              String value,
+                                              boolean sensitive) {
+        int neverIndex = sensitive ? 0x20 : 0;
         if (fromStaticTable) {
-            writePrefixedInteger(output, 4, 0b0101_0000, absoluteIndex);
+            writePrefixedInteger(output, 4, 0b0101_0000 | neverIndex, absoluteIndex);
         } else {
-            writePrefixedInteger(output, 4, 0b0100_0000, base - 1 - absoluteIndex);
+            writePrefixedInteger(output, 4, 0b0100_0000 | neverIndex, base - 1 - absoluteIndex);
         }
         writeString(output, 7, 0, value);
     }
 
-    static void writeLiteralFieldLine(BufferData output, String name, String value) {
-        writeString(output, 3, 0b0010_0000, name);
+    static void writeLiteralFieldLine(BufferData output, String name, String value, boolean sensitive) {
+        writeString(output, 3, sensitive ? 0b0011_0000 : 0b0010_0000, name);
         writeString(output, 7, 0, value);
+    }
+
+    static Header literalHeader(String name, String value, boolean sensitive) {
+        var headerName = HeaderNames.createFromLowercase(name);
+        return sensitive
+                ? HeaderValues.create(headerName, false, true, value)
+                : HeaderValues.create(headerName, value);
     }
 
     static String readString(BufferData buffer,
@@ -319,6 +341,7 @@ final class QpackCodec {
     private static Header literalWithNameReference(BufferData buffer,
                                                    FieldSectionSizeTracker sizeTracker) {
         int first = buffer.get(0) & 0xff;
+        boolean sensitive = (first & 0x20) != 0;
         boolean fromStatic = (first & 0x10) != 0;
         long index = readPrefixedInteger(buffer, 4);
         if (!fromStatic) {
@@ -328,15 +351,16 @@ final class QpackCodec {
         sizeTracker.beginFieldLine();
         sizeTracker.consume(name.length());
         String value = readString(buffer, 7, sizeTracker);
-        return HeaderValues.create(HeaderNames.createFromLowercase(name), value);
+        return literalHeader(name, value, sensitive);
     }
 
     private static Header literalWithLiteralName(BufferData buffer,
                                                  FieldSectionSizeTracker sizeTracker) {
+        boolean sensitive = (buffer.get(0) & 0x10) != 0;
         sizeTracker.beginFieldLine();
         String name = readString(buffer, 3, sizeTracker);
         String value = readString(buffer, 7, sizeTracker);
-        return HeaderValues.create(HeaderNames.createFromLowercase(name), value);
+        return literalHeader(name, value, sensitive);
     }
 
     record FieldSectionPrefix(long requiredInsertCount, long base) {

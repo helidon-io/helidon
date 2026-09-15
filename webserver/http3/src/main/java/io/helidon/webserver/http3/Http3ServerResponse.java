@@ -60,7 +60,6 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
     private final Http3ConnectionContext ctx;
     private final Http3ServerRequest request;
     private final Http3ServerStream stream;
-    private final boolean validateResponseHeaders;
     private final int responseDispatchWindowSize;
     private final ReentrantLock writeLock = new ReentrantLock();
 
@@ -75,7 +74,6 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
     Http3ServerResponse(Http3ConnectionContext ctx,
                         Http3ServerRequest request,
                         Http3ServerStream stream,
-                        boolean validateResponseHeaders,
                         int responseDispatchWindowSize,
                         @SuppressWarnings("rawtypes") List<SinkProvider> sinkProviders) {
         super(ctx, request);
@@ -84,7 +82,6 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
         this.stream = stream;
-        this.validateResponseHeaders = validateResponseHeaders;
         if (responseDispatchWindowSize <= 0) {
             throw new IllegalArgumentException("responseDispatchWindowSize must be greater than 0: "
                                                        + responseDispatchWindowSize);
@@ -472,7 +469,7 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
 
     private void writeTrailers(boolean last) {
         finalizeTrailers();
-        Http3MessageReader.validateTrailers(trailers, validateResponseHeaders);
+        Http3MessageReader.validateTrailers(trailers);
         stream.writeTrailers(trailers, last);
     }
 
@@ -536,8 +533,7 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
     private OptionalLong validateHeaders() {
         return Http3MessageReader.validateResponseHeaders(request.prologue().method(),
                                                           status(),
-                                                          headers,
-                                                          validateResponseHeaders);
+                                                          headers);
     }
 
     private final class StreamingEntityOutputStream extends OutputStream {

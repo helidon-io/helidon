@@ -49,15 +49,6 @@ public enum Http3StreamType {
     }
 
     /**
-     * Return the wire-encoded stream type value.
-     *
-     * @return stream type code
-     */
-    public long code() {
-        return code;
-    }
-
-    /**
      * Resolve a stream type from its wire-encoded value.
      *
      * @param code wire-encoded stream type
@@ -70,5 +61,14 @@ public enum Http3StreamType {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Return the wire-encoded stream type value.
+     *
+     * @return stream type code
+     */
+    public long code() {
+        return code;
     }
 }

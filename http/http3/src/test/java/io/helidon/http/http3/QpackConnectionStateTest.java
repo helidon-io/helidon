@@ -52,6 +52,105 @@ class QpackConnectionStateTest {
     private static final long MAX_TABLE_ENTRIES = MAX_TABLE_CAPACITY / 32;
 
     @Test
+    void rejectsNegativeLocalBlockedStreams() {
+        for (long blockedStreams : new long[] {-1, Long.MIN_VALUE}) {
+            IllegalArgumentException stateFailure = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> qpackState(MAX_TABLE_CAPACITY, blockedStreams));
+            IllegalArgumentException contextFailure = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> Http3QpackContext.create(MAX_TABLE_CAPACITY, blockedStreams, 16_384, _ -> {
+                    }));
+
+            String expected = "localBlockedStreams must not be negative: " + blockedStreams;
+            assertThat(stateFailure.getMessage(), equalTo(expected));
+            assertThat(contextFailure.getMessage(), equalTo(expected));
+        }
+    }
+
+    @Test
+    void preservesNeverIndexAcrossEveryLiteralRepresentation() {
+        for (boolean sensitive : new boolean[] {false, true}) {
+            QpackConnectionState decoder = qpackState(MAX_TABLE_CAPACITY, 1);
+            decoder.onEncoderStreamData(capacityUpdate(MAX_TABLE_CAPACITY));
+            decoder.onEncoderStreamData(literalInsertion("x-dynamic", "stored"));
+            BufferData fieldSection = BufferData.growing(64);
+            QpackCodec.writeFieldSectionPrefix(fieldSection, 1, 1, MAX_TABLE_ENTRIES);
+            QpackCodec.writePrefixedInteger(fieldSection, 4, sensitive ? 0x70 : 0x50, 0);
+            QpackCodec.writeString(fieldSection, 7, 0, "static-name");
+            QpackCodec.writePrefixedInteger(fieldSection, 4, sensitive ? 0x60 : 0x40, 0);
+            QpackCodec.writeString(fieldSection, 7, 0, "dynamic-name");
+            QpackCodec.writeString(fieldSection, 3, sensitive ? 0x30 : 0x20, "x-literal");
+            QpackCodec.writeString(fieldSection, 7, 0, "literal-name");
+
+            QpackConnectionState.DecoderStream stream = decoder.openDecoderStream(0);
+            List<Header> decoded = stream.decodeHeaderLines(fieldSection, -1);
+            stream.complete();
+
+            assertThat(decoded, hasSize(3));
+            assertThat(decoded.stream().map(header -> header.headerName().lowerCase()).toList(),
+                       equalTo(List.of(":authority", "x-dynamic", "x-literal")));
+            assertThat(decoded.stream().map(header -> header.get()).toList(),
+                       equalTo(List.of("static-name", "dynamic-name", "literal-name")));
+            for (Header header : decoded) {
+                assertThat(header.headerName().lowerCase(), header.sensitive(), is(sensitive));
+            }
+
+            BufferData postBaseSection = BufferData.growing(32);
+            QpackCodec.writeFieldSectionPrefix(postBaseSection, 1, 0, MAX_TABLE_ENTRIES);
+            QpackCodec.writePrefixedInteger(postBaseSection, 3, sensitive ? 0x08 : 0, 0);
+            QpackCodec.writeString(postBaseSection, 7, 0, "post-base-name");
+            QpackConnectionState.DecoderStream postBaseStream = decoder.openDecoderStream(4);
+
+            List<Header> postBaseDecoded = postBaseStream.decodeHeaderLines(postBaseSection, -1);
+            postBaseStream.complete();
+
+            assertThat(postBaseDecoded, hasSize(1));
+            assertThat(postBaseDecoded.getFirst().headerName().lowerCase(), equalTo("x-dynamic"));
+            assertThat(postBaseDecoded.getFirst().get(), equalTo("post-base-name"));
+            assertThat(postBaseDecoded.getFirst().sensitive(), is(sensitive));
+        }
+    }
+
+    @Test
+    void skipsSensitiveInsertionsAndUsesNeverIndexedLiteralForExactDynamicMatch() {
+        QpackConnectionState encoder = qpackState(0, 0);
+        QpackConnectionState decoder = qpackState(MAX_TABLE_CAPACITY, 1);
+        List<byte[]> encoderInstructions = new ArrayList<>();
+        encoder.encoderInstructionsSender(bytes -> {
+            encoderInstructions.add(bytes);
+            decoder.onEncoderStreamData(bytes);
+        });
+        decoder.decoderInstructionsSender(encoder::onDecoderStreamData);
+        encoder.peerSettings(MAX_TABLE_CAPACITY, 1);
+        Header sensitive = HeaderValues.create(HeaderNames.create("x-secret"), false, true, "first", "second");
+
+        byte[] sensitiveSection = encoder.encodeHeaders(0, List.of(sensitive));
+
+        assertThat(encoderInstructions, hasSize(1));
+        assertThat(requiredInsertCount(sensitiveSection), equalTo(0L));
+        List<Header> sensitiveDecoded = QpackCodec.decodeHeaderLines(BufferData.create(sensitiveSection));
+        assertThat(sensitiveDecoded.stream().map(header -> header.get()).toList(), equalTo(List.of("first", "second")));
+        assertThat(sensitiveDecoded.stream().map(Header::sensitive).toList(), equalTo(List.of(true, true)));
+
+        encoder.encodeHeaders(4, List.of(HeaderValues.create("x-secret", "first")));
+        assertThat(encoderInstructions, hasSize(2));
+        Header exactMatch = HeaderValues.create(HeaderNames.create("x-secret"), false, true, "first");
+
+        byte[] exactSection = encoder.encodeHeaders(8, List.of(exactMatch));
+
+        assertThat(encoderInstructions, hasSize(2));
+        assertThat(requiredInsertCount(exactSection), equalTo(1L));
+        assertThat(exactSection, equalTo(new byte[] {2, 0, 0x60, 5, 'f', 'i', 'r', 's', 't'}));
+        QpackConnectionState.DecoderStream stream = decoder.openDecoderStream(8);
+        List<Header> exactDecoded = stream.decodeHeaderLines(BufferData.create(exactSection), -1);
+        stream.complete();
+        assertThat(exactDecoded, hasSize(1));
+        assertThat(exactDecoded.getFirst().get(), equalTo("first"));
+        assertThat(exactDecoded.getFirst().sensitive(), is(true));
+    }
+
+    @Test
     void rejectsNullInstructionSendersBeforeBinding() {
         QpackConnectionState state = qpackState(MAX_TABLE_CAPACITY, 1);
         state.peerSettings(MAX_TABLE_CAPACITY, 1);
@@ -96,6 +195,98 @@ class QpackConnectionStateTest {
         assertThat(decoderInstructions, hasSize(2));
         assertThat(decoderInstructions.get(0), equalTo(insertCountIncrement(1)));
         assertThat(decoderInstructions.get(1), equalTo(sectionAcknowledgment(0)));
+    }
+
+    @Test
+    void acceptsFragmentedLargeLiteralInsertionAtExactTableCapacity() {
+        int tableCapacity = 16_384;
+        String name = "x".repeat(4_096);
+        String value = "\u00ff".repeat(tableCapacity - name.length() - 32);
+        for (boolean huffman : new boolean[] {false, true}) {
+            for (int fragmentSize : new int[] {1, 8_193}) {
+                QpackConnectionState state = qpackState(tableCapacity, 1);
+                List<byte[]> instructions = new ArrayList<>();
+                state.decoderInstructionsSender(instructions::add);
+                state.onEncoderStreamData(capacityUpdate(tableCapacity));
+                byte[] insertion = literalInsertion(name, value, huffman);
+
+                deliverEncoderFragments(state, Arrays.copyOf(insertion, insertion.length - 1), fragmentSize);
+
+                assertThat("incomplete insertion must not update the dynamic table", instructions, empty());
+                state.onEncoderStreamData(new byte[] {insertion[insertion.length - 1]});
+                assertThat(instructions, hasSize(1));
+                assertThat(instructions.getFirst(), equalTo(insertCountIncrement(1)));
+                QpackConnectionState.DecoderStream stream = state.openDecoderStream(0);
+                List<Header> decoded = stream.decodeHeaderLines(indexedFieldSection(1, 1, 0), tableCapacity);
+                stream.complete();
+
+                assertThat(decoded, hasSize(1));
+                assertThat(decoded.getFirst().headerName().lowerCase(), equalTo(name));
+                assertThat(decoded.getFirst().get(), equalTo(value));
+            }
+        }
+    }
+
+    @Test
+    void parsesAdjacentEncoderInstructionKindsAcrossFragments() {
+        for (int fragmentSize : new int[] {1, 7, 8_193}) {
+            QpackConnectionState state = qpackState(512, 1);
+            List<byte[]> decoderInstructions = new ArrayList<>();
+            state.decoderInstructionsSender(decoderInstructions::add);
+            BufferData instructions = BufferData.growing(64);
+            instructions.write(capacityUpdate(512));
+            instructions.write(literalInsertion("x-first", "one"));
+            QpackCodec.writePrefixedInteger(instructions, 6, 0b1000_0000, 0);
+            QpackCodec.writeString(instructions, 7, 0, "two");
+            QpackCodec.writePrefixedInteger(instructions, 5, 0, 0);
+            QpackCodec.writePrefixedInteger(instructions, 6, 0b1100_0000, 0);
+            QpackCodec.writeString(instructions, 7, 0, "example.com");
+            instructions.write(literalInsertion("x-empty", ""));
+
+            deliverEncoderFragments(state, instructions.readBytes(), fragmentSize);
+
+            assertThat(decoderInstructions, hasSize(5));
+            for (byte[] instruction : decoderInstructions) {
+                assertThat(instruction, equalTo(insertCountIncrement(1)));
+            }
+            BufferData fieldSection = BufferData.growing(16);
+            QpackCodec.writeFieldSectionPrefix(fieldSection, 5, 5, 512 / 32);
+            for (int index = 0; index < 5; index++) {
+                QpackCodec.writeIndexedFieldLine(fieldSection, index, false, 5);
+            }
+            QpackConnectionState.DecoderStream stream = state.openDecoderStream(0);
+            List<Header> decoded = stream.decodeHeaderLines(fieldSection, -1);
+            stream.complete();
+
+            assertThat(decoded.stream().map(header -> header.headerName().lowerCase()).toList(),
+                       equalTo(List.of("x-first", "x-first", "x-first", ":authority", "x-empty")));
+            assertThat(decoded.stream().map(header -> header.get()).toList(),
+                       equalTo(List.of("one", "two", "two", "example.com", "")));
+        }
+    }
+
+    @Test
+    void preservesFragmentedEncoderIntegerRange() {
+        QpackConnectionState state = qpackState(Long.MAX_VALUE, 1);
+
+        deliverEncoderFragments(state, capacityUpdate(Long.MAX_VALUE), 1);
+        deliverEncoderFragments(state, capacityUpdate(MAX_TABLE_CAPACITY), 1);
+        state.onEncoderStreamData(literalInsertion("x", "value"));
+        QpackConnectionState.DecoderStream stream = state.openDecoderStream(0);
+        List<Header> decoded = stream.decodeHeaderLines(indexedFieldSection(1, 1, 0), -1);
+        stream.complete();
+
+        assertThat(decoded, equalTo(List.of(HeaderValues.create("x", "value"))));
+
+        for (byte first : new byte[] {0x3f, 0x5f, (byte) 0xbf}) {
+            QpackConnectionState overflowState = qpackState(MAX_TABLE_CAPACITY, 1);
+            Http3ProtocolException failure = assertThrows(
+                    Http3ProtocolException.class,
+                    () -> deliverEncoderFragments(overflowState, overflowingInteger(first), 1));
+
+            assertThat(failure.errorCode(), equalTo(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR));
+            assertThat(failure.getCause().getMessage(), equalTo("QPACK prefixed integer exceeds the supported range"));
+        }
     }
 
     @Test
@@ -391,6 +582,93 @@ class QpackConnectionStateTest {
     }
 
     @Test
+    void rejectsOversizedFragmentedEncoderNameAndValueLengths() {
+        for (boolean literalName : new boolean[] {false, true}) {
+            QpackConnectionState state = qpackState(MAX_TABLE_CAPACITY, 1);
+            BufferData instruction = BufferData.growing(16);
+            if (literalName) {
+                QpackCodec.writePrefixedInteger(instruction, 5, 0b0100_0000, 577);
+            } else {
+                QpackCodec.writePrefixedInteger(instruction, 6, 0b1100_0000, 0);
+                QpackCodec.writePrefixedInteger(instruction, 7, 0, 577);
+            }
+            byte[] bytes = instruction.readBytes();
+
+            deliverEncoderFragments(state, Arrays.copyOf(bytes, bytes.length - 1), 1);
+            Http3ProtocolException failure = assertThrows(
+                    Http3ProtocolException.class,
+                    () -> state.onEncoderStreamData(new byte[] {bytes[bytes.length - 1]}));
+
+            assertThat(failure.errorCode(), equalTo(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR));
+            assertThat(failure.getCause().getMessage(),
+                       equalTo("QPACK string exceeds the local encoded-length limit: 577 > 576"));
+        }
+    }
+
+    @Test
+    void countsDecodedNameBytesTowardsIncompleteInstructionLimit() {
+        for (int nameLength : new int[] {100, 576}) {
+            QpackConnectionState state = qpackState(MAX_TABLE_CAPACITY, 1);
+            List<byte[]> decoderInstructions = new ArrayList<>();
+            state.decoderInstructionsSender(decoderInstructions::add);
+            byte[] instruction = literalInsertion("x".repeat(nameLength), "v".repeat(576));
+
+            deliverEncoderFragments(state, Arrays.copyOf(instruction, 576), 1);
+
+            assertThat(decoderInstructions, empty());
+            Http3ProtocolException failure = assertThrows(
+                    Http3ProtocolException.class,
+                    () -> state.onEncoderStreamData(new byte[] {instruction[576]}));
+
+            assertThat(failure.errorCode(), equalTo(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR));
+            assertThat(failure.getCause().getMessage(),
+                       equalTo("Incomplete QPACK encoder instruction exceeds the local limit"));
+        }
+    }
+
+    @Test
+    void validatesCompletedInstructionBeforeIncompleteInstructionLimit() {
+        QpackConnectionState state = qpackState(MAX_TABLE_CAPACITY, 1);
+        state.onEncoderStreamData(capacityUpdate(MAX_TABLE_CAPACITY));
+        byte[] instruction = literalInsertion("x", "v".repeat(576));
+
+        state.onEncoderStreamData(Arrays.copyOf(instruction, 576));
+        Http3ProtocolException failure = assertThrows(
+                Http3ProtocolException.class,
+                () -> state.onEncoderStreamData(Arrays.copyOfRange(instruction, 576, instruction.length)));
+
+        assertThat(failure.errorCode(), equalTo(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR));
+        assertThat(failure.getMessage(), equalTo("QPACK decoder table cannot insert header: x"));
+    }
+
+    @Test
+    void rejectsMalformedHuffmanNameBeforeFollowingOversizedValue() {
+        for (boolean fragmented : new boolean[] {false, true}) {
+            QpackConnectionState state = qpackState(MAX_TABLE_CAPACITY, 1);
+            BufferData instruction = BufferData.growing(16);
+            instruction.write(0x61);
+            instruction.write(0xff);
+            QpackCodec.writePrefixedInteger(instruction, 7, 0, 577);
+            byte[] bytes = instruction.readBytes();
+            int offset;
+            if (fragmented) {
+                state.onEncoderStreamData(new byte[] {bytes[0]});
+                offset = 1;
+            } else {
+                offset = 0;
+            }
+
+            Http3ProtocolException failure = assertThrows(
+                    Http3ProtocolException.class,
+                    () -> state.onEncoderStreamData(Arrays.copyOfRange(bytes, offset, bytes.length)));
+
+            assertThat(failure.errorCode(), equalTo(Http3ErrorCode.QPACK_ENCODER_STREAM_ERROR));
+            assertThat(failure.getCause().getMessage(),
+                       equalTo("Huffman encoding has invalid padding or is truncated"));
+        }
+    }
+
+    @Test
     void acceptsEncoderInsertionThatFitsAdvertisedTableAboveHeaderLimit() {
         QpackConnectionState state = QpackConnectionState.create(256, 1, 32, _ -> {
         });
@@ -680,6 +958,28 @@ class QpackConnectionStateTest {
         QpackCodec.writeString(output, 5, 0b0100_0000, name);
         QpackCodec.writeString(output, 7, 0, value);
         return output.readBytes();
+    }
+
+    private static byte[] literalInsertion(String name, String value, boolean huffman) {
+        if (!huffman) {
+            return literalInsertion(name, value);
+        }
+        byte[] encodedName = new byte[HuffmanCodec.encodedLength(name)];
+        byte[] encodedValue = new byte[HuffmanCodec.encodedLength(value)];
+        assertThat(HuffmanCodec.encode(name, encodedName), is(encodedName.length));
+        assertThat(HuffmanCodec.encode(value, encodedValue), is(encodedValue.length));
+        BufferData output = BufferData.growing(encodedName.length + encodedValue.length + 8);
+        QpackCodec.writePrefixedInteger(output, 5, 0b0110_0000, encodedName.length);
+        output.write(encodedName);
+        QpackCodec.writePrefixedInteger(output, 7, 0b1000_0000, encodedValue.length);
+        output.write(encodedValue);
+        return output.readBytes();
+    }
+
+    private static void deliverEncoderFragments(QpackConnectionState state, byte[] bytes, int fragmentSize) {
+        for (int offset = 0; offset < bytes.length; offset += fragmentSize) {
+            state.onEncoderStreamData(Arrays.copyOfRange(bytes, offset, Math.min(bytes.length, offset + fragmentSize)));
+        }
     }
 
     private static byte[] sectionAcknowledgment(long streamId) {

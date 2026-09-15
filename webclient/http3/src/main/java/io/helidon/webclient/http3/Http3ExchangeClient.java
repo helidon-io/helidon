@@ -102,8 +102,6 @@ final class Http3ExchangeClient implements AutoCloseable {
     private final Http3ConnectionCache connectionCache;
     private final ConnectionConfig connectionConfig;
     private final Executor requestExecutor;
-    private final boolean validateRequestHeaders;
-    private final boolean validateResponseHeaders;
 
     private Http3ExchangeClient(Builder builder) {
         Objects.requireNonNull(builder.connectionCache, "connectionCache");
@@ -115,8 +113,6 @@ final class Http3ExchangeClient implements AutoCloseable {
         Objects.requireNonNull(builder.transportObserver, "transportObserver");
         this.connectionCache = builder.connectionCache;
         this.requestExecutor = builder.requestExecutor;
-        this.validateRequestHeaders = builder.validateRequestHeaders;
-        this.validateResponseHeaders = builder.validateResponseHeaders;
         SSLParameters tlsParameters = builder.cacheKey.connectionKey().tls().sslParameters();
         builder.cacheKey.connectionKey().applyServerNames(tlsParameters);
         this.connectionConfig = new ConnectionConfig(
@@ -143,8 +139,6 @@ final class Http3ExchangeClient implements AutoCloseable {
                                          options.continueTimeout(),
                                          options.sendExpectContinue(),
                                          options.retried(),
-                                         validateRequestHeaders,
-                                         validateResponseHeaders,
                                          options.context(),
                                          options.requestSent())).join();
     }
@@ -319,8 +313,6 @@ final class Http3ExchangeClient implements AutoCloseable {
                        Duration continueTimeout,
                        boolean sendExpectContinue,
                        boolean retried,
-                       boolean validateRequestHeaders,
-                       boolean validateResponseHeaders,
                        Context context,
                        Runnable requestSent) {
         RequestData {
@@ -369,8 +361,6 @@ final class Http3ExchangeClient implements AutoCloseable {
         private Http3FrameListener receiveFrameListener;
         private Http3FrameListener sendFrameListener;
         private HttpTransportObserver transportObserver = HttpTransportObserver.noop();
-        private boolean validateRequestHeaders = true;
-        private boolean validateResponseHeaders = true;
 
         Builder connectionCache(Http3ConnectionCache connectionCache) {
             this.connectionCache = connectionCache;
@@ -414,16 +404,6 @@ final class Http3ExchangeClient implements AutoCloseable {
 
         Builder transportObserver(HttpTransportObserver transportObserver) {
             this.transportObserver = transportObserver;
-            return this;
-        }
-
-        Builder validateRequestHeaders(boolean validateRequestHeaders) {
-            this.validateRequestHeaders = validateRequestHeaders;
-            return this;
-        }
-
-        Builder validateResponseHeaders(boolean validateResponseHeaders) {
-            this.validateResponseHeaders = validateResponseHeaders;
             return this;
         }
 
@@ -763,8 +743,7 @@ final class Http3ExchangeClient implements AutoCloseable {
                         connection,
                         request.method(),
                         maxHeadersSize,
-                        Http3MessageReader.ResponseOptions.create(request.validateResponseHeaders(),
-                                                                  request.readTimeout(),
+                        Http3MessageReader.ResponseOptions.create(request.readTimeout(),
                                                                   receiveFrameListener));
             } catch (RuntimeException | Error e) {
                 try {

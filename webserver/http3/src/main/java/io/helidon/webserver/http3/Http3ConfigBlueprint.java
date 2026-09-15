@@ -50,6 +50,28 @@ interface Http3ConfigBlueprint extends QuicSubProtocolConfig, HttpConfig {
     String name();
 
     /**
+     * Common HTTP request-header validation setting, ignored by HTTP/3.
+     * HTTP/3 always validates request field names and values.
+     *
+     * @return configured common HTTP validation setting
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    @Override
+    boolean validateRequestHeaders();
+
+    /**
+     * Common HTTP response-header validation setting, ignored by HTTP/3.
+     * HTTP/3 always validates response field names and values.
+     *
+     * @return configured common HTTP validation setting
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    @Override
+    boolean validateResponseHeaders();
+
+    /**
      * Whether HTTP/3 is enabled on this listener.
      *
      * @return whether HTTP/3 is enabled

@@ -731,8 +731,6 @@ class Http3ExchangeClientTest {
                 Duration.ZERO,
                 false,
                 false,
-                true,
-                true,
                 Context.create(),
                 () -> {
                 });
@@ -746,7 +744,6 @@ class Http3ExchangeClientTest {
                                             mock(SocketContext.class),
                                             Method.POST,
                                             16_384,
-                                            true,
                                             frameListener),
                 writer,
                 frameListener,
@@ -784,7 +781,6 @@ class Http3ExchangeClientTest {
                                             mock(SocketContext.class),
                                             Method.GET,
                                             16_384,
-                                            true,
                                             Http3FrameListener.create(List.of())),
                 writer,
                 Http3FrameListener.create(List.of()),

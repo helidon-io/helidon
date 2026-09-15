@@ -83,6 +83,9 @@ public final class Http3StreamSupport {
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(frameListener, "frameListener");
         QuicStreamWriter writer = stream.connectWriter(scheduler(NO_OP));
+        if (frameListener == NO_OP_FRAME_LISTENER) {
+            return writer;
+        }
         return new LoggingWriter(writer, stream.streamId(), context, frameListener);
     }
 
@@ -118,6 +121,9 @@ public final class Http3StreamSupport {
         Objects.requireNonNull(streamType, "streamType");
         Objects.requireNonNull(frameListener, "frameListener");
         QuicStreamWriter writer = stream.connectWriter(scheduler(NO_OP));
+        if (frameListener == NO_OP_FRAME_LISTENER) {
+            return writer;
+        }
         return new LoggingWriter(writer, stream.streamId(), context, streamType, frameListener);
     }
 
@@ -405,6 +411,10 @@ public final class Http3StreamSupport {
             }
         }
 
+        boolean closed() {
+            return closed;
+        }
+
         private void offerIfOpen(Object value) {
             queueLock.lock();
             try {
@@ -470,10 +480,6 @@ public final class Http3StreamSupport {
                     throw new StreamInputException("Interrupted while reading HTTP/3 stream", e);
                 }
             }
-        }
-
-        boolean closed() {
-            return closed;
         }
     }
 
@@ -678,7 +684,9 @@ public final class Http3StreamSupport {
                         while (offset < rawEnd) {
                             int rawChunkSize = Math.min(rawEnd - offset, MAX_RAW_DATA_CHUNK_SIZE);
                             boolean last = payloadRemaining == rawChunkSize;
-                            frameListener.frameData(context, streamId, rawChunkSize, last);
+                            if (frameListener.enabled()) {
+                                frameListener.frameData(context, streamId, rawChunkSize, last);
+                            }
                             frameListener.rawFrameData(context,
                                                        streamId,
                                                        copy(buffer, offset, rawChunkSize),

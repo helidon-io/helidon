@@ -192,6 +192,22 @@ public final class Http3LoggingFrameListener implements Http3FrameListener {
         }
     }
 
+    private static String frameTypeName(long frameType) {
+        if (frameType == Http3Protocol.FRAME_DATA) {
+            return "DATA";
+        }
+        if (frameType == Http3Protocol.FRAME_HEADERS) {
+            return "HEADERS";
+        }
+        if (frameType == Http3Protocol.FRAME_SETTINGS) {
+            return "SETTINGS";
+        }
+        if (frameType == Http3Protocol.FRAME_GOAWAY) {
+            return "GOAWAY";
+        }
+        return "0x" + Long.toHexString(frameType);
+    }
+
     private void data(SocketContext context, long streamId, String label, int byteCount) {
         if (!unsafeLogRawData && logger.isLoggable(TRACE)) {
             log(TRACE, context, streamId, "%s bytes=%d", label, byteCount);
@@ -264,21 +280,5 @@ public final class Http3LoggingFrameListener implements Http3FrameListener {
         actualArguments[1] = streamId;
         System.arraycopy(arguments, 0, actualArguments, 2, arguments.length);
         context.log(logger, level, "%s %d: " + format, actualArguments);
-    }
-
-    private static String frameTypeName(long frameType) {
-        if (frameType == Http3Protocol.FRAME_DATA) {
-            return "DATA";
-        }
-        if (frameType == Http3Protocol.FRAME_HEADERS) {
-            return "HEADERS";
-        }
-        if (frameType == Http3Protocol.FRAME_SETTINGS) {
-            return "SETTINGS";
-        }
-        if (frameType == Http3Protocol.FRAME_GOAWAY) {
-            return "GOAWAY";
-        }
-        return "0x" + Long.toHexString(frameType);
     }
 }

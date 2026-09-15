@@ -669,7 +669,7 @@ class Http3ServerResponseTest {
         when(remotePeer.tlsCertificates()).thenReturn(Optional.empty());
         Http3ConnectionContext context = new Http3ConnectionContext(bindingContext, connection);
         Http3ServerRequest request = request(context, method);
-        return new Http3ServerResponse(context, request, stream, true, responseDispatchWindowSize, sinkProviders);
+        return new Http3ServerResponse(context, request, stream, responseDispatchWindowSize, sinkProviders);
     }
 
     private static Http3ServerRequest request(Http3ConnectionContext context, Method method) {

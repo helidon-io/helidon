@@ -38,12 +38,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.quic.SequentialScheduler;
@@ -56,6 +61,7 @@ import io.helidon.quic.stream.QuicStreamWriter;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -373,7 +379,6 @@ class Http3StreamSupportTest {
                                                                 Method.GET,
                                                                 16_384,
                                                                 Http3MessageReader.ResponseOptions.create(
-                                                                        true,
                                                                         Duration.ofMillis(50),
                                                                         NO_OP_FRAME_LISTENER));
         reader.activateReadTimeout();
@@ -398,7 +403,6 @@ class Http3StreamSupportTest {
                                                                 Method.GET,
                                                                 16_384,
                                                                 Http3MessageReader.ResponseOptions.create(
-                                                                        true,
                                                                         Duration.ofMillis(50),
                                                                         NO_OP_FRAME_LISTENER));
         reader.activateReadTimeout();
@@ -419,7 +423,6 @@ class Http3StreamSupportTest {
                                                                qpackContext(0, 0),
                                                                Http3TestSocketContext.INSTANCE,
                                                                16_384,
-                                                               true,
                                                                Duration.ofMillis(50),
                                                                NO_OP_FRAME_LISTENER);
         reader.activateReadTimeout();
@@ -440,7 +443,6 @@ class Http3StreamSupportTest {
                                                                qpackContext(0, 0),
                                                                Http3TestSocketContext.INSTANCE,
                                                                16_384,
-                                                               true,
                                                                Duration.ofMillis(50),
                                                                NO_OP_FRAME_LISTENER);
         reader.activateReadTimeout();
@@ -478,7 +480,6 @@ class Http3StreamSupportTest {
                                                                localDecoder,
                                                                Http3TestSocketContext.INSTANCE,
                                                                16_384,
-                                                               true,
                                                                Duration.ofMillis(50),
                                                                NO_OP_FRAME_LISTENER);
         reader.activateReadTimeout();
@@ -768,6 +769,100 @@ class Http3StreamSupportTest {
     }
 
     @Test
+    void shouldUseUnwrappedWriterWithoutFrameListener() {
+        FakeSenderStream stream = new FakeSenderStream();
+        QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream, Http3TestSocketContext.INSTANCE);
+
+        assertThat(writer, sameInstance(stream.writer));
+        assertWriterForwardsOperations(stream, writer, new byte[] {0x00, 0x03, 'a', 'b', 'c'});
+    }
+
+    @Test
+    void shouldUseUnwrappedWriterForExplicitNoOpFrameListener() {
+        FakeSenderStream stream = new FakeSenderStream();
+        QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream,
+                                                                   Http3TestSocketContext.INSTANCE,
+                                                                   Http3FrameListener.create(List.of()));
+
+        assertThat(writer, sameInstance(stream.writer));
+        assertWriterForwardsOperations(stream, writer, new byte[] {0x00, 0x03, 'a', 'b', 'c'});
+    }
+
+    @Test
+    void shouldUseUnwrappedControlAndQpackWritersWithoutFrameListener() {
+        for (Http3StreamType streamType : List.of(Http3StreamType.CONTROL,
+                                                  Http3StreamType.QPACK_ENCODER,
+                                                  Http3StreamType.QPACK_DECODER)) {
+            FakeSenderStream stream = new FakeSenderStream();
+            QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream,
+                                                                       Http3TestSocketContext.INSTANCE,
+                                                                       streamType);
+
+            assertThat(streamType.toString(), writer, sameInstance(stream.writer));
+            assertWriterForwardsOperations(stream, writer, streamBytes(streamType));
+        }
+    }
+
+    @Test
+    void shouldUseUnwrappedControlAndQpackWritersForExplicitNoOpFrameListener() {
+        for (Http3StreamType streamType : List.of(Http3StreamType.CONTROL,
+                                                  Http3StreamType.QPACK_ENCODER,
+                                                  Http3StreamType.QPACK_DECODER)) {
+            FakeSenderStream stream = new FakeSenderStream();
+            QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream,
+                                                                       Http3TestSocketContext.INSTANCE,
+                                                                       streamType,
+                                                                       Http3FrameListener.create(List.of()));
+
+            assertThat(streamType.toString(), writer, sameInstance(stream.writer));
+            assertWriterForwardsOperations(stream, writer, streamBytes(streamType));
+        }
+    }
+
+    @Test
+    void shouldKeepControlAndQpackStreamStateWhileListenerIsDisabled() {
+        for (Http3StreamType streamType : List.of(Http3StreamType.CONTROL,
+                                                  Http3StreamType.QPACK_ENCODER,
+                                                  Http3StreamType.QPACK_DECODER)) {
+            RecordingFrameListener listener = new RecordingFrameListener(true);
+            listener.enabled(false);
+            FakeSenderStream stream = new FakeSenderStream();
+            QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream,
+                                                                       Http3TestSocketContext.INSTANCE,
+                                                                       streamType,
+                                                                       listener);
+
+            writer.queueForWriting(BufferData.create(new byte[] {0x40}));
+            listener.enabled(true);
+            CompletableFuture<Void> completion = writer.scheduleForWritingAndGetDispatchCompletion(
+                    BufferData.create(new byte[] {(byte) streamType.code(), 0x04, 0x00}), true);
+
+            assertThat(listener.streamTypes, is(List.of(streamType)));
+            assertThat(listener.streamTypeLengths, is(List.of(2)));
+            assertThat(listener.rawStreamData.getFirst(), is(new byte[] {0x40, (byte) streamType.code()}));
+            if (streamType == Http3StreamType.CONTROL) {
+                assertThat(listener.frameTypes, is(List.of(Http3Protocol.FRAME_SETTINGS)));
+                assertThat(listener.frameLengths, is(List.of(0L)));
+                assertThat(listener.rawHeaders.getFirst(), is(new byte[] {0x04, 0x00}));
+                assertThat(listener.streamDataLengths, is(List.of()));
+                assertThat(listener.rawStreamData, hasSize(1));
+            } else {
+                assertThat(listener.frameTypes, is(List.of()));
+                assertThat(listener.streamDataLengths, is(List.of(2)));
+                assertThat(listener.rawStreamData, hasSize(2));
+                assertThat(listener.rawStreamData.get(1), is(new byte[] {0x04, 0x00}));
+            }
+            assertThat(concat(stream.writer.writtenData.toArray(byte[][]::new)),
+                       is(new byte[] {0x40, (byte) streamType.code(), 0x04, 0x00}));
+            assertThat(stream.writer.finalWrites, is(List.of(false, true)));
+            assertThat(completion, sameInstance(stream.writer.dispatchCompletion));
+            assertThat(completion.isDone(), is(false));
+            stream.writer.dispatchCompletion.complete(null);
+            assertThat(completion.isDone(), is(true));
+        }
+    }
+
+    @Test
     void shouldTrackSplitOutboundFramesWithoutRawPayloadCopies() throws Exception {
         RecordingFrameListener listener = new RecordingFrameListener(false);
         FakeSenderStream stream = new FakeSenderStream();
@@ -826,6 +921,96 @@ class Http3StreamSupportTest {
         assertThat(listener.frameLengths, equalTo(List.of(0L)));
         assertThat(listener.frameDataLengths, equalTo(List.of(2, 0)));
         assertThat(listener.finalChunks, equalTo(List.of(true, true)));
+    }
+
+    @Test
+    void shouldEnableRawOutboundObservationWithoutEnablingMetadata() {
+        RecordingFrameListener listener = new RecordingFrameListener(false);
+        listener.enabled(false);
+        FakeSenderStream stream = new FakeSenderStream();
+        QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream,
+                                                                   Http3TestSocketContext.INSTANCE,
+                                                                   listener);
+
+        writer.queueForWriting(BufferData.create(new byte[] {0x40}));
+        listener.rawDataEnabled = true;
+        writer.queueForWriting(BufferData.create(new byte[] {0x00, 0x03, 'a'}));
+
+        assertThat(listener.frameTypes, is(List.of()));
+        assertThat(listener.frameDataLengths, is(List.of()));
+        assertThat(listener.rawHeaders, hasSize(1));
+        assertThat(listener.rawHeaders.getFirst(), is(new byte[] {0x40, 0x00, 0x03}));
+        assertThat(listener.rawFrameData, hasSize(1));
+        assertThat(listener.rawFrameData.getFirst(), is(new byte[] {'a'}));
+
+        listener.enabled(true);
+        writer.scheduleForWriting(BufferData.create(new byte[] {'b', 'c', 0x01, 0x00}), true);
+
+        assertThat(listener.frameTypes, is(List.of(Http3Protocol.FRAME_HEADERS)));
+        assertThat(listener.frameLengths, is(List.of(0L)));
+        assertThat(listener.frameDataLengths, is(List.of(2, 0)));
+        assertThat(listener.finalChunks, is(List.of(true, true)));
+        assertThat(listener.rawHeaders, hasSize(2));
+        assertThat(listener.rawHeaders.get(1), is(new byte[] {0x01, 0x00}));
+        assertThat(listener.rawFrameData.stream().map(it -> it.length).toList(), is(List.of(1, 2, 0)));
+        assertThat(concat(listener.rawFrameData.toArray(byte[][]::new)), is(new byte[] {'a', 'b', 'c'}));
+    }
+
+    @Test
+    void shouldKeepOutboundFrameStateWhileLoggingIsDisabled() {
+        String loggerName = Http3StreamSupportTest.class.getName() + ".dynamic-logging";
+        Logger logger = Logger.getLogger(loggerName + ".send");
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<String> messages = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.OFF);
+
+        try {
+            Http3LoggingFrameListener listener = Http3LoggingFrameListener.create(HttpLogConfig.builder()
+                                                                                         .loggerName(loggerName)
+                                                                                         .build(),
+                                                                                 "send");
+            FakeSenderStream stream = new FakeSenderStream();
+            QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream,
+                                                                       Http3TestSocketContext.INSTANCE,
+                                                                       listener);
+
+            assertThat(listener.enabled(), is(false));
+            writer.queueForWriting(BufferData.create(new byte[] {0x00, 0x03, 'a'}));
+            assertThat(messages, is(List.of()));
+
+            logger.setLevel(Level.FINER);
+            assertThat(listener.enabled(), is(true));
+            writer.scheduleForWriting(BufferData.create(new byte[] {'b', 'c', 0x01, 0x00}), true);
+
+            assertThat(messages, hasSize(4));
+            assertThat(messages.get(0), containsString("frame data bytes=2"));
+            assertThat(messages.get(1), containsString("HEADERS frame <length=0>"));
+            assertThat(messages.get(2), containsString("frame header bytes=2"));
+            assertThat(messages.get(3), containsString("frame data bytes=0"));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
     }
 
     @Test
@@ -1043,7 +1228,6 @@ class Http3StreamSupportTest {
                                                                 Method.GET,
                                                                 16_384,
                                                                 Http3MessageReader.ResponseOptions.create(
-                                                                        true,
                                                                         Duration.ofMillis(50),
                                                                         NO_OP_FRAME_LISTENER));
         reader.activateReadTimeout();
@@ -1190,7 +1374,6 @@ class Http3StreamSupportTest {
                                            Http3TestSocketContext.INSTANCE,
                                            Method.GET,
                                            maxHeadersSize,
-                                           true,
                                            listener);
     }
 
@@ -1199,8 +1382,35 @@ class Http3StreamSupportTest {
                                           qpackContext(0, 0),
                                           Http3TestSocketContext.INSTANCE,
                                           16_384,
-                                          true,
                                           NO_OP_FRAME_LISTENER);
+    }
+
+    private static byte[] streamBytes(Http3StreamType streamType) {
+        return switch (streamType) {
+            case CONTROL -> new byte[] {0x00, 0x04, 0x00, 0x07, 0x01, 0x00};
+            case QPACK_ENCODER -> new byte[] {0x02, 0x20, 0x20, 0x20};
+            case QPACK_DECODER -> new byte[] {0x03, 0x01, 0x01, 0x01};
+            case PUSH -> throw new AssertionError("Push streams are not supported");
+        };
+    }
+
+    private static void assertWriterForwardsOperations(FakeSenderStream stream, QuicStreamWriter writer, byte[] bytes) {
+        assertThat(writer.connected(), is(true));
+        assertThat(writer.stream().orElseThrow(), sameInstance(stream));
+        assertThat(writer.sendingState(), is(QuicSenderStream.SendingStreamState.SEND));
+        assertThat(writer.credit(), is(Long.MAX_VALUE));
+
+        writer.queueForWriting(BufferData.create(Arrays.copyOfRange(bytes, 0, 2)));
+        writer.scheduleForWriting(BufferData.create(Arrays.copyOfRange(bytes, 2, bytes.length - 1)), false);
+        CompletableFuture<Void> completion = writer.scheduleForWritingAndGetDispatchCompletion(
+                BufferData.create(new byte[] {bytes[bytes.length - 1]}), true);
+
+        assertThat(concat(stream.writer.writtenData.toArray(byte[][]::new)), is(bytes));
+        assertThat(stream.writer.finalWrites, is(List.of(false, false, true)));
+        assertThat(completion, sameInstance(stream.writer.dispatchCompletion));
+        assertThat(completion.isDone(), is(false));
+        stream.writer.dispatchCompletion.complete(null);
+        assertThat(completion.isDone(), is(true));
     }
 
     private static String readEntityWithTrailers(Http3MessageReader reader, int estimate) {
@@ -1258,7 +1468,6 @@ class Http3StreamSupportTest {
     }
 
     private static final class RecordingFrameListener implements Http3FrameListener {
-        private final boolean rawDataEnabled;
         private final List<Long> frameTypes = new ArrayList<>();
         private final List<Long> frameLengths = new ArrayList<>();
         private final List<Integer> headerLengths = new ArrayList<>();
@@ -1266,6 +1475,11 @@ class Http3StreamSupportTest {
         private final List<Boolean> finalChunks = new ArrayList<>();
         private final List<byte[]> rawHeaders = new ArrayList<>();
         private final List<byte[]> rawFrameData = new ArrayList<>();
+        private final List<Http3StreamType> streamTypes = new ArrayList<>();
+        private final List<Integer> streamTypeLengths = new ArrayList<>();
+        private final List<Integer> streamDataLengths = new ArrayList<>();
+        private final List<byte[]> rawStreamData = new ArrayList<>();
+        private boolean rawDataEnabled;
         private boolean enabled = true;
 
         private RecordingFrameListener(boolean rawDataEnabled) {
@@ -1274,7 +1488,7 @@ class Http3StreamSupportTest {
 
         @Override
         public boolean rawDataEnabled() {
-            return enabled && rawDataEnabled;
+            return rawDataEnabled;
         }
 
         @Override
@@ -1307,6 +1521,29 @@ class Http3StreamSupportTest {
         @Override
         public void rawFrameData(SocketContext context, long streamId, byte[] data, boolean last) {
             rawFrameData.add(data);
+        }
+
+        @Override
+        public void streamType(SocketContext context, long streamId, Http3StreamType streamType, int encodedLength) {
+            assertThat(context, sameInstance(Http3TestSocketContext.INSTANCE));
+            assertThat(streamId, is(0L));
+            streamTypes.add(streamType);
+            streamTypeLengths.add(encodedLength);
+        }
+
+        @Override
+        public void streamData(SocketContext context, long streamId, String label, int byteCount) {
+            assertThat(context, sameInstance(Http3TestSocketContext.INSTANCE));
+            assertThat(streamId, is(0L));
+            assertThat(label, is(streamTypes.getLast() + " stream data"));
+            streamDataLengths.add(byteCount);
+        }
+
+        @Override
+        public void rawStreamData(SocketContext context, long streamId, String label, byte[] data) {
+            assertThat(context, sameInstance(Http3TestSocketContext.INSTANCE));
+            assertThat(streamId, is(0L));
+            rawStreamData.add(data);
         }
 
         private void enabled(boolean enabled) {
@@ -1417,6 +1654,9 @@ class Http3StreamSupportTest {
 
     private static final class FakeStreamWriter extends QuicStreamWriter {
         private final FakeSenderStream stream;
+        private final List<byte[]> writtenData = new ArrayList<>();
+        private final List<Boolean> finalWrites = new ArrayList<>();
+        private final CompletableFuture<Void> dispatchCompletion = new CompletableFuture<>();
         private boolean connected = true;
 
         private FakeStreamWriter(FakeSenderStream stream, SequentialScheduler scheduler) {
@@ -1431,17 +1671,19 @@ class Http3StreamSupportTest {
 
         @Override
         public void scheduleForWriting(BufferData buffer, boolean last) {
-            // No-op for test harness.
+            writtenData.add(buffer.readBytes());
+            finalWrites.add(last);
         }
 
         @Override
         public CompletableFuture<Void> scheduleForWritingAndGetDispatchCompletion(BufferData buffer, boolean last) {
-            return CompletableFuture.completedFuture(null);
+            scheduleForWriting(buffer, last);
+            return dispatchCompletion;
         }
 
         @Override
         public void queueForWriting(BufferData buffer) {
-            // No-op for test harness.
+            scheduleForWriting(buffer, false);
         }
 
         @Override
@@ -1626,13 +1868,6 @@ class Http3StreamSupportTest {
                     .sum();
         }
 
-        private static FakeReceiverStream create(List<BufferData> buffers) {
-            List<BufferData> input = new ArrayList<>(buffers.size() + 1);
-            input.addAll(buffers);
-            input.add(QuicStreamReader.EOF);
-            return new FakeReceiverStream(input);
-        }
-
         @Override
         public ReceivingStreamState receivingState() {
             return disconnected ? ReceivingStreamState.DATA_READ : receivingState;
@@ -1719,6 +1954,13 @@ class Http3StreamSupportTest {
         @Override
         public QuicStream.StreamState state() {
             return receivingState();
+        }
+
+        private static FakeReceiverStream create(List<BufferData> buffers) {
+            List<BufferData> input = new ArrayList<>(buffers.size() + 1);
+            input.addAll(buffers);
+            input.add(QuicStreamReader.EOF);
+            return new FakeReceiverStream(input);
         }
 
         private boolean disconnected() {

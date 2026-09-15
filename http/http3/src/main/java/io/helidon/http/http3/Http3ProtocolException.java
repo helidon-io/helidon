@@ -99,24 +99,6 @@ public final class Http3ProtocolException extends RuntimeException {
     }
 
     /**
-     * Return the peer-visible HTTP/3 or QPACK application error code.
-     *
-     * @return error code
-     */
-    public Http3ErrorCode errorCode() {
-        return errorCode;
-    }
-
-    /**
-     * Scope of the required protocol action.
-     *
-     * @return protocol action scope
-     */
-    public Scope scope() {
-        return scope;
-    }
-
-    /**
      * Find a nested HTTP/3 protocol exception in the supplied throwable chain.
      *
      * @param throwable throwable to inspect
@@ -135,6 +117,24 @@ public final class Http3ProtocolException extends RuntimeException {
             current = current.getCause();
         }
         return Optional.empty();
+    }
+
+    /**
+     * Return the peer-visible HTTP/3 or QPACK application error code.
+     *
+     * @return error code
+     */
+    public Http3ErrorCode errorCode() {
+        return errorCode;
+    }
+
+    /**
+     * Scope of the required protocol action.
+     *
+     * @return protocol action scope
+     */
+    public Scope scope() {
+        return scope;
     }
 
     /**

@@ -291,8 +291,6 @@ class Http3CallEntityChain implements WebClientService.TransportChain {
                 .receiveFrameListener(http3Client.receiveFrameListener())
                 .sendFrameListener(http3Client.sendFrameListener())
                 .transportObserver(WebClientTransportObserverSupport.observer(http3Client.webClient()))
-                .validateRequestHeaders(http3Client.protocolConfig().validateRequestHeaders())
-                .validateResponseHeaders(http3Client.protocolConfig().validateResponseHeaders())
                 .build();
     }
 

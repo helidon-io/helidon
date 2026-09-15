@@ -92,6 +92,39 @@ mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
 For retained comparisons, use at least three warmup iterations, five measurement iterations, and multiple forks, with
 distinct `http3.qpack.decoding.jmh.result` and `http3.qpack.decoding.jmh.output` paths for each source revision.
 
+### QPACK instruction fragmentation and frame observation
+
+`Http3QpackInstructionIngressJmhBenchmark.processEncoderInstruction` processes one complete literal insertion on a reused
+connection, delivered as one-byte, 64-byte, or whole-instruction fragments. Trial setup builds the fragments and verifies
+dynamic-table insertion through eviction; measurement includes parsing, buffering, and insertion. Select `nameSize`,
+`valueSize`, and `fragmentation` independently to distinguish literal size from fragmentation cost.
+
+`Http3FrameObservationJmhBenchmark.writeDataFrame` compares a raw QUIC writer, a permanent no-op HTTP/3 listener, and an
+enabled metadata listener. It reuses buffers and writers, uses a constant-time sink, and measures whole or segmented DATA
+frames without networking. `constructWriter` measures connection setup separately. The raw control uses equivalent
+scheduler and underlying writer construction. Neither benchmark predicts network throughput.
+
+After preparing reactor artifacts, select only the relevant runner and method. For example:
+
+```shell
+mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
+    -Dtest=Http3QpackInstructionIngressJmhRunnerTest \
+    -Dhttp3.qpack.instruction.ingress.jmh.nameSize=8,256 \
+    -Dhttp3.qpack.instruction.ingress.jmh.valueSize=1024 \
+    -Dhttp3.qpack.instruction.ingress.jmh.gcProfiler=true test
+
+mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
+    -Dtest=Http3FrameObservationJmhRunnerTest \
+    '-Dhttp3.frame.observation.jmh.include=^io\.helidon\.http\.http3\.Http3FrameObservationJmhBenchmark\.writeDataFrame$' \
+    -Dhttp3.frame.observation.jmh.payloadSize=8 \
+    -Dhttp3.frame.observation.jmh.gcProfiler=true test
+```
+
+Both runners accept `include`, `forks`, `threads`, `warmupIterations`, `warmupMillis`, `measurementIterations`,
+`measurementMillis`, `result`, and `output` under their respective prefixes. Use identical benchmark sources, JVM settings,
+parameters, and dependencies for before/after comparisons, changing only the production implementation being measured.
+Report GC-profiler allocated bytes per operation alongside timing, with distinct numbered result paths for each run.
+
 ### JDBC client creation
 
 The JDBC client creation benchmark isolates the statement-stage path before
