@@ -18,8 +18,17 @@ updates:
   - package-ecosystem: "maven"
     directory: "/dependencies"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     allow:
+      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+        update-types:
+          - "version-update:semver-patch"
+      - dependency-name: "org.yaml:snakeyaml"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
     labels:
       - "build"
       - "dependencies"
+    assignees:
+      - "barchetta"
