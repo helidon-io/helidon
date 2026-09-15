@@ -240,7 +240,8 @@ class ApiStabilityEnforcerProcessorTest {
 
             List<JavaFileObject> sources = new ArrayList<>(List.of(compilationUnits));
 
-            var task = compiler.getTask(null, manager, diagnostics, List.of("--release", "21"), null, sources);
+            var options = List.of("--release", String.valueOf(Runtime.version().feature()));
+            var task = compiler.getTask(null, manager, diagnostics, options, null, sources);
             task.setProcessors(List.of(processor));
             task.call();
         }
