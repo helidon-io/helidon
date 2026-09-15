@@ -18,9 +18,11 @@ package io.helidon.quic;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketOption;
+import java.net.StandardProtocolFamily;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
@@ -100,6 +102,7 @@ import static io.helidon.quic.QuicEndpoint.ChannelType.NON_BLOCKING_WITH_SELECTO
 public abstract sealed class QuicEndpoint implements AutoCloseable
         permits QuicEndpoint.QuicSelectableEndpoint, QuicEndpoint.QuicVirtualThreadedEndpoint {
     private static final System.Logger LOGGER = System.getLogger(QuicEndpoint.class.getName());
+    private static final int MAX_EPHEMERAL_BIND_ATTEMPTS = 10;
 
     private final Executor executor;
     private final QuicInboundQueue<Datagram> readQueue;
@@ -1856,7 +1859,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                                               quicInstance.receiveBufferSize(),
                                               quicInstance.sendBufferSize());
             }
-            channel.bind(bindAddress); // could do that on attach instead?
+            bind(channel, bindAddress);
 
             if (endpointType.isAssignableFrom(QuicSelectableEndpoint.class)) {
                 return endpointType.cast(new QuicSelectableEndpoint(quicInstance,
@@ -1887,6 +1890,35 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 e.addSuppressed(closeFailure);
             }
             throw e;
+        }
+    }
+
+    private static void bind(DatagramChannel channel, SocketAddress bindAddress) throws IOException {
+        if (!(bindAddress instanceof InetSocketAddress address)
+                || address.getPort() != 0
+                || address.isUnresolved()
+                || !address.getAddress().isAnyLocalAddress()) {
+            channel.bind(bindAddress);
+            return;
+        }
+
+        // A dual-stack ephemeral bind can reuse a port already occupied by an IPv4 socket on macOS.
+        // Select with an IPv4 socket, then explicitly bind the dual-stack channel to check both families.
+        for (int attempt = 1; ; attempt++) {
+            int port;
+            try (DatagramChannel reservation = DatagramChannel.open(StandardProtocolFamily.INET)) {
+                reservation.bind(null);
+                port = ((InetSocketAddress) reservation.getLocalAddress()).getPort();
+            }
+            try {
+                channel.bind(new InetSocketAddress(address.getAddress(), port));
+                return;
+            } catch (BindException e) {
+                // Another socket can claim the selected port after the reservation closes.
+                if (attempt == MAX_EPHEMERAL_BIND_ATTEMPTS) {
+                    throw e;
+                }
+            }
         }
     }
 

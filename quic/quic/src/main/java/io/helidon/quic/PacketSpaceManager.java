@@ -1759,6 +1759,9 @@ public sealed class PacketSpaceManager implements PacketSpace
             }
         }
         if (packetNumberSpace == PacketNumberSpace.HANDSHAKE) {
+            if (!quicTLSEngine.keysAvailable(KeySpace.HANDSHAKE)) {
+                return null;
+            }
             // set anti-deadlock timer
             if (lastAckElicitingTime == null) {
                 lastAckElicitingTime = now();
