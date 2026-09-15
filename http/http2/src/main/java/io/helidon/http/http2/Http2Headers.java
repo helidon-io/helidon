@@ -466,7 +466,7 @@ public class Http2Headers {
         if (hostValues.size() > 1) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Repeated Host header");
         }
-        boolean hasHost = hostValues.size() == 1 && !hostValues.get(0).isEmpty();
+        boolean hasHost = hostValues.size() == 1 && !hostValues.getFirst().isEmpty();
         boolean hasAuthority = pseudoHeaders.hasAuthority() && !pseudoHeaders.authority().isEmpty();
         if (connect && !hasAuthority) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header in CONNECT request");
@@ -475,7 +475,7 @@ public class Http2Headers {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header or Host header");
         }
         if (pseudoHeaders.hasAuthority() && !hostValues.isEmpty()
-                && !authoritiesMatch(pseudoHeaders.scheme(), pseudoHeaders.authority(), hostValues.get(0))) {
+                && !authoritiesMatch(pseudoHeaders.scheme(), pseudoHeaders.authority(), hostValues.getFirst())) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Host header does not match :authority pseudo header");
         }
     }
@@ -1094,19 +1094,20 @@ public class Http2Headers {
          */
         public static final int MAX_INDEX;
 
-        private static final Map<Integer, StaticHeader> BY_INDEX = new HashMap<>();
         private static final Map<String, StaticHeader> BY_NAME_NO_VALUE = new HashMap<>();
         private static final Map<String, Map<String, StaticHeader>> BY_NAME_VALUE = new HashMap<>();
+        private static final StaticHeader[] VALUES;
 
         static {
             int maxIndex = 0;
 
-            for (StaticHeader predefinedHeader : StaticHeader.values()) {
-                BY_INDEX.put(predefinedHeader.index(), predefinedHeader);
+            VALUES = StaticHeader.values();
+
+            for (StaticHeader predefinedHeader : VALUES) {
                 maxIndex = Math.max(maxIndex, predefinedHeader.index);
                 // Indexed headers may be referenced either with or without value, so we need to store them in both tables
                 if (predefinedHeader.hasValue()) {
-                    BY_NAME_VALUE.computeIfAbsent(predefinedHeader.headerName().lowerCase(), it -> new HashMap<>())
+                    BY_NAME_VALUE.computeIfAbsent(predefinedHeader.headerName().lowerCase(), _ -> new HashMap<>())
                             .put(predefinedHeader.value(), predefinedHeader);
                 }
                 BY_NAME_NO_VALUE.putIfAbsent(predefinedHeader.headerName().lowerCase(), predefinedHeader);
@@ -1150,7 +1151,7 @@ public class Http2Headers {
                 throw new IllegalArgumentException("Max index for predefined headers is " + MAX_INDEX
                                                            + ", but requested " + index);
             }
-            return BY_INDEX.get(index);
+            return VALUES[index - 1];
         }
 
         static StaticHeader find(HeaderName headerName, String headerValue) {
@@ -1227,10 +1228,8 @@ public class Http2Headers {
 
         static HeaderApproach resolve(BufferData data) {
             int value = data.read();
-            HeaderApproach approach = resolve(data, value);
-            //            System.out.println("Decoded value " + Integer.toBinaryString(value) + " as " + approach + " (maybe
-            //            used more bytes)");
-            return approach;
+
+            return resolve(data, value);
         }
 
         static HeaderApproach resolve(BufferData data, int value) {
@@ -1564,7 +1563,7 @@ public class Http2Headers {
                 currentTableSize = 0;
                 return;
             }
-            DynamicHeader removed = headers.remove(headers.size() - 1);
+            DynamicHeader removed = headers.removeLast();
 
             if (removed != null) {
                 currentTableSize -= removed.size();
@@ -1572,7 +1571,7 @@ public class Http2Headers {
         }
 
         private int add(HeaderName name, String value, int size) {
-            headers.add(0, new DynamicHeader(name, value, size));
+            headers.addFirst(new DynamicHeader(name, value, size));
             currentTableSize += size;
             return 0;
         }
