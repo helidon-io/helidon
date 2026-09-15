@@ -45,6 +45,10 @@ class Http3QpackEncodingJmhRunnerTest {
                 .measurementTime(TimeValue.milliseconds(Long.getLong("http3.qpack.encoding.jmh.measurementMillis", 1000)))
                 .shouldFailOnError(true);
 
+        String sensitiveHost = System.getProperty("http3.qpack.encoding.jmh.sensitiveHost");
+        if (sensitiveHost != null && !sensitiveHost.isBlank()) {
+            optionsBuilder.param("sensitiveHost", sensitiveHost.split(","));
+        }
         String output = System.getProperty("http3.qpack.encoding.jmh.output");
         if (output != null && !output.isBlank()) {
             optionsBuilder.output(output);

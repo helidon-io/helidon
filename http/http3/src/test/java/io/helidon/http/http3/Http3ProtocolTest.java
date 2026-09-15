@@ -499,11 +499,12 @@ class Http3ProtocolTest {
 
     @Test
     void shouldRejectInvalidRequestPaths() {
-        for (String scheme : List.of("http", "https", "HTTPS")) {
+        for (String scheme : List.of("http", "https", "HTTPS", "foo+bar-1.2")) {
             for (String path : List.of("/path\n", "/path\r", "/path\0", "/path\t", "/a b", "/caf\u00e9",
                                        "/path#fragment", "/path?query#fragment", "/path%", "/path%2", "/path%gg",
                                        "/path?query=%", "/path?query=%0", "/path?query=%xy", "/path\\segment",
-                                       "relative", "https://example.com/path", "?query=value", "*", "*?query=value", "")) {
+                                       "relative", "opaque:part?query=/path?value", "https://example.com/path",
+                                       "?query=value", "*", "*?query=value", "")) {
                 byte[] payload = QpackCodec.encodeHeaders(List.of(HeaderValues.create(":method", "GET"),
                                                                   HeaderValues.create(":scheme", scheme),
                                                                   HeaderValues.create(":authority", "example.com"),
@@ -542,7 +543,8 @@ class Http3ProtocolTest {
                 new RequestTarget("GET", "https", "/path!$&'()*+,;=:@~_-.?query=one/two?three"),
                 new RequestTarget("OPTIONS", "https", "*"),
                 new RequestTarget("GET", "a", "/path"),
-                new RequestTarget("GET", "foo+bar-1.2", "opaque:part?query=/path?value"));
+                new RequestTarget("GET", "foo+bar-1.2", "/opaque:part?query=/path?value"),
+                new RequestTarget("OPTIONS", "foo+bar-1.2", "*"));
         for (RequestTarget target : requestTargets) {
             byte[] payload = QpackCodec.encodeHeaders(List.of(HeaderValues.create(":method", target.method()),
                                                               HeaderValues.create(":scheme", target.scheme()),
