@@ -24,6 +24,7 @@ import java.util.List;
 
 import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.HuffmanCodec;
 import io.helidon.common.buffers.PrefixedIntegerCodec;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -32,7 +33,6 @@ import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http3.Http3ErrorCode;
 import io.helidon.http.http3.Http3ProtocolException;
-import io.helidon.http.http3.hpack.Http3Huffman;
 
 /**
  * Shared QPACK field-section encoding and decoding utilities.
@@ -307,7 +307,7 @@ public final class QpackCodec {
         int decodedCapacity = huffmanDecodedCapacity(encodedLength);
         StringBuilder builder = new StringBuilder(sizeTracker.initialStringCapacity(decodedCapacity));
         Appendable destination = sizeTracker.wrap(builder);
-        Http3Huffman.decode(bytes, destination);
+        HuffmanCodec.decode(bytes, encodedLength, destination);
         return builder.toString();
     }
 
