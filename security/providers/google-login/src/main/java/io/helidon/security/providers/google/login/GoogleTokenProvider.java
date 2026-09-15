@@ -319,7 +319,7 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
         }
         return AuthenticationResponse.builder()
                 .statusCode(400)
-                .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildInvalidRequestChallenge(e))
+                .responseHeader(HEADER_AUTHENTICATION_REQUIRED, buildInvalidRequestChallenge())
                 .status(AuthenticationResponse.SecurityStatus.FAILURE)
                 .description("Invalid authorization header")
                 .throwable(e)
@@ -346,11 +346,7 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
             return AuthenticationResponse.abstain();
         }
 
-        String description = ((null == throwable) ? null : throwable.getMessage());
-
-        if (null == description) {
-            description = ((null == throwable) ? "verification failed" : throwable.getClass().getName());
-        }
+        String description = "Token verification failed";
         return AuthenticationResponse.builder()
                 .statusCode(401)
                 .responseHeader(HEADER_AUTHENTICATION_REQUIRED,
@@ -361,12 +357,12 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
                 .build();
     }
 
-    private String buildInvalidRequestChallenge(Exception e) {
+    private String buildInvalidRequestChallenge() {
 
         return "Bearer"
                 + " realm=\"" + realm + "\""
                 + ",error=\"invalid_request\""
-                + ",error_description=\"" + e.getMessage() + "\""
+                + ",error_description=\"Invalid authorization header\""
                 + ",scope=\"openid profile email\"";
     }
 
