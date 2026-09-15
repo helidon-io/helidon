@@ -46,6 +46,22 @@ class QpackStaticTableTest {
         assertThat(QpackStaticTable.indices("x-unknown") == null, is(true));
         assertThat(QpackStaticTable.indexOf(":method", "PATCH"), is(-1L));
         assertThat(QpackStaticTable.nameIndex(":method"), is(15L));
+
+        QpackStaticTable.HeaderIndices indices = QpackStaticTable.indices(":method");
+        assertThat(indices.exactIndex("PATCH"), is(-1));
+        assertThat(indices.nameIndex(), is(15));
+    }
+
+    @Test
+    void preservesNullLookupBehavior() {
+        assertThrows(NullPointerException.class, () -> QpackStaticTable.indices(null));
+        assertThrows(NullPointerException.class, () -> QpackStaticTable.nameIndex(null));
+        assertThrows(NullPointerException.class, () -> QpackStaticTable.indexOf(null, "value"));
+        assertThrows(NullPointerException.class, () -> QpackStaticTable.indexOf(":authority", null));
+        assertThrows(NullPointerException.class, () -> QpackStaticTable.indexOf(":method", null));
+        assertThrows(NullPointerException.class, () -> QpackStaticTable.indices(":authority").exactIndex(null));
+        assertThrows(NullPointerException.class, () -> QpackStaticTable.indices(":method").exactIndex(null));
+        assertThat(QpackStaticTable.indexOf("x-unknown", null), is(-1L));
     }
 
     @Test
