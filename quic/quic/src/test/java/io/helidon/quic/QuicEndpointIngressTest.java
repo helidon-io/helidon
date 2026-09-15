@@ -24,6 +24,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.quic.QuicEndpoint.QuicEndpointFactory;
 import io.helidon.quic.QuicEndpoint.UnmatchedDatagram;
 import io.helidon.quic.packet.QuicPacket.HeadersType;
 
@@ -66,6 +68,35 @@ import static org.mockito.Mockito.when;
 
 class QuicEndpointIngressTest {
     private static final InetSocketAddress PEER = new InetSocketAddress(InetAddress.getLoopbackAddress(), 4433);
+
+    @Test
+    void emptyDatagramDoesNotDiscardFollowingDatagram() throws Exception {
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+             Fixture fixture = fixture(() -> {
+             }, false, Runnable::run, true);
+             DatagramChannel peer = DatagramChannel.open()) {
+            peer.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            ByteBuffer packet = longHeader(0xc0, QuicVersion.QUIC_V1.versionNumber(), new byte[8]);
+            ByteBuffer expected = packet.asReadOnlyBuffer();
+            CompletableFuture<ByteBuffer> received = new CompletableFuture<>();
+            doAnswer(invocation -> {
+                ByteBuffer payload = invocation.getArgument(2);
+                received.complete(ByteBuffer.allocate(payload.remaining()).put(payload.duplicate()).flip());
+                return null;
+            }).when(fixture.instance()).unmatchedQuicPacket(eq(peer.getLocalAddress()), eq(HeadersType.LONG), any());
+            Future<?> reader = executor.submit(fixture.endpoint()::channelReadLoop);
+            try {
+                peer.send(ByteBuffer.allocate(0), fixture.endpoint().localAddress());
+                assertThat(peer.send(packet, fixture.endpoint().localAddress()), is(expected.remaining()));
+
+                assertThat(received.get(5, TimeUnit.SECONDS), is(expected));
+                assertThat(fixture.endpoint().isClosed(), is(false));
+            } finally {
+                fixture.endpoint().close();
+                reader.get(5, TimeUnit.SECONDS);
+            }
+        }
+    }
 
     @Test
     void endpointCloseDrainsQueuedDatagramAccountingBeforeStoppedTaskCanRun() throws Exception {
@@ -792,6 +823,10 @@ class QuicEndpointIngressTest {
     }
 
     private static Fixture fixture(Runnable timerNotifier, boolean sendAsync, Executor executor) {
+        return fixture(timerNotifier, sendAsync, executor, false);
+    }
+
+    private static Fixture fixture(Runnable timerNotifier, boolean sendAsync, Executor executor, boolean blocking) {
         QuicConfig userConfig = QuicConfig.create();
         QuicRuntimeConfig defaults = QuicRuntimeConfig.create(userConfig);
         QuicRuntimeConfig.Endpoint defaultEndpoint = defaults.endpoint();
@@ -816,12 +851,12 @@ class QuicEndpointIngressTest {
         when(instance.isVersionAvailable(QuicVersion.QUIC_V1)).thenReturn(true);
         when(instance.availableVersions()).thenReturn(List.of(QuicVersion.QUIC_V1));
         when(instance.instanceId()).thenReturn("ingress-test");
-        QuicEndpoint endpoint = QuicEndpoint.QuicEndpointFactory.create()
-                .createSelectableEndpoint(instance,
-                                          runtimeConfig,
-                                          "ingress-test",
-                                          new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
-                                          new QuicTimerQueue(timerNotifier, () -> "ingress-test-timer"));
+        QuicEndpointFactory factory = QuicEndpointFactory.create();
+        InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        QuicTimerQueue timer = new QuicTimerQueue(timerNotifier, () -> "ingress-test-timer");
+        QuicEndpoint endpoint = blocking
+                ? factory.createVirtualThreadedEndpoint(instance, runtimeConfig, "ingress-test", address, timer)
+                : factory.createSelectableEndpoint(instance, runtimeConfig, "ingress-test", address, timer);
         return new Fixture(instance, endpoint);
     }
 

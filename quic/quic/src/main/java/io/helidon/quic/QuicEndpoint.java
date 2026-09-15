@@ -1038,6 +1038,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                         log(System.Logger.Level.DEBUG, "Dropped empty datagram");
                     }
+                    buffer.clear();
                 }
             }
             // trigger code that will process the received
