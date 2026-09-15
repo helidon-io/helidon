@@ -141,9 +141,13 @@ public final class Http3ProtocolException extends RuntimeException {
      * Scope of an HTTP/3 protocol signal.
      */
     public enum Scope {
-        /** The owning stream performs the wire action. */
+        /**
+         * The owning stream performs the wire action.
+         */
         STREAM,
-        /** The owning HTTP/3 connection performs the wire action. */
+        /**
+         * The owning HTTP/3 connection performs the wire action.
+         */
         CONNECTION
     }
 }

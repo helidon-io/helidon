@@ -74,7 +74,9 @@ public class QuicServerIngressJmhBenchmark {
         return state.retryIngress.inspect(state.peerAddress, state.connectionIdFactory, state.validRetryInitial);
     }
 
-    /** Stateless server-ingress packet shapes. */
+    /**
+     * Stateless server-ingress packet shapes.
+     */
     @State(Scope.Thread)
     public static class ServerIngressState {
         private QuicServerIngress ingress;

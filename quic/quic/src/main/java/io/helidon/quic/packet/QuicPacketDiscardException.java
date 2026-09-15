@@ -29,7 +29,9 @@ import io.helidon.common.Api;
 public final class QuicPacketDiscardException extends QuicPacketDecodeException {
     @Serial
     private static final long serialVersionUID = 5380465033971368382L;
-    /** Frame type that triggered the discard policy. */
+    /**
+     * Frame type that triggered the discard policy.
+     */
     private final long frameType;
 
     /**
