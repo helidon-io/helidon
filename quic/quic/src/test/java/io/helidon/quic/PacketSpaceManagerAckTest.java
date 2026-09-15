@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import io.helidon.quic.QuicTLSEngine.HandshakeState;
+import io.helidon.quic.QuicTLSEngine.KeySpace;
 import io.helidon.quic.frame.AckFrame;
 import io.helidon.quic.frame.AckFrame.AckRange;
 import io.helidon.quic.frame.PingFrame;
@@ -47,6 +48,35 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PacketSpaceManagerAckTest {
+
+    @Test
+    void doesNotArmHandshakePtoBeforeKeysAreAvailable() {
+        QuicTLSEngine tlsEngine = mock(QuicTLSEngine.class);
+        TestContext context = TestContext.create(true,
+                                                 QuicTransportParametersConfigSupport.DEFAULT_ACK_DELAY_EXPONENT,
+                                                 QuicTransportParametersConfigSupport.DEFAULT_MAX_ACK_DELAY,
+                                                 PacketNumberSpace.HANDSHAKE,
+                                                 tlsEngine);
+
+        context.manager.runTransmitter();
+
+        assertThat(context.emitter.nextScheduledDeadline(), is(Deadline.MAX));
+        context.timeLine.advance(Duration.ofSeconds(2));
+        context.manager.runTransmitter();
+        assertThat(context.emitter.pingAttempts, is(0));
+        assertThat(context.rttEstimator.ptoBackoff(), is(1L));
+
+        when(tlsEngine.keysAvailable(KeySpace.HANDSHAKE)).thenReturn(true);
+        context.manager.runTransmitter();
+
+        assertThat(context.emitter.nextScheduledDeadline(),
+                   is(context.timeLine.instant().plus(context.manager.ptoDuration())));
+        assertThat(context.emitter.pingAttempts, is(0));
+        context.timeLine.advance(context.manager.ptoDuration());
+        context.emitter.fireTimer();
+        assertThat(context.emitter.pingAttempts, is(1));
+        assertThat(context.rttEstimator.ptoBackoff(), is(2L));
+    }
 
     @Test
     void processesLargeAckRangeSetOncePerPacket() throws Exception {
@@ -478,17 +508,25 @@ class PacketSpaceManagerAckTest {
         }
 
         static TestContext create(boolean runTimers, int ackDelayExponent, Duration maxAckDelay) {
+            QuicTLSEngine tlsEngine = mock(QuicTLSEngine.class);
+            when(tlsEngine.handshakeState()).thenReturn(HandshakeState.HANDSHAKE_CONFIRMED);
+            return create(runTimers, ackDelayExponent, maxAckDelay, PacketNumberSpace.APPLICATION, tlsEngine);
+        }
+
+        static TestContext create(boolean runTimers,
+                                  int ackDelayExponent,
+                                  Duration maxAckDelay,
+                                  PacketNumberSpace packetNumberSpace,
+                                  QuicTLSEngine tlsEngine) {
             PacketSpaceManager.PathRecoveryState recoveryState = new PacketSpaceManager.PathRecoveryState(0);
             QuicRttEstimator rttEstimator = QuicRttEstimator.create(
                     QuicRuntimeConfig.create(QuicConfig.create()).recovery());
             QuicCongestionController congestionController = mock(QuicCongestionController.class);
             when(congestionController.canSendPacket()).thenReturn(true);
             when(congestionController.maxDatagramSize()).thenReturn(1200L);
-            QuicTLSEngine tlsEngine = mock(QuicTLSEngine.class);
-            when(tlsEngine.handshakeState()).thenReturn(HandshakeState.HANDSHAKE_CONFIRMED);
             TestTimeLine timeLine = new TestTimeLine();
             TestPacketEmitter emitter = new TestPacketEmitter(recoveryState, runTimers);
-            PacketSpaceManager manager = new PacketSpaceManager(PacketNumberSpace.APPLICATION,
+            PacketSpaceManager manager = new PacketSpaceManager(packetNumberSpace,
                                                                 emitter,
                                                                 timeLine,
                                                                 rttEstimator,
@@ -544,6 +582,7 @@ class PacketSpaceManagerAckTest {
         private boolean closeOnFailedRetransmission;
         private long acknowledgeOnFailedRetransmission = -1;
         private int retransmissionAttempts;
+        private int pingAttempts;
 
         private TestPacketEmitter(PacketSpaceManager.PathRecoveryState recoveryState, boolean runTimers) {
             this.recoveryState = recoveryState;
@@ -583,6 +622,9 @@ class PacketSpaceManagerAckTest {
 
         @Override
         public long emitAckPacket(PacketSpace packetSpaceManager, AckFrame ackFrame, boolean sendPing) {
+            if (sendPing) {
+                pingAttempts++;
+            }
             return -1;
         }
 
