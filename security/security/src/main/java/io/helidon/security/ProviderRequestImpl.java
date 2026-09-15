@@ -85,9 +85,6 @@ class ProviderRequestImpl implements ProviderRequest {
         Class<?> aClass = object.getClass();
         try {
             Field field = aClass.getField(key);
-            // java9
-            //if (field.canAccess(null)) {
-            // java8
             if (ReflectionUtil.canAccess(ProviderRequestImpl.class, field)) {
                 return Optional.ofNullable(field.get(object));
             }
@@ -127,9 +124,6 @@ class ProviderRequestImpl implements ProviderRequest {
     static Optional<Method> getMethod(Class<?> aClass, String methodName) {
         try {
             Method method = aClass.getMethod(methodName);
-            // java9
-            //if (method.canAccess(null)) {
-            // java8 not good approach (don't have any other)
             if (ReflectionUtil.canAccess(ProviderRequestImpl.class, method)) {
                 return Optional.of(method);
             }
