@@ -134,7 +134,7 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
 
     @Override
     public String debugDataBinary() {
-        return BufferUtil.debugDataBinary(bytes, offset + position, length - position);
+        return BufferUtil.debugDataBinary(bytes, offset + position, offset + length);
     }
 
     @Override
@@ -142,7 +142,7 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
         if (fullBuffer) {
             return BufferUtil.debugDataHex(bytes, offset, offset + length);
         } else {
-            return BufferUtil.debugDataHex(bytes, offset + position, offset + length - position);
+            return BufferUtil.debugDataHex(bytes, offset + position, offset + length);
         }
 
     }

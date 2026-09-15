@@ -20,6 +20,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.List;
@@ -56,7 +57,6 @@ public class Http2ConnectionWriterJmhTest {
     private static final int MAX_FRAME_SIZE = 16_384;
     private static final int CONCURRENT_THREADS = 8;
     private static final String FRAGMENTED_HEADER_VALUE = "~".repeat(18_000);
-    private static final byte[] RESPONSE_BYTES = {1};
     private static final byte[] PARTIAL_RESPONSE_BYTES = {1, 2};
     private static final PeerInfo PEER_INFO = new BenchmarkPeerInfo();
     private static final Runnable NO_OP = () -> { };
@@ -174,9 +174,15 @@ public class Http2ConnectionWriterJmhTest {
 
     @State(Scope.Thread)
     public static class FrameState {
-        private final BenchmarkFlowControl fundedWindow = new BenchmarkFlowControl(RESPONSE_BYTES.length);
-        private final BenchmarkFlowControl exhaustedWindow = new BenchmarkFlowControl(0);
-        private final BenchmarkFlowControl partialWindow = new BenchmarkFlowControl(1);
+        @Param("1")
+        public int payloadSize;
+
+        @Param("false")
+        public boolean readOnlyPayload;
+
+        private final BenchmarkFlowControl partialWindow = new BenchmarkFlowControl(1, 1);
+        private BenchmarkFlowControl fundedWindow;
+        private BenchmarkFlowControl exhaustedWindow;
         private BenchmarkDataWriter dataWriter;
         private Http2FrameData data;
         private Http2Headers fragmentedHeaders;
@@ -185,6 +191,18 @@ public class Http2ConnectionWriterJmhTest {
 
         @Setup
         public void setup(ConnectionState connection, Blackhole blackhole) {
+            if (payloadSize < 1 || payloadSize > MAX_FRAME_SIZE) {
+                throw new IllegalArgumentException("Payload size must be between 1 and " + MAX_FRAME_SIZE);
+            }
+            byte[] responseBytes = new byte[payloadSize];
+            for (int i = 0; i < responseBytes.length; i++) {
+                responseBytes[i] = (byte) (i * 31 + 1);
+            }
+            BufferData response = readOnlyPayload
+                    ? BufferData.createReadOnly(responseBytes, 0, responseBytes.length)
+                    : BufferData.create(responseBytes);
+            fundedWindow = new BenchmarkFlowControl(payloadSize, payloadSize);
+            exhaustedWindow = new BenchmarkFlowControl(0, payloadSize);
             dataWriter = connection.dataWriter;
             dataWriter.register(blackhole);
             headers = Http2Headers.create(WritableHeaders.create())
@@ -193,11 +211,11 @@ public class Http2ConnectionWriterJmhTest {
             writableHeaders.set(HeaderNames.create("x-large-header"), FRAGMENTED_HEADER_VALUE);
             fragmentedHeaders = Http2Headers.create(writableHeaders)
                     .status(Status.OK_200);
-            data = new Http2FrameData(Http2FrameHeader.create(RESPONSE_BYTES.length,
+            data = new Http2FrameData(Http2FrameHeader.create(responseBytes.length,
                                                                Http2FrameTypes.DATA,
                                                                Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
                                                                1),
-                                      BufferData.create(RESPONSE_BYTES));
+                                      response);
             partialData = new Http2FrameData(Http2FrameHeader.create(PARTIAL_RESPONSE_BYTES.length,
                                                                       Http2FrameTypes.DATA,
                                                                       Http2Flag.DataFlags.create(
@@ -219,11 +237,13 @@ public class Http2ConnectionWriterJmhTest {
 
     private static final class BenchmarkFlowControl implements FlowControl.Outbound {
         private final int initialWindowSize;
+        private final int updatedWindowSize;
         private boolean windowUpdated;
         private int remainingWindowSize;
 
-        private BenchmarkFlowControl(int initialWindowSize) {
+        private BenchmarkFlowControl(int initialWindowSize, int updatedWindowSize) {
             this.initialWindowSize = initialWindowSize;
+            this.updatedWindowSize = updatedWindowSize;
             this.remainingWindowSize = initialWindowSize;
         }
 
@@ -263,7 +283,7 @@ public class Http2ConnectionWriterJmhTest {
             }
             // Model one WINDOW_UPDATE without including an unbounded external wait in the benchmark.
             windowUpdated = true;
-            remainingWindowSize = RESPONSE_BYTES.length;
+            remainingWindowSize = updatedWindowSize;
         }
 
         @Override
@@ -278,42 +298,72 @@ public class Http2ConnectionWriterJmhTest {
     }
 
     private static final class BenchmarkDataWriter implements DataWriter {
-        private final ThreadLocal<Blackhole> blackholes = new ThreadLocal<>();
+        private final ThreadLocal<StagingSink> sinks = new ThreadLocal<>();
 
         @Override
         public void write(BufferData... buffers) {
-            blackhole().consume(buffers);
+            StagingSink sink = sink();
+            for (BufferData buffer : buffers) {
+                sink.consume(buffer);
+            }
         }
 
         @Override
         public void write(BufferData buffer) {
-            blackhole().consume(buffer);
+            sink().consume(buffer);
         }
 
         @Override
         public void writeNow(BufferData... buffers) {
-            blackhole().consume(buffers);
+            write(buffers);
         }
 
         @Override
         public void writeNow(BufferData buffer) {
-            blackhole().consume(buffer);
+            write(buffer);
         }
 
         private void register(Blackhole blackhole) {
-            blackholes.set(blackhole);
+            sinks.set(new StagingSink(blackhole));
         }
 
         private void unregister() {
-            blackholes.remove();
+            sinks.remove();
         }
 
-        private Blackhole blackhole() {
-            Blackhole blackhole = blackholes.get();
-            if (blackhole == null) {
-                throw new IllegalStateException("No JMH blackhole registered for benchmark thread");
+        private StagingSink sink() {
+            StagingSink sink = sinks.get();
+            if (sink == null) {
+                throw new IllegalStateException("No staging sink registered for benchmark thread");
             }
-            return blackhole;
+            return sink;
+        }
+    }
+
+    private static final class StagingSink {
+        private final ByteBuffer staging = ByteBuffer.allocate(8 * 1024);
+        private final Blackhole blackhole;
+
+        private StagingSink(Blackhole blackhole) {
+            this.blackhole = blackhole;
+        }
+
+        private void consume(BufferData buffer) {
+            long checksum = 0;
+            while (!buffer.consumed()) {
+                staging.clear();
+                if (buffer.writeTo(staging, buffer.available()) <= 0) {
+                    throw new IllegalStateException("Buffer did not provide available data");
+                }
+                staging.flip();
+                while (staging.remaining() >= Long.BYTES) {
+                    checksum += staging.getLong();
+                }
+                while (staging.hasRemaining()) {
+                    checksum += staging.get();
+                }
+            }
+            blackhole.consume(checksum);
         }
     }
 

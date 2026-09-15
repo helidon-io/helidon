@@ -144,7 +144,7 @@ public interface ServerResponse {
      * @throws IllegalStateException if a positive length is sent for a {@link io.helidon.http.Method#HEAD HEAD} request
      */
     default void send(byte[] bytes, int position, int length) {
-        send(Arrays.copyOfRange(bytes, position, length));
+        send(Arrays.copyOfRange(bytes, position, position + length));
     }
 
     /**

@@ -205,7 +205,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 bytesWritten += stream.writeHeaders(http2Headers, !sendTrailers);
             } else {
                 bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
-                                                            BufferData.create(actualBytes, actualPosition, actualLength),
+                                                            BufferData.createReadOnly(actualBytes, actualPosition, actualLength),
                                                             !sendTrailers);
             }
 
