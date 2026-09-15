@@ -9,6 +9,17 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.21]
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 3. Helidon 3 requires Java 17 or newer.
+
+- DBClient: Validate MongoDB numeric statement parameters [7dd3847b20](https://github.com/helidon-io/helidon/commit/7dd3847b207036f6a64d8efc3b5de6990b8b4fb3)
+- Media: Fix multipart pseudo-boundary parsing [534d0d1208](https://github.com/helidon-io/helidon/commit/534d0d1208ce85426dd93ab612097945f027fa8a)
+- Security: Preserve subject types in IDCS role mapping [1a969b4344](https://github.com/helidon-io/helidon/commit/1a969b4344aee939dfad49a65fa93ccbe17f591d)
+- Dependencies: Upgrade netty to 4.1.138.Final and Jackson to 2.21.6 [12565](https://github.com/helidon-io/helidon/pull/12565)
+- Build: Fix SCM connection URL in parent pom [12564](https://github.com/helidon-io/helidon/pull/12564)
+- Build: Update build-examples.sh to always update examples with helidon version [12482](https://github.com/helidon-io/helidon/pull/12482)
+
 ## [3.2.20]
 
 This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 3. Helidon 3 requires Java 17 or newer.
@@ -1148,6 +1159,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.21]: https://github.com/helidon-io/helidon/compare/3.2.20...3.2.21
 [3.2.20]: https://github.com/helidon-io/helidon/compare/3.2.19...3.2.20
 [3.2.19]: https://github.com/helidon-io/helidon/compare/3.2.18...3.2.19
 [3.2.18]: https://github.com/helidon-io/helidon/compare/3.2.17...3.2.18
