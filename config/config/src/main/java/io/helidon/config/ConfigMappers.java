@@ -25,7 +25,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParsePosition;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -40,8 +39,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalAccessor;
 import java.util.AbstractMap;
 import java.util.Calendar;
 import java.util.Date;
@@ -399,27 +396,11 @@ public final class ConfigMappers {
     @Deprecated
     public static Date toDate(String stringValue) {
         try {
-            return new Date(
-                    Instant.from(buildDateTimeFormatter(stringValue).parse(stringValue)).toEpochMilli());
+            var formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneOffset.UTC);
+            return new Date(Instant.from(formatter.parse(stringValue)).toEpochMilli());
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
-    }
-
-    private static DateTimeFormatter buildDateTimeFormatter(String stringValue) {
-        /*
-        A Java 8 bug causes DateTimeFormatter.withZone to override an explicit
-        time zone in the parsed string, contrary to the documented behavior. So
-        if the string includes a zone do NOT use withZone in building the formatter.
-         */
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-
-        ParsePosition pp = new ParsePosition(0);
-        TemporalAccessor accessor = formatter.parseUnresolved(stringValue, pp);
-        if (!accessor.isSupported(ChronoField.OFFSET_SECONDS)) {
-            formatter = formatter.withZone(ZoneId.of("UTC"));
-        }
-        return formatter;
     }
 
     /**

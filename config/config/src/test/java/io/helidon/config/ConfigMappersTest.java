@@ -41,6 +41,7 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -58,6 +59,10 @@ import java.util.regex.Pattern;
 import io.helidon.common.Size;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -65,6 +70,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -214,6 +220,28 @@ public class ConfigMappersTest {
         assertMapper("64 kB", Size.class, Size.create(64, Size.Unit.KB));
         assertMapper("64 MB", Size.class, Size.create(64, Size.Unit.MIB));
         assertMapper("64 mB", Size.class, Size.create(64, Size.Unit.MB));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "2011-12-03T10:15:30, 2011-12-03T10:15:30Z",
+            "2011-12-03T10:15:30Z, 2011-12-03T10:15:30Z",
+            "2011-12-03T10:15:30+01:00, 2011-12-03T09:15:30Z",
+            "2011-12-03T10:15:30-07:00, 2011-12-03T17:15:30Z",
+            "2011-12-03T10:15:30+01:00[Europe/Paris], 2011-12-03T09:15:30Z",
+            "2011-07-03T10:15:30+01:00[Europe/Paris], 2011-07-03T09:15:30Z",
+            "2011-12-03T10:15:30.123456789+01:00, 2011-12-03T09:15:30.123Z"
+    })
+    void testDateMapper(String value, String expected) {
+        assertThat(ConfigMappers.toDate(value).toInstant(), is(Instant.parse(expected)));
+    }
+
+    @ParameterizedTest
+    @EmptySource
+    @ValueSource(strings = {"invalid", "2011-02-29T10:15:30Z", "2011-12-03T10:15:30Zjunk"})
+    void testDateMapperRejectsInvalidInput(String value) {
+        var exception = assertThrows(IllegalArgumentException.class, () -> ConfigMappers.toDate(value));
+        assertThat(exception.getCause(), instanceOf(DateTimeParseException.class));
     }
 
     @Test
