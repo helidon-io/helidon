@@ -33,7 +33,6 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http3.Http3ErrorCode;
 import io.helidon.http.http3.Http3ProtocolException;
 import io.helidon.http.http3.hpack.Http3Huffman;
-import io.helidon.http.http3.hpack.Iso88591;
 
 /**
  * Shared QPACK field-section encoding and decoding utilities.
@@ -301,14 +300,14 @@ public final class QpackCodec {
                                     boolean huffman,
                                     FieldSectionSizeTracker sizeTracker) {
         int encodedLength = bytes.available();
-        int decodedCapacity = huffman ? huffmanDecodedCapacity(encodedLength) : encodedLength;
+        if (!huffman) {
+            sizeTracker.consume(encodedLength);
+            return bytes.readString(encodedLength, StandardCharsets.ISO_8859_1);
+        }
+        int decodedCapacity = huffmanDecodedCapacity(encodedLength);
         StringBuilder builder = new StringBuilder(sizeTracker.initialStringCapacity(decodedCapacity));
         Appendable destination = sizeTracker.wrap(builder);
-        if (huffman) {
-            Http3Huffman.decode(bytes, destination);
-        } else {
-            Iso88591.Reader.create().read(bytes, destination);
-        }
+        Http3Huffman.decode(bytes, destination);
         return builder.toString();
     }
 

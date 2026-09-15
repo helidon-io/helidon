@@ -30,7 +30,7 @@ class Http3QpackDecodingJmhRunnerTest {
     @Test
     void run() throws RunnerException {
         String include = System.getProperty("http3.qpack.decoding.jmh.include",
-                                            ".*Http3QpackDecodingJmhBenchmark.*");
+                                            ".*Http3Qpack.*DecodingJmhBenchmark.*");
         String result = System.getProperty("http3.qpack.decoding.jmh.result",
                                            "./target/http3-qpack-decoding-jmh-result.json");
 
