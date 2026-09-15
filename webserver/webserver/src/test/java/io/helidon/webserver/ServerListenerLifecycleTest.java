@@ -72,8 +72,10 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.HttpTransportObserverSupport.ObserverLifecycle;
 import io.helidon.webserver.http.DirectHandlers;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.spi.PortTransportBinding;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 import io.helidon.webserver.spi.TransportBinding;
@@ -1285,7 +1287,18 @@ class ServerListenerLifecycleTest {
     @Test
     void tcpTransportReusesEarlierPortBindingRandomPort() throws Exception {
         InetAddress address = InetAddress.getLoopbackAddress();
-        WebServer server = startTcpPortReuseServerWithRetry(address);
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(address)
+                .port(0)
+                .bindingsDiscoverServices(false)
+                .addBinding(new TestTransportBindingConfig("test", true, false, false, false, true))
+                .addBinding(TcpTransportConfig.builder()
+                                    .required(true)
+                                    .buildPrototype())
+                .build()
+                .start();
 
         try {
             assertThat(server.port(), is(TestTransportBindingProvider.boundPort("test")));
@@ -1294,6 +1307,198 @@ class ServerListenerLifecycleTest {
             }
         } finally {
             stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void ephemeralPortCollisionRecreatesBindingsWithoutRestartingListenerLifecycle() throws Exception {
+        Timer timer = new Timer("test-listener-port-collision", true);
+        TrackingTcpBindingFactory tcp = new TrackingTcpBindingFactory(timer);
+        PortCollisionBindingFactory collision = new PortCollisionBindingFactory(1);
+        LifecycleService service = new LifecycleService("port-collision");
+        AtomicInteger observerStarts = new AtomicInteger();
+        AtomicInteger observerStops = new AtomicInteger();
+        ObserverLifecycle observer = new ObserverLifecycle() {
+            @Override
+            public HttpTransportObserver start() {
+                observerStarts.incrementAndGet();
+                return HttpTransportObserver.noop();
+            }
+
+            @Override
+            public CompletionStage<Void> stop() {
+                observerStops.incrementAndGet();
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+        WebServerConfig config = WebServer.builder()
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .bindingsDiscoverServices(false)
+                .addBinding(tcp)
+                .addBinding(collision)
+                .buildPrototype();
+        Router router = Router.builder()
+                .addRouting(HttpRouting.builder().register(service))
+                .build();
+        ServerListener listener = testListener(timer, config, router, List.of(observer));
+
+        try {
+            listener.start();
+
+            assertThat(tcp.bindings.size(), is(2));
+            assertThat(tcp.portsAtCreate, is(List.of(-1, -1)));
+            assertThat(tcp.bindings.getFirst().port(), is(-1));
+            assertThat(tcp.bindings.getLast().port(), is(listener.port()));
+            assertThat(collision.bindings.size(), is(2));
+            assertThat(collision.bindings.getFirst().stops, is(1));
+            assertThat(collision.bindings.getLast().port(), is(listener.port()));
+            assertThat(collision.bindings.getLast().stops, is(0));
+            assertThat(service.beforeStarts(), is(1));
+            assertThat(service.afterStops(), is(0));
+            assertThat(observerStarts.get(), is(1));
+            assertThat(observerStops.get(), is(0));
+            CompletableFuture.runAsync(() -> {
+            }, listener.executor()).get(5, TimeUnit.SECONDS);
+        } finally {
+            try {
+                listener.stop();
+            } finally {
+                timer.cancel();
+            }
+        }
+        assertThat(service.afterStops(), is(1));
+        assertThat(observerStops.get(), is(1));
+        assertThat(collision.bindings.getLast().stops, is(1));
+    }
+
+    @Test
+    void repeatedEphemeralPortCollisionsFailAfterBoundedAttempts() {
+        Timer timer = new Timer("test-listener-port-collision-exhaustion", true);
+        TrackingTcpBindingFactory tcp = new TrackingTcpBindingFactory(timer);
+        PortCollisionBindingFactory collision = new PortCollisionBindingFactory(Integer.MAX_VALUE);
+        ServerListener listener = portCollisionListener(timer, tcp, collision);
+        try {
+            UncheckedIOException failure = assertThrows(UncheckedIOException.class, listener::start);
+
+            assertThat(failure.getCause(), instanceOf(BindException.class));
+            assertThat(collision.bindings.size(), is(10));
+            assertThat(tcp.bindings.size(), is(10));
+            collision.bindings.forEach(binding -> assertThat(binding.stops, is(1)));
+            tcp.bindings.forEach(binding -> assertThat(binding.port(), is(-1)));
+            assertThat(listener.executor().isShutdown(), is(true));
+        } finally {
+            try {
+                listener.stop();
+            } finally {
+                timer.cancel();
+            }
+        }
+    }
+
+    @Test
+    void fixedPortCollisionDoesNotRecreateBindings() {
+        Timer timer = new Timer("test-listener-fixed-port-collision", true);
+        PortCollisionBindingFactory owner = new PortCollisionBindingFactory("port-owner", 0);
+        PortCollisionBindingFactory collision = new PortCollisionBindingFactory(1);
+        WebServerConfig config = WebServer.builder()
+                .port(40000)
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(owner)
+                .addBinding(collision)
+                .buildPrototype();
+        ServerListener listener = testListener(timer, config, List.of());
+        try {
+            UncheckedIOException failure = assertThrows(UncheckedIOException.class, listener::start);
+
+            assertThat(failure.getCause(), instanceOf(BindException.class));
+            assertThat(owner.bindings.size(), is(1));
+            assertThat(owner.bindings.getFirst().stops, is(1));
+            assertThat(collision.bindings.size(), is(1));
+            assertThat(collision.bindings.getFirst().stops, is(1));
+        } finally {
+            try {
+                listener.stop();
+            } finally {
+                timer.cancel();
+            }
+        }
+    }
+
+    @Test
+    void portCollisionCleanupFailurePreventsAnotherAttempt() {
+        Timer timer = new Timer("test-listener-port-collision-cleanup", true);
+        TrackingTcpBindingFactory tcp = new TrackingTcpBindingFactory(timer);
+        PortCollisionBindingFactory collision = new PortCollisionBindingFactory(1);
+        collision.stopFailure = new IllegalStateException("test cleanup failure");
+        ServerListener listener = portCollisionListener(timer, tcp, collision);
+        try {
+            UncheckedIOException failure = assertThrows(UncheckedIOException.class, listener::start);
+
+            assertThat(failureMessages(failure), containsString("test cleanup failure"));
+            assertThat(collision.bindings.size(), is(1));
+            assertThat(tcp.bindings.size(), is(1));
+            assertThat(tcp.bindings.getFirst().port(), is(-1));
+            assertThat(listener.executor().isShutdown(), is(true));
+        } finally {
+            try {
+                listener.stop();
+            } finally {
+                timer.cancel();
+            }
+        }
+    }
+
+    @Test
+    void bindingRecreationFailureCleansUpListener() {
+        Timer timer = new Timer("test-listener-port-binding-recreation", true);
+        TrackingTcpBindingFactory tcp = new TrackingTcpBindingFactory(timer);
+        PortCollisionBindingFactory collision = new PortCollisionBindingFactory(1);
+        collision.recreationFailure = new IllegalStateException("test binding recreation failure");
+        ServerListener listener = portCollisionListener(timer, tcp, collision);
+        try {
+            IllegalStateException failure = assertThrows(IllegalStateException.class, listener::start);
+
+            assertThat(failure, sameInstance(collision.recreationFailure));
+            assertThat(collision.bindings.size(), is(1));
+            assertThat(collision.bindings.getFirst().stops, is(1));
+            assertThat(tcp.bindings.size(), is(2));
+            assertThat(tcp.portsAtCreate, is(List.of(-1, -1)));
+            tcp.bindings.forEach(binding -> assertThat(binding.port(), is(-1)));
+            assertThat(listener.boundPort().isEmpty(), is(true));
+            assertThat(listener.executor().isShutdown(), is(true));
+        } finally {
+            try {
+                listener.stop();
+            } finally {
+                timer.cancel();
+            }
+        }
+    }
+
+    @Test
+    void unrelatedBindingStartupFailureDoesNotRecreateBindings() {
+        Timer timer = new Timer("test-listener-unrelated-startup-failure", true);
+        TrackingTcpBindingFactory tcp = new TrackingTcpBindingFactory(timer);
+        PortCollisionBindingFactory collision = new PortCollisionBindingFactory(1);
+        collision.startFailure = new IllegalStateException("test unrelated startup failure");
+        ServerListener listener = portCollisionListener(timer, tcp, collision);
+        try {
+            IllegalStateException failure = assertThrows(IllegalStateException.class, listener::start);
+
+            assertThat(failure, sameInstance(collision.startFailure));
+            assertThat(collision.bindings.size(), is(1));
+            assertThat(collision.bindings.getFirst().stops, is(1));
+            assertThat(tcp.bindings.size(), is(1));
+            assertThat(tcp.bindings.getFirst().port(), is(-1));
+            assertThat(listener.executor().isShutdown(), is(true));
+        } finally {
+            try {
+                listener.stop();
+            } finally {
+                timer.cancel();
+            }
         }
     }
 
@@ -2296,32 +2501,6 @@ class ServerListenerLifecycleTest {
         }
     }
 
-    private static WebServer startTcpPortReuseServerWithRetry(InetAddress address) {
-        RuntimeException lastBindFailure = null;
-        for (int i = 0; i < 10; i++) {
-            TestTransportBindingProvider.reset();
-            try {
-                return WebServer.builder()
-                        .shutdownHook(false)
-                        .address(address)
-                        .port(0)
-                        .bindingsDiscoverServices(false)
-                        .addBinding(new TestTransportBindingConfig("test", true, false, false, false, true))
-                        .addBinding(TcpTransportConfig.builder()
-                                            .required(true)
-                                            .buildPrototype())
-                        .build()
-                        .start();
-            } catch (RuntimeException e) {
-                if (!containsType(e, BindException.class)) {
-                    throw e;
-                }
-                lastBindFailure = e;
-            }
-        }
-        throw lastBindFailure;
-    }
-
     private static TcpTransportConfig disabledTcpBinding() {
         return TcpTransportConfig.builder()
                 .enabled(false)
@@ -2339,9 +2518,17 @@ class ServerListenerLifecycleTest {
             Timer timer,
             WebServerConfig config,
             List<ObserverLifecycle> observerLifecycles) {
+        return testListener(timer, config, Router.empty(), observerLifecycles);
+    }
+
+    private static ServerListener testListener(
+            Timer timer,
+            WebServerConfig config,
+            Router router,
+            List<ObserverLifecycle> observerLifecycles) {
         return new ServerListener(WebServer.DEFAULT_SOCKET_NAME,
                                   config,
-                                  Router.empty(),
+                                  router,
                                   Context.builder()
                                           .id("transport-observer-lifecycle-test")
                                           .build(),
@@ -2351,6 +2538,19 @@ class ServerListenerLifecycleTest {
                                   DirectHandlers.create(),
                                   observerLifecycles,
                                   (failedListener, _) -> failedListener.stop());
+    }
+
+    private static ServerListener portCollisionListener(Timer timer,
+                                                        TrackingTcpBindingFactory tcp,
+                                                        PortCollisionBindingFactory collision) {
+        WebServerConfig config = WebServer.builder()
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .bindingsDiscoverServices(false)
+                .addBinding(tcp)
+                .addBinding(collision)
+                .buildPrototype();
+        return testListener(timer, config, List.of());
     }
 
     private static WebServerConfig listenerConfigWithoutTcp() {
@@ -2445,6 +2645,142 @@ class ServerListenerLifecycleTest {
                 .routing(routing -> routing.register(service))
                 .build()
                 .start();
+    }
+
+    private static final class TrackingTcpBindingFactory implements TransportBindingFactory {
+        private final Timer timer;
+        private final List<TcpTransportBinding> bindings = new ArrayList<>();
+        private final List<Integer> portsAtCreate = new ArrayList<>();
+
+        private TrackingTcpBindingFactory(Timer timer) {
+            this.timer = timer;
+        }
+
+        @Override
+        public String type() {
+            return TransportBindingTypes.TCP;
+        }
+
+        @Override
+        public boolean canBind(BindingPlanContext context) {
+            return true;
+        }
+
+        @Override
+        public TransportBinding create(TransportBindingContext context) {
+            portsAtCreate.add(context.boundPort().orElse(-1));
+            TcpTransportBinding binding = new TcpTransportBinding(context, timer);
+            bindings.add(binding);
+            return binding;
+        }
+    }
+
+    private static final class PortCollisionBindingFactory implements TransportBindingFactory {
+        private final String type;
+        private final int collisions;
+        private final List<PortCollisionBinding> bindings = new ArrayList<>();
+        private int starts;
+        private RuntimeException startFailure;
+        private RuntimeException stopFailure;
+        private RuntimeException recreationFailure;
+
+        private PortCollisionBindingFactory(int collisions) {
+            this("port-collision", collisions);
+        }
+
+        private PortCollisionBindingFactory(String type, int collisions) {
+            this.type = type;
+            this.collisions = collisions;
+        }
+
+        @Override
+        public String type() {
+            return type;
+        }
+
+        @Override
+        public boolean canBind(BindingPlanContext context) {
+            return true;
+        }
+
+        @Override
+        public TransportBinding create(TransportBindingContext context) {
+            if (!bindings.isEmpty() && recreationFailure != null) {
+                throw recreationFailure;
+            }
+            PortCollisionBinding binding = new PortCollisionBinding(this, context);
+            bindings.add(binding);
+            return binding;
+        }
+    }
+
+    private static final class PortCollisionBinding implements PortTransportBinding {
+        private final PortCollisionBindingFactory factory;
+        private final TransportBindingContext context;
+        private int port = -1;
+        private int stops;
+
+        private PortCollisionBinding(PortCollisionBindingFactory factory, TransportBindingContext context) {
+            this.factory = factory;
+            this.context = context;
+        }
+
+        @Override
+        public String type() {
+            return factory.type();
+        }
+
+        @Override
+        public String configuredEndpoint() {
+            return "test-port-collision";
+        }
+
+        @Override
+        public boolean holdsIdleConnectionPermit() {
+            return false;
+        }
+
+        @Override
+        public Security security() {
+            return Security.UNPROTECTED;
+        }
+
+        @Override
+        public int port() {
+            return port;
+        }
+
+        @Override
+        public void start() {
+            int inheritedPort = context.boundPort()
+                    .orElse(((InetSocketAddress) context.configuredAddress()).getPort());
+            assertThat(inheritedPort, greaterThan(0));
+            if (factory.startFailure != null) {
+                throw factory.startFailure;
+            }
+            if (++factory.starts <= factory.collisions) {
+                throw new UncheckedIOException(new BindException("test port collision"));
+            }
+            port = inheritedPort;
+        }
+
+        @Override
+        public ShutdownResult stop(Duration gracefulPeriod) {
+            stops++;
+            port = -1;
+            if (factory.stopFailure != null) {
+                throw factory.stopFailure;
+            }
+            return ShutdownResult.GRACEFUL;
+        }
+
+        @Override
+        public void suspend() {
+        }
+
+        @Override
+        public void resume() {
+        }
     }
 
     private static final class BlockingSocketOptions implements SocketOptions {

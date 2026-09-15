@@ -19,7 +19,6 @@ package io.helidon.webserver;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Map;
@@ -165,9 +164,8 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
 
     private static int bindDatagramSocket(String name) {
         InetAddress address = InetAddress.getLoopbackAddress();
-        try (ServerSocket tcpSocket = new ServerSocket(0, 50, address)) {
-            // The lifecycle test reuses this port for TCP, so select it from the TCP allocator.
-            DatagramSocket socket = new DatagramSocket(tcpSocket.getLocalPort(), address);
+        try {
+            DatagramSocket socket = new DatagramSocket(0, address);
             closeBoundSocket(name);
             BOUND_SOCKETS.put(name, socket);
             return socket.getLocalPort();
@@ -240,6 +238,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         public ShutdownResult stop(Duration gracefulPeriod) {
             counter(STOPS, config.testId()).incrementAndGet();
             closeBoundSocket(config.testId());
+            BOUND_PORTS.remove(config.testId());
             if (config.hangStop()) {
                 CountDownLatch latch = new CountDownLatch(1);
                 PENDING_STOPS.put(config.testId(), latch);
