@@ -24,6 +24,48 @@ New benchmark classes belong under `tests/benchmark/jmh/src/main/java`. Benchmar
 baseline runner end with `JmhTest`; a benchmark that needs specialized configuration may instead use a dedicated JUnit
 runner under `src/test/java` and does not have to participate in the legacy baseline comparison.
 
+### HPACK and QPACK static tables
+
+`HttpStaticTableJmhBenchmark` measures one static-table operation per invocation, with average time in ns/op and GC
+allocation in B/op. It calls the production tables through same-package benchmark code without changing production access.
+Inputs and expected matches are checked during trial setup; header creation, randomization, and string hashing happen
+outside measurement. The two protocols receive the same deterministic sequence of prebuilt header names and equal,
+non-interned values.
+
+- `hpackIndexedGet` and `qpackIndexedGet` read valid static indexes used for request/response fields and name references.
+  HPACK uses a map; QPACK uses an immutable list. Some indexed entries have different values between protocols.
+- `qpackArrayGetControl` reads a benchmark-only array containing the same QPACK entry objects. This is an array-access
+  control, including the same input selection, rather than a replacement production implementation with identical checks.
+- `hpackEncodingLookup` and `qpackEncodingLookup` find an exact match, fall back to a name match, or report a miss.
+  They include match classification but exclude dynamic-table search, encoding-plan allocation, and wire/Huffman encoding.
+  `NAME_ONLY` and `UNKNOWN` hold the match category constant. `REQUEST_REGULAR` and `RESPONSE_REGULAR` use the same headers
+  with each protocol's actual table coverage, so QPACK can find additional exact matches.
+
+`EXACT_COMMON` uses pseudoheader values present in both tables. HTTP/2 has dedicated encoding paths for these common
+pseudoheaders that bypass table search, so this case compares lookup primitives, not complete pseudoheader encoding.
+The request/response encoding mixes contain only regular headers. Results are steady-state lookup costs, not request
+latency or protocol throughput predictions.
+
+After preparing current reactor artifacts with the repository's build JDK, run the focused comparison from the root:
+
+```shell
+mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
+    -Dtest=HttpStaticTableJmhRunnerTest test
+```
+
+The runner selects only this class, uses three forks, three one-second warmups and five one-second measurements, and always
+enables the GC profiler. Results default to `tests/benchmark/jmh/target/http-static-table-jmh-1.json`. Override timing,
+`forks`, `threads`, `result`, or `output` with the `http.static.table.jmh.` prefix. Use distinct numbered output paths for
+repeated runs. A short smoke run can set `forks=1`, `warmupIterations=0`, `measurementIterations=1`, and
+`measurementMillis=100`. To select a subset, pair the method suffix expression with its supported workload values:
+
+```shell
+mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
+    -Dtest=HttpStaticTableJmhRunnerTest \
+    '-Dhttp.static.table.jmh.methods=(hpack|qpack)EncodingLookup' \
+    -Dhttp.static.table.jmh.workload=REQUEST_REGULAR,RESPONSE_REGULAR test
+```
+
 ### QPACK request and literal decoding
 
 `Http3QpackDecodingJmhBenchmark` decodes a fixed h2load-shaped request field section with plain and Huffman-encoded literal
