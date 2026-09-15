@@ -24,7 +24,7 @@ The Helidon SE API in Helidon 4 has changed significantly from Helidon 3. The us
 
 New to Helidon? Then jump in and [get started](https://helidon.io/docs/v4/about/prerequisites).
 
-Java 26 is required to use Helidon 27.
+Java 27 is required to use Helidon 27.
 
 
 ## License
@@ -71,7 +71,7 @@ See this [document](HELIDON-CLI.md) for more info.
 
 ## Build
 
-You need JDK 26 to build Helidon 27.
+You need JDK 27 to build Helidon 27.
 
 You also need Maven. We recommend 3.8.0 or newer.
 

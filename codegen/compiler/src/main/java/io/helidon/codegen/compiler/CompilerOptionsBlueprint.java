@@ -69,7 +69,7 @@ interface CompilerOptionsBlueprint {
      *
      * @return source version
      */
-    @Option.Default("26")
+    @Option.Default("27")
     String source();
 
     /**
@@ -77,7 +77,7 @@ interface CompilerOptionsBlueprint {
      *
      * @return target version
      */
-    @Option.Default("26")
+    @Option.Default("27")
     String target();
 
     /**

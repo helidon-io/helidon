@@ -245,13 +245,11 @@ test_archetype(){
   printf "\nINFO: %s - Building jlink image" "${ARCHETYPE}"
   printf "\n*******************************************\n\n"
 
-  # -Djlink.image.additionalModules is Workaround for Java 26. See issue #11527
   # shellcheck disable=SC2086
   mvn ${MVN_ARGS} \
     -f "${ARCHETYPE}/pom.xml" \
     -DskipTests \
     -Pjlink-image \
-    -Djlink.image.additionalModules=jdk.compiler \
     package
 
   printf "\n*******************************************"

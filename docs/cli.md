@@ -18,7 +18,7 @@ edit your code.
 
 | Requirement                                              | Description                                        |
 |----------------------------------------------------------|----------------------------------------------------|
-| [Java 26][java-26] ([OpenJDK 26][openjdk-26])            | Helidon requires Java 26+.                         |
+| [Java 27][java-27] ([OpenJDK 27][openjdk-27])            | Helidon requires Java 27+.                         |
 | [Maven 3.8+][maven-3-8]                                  | Helidon requires Maven 3.8+.                       |
 | [Microsoft Visual C++ Redistributable][microsoft-visual] | Required on Windows. Latest version is recommended |
 
@@ -115,7 +115,7 @@ Watch the following demo to see some of the functionality of the Helidon CLI.
 
 [Open the CLI demo animation.](images/cli/Helidon_cli.gif)
 
-[java-26]: https://www.oracle.com/technetwork/java/javase/downloads
-[openjdk-26]: http://jdk.java.net
+[java-27]: https://www.oracle.com/technetwork/java/javase/downloads
+[openjdk-27]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [microsoft-visual]: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-v14-redistributable
