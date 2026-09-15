@@ -1,7 +1,7 @@
 <!--@frontmatter
 site:
   title: Helidon
-  version: "4.5.5-SNAPSHOT"
+  version: "4.5.6-SNAPSHOT"
 pages:
   - config/manifest.md
 -->
