@@ -578,8 +578,7 @@ public final class Http3Protocol {
             }
             throw requestMessageError("Invalid HTTP/3 :scheme pseudo-header field");
         }
-        if (("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
-                && path.charAt(0) != '/'
+        if (path.charAt(0) != '/'
                 && !(Method.OPTIONS_NAME.equals(method) && "*".equals(path))) {
             throw requestMessageError("Invalid HTTP/3 :path pseudo-header field");
         }
