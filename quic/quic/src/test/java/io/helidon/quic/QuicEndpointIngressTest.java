@@ -16,8 +16,12 @@
 
 package io.helidon.quic;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.StandardProtocolFamily;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -51,9 +55,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -68,6 +74,45 @@ import static org.mockito.Mockito.when;
 
 class QuicEndpointIngressTest {
     private static final InetSocketAddress PEER = new InetSocketAddress(InetAddress.getLoopbackAddress(), 4433);
+
+    @Test
+    void wildcardEphemeralEndpointReceivesIpv4() throws Exception {
+        try (Fixture fixture = fixture(new InetSocketAddress(0))) {
+            assertReceivesFrom(fixture, StandardProtocolFamily.INET, "127.0.0.1");
+        }
+    }
+
+    @Test
+    void wildcardEphemeralEndpointReceivesIpv4AndIpv6() throws Exception {
+        assumeTrue(ipv6LoopbackAvailable(), "IPv6 loopback is not available.");
+
+        try (Fixture fixture = fixture(new InetSocketAddress(0))) {
+            assertReceivesFrom(fixture, StandardProtocolFamily.INET, "127.0.0.1");
+            assertReceivesFrom(fixture, StandardProtocolFamily.INET6, "::1");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"::", "::1"})
+    void configuredIpv6EndpointReceivesIpv6(String host) throws Exception {
+        assumeTrue(ipv6LoopbackAvailable(), "IPv6 loopback is not available.");
+
+        try (Fixture fixture = fixture(new InetSocketAddress(InetAddress.getByName(host), 0))) {
+            assertReceivesFrom(fixture, StandardProtocolFamily.INET6, "::1");
+        }
+    }
+
+    @Test
+    void occupiedFixedPortIsRejected() throws Exception {
+        try (DatagramChannel blocker = DatagramChannel.open(StandardProtocolFamily.INET)) {
+            blocker.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
+            InetSocketAddress bindAddress = new InetSocketAddress(((InetSocketAddress) blocker.getLocalAddress()).getPort());
+
+            UncheckedIOException failure = assertThrows(UncheckedIOException.class, () -> fixture(bindAddress).close());
+
+            assertThat(failure.getCause(), instanceOf(BindException.class));
+        }
+    }
 
     @Test
     void emptyDatagramDoesNotDiscardFollowingDatagram() throws Exception {
@@ -814,6 +859,11 @@ class QuicEndpointIngressTest {
         });
     }
 
+    private static Fixture fixture(InetSocketAddress address) {
+        return fixture(() -> {
+        }, false, Runnable::run, false, address);
+    }
+
     private static Fixture fixture(Runnable timerNotifier) {
         return fixture(timerNotifier, false);
     }
@@ -827,6 +877,18 @@ class QuicEndpointIngressTest {
     }
 
     private static Fixture fixture(Runnable timerNotifier, boolean sendAsync, Executor executor, boolean blocking) {
+        return fixture(timerNotifier,
+                       sendAsync,
+                       executor,
+                       blocking,
+                       new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+    }
+
+    private static Fixture fixture(Runnable timerNotifier,
+                                   boolean sendAsync,
+                                   Executor executor,
+                                   boolean blocking,
+                                   InetSocketAddress address) {
         QuicConfig userConfig = QuicConfig.create();
         QuicRuntimeConfig defaults = QuicRuntimeConfig.create(userConfig);
         QuicRuntimeConfig.Endpoint defaultEndpoint = defaults.endpoint();
@@ -852,12 +914,55 @@ class QuicEndpointIngressTest {
         when(instance.availableVersions()).thenReturn(List.of(QuicVersion.QUIC_V1));
         when(instance.instanceId()).thenReturn("ingress-test");
         QuicEndpointFactory factory = QuicEndpointFactory.create();
-        InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         QuicTimerQueue timer = new QuicTimerQueue(timerNotifier, () -> "ingress-test-timer");
         QuicEndpoint endpoint = blocking
                 ? factory.createVirtualThreadedEndpoint(instance, runtimeConfig, "ingress-test", address, timer)
                 : factory.createSelectableEndpoint(instance, runtimeConfig, "ingress-test", address, timer);
         return new Fixture(instance, endpoint);
+    }
+
+    private static void assertReceivesFrom(Fixture fixture, StandardProtocolFamily family, String host) throws Exception {
+        try (DatagramChannel peer = DatagramChannel.open(family);
+             Selector selector = Selector.open()) {
+            InetAddress loopback = InetAddress.getByName(host);
+            peer.bind(new InetSocketAddress(loopback, 0));
+            fixture.endpoint().channel().register(selector, SelectionKey.OP_READ);
+            ByteBuffer packet = longHeader(0xc0, QuicVersion.QUIC_V1.versionNumber(), new byte[8]);
+            ByteBuffer expected = packet.asReadOnlyBuffer();
+            CompletableFuture<ByteBuffer> received = new CompletableFuture<>();
+            doAnswer(invocation -> {
+                ByteBuffer payload = invocation.getArgument(2);
+                received.complete(ByteBuffer.allocate(payload.remaining()).put(payload.duplicate()).flip());
+                return null;
+            }).when(fixture.instance()).unmatchedQuicPacket(eq(peer.getLocalAddress()), eq(HeadersType.LONG), any());
+            int endpointPort = ((InetSocketAddress) fixture.endpoint().localAddress()).getPort();
+
+            assertThat(peer.send(packet, new InetSocketAddress(loopback, endpointPort)), is(expected.remaining()));
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            int selected = 0;
+            while (selected == 0) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    break;
+                }
+                selected = selector.select(Math.max(1, TimeUnit.NANOSECONDS.toMillis(remaining)));
+            }
+            assertThat("Timed out waiting for a datagram from " + host, selected, is(1));
+            selector.selectedKeys().clear();
+            fixture.endpoint().channelReadLoop();
+
+            assertThat(received.get(5, TimeUnit.SECONDS), is(expected));
+            assertThat(fixture.endpoint().isClosed(), is(false));
+        }
+    }
+
+    private static boolean ipv6LoopbackAvailable() {
+        try (DatagramChannel peer = DatagramChannel.open(StandardProtocolFamily.INET6)) {
+            peer.bind(new InetSocketAddress(InetAddress.getByName("::1"), 0));
+            return true;
+        } catch (IOException | UnsupportedOperationException e) {
+            return false;
+        }
     }
 
     private static QuicConnectionImpl registerConnection(Fixture fixture, byte[] connectionId) {
