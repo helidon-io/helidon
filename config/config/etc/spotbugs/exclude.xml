@@ -39,6 +39,12 @@
         <Bug pattern="WEAK_MESSAGE_DIGEST_MD5"/>
     </Match>
     <Match>
+        <!-- DigestInputStream hashes the actual bytes read; the loop only consumes and discards their contents. -->
+        <Class name="io.helidon.config.FileSourceHelper"/>
+        <Method name="digest" params="java.nio.file.Path"/>
+        <Bug pattern="NCR_NOT_PROPERLY_CHECKED_READ"/>
+    </Match>
+    <Match>
         <!-- Path from config/code, not openly from user -->
         <Class name="io.helidon.config.ConfigMappers"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
