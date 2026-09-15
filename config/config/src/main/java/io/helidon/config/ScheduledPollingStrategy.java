@@ -26,6 +26,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
 import io.helidon.config.spi.ChangeEventType;
@@ -46,6 +48,7 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
 
     private final RecurringPolicy recurringPolicy;
     private final boolean defaultExecutor;
+    private final Lock lifecycleLock = new ReentrantLock();
 
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> scheduledFuture;
@@ -90,29 +93,39 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
     }
 
     @Override
-    public synchronized void start(Polled polled) {
-        Objects.requireNonNull(polled, "polled");
+    public void start(Polled polled) {
+        lifecycleLock.lock();
+        try {
+            Objects.requireNonNull(polled, "polled");
 
-        if (defaultExecutor && executor.isShutdown()) {
-            executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
+            if (defaultExecutor && executor.isShutdown()) {
+                executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
+            }
+
+            if (executor.isShutdown()) {
+                throw new ConfigException("Cannot start a scheduled polling strategy, as the executor service is shutdown");
+            }
+
+            this.polled = polled;
+            this.pollFailureLogged = false;
+            scheduleNext();
+        } finally {
+            lifecycleLock.unlock();
         }
-
-        if (executor.isShutdown()) {
-            throw new ConfigException("Cannot start a scheduled polling strategy, as the executor service is shutdown");
-        }
-
-        this.polled = polled;
-        this.pollFailureLogged = false;
-        scheduleNext();
     }
 
     @Override
-    public synchronized void stop() {
-        if (scheduledFuture != null) {
-            scheduledFuture.cancel(true);
-        }
-        if (defaultExecutor) {
-            ConfigUtils.shutdownExecutor(executor);
+    public void stop() {
+        lifecycleLock.lock();
+        try {
+            if (scheduledFuture != null) {
+                scheduledFuture.cancel(true);
+            }
+            if (defaultExecutor) {
+                ConfigUtils.shutdownExecutor(executor);
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
     }
 
@@ -132,38 +145,43 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
         }
     }
 
-    private synchronized void fireEvent() {
-        ChangeEventType event;
+    private void fireEvent() {
+        lifecycleLock.lock();
         try {
-            event = polled.poll(Instant.now());
-        } catch (RuntimeException e) {
-            if (!pollFailureLogged) {
-                LOGGER.log(Level.WARNING, "Failed to poll config source, polling will continue; "
-                        + "further failures are logged at debug.", e);
-                pollFailureLogged = true;
-            } else {
-                LOGGER.log(Level.DEBUG, "Config polling failure", e);
+            ChangeEventType event;
+            try {
+                event = polled.poll(Instant.now());
+            } catch (RuntimeException e) {
+                if (!pollFailureLogged) {
+                    LOGGER.log(Level.WARNING, "Failed to poll config source, polling will continue; "
+                            + "further failures are logged at debug.", e);
+                    pollFailureLogged = true;
+                } else {
+                    LOGGER.log(Level.DEBUG, "Config polling failure", e);
+                }
+                scheduleNext();
+                return;
+            }
+
+            Objects.requireNonNull(event, "Change event type must not be null");
+            pollFailureLogged = false;
+
+            switch (event) {
+            case CHANGED:
+            case DELETED:
+                recurringPolicy.shorten();
+                break;
+            case UNCHANGED:
+                recurringPolicy.lengthen();
+                break;
+            case CREATED:
+            default:
+                break;
             }
             scheduleNext();
-            return;
+        } finally {
+            lifecycleLock.unlock();
         }
-
-        Objects.requireNonNull(event, "Change event type must not be null");
-        pollFailureLogged = false;
-
-        switch (event) {
-        case CHANGED:
-        case DELETED:
-            recurringPolicy.shorten();
-            break;
-        case UNCHANGED:
-            recurringPolicy.lengthen();
-            break;
-        case CREATED:
-        default:
-            break;
-        }
-        scheduleNext();
     }
 
     ScheduledExecutorService executor() {
