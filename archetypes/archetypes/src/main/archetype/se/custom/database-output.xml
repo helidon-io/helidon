@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -226,7 +226,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
         <model>
             <value key="database">true</value>
             <value key="server">${db.server}</value>
-            <value key="readme-native-docker" template="mustache">{{start-db-docker}}</value>
             <list key="dependencies">
                 <map>
                     <value key="groupId">io.helidon.dbclient</value>

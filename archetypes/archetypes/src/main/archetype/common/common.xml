@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,10 +36,6 @@
         </transformation>
         <transformation id="multipart-mustache">
             <replace regex="\.multipart.mustache$" replacement=""/>
-        </transformation>
-        <transformation id="native-image">
-            <replace regex="groupid" replacement="${groupId/\./\/}"/>
-            <replace regex="artifactid" replacement="${artifactId/\./\/}"/>
         </transformation>
         <templates engine="mustache" transformations="mustache,packaged">
             <directory>files</directory>

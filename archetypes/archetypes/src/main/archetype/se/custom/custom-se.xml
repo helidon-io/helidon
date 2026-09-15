@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,11 +36,6 @@
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
         <model>
-            <list key="native-sections" if="${docker}">
-                <value file="files/README.md.native.mustache"
-                       if="${docker.native-image} &amp;&amp; !(${db})"
-                       template="mustache"/>
-            </list>
             <list key="Main-routing-builder">
                 <value><![CDATA[.get("/simple-greet", (req, res) -> res.send("Hello World!"))]]></value>
             </list>
