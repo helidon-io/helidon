@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ class QpackStaticTableTest {
     @Test
     void indexesEveryEntryWithFirstMatchSemantics() {
         for (int index = 0; index < QpackStaticTable.size(); index++) {
-            HeaderField field = QpackStaticTable.get(index);
+            QpackCodec.HeaderField field = QpackStaticTable.get(index);
             int expectedExactIndex = firstExactIndex(field);
             int expectedNameIndex = firstNameIndex(field.name());
 
@@ -86,7 +86,7 @@ class QpackStaticTableTest {
         assertThrows(IllegalArgumentException.class, () -> QpackStaticTable.get(QpackStaticTable.size()));
     }
 
-    private static int firstExactIndex(HeaderField expected) {
+    private static int firstExactIndex(QpackCodec.HeaderField expected) {
         for (int index = 0; index < QpackStaticTable.size(); index++) {
             if (QpackStaticTable.get(index).equals(expected)) {
                 return index;

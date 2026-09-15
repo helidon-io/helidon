@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.http2.Http2StaticTableBenchmarkAccess;
+import io.helidon.http.http3.QpackCodec.HeaderField;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

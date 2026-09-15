@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.profile.GCProfiler;
@@ -28,7 +28,7 @@ class HttpStaticTableJmhRunnerTest {
     @Test
     void run() throws RunnerException {
         var builder = new OptionsBuilder()
-                .include("^io\\.helidon\\.http\\.http3\\.qpack\\.HttpStaticTableJmhBenchmark\\.(?:"
+                .include("^io\\.helidon\\.http\\.http3\\.HttpStaticTableJmhBenchmark\\.(?:"
                                  + System.getProperty("http.static.table.jmh.methods", ".*") + ")$")
                 .forks(Integer.getInteger("http.static.table.jmh.forks", 3))
                 .threads(Integer.getInteger("http.static.table.jmh.threads", 1))
