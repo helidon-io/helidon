@@ -24,11 +24,14 @@ New benchmark classes belong under `tests/benchmark/jmh/src/main/java`. Benchmar
 baseline runner end with `JmhTest`; a benchmark that needs specialized configuration may instead use a dedicated JUnit
 runner under `src/test/java` and does not have to participate in the legacy baseline comparison.
 
-### QPACK Huffman request decoding
+### QPACK request and literal decoding
 
-`Http3QpackDecodingJmhBenchmark` decodes a fixed h2load-shaped request field section whose literal values use QPACK
-Huffman encoding. The shared connection state and finite 16 KiB decoded-header limit exercise the same bounded decoder
-path at one and eight threads. Run a short real-fork smoke check with:
+`Http3QpackDecodingJmhBenchmark` decodes a fixed h2load-shaped request field section with plain and Huffman-encoded literal
+values. The shared connection state and finite 16 KiB decoded-header limit exercise the same bounded decoder path at one
+and eight threads. `Http3QpackLiteralDecodingJmhBenchmark` isolates plain literal conversion at 16, 64, and 256 octets,
+with ASCII or high Latin-1 octets and with or without a decoded-size limit. Both benchmarks include input-buffer creation;
+the request benchmark also includes stream opening and completion. Enable the GC profiler to compare allocated bytes per
+operation as well as time or throughput. Run a short real-fork smoke check with:
 
 ```shell
 mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
