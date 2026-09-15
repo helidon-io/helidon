@@ -26,7 +26,63 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 
 ### CHANGES
 
-- WebServer: Add opt-in case-sensitive inbound HTTP method parsing
+- Builders: Enforce HTTP header size limits consistently [b17e082484](https://github.com/helidon-io/helidon/commit/b17e082484c8066305da5bcbf0cc7d7c9504302b)
+- Common: Add non-mutating LRU cache lookup [12381](https://github.com/helidon-io/helidon/pull/12381)
+- Common: Fix byte-range sends and buffer diagnostics [12574](https://github.com/helidon-io/helidon/pull/12574)
+- Common: Protect cached HTTP header bytes [30fbcfaaf4](https://github.com/helidon-io/helidon/commit/30fbcfaaf4b03d06f78d969242e7029ec603113f)
+- Common: Validate custom HTTP status reason phrases [060ed6d755](https://github.com/helidon-io/helidon/commit/060ed6d7555b4115ee875fd52e505288c881a11c)
+- CORS: Restore default-port CORS origin matching [12512](https://github.com/helidon-io/helidon/pull/12512)
+- DBClient: Validate MongoDB numeric statement parameters [32eac7a31c](https://github.com/helidon-io/helidon/commit/32eac7a31c3af1061669a3eaabb2369dc9f44623)
+- gRPC: Make gRPC deframing independent of HTTP/2 DATA boundaries [9a48497f58](https://github.com/helidon-io/helidon/commit/9a48497f5841cbdfa2294cfcd5091cf331b57277)
+- HTTP: Fix HTTP parsing and redirect handling [12532](https://github.com/helidon-io/helidon/pull/12532)
+- JSON: Bound JSON BigInteger materialization [a7b595aa8a](https://github.com/helidon-io/helidon/commit/a7b595aa8ae56c359a403d84ca5a18c9633bb6f5)
+- LC4J: Bump LangChain4j to 1.18.1 [12252](https://github.com/helidon-io/helidon/pull/12252)
+- LRA: Fix LRA coordinator target validation [d7fdfc9818](https://github.com/helidon-io/helidon/commit/d7fdfc98185076c86e769f1521a917760e656f4d)
+- Metrics: Mark metrics.prometheus.histogramFlavor as deprecated [12496](https://github.com/helidon-io/helidon/pull/12496)
+- Neo4j: Enable Neo4j hostname verification by default [fdd0dc1d15](https://github.com/helidon-io/helidon/commit/fdd0dc1d15b7c88bb13064783e3d1dd4cc521067)
+- OCI: Support OCI-managed private-key certificate bundles [12297](https://github.com/helidon-io/helidon/pull/12297)
+- Security: Honor path-specific MP security configuration [7423801034](https://github.com/helidon-io/helidon/commit/74238010342fc093eff584b5467df8016dc222a6)
+- Security: Preserve subject types in IDCS role mapping [522d4d51bb](https://github.com/helidon-io/helidon/commit/522d4d51bbfe45d4fba37562198c52fde89b18bf)
+- Telemetry: Allow MP Telemetry span to include response write [12350](https://github.com/helidon-io/helidon/pull/12350)
+- WebClient: Normalize WebClient URI schemes before transport selection [1ac526ecdb](https://github.com/helidon-io/helidon/commit/1ac526ecdb83aa2cdfc4aa063c68e32075e1ae9a)
+- WebClient: Use cached shared header constants [12396](https://github.com/helidon-io/helidon/pull/12396)
+- WebServer: Clamp static content byte ranges [d210b03e4e](https://github.com/helidon-io/helidon/commit/d210b03e4e81dc2a02fe1934fbed6282bbdcef5c)
+- WebServer: Harden PROXY protocol trusted proxy handling [29a4743ab4](https://github.com/helidon-io/helidon/commit/29a4743ab4a15f5641f5f49162daf41727d16cd1)
+- WebServer: Keep selected PROXY handling within the method length limit [123093956f](https://github.com/helidon-io/helidon/commit/123093956fe9073da3981ee86ac10fc6657b3577)
+- WebServer: Log expected WebServer connection termination at trace [12541](https://github.com/helidon-io/helidon/pull/12541)
+- WebSocket: Limit buffered WebSocket message size [3ffd517479](https://github.com/helidon-io/helidon/commit/3ffd5174799ec86082b9d8182dd027989d77aa9b)
+- WebServer: Preserve case-sensitive HTTP request methods [0ac0cef846](https://github.com/helidon-io/helidon/commit/0ac0cef846a20164bd95af1e57da8fbf73ebb639)
+- Dependencies: Upgrade Netty to 4.1.138.Final [12566](https://github.com/helidon-io/helidon/pull/12566)
+- Dependencies: Upgrade Protobuf to 4.36.0 [12394](https://github.com/helidon-io/helidon/pull/12394)
+- Docs: Backport documentation release and Javadoc fixes [12475](https://github.com/helidon-io/helidon/pull/12475)
+- Docs: Document application.yaml as a default MP Config source [12559](https://github.com/helidon-io/helidon/pull/12559)
+- Docs: Fix config docs logging initialization [12501](https://github.com/helidon-io/helidon/pull/12501)
+- Docs: Regenerate configuration reference for selected fixes [4067b0ae08](https://github.com/helidon-io/helidon/commit/4067b0ae0822eec6144bd42fc3cc4fbbb4873d9a)
+- Build: Fix Maven Invoker split repository handling [12516](https://github.com/helidon-io/helidon/pull/12516)
+- Build: Fix SCM connection URL in parent pom [12563](https://github.com/helidon-io/helidon/pull/12563)
+- Build: When building examples use helidon-N.x branch and update version [12474](https://github.com/helidon-io/helidon/pull/12474)
+
+## 4.5.4
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### NOTABLE CHANGES
+
+Helidon's OpenTelemetry Zipkin exporter integration is deprecated. Users should move to the OTLP exporter. See [12318](https://github.com/helidon-io/helidon/pull/12318)
+
+### CHANGES
+
+- Config: Support char[] in @Configuration.Value injection [12303](https://github.com/helidon-io/helidon/pull/12303)
+- Telemetry: Deprecate OpenTelemetry Zipkin exporter in Helidon [12318](https://github.com/helidon-io/helidon/pull/12318)
+- Validation: Fix nullable cascading validation [12376](https://github.com/helidon-io/helidon/pull/12376)
+- WebServer: Close HTTP/1.1 connections after Connection: close [12326](https://github.com/helidon-io/helidon/pull/12326)
+- WebServer: Reject relative HTTP/1.1 origin-form request-targets with 400 [12329](https://github.com/helidon-io/helidon/pull/12329)
+- Security: Avoid CDI tracing lookup during OIDC metadata load [12286](https://github.com/helidon-io/helidon/pull/12286)
+- Dependencies: Upgrade Jackson to 2.21.6. [12306](https://github.com/helidon-io/helidon/pull/12306)
+- Dependencies: Upgrade OCI SDK to 3.95.0 [12336](https://github.com/helidon-io/helidon/pull/12336)
+- Tests: IDCS startup test module version [12311](https://github.com/helidon-io/helidon/pull/12311)
 
 ## 4.5.3
 
@@ -2824,6 +2880,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.5.5]: https://github.com/oracle/helidon/compare/4.5.4...4.5.5
+[4.5.4]: https://github.com/oracle/helidon/compare/4.5.3...4.5.4
 [4.5.3]: https://github.com/oracle/helidon/compare/4.5.2...4.5.3
 [4.5.2]: https://github.com/oracle/helidon/compare/4.5.1...4.5.2
 [4.5.1]: https://github.com/oracle/helidon/compare/4.5.0...4.5.1
