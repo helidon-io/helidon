@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;

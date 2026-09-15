@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,10 +36,6 @@ import io.helidon.common.buffers.HuffmanCodec;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.http3.Http3ErrorCode;
-import io.helidon.http.http3.Http3ProtocolException;
-import io.helidon.http.http3.Http3QpackContext;
-import io.helidon.http.http3.Http3ReadTimeoutException;
 
 import org.junit.jupiter.api.Test;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -27,9 +27,6 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.http3.Http3ErrorCode;
-import io.helidon.http.http3.Http3ProtocolException;
-import io.helidon.http.http3.Http3QpackContext;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;

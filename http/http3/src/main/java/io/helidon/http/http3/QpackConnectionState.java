@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,23 +37,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.http3.Http3ErrorCode;
-import io.helidon.http.http3.Http3ProtocolException;
-import io.helidon.http.http3.Http3QpackContext;
-import io.helidon.http.http3.Http3ReadTimeoutException;
 
 import static io.helidon.common.buffers.BufferData.EMPTY_BYTES;
 
 /**
  * Per-connection QPACK state shared between encoder and decoder streams.
  */
-@Api.Internal
-public final class QpackConnectionState {
+final class QpackConnectionState {
     private static final int MAX_LOCAL_ENCODER_TABLE_CAPACITY = 4 * 1024;
     private static final int MAX_PENDING_INSTRUCTION_BYTES = 16 * 1024;
     private static final int MAX_QPACK_INPUT_CHUNK_SIZE = 8 * 1024;
@@ -123,10 +117,10 @@ public final class QpackConnectionState {
      * @param connectionFailureHandler connection-owner handler for QPACK connection failure
      * @return new per-connection QPACK state
      */
-    public static QpackConnectionState create(long localMaxTableCapacity,
-                                              long localBlockedStreams,
-                                              int maxHeadersSize,
-                                              Consumer<Throwable> connectionFailureHandler) {
+    static QpackConnectionState create(long localMaxTableCapacity,
+                                       long localBlockedStreams,
+                                       int maxHeadersSize,
+                                       Consumer<Throwable> connectionFailureHandler) {
         if (maxHeadersSize < 0) {
             throw new IllegalArgumentException("maxHeadersSize must not be negative: " + maxHeadersSize);
         }
@@ -142,7 +136,7 @@ public final class QpackConnectionState {
      * @param qpackMaxTableCapacity peer dynamic-table capacity
      * @param qpackBlockedStreams   peer blocked-stream limit
      */
-    public void peerSettings(long qpackMaxTableCapacity, long qpackBlockedStreams) {
+    void peerSettings(long qpackMaxTableCapacity, long qpackBlockedStreams) {
         Http3ProtocolException failure = null;
         encoderLock.lock();
         try {
@@ -171,7 +165,7 @@ public final class QpackConnectionState {
      *
      * @param sender encoder instruction sender
      */
-    public void encoderInstructionsSender(Http3QpackContext.InstructionSender sender) {
+    void encoderInstructionsSender(Http3QpackContext.InstructionSender sender) {
         Objects.requireNonNull(sender, "sender");
         Http3ProtocolException failure = null;
         encoderLock.lock();
@@ -203,7 +197,7 @@ public final class QpackConnectionState {
      *
      * @param sender decoder instruction sender
      */
-    public void decoderInstructionsSender(Http3QpackContext.InstructionSender sender) {
+    void decoderInstructionsSender(Http3QpackContext.InstructionSender sender) {
         Objects.requireNonNull(sender, "sender");
         Http3ProtocolException failure = null;
         decoderLock.lock();
@@ -237,7 +231,7 @@ public final class QpackConnectionState {
      * @param headers  headers to encode
      * @return encoded field section
      */
-    public byte[] encodeHeaders(long streamId, Iterable<Header> headers) {
+    byte[] encodeHeaders(long streamId, Iterable<Header> headers) {
         Http3ProtocolException failure = null;
         encoderLock.lock();
         try {
@@ -250,7 +244,7 @@ public final class QpackConnectionState {
                     : Math.min(base - 1, knownReceivedCount - 1);
 
             List<FieldEncoding> encodings = new ArrayList<>();
-            List<HeaderField> insertionCandidates = new ArrayList<>();
+            List<QpackCodec.HeaderField> insertionCandidates = new ArrayList<>();
             long minReferenced = Long.MAX_VALUE;
             long maxReferenced = -1;
 
@@ -260,7 +254,7 @@ public final class QpackConnectionState {
                     FieldEncoding encoding = chooseFieldEncoding(name, value, referenceLimit);
                     encodings.add(encoding);
                     if (encoding.kind() != Kind.INDEXED) {
-                        insertionCandidates.add(new HeaderField(name, value));
+                        insertionCandidates.add(new QpackCodec.HeaderField(name, value));
                     }
                     if (!encoding.fromStaticTable() && encoding.index() >= 0) {
                         minReferenced = Math.min(minReferenced, encoding.index());
@@ -271,7 +265,7 @@ public final class QpackConnectionState {
 
             if (unacknowledgedSections.isEmpty()) {
                 long protectedMinAbsoluteIndex = maxReferenced < 0 ? Long.MAX_VALUE : minReferenced;
-                for (HeaderField header : insertionCandidates) {
+                for (QpackCodec.HeaderField header : insertionCandidates) {
                     maybeInsert(header.name(), header.value(), protectedMinAbsoluteIndex);
                 }
             }
@@ -318,7 +312,7 @@ public final class QpackConnectionState {
      * @param streamId HTTP/3 stream id
      * @return decoder stream state
      */
-    public DecoderStream openDecoderStream(long streamId) {
+    DecoderStream openDecoderStream(long streamId) {
         decoderLock.lock();
         try {
             ensureOpen();
@@ -408,7 +402,7 @@ public final class QpackConnectionState {
         } finally {
             decoderLock.unlock();
         }
-        section = Objects.requireNonNull(section, "fieldSection");
+        Objects.requireNonNull(section, "fieldSection");
         section.publishCompletion();
         if (connectionFailure != null) {
             failConnection(connectionFailure);
@@ -421,7 +415,7 @@ public final class QpackConnectionState {
      *
      * @param bytes encoder-stream bytes
      */
-    public void onEncoderStreamData(byte[] bytes) {
+    void onEncoderStreamData(byte[] bytes) {
         Objects.requireNonNull(bytes, "bytes");
         List<FieldSection> completedSections = null;
         CompletableFuture<Void> progress = null;
@@ -510,7 +504,7 @@ public final class QpackConnectionState {
      *
      * @param bytes decoder-stream bytes
      */
-    public void onDecoderStreamData(byte[] bytes) {
+    void onDecoderStreamData(byte[] bytes) {
         Throwable failure = null;
         encoderLock.lock();
         try {
@@ -559,7 +553,7 @@ public final class QpackConnectionState {
      *
      * @param cause instruction-stream failure
      */
-    public void instructionStreamFailed(Throwable cause) {
+    void instructionStreamFailed(Throwable cause) {
         failConnection(Objects.requireNonNull(cause, "cause"));
     }
 
@@ -568,7 +562,7 @@ public final class QpackConnectionState {
      *
      * @param cause connection close cause
      */
-    public void close(Throwable cause) {
+    void close(Throwable cause) {
         terminate(Objects.requireNonNull(cause, "cause"));
     }
 
@@ -908,7 +902,7 @@ public final class QpackConnectionState {
         int first = section.buffer.get(0) & 0xff;
         boolean fromStatic = (first & 0x40) != 0;
         long index = QpackCodec.readPrefixedInteger(section.buffer, 6);
-        HeaderField field;
+        QpackCodec.HeaderField field;
         if (fromStatic) {
             field = QpackStaticTable.get(index);
         } else {
@@ -926,7 +920,7 @@ public final class QpackConnectionState {
         long index = QpackCodec.readPrefixedInteger(section.buffer, 4);
         long absoluteIndex = section.prefix.base() + index;
         section.dynamicReference(absoluteIndex);
-        HeaderField field = decoderTable.get(absoluteIndex);
+        QpackCodec.HeaderField field = decoderTable.get(absoluteIndex);
         section.sizeTracker.beginFieldLine();
         section.sizeTracker.consume(field.name().length());
         section.sizeTracker.consume(field.value().length());
@@ -1171,23 +1165,18 @@ public final class QpackConnectionState {
 
     private static RuntimeException uncheckedFailure(String message, Throwable failure) {
         Objects.requireNonNull(failure, "failure");
-        if (failure instanceof RuntimeException runtimeException) {
-            return runtimeException;
-        }
-        if (failure instanceof Error error) {
-            throw error;
-        }
-        if (failure instanceof IOException ioException) {
-            return new UncheckedIOException(message, ioException);
-        }
-        return new IllegalStateException(message, failure);
+        return switch (failure) {
+            case RuntimeException runtimeException -> runtimeException;
+            case Error error -> throw error;
+            case IOException ioException -> new UncheckedIOException(message, ioException);
+            default -> new IllegalStateException(message, failure);
+        };
     }
 
     /**
      * Decoder-side state owned by one HTTP/3 request or push stream.
      */
-    @Api.Internal
-    public static final class DecoderStream {
+    static final class DecoderStream {
         private final QpackConnectionState owner;
         private final long streamId;
         private final boolean registered;
@@ -1209,7 +1198,7 @@ public final class QpackConnectionState {
          *                            common header limit; non-negative values are clamped to the common limit
          * @return decoded header lines in wire order
          */
-        public List<Header> decodeHeaderLines(BufferData buffer, long maxFieldSectionSize) {
+        List<Header> decodeHeaderLines(BufferData buffer, long maxFieldSectionSize) {
             return owner.beginFieldSection(this,
                                            Objects.requireNonNull(buffer, "buffer"),
                                            maxFieldSectionSize)
@@ -1226,10 +1215,10 @@ public final class QpackConnectionState {
          * @param readTimeoutActivation completion that activates the message read timeout
          * @return decoded header lines in wire order
          */
-        public List<Header> decodeHeaderLines(BufferData buffer,
-                                              long maxFieldSectionSize,
-                                              Duration readTimeout,
-                                              CompletableFuture<Void> readTimeoutActivation) {
+        List<Header> decodeHeaderLines(BufferData buffer,
+                                       long maxFieldSectionSize,
+                                       Duration readTimeout,
+                                       CompletableFuture<Void> readTimeoutActivation) {
             return owner.beginFieldSection(this,
                                            Objects.requireNonNull(buffer, "buffer"),
                                            maxFieldSectionSize)
@@ -1240,7 +1229,7 @@ public final class QpackConnectionState {
         /**
          * Mark peer field-section processing complete for this HTTP/3 stream.
          */
-        public void complete() {
+        void complete() {
             boolean cancel;
             owner.decoderLock.lock();
             try {
@@ -1265,7 +1254,7 @@ public final class QpackConnectionState {
         /**
          * Abandon peer field-section processing for this HTTP/3 stream.
          */
-        public void cancel() {
+        void cancel() {
             owner.cancelDecoderStream(this);
         }
 

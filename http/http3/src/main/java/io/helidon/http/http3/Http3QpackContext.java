@@ -28,7 +28,6 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.http3.qpack.QpackConnectionState;
 
 /**
  * Per-connection QPACK state shared between HTTP/3 request and response streams.
@@ -74,7 +73,7 @@ public final class Http3QpackContext {
      * @param maxHeadersSize hard local decoded-header limit
      * @return encoded field-section limit
      */
-    public static int encodedFieldSectionLimit(int maxHeadersSize) {
+    static int encodedFieldSectionLimit(int maxHeadersSize) {
         if (maxHeadersSize < 0) {
             throw new IllegalArgumentException("maxHeadersSize must not be negative: " + maxHeadersSize);
         }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,11 +32,11 @@ class QpackDynamicTableTest {
         assertThat(table.insert("second", "two"), is(1L));
         assertThat(table.insert("third", "three"), is(2L));
 
-        assertThat(table.get(0), equalTo(new HeaderField("first", "one")));
-        assertThat(table.get(1), equalTo(new HeaderField("second", "two")));
-        assertThat(table.get(2), equalTo(new HeaderField("third", "three")));
-        assertThat(table.relativeField(0), equalTo(new HeaderField("third", "three")));
-        assertThat(table.relativeField(2), equalTo(new HeaderField("first", "one")));
+        assertThat(table.get(0), equalTo(new QpackCodec.HeaderField("first", "one")));
+        assertThat(table.get(1), equalTo(new QpackCodec.HeaderField("second", "two")));
+        assertThat(table.get(2), equalTo(new QpackCodec.HeaderField("third", "three")));
+        assertThat(table.relativeField(0), equalTo(new QpackCodec.HeaderField("third", "three")));
+        assertThat(table.relativeField(2), equalTo(new QpackCodec.HeaderField("first", "one")));
         assertThat(table.findExact("second", "two", 2), is(1L));
         assertThat(table.findName("third", 2), is(2L));
     }
@@ -68,9 +68,9 @@ class QpackDynamicTableTest {
         assertThat(table.insert("c", "3"), is(2L));
 
         assertThrows(IllegalArgumentException.class, () -> table.get(0));
-        assertThat(table.get(1), equalTo(new HeaderField("b", "2")));
-        assertThat(table.get(2), equalTo(new HeaderField("c", "3")));
-        assertThat(table.relativeField(1), equalTo(new HeaderField("b", "2")));
+        assertThat(table.get(1), equalTo(new QpackCodec.HeaderField("b", "2")));
+        assertThat(table.get(2), equalTo(new QpackCodec.HeaderField("c", "3")));
+        assertThat(table.relativeField(1), equalTo(new QpackCodec.HeaderField("b", "2")));
     }
 
     @Test
@@ -85,8 +85,8 @@ class QpackDynamicTableTest {
 
         assertThrows(IllegalArgumentException.class, () -> table.get(0));
         assertThrows(IllegalArgumentException.class, () -> table.get(1));
-        assertThat(table.get(2), equalTo(new HeaderField("c", "3")));
-        assertThat(table.get(3), equalTo(new HeaderField("d", "4")));
+        assertThat(table.get(2), equalTo(new QpackCodec.HeaderField("c", "3")));
+        assertThat(table.get(3), equalTo(new QpackCodec.HeaderField("d", "4")));
         assertThat(table.findExact("a", "1", Long.MAX_VALUE), is(-1L));
         assertThat(table.findName("b", Long.MAX_VALUE), is(-1L));
         assertThat(table.findExact("c", "3", Long.MAX_VALUE), is(2L));
@@ -126,8 +126,8 @@ class QpackDynamicTableTest {
         assertThat(table.insert("c", "3", 0), is(-1L));
 
         assertThat(table.insertCount(), is(2L));
-        assertThat(table.get(0), equalTo(new HeaderField("a", "1")));
-        assertThat(table.get(1), equalTo(new HeaderField("b", "2")));
+        assertThat(table.get(0), equalTo(new QpackCodec.HeaderField("a", "1")));
+        assertThat(table.get(1), equalTo(new QpackCodec.HeaderField("b", "2")));
         assertThat(table.findExact("a", "1", Long.MAX_VALUE), is(0L));
         assertThat(table.findName("b", Long.MAX_VALUE), is(1L));
         assertThat(table.findExact("c", "3", Long.MAX_VALUE), is(-1L));
@@ -147,9 +147,9 @@ class QpackDynamicTableTest {
             int oldest = Math.max(0, i - 3);
             for (int absoluteIndex = oldest; absoluteIndex <= i; absoluteIndex++) {
                 assertThat(table.get(absoluteIndex),
-                           equalTo(new HeaderField("n", Integer.toString(absoluteIndex))));
+                           equalTo(new QpackCodec.HeaderField("n", Integer.toString(absoluteIndex))));
                 assertThat(table.relativeField(i - absoluteIndex),
-                           equalTo(new HeaderField("n", Integer.toString(absoluteIndex))));
+                           equalTo(new QpackCodec.HeaderField("n", Integer.toString(absoluteIndex))));
             }
             if (oldest > 0) {
                 assertThrows(IllegalArgumentException.class, () -> table.get(oldest - 1));

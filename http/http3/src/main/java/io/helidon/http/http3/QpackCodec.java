@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.http.http3.qpack;
+package io.helidon.http.http3;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.HuffmanCodec;
 import io.helidon.common.buffers.PrefixedIntegerCodec;
@@ -31,14 +29,11 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.http3.Http3ErrorCode;
-import io.helidon.http.http3.Http3ProtocolException;
 
 /**
  * Shared QPACK field-section encoding and decoding utilities.
  */
-@Api.Internal
-public final class QpackCodec {
+final class QpackCodec {
     private QpackCodec() {
     }
 
@@ -48,7 +43,7 @@ public final class QpackCodec {
      * @param headers headers to encode
      * @return encoded field section
      */
-    public static byte[] encodeHeaders(Iterable<Header> headers) {
+    static byte[] encodeHeaders(Iterable<Header> headers) {
         BufferData output = BufferData.growing(128);
         writeFieldSectionPrefix(output, 0, 0, 0);
         for (Header header : headers) {
@@ -65,28 +60,7 @@ public final class QpackCodec {
      * @param buffer encoded field section
      * @return decoded headers
      */
-    public static Headers decodeHeaders(ByteBuffer buffer) {
-        return decodeHeaders(BufferData.create(readRemaining(buffer)));
-    }
-
-    /**
-     * Decode a QPACK field section that does not use dynamic-table references.
-     *
-     * @param buffer encoded field section
-     * @param maxFieldSectionSize maximum decoded field section size in octets, or a negative value to disable the limit
-     * @return decoded headers
-     */
-    public static Headers decodeHeaders(ByteBuffer buffer, long maxFieldSectionSize) {
-        return decodeHeaders(BufferData.create(readRemaining(buffer)), maxFieldSectionSize);
-    }
-
-    /**
-     * Decode a QPACK field section that does not use dynamic-table references.
-     *
-     * @param buffer encoded field section
-     * @return decoded headers
-     */
-    public static Headers decodeHeaders(BufferData buffer) {
+    static Headers decodeHeaders(BufferData buffer) {
         return decodeHeaders(buffer, -1);
     }
 
@@ -97,7 +71,7 @@ public final class QpackCodec {
      * @param maxFieldSectionSize maximum decoded field section size in octets, or a negative value to disable the limit
      * @return decoded headers
      */
-    public static Headers decodeHeaders(BufferData buffer, long maxFieldSectionSize) {
+    static Headers decodeHeaders(BufferData buffer, long maxFieldSectionSize) {
         WritableHeaders<?> headers = WritableHeaders.create();
         decodeHeaderLines(buffer, maxFieldSectionSize).forEach(headers::add);
         return headers;
@@ -109,28 +83,7 @@ public final class QpackCodec {
      * @param buffer encoded field section
      * @return decoded header lines in wire order
      */
-    public static List<Header> decodeHeaderLines(ByteBuffer buffer) {
-        return decodeHeaderLines(BufferData.create(readRemaining(buffer)));
-    }
-
-    /**
-     * Decode a QPACK field section into ordered header lines that preserve the wire sequence.
-     *
-     * @param buffer encoded field section
-     * @param maxFieldSectionSize maximum decoded field section size in octets, or a negative value to disable the limit
-     * @return decoded header lines in wire order
-     */
-    public static List<Header> decodeHeaderLines(ByteBuffer buffer, long maxFieldSectionSize) {
-        return decodeHeaderLines(BufferData.create(readRemaining(buffer)), maxFieldSectionSize);
-    }
-
-    /**
-     * Decode a QPACK field section into ordered header lines that preserve the wire sequence.
-     *
-     * @param buffer encoded field section
-     * @return decoded header lines in wire order
-     */
-    public static List<Header> decodeHeaderLines(BufferData buffer) {
+    static List<Header> decodeHeaderLines(BufferData buffer) {
         return decodeHeaderLines(buffer, -1);
     }
 
@@ -141,7 +94,7 @@ public final class QpackCodec {
      * @param maxFieldSectionSize maximum decoded field section size in octets, or a negative value to disable the limit
      * @return decoded header lines in wire order
      */
-    public static List<Header> decodeHeaderLines(BufferData buffer, long maxFieldSectionSize) {
+    static List<Header> decodeHeaderLines(BufferData buffer, long maxFieldSectionSize) {
         FieldSectionPrefix prefix = readFieldSectionPrefix(buffer, 0, 0);
         if (prefix.requiredInsertCount() != 0 || prefix.base() != 0) {
             throw new IllegalArgumentException("Dynamic QPACK table references are not supported");
@@ -182,27 +135,7 @@ public final class QpackCodec {
             return new FieldSectionPrefix(0, 0);
         }
 
-        if (maxEntries == 0) {
-            throw new IllegalArgumentException("Dynamic QPACK table references are not supported");
-        }
-
-        long fullRange = 2 * maxEntries;
-        if (encodedRequiredInsertCount > fullRange) {
-            throw new IllegalArgumentException("Malformed QPACK required insert count");
-        }
-
-        long maxValue = insertCount + maxEntries;
-        long maxWrapped = (maxValue / fullRange) * fullRange;
-        long requiredInsertCount = maxWrapped + encodedRequiredInsertCount - 1;
-        if (requiredInsertCount > maxValue) {
-            if (requiredInsertCount <= fullRange) {
-                throw new IllegalArgumentException("Malformed QPACK required insert count");
-            }
-            requiredInsertCount -= fullRange;
-        }
-        if (requiredInsertCount == 0) {
-            throw new IllegalArgumentException("Malformed QPACK required insert count");
-        }
+        long requiredInsertCount = requiredInsertCount(insertCount, maxEntries, encodedRequiredInsertCount);
 
         if (signBit == 1 && requiredInsertCount <= deltaBase) {
             throw new IllegalArgumentException("QPACK field section Base must not be negative");
@@ -266,10 +199,6 @@ public final class QpackCodec {
         writeString(output, 7, 0, value);
     }
 
-    static String readString(BufferData buffer, int prefixBits) {
-        return readString(buffer, prefixBits, FieldSectionSizeTracker.UNBOUNDED);
-    }
-
     static String readString(BufferData buffer,
                              int prefixBits,
                              FieldSectionSizeTracker sizeTracker) {
@@ -311,10 +240,6 @@ public final class QpackCodec {
         return builder.toString();
     }
 
-    private static int huffmanDecodedCapacity(int encodedLength) {
-        return (int) Math.min(Integer.MAX_VALUE, (encodedLength * 8L + 4) / 5);
-    }
-
     static void writeString(BufferData output,
                             int prefixBits,
                             int leadingBits,
@@ -341,6 +266,39 @@ public final class QpackCodec {
                                      int leadingBits,
                                      long value) {
         PrefixedIntegerCodec.writeLong(output, value, leadingBits, prefixBits);
+    }
+
+    static FieldSectionSizeTracker fieldSectionSizeTracker(long maxFieldSectionSize) {
+        return maxFieldSectionSize < 0 ? FieldSectionSizeTracker.UNBOUNDED : new FieldSectionSizeTracker(maxFieldSectionSize);
+    }
+
+    private static long requiredInsertCount(long insertCount, long maxEntries, long encodedRequiredInsertCount) {
+        if (maxEntries == 0) {
+            throw new IllegalArgumentException("Dynamic QPACK table references are not supported");
+        }
+
+        long fullRange = 2 * maxEntries;
+        if (encodedRequiredInsertCount > fullRange) {
+            throw new IllegalArgumentException("Malformed QPACK required insert count");
+        }
+
+        long maxValue = insertCount + maxEntries;
+        long maxWrapped = (maxValue / fullRange) * fullRange;
+        long requiredInsertCount = maxWrapped + encodedRequiredInsertCount - 1;
+        if (requiredInsertCount > maxValue) {
+            if (requiredInsertCount <= fullRange) {
+                throw new IllegalArgumentException("Malformed QPACK required insert count");
+            }
+            requiredInsertCount -= fullRange;
+        }
+        if (requiredInsertCount == 0) {
+            throw new IllegalArgumentException("Malformed QPACK required insert count");
+        }
+        return requiredInsertCount;
+    }
+
+    private static int huffmanDecodedCapacity(int encodedLength) {
+        return (int) Math.min(Integer.MAX_VALUE, (encodedLength * 8L + 4) / 5);
     }
 
     private static Header indexedFieldLine(BufferData buffer,
@@ -379,16 +337,6 @@ public final class QpackCodec {
         String name = readString(buffer, 3, sizeTracker);
         String value = readString(buffer, 7, sizeTracker);
         return HeaderValues.create(HeaderNames.createFromLowercase(name), value);
-    }
-
-    private static byte[] readRemaining(ByteBuffer buffer) {
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
-        return bytes;
-    }
-
-    static FieldSectionSizeTracker fieldSectionSizeTracker(long maxFieldSectionSize) {
-        return maxFieldSectionSize < 0 ? FieldSectionSizeTracker.UNBOUNDED : new FieldSectionSizeTracker(maxFieldSectionSize);
     }
 
     record FieldSectionPrefix(long requiredInsertCount, long base) {
@@ -468,6 +416,22 @@ public final class QpackCodec {
             sizeTracker.consume(1);
             delegate.append(c);
             return this;
+        }
+    }
+
+    record HeaderField(String name, String value) {
+
+        HeaderField(String name) {
+            this(name, "");
+        }
+
+        String text() {
+            return value.isEmpty() ? name : name + ":" + value;
+        }
+
+        @Override
+        public String toString() {
+            return text();
         }
     }
 }
