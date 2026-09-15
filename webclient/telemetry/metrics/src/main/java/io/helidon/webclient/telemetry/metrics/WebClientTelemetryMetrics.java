@@ -49,13 +49,15 @@ public class WebClientTelemetryMetrics implements WebClientService {
 
     static final String REQUEST_DURATION = "http.client.request.duration";
 
-    static final String HTTP_REQUEST_METHOD = "http.client.request.method";
+    static final String HTTP_REQUEST_METHOD = "http.request.method";
     static final String SERVER_ADDRESS = "server.address";
     static final String SERVER_PORT = "server.port";
     static final String ERROR_TYPE = "error.type";
     static final String HTTP_RESPONSE_STATUS_CODE = "http.response.status.code";
     static final String URL_SCHEME = "url.scheme";
     static final String URL_TEMPLATE = "url.template";
+
+    private static final String OTHER_METHOD = "_OTHER";
 
     private final LazyValue<DoubleHistogram> outboundHttpRequestDuration;
 
@@ -116,8 +118,10 @@ public class WebClientTelemetryMetrics implements WebClientService {
             throw ex;
         } finally {
             long endTime = System.nanoTime();
+            String requestMethod = clientRequest.method().text();
+            String knownMethod = knownMethod(requestMethod);
             var attributes = Attributes.builder()
-                    .put(HTTP_REQUEST_METHOD, clientRequest.method().text())
+                    .put(HTTP_REQUEST_METHOD, knownMethod == null ? OTHER_METHOD : knownMethod)
                     .put(SERVER_ADDRESS, clientRequest.uri().host())
                     .put(SERVER_PORT, clientRequest.uri().port())
                     .put(ERROR_TYPE, errorType)
@@ -128,6 +132,13 @@ public class WebClientTelemetryMetrics implements WebClientService {
 
             outboundHttpRequestDuration.get().record(endTime - startTime, attributes);
         }
+    }
+
+    private static String knownMethod(String method) {
+        return switch (method) {
+        case "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "QUERY", "TRACE" -> method;
+        default -> null;
+        };
     }
 
     private static DoubleHistogram createHistogram() {

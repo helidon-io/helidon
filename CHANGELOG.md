@@ -33,6 +33,8 @@ A minimum of Java 27 is required to use Helidon 27.
 4. Helidon 27 contains multiple third party dependency upgrades. Some that might impact backwards compatibility:
    * OpenTelemetry 1.65.0
    * Micrometer 1.17.1
+5. HTTP method names and method selectors are now case-sensitive. Update ordinary built-in method names in configuration
+   and application code to their standard uppercase form, such as `GET` instead of `get`. See the
+   [27 upgrade guide](docs/guides/upgrade/27.md#http-method-case-sensitivity) for affected configuration areas.
 
 [27.0.0-M1]: https://github.com/oracle/helidon/compare/main...27.0.0-M1
-

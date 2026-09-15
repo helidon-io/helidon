@@ -159,7 +159,7 @@ public final class SecurityHandler implements Handler, ProtocolUpgradeHandler, R
      *   # these are used by {@link SecurityHttpFeature} when loaded from config, to register with {@link io.helidon.webserver.WebServer}
      *   #
      *   path = "/noRoles"
-     *   methods = ["get"]
+     *   methods = ["GET"]
      *
      *   #
      *   # these are used by this class

@@ -57,8 +57,7 @@ public final class OutboundTarget {
 
     /**
      * Configuration key for string array of HTTP methods. If not provided or empty, all methods are supported.
-     * The values must contain exact names of HTTP methods that should propagate, case insensitive (such as {@code GET},
-     * or {@code get} are both valid methods).
+     * The values must contain exact names of HTTP methods that should propagate.
      */
     public static final String CONFIG_METHODS = "methods";
 
@@ -202,7 +201,7 @@ public final class OutboundTarget {
     }
 
     boolean matchMethod(String method) {
-        return matchAllMethods || (method != null && methods.contains(method.toUpperCase()));
+        return matchAllMethods || (method != null && methods.contains(method));
     }
 
     private boolean match(String toMatch, boolean matchAll, Set<String> values, List<Pattern> patterns) {
@@ -373,15 +372,14 @@ public final class OutboundTarget {
         }
 
         /**
-         * Add supported method for this target. May be called more than once to add more methods.
-         * The method is tested as is ignoring case against the used method.
+         * Add an exactly matched supported method for this target. May be called more than once to add more methods.
          *
-         * @param method supported method (exact match ignoring case)
+         * @param method supported method
          * @return updated builder instance
          */
         @ConfiguredOption(key = "methods", kind = ConfiguredOption.Kind.LIST)
         public Builder addMethod(String method) {
-            this.methods.add(method.toUpperCase());
+            this.methods.add(Objects.requireNonNull(method));
             return this;
         }
 

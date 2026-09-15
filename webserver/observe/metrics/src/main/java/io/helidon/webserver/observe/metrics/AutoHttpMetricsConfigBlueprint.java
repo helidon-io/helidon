@@ -73,15 +73,15 @@ interface AutoHttpMetricsConfigBlueprint {
     List<String> optIn();
 
     /**
-     * HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard HTTP methods plus
-     * {@code LIST}; assigning this value fully replaces the set of method names.
+     * Exact, case-sensitive HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard
+     * HTTP methods; assigning this value fully replaces the set of method names.
      * <p>
-     * Default known HTTP methods: {@code CONNECT}, {@code DELETE}, {@code GET}, {@code HEAD}, {@code LIST},
-     * {@code OPTIONS}, {@code PATCH}, {@code POST}, {@code PUT}, {@code QUERY}, and {@code TRACE}. Unlisted methods are
+     * Default known HTTP methods: {@code CONNECT}, {@code DELETE}, {@code GET}, {@code HEAD}, {@code OPTIONS},
+     * {@code PATCH}, {@code POST}, {@code PUT}, {@code QUERY}, and {@code TRACE}. Unlisted methods are
      * reported as {@code _OTHER}, so configurations that add additional method names must also include default methods
      * they intend to retain.
      * <p>
-     * Method names are canonicalized using Helidon's HTTP method model.
+     * Method names are matched exactly.
      * See the <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/http/#http-request-method">
      * OpenTelemetry semantic convention for HTTP request methods</a>.
      *

@@ -31,7 +31,7 @@ import io.helidon.webserver.WebServer;
 @Prototype.CustomMethods(SecurityConfigSupport.PathConfigCustomMethods.class)
 interface PathsConfigBlueprint {
     /**
-     * HTTP methods to match when applying this configured path.
+     * Exact, case-sensitive HTTP methods to match when applying this configured path.
      *
      * @return list of methods to secure
      */

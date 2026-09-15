@@ -186,7 +186,8 @@ Annotations on endpoint methods:
   `io.helidon.http.Http.QUERY`) - definition of HTTP method this method will
   serve
 - [`io.helidon.http.Http.HttpMethod`][io-helidon-http-3] - for custom HTTP
-  method names (mutually exclusive with above)
+  method names (mutually exclusive with above); the name is case-sensitive and
+  is preserved exactly
 - [`io.helidon.http.Http.Produces`][io-helidon-http-4] - what media type this
   method produces (return entity content type), replacing the endpoint default;
   an empty array clears it
@@ -333,7 +334,8 @@ Annotations on endpoint methods:
   `io.helidon.http.Http.QUERY`) - definition of HTTP method this method will
   invoke
 - [`io.helidon.http.Http.HttpMethod`][io-helidon-http-3] - for custom HTTP
-  method names (mutually exclusive with above)
+  method names (mutually exclusive with above); the name is case-sensitive and
+  is preserved exactly
 - [`io.helidon.http.Http.Produces`][io-helidon-http-4] - what media type this
   method produces (content type of entity from the server), replacing the
   client type default; an empty array clears it

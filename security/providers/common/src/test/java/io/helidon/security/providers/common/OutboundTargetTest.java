@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.security.providers.common;
+
+import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -95,6 +97,26 @@ public class OutboundTargetTest {
         assertThat(instance.matches("iiop", "localhost", null, null), is(false));
         assertThat(instance.matches("http", "localhost", null, "GET"), is(false));
         assertThat(instance.matches("http", "192.168.1.14", null, null), is(false));
+    }
+
+    @Test
+    public void testConfiguredMethodUsesExactCase() {
+        OutboundTarget instance = OutboundTarget.create(Config.create(ConfigSources.create(Map.of(
+                "name", "test",
+                "methods.0", "get"))));
+
+        assertThat("Differently cased method", instance.matches(null, null, null, "GET"), is(false));
+        assertThat("Exact method", instance.matches(null, null, null, "get"), is(true));
+    }
+
+    @Test
+    public void testProgrammaticMethodUsesExactCase() {
+        OutboundTarget instance = OutboundTarget.builder("test")
+                .addMethod("get")
+                .build();
+
+        assertThat("Differently cased method", instance.matches(null, null, null, "GET"), is(false));
+        assertThat("Exact method", instance.matches(null, null, null, "get"), is(true));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,8 @@ class GetTest {
         router.route(Method.GET, "/string", Routes::string)
                 .route(Method.GET, "/bytes", Routes::bytes)
                 .route(Method.GET, "/stream", Routes::outputStream)
-                .route(Method.GET, "/headers", Routes::headers);
+                .route(Method.GET, "/headers", Routes::headers)
+                .route(Method.DELETE, "/delete", Routes::string);
     }
 
     @Test
@@ -148,6 +149,18 @@ class GetTest {
         assertThat("Should contain configured response header",
                    headers.firstValue(RESPONSE_HEADER_NAME.lowerCase()),
                    is(Optional.of(RESPONSE_HEADER_VALUE_STRING)));
+        assertThat(response.version(), is(HttpClient.Version.HTTP_2));
+    }
+
+    @Test
+    void testMethodRouteIsCaseSensitive() throws IOException, InterruptedException {
+        HttpResponse<String> response = client.send(HttpRequest.newBuilder()
+                                                            .timeout(Duration.ofSeconds(5))
+                                                            .uri(uri.resolve("/delete"))
+                                                            .method("delete", HttpRequest.BodyPublishers.noBody())
+                                                            .build(), HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(Status.NOT_FOUND_404.code()));
         assertThat(response.version(), is(HttpClient.Version.HTTP_2));
     }
 

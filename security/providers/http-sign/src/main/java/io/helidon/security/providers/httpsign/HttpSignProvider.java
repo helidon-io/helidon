@@ -217,7 +217,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     }
 
     private String headersForMethod(String method) {
-        return String.join(" ", inboundRequiredHeaders.headers(method.toLowerCase()));
+        return String.join(" ", inboundRequiredHeaders.headers(method));
     }
 
     private AuthenticationResponse signatureHeader(List<String> signatures,

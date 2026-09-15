@@ -67,12 +67,14 @@ security:
         authenticate: true
       paths:
         - path: "/service1/*"
-          methods: ["get"]
+          methods: ["GET"]
           roles-allowed: ["user"]
           # "authenticate: true" is implicit, as it is configured in defaults above
 ```
 1. Configuration of integration with web server
 <!--@mdc :: -->
+
+Configured security method names use exact, case-sensitive matching.
 
 Note: `defaults` section in configuration is related to paths on WebServer
 configured below in `paths` section, it will not apply to any other path on the

@@ -460,7 +460,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         } else {
             it.addContent("method(")
                     .addContent(HttpFields.ensureHttpMethodConstant(fieldHandler, method.httpMethod().name()))
-                    .addContentLine(").path(declarative__uri);");
+                    .addContentLine(").uri(declarative__uri);");
         }
 
         List<ClientParameter> headerParameters = annotatedParameters(clientParameters, HTTP_HEADER_PARAM_ANNOTATION);

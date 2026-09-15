@@ -42,6 +42,7 @@ import org.mockito.Mockito;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -146,6 +147,16 @@ class Http2HeadersTest {
 
         assertThat(http2Headers.method(), is(Method.GET));
         assertThat("Dynamic table should be empty", dynamicTable.currentTableSize(), is(0));
+    }
+
+    @Test
+    void testMethodCasePreserved() {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Method method = headers(literalWithIndexedName(2, "delete"), dynamicTable).method();
+
+        assertThat(method.text(), is("delete"));
+        assertThat(method, not(sameInstance(Method.DELETE)));
     }
 
     /*

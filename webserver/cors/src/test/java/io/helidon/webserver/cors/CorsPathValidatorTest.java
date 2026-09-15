@@ -221,6 +221,31 @@ public class CorsPathValidatorTest {
     }
 
     @Test
+    public void testConfiguredMethodUsesExactCase() {
+        CorsPathConfig config = CorsPathConfig.create(Config.create(ConfigSources.create(Map.of(
+                "path-pattern", "/greet",
+                "allow-methods.0", "get"))));
+
+        assertThat("Different-case method matching", flight(config, "GET").shouldContinue(), is(false));
+        assertThat("Exact method matching", flight(config, "get").shouldContinue(), is(true));
+    }
+
+    @Test
+    public void testProgrammaticMethodUsesExactCase() {
+        CorsPathConfig config = CorsPathConfig.builder()
+                .pathPattern("/greet")
+                .clearAllowOrigins()
+                .addAllowOrigin("http://example.com")
+                .clearAllowMethods()
+                .addAllowMethod("FOO")
+                .allowCredentials(true)
+                .build();
+
+        assertThat("Exact preflight method matching", preFlight(config, "FOO").shouldContinue(), is(true));
+        assertThat("Preflight method case mismatch", preFlight(config, "foo").shouldContinue(), is(false));
+    }
+
+    @Test
     public void testPreFlightCustomPattern() {
         CorsPathValidator validator = CorsPathValidator.create(CorsPathConfig.builder()
                                                                        .pathPattern("/greet")
@@ -567,6 +592,26 @@ public class CorsPathValidatorTest {
         assertThat(result.matched(), is(true));
         assertThat(result.shouldContinue(), is(true));
         assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is(origin)));
+    }
+
+    private static CorsPathValidator.Result preFlight(CorsPathConfig config, String method) {
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, "http://example.com");
+        requestHeaders.set(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, method);
+        var response = response(ServerResponseHeaders.create());
+        when(response.status(Mockito.any())).thenReturn(response);
+        return CorsPathValidator.create(config).preFlight(request("/greet", requestHeaders), response);
+    }
+
+    private static CorsPathValidator.Result flight(CorsPathConfig config, String method) {
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, "http://example.com");
+        var request = request("/greet", requestHeaders);
+        when(request.prologue())
+                .thenReturn(HttpPrologue.create("HTTP", "HTTP", "1.1", Method.create(method), "/greet", false));
+        var response = response(ServerResponseHeaders.create());
+        when(response.status(Mockito.any())).thenReturn(response);
+        return CorsPathValidator.create(config).flight(request, response);
     }
 
     private static ServerRequest request(String path, Headers headers) {

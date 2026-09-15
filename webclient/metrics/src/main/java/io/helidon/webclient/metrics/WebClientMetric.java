@@ -17,7 +17,6 @@ package io.helidon.webclient.metrics;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -139,7 +138,7 @@ abstract class WebClientMetric implements WebClientService {
     public static final class Builder implements io.helidon.common.Builder<Builder, WebClientMetric> {
 
         private final WebClientMetricType type;
-        private Set<String> methods = Collections.emptySet();
+        private Set<String> methods = Set.of();
         private String nameFormat;
         private String description;
         private boolean success = true;
@@ -151,18 +150,18 @@ abstract class WebClientMetric implements WebClientService {
         }
 
         /**
-         * Adds metric supported methods.
+         * Adds exact, case-sensitive HTTP methods supported by the metric.
          *
          * @param methods metric supported methods
          * @return updated builder instance
          */
         public Builder methods(String... methods) {
-            this.methods = Arrays.stream(methods).map(String::toUpperCase).collect(Collectors.toSet());
+            this.methods = Set.copyOf(Arrays.asList(methods));
             return this;
         }
 
         /**
-         * Adds metric supported methods.
+         * Adds exact, case-sensitive HTTP methods supported by the metric.
          *
          * @param methods metric supported methods
          * @return updated builder instance
@@ -170,21 +169,18 @@ abstract class WebClientMetric implements WebClientService {
         public Builder methods(Method... methods) {
             this.methods = Arrays.stream(methods)
                                  .map(Method::text)
-                                 .map(String::toUpperCase)
                                  .collect(Collectors.toSet());
             return this;
         }
 
         /**
-         * Adds metric supported methods.
+         * Adds exact, case-sensitive HTTP methods supported by the metric.
          *
          * @param methods metric supported methods
          * @return updated builder instance
          */
         public Builder methods(Collection<String> methods) {
-            this.methods = methods.stream()
-                                  .map(String::toUpperCase)
-                                  .collect(Collectors.toSet());
+            this.methods = Set.copyOf(methods);
             return this;
         }
 
@@ -246,6 +242,11 @@ abstract class WebClientMetric implements WebClientService {
          *     <th>key</th>
          *     <th>default</th>
          *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>methods</td>
+         *     <td>All methods</td>
+         *     <td>HTTP methods for which this metric is applied</td>
          * </tr>
          * <tr>
          *     <td>errors</td>

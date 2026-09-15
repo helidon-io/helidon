@@ -201,6 +201,12 @@ span for each HTTP request if your project includes the following dependency.
 </dependency>
 ```
 
+Automatic HTTP spans use exact, case-sensitive standard method names for the
+`http.request.method` attribute. For an unrecognized method, including a case
+variant such as `get`, Helidon records `_OTHER`, preserves the received token in
+`http.request.method_original`, and uses `HTTP` as the method portion of the
+span name as required by the OpenTelemetry semantic conventions.
+
 ### Enabling OpenTelemetry Metrics Semantics for HTTP Requests
 
 ```xml [pom.xml]
@@ -213,7 +219,7 @@ span for each HTTP request if your project includes the following dependency.
 
 Helidon limits the values recorded for the OpenTelemetry
 `http.request.method` attribute, mapping methods not in the configured known
-method list to `_OTHER`. See the [automatic HTTP metrics
+method list to `_OTHER`. The comparison is exact and case-sensitive. See the [automatic HTTP metrics
 configuration](../metrics/metrics.md#controlling-http-method-attribute-values)
 for the default method list and customization details.
 

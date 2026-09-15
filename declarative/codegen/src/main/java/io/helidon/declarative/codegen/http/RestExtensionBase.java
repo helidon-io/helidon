@@ -61,7 +61,6 @@ public abstract class RestExtensionBase {
      */
     protected HttpMethod httpMethodFromAnnotation(TypedElementInfo element, Annotation httpMethodAnnotation) {
         String method = httpMethodAnnotation.stringValue()
-                .map(String::toUpperCase)
                 .orElseThrow(() -> new CodegenException("Could not find @HttpMethod meta annotation for method "
                                                                 + element.elementName(),
                                                         element.originatingElementValue()));

@@ -32,7 +32,7 @@ Configuration of outbound target
 <td>
 <code>List&lt;<wbr>String&gt;</code>
 </td>
-<td>Add supported method for this target</td>
+<td>Add an exactly matched supported method for this target</td>
 </tr>
 <tr>
 <td>

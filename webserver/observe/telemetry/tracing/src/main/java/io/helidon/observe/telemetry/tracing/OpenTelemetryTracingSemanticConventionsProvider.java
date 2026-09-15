@@ -52,6 +52,7 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
     static class SemanticConventions implements TracingSemanticConventions {
 
         private static final String HTTP_REQUEST_METHOD = HttpAttributes.HTTP_REQUEST_METHOD.getKey();
+        private static final String HTTP_REQUEST_METHOD_ORIGINAL = HttpAttributes.HTTP_REQUEST_METHOD_ORIGINAL.getKey();
         private static final String URL_PATH = UrlAttributes.URL_PATH.getKey();
         private static final String URL_SCHEME = UrlAttributes.URL_SCHEME.getKey();
         private static final String ERROR_TYPE = ErrorAttributes.ERROR_TYPE.getKey();
@@ -63,12 +64,15 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
         private static final String USER_AGENT_ORIGINAL = UserAgentAttributes.USER_AGENT_ORIGINAL.getKey();
 
         private static final String HELIDON_SOCKET = "helidon.socket";
+        private static final String OTHER_METHOD = "_OTHER";
+        private static final String UNKNOWN_METHOD_SPAN_NAME = "HTTP";
 
         private final String socketName;
         private final RoutingRequest request;
         private final RoutingResponse response;
 
         private String methodText;
+        private String originalMethodText;
 
         SemanticConventions(SpanTracingConfig spanTracingConfig,
                             String socketName,
@@ -81,7 +85,14 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
 
         @Override
         public String spanName() {
-            methodText = request.prologue().method().text();
+            String requestMethodText = request.prologue().method().text();
+            methodText = knownMethod(requestMethodText);
+            if (methodText == null) {
+                methodText = OTHER_METHOD;
+                originalMethodText = requestMethodText;
+                return UNKNOWN_METHOD_SPAN_NAME;
+            }
+            originalMethodText = null;
             return methodText;
         }
 
@@ -93,7 +104,11 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
                     .tag(HTTP_REQUEST_METHOD, methodText)
                     .tag(URL_PATH, uriInfo.path().path())
                     .tag(URL_SCHEME, uriInfo.scheme())
-                    .tag(SERVER_PORT, Integer.toString(request.localPeer().port()))
+                    .tag(SERVER_PORT, Integer.toString(request.localPeer().port()));
+            if (originalMethodText != null) {
+                spanBuilder.tag(HTTP_REQUEST_METHOD_ORIGINAL, originalMethodText);
+            }
+            spanBuilder
                     .update(b -> {
                         if (!request.query().isEmpty()) {
                             b.tag(URL_QUERY, request.query().value());
@@ -117,6 +132,13 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
         public void beforeEnd(Span span, Exception e) {
             commonBeforeEnd(span);
             span.tag(ERROR_TYPE, e.getClass().getName());
+        }
+
+        private static String knownMethod(String method) {
+            return switch (method) {
+            case "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "QUERY", "TRACE" -> method;
+            default -> null;
+            };
         }
 
         private void commonBeforeEnd(Span span) {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2016, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ current:
       # if method is not defined, then this is the default config
       # MUST be present and signed
       - always: [ "date" ]
-      - method: "get"
+      - method: "GET"
         # MUST be present and signed
         always: [ "date", "(request-target)", "host" ]
         # MUST be signed IF present
@@ -109,7 +109,7 @@ old:
       # if method is not defined, then this is the default config
       # MUST be present and signed
       - always: [ "date" ]
-      - method: "get"
+      - method: "GET"
         # MUST be present and signed
         always: [ "date", "(request-target)", "host" ]
         # MUST be signed IF present

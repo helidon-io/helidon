@@ -41,6 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 class OpenTelemetryTracingSemanticConventionsProviderTest {
@@ -56,13 +57,36 @@ class OpenTelemetryTracingSemanticConventionsProviderTest {
         conventions.beforeStart(spanBuilder);
 
         assertThat("Span tags", spanBuilder.tags(), allOf(
+                hasEntry("http.request.method", "GET"),
                 hasEntry("server.address", "helidon.example"),
                 hasEntry("server.port", "8080"),
+                not(hasKey("http.request.method_original")),
                 not(hasKey("net.host.name")),
                 not(hasKey("net.host.port"))));
     }
 
+    @Test
+    void unknownMethodUsesOtherAndPreservesOriginal() {
+        for (String method : new String[] {"get", "GeT", "CUSTOM"}) {
+            var request = request(Method.create(method));
+            TracingSemanticConventions conventions = new OpenTelemetryTracingSemanticConventionsProvider()
+                    .create(SpanTracingConfig.ENABLED, "", request, null);
+            var spanBuilder = new RecordingSpanBuilder();
+
+            assertThat(method + " span name", conventions.spanName(), is("HTTP"));
+            conventions.beforeStart(spanBuilder);
+
+            assertThat(method + " span tags", spanBuilder.tags(), allOf(
+                    hasEntry("http.request.method", "_OTHER"),
+                    hasEntry("http.request.method_original", method)));
+        }
+    }
+
     private static RoutingRequest request() {
+        return request(Method.GET);
+    }
+
+    private static RoutingRequest request(Method requestMethod) {
         var uriInfo = UriInfo.builder()
                 .scheme("http")
                 .host("helidon.example")
@@ -70,7 +94,7 @@ class OpenTelemetryTracingSemanticConventionsProviderTest {
                 .path("/greet")
                 .query(UriQuery.empty())
                 .build();
-        var prologue = HttpPrologue.create("HTTP/1.1", "HTTP", "1.1", Method.GET, "/greet", false);
+        var prologue = HttpPrologue.create("HTTP/1.1", "HTTP", "1.1", requestMethod, "/greet", false);
         var peerInfo = peerInfo();
         var headers = ServerRequestHeaders.create();
 

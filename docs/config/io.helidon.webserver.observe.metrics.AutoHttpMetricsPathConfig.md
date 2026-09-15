@@ -37,7 +37,7 @@ Settings for path-based automatic metrics configuration
 </td>
 <td>
 </td>
-<td>HTTP methods for which this path config applies; default is to match all HTTP methods</td>
+<td>Exact, case-sensitive HTTP methods for which this path config applies; default is to match all HTTP methods</td>
 </tr>
 <tr>
 <td>

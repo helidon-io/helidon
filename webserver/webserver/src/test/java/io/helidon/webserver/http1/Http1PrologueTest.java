@@ -31,6 +31,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -46,6 +48,16 @@ class Http1PrologueTest {
         assertThat(prologue.uriPath().path(), is("/"));
         assertThat(prologue.protocol(), is("HTTP"));
         assertThat(prologue.protocolVersion(), is("1.1"));
+    }
+
+    @Test
+    void testMethodCasePreserved() {
+        DataReader reader = DataReader.create(() -> "delete / HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+
+        Method method = new Http1Prologue(reader, 100, false).readPrologue().method();
+
+        assertThat(method.text(), is("delete"));
+        assertThat(method, not(sameInstance(Method.DELETE)));
     }
 
     @Test

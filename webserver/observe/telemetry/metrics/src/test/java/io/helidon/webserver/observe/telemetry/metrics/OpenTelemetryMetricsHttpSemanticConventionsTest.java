@@ -95,7 +95,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     @Test
-    void knownExtensionHttpMethodUsesMethodMetricAttribute() throws Exception {
+    void extensionHttpMethodUsesOtherMetricAttributeByDefault() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
@@ -103,7 +103,19 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
                 .filter(mock(FilterChain.class), request(Method.create("LIST")), response(whenSent));
         whenSent.get().run();
 
-        assertThat(methodAttribute(recordedAttributes.get()), is("LIST"));
+        assertThat(methodAttribute(recordedAttributes.get()), is("_OTHER"));
+    }
+
+    @Test
+    void standardMethodCaseVariantUsesOtherMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set)
+                .filter(mock(FilterChain.class), request(Method.create("get")), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(methodAttribute(recordedAttributes.get()), is("_OTHER"));
     }
 
     @Test
@@ -133,7 +145,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     @Test
     void knownMethodsConfigFullyOverridesDefaults() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
-        Filter filter = filter(recordedAttributes::set, List.of("list"));
+        Filter filter = filter(recordedAttributes::set, List.of("LIST"));
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
         filter.filter(mock(FilterChain.class), request(Method.GET), response(whenSent));
@@ -144,6 +156,23 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         filter.filter(mock(FilterChain.class), request(Method.create("LIST")), response(whenSent));
         whenSent.get().run();
         assertThat(methodAttribute(recordedAttributes.get()), is("LIST"));
+    }
+
+    @Test
+    void knownMethodsUseExactMatching() throws Exception {
+        var autoConfig = AutoHttpMetricsConfig.create(Config.just("known-methods: [get]", MediaTypes.APPLICATION_YAML));
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+        Filter filter = filter(recordedAttributes::set, autoConfig);
+
+        filter.filter(mock(FilterChain.class), request(Method.create("get")), response(whenSent));
+        whenSent.get().run();
+        assertThat(methodAttribute(recordedAttributes.get()), is("get"));
+
+        whenSent.set(null);
+        filter.filter(mock(FilterChain.class), request(Method.GET), response(whenSent));
+        whenSent.get().run();
+        assertThat(methodAttribute(recordedAttributes.get()), is("_OTHER"));
     }
 
     @Test

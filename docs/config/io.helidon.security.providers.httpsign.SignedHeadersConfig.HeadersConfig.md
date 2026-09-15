@@ -41,7 +41,7 @@ Configuration of headers to be signed
 <td>
 <code>String</code>
 </td>
-<td>HTTP method this header configuration is bound to. If not present, it is considered default header configuration</td>
+<td>Exact HTTP method this header configuration is bound to. If not present, it is considered default header configuration</td>
 </tr>
 </tbody>
 </table>

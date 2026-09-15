@@ -303,7 +303,7 @@ server:
         # protected paths on the web server
         paths: # <1>
           - path: "/greet"
-            methods: ["get"]
+            methods: ["GET"]
             authenticate: true
 security:
   providers:
@@ -545,7 +545,7 @@ security:
     # protected paths on the web server
     paths:
       - path: "/greet"
-        methods: ["get"]
+        methods: ["GET"]
         authenticate: true
 ```
 1. Replace this field by your Keycloak client ID.
@@ -630,7 +630,7 @@ web-server:
     # protected paths on the web server
     paths:
       - path: "/greet"
-        methods: ["get"]
+        methods: ["GET"]
         roles-allowed: "admin"
         authenticate: true
 ```

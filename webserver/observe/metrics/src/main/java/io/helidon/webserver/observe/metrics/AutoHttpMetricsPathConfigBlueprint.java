@@ -57,7 +57,7 @@ interface AutoHttpMetricsPathConfigBlueprint {
     String path();
 
     /**
-     * HTTP methods for which this path config applies; default is to match all HTTP methods.
+     * Exact, case-sensitive HTTP methods for which this path config applies; default is to match all HTTP methods.
      *
      * @return HTTP methods
      */

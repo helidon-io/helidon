@@ -19,14 +19,13 @@ package io.helidon.http;
 import java.util.Collection;
 import java.util.Objects;
 
-import io.helidon.common.buffers.Ascii;
+import io.helidon.common.Api;
 
 /**
  * HTTP request methods.
  * <p>
- * Although the constants are instances of this class, they can be compared using instance equality, as the only
- * way to obtain an instance is through method {@link #create(String)}, which ensures the same instance is returned for
- * known methods.
+ * Although the constants are instances of this class, they can be compared using instance equality, as the factory
+ * methods ensure the same instance is returned for exact standard method names.
  * <p>
  * Methods that are not known (e.g. there is no constant for them) must be compared using {@link #equals(Object)} as usual.
  * <p>
@@ -176,6 +175,7 @@ public final class Method {
      * In case the method name is recognized as one of the {@link Method standard HTTP methods},
      * the respective enumeration
      * value is returned.
+     * HTTP method names are case-sensitive, so the provided name is not normalized.
      *
      * @param name the method name. Must not be {@code null} or empty and must be a legal HTTP method name string.
      * @return HTTP request method instance representing an HTTP method with the provided name.
@@ -186,15 +186,31 @@ public final class Method {
             return GET;
         }
 
-        String methodName = Ascii.toUpperCase(name);
-
-        Method method = MethodHelper.byName(methodName);
+        Method method = MethodHelper.byName(name);
         if (method == null) {
             // validate that it only contains characters allowed by a method
-            HttpToken.validate(methodName);
-            return new Method(methodName, false);
+            HttpToken.validate(name);
+            return new Method(name, false);
         }
         return method;
+    }
+
+    /**
+     * Create an HTTP request method from the exact provided name.
+     * <p>
+     * This method is retained for compatibility with Helidon 4. In Helidon 27, {@link #create(String)} also preserves
+     * the exact method name.
+     *
+     * @param name method name, must not be {@code null} or empty and must be a legal HTTP method token
+     * @return HTTP request method with the exact provided name
+     * @throws NullPointerException if the name is {@code null}
+     * @throws IllegalArgumentException if the name is empty or illegal
+     * @deprecated use {@link #create(String)}, which is case-sensitive
+     */
+    @Api.Internal
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    public static Method createCaseSensitive(String name) {
+        return create(name);
     }
 
     /**

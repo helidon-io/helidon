@@ -95,7 +95,9 @@ interface CorsPathConfigBlueprint {
     Set<String> allowHeaders();
 
     /**
-     * Set of allowed methods, defaults to all.
+     * Set of allowed case-sensitive HTTP method names, defaults to all.
+     * <p>
+     * Configured names must match the exact case of both preflight and actual request methods.
      *
      * @return allowed methods
      */

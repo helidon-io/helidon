@@ -97,7 +97,7 @@ Configuration of CORS for a specific path
 <td>
 <code>*</code>
 </td>
-<td>Set of allowed methods, defaults to all</td>
+<td>Set of allowed case-sensitive HTTP method names, defaults to all</td>
 </tr>
 <tr>
 <td>

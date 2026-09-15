@@ -24,6 +24,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -117,6 +118,15 @@ abstract class RoutingTestBase {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("header_based_TEXT"));
+    }
+
+    @Test
+    void testMethodRouteIsCaseSensitive() {
+        try (Http1ClientResponse response = client.method(Method.create("delete"))
+                .path("/delete")
+                .request()) {
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
     }
 
     @ParameterizedTest

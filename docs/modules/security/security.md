@@ -72,7 +72,7 @@ Security direct usage:
 ```java
 SecurityContext context = security.contextBuilder(UUID.randomUUID().toString()) // <1>
         .env(SecurityEnvironment.builder()
-                     .method("get")
+                     .method("GET")
                      .path("/test")
                      .transport("http")
                      .header("Authorization", "Bearer abcdefgh")

@@ -136,7 +136,7 @@ public interface PathTracingConfig {
         }
 
         /**
-         * HTTP methods to restrict registration of this configuration on web server.
+         * Exact, case-sensitive HTTP methods to restrict registration of this configuration on web server.
          *
          * @param methods list of methods to use, empty means all methods
          * @return updated builder instance
@@ -148,7 +148,7 @@ public interface PathTracingConfig {
         }
 
         /**
-         * Add a new HTTP method to restrict this configuration for.
+         * Add a new exact, case-sensitive HTTP method to restrict this configuration for.
          *
          * @param method method to add to the list of supported methods
          * @return updated builder instance

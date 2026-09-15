@@ -10,4 +10,4 @@ security:
       authenticate: true
     paths:
       - path: "/hello"
-        methods: ["get"]
+        methods: ["GET"]

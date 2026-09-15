@@ -104,6 +104,61 @@ class CurrentHttpSignProviderBuilderTest extends CurrentHttpSignProviderTest {
     }
 
     @Test
+    void testChallengeAndValidationUseExactMethodHeaders() {
+        SignedHeadersConfig requiredHeaders = SignedHeadersConfig.builder()
+                .defaultConfig(SignedHeadersConfig.HeadersConfig.create(List.of("date")))
+                .config("GET", SignedHeadersConfig.HeadersConfig.create(List.of("x-required")))
+                .build();
+        HttpSignProvider provider = HttpSignProvider.builder()
+                .addAcceptHeader(HttpSignHeader.AUTHORIZATION)
+                .optional(false)
+                .inboundRequiredHeaders(requiredHeaders)
+                .addInbound(hmacInbound())
+                .build();
+
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("Authorization", List.of("Basic credentials"));
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.env()).thenReturn(SecurityEnvironment.builder(inboundTime())
+                                      .method("GET")
+                                      .path("/my/resource")
+                                      .headers(headers)
+                                      .build());
+
+        AuthenticationResponse challenge = provider.authenticate(request);
+
+        assertThat(challenge.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(challenge.responseHeaders().get("WWW-Authenticate").getFirst(),
+                   containsString("headers=\"x-required\""));
+
+        headers.clear();
+        headers.put("x-required", List.of("value"));
+        SecurityEnvironment signingEnv = SecurityEnvironment.builder(inboundTime())
+                .method("GET")
+                .path("/my/resource")
+                .headers(headers)
+                .build();
+        String signatureHeader = signatureHeader(signingEnv,
+                                                 OutboundTargetDefinition.builder("myServiceKeyId")
+                                                         .hmacSecret("MyPasswordForHmac")
+                                                         .signedHeaders(requiredHeaders)
+                                                         .build(),
+                                                 false);
+        headers.put("Authorization", List.of("Signature " + signatureHeader));
+        when(request.env()).thenReturn(SecurityEnvironment.builder(inboundTime())
+                                      .method("GET")
+                                      .path("/my/resource")
+                                      .headers(headers)
+                                      .build());
+
+        AuthenticationResponse authentication = provider.authenticate(request);
+
+        assertThat(authentication.description().orElse("Unknown problem"),
+                   authentication.status(),
+                   is(SecurityResponse.SecurityStatus.SUCCESS));
+    }
+
+    @Test
     void testDefaultInboundRequiredHeadersAcceptGetHeadDeleteAndFallbackMethods() {
         for (String method : List.of("GET", "HEAD", "DELETE", "PATCH")) {
             Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -409,7 +464,7 @@ class CurrentHttpSignProviderBuilderTest extends CurrentHttpSignProviderTest {
         return SignedHeadersConfig.builder()
                 .defaultConfig(SignedHeadersConfig.HeadersConfig
                                        .create(List.of("date")))
-                .config("get",
+                .config("GET",
                         SignedHeadersConfig.HeadersConfig
                                 .create(List.of("date",
                                                                  requestTarget,

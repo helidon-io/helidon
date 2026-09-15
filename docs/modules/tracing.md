@@ -383,6 +383,7 @@ tracing:
     - path: "/health"
       enabled: false
     - path: "/greet"
+      methods: ["GET"]
       components:
         web-server:
           spans:
@@ -390,6 +391,8 @@ tracing:
             new-name: "read"
             enabled: false
 ```
+
+Configured method names are matched exactly.
 
 #### Renaming top level span using request properties
 

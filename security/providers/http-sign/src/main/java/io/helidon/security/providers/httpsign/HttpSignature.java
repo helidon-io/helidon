@@ -36,6 +36,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -493,7 +494,7 @@ class HttpSignature {
                     target = query.isEmpty() ? path : path + "?" + query;
                 }
                 linesToSign.add(header
-                                        + ": " + method.toLowerCase()
+                                        + ": " + method.toLowerCase(Locale.ROOT)
                                         + " " + target);
             } else {
                 List<String> headerValues = requestHeaders.get(header);

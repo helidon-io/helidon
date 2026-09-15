@@ -490,6 +490,9 @@ client:
 8. TLS configuration
 <!--@mdc :: -->
 
+Configured WebClient metric method names use exact, case-sensitive matching.
+For example, `get` matches only a request method whose text is `get`, not `GET`.
+
 ## Examples
 
 ### WebClient with Proxy
@@ -901,6 +904,12 @@ client:
 ```
 
 The `metrics` and `tracing` subsections have no explicit settings.
+
+Telemetry method classification is exact and case-sensitive. Recognized
+standard methods use their exact names. Other methods, including case variants
+such as `get`, use `_OTHER` for the method attribute. Tracing also records the
+received method in `http.request.method_original` and uses `HTTP` as the method
+portion of the span name.
 
 Alternatively, trigger webclient telemetry collection by modifying your client
 code to add one or more webclient telemetry services to the webclient builder.

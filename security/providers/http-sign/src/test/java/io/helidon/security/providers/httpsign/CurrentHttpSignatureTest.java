@@ -216,6 +216,23 @@ class CurrentHttpSignatureTest {
     }
 
     @Test
+    void testRequestTargetLowercasesMethod() {
+        HttpSignature signature = new HttpSignature("myServiceKeyId",
+                                                    "hmac-sha256",
+                                                    List.of("(request-target)"),
+                                                    false);
+
+        for (String method : List.of("GET", "get", "GeT")) {
+            SecurityEnvironment env = SecurityEnvironment.builder()
+                    .method(method)
+                    .path("/my/resource")
+                    .build();
+
+            assertThat(method, signature.getSignedString(null, env), is("(request-target): get /my/resource"));
+        }
+    }
+
+    @Test
     void testOutboundSigningUsesRequestedEmptyQuery() {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         headers.put("DATE", List.of("Thu, 08 Jun 2014 18:32:30 GMT"));

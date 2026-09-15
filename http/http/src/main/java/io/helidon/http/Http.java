@@ -65,7 +65,8 @@ public final class Http {
     }
 
     /**
-     * HTTP Method. Can be used as a meta annotation.
+     * HTTP method. Can be used as a meta annotation.
+     * The method value is case-sensitive and is preserved exactly.
      */
     @Retention(RetentionPolicy.CLASS)
     @Documented
@@ -73,7 +74,7 @@ public final class Http {
     @Service.EntryPoint
     public @interface HttpMethod {
         /**
-         * Text of the HTTP method.
+         * Exact text of the HTTP method, such as {@code GET}.
          *
          * @return method
          */

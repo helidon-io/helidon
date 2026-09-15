@@ -180,6 +180,9 @@ cors:
       "allow-methods": ["GET", "HEAD", "OPTIONS", "POST"]
 ```
 
+Configured method names must match the exact case of both preflight and actual
+request methods because HTTP method names are case-sensitive.
+
 ### Formats
 
 CORS configuration is done through [`CorsFeature`][corsfeature], a `WebServer`

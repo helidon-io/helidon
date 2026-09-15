@@ -74,7 +74,7 @@ Automatic metrics collection settings
 </td>
 <td>
 </td>
-<td>HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard HTTP methods plus <code>LIST</code>; assigning this value fully replaces the set of method names</td>
+<td>Exact, case-sensitive HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard HTTP methods; assigning this value fully replaces the set of method names</td>
 </tr>
 </tbody>
 </table>

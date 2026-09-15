@@ -784,6 +784,7 @@ Helidon decides whether to measure incoming requests as follows:
   entries in order. A given request matches an entry if its path matches the
   path pattern and its HTTP method is in the `methods` list. If there is no
   `methods` list for an entry, all HTTP methods match the entry.
+- Method names configured in path entries are matched exactly.
 - If a request matches an entry, the entry’s `enabled` setting determines if the
   request should be measured.
 - If a request matches multiple entries, the first match wins.
@@ -800,11 +801,11 @@ for the `http.request.method` attribute. This setting does not control which
 requests Helidon measures; use the `methods` setting in a `paths` entry for that
 purpose.
 
-By default, Helidon records `CONNECT`, `DELETE`, `GET`, `HEAD`, `LIST`,
-`OPTIONS`, `PATCH`, `POST`, `PUT`, `QUERY`, and `TRACE` as their canonical
-method names. Helidon records any other method as `_OTHER`. Method names in the
-configuration are canonicalized using Helidon's HTTP method model; for example,
-`propfind` becomes `PROPFIND`.
+By default, Helidon records `CONNECT`, `DELETE`, `GET`, `HEAD`, `OPTIONS`,
+`PATCH`, `POST`, `PUT`, `QUERY`, and `TRACE` using those exact method names.
+Helidon records any other method, including case variants, as `_OTHER`. Method
+names in the configuration and incoming requests must match exactly, and the
+configured case is preserved in the recorded attribute.
 
 Assigning `known-methods` replaces the entire default list. Include every
 default method you want to retain.
@@ -822,7 +823,7 @@ server:
 ```
 
 With this configuration, Helidon records the four listed methods using their
-canonical names and records every other HTTP method, including default methods
+configured names and records every other HTTP method, including default methods
 omitted from the list, as `_OTHER`.
 
 > [!NOTE]

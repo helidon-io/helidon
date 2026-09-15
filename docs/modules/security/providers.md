@@ -353,6 +353,8 @@ security:
           password: "${CLEAR=changeit}"
 ```
 
+Outbound target HTTP method names are exact, case-sensitive selectors.
+
 ### Example
 
 See the [example][example-2] on GitHub.
@@ -480,6 +482,9 @@ purposes.
 
 Support for HTTP Signatures.
 
+Method names in `sign-headers` entries and outbound targets are exact,
+case-sensitive selectors.
+
 ### Maven Coordinates
 
 ```xml [pom.xml]
@@ -563,8 +568,16 @@ The `(request-target)` field uses the lower-case HTTP method followed by a
 space, the request path, and the raw query string from the security environment,
 when present. Query parameter order and encoding are significant.
 
+The provider implements
+[draft-cavage-http-signatures-03](https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-03#section-2.3),
+which requires that lowercase representation. Consequently,
+`(request-target)` does not bind the original method case: methods such as
+`GET`, `get`, and `GeT` produce the same signed method text. Do not rely on this
+legacy signed component when a trust boundary must distinguish method case.
+
 Use `sign-headers` to require additional signed fields such as `digest`,
-`content-length`, or `content-type` for selected methods.
+`content-length`, or `content-type` for selected methods. Each entry uses its
+configured method as an exact, case-sensitive selector.
 
 If a request carries the signature in the `Authorization` header, that header
 value cannot be combined with any other authorization scheme. Use the standalone

@@ -17,7 +17,9 @@
 package io.helidon.webclient.telemetry;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,16 +50,23 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleHistogram;
 import io.opentelemetry.api.metrics.DoubleHistogramBuilder;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.MeterProvider;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
@@ -96,10 +105,13 @@ class WebClientTelemetryProviderTest {
                     .create(METRICS_CONFIG, "telemetry", manager.registry());
             verifyNoMoreInteractions(openTelemetry);
 
-            service.handle(WebClientTelemetryProviderTest::response, request("http://localhost/metrics"));
+            service.handle(WebClientTelemetryProviderTest::response,
+                           request("http://localhost/metrics", Method.create("get")));
 
+            ArgumentCaptor<Attributes> attributes = ArgumentCaptor.forClass(Attributes.class);
             verify(meterProvider).get(OTEL_SERVICE);
-            verify(histogram).record(anyDouble(), any());
+            verify(histogram).record(anyDouble(), attributes.capture());
+            assertThat(attributes.getValue().get(AttributeKey.stringKey("http.request.method")), is("_OTHER"));
         } finally {
             manager.shutdown();
         }
@@ -123,6 +135,26 @@ class WebClientTelemetryProviderTest {
 
         assertThat(resolved.get(), is(true));
         assertThat(tracer.spanNames(), contains("GET"));
+        assertThat(tracer.spanTags().getFirst(), allOf(
+                hasEntry("http.request.method", "GET"),
+                not(hasKey("http.request.method_original"))));
+    }
+
+    @Test
+    void tracingClassifiesUnknownMethodAndPreservesOriginal() {
+        RecordingTracer tracer = new RecordingTracer();
+        ServiceRegistry serviceRegistry = mock(ServiceRegistry.class);
+        when(serviceRegistry.supply(Tracer.class)).thenReturn(() -> tracer);
+        WebClientService service = new WebClientTelemetryProvider()
+                .create(TRACING_CONFIG, "telemetry", serviceRegistry);
+
+        service.handle(WebClientTelemetryProviderTest::response,
+                       request("http://localhost/unknown", Method.create("get")));
+
+        assertThat(tracer.spanNames(), contains("HTTP"));
+        assertThat(tracer.spanTags().getFirst(), allOf(
+                hasEntry("http.request.method", "_OTHER"),
+                hasEntry("http.request.method_original", "get")));
     }
 
     @Test
@@ -162,7 +194,11 @@ class WebClientTelemetryProviderTest {
     }
 
     private static WebClientServiceRequest request(String uri) {
-        return new TestRequest(uri);
+        return request(uri, Method.GET);
+    }
+
+    private static WebClientServiceRequest request(String uri, Method method) {
+        return new TestRequest(uri, method);
     }
 
     private static WebClientServiceResponse response(WebClientServiceRequest request) {
@@ -181,14 +217,16 @@ class WebClientTelemetryProviderTest {
 
     private static final class TestRequest implements WebClientServiceRequest {
         private final ClientUri uri;
+        private final Method method;
         private final ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
         private final Context context = Context.create();
         private final CompletableFuture<WebClientServiceRequest> whenSent = CompletableFuture.completedFuture(this);
         private final CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         private String requestId = "test-request";
 
-        private TestRequest(String uri) {
+        private TestRequest(String uri, Method method) {
             this.uri = ClientUri.create(URI.create(uri));
+            this.method = method;
         }
 
         @Override
@@ -198,7 +236,7 @@ class WebClientTelemetryProviderTest {
 
         @Override
         public Method method() {
-            return Method.GET;
+            return method;
         }
 
         @Override
@@ -245,6 +283,7 @@ class WebClientTelemetryProviderTest {
     private static final class RecordingTracer implements Tracer {
         private final Tracer delegate = Tracer.noOp();
         private final List<String> spanNames = new ArrayList<>();
+        private final List<Map<String, Object>> spanTags = new ArrayList<>();
 
         @Override
         public boolean enabled() {
@@ -254,7 +293,9 @@ class WebClientTelemetryProviderTest {
         @Override
         public Span.Builder<?> spanBuilder(String name) {
             spanNames.add(name);
-            return delegate.spanBuilder(name);
+            Map<String, Object> tags = new LinkedHashMap<>();
+            spanTags.add(tags);
+            return new RecordingSpanBuilder(delegate.spanBuilder(name), tags);
         }
 
         @Override
@@ -276,6 +317,65 @@ class WebClientTelemetryProviderTest {
 
         private List<String> spanNames() {
             return List.copyOf(spanNames);
+        }
+
+        private List<Map<String, Object>> spanTags() {
+            return spanTags.stream()
+                    .map(Map::copyOf)
+                    .toList();
+        }
+    }
+
+    private static final class RecordingSpanBuilder implements Span.Builder<RecordingSpanBuilder> {
+        private final Span.Builder<?> delegate;
+        private final Map<String, Object> tags;
+
+        private RecordingSpanBuilder(Span.Builder<?> delegate, Map<String, Object> tags) {
+            this.delegate = delegate;
+            this.tags = tags;
+        }
+
+        @Override
+        public RecordingSpanBuilder parent(SpanContext spanContext) {
+            delegate.parent(spanContext);
+            return this;
+        }
+
+        @Override
+        public RecordingSpanBuilder kind(Span.Kind kind) {
+            delegate.kind(kind);
+            return this;
+        }
+
+        @Override
+        public RecordingSpanBuilder tag(String key, String value) {
+            delegate.tag(key, value);
+            tags.put(key, value);
+            return this;
+        }
+
+        @Override
+        public RecordingSpanBuilder tag(String key, Boolean value) {
+            delegate.tag(key, value);
+            tags.put(key, value);
+            return this;
+        }
+
+        @Override
+        public RecordingSpanBuilder tag(String key, Number value) {
+            delegate.tag(key, value);
+            tags.put(key, value);
+            return this;
+        }
+
+        @Override
+        public Span start(Instant instant) {
+            return delegate.start(instant);
+        }
+
+        @Override
+        public Span build() {
+            return delegate.build();
         }
     }
 }

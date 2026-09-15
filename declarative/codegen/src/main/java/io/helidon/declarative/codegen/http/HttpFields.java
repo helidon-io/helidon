@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package io.helidon.declarative.codegen.http;
-
-import java.util.Locale;
 
 import io.helidon.declarative.codegen.model.http.HeaderValue;
 import io.helidon.declarative.codegen.model.http.HttpStatus;
@@ -111,11 +109,11 @@ public final class HttpFields {
         String constantName = toConstantName("ENDPOINT_METHOD_" + httpMethod);
         return fieldHandler.constant(constantName,
                                      HTTP_METHOD,
-                                     httpMethod.toUpperCase(Locale.ROOT),
+                                     httpMethod,
                                      content -> content.addContent(HTTP_METHOD)
                                              .addContent(".create(\"")
                                              .addContent(httpMethod)
-                                             .addContent("\""));
+                                             .addContent("\")"));
     }
 
     /**

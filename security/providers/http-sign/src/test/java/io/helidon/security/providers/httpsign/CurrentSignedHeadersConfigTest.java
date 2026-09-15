@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 
 import org.hamcrest.CoreMatchers;
@@ -28,6 +29,8 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.security.providers.httpsign.SignedHeadersConfig.REQUEST_TARGET;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link SignedHeadersConfig}.
@@ -48,10 +51,23 @@ class CurrentSignedHeadersConfigTest {
     }
 
     @Test
+    void testExactMethodFromConfig() {
+        SignedHeadersConfig shc = SignedHeadersConfig.create(Config.just("""
+                sign-headers:
+                  - always: [date]
+                  - method: PATCH
+                    always: [date, x-exact]
+                """, MediaTypes.APPLICATION_YAML).get("sign-headers"));
+
+        assertThat(shc.headers("patch"), CoreMatchers.not(CoreMatchers.hasItem("x-exact")));
+        assertThat(shc.headers("PATCH"), CoreMatchers.hasItem("x-exact"));
+    }
+
+    @Test
     void testFromBuilder() {
         SignedHeadersConfig shc = SignedHeadersConfig.builder()
                 .defaultConfig(SignedHeadersConfig.HeadersConfig.create(List.of("date")))
-                .config("get",
+                .config("GET",
                         SignedHeadersConfig.HeadersConfig
                                 .create(List.of("date", REQUEST_TARGET, "host"),
                                         List.of("authorization")))
@@ -60,25 +76,41 @@ class CurrentSignedHeadersConfigTest {
         testThem(shc);
     }
 
+    @Test
+    void testBuilderRejectsNullMethodConfig() {
+        var headers = SignedHeadersConfig.HeadersConfig.create();
+
+        assertAll(
+                () -> assertThrows(NullPointerException.class,
+                                   () -> SignedHeadersConfig.builder().config(null, headers)),
+                () -> assertThrows(NullPointerException.class,
+                                   () -> SignedHeadersConfig.builder().config("GET", null))
+        );
+    }
+
     private void testThem(SignedHeadersConfig shc) {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        List<String> requiredHeaders = shc.headers("get", headers);
+        List<String> requiredHeaders = shc.headers("GET", headers);
         // first check we get the mandatory ones even if they are not present in request
         assertThat(requiredHeaders, CoreMatchers.hasItems("date", REQUEST_TARGET, "host"));
         assertThat(requiredHeaders, CoreMatchers.not(CoreMatchers.hasItems("authorization")));
 
-        requiredHeaders = shc.headers("post", headers);
+        requiredHeaders = shc.headers("get", headers);
+        assertThat(requiredHeaders, CoreMatchers.hasItems("date"));
+        assertThat(requiredHeaders, CoreMatchers.not(CoreMatchers.hasItems("authorization", REQUEST_TARGET, "host")));
+
+        requiredHeaders = shc.headers("POST", headers);
         assertThat(requiredHeaders, CoreMatchers.hasItems("date"));
         assertThat(requiredHeaders, CoreMatchers.not(CoreMatchers.hasItems("authorization", REQUEST_TARGET, "host")));
 
         //now let's add authorization to the request headers
         headers.put("Authorization", List.of("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
-        requiredHeaders = shc.headers("get", headers);
+        requiredHeaders = shc.headers("GET", headers);
         // first check we get the mandatory ones even if they are not present in request
         assertThat(requiredHeaders, CoreMatchers.hasItems("date", REQUEST_TARGET, "host", "authorization"));
 
-        requiredHeaders = shc.headers("post", headers);
+        requiredHeaders = shc.headers("POST", headers);
         assertThat(requiredHeaders, CoreMatchers.hasItems("date"));
         assertThat(requiredHeaders, CoreMatchers.not(CoreMatchers.hasItems("authorization", REQUEST_TARGET, "host")));
     }

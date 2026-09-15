@@ -171,6 +171,16 @@ class GreetServiceEndpoint implements GreetService {
         return "Result: " + query;
     }
 
+    @Override
+    public String uppercaseCustomMethod() {
+        return "CASE";
+    }
+
+    @Override
+    public String lowercaseCustomMethod() {
+        return "case";
+    }
+
     @Ft.Fallback(value = "fallback", applyOn = IllegalStateException.class)
     @Override
     public String failingFallback(@Http.HeaderParam(HeaderNames.HOST_NAME) String host) {

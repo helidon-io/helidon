@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ class OldHttpSignProviderBuilderTest extends OldHttpSignProviderTest {
         return SignedHeadersConfig.builder()
                 .defaultConfig(SignedHeadersConfig.HeadersConfig
                                        .create(List.of("date")))
-                .config("get",
+                .config("GET",
                         SignedHeadersConfig.HeadersConfig
                                 .create(List.of("date",
                                                                  requestTarget,

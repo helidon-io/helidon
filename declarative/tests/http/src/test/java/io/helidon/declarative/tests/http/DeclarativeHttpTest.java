@@ -101,6 +101,17 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testCaseDistinctCustomMethods() {
+        GreetServiceClient typedClient = registry.get(Lookup.builder()
+                                                              .addContract(GreetServiceClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
+
+        assertThat(typedClient.uppercaseCustomMethod(), is("CASE"));
+        assertThat(typedClient.lowercaseCustomMethod(), is("case"));
+    }
+
+    @Test
     void testInheritedClientRetry() {
         InheritedFtClient typedClient = registry.get(Lookup.builder()
                                                               .addContract(InheritedFtClient.class)

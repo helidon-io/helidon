@@ -68,7 +68,7 @@ Configuration of a single path security setup
 <td>
 <code>List&lt;<wbr>Path<wbr>Config<wbr>Custom<wbr>Methods&gt;</code>
 </td>
-<td>HTTP methods to match when applying this configured path</td>
+<td>Exact, case-sensitive HTTP methods to match when applying this configured path</td>
 </tr>
 <tr>
 <td>

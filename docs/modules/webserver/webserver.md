@@ -433,6 +433,9 @@ WebServer.builder()
 `HttpRouting.Builder` lets you specify how to handle each HTTP method. For
 example:
 
+HTTP method names are case-sensitive. A case variant such as `delete` is a
+distinct custom method and does not match a route registered for `DELETE`.
+
 <!--@mdc ::table-collapse -->
 | HTTP Method        | HttpRouting.Builder example                                        |
 |--------------------|--------------------------------------------------------------------|
