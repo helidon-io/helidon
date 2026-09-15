@@ -69,6 +69,10 @@ public interface TransportBindingFactory extends NamedService {
      * Implementations must not bind sockets, allocate transport runtime resources, or start background work here. Resource
      * allocation belongs to {@link TransportBinding#start()}; otherwise a later planning failure would have no lifecycle
      * path to release those resources.
+     * <p>
+     * When an ephemeral port cannot be shared by all transports, the listener may stop the attempted bindings and repeat
+     * planning with a new port. Each invocation must create an independent binding, even if a previous binding from this
+     * factory has already been stopped.
      *
      * @param context logical listener context
      * @return created transport binding, never {@code null}
