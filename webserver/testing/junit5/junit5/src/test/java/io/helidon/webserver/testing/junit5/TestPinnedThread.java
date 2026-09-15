@@ -34,7 +34,7 @@ class TestPinnedThread {
 
     @Test
     void engineTestJava() {
-        // synchronized no longer pins in Java 24
+        // Thread.sleep in a synchronized block does not pin virtual threads.
         EngineTestKit.engine("junit-jupiter")
                 .selectors(
                         selectClass(PinningTestCase.class),

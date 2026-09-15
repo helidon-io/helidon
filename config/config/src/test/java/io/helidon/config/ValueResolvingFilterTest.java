@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,8 +184,7 @@ public class ValueResolvingFilterTest {
                 return result;
             }
             );
-        // Either JDK9 or later or the config implementation should prevent
-        // the config.get from timing out and should throw an exception instead.
+        // Recursive config lookups should throw an exception.
         shouldNotRecurse.run();
         LoopTestResult result = shouldNotRecurse.get(2, TimeUnit.SECONDS);
         assertThat(result.message, nullValue());

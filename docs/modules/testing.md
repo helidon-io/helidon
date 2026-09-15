@@ -209,12 +209,10 @@ Routing is configured the same way as in full server testing using the
 
 ## Virtual Threads
 
-Helidon tests are able to detect Virtual Threads pinning. A situation when
-carrier thread is blocked in a way, that virtual thread scheduler can’t use it
-for scheduling of other virtual threads. This can happen for example when
-blocking native code is invoked, or prior to the JDK 24 when blocking IO
-operation happens in a synchronized block. Pinning can in some cases negatively
-affect application performance.
+Helidon tests can detect virtual thread pinning, which occurs when a virtual
+thread blocks its carrier thread and prevents the scheduler from using it for
+other virtual threads. This can happen when blocking native code is invoked.
+Pinning can negatively affect application performance.
 
 Enable pinning detection:
 

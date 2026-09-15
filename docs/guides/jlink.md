@@ -142,26 +142,19 @@ using the provide `start` script:
 ./target/helidon-quickstart-se-jri/bin/start
 ```
 
-### Class Data Sharing (CDS) Archive and AOT Cache
+### Ahead-of-Time (AOT) Cache
 
-If you are building with Java 24 or earlier a Class Data Sharing (CDS) archive
-is also included in your custom image by default. The CDS archive improves your
-application’s startup performance and in-memory footprint. You can learn more
-about Class Data Sharing in the [JDK documentation][jdk-documentation].
-
-If you are building with Java 26 or later an AOT Cache is created instead of a
-CDS archive. The AOT Cache is more advanced than the CDS archive and over time
-will contain more optimizations for improving application startup performance.
-You can learn more about the AOT Cache in the following JEPS: [JEP
+An ahead-of-time (AOT) cache is included in your custom image by default to
+improve application startup performance.
+You can learn more about the AOT cache in the following JEPs: [JEP
 483](https://openjdk.org/jeps/483), [JEP 515](https://openjdk.org/jeps/515),
-[JEP 514](https://openjdk.org/jeps/514)
+[JEP 514](https://openjdk.org/jeps/514).
 
-An on-disk cache (CDS Archive or AOT Cache) increases the size of the custom
-image to get these performance optimizations. It can be of significant size
-(tens of MB). The size of the on-disk cache is reported at the end of the build
-output.
+The AOT cache increases the size of the custom image to get these performance
+optimizations. It can be of significant size (tens of MB). The size of the cache
+is reported at the end of the build output.
 
-If you want to skip the creation of the on-disk cache you can do so by executing
+If you want to skip the creation of the AOT cache you can do so by executing
 your build like this:
 
 ```shell [Terminal]
@@ -208,5 +201,4 @@ performance of the JDK JVM in a reasonably compact form.
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [rpm-based]: https://en.wikipedia.org/wiki/List_of_Linux_distributions#RPM-based
 [debian-based]: https://en.wikipedia.org/wiki/List_of_Linux_distributions#Debian-based
-[jdk-documentation]: https://docs.oracle.com/en/java/javase/27/vm/class-data-sharing.html
 [helidon-maven-pl]: https://github.com/helidon-io/helidon-build-tools/blob/4.0.25/maven-plugins/helidon-maven-plugin/README.md#goal-jlink-image

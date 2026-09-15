@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 /**
  * "all in one" Bundle module.
  * <p>
- * Config Bundle is placed in {@code io.helidon.bundles.config} Java 9 module.
+ * Config Bundle is provided by the {@code io.helidon.bundles.config} Java module.
  * Maven coordinates are {@code io.helidon.bundles:helidon-bundles-config}.
  */
 package io.helidon.bundles.config;
