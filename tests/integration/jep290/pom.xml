@@ -55,8 +55,7 @@
 
     onWrongConfig:
         fail: f
-        configure: c // not yet supported, maybe can work with JDK 17 and its combined filters?
-                    https://openjdk.java.net/jeps/415
+        configure: c // reconfiguring an existing global filter is not supported
 
     type:
         pattern: p (pattern config using system property)

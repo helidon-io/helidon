@@ -70,7 +70,7 @@ public enum ElementKind {
      */
     PACKAGE,
     /**
-     * Record element type kind (since Java 16).
+     * Record element type kind.
      * See javax.lang.model.element.ElementKind#RECORD
      */
     RECORD,

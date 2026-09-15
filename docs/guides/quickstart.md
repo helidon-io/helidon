@@ -74,7 +74,7 @@ to:
     service](#track-health-and-metrics)
 - [Build a Docker Image](#build-a-docker-image)
 - [Deploy it to Kubernetes][deploy-it-to-kub]
-- [Build GraalVM Native and Custom Java Runtime Images][build-graalvm-na]
+- [Build Custom Java Runtime Images][build-custom-runtime]
 
 and much more!
 
@@ -172,13 +172,12 @@ If you haven’t already, install `kubectl`, the Kubernetes command line tool. S
 
 To remove the application from Kubernetes, run `kubectl delete -f app.yaml`.
 
-## Build GraalVM Native and Custom Java Runtime Images
+## Build Custom Java Runtime Images
 
-Helidon also includes support for GraalVM Native Images and custom Java Runtime
-Images. For more information, see:
+You can build a custom Java runtime image containing your application and the
+JDK modules it needs. See [Custom Java Runtime Images using `jlink`](jlink.md).
 
-- [GraalVM Native Images](native-image.md)
-- [Custom Java Runtime Images using `jlink`](jlink.md)
+GraalVM Native Image is not supported in Helidon 27.
 
 ## Next Steps
 
@@ -190,5 +189,5 @@ Learn more about Helidon:
 
 [getting-started]: ../get-started.md#system-requirements
 [deploy-it-to-kub]: #deploy-application-to-kubernetes
-[build-graalvm-na]: #build-graalvm-native-and-custom-java-runtime-images
+[build-custom-runtime]: #build-custom-java-runtime-images
 [install-kubectl]: https://kubernetes.io/docs/tasks/tools/#kubectl

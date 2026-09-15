@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,6 +89,7 @@ public class HoconConfigParser implements ConfigParser {
     private final ConfigResolveOptions resolveOptions;
     private final ConfigParseOptions parseOptions;
     private final HoconConfigIncluder includer;
+    private final Lock parseLock = new ReentrantLock();
 
     HoconConfigParser(HoconConfigParserBuilder builder) {
         this.resolvingEnabled = builder.resolvingEnabled();
@@ -137,23 +140,28 @@ public class HoconConfigParser implements ConfigParser {
     }
 
     @Override
-    public synchronized ObjectNode parse(Content content, Function<String, Optional<InputStream>> relativeResolver) {
-        includer.parseOptions(parseOptions);
-        includer.relativeResourceFunction(relativeResolver);
-        includer.charset(content.charset());
+    public ObjectNode parse(Content content, Function<String, Optional<InputStream>> relativeResolver) {
+        parseLock.lock();
+        try {
+            includer.parseOptions(parseOptions);
+            includer.relativeResourceFunction(relativeResolver);
+            includer.charset(content.charset());
 
-        Config typesafeConfig;
-        try (InputStreamReader readable = new InputStreamReader(content.data(), content.charset())) {
-            typesafeConfig = ConfigFactory.parseReader(readable, parseOptions);
-            if (resolvingEnabled) {
-                typesafeConfig = typesafeConfig.resolve(resolveOptions);
-                return fromConfig(typesafeConfig.root(), typesafeConfig, List.of(), false);
+            Config typesafeConfig;
+            try (InputStreamReader readable = new InputStreamReader(content.data(), content.charset())) {
+                typesafeConfig = ConfigFactory.parseReader(readable, parseOptions);
+                if (resolvingEnabled) {
+                    typesafeConfig = typesafeConfig.resolve(resolveOptions);
+                    return fromConfig(typesafeConfig.root(), typesafeConfig, List.of(), false);
+                }
+                return fromConfig(typesafeConfig.root(), typesafeConfig, List.of(), true);
+            } catch (ConfigException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new ConfigParserException("Cannot read from source: " + e.getLocalizedMessage(), e);
             }
-            return fromConfig(typesafeConfig.root(), typesafeConfig, List.of(), true);
-        } catch (ConfigException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ConfigParserException("Cannot read from source: " + e.getLocalizedMessage(), e);
+        } finally {
+            parseLock.unlock();
         }
     }
 

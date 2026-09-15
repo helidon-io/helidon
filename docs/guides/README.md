@@ -18,7 +18,6 @@ index:
 ## Components
 
 - [Config](config.md)
-- [CRaC](crac.md)
 - [DbClient](dbclient.md)
 - [Health](health.md)
 - [Metrics](metrics.md)

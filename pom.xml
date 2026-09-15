@@ -35,7 +35,7 @@
     <description>Java libraries for writing microservices</description>
 
     <properties>
-        <version.java>26</version.java>
+        <version.java>27</version.java>
 
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -104,7 +104,7 @@
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
         <version.plugin.resources>3.5.0</version.plugin.resources>
         <version.plugin.source>3.4.0</version.plugin.source>
-        <version.plugin.spotbugs>4.9.8.2</version.plugin.spotbugs>
+        <version.plugin.spotbugs>4.10.4.1</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.14.0</version.plugin.findsecbugs>
         <version.plugin.dependency-check>13.0.0</version.plugin.dependency-check>
         <version.plugin.surefire>3.5.6</version.plugin.surefire>

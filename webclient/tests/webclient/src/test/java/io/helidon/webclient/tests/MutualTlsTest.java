@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ class MutualTlsTest {
 
         IOException cause = ex.getCause();
         if (cause instanceof SSLHandshakeException) {
-            // Java 24 returns a different message
+            // A missing client certificate can be reported with either certificate alert.
             String message = cause.getMessage();
             if (!message.contains("Received fatal alert: bad_certificate")
                     && !message.contains("Received fatal alert: certificate_required")) {

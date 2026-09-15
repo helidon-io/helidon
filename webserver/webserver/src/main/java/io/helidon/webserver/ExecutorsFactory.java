@@ -23,16 +23,7 @@ import java.util.concurrent.ThreadFactory;
 import io.helidon.common.task.HelidonTaskExecutor;
 
 /**
- * Encapsulates operations with {@link Executors}. Helps to workaround
- * limitations of GraalVM for JDK21 which doesn't support execution of
- * virtual threads and Graal.js code together. New versions of GraalVM
- * don't have this limitation, but for those who stick with JDK21, this
- * is a serious limitations in using Helidon 4.0.x
- * <p>
- * By moving these <em>"factories"</em> into separate class, it is easier
- * to use GraalVM's `@Substitute` mechanism and get Helidon and Graal.js working
- * on GraalVM for JDK21. More info
- * <a href="https://github.com/enso-org/enso/pull/10783#discussion_r1768000821">available in PR-10783</a>.
+ * Creates virtual-thread executors used by the webserver.
  */
 final class ExecutorsFactory {
     private static final System.Logger LOGGER = System.getLogger(ExecutorsFactory.class.getName());

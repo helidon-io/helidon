@@ -57,7 +57,7 @@ You must have Java and Maven installed on your system to use Helidon.
 
 | Requirement                                     | Description                                  |
 |-------------------------------------------------|----------------------------------------------|
-| [Java 26][java-26] ([Open JDK 26][open-jdk-26]) | Helidon requires Java 26+.                   |
+| [Java 27][java-27] ([Open JDK 27][open-jdk-27]) | Helidon requires Java 27+.                   |
 | [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                 |
 
 > [!NOTE]
@@ -79,17 +79,17 @@ Make sure you set the `JAVA_HOME` environment variable.
 
 ```shell [Linux] <!-- @icon i-logos-linux-tux -->
 # Enter the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-26
+export JAVA_HOME=/usr/lib/jvm/jdk-27
 ```
 
 ```shell [macOS] <!-- @icon i-simple-icons-apple -->
 # Enter the appropriate path to your JDK
-export JAVA_HOME=`/usr/libexec/java_home -v 26`
+export JAVA_HOME=`/usr/libexec/java_home -v 27`
 ```
 
 ```cmd [Windows] <!-- @icon i-logos-microsoft-windows-icon -->
 # Enter the appropriate path to your JDK
-setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-26
+setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-27
 ```
 
 <!--@mdc :: -->
@@ -104,6 +104,6 @@ project and application.
 > Read the [Helidon overview](modules/introduction.md) to learn more about
 > the programming model.
 
-[java-26]: https://www.oracle.com/technetwork/java/javase/downloads
-[open-jdk-26]: http://jdk.java.net
+[java-27]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-27]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi

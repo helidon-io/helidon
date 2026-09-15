@@ -67,7 +67,7 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
      * Note: using the same as maven-compiler for convenience and least astonishment.
      */
     @Parameter(property = "maven.compiler.source",
-               defaultValue = "25")
+               defaultValue = "27")
     private String release;
     /**
      * Whether to validate the application when creating its bindings.
@@ -427,7 +427,10 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
             try {
                 try (Stream<Path> pathStream = Files.walk(sourceRoot)) {
                     pathStream
-                            .filter(it -> it.getFileName().toString().endsWith(".java"))
+                            .filter(it -> {
+                                Path fileName = it.getFileName();
+                                return fileName != null && fileName.toString().endsWith(".java");
+                            })
                             .map(it -> packageName(sourceRoot, it))
                             .filter(Predicate.not(String::isBlank))
                             .forEach(found::add);

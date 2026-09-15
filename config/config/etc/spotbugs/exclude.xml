@@ -23,6 +23,12 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
+        <!-- Regular-file filtering excludes filesystem roots, whose getFileName() is null. -->
+        <Class name="io.helidon.config.DirectoryConfigSource"/>
+        <Method name="~lambda\$load\$[0-9]+"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+    <Match>
         <!-- Hash is used only to see if a file has changed -->
         <Class name="io.helidon.config.FileSourceHelper"/>
         <Bug pattern="UNSAFE_HASH_EQUALS"/>
@@ -31,6 +37,12 @@
         <!-- Hash is used only to see if a file has changed -->
         <Class name="io.helidon.config.FileSourceHelper"/>
         <Bug pattern="WEAK_MESSAGE_DIGEST_MD5"/>
+    </Match>
+    <Match>
+        <!-- DigestInputStream hashes the actual bytes read; the loop only consumes and discards their contents. -->
+        <Class name="io.helidon.config.FileSourceHelper"/>
+        <Method name="digest" params="java.nio.file.Path"/>
+        <Bug pattern="NCR_NOT_PROPERLY_CHECKED_READ"/>
     </Match>
     <Match>
         <!-- Path from config/code, not openly from user -->
