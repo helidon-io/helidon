@@ -36,6 +36,10 @@ final class QpackDynamicTable {
     private long insertCount;
     private long size;
 
+    static long headerSize(String name, String value) {
+        return name.length() + value.length() + ENTRY_OVERHEAD;
+    }
+
     long maxCapacity() {
         return maxCapacity;
     }
@@ -169,10 +173,6 @@ final class QpackDynamicTable {
         exactIndex.computeIfAbsent(name, _ -> new HashMap<>()).put(value, entry);
         size += entrySize;
         return absoluteIndex;
-    }
-
-    static long headerSize(String name, String value) {
-        return name.length() + value.length() + ENTRY_OVERHEAD;
     }
 
     private void evictToCapacity() {

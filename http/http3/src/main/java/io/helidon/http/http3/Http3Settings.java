@@ -133,6 +133,16 @@ public final class Http3Settings {
                                  extensionSettings);
     }
 
+    static boolean isKnownId(long id) {
+        return id == QPACK_MAX_TABLE_CAPACITY_ID
+                || id == MAX_FIELD_SECTION_SIZE_ID
+                || id == QPACK_BLOCKED_STREAMS_ID;
+    }
+
+    static boolean isReservedId(long id) {
+        return RESERVED_IDS.contains(id);
+    }
+
     /**
      * Maximum field-section size advertised by the endpoint.
      *
@@ -169,30 +179,6 @@ public final class Http3Settings {
         return extensionSettings;
     }
 
-    static boolean isKnownId(long id) {
-        return id == QPACK_MAX_TABLE_CAPACITY_ID
-                || id == MAX_FIELD_SECTION_SIZE_ID
-                || id == QPACK_BLOCKED_STREAMS_ID;
-    }
-
-    static boolean isReservedId(long id) {
-        return RESERVED_IDS.contains(id);
-    }
-
-    private static long requireVarInt(String name, long value) {
-        if (value < 0 || value > VariableLengthEncoder.MAX_ENCODED_INTEGER) {
-            throw new IllegalArgumentException(name + " must be a QUIC variable-length integer: " + value);
-        }
-        return value;
-    }
-
-    private static long requireConfiguredVarInt(String name, long value) {
-        if (value < 0 || value > VariableLengthEncoder.MAX_ENCODED_INTEGER) {
-            throw new IllegalArgumentException(name + " must be -1 or a QUIC variable-length integer: " + value);
-        }
-        return value;
-    }
-
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -219,5 +205,19 @@ public final class Http3Settings {
                 + ", qpackBlockedStreams=" + qpackBlockedStreams
                 + ", extensionSettings=" + extensionSettings
                 + ']';
+    }
+
+    private static long requireVarInt(String name, long value) {
+        if (value < 0 || value > VariableLengthEncoder.MAX_ENCODED_INTEGER) {
+            throw new IllegalArgumentException(name + " must be a QUIC variable-length integer: " + value);
+        }
+        return value;
+    }
+
+    private static long requireConfiguredVarInt(String name, long value) {
+        if (value < 0 || value > VariableLengthEncoder.MAX_ENCODED_INTEGER) {
+            throw new IllegalArgumentException(name + " must be -1 or a QUIC variable-length integer: " + value);
+        }
+        return value;
     }
 }

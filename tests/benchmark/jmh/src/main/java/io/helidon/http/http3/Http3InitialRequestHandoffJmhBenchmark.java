@@ -224,7 +224,6 @@ public class Http3InitialRequestHandoffJmhBenchmark {
                                                                           decoderContext,
                                                                           BENCHMARK_SOCKET_CONTEXT,
                                                                           MAX_HEADERS_SIZE,
-                                                                          true,
                                                                           NO_OP_FRAME_LISTENER);
             operation = new RequestOperation(messageReader, stream.streamId());
             operation.start();

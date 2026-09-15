@@ -27,7 +27,7 @@ Configuration of the HTTP/3 client protocol
 <td>
 <code>true</code>
 </td>
-<td>Whether to validate response headers</td>
+<td>Common HTTP response-header validation setting, ignored by HTTP/3</td>
 </tr>
 <tr>
 <td>
@@ -163,7 +163,7 @@ Configuration of the HTTP/3 client protocol
 <td>
 <code>true</code>
 </td>
-<td>Whether to validate request headers</td>
+<td>Common HTTP request-header validation setting, ignored by HTTP/3</td>
 </tr>
 <tr>
 <td>

@@ -434,7 +434,6 @@ public class Http3DataIngressJmhBenchmark {
                                                SOCKET_CONTEXT,
                                                Method.GET,
                                                16_384,
-                                               true,
                                                NO_OP_FRAME_LISTENER);
         }
 

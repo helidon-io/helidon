@@ -4742,12 +4742,16 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         QuicPathManager.SendPermit permit = reservation.orElseThrow();
         boolean transferred = false;
         try {
+        PacketNumberSpace packetNumberSpace = packetSpaceManager.packetNumberSpace();
+        if (packetNumberSpace == PacketNumberSpace.INITIAL && permit.size() < SMALLEST_MAXIMUM_DATAGRAM_SIZE) {
+            // Initial packets are padded to the minimum datagram size, including retransmissions.
+            return false;
+        }
         long oldPacketNumber = packet.packetNumber();
 
         long largestAckedPN = packetSpaceManager.largestPeerAcknowledgedPacketNumber();
         long newPacketNumber = packetSpaceManager.allocateNextPN();
         int maxDatagramSize = permit.size();
-        PacketNumberSpace packetNumberSpace = packetSpaceManager.packetNumberSpace();
         QuicConnectionId destinationConnectionId;
         if (packetNumberSpace == PacketNumberSpace.APPLICATION) {
             Optional<PeerConnIdManager.PathCidBinding> binding = pathManager.cidBinding(permit);

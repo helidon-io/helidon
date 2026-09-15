@@ -68,6 +68,85 @@ class QpackCodecTest {
     }
 
     @Test
+    void shouldPreserveNeverIndexOnStaticAndLiteralNamesWhenForwarding() {
+        byte[] payload = {0, 0, 0x70, 1, 'a', 0x31, 'x', 1, 'b', 0x21, 'y', 1, 'c'};
+
+        Headers decoded = QpackCodec.decodeHeaders(BufferData.create(payload));
+        byte[] forwarded = QpackCodec.encodeHeaders(List.of(decoded.get(HeaderNames.create(":authority")),
+                                                            decoded.get(HeaderNames.create("x")),
+                                                            decoded.get(HeaderNames.create("y"))));
+        List<Header> forwardedHeaders = QpackCodec.decodeHeaderLines(BufferData.create(forwarded));
+
+        assertThat(forwardedHeaders, hasSize(3));
+        assertThat(forwardedHeaders.get(0).headerName().lowerCase(), equalTo(":authority"));
+        assertThat(forwardedHeaders.get(0).get(), equalTo("a"));
+        assertThat(forwardedHeaders.get(0).sensitive(), is(true));
+        assertThat(forwardedHeaders.get(1).headerName().lowerCase(), equalTo("x"));
+        assertThat(forwardedHeaders.get(1).get(), equalTo("b"));
+        assertThat(forwardedHeaders.get(1).sensitive(), is(true));
+        assertThat(forwardedHeaders.get(2).headerName().lowerCase(), equalTo("y"));
+        assertThat(forwardedHeaders.get(2).get(), equalTo("c"));
+        assertThat(forwardedHeaders.get(2).sensitive(), is(false));
+        assertThat(forwarded, equalTo(concat(new byte[] {0, 0, 0x37, 3},
+                                             ":authority".getBytes(StandardCharsets.ISO_8859_1),
+                                             new byte[] {1, 'a', 0x31, 'x', 1, 'b', 0x21, 'y', 1, 'c'})));
+    }
+
+    @Test
+    void shouldEncodeSensitiveExactStaticMatchAsNeverIndexedLiteral() {
+        QpackConnectionState encoder = qpackState(0, 0);
+        Header header = HeaderValues.create(HeaderNames.create("x-frame-options"), false, true, "sameorigin");
+
+        byte[] encoded = encoder.encodeHeaders(0, List.of(header));
+
+        assertThat(encoded, equalTo(concat(new byte[] {0, 0, 0x7f, 0x52, 0x0a},
+                                           "sameorigin".getBytes(StandardCharsets.ISO_8859_1))));
+        List<Header> decoded = QpackCodec.decodeHeaderLines(BufferData.create(encoded));
+        assertThat(decoded, hasSize(1));
+        assertThat(decoded.getFirst().get(), equalTo("sameorigin"));
+        assertThat(decoded.getFirst().sensitive(), is(true));
+    }
+
+    @Test
+    void shouldPreserveNeverIndexWhenAggregatingRepeatedFields() {
+        for (boolean sensitiveFirst : new boolean[] {false, true}) {
+            byte[] payload = {0, 0,
+                    sensitiveFirst ? (byte) 0x31 : 0x21, 'x', 1, 'a',
+                    sensitiveFirst ? (byte) 0x21 : 0x31, 'x', 1, 'b'};
+            Headers staticDecoded = QpackCodec.decodeHeaders(BufferData.create(payload));
+            Http3QpackContext context = qpackContext(0, 0);
+            Headers contextDecoded = decodeHeaders(context, 0, payload, -1);
+
+            for (Headers decoded : List.of(staticDecoded, contextDecoded)) {
+                Header aggregate = decoded.get(HeaderNames.create("x"));
+                assertThat(aggregate.allValues(), equalTo(List.of("a", "b")));
+                assertThat(aggregate.sensitive(), is(true));
+                byte[] forwarded = context.encodeHeaders(4, decoded);
+                List<Header> forwardedHeaders = QpackCodec.decodeHeaderLines(BufferData.create(forwarded));
+                assertThat(forwardedHeaders.stream().map(Header::sensitive).toList(), equalTo(List.of(true, true)));
+            }
+        }
+    }
+
+    @Test
+    void shouldPreserveNeverIndexWhenAggregatingRequestFields() {
+        List<Header> headers = List.of(HeaderValues.create(":method", "GET"),
+                                       HeaderValues.create(":scheme", "https"),
+                                       HeaderValues.create(":authority", "example.com"),
+                                       HeaderValues.create(":path", "/"),
+                                       HeaderValues.create("x-secret", "public"),
+                                       HeaderValues.create(HeaderNames.create("x-secret"), false, true, "private"));
+        byte[] payload = QpackCodec.encodeHeaders(headers);
+
+        Http3Protocol.DecodedRequestHead request = Http3Protocol.decodeRequestHeaders(
+                QpackCodec.decodeHeaderLines(BufferData.create(payload)));
+
+        Header aggregate = request.headers().get(HeaderNames.create("x-secret"));
+        assertThat(aggregate.allValues(), equalTo(List.of("public", "private")));
+        assertThat(aggregate.sensitive(), is(true));
+    }
+
+    @Test
     void shouldEncodeLateExactAndFirstNameStaticReferences() {
         List<Header> headers = List.of(
                 HeaderValues.create("x-frame-options", "sameorigin"),

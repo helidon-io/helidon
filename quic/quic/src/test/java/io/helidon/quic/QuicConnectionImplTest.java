@@ -33,7 +33,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1740,6 +1742,84 @@ class QuicConnectionImplTest {
     }
 
     @Test
+    void defersInitialRetransmissionUntilFullAntiAmplificationBudgetIsAvailable() throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.createServer(EnumSet.of(KeySpace.INITIAL))) {
+            QuicPathManager pathManager = harness.connection.pathManager();
+            PacketSpaceManager initialSpace =
+                    (PacketSpaceManager) harness.connection.packetSpace(PacketNumberSpace.INITIAL);
+            byte[] cryptoBytes = {1, 2, 3, 4};
+            pathManager.receive(harness.connection.peerAddress(), 400);
+            harness.engine.queueHandshakeFlight(KeySpace.INITIAL, ByteBuffer.wrap(cryptoBytes));
+            harness.connection.continueHandshake();
+
+            assertThat(initialSpace.nextPacketNumber().get(), is(1L));
+            assertThat(harness.engine.encryptedCryptoFrames.size(), is(1));
+            assertThat(pathManager.reserve(1), is(Optional.empty()));
+
+            // A previous flight can leave less credit than the required 1200-byte Initial datagram.
+            pathManager.receive(harness.connection.peerAddress(), 184);
+            QuicPacket original = harness.connection.encoder()
+                    .newInitialPacket(harness.connection.localConnectionId().orElseThrow(),
+                                      harness.connection.peerConnectionId(),
+                                      new byte[0],
+                                      0,
+                                      -1,
+                                      List.of(CryptoFrame.create(0, cryptoBytes.length, ByteBuffer.wrap(cryptoBytes))),
+                                      harness.connection.codingContext());
+
+            assertThat(harness.connection.emitter().retransmit(initialSpace, original, 0), is(false));
+            assertThat(initialSpace.nextPacketNumber().get(), is(1L));
+            assertThat(harness.engine.encryptedCryptoFrames.size(), is(1));
+            initialSpace.fastRetransmit();
+            assertThat(harness.engine.encryptedCryptoFrames.size(), is(1));
+            QuicPathManager.SendPermit remaining = pathManager.reserve(1200).orElseThrow();
+            assertThat(remaining.size(), is(552));
+            remaining.release();
+
+            // Receiving another datagram wakes the packet spaces; their retry timer retains the queued CRYPTO.
+            ByteBuffer incoming = harness.connection.encodeIncomingInitial(0, List.of(PingFrame.create()));
+            harness.connection.processIncoming(harness.connection.peerAddress(),
+                                                harness.connection.localConnectionId().orElseThrow().asReadOnlyBuffer(),
+                                                QuicPacket.HeadersType.LONG,
+                                                incoming);
+            try (ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor()) {
+                CompletableFuture<Void> retransmission = new CompletableFuture<>();
+                scheduler.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Deadline next = harness.connection.endpoint().timer()
+                                    .processEventsAndReturnNextDeadline(TimeSource.now(), Runnable::run);
+                            if (harness.engine.encryptedCryptoFrames.size() >= 2) {
+                                retransmission.complete(null);
+                            } else if (next.equals(Deadline.MAX)) {
+                                retransmission.completeExceptionally(
+                                        new IllegalStateException("No retransmission scheduled"));
+                            } else {
+                                long delay = Math.max(0, Deadline.between(TimeSource.now(), next).toNanos());
+                                scheduler.schedule(this, delay, TimeUnit.NANOSECONDS);
+                            }
+                        } catch (Throwable failure) {
+                            retransmission.completeExceptionally(failure);
+                        }
+                    }
+                });
+                try {
+                    retransmission.get(10, TimeUnit.SECONDS);
+                } finally {
+                    scheduler.shutdownNow();
+                }
+            }
+
+            assertThat(harness.engine.encryptedCryptoFrames.size(), is(2));
+            CryptoFrame retransmitted = harness.engine.encryptedCryptoFrames.getLast();
+            assertThat(retransmitted.offset(), is(0L));
+            assertThat(retransmitted.payload(), is(ByteBuffer.wrap(cryptoBytes)));
+            assertThat(harness.connection.isOpen(), is(true));
+        }
+    }
+
+    @Test
     void pathControlFlightsAreCongestionBoundedAndNotRetransmitted() throws Exception {
         try (ConnectionHarness harness = ConnectionHarness.createServer(EnumSet.of(KeySpace.ONE_RTT))) {
             QuicPathManager pathManager = harness.connection.pathManager();
@@ -2512,6 +2592,7 @@ class QuicConnectionImplTest {
         private final AtomicInteger consumedCryptoBytes = new AtomicInteger();
         private final List<KeySpace> closeKeySpaces = new ArrayList<>();
         private final List<ConnectionCloseFrame> closeFrames = new ArrayList<>();
+        private final List<CryptoFrame> encryptedCryptoFrames = new ArrayList<>();
         private SSLParameters sslParameters = new SSLParameters();
         private QuicTransportParametersConsumer remoteTransportParametersConsumer = buffer -> {
         };
@@ -2652,6 +2733,8 @@ class QuicConnectionImplTest {
                 if (frame instanceof ConnectionCloseFrame connectionCloseFrame) {
                     closeFrames.add(connectionCloseFrame);
                     break;
+                } else if (frame instanceof CryptoFrame cryptoFrame) {
+                    encryptedCryptoFrames.add(cryptoFrame);
                 }
             }
             output.put(packetPayload.slice());

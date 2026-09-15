@@ -136,23 +136,29 @@ final class Http3FrameListenerUtil {
                                    String authority,
                                    String path,
                                    Headers headers) {
-            delegates.forEach(it -> it.requestHeaders(context,
-                                                       streamId,
-                                                       method,
-                                                       scheme,
-                                                       authority,
-                                                       path,
-                                                       headers));
+            for (Http3FrameListener delegate : delegates) {
+                if (delegate.enabled()) {
+                    delegate.requestHeaders(context, streamId, method, scheme, authority, path, headers);
+                }
+            }
         }
 
         @Override
         public void responseHeaders(SocketContext context, long streamId, int status, Headers headers) {
-            delegates.forEach(it -> it.responseHeaders(context, streamId, status, headers));
+            for (Http3FrameListener delegate : delegates) {
+                if (delegate.enabled()) {
+                    delegate.responseHeaders(context, streamId, status, headers);
+                }
+            }
         }
 
         @Override
         public void trailers(SocketContext context, long streamId, Headers trailers) {
-            delegates.forEach(it -> it.trailers(context, streamId, trailers));
+            for (Http3FrameListener delegate : delegates) {
+                if (delegate.enabled()) {
+                    delegate.trailers(context, streamId, trailers);
+                }
+            }
         }
     }
 }

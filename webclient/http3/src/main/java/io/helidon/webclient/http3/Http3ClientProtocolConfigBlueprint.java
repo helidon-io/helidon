@@ -50,6 +50,28 @@ interface Http3ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
     String name();
 
     /**
+     * Common HTTP request-header validation setting, ignored by HTTP/3.
+     * HTTP/3 always validates request field names and values.
+     *
+     * @return configured common HTTP validation setting
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    @Override
+    boolean validateRequestHeaders();
+
+    /**
+     * Common HTTP response-header validation setting, ignored by HTTP/3.
+     * HTTP/3 always validates response field names and values.
+     *
+     * @return configured common HTTP validation setting
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    @Override
+    boolean validateResponseHeaders();
+
+    /**
      * Prior knowledge of HTTP/3 capabilities of the server. If server we are connecting to does not support HTTP/3 and
      * prior knowledge is set to {@code true}, the request fails instead of falling back to a configured TCP protocol.
      *
