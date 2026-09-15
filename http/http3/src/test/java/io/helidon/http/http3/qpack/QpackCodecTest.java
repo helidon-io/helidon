@@ -188,14 +188,108 @@ class QpackCodecTest {
     }
 
     @Test
-    void shouldAcceptNonHuffmanValueAtExactLimit() {
-        byte[] value = "value".getBytes(StandardCharsets.ISO_8859_1);
+    void shouldDecodeEveryNonHuffmanOctet() {
+        byte[] encoded = new byte[256];
+        char[] expected = new char[256];
+        for (int octet = 0; octet < encoded.length; octet++) {
+            encoded[octet] = (byte) octet;
+            expected[octet] = (char) octet;
+        }
+        BufferData buffer = BufferData.create(encoded);
 
-        String decoded = QpackCodec.decodeStringBytes(BufferData.create(value),
+        String decoded = QpackCodec.decodeStringBytes(buffer, false);
+
+        assertThat(decoded, equalTo(new String(expected)));
+        assertThat(buffer.available(), is(0));
+    }
+
+    @Test
+    void shouldDecodeEmptyNonHuffmanValueAtZeroLimit() {
+        String decoded = QpackCodec.decodeStringBytes(BufferData.empty(),
                                                       false,
-                                                      QpackCodec.fieldSectionSizeTracker(value.length));
+                                                      QpackCodec.fieldSectionSizeTracker(0));
 
-        assertThat(decoded, equalTo("value"));
+        assertThat(decoded, equalTo(""));
+    }
+
+    @Test
+    void shouldDecodeNonHuffmanValueFromConsumedReadOnlySlice() {
+        byte[] encoded = {0x11, 0x22, 'x', (byte) 0x80, (byte) 0xe9, (byte) 0xff, 0x33, 0x44};
+        BufferData buffer = BufferData.createReadOnly(encoded, 2, 4);
+        buffer.skip(1);
+
+        String decoded = QpackCodec.decodeStringBytes(buffer,
+                                                      false,
+                                                      QpackCodec.fieldSectionSizeTracker(3));
+
+        assertThat(decoded, equalTo("\u0080\u00e9\u00ff"));
+        assertThat(buffer.available(), is(0));
+    }
+
+    @Test
+    void shouldDecodeNonHuffmanValueAcrossConsumedCompositeBuffers() {
+        BufferData first = BufferData.create(new byte[] {'x', (byte) 0x80});
+        BufferData second = BufferData.createReadOnly(new byte[] {0x11, (byte) 0xe9, (byte) 0xff, 0x22}, 1, 2);
+        BufferData buffer = BufferData.create(first, second);
+        buffer.skip(1);
+
+        String decoded = QpackCodec.decodeStringBytes(buffer,
+                                                      false,
+                                                      QpackCodec.fieldSectionSizeTracker(3));
+
+        assertThat(decoded, equalTo("\u0080\u00e9\u00ff"));
+        assertThat(buffer.available(), is(0));
+        assertThat(first.available(), is(0));
+        assertThat(second.available(), is(0));
+    }
+
+    @Test
+    void shouldDecodeNonHuffmanValueAtExactAccumulatedLimit() {
+        byte[] encoded = {(byte) 0x80, (byte) 0xe9, (byte) 0xff};
+        int priorFieldSize = 32 + 3 + 5;
+        int currentFieldPrefixSize = 32 + 1;
+        long exactLimit = priorFieldSize + currentFieldPrefixSize + encoded.length;
+        QpackCodec.FieldSectionSizeTracker exactTracker = QpackCodec.fieldSectionSizeTracker(exactLimit);
+        exactTracker.consume(priorFieldSize);
+        exactTracker.beginFieldLine();
+        exactTracker.consume(1);
+
+        String decoded = QpackCodec.decodeStringBytes(BufferData.create(encoded), false, exactTracker);
+
+        assertThat(decoded, equalTo("\u0080\u00e9\u00ff"));
+
+        QpackCodec.FieldSectionSizeTracker excessTracker = QpackCodec.fieldSectionSizeTracker(exactLimit - 1);
+        excessTracker.consume(priorFieldSize);
+        excessTracker.beginFieldLine();
+        excessTracker.consume(1);
+        Http3ProtocolException exception = assertThrows(
+                Http3ProtocolException.class,
+                () -> QpackCodec.decodeStringBytes(BufferData.create(encoded), false, excessTracker));
+
+        assertThat(exception.errorCode(), equalTo(Http3ErrorCode.MESSAGE_ERROR));
+        assertThat(exception.scope(), is(Http3ProtocolException.Scope.STREAM));
+    }
+
+    @Test
+    void shouldDecodeAdjacentLatin1LiteralFieldsWithinAccumulatedLimit() {
+        byte[] encoded = {0, 0,
+                0x23, 'x', '-', 'a', 2, (byte) 0x80, (byte) 0xe9,
+                0x23, 'x', '-', 'b', 2, (byte) 0xfe, (byte) 0xff};
+        long exactLimit = 2 * (32 + 3 + 2);
+        BufferData buffer = BufferData.create(encoded);
+
+        List<Header> decoded = QpackCodec.decodeHeaderLines(buffer, exactLimit);
+
+        assertThat(decoded, equalTo(List.of(HeaderValues.create("x-a", "\u0080\u00e9"),
+                                            HeaderValues.create("x-b", "\u00fe\u00ff"))));
+        assertThat(buffer.available(), is(0));
+
+        Http3ProtocolException exception = assertThrows(
+                Http3ProtocolException.class,
+                () -> QpackCodec.decodeHeaderLines(BufferData.create(encoded), exactLimit - 1));
+
+        assertThat(exception.errorCode(), equalTo(Http3ErrorCode.MESSAGE_ERROR));
+        assertThat(exception.scope(), is(Http3ProtocolException.Scope.STREAM));
     }
 
     @Test

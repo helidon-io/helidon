@@ -84,16 +84,19 @@ class QpackConnectionStateTest {
         state.onEncoderStreamData(capacityUpdate(MAX_TABLE_CAPACITY));
         assertThat(section.isDone(), is(false));
 
-        byte[] insertion = literalInsertion("x-blocked", "ready");
-        state.onEncoderStreamData(Arrays.copyOf(insertion, insertion.length - 1));
-        assertThat(section.isDone(), is(false));
+        String value = "r\u0080\u00e9\u00ff";
+        byte[] insertion = literalInsertion("x-blocked", value);
+        for (int index = 0; index < insertion.length - 1; index++) {
+            state.onEncoderStreamData(new byte[] {insertion[index]});
+            assertThat("partial insertion ending at byte " + index, section.isDone(), is(false));
+        }
 
-        state.onEncoderStreamData(Arrays.copyOfRange(insertion, insertion.length - 1, insertion.length));
+        state.onEncoderStreamData(new byte[] {insertion[insertion.length - 1]});
 
         List<Header> headers = section.join();
         assertThat(headers, hasSize(1));
         assertThat(headers.getFirst().headerName(), equalTo(HeaderNames.create("x-blocked")));
-        assertThat(headers.getFirst().get(), equalTo("ready"));
+        assertThat(headers.getFirst().get(), equalTo(value));
         assertThat(decoderInstructions, hasSize(2));
         assertThat(decoderInstructions.get(0), equalTo(insertCountIncrement(1)));
         assertThat(decoderInstructions.get(1), equalTo(sectionAcknowledgment(0)));

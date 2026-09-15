@@ -16,6 +16,7 @@
 
 package io.helidon.http.http3;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,6 +33,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -40,7 +42,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Benchmarks limited QPACK decoding of an h2load-shaped Huffman-encoded request field section.
+ * Benchmarks limited QPACK decoding of an h2load-shaped request field section with plain or Huffman-encoded literals.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -52,13 +54,13 @@ public class Http3QpackDecodingJmhBenchmark {
 
     @Benchmark
     @Threads(1)
-    public List<Header> decodeRequestHuffman(HuffmanRequestState state) {
+    public List<Header> decodeRequest(RequestState state) {
         return state.decode();
     }
 
     @Benchmark
     @Threads(CONCURRENT_THREADS)
-    public List<Header> decodeRequestHuffmanConcurrent(HuffmanRequestState state) {
+    public List<Header> decodeRequestConcurrent(RequestState state) {
         return state.decode();
     }
 
@@ -66,7 +68,7 @@ public class Http3QpackDecodingJmhBenchmark {
      * Shared connection-level decoder state and immutable encoded request bytes.
      */
     @State(Scope.Benchmark)
-    public static class HuffmanRequestState {
+    public static class RequestState {
         private static final int MAX_HEADERS_SIZE = 16_384;
         private static final int STATIC_AUTHORITY = 0;
         private static final int STATIC_PATH = 1;
@@ -77,6 +79,10 @@ public class Http3QpackDecodingJmhBenchmark {
 
         private final AtomicLong nextStreamId = new AtomicLong();
         private final AtomicReference<Throwable> connectionFailure = new AtomicReference<>();
+
+        @Param({"false", "true"})
+        public boolean huffman;
+
         private Http3QpackContext context;
         private byte[] encodedRequest;
 
@@ -86,7 +92,7 @@ public class Http3QpackDecodingJmhBenchmark {
                                                0,
                                                MAX_HEADERS_SIZE,
                                                failure -> connectionFailure.compareAndSet(null, failure));
-            encodedRequest = encodedRequest();
+            encodedRequest = encodedRequest(huffman);
 
             List<Header> decoded = decode();
             if (decoded.size() != 6
@@ -116,15 +122,15 @@ public class Http3QpackDecodingJmhBenchmark {
             }
         }
 
-        private static byte[] encodedRequest() {
+        private static byte[] encodedRequest(boolean huffman) {
             BufferData output = BufferData.growing(128);
             PrefixedIntegerCodec.writeLong(output, 0, 0, 8);
             PrefixedIntegerCodec.writeLong(output, 0, 0, 7);
             writeStaticIndexed(output, STATIC_METHOD_GET);
             writeStaticIndexed(output, STATIC_SCHEME_HTTPS);
-            writeHuffmanValue(output, STATIC_AUTHORITY, "localhost");
-            writeHuffmanValue(output, STATIC_PATH, "/baseline2?a=1&b=1");
-            writeHuffmanValue(output, STATIC_USER_AGENT, "h2load nghttp3/ngtcp2");
+            writeValue(output, STATIC_AUTHORITY, "localhost", huffman);
+            writeValue(output, STATIC_PATH, "/baseline2?a=1&b=1", huffman);
+            writeValue(output, STATIC_USER_AGENT, "h2load nghttp3/ngtcp2", huffman);
             writeStaticIndexed(output, STATIC_ACCEPT_ANY);
             return output.readBytes();
         }
@@ -133,11 +139,16 @@ public class Http3QpackDecodingJmhBenchmark {
             PrefixedIntegerCodec.writeLong(output, index, 0b1100_0000, 6);
         }
 
-        private static void writeHuffmanValue(BufferData output, long staticNameIndex, String value) {
+        private static void writeValue(BufferData output, long staticNameIndex, String value, boolean huffman) {
             PrefixedIntegerCodec.writeLong(output, staticNameIndex, 0b0101_0000, 4);
-            byte[] encodedValue = new byte[HuffmanCodec.encodedLength(value)];
-            HuffmanCodec.encode(value, encodedValue);
-            PrefixedIntegerCodec.writeLong(output, encodedValue.length, 0b1000_0000, 7);
+            byte[] encodedValue;
+            if (huffman) {
+                encodedValue = new byte[HuffmanCodec.encodedLength(value)];
+                HuffmanCodec.encode(value, encodedValue);
+            } else {
+                encodedValue = value.getBytes(StandardCharsets.ISO_8859_1);
+            }
+            PrefixedIntegerCodec.writeLong(output, encodedValue.length, huffman ? 0b1000_0000 : 0, 7);
             output.write(encodedValue);
         }
     }
