@@ -29,11 +29,17 @@ public final class QuicStreamException extends IllegalStateException {
     @Serial
     private static final long serialVersionUID = 5605676636689196101L;
 
-    /** Stream identifier. */
+    /**
+     * Stream identifier.
+     */
     private final long streamId;
-    /** Terminal stream condition. */
+    /**
+     * Terminal stream condition.
+     */
     private final Kind kind;
-    /** Application error code associated with the condition. */
+    /**
+     * Application error code associated with the condition.
+     */
     private final OptionalLong errorCode;
 
     private QuicStreamException(long streamId, Kind kind, OptionalLong errorCode, String message) {
@@ -102,13 +108,21 @@ public final class QuicStreamException extends IllegalStateException {
      * Terminal stream condition.
      */
     public enum Kind {
-        /** Stream output or input was already closed. */
+        /**
+         * Stream output or input was already closed.
+         */
         CLOSED,
-        /** Local endpoint reset the stream. */
+        /**
+         * Local endpoint reset the stream.
+         */
         RESET_LOCALLY,
-        /** Peer reset the stream. */
+        /**
+         * Peer reset the stream.
+         */
         RESET_BY_PEER,
-        /** Peer requested that stream sending stop. */
+        /**
+         * Peer requested that stream sending stop.
+         */
         STOP_SENDING
     }
 }

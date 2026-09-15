@@ -41,11 +41,17 @@ import io.helidon.webserver.quic.QuicTransportBindingProvider;
  * Defines the complete HTTP/3 and QUIC evidence source and loaded-artifact identity scope.
  */
 public final class Http3QuicEvidenceScope {
-    /** Absolute directory used for manifests and completed non-smoke evidence bundles. */
+    /**
+     * Absolute directory used for manifests and completed non-smoke evidence bundles.
+     */
     public static final String EVIDENCE_ROOT_PROPERTY = "helidon.benchmark.evidence.root";
-    /** Live worktree root used while the benchmark harness is clean-compiled in an isolated snapshot. */
+    /**
+     * Live worktree root used while the benchmark harness is clean-compiled in an isolated snapshot.
+     */
     static final String LIVE_REPOSITORY_ROOT_PROPERTY = "helidon.benchmark.evidence.liveRepositoryRoot";
-    /** Effective Maven local repository passed by Surefire. */
+    /**
+     * Effective Maven local repository passed by Surefire.
+     */
     public static final String MAVEN_LOCAL_REPOSITORY_PROPERTY =
             "helidon.benchmark.evidence.mavenLocalRepository";
     private static final Pattern SAFE_STEM = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");

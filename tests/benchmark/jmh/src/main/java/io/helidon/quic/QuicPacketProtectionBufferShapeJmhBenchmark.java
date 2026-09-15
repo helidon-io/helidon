@@ -88,7 +88,9 @@ public class QuicPacketProtectionBufferShapeJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class BufferState {
-        /** TLS cipher suite used to protect packets. */
+        /**
+         * TLS cipher suite used to protect packets.
+         */
         @Param({"TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256"})
         public String cipherSuite;
 
@@ -99,7 +101,9 @@ public class QuicPacketProtectionBufferShapeJmhBenchmark {
         @Param({"64", "1200", "1452"})
         public int datagramSize;
 
-        /** Input/output storage and overlap shape. */
+        /**
+         * Input/output storage and overlap shape.
+         */
         @Param({
                 "DISTINCT_MUTABLE_HEAP",
                 "EXACT_IN_PLACE_MUTABLE_HEAP",
