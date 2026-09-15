@@ -1185,6 +1185,21 @@ class Http3WebServerIT {
     }
 
     @Test
+    void shouldResetRelativeRequestTargetForExtensionSchemeWhenValidationIsDisabled() throws Exception {
+        Http3Config config = Http3Config.builder()
+                .validatePath(false)
+                .validateRequestHeaders(false)
+                .buildPrototype();
+        byte[] requestHeaders = rawHeadersFrame(List.of(
+                HeaderValues.create(HeaderNames.createFromLowercase(":method"), "GET"),
+                HeaderValues.create(HeaderNames.createFromLowercase(":scheme"), "foo+bar-1.2"),
+                HeaderValues.create(HeaderNames.createFromLowercase(":authority"), "localhost"),
+                HeaderValues.create(HeaderNames.createFromLowercase(":path"), "opaque:part")));
+
+        assertMalformedRequestIsRejected(config, requestHeaders);
+    }
+
+    @Test
     void shouldResetInvalidSchemeWithOptionalValidationEnabledOrDisabled() throws Exception {
         for (Http3Config config : List.of(Http3Config.create(),
                                           Http3Config.builder()

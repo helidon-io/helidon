@@ -16,6 +16,7 @@
 
 package io.helidon.http.http3;
 
+import java.net.URI;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,22 +24,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.PrefixedIntegerCodec;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
+import io.helidon.http.WritableHeaders;
+import io.helidon.quic.VariableLengthEncoder;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Benchmarks QPACK response encoding with static-only and dynamic-enabled peer settings.
+ * Benchmarks QPACK request and response encoding with static-only and dynamic-enabled peer settings.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -47,6 +55,22 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(1)
 public class Http3QpackEncodingJmhBenchmark {
     private static final int CONCURRENT_THREADS = 8;
+
+    /**
+     * Encode a complete request HEADERS frame, including Host selection and pseudo-header construction.
+     *
+     * @param state per-thread connection and prebuilt request inputs
+     * @return encoded HEADERS frame
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @Threads(1)
+    public byte[] encodeRequestProtocolStaticOnly(RequestProtocolState state) {
+        long streamId = state.nextStreamId;
+        state.nextStreamId += 4;
+        return Http3Protocol.encodeRequestHeaders(state.context, streamId, state.uri, "GET", state.headers);
+    }
 
     @Benchmark
     @Threads(1)
@@ -94,6 +118,96 @@ public class Http3QpackEncodingJmhBenchmark {
     @Threads(CONCURRENT_THREADS)
     public byte[] encodeResponseDynamicDeepConcurrent(DeepDynamicQpackState state) {
         return state.encodeResponse();
+    }
+
+    /**
+     * Per-thread connection state and ordinary request headers with a Host field that overrides the URI authority.
+     */
+    @State(Scope.Thread)
+    public static class RequestProtocolState {
+        private static final int MAX_HEADERS_SIZE = 16_384;
+
+        /**
+         * Whether the prebuilt Host field carries never-index metadata.
+         */
+        @Param({"false", "true"})
+        public boolean sensitiveHost;
+
+        private Http3QpackContext context;
+        private URI uri;
+        private Headers headers;
+        private long nextStreamId;
+        private Throwable connectionFailure;
+
+        /**
+         * Prepare request inputs, disable the dynamic table, and verify the complete encoded request.
+         */
+        @Setup(Level.Trial)
+        public void setup() {
+            uri = URI.create("https://uri.example/baseline2?a=1&b=1");
+            Header host = sensitiveHost
+                    ? HeaderValues.create(HeaderNames.HOST, false, true, "localhost")
+                    : HeaderValues.create(HeaderNames.HOST, "localhost");
+            headers = WritableHeaders.create()
+                    .add(host)
+                    .add(HeaderValues.create("user-agent", "h2load nghttp3/ngtcp2"))
+                    .add(HeaderValues.create("accept", "*/*"));
+            context = Http3QpackContext.create(0, 0, MAX_HEADERS_SIZE, failure -> connectionFailure = failure);
+            try {
+                context.peerSettings(0, 0);
+                verifyRequest(Http3Protocol.encodeRequestHeaders(context, 0, uri, "GET", headers));
+                nextStreamId = 4;
+            } catch (RuntimeException | Error failure) {
+                context.close(failure);
+                context = null;
+                throw failure;
+            }
+        }
+
+        /**
+         * Release the connection state after all encoding operations.
+         */
+        @TearDown(Level.Trial)
+        public void tearDown() {
+            if (context != null) {
+                Throwable failure = connectionFailure;
+                context.close(new IllegalStateException("HTTP/3 request encoding benchmark complete"));
+                context = null;
+                if (failure != null) {
+                    throw new IllegalStateException("HTTP/3 request encoding failed", failure);
+                }
+            }
+        }
+
+        private void verifyRequest(byte[] encoded) {
+            BufferData frame = BufferData.createReadOnly(encoded, 0, encoded.length);
+            long frameType = VariableLengthEncoder.decode(frame);
+            long frameLength = VariableLengthEncoder.decode(frame);
+            if (frameType != Http3Protocol.FRAME_HEADERS || frameLength != frame.available()) {
+                throw new IllegalStateException("Unexpected HTTP/3 request frame");
+            }
+            Http3QpackContext.Stream stream = context.openStream(0);
+            try {
+                Headers decoded = stream.decodeHeaders(frame, MAX_HEADERS_SIZE);
+                if (decoded.size() != 6 || !frame.consumed()
+                        || decoded.contains(HeaderNames.HOST)
+                        || !"GET".equals(decoded.first(HeaderNames.create(":method")).orElse(null))
+                        || !"https".equals(decoded.first(HeaderNames.create(":scheme")).orElse(null))
+                        || !"localhost".equals(decoded.first(HeaderNames.create(":authority")).orElse(null))
+                        || !"/baseline2?a=1&b=1".equals(decoded.first(HeaderNames.create(":path")).orElse(null))
+                        || !"h2load nghttp3/ngtcp2".equals(decoded.first(HeaderNames.USER_AGENT).orElse(null))
+                        || !"*/*".equals(decoded.first(HeaderNames.ACCEPT).orElse(null))) {
+                    throw new IllegalStateException("Unexpected HTTP/3 request fields: " + decoded);
+                }
+                // Older implementations lose Host sensitivity; keep them measurable and record their wire behavior.
+                boolean authoritySensitive = decoded.get(HeaderNames.create(":authority")).sensitive();
+                System.out.println("HTTP/3 request encoding fixture: sensitiveHost=" + sensitiveHost
+                                           + ", encodedAuthoritySensitive=" + authoritySensitive
+                                           + ", bytes=" + encoded.length);
+            } finally {
+                stream.complete();
+            }
+        }
     }
 
     /**

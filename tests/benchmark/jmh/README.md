@@ -70,6 +70,32 @@ mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
     -Dhttp.static.table.jmh.workload=REQUEST_REGULAR,RESPONSE_REGULAR test
 ```
 
+### QPACK request encoding
+
+`Http3QpackEncodingJmhBenchmark.encodeRequestProtocolStaticOnly` calls `Http3Protocol.encodeRequestHeaders` for a complete
+request HEADERS frame. It includes authority selection from `Host`, authority validation, pseudo-header creation, QPACK encoding,
+and frame construction. URI and ordinary request fields are prepared once per trial; the `Host` value overrides the URI
+authority. `sensitiveHost=false,true` selects ordinary and sensitive Host fields with identical values. The connection
+context is reused with the peer dynamic table disabled and is closed after each trial. The returned byte array is consumed
+by JMH; no bodies or network I/O are included.
+
+This method reports average time in ns/op; enable the GC profiler for B/op. Existing methods that call QPACK directly with
+prebuilt pseudo-headers retain their throughput mode and measure a different boundary. Run only the protocol method with:
+
+```shell
+mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
+    -Dtest=Http3QpackEncodingJmhRunnerTest \
+    '-Dhttp3.qpack.encoding.jmh.include=^io\.helidon\.http\.http3\.Http3QpackEncodingJmhBenchmark\.encodeRequestProtocolStaticOnly$' \
+    -Dhttp3.qpack.encoding.jmh.sensitiveHost=false,true \
+    -Dhttp3.qpack.encoding.jmh.gcProfiler=true \
+    -Dhttp3.qpack.encoding.jmh.result=./target/http3-request-protocol-encoding-jmh-1.json test
+```
+
+The runner accepts `forks`, `warmupIterations`, `warmupMillis`, `measurementIterations`, `measurementMillis`, and `output`
+under the same prefix. Use identical benchmark bytecode, JVM settings, and parameters against each production revision,
+with distinct numbered result paths. Trial setup verifies the decoded request and logs the encoded authority's sensitivity;
+older implementations that drop sensitive Host metadata remain measurable, so that case includes changed wire semantics.
+
 ### QPACK request and literal decoding
 
 `Http3QpackDecodingJmhBenchmark` decodes a fixed h2load-shaped request field section with plain and Huffman-encoded literal
