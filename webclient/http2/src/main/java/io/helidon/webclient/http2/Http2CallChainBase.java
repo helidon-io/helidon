@@ -161,9 +161,12 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
     }
 
     static void alignHostHeader(ClientUri uri, ClientRequestHeaders requestHeaders) {
-        requestHeaders.first(Http2Headers.AUTHORITY_NAME)
-                .ifPresentOrElse(authority -> requestHeaders.set(HeaderValues.create(HeaderNames.HOST, authority)),
-                                 () -> requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority())));
+        ClientRequestHeaders normalized = Http2RequestHeaders.normalizedRequestHeaders(requestHeaders);
+        if (normalized != requestHeaders) {
+            requestHeaders.remove(Http2Headers.AUTHORITY_NAME);
+            requestHeaders.set(normalized.get(HeaderNames.HOST));
+        }
+        requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
     }
 
     @Override

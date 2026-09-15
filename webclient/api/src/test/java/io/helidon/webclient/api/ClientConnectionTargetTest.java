@@ -131,11 +131,10 @@ class ClientConnectionTargetTest {
     }
 
     @Test
-    void usesFinalAuthorityBeforeHost() {
+    void usesFinalHostBeforeUriAuthority() {
         ClientUri uri = ClientUri.create(URI.create("https://route.example/path"));
         ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
         headers.set(HeaderNames.HOST, "host.example:8443");
-        headers.set(HeaderNames.create(":authority"), "authority.example:9443");
         ConnectionKey connectionKey = ConnectionKey.create(uri,
                                                            TLS,
                                                            (_, _) -> InetAddress.getLoopbackAddress(),
@@ -144,7 +143,7 @@ class ClientConnectionTargetTest {
 
         ClientConnectionTarget target = ClientConnectionTarget.create(connectionKey, uri, headers);
 
-        assertThat(target.originAuthority().toString(), is("authority.example:9443"));
+        assertThat(target.originAuthority().toString(), is("host.example:8443"));
     }
 
     @Test

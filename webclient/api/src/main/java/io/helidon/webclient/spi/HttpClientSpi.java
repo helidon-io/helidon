@@ -19,6 +19,7 @@ package io.helidon.webclient.spi;
 import java.util.Objects;
 
 import io.helidon.common.Api;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -29,6 +30,21 @@ import io.helidon.webclient.api.WebClientProtocolResponse;
  * Integration for HTTP versions to provide a single API.
  */
 public interface HttpClientSpi extends ReleasableResource {
+    /**
+     * Normalize protocol-specific request headers for shared client processing. In particular, the effective HTTP
+     * authority must be represented by the {@code Host} header before origin, cookie, and connection-target decisions.
+     * This operation may run before protocol selection and must not depend on discovery or open a connection.
+     * <p>
+     * Implementations must not modify the supplied headers. Return the same instance when no normalization is needed,
+     * or an independent copy with the normalized fields. Normalization must be idempotent and preserve header metadata.
+     *
+     * @param headers request headers
+     * @return normalized request headers
+     */
+    default ClientRequestHeaders normalizedRequestHeaders(ClientRequestHeaders headers) {
+        return Objects.requireNonNull(headers, "headers");
+    }
+
     /**
      * Whether requests created by this provider support dispatch after generic WebClient services have run.
      *

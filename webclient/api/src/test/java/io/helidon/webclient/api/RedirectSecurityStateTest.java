@@ -74,15 +74,13 @@ class RedirectSecurityStateTest {
     }
 
     @Test
-    void http2AuthorityTakesPrecedenceOverHost() {
+    void usesUriOriginWhenHostIsAbsent() {
         ClientUri requestUri = uri("https://route.invalid:8443/path");
         ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
-        headers.set(HeaderValues.create(HeaderNames.HOST, "host.invalid:9443"));
-        headers.set(HeaderValues.create(HeaderNames.create(":authority"), "authority.invalid:10443"));
 
         ClientRequestOrigin effectiveOrigin = ClientRequestOrigin.create(requestUri, headers);
 
-        assertThat(effectiveOrigin.toString(), is("https://authority.invalid:10443"));
+        assertThat(effectiveOrigin.toString(), is("https://route.invalid:8443"));
     }
 
     @Test

@@ -22,7 +22,6 @@ import java.util.Objects;
 import io.helidon.common.Api;
 import io.helidon.common.uri.UriAuthority;
 import io.helidon.common.uri.UriHost;
-import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 
@@ -31,8 +30,6 @@ import io.helidon.http.Headers;
  */
 @Api.Internal
 public final class ClientRequestOrigin {
-    private static final HeaderName AUTHORITY = HeaderNames.create(":authority");
-
     private final String scheme;
     private final UriAuthority authority;
 
@@ -54,8 +51,7 @@ public final class ClientRequestOrigin {
     }
 
     /**
-     * Create an effective HTTP origin. A final HTTP/2 {@code :authority} pseudo-header or {@code Host} header overrides the
-     * URI authority.
+     * Create an effective HTTP origin. The final {@code Host} header overrides the URI authority.
      *
      * @param uri request URI
      * @param headers final request headers
@@ -65,8 +61,7 @@ public final class ClientRequestOrigin {
         Objects.requireNonNull(uri, "uri");
         Objects.requireNonNull(headers, "headers");
         String scheme = normalizedScheme(uri.scheme());
-        UriAuthority requestAuthority = headers.first(AUTHORITY)
-                .or(() -> headers.first(HeaderNames.HOST))
+        UriAuthority requestAuthority = headers.first(HeaderNames.HOST)
                 .map(authority -> requestAuthority(uri, scheme, authority))
                 .orElseGet(() -> uriAuthority(uri, scheme));
         UriAuthority authority = UriAuthority.create(requestAuthority.host(),

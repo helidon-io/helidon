@@ -50,7 +50,6 @@ import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Header;
-import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
@@ -71,7 +70,6 @@ import io.helidon.webclient.spi.WebClientService;
  */
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
-    private static final HeaderName AUTHORITY = HeaderNames.create(":authority");
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     @SuppressWarnings("rawtypes")
     private static final List<SourceHandlerProvider> SOURCE_HANDLERS = HelidonServiceLoader.builder(
@@ -265,6 +263,15 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         return invokeBody(RequestBody.create(outputStreamConsumer, headers().contentLength().orElse(-1)));
     }
 
+    @Override
+    protected ClientRequestHeaders normalizedRequestHeaders(ClientRequestHeaders requestHeaders) {
+        ClientRequestHeaders normalized = requestHeaders;
+        for (LoomClient.ProtocolSpi protocol : protocols) {
+            normalized = protocol.spi().normalizedRequestHeaders(normalized);
+        }
+        return normalized;
+    }
+
     private HttpClientResponse invokeBody(RequestBody body) {
         if (preparedEntityHeaders != null && preparedEntityHeaders.body() != body) {
             preparedEntityHeaders = null;
@@ -407,8 +414,12 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         redirectRequest.headers().remove(HeaderNames.TRANSFER_ENCODING);
         redirectRequest.headers().remove(HeaderNames.EXPECT);
         if (!sameOrigin) {
+            ClientRequestHeaders redirectHeaders = normalizedRequestHeaders(redirectRequest.headers());
+            if (redirectHeaders != redirectRequest.headers()) {
+                redirectRequest.headers().clear();
+                redirectRequest.headers(redirectHeaders);
+            }
             redirectRequest.headers().remove(HeaderNames.HOST);
-            redirectRequest.headers().remove(AUTHORITY);
             if (clientConfig().filterRedirectHeaders()) {
                 clientConfig().redirectSensitiveHeaders().forEach(redirectRequest.headers()::remove);
             }
@@ -451,7 +462,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         copy.headers().clear();
         copy.headers(headers());
         copy.proxy(proxy());
-        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(uri, copy.headers());
+        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(uri, normalizedRequestHeaders(copy.headers()));
         if (retainConnectionOverrides) {
             connection().ifPresent(value -> {
                 Optional<ClientRequestOrigin> inheritedOrigin = inheritedConnectionOrigin();
@@ -500,7 +511,8 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
     }
 
     private ClientRequest<?> discoverHttpImplementation(ClientUri resolvedUri) {
-        ClientRequestHeaderSupport.validate(headers());
+        ClientRequestHeaders normalizedHeaders = normalizedRequestHeaders(headers());
+        ClientRequestHeaderSupport.validate(normalizedHeaders);
 
         LoomClient.ProtocolSpi preferredProtocol = null;
         if (preferredProtocolId != null) {
@@ -531,13 +543,13 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                      currentTls,
                                                      config,
                                                      proxy(),
-                                                     headers());
+                                                     normalizedHeaders);
             ProxyRoute route = resolvedTarget.get().proxyRoute();
             if (!ClientConnectionTarget.routeMatches(currentKey, resolvedUri.scheme(), route)) {
                 return explicitTcpRequest(connection, preferredProtocol, resolvedUri);
             }
             if (!servicesPending()) {
-                ClientConnectionTarget.matchingRoute(connection, currentKey, resolvedUri, headers())
+                ClientConnectionTarget.matchingRoute(connection, currentKey, resolvedUri, normalizedHeaders)
                         .ifPresent(this::selectedProxyRoute);
             }
             return explicitTcpRequest(connection, preferredProtocol, resolvedUri);
@@ -658,15 +670,16 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                     conn -> {
                                                     });
         } else {
+            ClientRequestHeaders normalizedHeaders = normalizedRequestHeaders(headers());
             ConnectionKey connectionKey = unixConnectionKey(resolvedUri,
                                                             effectiveSni,
                                                             effectiveTls,
                                                             clientConfig,
                                                             unixSocketAddress,
-                                                            headers());
+                                                            normalizedHeaders);
             ClientConnectionTarget connectionTarget = ClientConnectionTarget.createUnixDomainSocket(connectionKey,
                                                                                                        resolvedUri,
-                                                                                                       headers(),
+                                                                                                       normalizedHeaders,
                                                                                                        unixSocketAddress);
             connection = UnixDomainSocketClientConnection.create(webClient,
                                                                  connectionTarget,
@@ -799,7 +812,8 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                     throw new IllegalStateException("Selected protocol did not expose its post-service response");
                 }
                 WebClientServiceRequest rawRequest = raw.serviceRequest();
-                redirectSecurityState(redirectSecurityState().finalized(response.lastEndpointUri(), rawRequest.headers()));
+                redirectSecurityState(redirectSecurityState().finalized(response.lastEndpointUri(),
+                                                                         normalizedRequestHeaders(rawRequest.headers())));
                 actualProtocol.set(response.protocolId());
                 transportResponse.set(response);
                 finalized.protocolSelectionConnection = null;
@@ -822,15 +836,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         } catch (RuntimeException | Error e) {
             whenSent.completeExceptionally(e);
             whenComplete.completeExceptionally(e);
-            HttpClientResponse response = transportResponse.get();
-            if (response != null) {
-                response.close();
-            }
-            HttpClientRequest finalized = finalizedRequest.get();
-            if (finalized != null && finalized.protocolSelectionConnection != null) {
-                finalized.protocolSelectionConnection.closeResource();
-                finalized.protocolSelectionConnection = null;
-            }
+            closeFailedDispatch(transportResponse.get(), finalizedRequest.get());
             throw e;
         }
 
@@ -928,8 +934,9 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         HttpClientConfig clientConfig = clientConfig();
         Tls effectiveTls = effectiveTls(resolvedUri, tls());
         SniConfig effectiveSni = effectiveSni(clientConfig);
-        SniSupport.Selection sni = sniSelection(resolvedUri, effectiveSni, effectiveTls, headers());
-        ClientRequestOrigin origin = ClientRequestOrigin.create(resolvedUri, headers());
+        ClientRequestHeaders normalizedHeaders = normalizedRequestHeaders(headers());
+        SniSupport.Selection sni = sniSelection(resolvedUri, effectiveSni, effectiveTls, normalizedHeaders);
+        ClientRequestOrigin origin = ClientRequestOrigin.create(resolvedUri, normalizedHeaders);
         tlsGeneration = effectiveTls.generation();
         return new LoomClient.EndpointKey(origin.scheme(),
                                           origin.authority().toString(),
@@ -943,12 +950,13 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                     SniConfig effectiveSni,
                                                     Tls effectiveTls,
                                                     HttpClientConfig clientConfig) {
+        ClientRequestHeaders normalizedHeaders = normalizedRequestHeaders(headers());
         ConnectionKey connectionKey = connectionKey(resolvedUri,
                                                     effectiveSni,
                                                     effectiveTls,
                                                     clientConfig,
                                                     proxy(),
-                                                    headers());
+                                                    normalizedHeaders);
         Optional<ProxyRoute> selectedRoute = selectedProxyRoute();
         Optional<ProxyRoute> matchingRoute = selectedRoute
                 .filter(route -> ClientConnectionTarget.routeMatches(connectionKey, resolvedUri.scheme(), route));
@@ -956,8 +964,8 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             clearSelectedProxyRoute();
         }
         ClientConnectionTarget target = matchingRoute
-                .map(route -> ClientConnectionTarget.create(connectionKey, resolvedUri, headers(), route))
-                .orElseGet(() -> ClientConnectionTarget.create(connectionKey, resolvedUri, headers()));
+                .map(route -> ClientConnectionTarget.create(connectionKey, resolvedUri, normalizedHeaders, route))
+                .orElseGet(() -> ClientConnectionTarget.create(connectionKey, resolvedUri, normalizedHeaders));
         selectedProxyRoute(target.proxyRoute());
         return target;
     }
@@ -991,6 +999,16 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                        + "willing to handle it. HTTP versions supported: " + clients.keySet());
         }
         return tcpProtocols.getFirst().spi().clientRequest(this, resolvedUri);
+    }
+
+    private static void closeFailedDispatch(HttpClientResponse response, HttpClientRequest request) {
+        if (response != null) {
+            response.close();
+        }
+        if (request != null && request.protocolSelectionConnection != null) {
+            request.protocolSelectionConnection.closeResource();
+            request.protocolSelectionConnection = null;
+        }
     }
 
     private static SniSupport.Selection sniSelection(ClientUri uri,

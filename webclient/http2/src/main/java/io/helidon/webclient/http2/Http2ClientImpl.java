@@ -28,7 +28,6 @@ import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.http2.Http2FrameListener;
-import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.webclient.api.AltSvcHeader;
 import io.helidon.webclient.api.ClientAltSvcConfig;
@@ -145,7 +144,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
             if (!connectionCache.mayContainAlternative(connectionKey.host(), explicitConnection)) {
                 return SupportLevel.NOT_SUPPORTED;
             }
-            ClientRequestHeaders headers = clientRequest.headers();
+            ClientRequestHeaders headers = normalizedRequestHeaders(clientRequest.headers());
             if (clientRequest.sni()
                     .or(clientConfig::sni)
                     .filter(sni -> sni.mode() == SniMode.HOST_HEADER)
@@ -169,8 +168,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                 if (candidate == null) {
                     alternativeAvailable = false;
                 } else {
-                    boolean originAuthorityOverride = headers.contains(Http2Headers.AUTHORITY_NAME)
-                            || headers.contains(HeaderNames.HOST);
+                    boolean originAuthorityOverride = headers.contains(HeaderNames.HOST);
                     ClientConnectionTarget target = originAuthorityOverride
                             ? ClientConnectionTarget.create(connectionKey,
                                                             clientUri,
@@ -215,6 +213,11 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     }
 
     @Override
+    public ClientRequestHeaders normalizedRequestHeaders(ClientRequestHeaders headers) {
+        return Http2RequestHeaders.normalizedRequestHeaders(headers);
+    }
+
+    @Override
     public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
         var selectedProxyRoute = clientRequest.selectedProxyRoute();
         Http2ClientRequestImpl request = new Http2ClientRequestImpl(this,
@@ -226,7 +229,8 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
         request.headers().clear();
         request.headers(clientRequest.headers());
-        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri, request.headers());
+        ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(clientUri,
+                                                                      normalizedRequestHeaders(request.headers()));
         clientRequest.connection().ifPresent(value -> {
             var inheritedOrigin = clientRequest.inheritedConnectionOrigin();
             if (inheritedOrigin.isEmpty()) {

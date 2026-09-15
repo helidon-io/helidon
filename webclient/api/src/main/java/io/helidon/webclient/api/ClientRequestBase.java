@@ -74,7 +74,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      */
     public static final Header PROXY_CONNECTION = HeaderValues.createCached(HeaderNames.create("Proxy-Connection"),
                                                                            "keep-alive");
-    private static final HeaderName AUTHORITY = HeaderNames.create(":authority");
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
     private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");
 
@@ -562,7 +561,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Api.Internal
     public void selectedProxyRoute(ProxyRoute proxyRoute) {
         this.selectedProxyRoute = Objects.requireNonNull(proxyRoute);
-        this.inheritedSelectedProxyRouteOrigin = ClientRequestOrigin.create(resolvedUri(), headers);
+        this.inheritedSelectedProxyRouteOrigin = ClientRequestOrigin.create(resolvedUri(), normalizedRequestHeaders(headers));
         this.lastSelectedProxyRoute = proxyRoute;
         this.inheritedLastSelectedProxyRouteOrigin = inheritedSelectedProxyRouteOrigin;
     }
@@ -796,6 +795,18 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                               requestPrepare);
     }
 
+    /**
+     * Normalize protocol-specific request headers for shared origin, cookie, and connection-target processing.
+     * Implementations must not modify the supplied headers. Return the same instance when no normalization is needed,
+     * or an independent copy with the normalized fields. Normalization must be idempotent and preserve header metadata.
+     *
+     * @param requestHeaders request headers
+     * @return normalized request headers
+     */
+    protected ClientRequestHeaders normalizedRequestHeaders(ClientRequestHeaders requestHeaders) {
+        return Objects.requireNonNull(requestHeaders, "requestHeaders");
+    }
+
     @SuppressWarnings("checkstyle:ParameterNumber") // central service path keeps protocol and transport modes together
     private WebClientServiceResponse invokeServices(WebClient webClient,
                                                     WebClientService.Chain httpCallChain,
@@ -813,11 +824,12 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         if (serviceRequestAfterServices == null || !dispatchPreparedAfterServices) {
             // Include cookies for the current effective authority. A service may still rewrite the final target; terminal
             // dispatch sanitizes and rebuilds cookies after all services have run.
-            ClientUri cookieUri = ClientRequestOrigin.create(usedUri, invocationHeaders).apply(usedUri);
+            ClientRequestHeaders originHeaders = normalizedRequestHeaders(invocationHeaders);
+            ClientUri cookieUri = ClientRequestOrigin.create(usedUri, originHeaders).apply(usedUri);
             List<String> explicitCookies = invocationHeaders.contains(HeaderNames.COOKIE)
                     ? List.copyOf(invocationHeaders.get(HeaderNames.COOKIE).allValues())
                     : List.of();
-            boolean crossesOrigin = redirectSecurityState.wouldCrossOrigin(usedUri, invocationHeaders);
+            boolean crossesOrigin = redirectSecurityState.wouldCrossOrigin(usedUri, originHeaders);
             if (redirectSecurityState.automaticCookiesAllowed()) {
                 appendManagedCookies(cookieUri,
                                      invocationHeaders,
@@ -849,12 +861,12 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             try {
                 if (dispatchPreparedAfterServices) {
                     ClientRequestHeaders preparedHeaders = serviceRequestAfterServices.headers();
-                    normalizeAuthority(preparedHeaders);
+                    applyNormalizedRequestHeaders(preparedHeaders);
                     ClientRequestOrigin originBeforePreparation =
                             ClientRequestOrigin.create(serviceRequestAfterServices.uri(), preparedHeaders);
                     CookieSnapshot cookiesBeforePreparation = cookieSnapshot(preparedHeaders);
                     requestPrepare.accept(serviceRequestAfterServices);
-                    normalizeAuthority(preparedHeaders);
+                    applyNormalizedRequestHeaders(preparedHeaders);
                     ClientRequestOrigin originAfterPreparation =
                             ClientRequestOrigin.create(serviceRequestAfterServices.uri(), preparedHeaders);
                     if (!originBeforePreparation.equals(originAfterPreparation)
@@ -914,7 +926,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             } catch (RuntimeException | Error failure) {
                 try {
                     captureFinalizedRequest(request);
-                    redirectSecurityState(redirectSecurityState.finalized(request.uri(), request.headers()));
+                    redirectSecurityState(redirectSecurityState.finalized(request.uri(), finalizedRequestHeaders));
                 } catch (RuntimeException snapshotFailure) {
                     if (snapshotFailure != failure) {
                         failure.addSuppressed(snapshotFailure);
@@ -935,14 +947,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         WebClientServiceResponse response = last.proceed(serviceRequest);
         WebClientServiceRequest responseRequest = response.serviceRequest();
         if (terminalDispatch.get() == TerminalDispatchState.NOT_INVOKED) {
-            ManagedCookiePolicy cookiePolicy = new ManagedCookiePolicy(dispatchCookieState.managerCookies(),
-                                                                       redirectSecurityState.automaticCookiesAllowed(),
-                                                                       redirectSecurityState.suppressedCookieNames());
-            cookiePolicy.observe(dispatchCookieState.provisionalCookies(), cookieSnapshot(responseRequest.headers()));
-            redirectSecurityState(redirectSecurityState.cookiePolicy(cookiePolicy.automaticAllowed(),
-                                                                      cookiePolicy.suppressedNames()));
-            redirectSecurityState(redirectSecurityState.finalized(responseRequest.uri(), responseRequest.headers()));
-            captureFinalizedRequest(responseRequest);
+            finalizeSyntheticResponse(responseRequest, dispatchCookieState);
             whenSent.complete(responseRequest);
         }
         ClientUri responseEndpointUri = finalizedEndpointUri();
@@ -972,13 +977,35 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private void captureFinalizedRequest(WebClientServiceRequest request) {
         finalizedEndpointUri = ClientUri.create(request.uri());
         finalizedRequestHeaders = snapshotHeaders(request.headers());
+        // Keep the captured endpoint and headers available if protocol validation fails and a service recovers.
+        finalizedRequestHeaders = normalizedRequestHeaders(finalizedRequestHeaders);
+    }
+
+    private void finalizeSyntheticResponse(WebClientServiceRequest request, CookieDispatchState cookieState) {
+        applyNormalizedRequestHeaders(request.headers());
+        ManagedCookiePolicy cookiePolicy = new ManagedCookiePolicy(cookieState.managerCookies(),
+                                                                   redirectSecurityState.automaticCookiesAllowed(),
+                                                                   redirectSecurityState.suppressedCookieNames());
+        cookiePolicy.observe(cookieState.provisionalCookies(), cookieSnapshot(request.headers()));
+        redirectSecurityState(redirectSecurityState.cookiePolicy(cookiePolicy.automaticAllowed(),
+                                                                  cookiePolicy.suppressedNames()));
+        redirectSecurityState(redirectSecurityState.finalized(request.uri(), request.headers()));
+        captureFinalizedRequest(request);
+    }
+
+    private void applyNormalizedRequestHeaders(ClientRequestHeaders requestHeaders) {
+        ClientRequestHeaders normalized = normalizedRequestHeaders(requestHeaders);
+        if (normalized != requestHeaders) {
+            requestHeaders.clear();
+            normalized.forEach(requestHeaders::set);
+        }
     }
 
     private void prepareForDispatch(WebClientServiceRequest request,
                                     Consumer<WebClientServiceRequest> requestPrepare,
                                     CookieDispatchState cookieState) {
         ClientRequestHeaders requestHeaders = request.headers();
-        normalizeAuthority(requestHeaders);
+        applyNormalizedRequestHeaders(requestHeaders);
         ManagedCookiePolicy cookiePolicy = new ManagedCookiePolicy(cookieState.managerCookies(),
                                                                    redirectSecurityState.automaticCookiesAllowed(),
                                                                    redirectSecurityState.suppressedCookieNames());
@@ -1000,7 +1027,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             }
             throw failure;
         }
-        normalizeAuthority(requestHeaders);
+        applyNormalizedRequestHeaders(requestHeaders);
         cookiePolicy.observe(serviceCookies, cookieSnapshot(requestHeaders));
         redirectSecurityState(redirectSecurityState.cookiePolicy(cookiePolicy.automaticAllowed(),
                                                                   cookiePolicy.suppressedNames()));
@@ -1118,21 +1145,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                    currentCookieHeader.sensitive(),
                                                    retainedCookies.toArray(String[]::new)));
         }
-    }
-
-    private static void normalizeAuthority(ClientRequestHeaders requestHeaders) {
-        if (!requestHeaders.contains(AUTHORITY)) {
-            return;
-        }
-        Header authority = requestHeaders.get(AUTHORITY);
-        if (authority.valueCount() != 1) {
-            throw new IllegalArgumentException("Request :authority must contain exactly one value");
-        }
-        requestHeaders.remove(AUTHORITY);
-        requestHeaders.set(HeaderValues.create(HeaderNames.HOST,
-                                               authority.changing(),
-                                               authority.sensitive(),
-                                               authority.get()));
     }
 
     private static ClientRequestHeaders snapshotHeaders(Headers source) {
@@ -1308,9 +1320,9 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      */
     protected final ClientRequestHeaders redirectSourceHeaders(Headers headersAfterServices) {
         Objects.requireNonNull(headersAfterServices, "headersAfterServices");
-        ClientRequestHeaders redirectHeaders = snapshotHeaders(headers);
-        ClientRequestHeaders dispatchedHeaders = finalizedRequestHeaders();
-        ClientRequestHeaders postServiceHeaders = snapshotHeaders(headersAfterServices);
+        ClientRequestHeaders redirectHeaders = normalizedRequestHeaders(snapshotHeaders(headers));
+        ClientRequestHeaders dispatchedHeaders = normalizedRequestHeaders(finalizedRequestHeaders());
+        ClientRequestHeaders postServiceHeaders = normalizedRequestHeaders(snapshotHeaders(headersAfterServices));
 
         dispatchedHeaders.forEach(dispatchedHeader -> {
             HeaderName name = dispatchedHeader.headerName();
@@ -1319,9 +1331,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             }
             if (!postServiceHeaders.contains(name)) {
                 redirectHeaders.remove(name);
-                if (name.equals(HeaderNames.HOST)) {
-                    redirectHeaders.remove(AUTHORITY);
-                }
                 return;
             }
             Header postServiceHeader = postServiceHeaders.get(name);
@@ -1329,18 +1338,12 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                     || dispatchedHeader.sensitive() != postServiceHeader.sensitive()
                     || !dispatchedHeader.allValues().equals(postServiceHeader.allValues())) {
                 redirectHeaders.set(postServiceHeader);
-                if (name.equals(HeaderNames.HOST)) {
-                    redirectHeaders.remove(AUTHORITY);
-                }
             }
         });
         postServiceHeaders.forEach(postServiceHeader -> {
             HeaderName name = postServiceHeader.headerName();
             if (!name.equals(HeaderNames.COOKIE) && !dispatchedHeaders.contains(name)) {
                 redirectHeaders.set(postServiceHeader);
-                if (name.equals(HeaderNames.HOST)) {
-                    redirectHeaders.remove(AUTHORITY);
-                }
             }
         });
         return redirectHeaders;

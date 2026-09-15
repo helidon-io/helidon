@@ -95,6 +95,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.http.HeaderNames.USER_AGENT;
 import static io.helidon.http.Method.GET;
@@ -253,6 +254,12 @@ class Http2WebClientTest {
                 .route(Http2Route.route(GET,
                                         "/connection-target",
                                         (req, res) -> res.send(req.requestedUri().host() + "|" + req.socketId())))
+                .route(Http2Route.route(GET,
+                                        "/authority-cookies",
+                                        (req, res) -> {
+                                            String cookies = req.headers().first(HeaderNames.COOKIE).orElse("");
+                                            res.send(req.requestedUri().host() + "|" + cookies + "|" + req.socketId());
+                                        }))
                 .route(Http2Route.route(GET,
                                         "/generic-retarget",
                                         (req, res) -> res.send("bootstrap|" + req.socketId())))
@@ -862,8 +869,9 @@ class Http2WebClientTest {
         }
     }
 
-    @Test
-    void directClientPreservesExplicitHostOnSameOriginRedirect() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void directClientPreservesExplicitAuthorityOnSameOriginRedirect(boolean pseudoheader) {
         Http2Client client = Http2Client.builder()
                 .servicesDiscoverServices(false)
                 .shareConnectionCache(false)
@@ -875,11 +883,93 @@ class Http2WebClientTest {
         try {
             try (Http2ClientResponse response = client.post()
                     .followRedirects(true)
-                    .header(HeaderNames.HOST, "virtual.example:" + plainPort)
+                    .header(pseudoheader ? Http2Headers.AUTHORITY_NAME : HeaderNames.HOST,
+                            "virtual.example:" + plainPort)
                     .submit("body")) {
                 assertThat(response.as(String.class),
                            is("virtual.example:" + plainPort + "|missing-authorization|body"));
             }
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void configuredAuthorityKeepsPrecedenceOverServiceHost() {
+        AtomicInteger serviceCalls = new AtomicInteger();
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .dnsResolver((_, _) -> InetAddress.ofLiteral("127.0.0.1"))
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .baseUri("http://source.example:" + plainPort + "/connection-target")
+                .addService((chain, request) -> {
+                    assertThat(request.headers().get(Http2Headers.AUTHORITY_NAME).get(),
+                               is("configured.example:" + plainPort));
+                    request.headers().set(HeaderValues.create(HeaderNames.HOST, "service.example:" + plainPort));
+                    serviceCalls.incrementAndGet();
+                    return chain.proceed(request);
+                })
+                .build();
+
+        try {
+            Http2ClientRequest request = client.get()
+                    .header(Http2Headers.AUTHORITY_NAME, "configured.example:" + plainPort);
+            String first = responseBody(request);
+            String second = responseBody(request);
+
+            assertThat(first, startsWith("configured.example|"));
+            assertThat(second, startsWith("configured.example|"));
+            assertThat(connectionId(second), is(connectionId(first)));
+            assertThat(serviceCalls.get(), is(2));
+            assertThat(request.headers().get(Http2Headers.AUTHORITY_NAME).get(), is("configured.example:" + plainPort));
+            assertThat(request.headers().contains(HeaderNames.HOST), is(false));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void serviceAuthoritySelectsFinalCookiesAndConnectionTarget() {
+        CookieStore cookieStore = new CookieManager().getCookieStore();
+        HttpCookie sourceCookie = new HttpCookie("source", "private");
+        sourceCookie.setPath("/");
+        sourceCookie.setVersion(0);
+        cookieStore.add(URI.create("http://source.example:" + plainPort), sourceCookie);
+        HttpCookie targetCookie = new HttpCookie("target", "selected");
+        targetCookie.setPath("/");
+        targetCookie.setVersion(0);
+        cookieStore.add(URI.create("http://target.example:" + plainPort), targetCookie);
+        AtomicReference<String> finalAuthority = new AtomicReference<>("target.example:" + plainPort);
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .dnsResolver((_, _) -> InetAddress.ofLiteral("127.0.0.1"))
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .baseUri("http://source.example:" + plainPort + "/authority-cookies")
+                .cookieManager(WebClientCookieManager.create(config -> config
+                        .automaticStoreEnabled(true)
+                        .cookieStore(cookieStore)))
+                .addService((chain, request) -> {
+                    request.headers().set(HeaderValues.create(Http2Headers.AUTHORITY_NAME, finalAuthority.get()));
+                    return chain.proceed(request);
+                })
+                .build();
+
+        try {
+            String first = responseBody(client.get());
+            String reused = responseBody(client.get());
+            finalAuthority.set("source.example:" + plainPort);
+            String source = responseBody(client.get());
+
+            assertThat(first, startsWith("target.example|"));
+            assertThat(first, containsString("target=selected"));
+            assertThat(first, not(containsString("source=")));
+            assertThat(connectionId(reused), is(connectionId(first)));
+            assertThat(source, startsWith("source.example|"));
+            assertThat(source, containsString("source=private"));
+            assertThat(source, not(containsString("target=")));
+            assertThat(connectionId(source), not(is(connectionId(first))));
         } finally {
             client.closeResource();
         }
@@ -1582,7 +1672,7 @@ class Http2WebClientTest {
     }
 
     private static String connectionId(String responseBody) {
-        return responseBody.substring(responseBody.indexOf('|') + 1);
+        return responseBody.substring(responseBody.lastIndexOf('|') + 1);
     }
 
     private static Http2Client syntheticBeforeExpectClient() {
