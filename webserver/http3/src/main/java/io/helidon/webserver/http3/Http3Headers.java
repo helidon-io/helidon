@@ -35,7 +35,10 @@ final class Http3Headers {
         writable.remove(HeaderNames.X_HELIDON_CN);
         tlsCommonName.ifPresent(cn -> writable.set(HeaderValues.create(HeaderNames.X_HELIDON_CN, cn)));
         if (authority != null && !authority.isEmpty()) {
-            writable.set(HeaderValues.create(HeaderNames.HOST, authority));
+            boolean sensitive = writable.contains(HeaderNames.HOST) && writable.get(HeaderNames.HOST).sensitive();
+            writable.set(sensitive
+                                 ? HeaderValues.create(HeaderNames.HOST, false, true, authority)
+                                 : HeaderValues.create(HeaderNames.HOST, authority));
         }
         return ServerRequestHeaders.create(writable);
     }

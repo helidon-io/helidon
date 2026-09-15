@@ -27,7 +27,7 @@ Configuration of the HTTP/3 client protocol
 <td>
 <code>true</code>
 </td>
-<td>Common HTTP response-header validation setting, ignored by HTTP/3</td>
+<td>Common HTTP response-header validation setting, ignored because HTTP/3 always validates response field names and values</td>
 </tr>
 <tr>
 <td>
@@ -163,7 +163,7 @@ Configuration of the HTTP/3 client protocol
 <td>
 <code>true</code>
 </td>
-<td>Common HTTP request-header validation setting, ignored by HTTP/3</td>
+<td>Common HTTP request-header validation setting, ignored because HTTP/3 always validates request field names and values</td>
 </tr>
 <tr>
 <td>

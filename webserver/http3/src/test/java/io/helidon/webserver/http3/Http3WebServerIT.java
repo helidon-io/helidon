@@ -1167,48 +1167,37 @@ class Http3WebServerIT {
     }
 
     @Test
-    void shouldRouteInvalidPathWhenValidationIsDisabled() throws Exception {
+    void shouldResetInvalidPathWhenValidationIsDisabled() throws Exception {
         Http3Config config = Http3Config.builder()
                 .validatePath(false)
                 .buildPrototype();
-        try (TestEnvironment environment = TestEnvironment.create(config,
-                                                                   routing -> routing.any((req, res) ->
-                                                                           res.send(req.prologue()
-                                                                                            .uriPath()
-                                                                                            .rawPath())));
-             LowLevelHttp3Client client = LowLevelHttp3Client.create(environment)) {
-            LowLevelHttp3Client.RequestStream requestStream = client.openRequestStream();
-            CompletableFuture<byte[]> responseFuture = readAll(requestStream.stream());
 
-            requestStream.writer()
-                    .scheduleForWriting(BufferData.create(rawRequestHeadersFrame("/invalid[path")), true);
-
-            DecodedResponse response = client.decodeResponse(requestStream, responseFuture.get(10, TimeUnit.SECONDS));
-            assertThat(response.status(), equalTo(200));
-            assertThat(new String(response.body(), StandardCharsets.UTF_8), equalTo("/invalid[path"));
-        }
+        assertMalformedRequestIsRejected(config, rawRequestHeadersFrame("/invalid[path"));
     }
 
     @Test
-    void shouldRouteRelativeRequestTargetWhenValidationIsDisabled() throws Exception {
+    void shouldResetRelativeRequestTargetWhenValidationIsDisabled() throws Exception {
         Http3Config config = Http3Config.builder()
                 .validatePath(false)
                 .buildPrototype();
-        try (TestEnvironment environment = TestEnvironment.create(config,
-                                                                   routing -> routing.any((req, res) ->
-                                                                           res.send(req.prologue()
-                                                                                            .uriPath()
-                                                                                            .rawPath())));
-             LowLevelHttp3Client client = LowLevelHttp3Client.create(environment)) {
-            LowLevelHttp3Client.RequestStream requestStream = client.openRequestStream();
-            CompletableFuture<byte[]> responseFuture = readAll(requestStream.stream());
 
-            requestStream.writer()
-                    .scheduleForWriting(BufferData.create(rawRequestHeadersFrame("relative[target")), true);
+        assertMalformedRequestIsRejected(config, rawRequestHeadersFrame("relative"));
+    }
 
-            DecodedResponse response = client.decodeResponse(requestStream, responseFuture.get(10, TimeUnit.SECONDS));
-            assertThat(response.status(), equalTo(200));
-            assertThat(new String(response.body(), StandardCharsets.UTF_8), equalTo("relative[target"));
+    @Test
+    void shouldResetInvalidSchemeWithOptionalValidationEnabledOrDisabled() throws Exception {
+        for (Http3Config config : List.of(Http3Config.create(),
+                                          Http3Config.builder()
+                                                  .validatePath(false)
+                                                  .validateRequestHeaders(false)
+                                                  .buildPrototype())) {
+            byte[] requestHeaders = rawHeadersFrame(List.of(
+                    HeaderValues.create(HeaderNames.createFromLowercase(":method"), "GET"),
+                    HeaderValues.create(HeaderNames.createFromLowercase(":scheme"), "https\n"),
+                    HeaderValues.create(HeaderNames.createFromLowercase(":authority"), "localhost"),
+                    HeaderValues.create(HeaderNames.createFromLowercase(":path"), "/malformed")));
+
+            assertMalformedRequestIsRejected(config, requestHeaders);
         }
     }
 
@@ -2970,6 +2959,31 @@ class Http3WebServerIT {
             Thread.sleep(10);
         }
         return condition.getAsBoolean();
+    }
+
+    private static void assertMalformedRequestIsRejected(Http3Config config, byte[] requestHeaders) throws Exception {
+        AtomicBoolean routed = new AtomicBoolean();
+        try (TestEnvironment environment = TestEnvironment.create(config,
+                                                                   routing -> routing
+                                                                           .get("/alive", (req, res) -> res.send("alive"))
+                                                                           .any((req, res) -> {
+                                                                               routed.set(true);
+                                                                               res.send();
+                                                                           }));
+             LowLevelHttp3Client client = LowLevelHttp3Client.create(environment)) {
+            LowLevelHttp3Client.RequestStream requestStream = client.openRequestStream();
+            requestStream.writer().scheduleForWriting(BufferData.create(requestHeaders), true);
+
+            assertThat("Malformed pseudo-header must reset its stream with H3_MESSAGE_ERROR; validatePath="
+                               + config.validatePath() + ", validateRequestHeaders=" + config.validateRequestHeaders(),
+                       waitFor(() -> requestStream.stream().rcvErrorCode() == Http3ErrorCode.MESSAGE_ERROR.code(),
+                               Duration.ofSeconds(10)),
+                       equalTo(true));
+            assertThat("Malformed request must not reach routing", routed.get(), equalTo(false));
+            DecodedResponse followUp = client.get(environment.uri("/alive"));
+            assertThat(followUp.status(), equalTo(200));
+            assertThat(new String(followUp.body(), StandardCharsets.UTF_8), equalTo("alive"));
+        }
     }
 
     private static byte[] rawHeadersFrame(List<Header> headers) {

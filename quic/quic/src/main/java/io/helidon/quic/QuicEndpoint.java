@@ -22,7 +22,6 @@ import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketOption;
-import java.net.StandardProtocolFamily;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
@@ -1903,10 +1902,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
 
         // A dual-stack ephemeral bind can reuse a port already occupied by an IPv4 socket on macOS.
-        // Select with an IPv4 socket, then explicitly bind the dual-stack channel to check both families.
+        // Select a candidate using the default family, then explicitly bind the real channel to check both families.
         for (int attempt = 1; ; attempt++) {
             int port;
-            try (DatagramChannel reservation = DatagramChannel.open(StandardProtocolFamily.INET)) {
+            try (DatagramChannel reservation = DatagramChannel.open()) {
                 reservation.bind(null);
                 port = ((InetSocketAddress) reservation.getLocalAddress()).getPort();
             }

@@ -19,6 +19,7 @@ package io.helidon.http.http3;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +112,76 @@ class Http3ProtocolTest {
         assertThat(decoded.authority(), equalTo(rawAuthority));
         assertThat(decoded.parsedAuthority().toString(), equalTo("api.example.com:8443"));
         assertThat(decoded.parsedAuthority().port(), equalTo(8443));
+    }
+
+    @Test
+    void shouldPreserveSensitiveAuthorityThroughHostForwarding() throws Exception {
+        for (boolean includeHost : List.of(false, true)) {
+            List<Header> fields = new ArrayList<>(List.of(
+                    HeaderValues.create(":method", "GET"),
+                    HeaderValues.create(":scheme", "https"),
+                    HeaderValues.create(HeaderNames.create(":authority"), false, true, "Api.Example.COM:443"),
+                    HeaderValues.create(":path", "/")));
+            if (includeHost) {
+                fields.add(HeaderValues.create(HeaderNames.HOST, "api.example.com"));
+            }
+            Http3Protocol.DecodedRequestHead decoded = decodeRequestHeaders(QpackCodec.encodeHeaders(fields));
+
+            assertThat(decoded.headers().contains(HeaderNames.HOST), is(true));
+            Header host = decoded.headers().get(HeaderNames.HOST);
+            assertThat(host.get(), is("Api.Example.COM:443"));
+            assertThat(host.sensitive(), is(true));
+
+            byte[] forwarded = Http3Protocol.encodeRequestHeaders(qpackContext(0, 0),
+                                                                   4,
+                                                                   URI.create("https://upstream.example/"),
+                                                                   decoded.method(),
+                                                                   decoded.headers());
+            Header authority = Http3Protocol.decodeHeadersPayload(
+                    nextFramePayload(ByteBuffer.wrap(forwarded), Http3Protocol.FRAME_HEADERS))
+                    .get(HeaderNames.create(":authority"));
+            assertThat(authority.get(), is("Api.Example.COM:443"));
+            assertThat(authority.sensitive(), is(true));
+        }
+    }
+
+    @Test
+    void shouldPreserveHostSensitivityWhenEncodingAuthority() throws Exception {
+        for (boolean sensitive : List.of(false, true)) {
+            var headers = WritableHeaders.create()
+                    .add(HeaderValues.create(HeaderNames.HOST, false, sensitive, "tenant.example:8443"));
+            byte[] encoded = Http3Protocol.encodeRequestHeaders(qpackContext(0, 0),
+                                                                0,
+                                                                URI.create("https://origin.example/"),
+                                                                "GET",
+                                                                headers);
+            Headers decoded = Http3Protocol.decodeHeadersPayload(
+                    nextFramePayload(ByteBuffer.wrap(encoded), Http3Protocol.FRAME_HEADERS));
+
+            assertThat(decoded.get(HeaderNames.create(":authority")).get(), is("tenant.example:8443"));
+            assertThat(decoded.get(HeaderNames.create(":authority")).sensitive(), is(sensitive));
+            assertThat(decoded.get(HeaderNames.create(":method")).sensitive(), is(false));
+            assertThat(decoded.contains(HeaderNames.HOST), is(false));
+        }
+    }
+
+    @Test
+    void shouldRetainSensitiveHostWithOrdinaryOrAbsentAuthority() {
+        for (boolean includeAuthority : List.of(false, true)) {
+            List<Header> fields = new ArrayList<>(List.of(
+                    HeaderValues.create(":method", "GET"),
+                    HeaderValues.create(":scheme", "https"),
+                    HeaderValues.create(":path", "/")));
+            if (includeAuthority) {
+                fields.add(HeaderValues.create(":authority", "example.com"));
+            }
+            fields.add(HeaderValues.create(HeaderNames.HOST, false, true, "example.com"));
+
+            Header host = decodeRequestHeaders(QpackCodec.encodeHeaders(fields)).headers().get(HeaderNames.HOST);
+
+            assertThat(host.get(), is("example.com"));
+            assertThat(host.sensitive(), is(true));
+        }
     }
 
     @Test
@@ -406,6 +477,84 @@ class Http3ProtocolTest {
 
         assertThat(exception.errorCode(), equalTo(Http3ErrorCode.MESSAGE_ERROR));
         assertThat(exception.scope(), is(Http3ProtocolException.Scope.STREAM));
+    }
+
+    @Test
+    void shouldRejectInvalidRequestSchemes() {
+        for (String scheme : List.of("https\n", "https\r", "https\0", "http s", "https\t", " https", "https ",
+                                     "http/s", "1https", "+https", "-https", ".https", "htt\u00e9ps", "")) {
+            byte[] payload = QpackCodec.encodeHeaders(List.of(HeaderValues.create(":method", "GET"),
+                                                              HeaderValues.create(":scheme", scheme),
+                                                              HeaderValues.create(":authority", "example.com"),
+                                                              HeaderValues.create(":path", "/")));
+
+            Http3ProtocolException exception = assertThrows(Http3ProtocolException.class,
+                                                            () -> decodeRequestHeaders(payload),
+                                                            scheme);
+
+            assertThat(scheme, exception.errorCode(), equalTo(Http3ErrorCode.MESSAGE_ERROR));
+            assertThat(scheme, exception.scope(), is(Http3ProtocolException.Scope.STREAM));
+        }
+    }
+
+    @Test
+    void shouldRejectInvalidRequestPaths() {
+        for (String scheme : List.of("http", "https", "HTTPS")) {
+            for (String path : List.of("/path\n", "/path\r", "/path\0", "/path\t", "/a b", "/caf\u00e9",
+                                       "/path#fragment", "/path?query#fragment", "/path%", "/path%2", "/path%gg",
+                                       "/path?query=%", "/path?query=%0", "/path?query=%xy", "/path\\segment",
+                                       "relative", "https://example.com/path", "?query=value", "*", "*?query=value", "")) {
+                byte[] payload = QpackCodec.encodeHeaders(List.of(HeaderValues.create(":method", "GET"),
+                                                                  HeaderValues.create(":scheme", scheme),
+                                                                  HeaderValues.create(":authority", "example.com"),
+                                                                  HeaderValues.create(":path", path)));
+
+                Http3ProtocolException exception = assertThrows(Http3ProtocolException.class,
+                                                                () -> decodeRequestHeaders(payload),
+                                                                scheme + ": " + path);
+
+                assertThat(path, exception.errorCode(), equalTo(Http3ErrorCode.MESSAGE_ERROR));
+                assertThat(path, exception.scope(), is(Http3ProtocolException.Scope.STREAM));
+            }
+        }
+    }
+
+    @Test
+    void shouldRejectAsteriskPathWithQueryForOptions() {
+        byte[] payload = QpackCodec.encodeHeaders(List.of(HeaderValues.create(":method", "OPTIONS"),
+                                                          HeaderValues.create(":scheme", "https"),
+                                                          HeaderValues.create(":authority", "example.com"),
+                                                          HeaderValues.create(":path", "*?query=value")));
+
+        Http3ProtocolException exception = assertThrows(Http3ProtocolException.class,
+                                                        () -> decodeRequestHeaders(payload));
+
+        assertThat(exception.errorCode(), equalTo(Http3ErrorCode.MESSAGE_ERROR));
+        assertThat(exception.scope(), is(Http3ProtocolException.Scope.STREAM));
+    }
+
+    @Test
+    void shouldPreserveValidRequestPseudoHeaders() {
+        List<RequestTarget> requestTargets = List.of(
+                new RequestTarget("GET", "http", "/"),
+                new RequestTarget("GET", "HTTPS", "/path"),
+                new RequestTarget("GET", "https", "/a%20b?query=%23%0a%0d%00"),
+                new RequestTarget("GET", "https", "/path!$&'()*+,;=:@~_-.?query=one/two?three"),
+                new RequestTarget("OPTIONS", "https", "*"),
+                new RequestTarget("GET", "a", "/path"),
+                new RequestTarget("GET", "foo+bar-1.2", "opaque:part?query=/path?value"));
+        for (RequestTarget target : requestTargets) {
+            byte[] payload = QpackCodec.encodeHeaders(List.of(HeaderValues.create(":method", target.method()),
+                                                              HeaderValues.create(":scheme", target.scheme()),
+                                                              HeaderValues.create(":authority", "example.com"),
+                                                              HeaderValues.create(":path", target.path())));
+
+            Http3Protocol.DecodedRequestHead decoded = decodeRequestHeaders(payload);
+
+            assertThat(target.toString(), decoded.method(), equalTo(target.method()));
+            assertThat(target.toString(), decoded.scheme().orElseThrow(), equalTo(target.scheme()));
+            assertThat(target.toString(), decoded.path().orElseThrow(), equalTo(target.path()));
+        }
     }
 
     @Test
@@ -858,6 +1007,9 @@ class Http3ProtocolTest {
     private static Http3QpackContext qpackContext(long maxTableCapacity, long blockedStreams) {
         return Http3QpackContext.create(maxTableCapacity, blockedStreams, 16_384, _ -> {
         });
+    }
+
+    private record RequestTarget(String method, String scheme, String path) {
     }
 
     private record DecodedResponse(int status, Headers headers, byte[] body, Headers trailers) {

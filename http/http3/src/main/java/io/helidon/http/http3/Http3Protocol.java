@@ -32,6 +32,7 @@ import java.util.Set;
 import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -445,6 +446,7 @@ public final class Http3Protocol {
         String scheme = null;
         String authority = null;
         String path = null;
+        boolean authoritySensitive = false;
         WritableHeaders<?> headers = WritableHeaders.create();
         Set<String> seenPseudoHeaders = new HashSet<>();
         boolean regularHeadersSeen = false;
@@ -482,7 +484,10 @@ public final class Http3Protocol {
             switch (headerName) {
             case ":method" -> method = value;
             case ":scheme" -> scheme = value;
-            case ":authority" -> authority = value;
+            case ":authority" -> {
+                authority = value;
+                authoritySensitive = header.sensitive();
+            }
             case ":path" -> path = value;
             default -> throw requestMessageError("Prohibited HTTP/3 pseudo-header field: " + headerName);
             }
@@ -526,6 +531,10 @@ public final class Http3Protocol {
                 throw requestMessageError("Invalid HTTP/3 Host field", e);
             }
         }
+        if (authoritySensitive && authority != null && !authority.isEmpty()) {
+            // Carry never-index metadata through the regular Host field used by the HTTP adapters.
+            headers.set(HeaderValues.create(HeaderNames.HOST, false, true, authority));
+        }
         if (Method.CONNECT_NAME.equals(method)) {
             if (!seenPseudoHeaders.contains(":authority") || authority == null || authority.isEmpty()) {
                 throw requestMessageError("CONNECT request is missing required :authority pseudo-header field");
@@ -551,12 +560,35 @@ public final class Http3Protocol {
                 || path == null || path.isEmpty()) {
             throw requestMessageError("Missing required HTTP/3 pseudo-header fields");
         }
+        validateRequestTarget(method, scheme, path);
         return DecodedRequestHead.create(method,
                                          Optional.of(scheme),
                                          authority,
                                          normalizedAuthority,
                                          Optional.of(path),
                                          headers);
+    }
+
+    private static void validateRequestTarget(String method, String scheme, String path) {
+        for (int i = 0; i < scheme.length(); i++) {
+            char c = scheme.charAt(i);
+            if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+                    || i > 0 && (c >= '0' && c <= '9' || c == '+' || c == '-' || c == '.')) {
+                continue;
+            }
+            throw requestMessageError("Invalid HTTP/3 :scheme pseudo-header field");
+        }
+        if (("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+                && path.charAt(0) != '/'
+                && !(Method.OPTIONS_NAME.equals(method) && "*".equals(path))) {
+            throw requestMessageError("Invalid HTTP/3 :path pseudo-header field");
+        }
+        try {
+            // Path and query share their allowed characters; '?' separates them or appears in the query.
+            UriValidator.validateQuery(path);
+        } catch (IllegalArgumentException e) {
+            throw requestMessageError("Invalid HTTP/3 :path pseudo-header field", e);
+        }
     }
 
     private static List<Header> requestHeaders(String method,
@@ -566,7 +598,10 @@ public final class Http3Protocol {
                                                Headers headers) {
         List<Header> requestHeaders = new ArrayList<>(headers.size() + 4);
         requestHeaders.add(HeaderValues.create(PSEUDO_METHOD, method));
-        requestHeaders.add(HeaderValues.create(PSEUDO_AUTHORITY, authority));
+        boolean authoritySensitive = headers.contains(HeaderNames.HOST) && headers.get(HeaderNames.HOST).sensitive();
+        requestHeaders.add(authoritySensitive
+                                   ? HeaderValues.create(PSEUDO_AUTHORITY, false, true, authority)
+                                   : HeaderValues.create(PSEUDO_AUTHORITY, authority));
         if (!Method.CONNECT_NAME.equals(method)) {
             requestHeaders.add(HeaderValues.create(PSEUDO_SCHEME, scheme));
             requestHeaders.add(HeaderValues.create(PSEUDO_PATH, path));
@@ -758,6 +793,8 @@ public final class Http3Protocol {
 
         /**
          * Return the decoded request headers without the required HTTP/3 pseudo-headers.
+         * A sensitive {@code :authority} is represented by a sensitive {@code Host} field so that forwarding these
+         * headers preserves its never-index metadata.
          *
          * @return decoded request headers
          */
