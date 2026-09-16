@@ -79,7 +79,7 @@
         <version.lib.log4j>2.25.5</version.lib.log4j>
         <version.lib.micrometer>1.17.1</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.17.1</version.lib.micrometer-prometheus>
-        <version.lib.mongodb>4.10.2</version.lib.mongodb>
+        <version.lib.mongodb>5.11.1</version.lib.mongodb>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
@@ -91,7 +91,7 @@
         <version.lib.prometheus>1.7.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
-        <version.lib.snakeyaml>2.6</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.7</version.lib.snakeyaml>
         <version.lib.testcontainers>1.21.4</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.8</version.lib.typesafe-config>
         <version.lib.yasson>3.0.4</version.lib.yasson>
