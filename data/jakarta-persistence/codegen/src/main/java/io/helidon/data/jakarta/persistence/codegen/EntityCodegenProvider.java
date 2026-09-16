@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -77,6 +79,7 @@ public class EntityCodegenProvider implements CodegenExtensionProvider {
             var classModel = ClassModel.builder()
                     .copyright(CodegenUtil.copyright(GENERATOR, trigger, generatedType))
                     .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, trigger, generatedType, "1", ""))
+                    .addAnnotation(Annotation.create(SuppressWarnings.class, Api.SUPPRESS_ALL))
                     .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                     .description("Entity provider for {@link " + trigger.fqName() + "}.")
                     .type(generatedType)
