@@ -48,9 +48,9 @@ module io.helidon.security.providers.oidc {
 
     exports io.helidon.security.providers.oidc;
 
-    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.oidc.OidcProviderService;
-
     uses io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
     uses io.helidon.security.providers.oidc.common.spi.TenantIdProvider;
+
+    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.oidc.OidcProviderService;
 
 }

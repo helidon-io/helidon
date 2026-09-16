@@ -18,9 +18,10 @@
  * Common types for Context propagation over HTTP.
  */
 module io.helidon.common.context.http {
-    exports io.helidon.common.context.http;
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.config;
     requires transitive io.helidon.http;
     requires static io.helidon.config.metadata;
+
+    exports io.helidon.common.context.http;
 }

@@ -25,5 +25,5 @@ module io.helidon.codegen.helidon.copyright {
 
     provides io.helidon.codegen.spi.CopyrightProvider
              with io.helidon.codegen.helidon.copyright.HelidonCopyrightProvider;
-	
+
 }

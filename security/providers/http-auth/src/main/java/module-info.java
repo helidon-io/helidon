@@ -38,8 +38,8 @@ module io.helidon.security.providers.httpauth {
 
     exports io.helidon.security.providers.httpauth;
 
-    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.httpauth.HttpBasicAuthService;
-
     uses io.helidon.security.providers.httpauth.spi.UserStoreService;
+
+    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.httpauth.HttpBasicAuthService;
 
 }

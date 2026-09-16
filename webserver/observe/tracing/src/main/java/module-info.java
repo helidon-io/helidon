@@ -38,9 +38,9 @@ module io.helidon.webserver.observe.tracing {
     requires io.helidon.service.registry;
     requires io.helidon.webserver.concurrency.limits;
 
-    provides io.helidon.webserver.observe.spi.ObserveProvider
-            with io.helidon.webserver.observe.tracing.TracingObserveProvider;
-
     exports io.helidon.webserver.observe.tracing;
     exports io.helidon.webserver.observe.tracing.spi;
+
+    provides io.helidon.webserver.observe.spi.ObserveProvider
+            with io.helidon.webserver.observe.tracing.TracingObserveProvider;
 }

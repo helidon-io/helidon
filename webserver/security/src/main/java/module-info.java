@@ -33,9 +33,9 @@ module io.helidon.webserver.security {
     requires transitive io.helidon.security.util;
     requires transitive io.helidon.security;
 
+    exports io.helidon.webserver.security;
+
     provides io.helidon.webserver.spi.ServerFeatureProvider
             with io.helidon.webserver.security.SecurityFeatureProvider;
-
-    exports io.helidon.webserver.security;
 
 }

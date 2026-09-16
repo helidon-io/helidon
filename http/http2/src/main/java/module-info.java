@@ -21,7 +21,7 @@ module io.helidon.http.http2 {
 
     requires io.helidon.common;
     requires io.helidon.common.uri;
-    
+
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.http;
 

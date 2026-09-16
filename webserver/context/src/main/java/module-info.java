@@ -32,9 +32,9 @@ module io.helidon.webserver.context {
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
 
+    exports io.helidon.webserver.context;
+
     provides io.helidon.webserver.spi.ServerFeatureProvider
             with io.helidon.webserver.context.ContextFeatureProvider;
-
-    exports io.helidon.webserver.context;
 
 }

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Support for OpenTelemetry metrics semantic conventions.
- */
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
+/**
+ * Support for OpenTelemetry metrics semantic conventions.
+ */
 @Features.Preview
 @Features.Name("OTel Automatic Metrics")
 @Features.Description("Automatic metrics for compliance with OpenTelemetry server HTTP semantic conventions")

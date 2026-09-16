@@ -29,8 +29,8 @@ module io.helidon.webserver.concurrency.limits {
 
     exports io.helidon.webserver.concurrency.limits;
 
+    uses io.helidon.common.concurrency.limits.spi.LimitProvider;
+
     provides io.helidon.webserver.spi.ServerFeatureProvider
             with io.helidon.webserver.concurrency.limits.LimitsFeatureProvider;
-
-    uses io.helidon.common.concurrency.limits.spi.LimitProvider;
 }

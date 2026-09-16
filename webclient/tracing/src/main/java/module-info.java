@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webclient.spi.WebClientServiceProvider;
-import io.helidon.webclient.tracing.WebClientTracingProvider;
 
 /**
  * Helidon WebClient Tracing Support.

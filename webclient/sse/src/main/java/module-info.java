@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.webclient.sse.SseSourceHandlerProvider;
-import io.helidon.webclient.spi.SourceHandlerProvider;
-
 /**
  * Helidon WebClient SSE Support.
  */
@@ -29,8 +26,8 @@ module io.helidon.webclient.sse {
     requires transitive io.helidon.http.sse;
     requires transitive io.helidon.webclient.api;
 
-    provides SourceHandlerProvider with SseSourceHandlerProvider;
-
     exports io.helidon.webclient.sse;
+
+    provides io.helidon.webclient.spi.SourceHandlerProvider with io.helidon.webclient.sse.SseSourceHandlerProvider;
 
 }
