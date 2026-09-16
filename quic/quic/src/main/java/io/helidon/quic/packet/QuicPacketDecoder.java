@@ -118,11 +118,11 @@ public class QuicPacketDecoder {
         // (1 byte for headers, 4 bytes for version)
         // Therefore the packet needs at least 6 bytes to contain
         // a DCID length (coded on 1 byte)
-        var remaining = buffer.remaining();
         var limit = buffer.limit();
-        if (remaining < 7) {
+        if (offset < 0 || offset > limit - 7) {
             return EMPTY_LONG_HEADER;
         }
+        var remaining = limit - offset;
         if ((buffer.get(offset) & 0x80) == 0) {
             // short header
             return EMPTY_LONG_HEADER;
@@ -134,8 +134,6 @@ public class QuicPacketDecoder {
         if (length < 0 || length > QuicConnectionId.MAX_CONNECTION_ID_LENGTH) {
             return EMPTY_LONG_HEADER;
         }
-        QuicConnectionId destinationId = PeerConnectionId.create(buffer.slice(offset + 6, length));
-
         // We need at least 6 + length + 1 byte to have
         // a chance to read the SCID length (coded on 1 byte)
         if (length > remaining - 7) {
@@ -153,6 +151,7 @@ public class QuicPacketDecoder {
         if (srclength > limit - srcPos - 1) {
             return EMPTY_LONG_HEADER;
         }
+        QuicConnectionId destinationId = PeerConnectionId.create(buffer.slice(offset + 6, length));
         QuicConnectionId sourceId = PeerConnectionId.create(buffer.slice(srcPos + 1, srclength));
         int headerLength = 7 + length + srclength;
 
