@@ -1314,11 +1314,9 @@ class Http2ClientConnectionTest {
 
                 assertTrue(blockedWrite.awaitEntered());
                 try {
-                    CompletableFuture<Http2FrameData> read = CompletableFuture.supplyAsync(
-                            () -> stream.readOne(Duration.ofSeconds(1)));
-                    Http2FrameData frame = read.get(2, TimeUnit.SECONDS);
-                    assertThat(frame.header().type(), is(Http2FrameType.DATA));
-                    assertThat(frame.data().readBytes(), is(responseData));
+                    CompletableFuture<BufferData> read = CompletableFuture.supplyAsync(stream::read);
+                    BufferData data = read.get(2, TimeUnit.SECONDS);
+                    assertThat(data.readBytes(), is(responseData));
                 } finally {
                     blockedWrite.release();
                 }
