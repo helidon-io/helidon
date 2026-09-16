@@ -5,6 +5,8 @@ refactoring existing code, and reviewing changes made by others.
 
 Some rules are enforced by Checkstyle; others are checked during code review.
 
+All Javadoc and `module-info.java` rules apply only to Helidon production code.
+
 <a id="chapter-0"></a>
 ## 0. Rule governance
 
@@ -34,6 +36,8 @@ requirement.
 - <a id="rule-1-1-3"></a>**Rule 1.1.3.** Existing runtime exceptions such as `NoSuchElementException` and
   `IllegalStateException` may be used when they fit the problem.
 
+Tests may declare checked exceptions and use `RuntimeException` directly.
+
 <a id="rule-1-2"></a>**Rule 1.2 — Keep Helidon public APIs and SPIs non-null.** Helidon public APIs and SPIs must not
 accept or return `null`.
 
@@ -57,6 +61,8 @@ SPI types; use regular classes or interfaces instead.
 code unless a third-party contract specifically requires monitor locking.
 
 - <a id="rule-1-4-1"></a>**Rule 1.4.1.** Use explicit locks or atomic types instead.
+
+Tests may use monitor locking for coordination or monitor-specific coverage.
 
 <a id="rule-1-5"></a>**Rule 1.5 — Use unnamed bindings.** Use `_` for deliberately unused local, lambda, exception,
 loop, or pattern bindings.
@@ -95,9 +101,9 @@ a visibility order.
 <a id="chapter-3"></a>
 ## 3. Imports and Javadoc
 
-<a id="rule-3-1"></a>**Rule 3.1 — Use imported simple names outside Javadoc.** Outside Javadoc, use an imported simple
-type name unless a name conflict or Java syntax requires a fully qualified name. The `uses` and `provides` directives in
-`module-info.java` are an explicit exception and must use fully qualified service types under [Rule 9.4](#rule-9-4).
+<a id="rule-3-1"></a>**Rule 3.1 — Avoid fully qualified names outside Javadoc.** Outside Javadoc and `module-info.java`,
+do not use fully qualified type names unless required. Qualifying nested types with enclosing type names is allowed.
+For `module-info.java`, see [Rule 9.4](#rule-9-4).
 
 <a id="rule-3-2"></a>**Rule 3.2 — Do not import types only for Javadoc.** Use the fully qualified name in Javadoc
 instead.
@@ -106,7 +112,7 @@ instead.
 <a id="chapter-4"></a>
 ## 4. Package and module structure
 
-<a id="rule-4-1"></a>**Rule 4.1 — Use a flat package structure.**
+<a id="rule-4-1"></a>**Rule 4.1 — Use a flat package structure in production modules.**
 
 - <a id="rule-4-1-1"></a>**Rule 4.1.1.** Do not introduce `internal`, `private`, or equivalent hidden package layers.
 - <a id="rule-4-1-2"></a>**Rule 4.1.2.** Each Maven and JPMS module has a single implementation package.
@@ -121,7 +127,8 @@ instead.
 For example, the ABAC security providers are separate modules instead of separate packages in one module. This helps keep
 different concerns separate.
 
-<a id="rule-4-2"></a>**Rule 4.2 — Keep directory, module, and package naming connected.**
+<a id="rule-4-2"></a>**Rule 4.2 — Keep directory, module, and package naming connected.** Examples and isolated Maven
+test fixtures are exempt from this rule and its subrules.
 
 - <a id="rule-4-2-1"></a>**Rule 4.2.1.** Use the module name as the module directory name.
     - <a id="rule-4-2-1-1"></a>**Rule 4.2.1.1.** A POM-packaging aggregator is a project module.
@@ -139,6 +146,8 @@ different concerns separate.
 <a id="chapter-5"></a>
 ## 5. Configuration and programmatic API
 
+Rules 5.1–5.3 and their subrules apply only to Helidon production components.
+
 <a id="rule-5-1"></a>**Rule 5.1 — Provide programmatic configuration.** Everything configurable must also be
 available programmatically through builders.
 
@@ -154,7 +163,7 @@ node containing the component's configuration, such as `ServerConfiguration` in 
 <a id="rule-5-4"></a>**Rule 5.4 — Follow configuration-key conventions.**
 
 - <a id="rule-5-4-1"></a>**Rule 5.4.1.** Use lowercase words separated by dashes, such as `token-endpoint-uri`, not
-  `tokenEndpointUri`.
+  `tokenEndpointUri`. Test fixtures are exempt.
 - <a id="rule-5-4-2"></a>**Rule 5.4.2.** Keys may be nested, such as `outbound-token.name` and
   `outbound-token.algorithm`.
 - <a id="rule-5-4-3"></a>**Rule 5.4.3.** Classify component properties as required, defaulted, or optional.
@@ -168,6 +177,8 @@ See [Builders](#chapter-8) and the [helidon-builder documentation](builder/READM
 <a id="getters-and-setters"></a>
 <a id="chapter-6"></a>
 ## 6. Getters and setters
+
+Test and example fixtures may use JavaBean accessors.
 
 <a id="rule-6-1"></a>**Rule 6.1 — Omit accessor verbs.** Property accessors do not use a verb. For a `port` property,
 use `port(int newPort)` and `int port()`.
@@ -193,6 +204,8 @@ Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/provide
 <a id="builders"></a>
 <a id="chapter-8"></a>
 ## 8. Builders
+
+Rules 8.1, 8.3, and 8.4 and their subrules apply only to Helidon production code.
 
 See [helidon-builder](builder/README.md) for module details and
 [helidon-builder-api](builder/api/README.md) for API and naming rules.
@@ -315,13 +328,14 @@ but: was "Requested value for configuration key 'list-1.1' is not present in the
 <a id="rule-11-1"></a>**Rule 11.1 — Manage all third-party versions.**
 
 - <a id="rule-11-1-1"></a>**Rule 11.1.1.** Manage plugin versions.
-- <a id="rule-11-1-2"></a>**Rule 11.1.2.** Manage dependency versions in `dependencies/pom.xml`.
+- <a id="rule-11-1-2"></a>**Rule 11.1.2.** Manage dependency versions in `dependencies/pom.xml`. Standalone examples
+  and isolated Maven test fixtures may manage their own versions.
 
 <a id="rule-11-2"></a>**Rule 11.2 — Follow the third-party update process.** Adding or upgrading a third-party
 dependency requires an internal process and can delay merging.
 
 <a id="rule-11-3"></a>**Rule 11.3 — Omit managed Helidon versions.** Do not specify a version when referencing another
-Helidon module; `bom/pom.xml` manages those versions.
+Helidon module; `bom/pom.xml` manages those versions. Isolated Maven test fixtures may specify versions explicitly.
 
 <a id="rule-11-4"></a>**Rule 11.4 — Name every module POM.** Every module `pom.xml` defines a `name`.
 
@@ -342,7 +356,8 @@ be used by users to [bom/pom.xml](bom/pom.xml).
 - <a id="rule-11-6-4"></a>**Rule 11.6.4.** Bundles are for end users, not internal use.
 
 <a id="rule-11-7"></a>**Rule 11.7 — Use `provided` scope for third-party specification APIs.** The exception is a
-module that implements the specification.
+module that implements the specification. Use `test` scope for test-only dependencies; examples choose scopes for their
+runtime packaging.
 
 - <a id="rule-11-7-1"></a>**Rule 11.7.1.** Analyze module dependencies and choose the matching Maven scope and
   `module-info.java` declaration.
