@@ -17,9 +17,12 @@
 package io.helidon.quic.packet;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.crypto.AEADBadTagException;
 
@@ -33,6 +36,8 @@ import io.helidon.quic.spi.QuicPacketTLSEngine;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -70,6 +75,91 @@ class QuicPacketDecoderTest {
         assertThrows(NullPointerException.class, () -> QuicPacketDecoder.peekLongHeader(null));
         assertThrows(NullPointerException.class, () -> QuicPacketDecoder.peekLongHeader(null, 0));
         assertThrows(NullPointerException.class, () -> QuicPacketDecoder.peekShortConnectionId(null, 1));
+    }
+
+    @ParameterizedTest(name = "{0}: offset={1}")
+    @MethodSource("invalidLongHeaderOffsets")
+    void rejectsLongHeaderOffsetsOutsideLimit(BufferKind bufferKind, int offset) {
+        ByteBuffer buffer = bufferKind.wrap(longHeader(new byte[0], new byte[0]), 0);
+        int originalPosition = buffer.position();
+        int originalLimit = buffer.limit();
+
+        var result = QuicPacketDecoder.peekLongHeader(buffer, offset);
+
+        assertThat(result.isEmpty(), is(true));
+        assertThat(buffer.position(), is(originalPosition));
+        assertThat(buffer.limit(), is(originalLimit));
+    }
+
+    @ParameterizedTest(name = "{0}: {1}")
+    @MethodSource("malformedLongHeaders")
+    void rejectsMalformedLongHeaderWithoutChangingBuffer(BufferKind bufferKind, String description, byte[] packet) {
+        int offset = 3;
+        ByteBuffer buffer = bufferKind.wrap(packet, offset);
+        int originalPosition = buffer.position();
+        int originalLimit = buffer.limit();
+
+        var result = QuicPacketDecoder.peekLongHeader(buffer, offset);
+
+        assertThat(description, result.isEmpty(), is(true));
+        assertThat(buffer.position(), is(originalPosition));
+        assertThat(buffer.limit(), is(originalLimit));
+    }
+
+    @ParameterizedTest(name = "{0}: destination={1}, source={2}, position={3}")
+    @MethodSource("validLongHeaders")
+    void peeksLongHeaderAtExplicitOffsetWithoutChangingBuffer(BufferKind bufferKind,
+                                                            int destinationLength,
+                                                            int sourceLength,
+                                                            int position) {
+        int offset = 3;
+        byte[] destinationId = connectionIdBytes(destinationLength, 0x30);
+        byte[] sourceId = connectionIdBytes(sourceLength, 0x90);
+        ByteBuffer buffer = bufferKind.wrap(longHeader(destinationId, sourceId), offset);
+        buffer.position(position);
+        int originalLimit = buffer.limit();
+
+        var result = QuicPacketDecoder.peekLongHeader(buffer, offset);
+
+        assertThat(result.isPresent(), is(true));
+        LongHeader header = result.orElseThrow();
+        assertThat(header.version(), is(QuicVersion.QUIC_V1.versionNumber()));
+        assertThat(header.headerLength(), is(7 + destinationLength + sourceLength));
+        assertThat(header.destinationId().bytes(), is(destinationId));
+        assertThat(header.sourceId().bytes(), is(sourceId));
+        assertThat(buffer.position(), is(position));
+        assertThat(buffer.limit(), is(originalLimit));
+    }
+
+    @Test
+    void rejectsTruncatedCoalescedLongHeaderAfterSkippingInitial() {
+        byte[] destinationId = {1, 2, 3, 4, 5, 6, 7, 8};
+        ByteBuffer datagram = ByteBuffer.allocate(1200);
+        datagram.put((byte) 0xc0).putInt(QuicVersion.QUIC_V1.versionNumber());
+        datagram.put((byte) destinationId.length).put(destinationId);
+        datagram.put((byte) 0); // Empty source connection ID.
+        datagram.put((byte) 0); // Empty Initial token.
+        datagram.putShort((short) (0x4000 | 1175)); // Packet-number plus ciphertext length.
+        datagram.position(1193); // Leave unauthenticated, zero-filled ciphertext.
+        datagram.put((byte) 0xc0).putInt(QuicVersion.QUIC_V1.versionNumber()).put((byte) 20).put((byte) 0);
+        datagram.flip();
+        QuicPacketDecoder decoder = QuicPacketDecoder.of(QuicVersion.QUIC_V1);
+
+        assertThat(datagram.limit(), is(1200));
+        assertThat(decoder.peekPacketType(datagram), is(QuicPacket.PacketType.INITIAL));
+        assertThat(QuicPacketDecoder.peekLongHeader(datagram).orElseThrow().destinationId().bytes(), is(destinationId));
+        assertThat(datagram.position(), is(0));
+
+        // A connection without Initial keys skips the first packet before examining the coalesced tail.
+        decoder.skipPacket(datagram, datagram.position());
+        assertThat(datagram.position(), is(1193));
+        assertThat(datagram.remaining(), is(7));
+        assertThat(QuicPacketDecoder.peekHeaderType(datagram, datagram.position()), is(QuicPacket.HeadersType.LONG));
+
+        // The second header declares 20 destination-ID bytes but contains only one.
+        assertThat(QuicPacketDecoder.peekLongHeader(datagram).isEmpty(), is(true));
+        assertThat(datagram.position(), is(1193));
+        assertThat(datagram.limit(), is(1200));
     }
 
     @Test
@@ -326,6 +416,60 @@ class QuicPacketDecoderTest {
         assertThat(failure.errorCode(), is(QuicTransportErrors.PROTOCOL_VIOLATION.code()));
     }
 
+    private static Stream<Arguments> invalidLongHeaderOffsets() {
+        return Stream.of(BufferKind.values())
+                .flatMap(bufferKind -> IntStream.of(-1, 7, 8, Integer.MIN_VALUE, Integer.MAX_VALUE)
+                        .mapToObj(offset -> Arguments.of(bufferKind, offset)));
+    }
+
+    private static Stream<Arguments> malformedLongHeaders() {
+        byte[] emptyIds = longHeader(new byte[0], new byte[0]);
+        byte[] maximumDestinationId = longHeader(connectionIdBytes(20, 0x30), new byte[0]);
+        byte[] maximumSourceId = longHeader(new byte[0], connectionIdBytes(20, 0x90));
+        byte[] shortHeader = emptyIds.clone();
+        shortHeader[0] = 0x40;
+        return Stream.of(BufferKind.values())
+                .flatMap(bufferKind -> Stream.of(
+                        Arguments.of(bufferKind, "truncated fixed header", Arrays.copyOf(emptyIds, 5)),
+                        Arguments.of(bufferKind, "missing destination ID", Arrays.copyOf(maximumDestinationId, 6)),
+                        Arguments.of(bufferKind, "truncated destination ID", Arrays.copyOf(maximumDestinationId, 7)),
+                        Arguments.of(bufferKind, "missing source ID length", Arrays.copyOf(maximumDestinationId, 26)),
+                        Arguments.of(bufferKind, "truncated source ID", Arrays.copyOf(maximumSourceId, 26)),
+                        Arguments.of(bufferKind, "21-byte destination ID", longHeader(new byte[21], new byte[0])),
+                        Arguments.of(bufferKind, "255-byte destination ID", longHeader(new byte[255], new byte[0])),
+                        Arguments.of(bufferKind, "21-byte source ID", longHeader(new byte[0], new byte[21])),
+                        Arguments.of(bufferKind, "255-byte source ID", longHeader(new byte[0], new byte[255])),
+                        Arguments.of(bufferKind, "short header", shortHeader)));
+    }
+
+    private static Stream<Arguments> validLongHeaders() {
+        return Stream.of(BufferKind.values())
+                .flatMap(bufferKind -> Stream.of(
+                        Arguments.of(bufferKind, 0, 0, 0),
+                        Arguments.of(bufferKind, 20, 0, 3),
+                        Arguments.of(bufferKind, 0, 20, 6),
+                        Arguments.of(bufferKind, 20, 20, 50)));
+    }
+
+    private static byte[] longHeader(byte[] destinationId, byte[] sourceId) {
+        return ByteBuffer.allocate(7 + destinationId.length + sourceId.length)
+                .put((byte) 0xc0)
+                .putInt(QuicVersion.QUIC_V1.versionNumber())
+                .put((byte) destinationId.length)
+                .put(destinationId)
+                .put((byte) sourceId.length)
+                .put(sourceId)
+                .array();
+    }
+
+    private static byte[] connectionIdBytes(int length, int firstByte) {
+        byte[] bytes = new byte[length];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) (firstByte + i);
+        }
+        return bytes;
+    }
+
     private static void assertInitialPacketTypeViolation(byte[] payload) {
         CodingContext context = mock(CodingContext.class);
         when(context.maxAckRangesPerFrame()).thenReturn(2);
@@ -363,5 +507,23 @@ class QuicPacketDecoderTest {
         }
         packet.put(new byte[20]);
         return packet.flip();
+    }
+
+    private enum BufferKind {
+        HEAP,
+        DIRECT,
+        READ_ONLY,
+        SLICED;
+
+        ByteBuffer wrap(byte[] packet, int offset) {
+            int capacity = offset + packet.length + 8;
+            ByteBuffer buffer = switch (this) {
+                case HEAP, READ_ONLY -> ByteBuffer.allocate(capacity);
+                case DIRECT -> ByteBuffer.allocateDirect(capacity);
+                case SLICED -> ByteBuffer.allocate(capacity + 8).slice(8, capacity);
+            };
+            buffer.position(offset).put(packet).flip();
+            return this == READ_ONLY ? buffer.asReadOnlyBuffer() : buffer;
+        }
     }
 }
