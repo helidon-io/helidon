@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,35 @@ public final class TypeFactory {
 
     /**
      * Create a class from a type name.
-     * This is using {@link java.lang.Class#forName(String)} to obtain a class instance.
+     * Primitive and array types are resolved directly. Other types use {@link java.lang.Class#forName(String)}.
      *
      * @param typeName type to convert to class
      * @return a class representing the type (ignoring generics)
      * @throws java.lang.IllegalArgumentException in case the class cannot be created
      */
     public static Class<?> toClass(TypeName typeName) {
+        if (typeName.array()) {
+            TypeName componentType = typeName.componentType()
+                    .orElseGet(() -> TypeName.builder(typeName)
+                            .array(false)
+                            .vararg(false)
+                            .build());
+            return toClass(componentType).arrayType();
+        }
+        if (typeName.primitive()) {
+            return switch (typeName.className()) {
+                case "boolean" -> boolean.class;
+                case "byte" -> byte.class;
+                case "char" -> char.class;
+                case "short" -> short.class;
+                case "int" -> int.class;
+                case "long" -> long.class;
+                case "float" -> float.class;
+                case "double" -> double.class;
+                case "void" -> void.class;
+                default -> throw new IllegalArgumentException("Unknown primitive type: " + typeName.resolvedName());
+            };
+        }
         try {
             return Class.forName(typeName.fqName());
         } catch (ClassNotFoundException e) {
@@ -58,10 +80,15 @@ public final class TypeFactory {
      *
      * @param typeName type name
      * @return a Type representing the type name, may be a class, wildcard, or parameterized type
+     * @throws java.lang.IllegalArgumentException if the type cannot be resolved or is an array with a parameterized component
      */
     public static Type toType(TypeName typeName) {
         if (typeName.wildcard()) {
             return new WildcardTypeImpl(typeName);
+        }
+
+        if (typeName.array() && !typeName.typeArguments().isEmpty()) {
+            throw new IllegalArgumentException("Cannot convert parameterized array type: " + typeName.resolvedName());
         }
 
         if (typeName.typeArguments().isEmpty()) {
