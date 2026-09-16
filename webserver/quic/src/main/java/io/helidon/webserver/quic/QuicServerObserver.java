@@ -118,6 +118,14 @@ final class QuicServerObserver implements QuicServerRuntime.Observer {
         });
     }
 
+    private static void closeObserved(ObservedConnection observed, ConnectionOutcome outcome) {
+        try {
+            observed.connectionObservation.close(outcome);
+        } catch (Throwable failure) {
+            LOGGER.log(WARNING, "HTTP transport observation failed during QUIC connection close", failure);
+        }
+    }
+
     private void connectionTerminated(QuicConnection connection,
                                       QuicTermination termination,
                                       Throwable failure,
@@ -148,14 +156,6 @@ final class QuicServerObserver implements QuicServerRuntime.Observer {
             }
         }
         closeObserved(observed, outcome);
-    }
-
-    private static void closeObserved(ObservedConnection observed, ConnectionOutcome outcome) {
-        try {
-            observed.connectionObservation.close(outcome);
-        } catch (Throwable failure) {
-            LOGGER.log(WARNING, "HTTP transport observation failed during QUIC connection close", failure);
-        }
     }
 
     private static final class ObservedConnection {

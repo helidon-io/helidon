@@ -341,26 +341,6 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
         return sendingState();
     }
 
-    private void log(System.Logger.Level level, String format, Object... arguments) {
-        if (!LOGGER.isLoggable(level)) {
-            return;
-        }
-        if (arguments.length == 0) {
-            connection().log(LOGGER, level, "%d: %s", streamId(), format);
-            return;
-        }
-        Object[] actualArguments = new Object[arguments.length + 1];
-        actualArguments[0] = streamId();
-        System.arraycopy(arguments, 0, actualArguments, 1, arguments.length);
-        connection().log(LOGGER, level, "%d: " + format, actualArguments);
-    }
-
-    private void logDebug(String format, Object... arguments) {
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            log(System.Logger.Level.DEBUG, format, arguments);
-        }
-    }
-
     /**
      * Called when the connection is closed locally.
      *
@@ -393,6 +373,26 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
             throw new IllegalArgumentException("A remotely initiated stream can't be write-only");
         }
         return streamId;
+    }
+
+    private void log(System.Logger.Level level, String format, Object... arguments) {
+        if (!LOGGER.isLoggable(level)) {
+            return;
+        }
+        if (arguments.length == 0) {
+            connection().log(LOGGER, level, "%d: %s", streamId(), format);
+            return;
+        }
+        Object[] actualArguments = new Object[arguments.length + 1];
+        actualArguments[0] = streamId();
+        System.arraycopy(arguments, 0, actualArguments, 1, arguments.length);
+        connection().log(LOGGER, level, "%d: " + format, actualArguments);
+    }
+
+    private void logDebug(String format, Object... arguments) {
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            log(System.Logger.Level.DEBUG, format, arguments);
+        }
     }
 
     /**

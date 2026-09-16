@@ -76,34 +76,6 @@ final class QuicChaCha20PacketProtection implements QuicPacketProtection {
         return computeHeaderProtectionMask(sample, headerProtectionOutput);
     }
 
-    private long computeHeaderProtectionMask(ByteBuffer sample, byte[] output) throws QuicTransportException {
-        if (sample.remaining() != HEADER_PROTECTION_SAMPLE_SIZE) {
-            throw new IllegalArgumentException("Invalid sample size");
-        }
-
-        headerProtectionCipherLock.lock();
-        try {
-            int offset = sample.position();
-            int counter = sample.get(offset) & 0xff
-                    | (sample.get(offset + 1) & 0xff) << 8
-                    | (sample.get(offset + 2) & 0xff) << 16
-                    | (sample.get(offset + 3) & 0xff) << 24;
-            for (int i = 0; i < headerProtectionNonce.length; i++) {
-                headerProtectionNonce[i] = sample.get(offset + Integer.BYTES + i);
-            }
-            ChaCha20ParameterSpec ivSpec = new ChaCha20ParameterSpec(headerProtectionNonce, counter);
-            Arrays.fill(output, (byte) 0);
-            // Reusing the same IV is expected for header protection, so decrypt mode avoids provider complaints.
-            headerProtectionCipher.init(Cipher.DECRYPT_MODE, headerProtectionKey, ivSpec);
-            headerProtectionCipher.doFinal(output, 0, output.length, output);
-            return QuicPacketProtection.packHeaderProtectionMask(output);
-        } catch (GeneralSecurityException | ProviderException e) {
-            throw QuicPacketProtection.internalError("Failed to compute header protection mask", e);
-        } finally {
-            headerProtectionCipherLock.unlock();
-        }
-    }
-
     @Override
     public void encryptPacket(long packetNumber,
                               ByteBuffer packetHeader,
@@ -160,5 +132,33 @@ final class QuicChaCha20PacketProtection implements QuicPacketProtection {
     @Override
     public long integrityLimit() {
         return INTEGRITY_LIMIT;
+    }
+
+    private long computeHeaderProtectionMask(ByteBuffer sample, byte[] output) throws QuicTransportException {
+        if (sample.remaining() != HEADER_PROTECTION_SAMPLE_SIZE) {
+            throw new IllegalArgumentException("Invalid sample size");
+        }
+
+        headerProtectionCipherLock.lock();
+        try {
+            int offset = sample.position();
+            int counter = sample.get(offset) & 0xff
+                    | (sample.get(offset + 1) & 0xff) << 8
+                    | (sample.get(offset + 2) & 0xff) << 16
+                    | (sample.get(offset + 3) & 0xff) << 24;
+            for (int i = 0; i < headerProtectionNonce.length; i++) {
+                headerProtectionNonce[i] = sample.get(offset + Integer.BYTES + i);
+            }
+            ChaCha20ParameterSpec ivSpec = new ChaCha20ParameterSpec(headerProtectionNonce, counter);
+            Arrays.fill(output, (byte) 0);
+            // Reusing the same IV is expected for header protection, so decrypt mode avoids provider complaints.
+            headerProtectionCipher.init(Cipher.DECRYPT_MODE, headerProtectionKey, ivSpec);
+            headerProtectionCipher.doFinal(output, 0, output.length, output);
+            return QuicPacketProtection.packHeaderProtectionMask(output);
+        } catch (GeneralSecurityException | ProviderException e) {
+            throw QuicPacketProtection.internalError("Failed to compute header protection mask", e);
+        } finally {
+            headerProtectionCipherLock.unlock();
+        }
     }
 }

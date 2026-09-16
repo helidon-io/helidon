@@ -32,6 +32,16 @@ import io.helidon.webserver.spi.TransportBinding;
 @Api.Internal
 public interface QuicSubProtocolRuntime extends AutoCloseable {
     /**
+     * Default text formatter for application error codes.
+     *
+     * @param errorCode application error code
+     * @return formatted error description
+     */
+    static String defaultApplicationErrorToString(long errorCode) {
+        return "ApplicationError(code=0x" + HexFormat.of().toHexDigits(errorCode) + ")";
+    }
+
+    /**
      * ALPN identifiers owned by this runtime, in server preference order with the most preferred identifier first.
      * The returned list must be immutable and stable for the lifetime of this runtime.
      *
@@ -87,15 +97,5 @@ public interface QuicSubProtocolRuntime extends AutoCloseable {
 
     @Override
     default void close() {
-    }
-
-    /**
-     * Default text formatter for application error codes.
-     *
-     * @param errorCode application error code
-     * @return formatted error description
-     */
-    static String defaultApplicationErrorToString(long errorCode) {
-        return "ApplicationError(code=0x" + HexFormat.of().toHexDigits(errorCode) + ")";
     }
 }

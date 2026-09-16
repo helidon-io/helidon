@@ -246,6 +246,87 @@ enum QuicTlsSignatureScheme {
         return true;
     }
 
+    int codePoint() {
+        return codePoint;
+    }
+
+    String tlsName() {
+        return tlsName;
+    }
+
+    String jcaSignatureAlgorithm() {
+        return jcaSignatureAlgorithm;
+    }
+
+    boolean certificateVerify() {
+        // RFC 8446 section 4.2.3 retains these code points only for signatures in certificates. TLS 1.3 RSA
+        // CertificateVerify messages use RSASSA-PSS; RFC 9963 legacy client signatures have distinct code points.
+        return switch (this) {
+            case RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512 -> false;
+            default -> true;
+        };
+    }
+
+    String keyType() {
+        return switch (this) {
+            case ECDSA_SECP256R1_SHA256, ECDSA_SECP384R1_SHA384, ECDSA_SECP521R1_SHA512 -> "EC";
+            case ED25519, ED448 -> "EdDSA";
+            case RSA_PSS_PSS_SHA256, RSA_PSS_PSS_SHA384, RSA_PSS_PSS_SHA512 -> "RSASSA-PSS";
+            case RSA_PSS_RSAE_SHA256, RSA_PSS_RSAE_SHA384, RSA_PSS_RSAE_SHA512,
+                 RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512 -> "RSA";
+        };
+    }
+
+    QuicTlsNamedGroup requiredCertificateGroup() {
+        return switch (this) {
+            case ECDSA_SECP256R1_SHA256 -> QuicTlsNamedGroup.SECP256_R1;
+            case ECDSA_SECP384R1_SHA384 -> QuicTlsNamedGroup.SECP384_R1;
+            case ECDSA_SECP521R1_SHA512 -> QuicTlsNamedGroup.SECP521_R1;
+            default -> null;
+        };
+    }
+
+    boolean supports(PrivateKey privateKey, PublicKey publicKey) {
+        try {
+            Signature signer = newSignature();
+            signer.initSign(privateKey);
+            configure(signer);
+            Signature verifier = newSignature();
+            verifier.initVerify(publicKey);
+            configure(verifier);
+            return true;
+        } catch (InvalidKeyException e) {
+            return false;
+        } catch (ProviderException e) {
+            throw QuicTlsHandshakeMessages.internalError(
+                    "Failed to probe the local " + tlsName + " signature implementation", e);
+        }
+    }
+
+    Signature newSigner(PrivateKey privateKey) {
+        try {
+            Signature signature = newSignature();
+            signature.initSign(privateKey);
+            configure(signature);
+            return signature;
+        } catch (InvalidKeyException | ProviderException e) {
+            throw QuicTlsHandshakeMessages.internalError("Failed to initialize the local " + tlsName + " signer", e);
+        }
+    }
+
+    Signature newVerifier(PublicKey publicKey) {
+        try {
+            Signature signature = newSignature();
+            signature.initVerify(publicKey);
+            configure(signature);
+            return signature;
+        } catch (InvalidKeyException e) {
+            throw QuicTlsHandshakeMessages.decryptError("Invalid public key for peer " + tlsName + " signature", e);
+        } catch (ProviderException e) {
+            throw QuicTlsHandshakeMessages.internalError("Failed to initialize the " + tlsName + " verifier", e);
+        }
+    }
+
     private static List<QuicTlsSignatureScheme> decodeVector(ByteBuffer buffer,
                                                               String fieldName,
                                                               String messageName,
@@ -285,44 +366,79 @@ enum QuicTlsSignatureScheme {
         return encoded.flip();
     }
 
-    int codePoint() {
-        return codePoint;
+    private static SubjectPublicKeyAlgorithm subjectPublicKeyAlgorithm(PublicKey publicKey) {
+        byte[] encoded;
+        try {
+            encoded = publicKey.getEncoded();
+        } catch (ProviderException e) {
+            return null;
+        }
+        if (encoded == null) {
+            return null;
+        }
+
+        ByteBuffer subjectPublicKeyInfo = derValue(ByteBuffer.wrap(encoded), 0x30);
+        if (subjectPublicKeyInfo == null) {
+            return null;
+        }
+        ByteBuffer algorithmIdentifier = derValue(subjectPublicKeyInfo, 0x30);
+        if (algorithmIdentifier == null) {
+            return null;
+        }
+        ByteBuffer objectIdentifier = derValue(algorithmIdentifier, 0x06);
+        if (objectIdentifier == null) {
+            return null;
+        }
+        byte[] encodedObjectIdentifier = new byte[objectIdentifier.remaining()];
+        objectIdentifier.get(encodedObjectIdentifier);
+        byte[] encodedParameters = null;
+        if (algorithmIdentifier.hasRemaining()) {
+            encodedParameters = new byte[algorithmIdentifier.remaining()];
+            algorithmIdentifier.get(encodedParameters);
+        }
+        return new SubjectPublicKeyAlgorithm(encodedObjectIdentifier, encodedParameters);
     }
 
-    String tlsName() {
-        return tlsName;
+    private static ByteBuffer derValue(ByteBuffer source, int expectedTag) {
+        if (source.remaining() < 2 || (source.get() & 0xFF) != expectedTag) {
+            return null;
+        }
+
+        int firstLengthByte = source.get() & 0xFF;
+        int length;
+        if ((firstLengthByte & 0x80) == 0) {
+            length = firstLengthByte;
+        } else {
+            int lengthBytes = firstLengthByte & 0x7F;
+            if (lengthBytes == 0 || lengthBytes > Integer.BYTES || source.remaining() < lengthBytes) {
+                return null;
+            }
+            length = 0;
+            for (int i = 0; i < lengthBytes; i++) {
+                int next = source.get() & 0xFF;
+                if (length > (Integer.MAX_VALUE >>> Byte.SIZE)) {
+                    return null;
+                }
+                length = (length << Byte.SIZE) | next;
+            }
+        }
+        if (length < 0 || source.remaining() < length) {
+            return null;
+        }
+
+        ByteBuffer value = source.slice(source.position(), length).asReadOnlyBuffer();
+        source.position(source.position() + length);
+        return value;
     }
 
-    String jcaSignatureAlgorithm() {
-        return jcaSignatureAlgorithm;
+    private static boolean sameDigest(String first, String second) {
+        return first.replace("-", "").equalsIgnoreCase(second.replace("-", ""));
     }
 
-    boolean certificateVerify() {
-        // RFC 8446 section 4.2.3 retains these code points only for signatures in certificates. TLS 1.3 RSA
-        // CertificateVerify messages use RSASSA-PSS; RFC 9963 legacy client signatures have distinct code points.
-        return switch (this) {
-            case RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512 -> false;
-            default -> true;
-        };
-    }
-
-    String keyType() {
-        return switch (this) {
-            case ECDSA_SECP256R1_SHA256, ECDSA_SECP384R1_SHA384, ECDSA_SECP521R1_SHA512 -> "EC";
-            case ED25519, ED448 -> "EdDSA";
-            case RSA_PSS_PSS_SHA256, RSA_PSS_PSS_SHA384, RSA_PSS_PSS_SHA512 -> "RSASSA-PSS";
-            case RSA_PSS_RSAE_SHA256, RSA_PSS_RSAE_SHA384, RSA_PSS_RSAE_SHA512,
-                 RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512 -> "RSA";
-        };
-    }
-
-    QuicTlsNamedGroup requiredCertificateGroup() {
-        return switch (this) {
-            case ECDSA_SECP256R1_SHA256 -> QuicTlsNamedGroup.SECP256_R1;
-            case ECDSA_SECP384R1_SHA384 -> QuicTlsNamedGroup.SECP384_R1;
-            case ECDSA_SECP521R1_SHA512 -> QuicTlsNamedGroup.SECP521_R1;
-            default -> null;
-        };
+    private static PSSParameterSpec pssSpec(String digestAlgorithm,
+                                            MGF1ParameterSpec mgf1ParameterSpec,
+                                            int saltLength) {
+        return new PSSParameterSpec(digestAlgorithm, "MGF1", mgf1ParameterSpec, saltLength, 1);
     }
 
     private boolean supportsCertificateSignature(X509Certificate certificate, PublicKey issuerPublicKey) {
@@ -428,116 +544,6 @@ enum QuicTlsSignatureScheme {
         }
     }
 
-    private static SubjectPublicKeyAlgorithm subjectPublicKeyAlgorithm(PublicKey publicKey) {
-        byte[] encoded;
-        try {
-            encoded = publicKey.getEncoded();
-        } catch (ProviderException e) {
-            return null;
-        }
-        if (encoded == null) {
-            return null;
-        }
-
-        ByteBuffer subjectPublicKeyInfo = derValue(ByteBuffer.wrap(encoded), 0x30);
-        if (subjectPublicKeyInfo == null) {
-            return null;
-        }
-        ByteBuffer algorithmIdentifier = derValue(subjectPublicKeyInfo, 0x30);
-        if (algorithmIdentifier == null) {
-            return null;
-        }
-        ByteBuffer objectIdentifier = derValue(algorithmIdentifier, 0x06);
-        if (objectIdentifier == null) {
-            return null;
-        }
-        byte[] encodedObjectIdentifier = new byte[objectIdentifier.remaining()];
-        objectIdentifier.get(encodedObjectIdentifier);
-        byte[] encodedParameters = null;
-        if (algorithmIdentifier.hasRemaining()) {
-            encodedParameters = new byte[algorithmIdentifier.remaining()];
-            algorithmIdentifier.get(encodedParameters);
-        }
-        return new SubjectPublicKeyAlgorithm(encodedObjectIdentifier, encodedParameters);
-    }
-
-    private static ByteBuffer derValue(ByteBuffer source, int expectedTag) {
-        if (source.remaining() < 2 || (source.get() & 0xFF) != expectedTag) {
-            return null;
-        }
-
-        int firstLengthByte = source.get() & 0xFF;
-        int length;
-        if ((firstLengthByte & 0x80) == 0) {
-            length = firstLengthByte;
-        } else {
-            int lengthBytes = firstLengthByte & 0x7F;
-            if (lengthBytes == 0 || lengthBytes > Integer.BYTES || source.remaining() < lengthBytes) {
-                return null;
-            }
-            length = 0;
-            for (int i = 0; i < lengthBytes; i++) {
-                int next = source.get() & 0xFF;
-                if (length > (Integer.MAX_VALUE >>> Byte.SIZE)) {
-                    return null;
-                }
-                length = (length << Byte.SIZE) | next;
-            }
-        }
-        if (length < 0 || source.remaining() < length) {
-            return null;
-        }
-
-        ByteBuffer value = source.slice(source.position(), length).asReadOnlyBuffer();
-        source.position(source.position() + length);
-        return value;
-    }
-
-    private static boolean sameDigest(String first, String second) {
-        return first.replace("-", "").equalsIgnoreCase(second.replace("-", ""));
-    }
-
-    boolean supports(PrivateKey privateKey, PublicKey publicKey) {
-        try {
-            Signature signer = newSignature();
-            signer.initSign(privateKey);
-            configure(signer);
-            Signature verifier = newSignature();
-            verifier.initVerify(publicKey);
-            configure(verifier);
-            return true;
-        } catch (InvalidKeyException e) {
-            return false;
-        } catch (ProviderException e) {
-            throw QuicTlsHandshakeMessages.internalError(
-                    "Failed to probe the local " + tlsName + " signature implementation", e);
-        }
-    }
-
-    Signature newSigner(PrivateKey privateKey) {
-        try {
-            Signature signature = newSignature();
-            signature.initSign(privateKey);
-            configure(signature);
-            return signature;
-        } catch (InvalidKeyException | ProviderException e) {
-            throw QuicTlsHandshakeMessages.internalError("Failed to initialize the local " + tlsName + " signer", e);
-        }
-    }
-
-    Signature newVerifier(PublicKey publicKey) {
-        try {
-            Signature signature = newSignature();
-            signature.initVerify(publicKey);
-            configure(signature);
-            return signature;
-        } catch (InvalidKeyException e) {
-            throw QuicTlsHandshakeMessages.decryptError("Invalid public key for peer " + tlsName + " signature", e);
-        } catch (ProviderException e) {
-            throw QuicTlsHandshakeMessages.internalError("Failed to initialize the " + tlsName + " verifier", e);
-        }
-    }
-
     private Signature newSignature() {
         try {
             return Signature.getInstance(jcaSignatureAlgorithm);
@@ -555,12 +561,6 @@ enum QuicTlsSignatureScheme {
             throw QuicTlsHandshakeMessages.internalError(
                     "Failed to configure the local " + tlsName + " signature implementation", e);
         }
-    }
-
-    private static PSSParameterSpec pssSpec(String digestAlgorithm,
-                                            MGF1ParameterSpec mgf1ParameterSpec,
-                                            int saltLength) {
-        return new PSSParameterSpec(digestAlgorithm, "MGF1", mgf1ParameterSpec, saltLength, 1);
     }
 
     private record SubjectPublicKeyAlgorithm(byte[] objectIdentifier, byte[] parameters) {

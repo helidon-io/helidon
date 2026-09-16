@@ -198,6 +198,19 @@ public final class QuicTransportException extends RuntimeException {
              sourceStreamId(sourceStreamId));
     }
 
+    private QuicTransportException(String reason,
+                                   Optional<QuicTLSEngine.KeySpace> keySpace,
+                                   long frameType,
+                                   long errorCode,
+                                   Optional<Throwable> cause,
+                                   OptionalLong sourceStreamId) {
+        super(Objects.requireNonNull(reason, "reason"), Objects.requireNonNull(cause, "cause").orElse(null));
+        this.keySpace = Objects.requireNonNull(keySpace, "keySpace");
+        this.frameType = frameType;
+        this.errorCode = errorCode;
+        this.sourceStreamId = Objects.requireNonNull(sourceStreamId, "sourceStreamId");
+    }
+
     /**
      * Returns the local diagnostic describing the failure.
      *
@@ -243,19 +256,6 @@ public final class QuicTransportException extends RuntimeException {
      */
     public OptionalLong sourceStreamId() {
         return sourceStreamId;
-    }
-
-    private QuicTransportException(String reason,
-                                   Optional<QuicTLSEngine.KeySpace> keySpace,
-                                   long frameType,
-                                   long errorCode,
-                                   Optional<Throwable> cause,
-                                   OptionalLong sourceStreamId) {
-        super(Objects.requireNonNull(reason, "reason"), Objects.requireNonNull(cause, "cause").orElse(null));
-        this.keySpace = Objects.requireNonNull(keySpace, "keySpace");
-        this.frameType = frameType;
-        this.errorCode = errorCode;
-        this.sourceStreamId = Objects.requireNonNull(sourceStreamId, "sourceStreamId");
     }
 
     private static OptionalLong sourceStreamId(long streamId) {

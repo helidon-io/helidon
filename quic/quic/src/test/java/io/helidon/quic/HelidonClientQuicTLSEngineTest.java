@@ -42,6 +42,8 @@ import javax.net.ssl.X509ExtendedTrustManager;
 import io.helidon.quic.spi.QuicPacketTLSEngine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.quic.QuicTLSEngine.HandshakeState.HANDSHAKE_CONFIRMED;
 import static io.helidon.quic.QuicTLSEngine.HandshakeState.NEED_RECV_CRYPTO;
@@ -268,6 +270,108 @@ class HelidonClientQuicTLSEngineTest {
 
         assertThat(remoteTransportParameters.get(), equalTo(new byte[] {0x0A, 0x0B, 0x0C}));
         assertThat(required(engine.applicationProtocol()), is("h3"));
+    }
+
+    @Test
+    void shouldRejectEncryptedExtensionsWithoutTransportParameters() throws Exception {
+        assertRejectedEncryptedExtensions(encryptedExtensions(null, "h3"), 0x016dL);
+    }
+
+    @Test
+    void shouldRejectEncryptedExtensionsWithoutAlpn() throws Exception {
+        assertRejectedEncryptedExtensions(encryptedExtensions(TRANSPORT_PARAMETERS, null), 0x0178L);
+    }
+
+    @Test
+    void shouldRejectEncryptedExtensionsWithoutEitherRequiredExtension() throws Exception {
+        assertRejectedEncryptedExtensions(encryptedExtensions(null, null), 0x016dL);
+    }
+
+    @Test
+    void shouldRejectUnofferedAlpnBeforePublishingTransportParameters() throws Exception {
+        assertRejectedEncryptedExtensions(encryptedExtensions(TRANSPORT_PARAMETERS, "h2"), 0x012fL);
+    }
+
+    @Test
+    void shouldRejectMalformedAlpnBeforePublishingTransportParameters() throws Exception {
+        assertRejectedEncryptedExtensions(encryptedExtensions(TRANSPORT_PARAMETERS, ""), 0x0132L);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {
+            QuicTlsExtensions.KEY_SHARE,
+            QuicTlsExtensions.SUPPORTED_VERSIONS,
+            QuicTlsExtensions.PRE_SHARED_KEY,
+            QuicTlsExtensions.SIGNATURE_ALGORITHMS,
+            QuicTlsExtensions.PADDING,
+            QuicTlsExtensions.COOKIE,
+            QuicTlsExtensions.PSK_KEY_EXCHANGE_MODES,
+            QuicTlsExtensions.CERTIFICATE_AUTHORITIES,
+            QuicTlsExtensions.SIGNATURE_ALGORITHMS_CERT
+    })
+    void shouldRejectExtensionsForbiddenInEncryptedExtensions(int extensionType) throws Exception {
+        assertRejectedEncryptedExtensions(encryptedExtensions(TRANSPORT_PARAMETERS,
+                                                               "h3",
+                                                               extension(extensionType, new byte[0])),
+                                          0x012fL);
+    }
+
+    @Test
+    void shouldRejectUnsolicitedUnknownEncryptedExtension() throws Exception {
+        assertRejectedEncryptedExtensions(encryptedExtensions(TRANSPORT_PARAMETERS,
+                                                               "h3",
+                                                               extension(0xFAFA, new byte[0])),
+                                          0x016eL);
+    }
+
+    @Test
+    void shouldRejectEncryptedExtensionsServerNameWhenSniIsDisabled() throws Exception {
+        HelidonClientQuicTLSEngine engine = newEngine("example.com", new RecordingTrustManager());
+        SSLParameters sslParameters = engine.sslParameters();
+        sslParameters.setServerNames(List.of());
+        engine.sslParameters(sslParameters);
+
+        assertRejectedEncryptedExtensions(engine,
+                                          encryptedExtensions(TRANSPORT_PARAMETERS,
+                                                              "h3",
+                                                              extension(QuicTlsExtensions.SERVER_NAME, new byte[0])),
+                                          0x016eL);
+    }
+
+    @Test
+    void shouldAcceptOfferedServerNameAndSupportedGroupsInEncryptedExtensions() throws Exception {
+        RecordingTrustManager trustManager = new RecordingTrustManager();
+        HelidonClientQuicTLSEngine engine = newEngine("example.com", trustManager);
+        List<byte[]> remoteTransportParameters = new ArrayList<>();
+        engine.remoteQuicTransportParametersConsumer(buffer -> remoteTransportParameters.add(copy(buffer)));
+
+        ByteBuffer clientHelloBytes = required(packetEngine(engine).handshakeBytesBuffer(INITIAL));
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(clientHelloBytes);
+        assertThat(clientHello.extension(QuicTlsExtensions.SERVER_NAME).isPresent(), is(true));
+        assertThat(clientHello.extension(QuicTlsExtensions.SUPPORTED_GROUPS).isPresent(), is(true));
+        ServerHandshakeFlight flight = serverHandshakeFlight(
+                copy(clientHelloBytes),
+                clientHello,
+                TRANSPORT_PARAMETERS,
+                "h3",
+                extension(QuicTlsExtensions.SERVER_NAME, new byte[0]),
+                extension(QuicTlsExtensions.SUPPORTED_GROUPS,
+                          copy(QuicTlsSupportedGroups.encode(List.of(clientHello.keyShares().getFirst().namedGroup())))));
+
+        engine.versionNegotiated(VERSION);
+        packetEngine(engine).consumeHandshakeBytesBuffer(INITIAL, ByteBuffer.wrap(flight.serverHello()));
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.encryptedExtensions()));
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.certificate()));
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.certificateVerify()));
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.finished()));
+
+        assertThat(remoteTransportParameters.size(), is(1));
+        assertThat(remoteTransportParameters.getFirst(), equalTo(TRANSPORT_PARAMETERS));
+        assertThat(required(engine.applicationProtocol()), is("h3"));
+        assertThat(trustManager.checkServerTrustedCalls, is(1));
+        assertThat(engine.keysAvailable(ONE_RTT), is(true));
+        assertThat(copy(packetEngine(engine).handshakeBytesBuffer(HANDSHAKE)), equalTo(flight.expectedClientFinished()));
+        assertThat(engine.isTLSHandshakeComplete(), is(true));
     }
 
     @Test
@@ -574,28 +678,57 @@ class HelidonClientQuicTLSEngineTest {
 
     @Test
     void shouldRejectUnexpectedEncryptedExtensionsEarlyData() throws Exception {
-        HelidonClientQuicTLSEngine engine = newEngine("example.com");
-        QuicTlsClientHelloMessage clientHello =
-                QuicTlsClientHelloMessage.decode(required(packetEngine(engine).handshakeBytesBuffer(INITIAL)));
-        QuicTlsKeySharePossession serverKeyShare =
-                QuicTlsKeySharePossession.create(clientHello.keyShares().getFirst().namedGroup(), new SecureRandom());
-        QuicTlsServerHelloMessage serverHello = serverHello(clientHello.legacySessionId(),
-                                                            QuicTls13CipherSuite.TLS_AES_128_GCM_SHA256,
-                                                            QuicTlsSupportedVersions.TLS_1_3,
-                                                            serverKeyShare.keyShareEntry());
+        assertRejectedEncryptedExtensions(encryptedExtensions(TRANSPORT_PARAMETERS,
+                                                               "h3",
+                                                               extension(QuicTlsExtensions.EARLY_DATA, new byte[0])),
+                                          0x016eL);
+    }
 
+    private static void assertRejectedEncryptedExtensions(ByteBuffer rejectedExtensions, long expectedErrorCode)
+            throws Exception {
+        assertRejectedEncryptedExtensions(newEngine("example.com", new RecordingTrustManager()),
+                                          rejectedExtensions,
+                                          expectedErrorCode);
+    }
+
+    private static void assertRejectedEncryptedExtensions(HelidonClientQuicTLSEngine engine,
+                                                          ByteBuffer rejectedExtensions,
+                                                          long expectedErrorCode) throws Exception {
+        List<byte[]> remoteTransportParameters = new ArrayList<>();
+        engine.remoteQuicTransportParametersConsumer(buffer -> remoteTransportParameters.add(copy(buffer)));
+
+        ByteBuffer clientHelloBytes = required(packetEngine(engine).handshakeBytesBuffer(INITIAL));
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(clientHelloBytes);
+        ServerHandshakeFlight flight = serverHandshakeFlight(copy(clientHelloBytes),
+                                                             clientHello,
+                                                             TRANSPORT_PARAMETERS,
+                                                             "h3");
         engine.versionNegotiated(VERSION);
-        packetEngine(engine).consumeHandshakeBytesBuffer(INITIAL, serverHello.encode());
+        packetEngine(engine).consumeHandshakeBytesBuffer(INITIAL, ByteBuffer.wrap(flight.serverHello()));
 
-        QuicTransportException thrown = assertThrows(QuicTransportException.class,
-                                                     () -> packetEngine(engine).consumeHandshakeBytesBuffer(
-                                                             HANDSHAKE,
-                                                             encryptedExtensions(new byte[] {0x0A, 0x0B, 0x0C},
-                                                                                 "h3",
-                                                                                 true)));
+        QuicTransportException failure = assertThrows(QuicTransportException.class,
+                                                       () -> packetEngine(engine).consumeHandshakeBytesBuffer(
+                                                               HANDSHAKE, rejectedExtensions));
 
-        assertThat(thrown.reason(),
-                   is("EncryptedExtensions early_data is not supported"));
+        assertThat(failure.errorCode(), is(expectedErrorCode));
+        assertThat(remoteTransportParameters, empty());
+        assertThat(engine.applicationProtocol(), is(Optional.empty()));
+        assertThat(engine.handshakeState(), is(NEED_RECV_CRYPTO));
+        assertThat(engine.keysAvailable(ONE_RTT), is(false));
+        assertThat(engine.isTLSHandshakeComplete(), is(false));
+
+        // Reuse the engine only to verify that rejection preserved its phase and transcript. A live QUIC connection
+        // closes on the fatal error and does not continue the handshake.
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.encryptedExtensions()));
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.certificate()));
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.certificateVerify()));
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.finished()));
+
+        assertThat(remoteTransportParameters.size(), is(1));
+        assertThat(remoteTransportParameters.getFirst(), equalTo(TRANSPORT_PARAMETERS));
+        assertThat(required(engine.applicationProtocol()), is("h3"));
+        assertThat(copy(packetEngine(engine).handshakeBytesBuffer(HANDSHAKE)), equalTo(flight.expectedClientFinished()));
+        assertThat(engine.isTLSHandshakeComplete(), is(true));
     }
 
     private static HelidonClientQuicTLSEngine newEngine(String peerHost) throws Exception {
@@ -737,29 +870,21 @@ class HelidonClientQuicTLSEngineTest {
                 List.copyOf(extensions));
     }
 
-    private static ByteBuffer encryptedExtensions(byte[] transportParameters, String applicationProtocol) {
-        return encryptedExtensions(transportParameters, applicationProtocol, false);
-    }
-
     private static ByteBuffer encryptedExtensions(byte[] transportParameters,
                                                   String applicationProtocol,
-                                                  boolean includeEarlyData) {
-        ByteBuffer alpnData = encodeApplicationProtocol(applicationProtocol);
-        byte[] alpnExtension = extension(QuicTlsExtensions.APPLICATION_LAYER_PROTOCOL_NEGOTIATION, copy(alpnData));
-        byte[] transportParametersExtension = extension(QuicTlsHandshakeMessages.QUIC_TRANSPORT_PARAMETERS_EXTENSION,
-                                                        transportParameters);
-        byte[] earlyDataExtension = includeEarlyData
-                ? extension(QuicTlsExtensions.EARLY_DATA, new byte[0])
-                : null;
-        ByteBuffer body = ByteBuffer.allocate(2
-                                                      + alpnExtension.length
-                                                      + transportParametersExtension.length
-                                                      + (earlyDataExtension == null ? 0 : earlyDataExtension.length));
-        if (earlyDataExtension == null) {
-            putVector(body, 0xFFFF, alpnExtension, transportParametersExtension);
-        } else {
-            putVector(body, 0xFFFF, alpnExtension, transportParametersExtension, earlyDataExtension);
+                                                  byte[]... additionalExtensions) {
+        List<byte[]> extensions = new ArrayList<>();
+        if (applicationProtocol != null) {
+            extensions.add(extension(QuicTlsExtensions.APPLICATION_LAYER_PROTOCOL_NEGOTIATION,
+                                     copy(encodeApplicationProtocol(applicationProtocol))));
         }
+        if (transportParameters != null) {
+            extensions.add(extension(QuicTlsHandshakeMessages.QUIC_TRANSPORT_PARAMETERS_EXTENSION,
+                                     transportParameters));
+        }
+        extensions.addAll(Arrays.asList(additionalExtensions));
+        ByteBuffer body = ByteBuffer.allocate(2 + extensions.stream().mapToInt(extension -> extension.length).sum());
+        putVector(body, 0xFFFF, extensions.toArray(byte[][]::new));
         return handshakeMessage(QuicTlsHandshakeMessages.ENCRYPTED_EXTENSIONS, body.flip());
     }
 
@@ -773,7 +898,8 @@ class HelidonClientQuicTLSEngineTest {
     private static ServerHandshakeFlight serverHandshakeFlight(byte[] clientHelloBytes,
                                                                QuicTlsClientHelloMessage clientHello,
                                                                byte[] transportParameters,
-                                                               String applicationProtocol) throws Exception {
+                                                               String applicationProtocol,
+                                                               byte[]... additionalExtensions) throws Exception {
         QuicTls13CipherSuite cipherSuite = QuicTls13CipherSuite.forCodePoint(clientHello.cipherSuites().getFirst());
         QuicTlsKeySharePossession serverKeyShare =
                 QuicTlsKeySharePossession.create(clientHello.keyShares().getFirst().namedGroup(), new SecureRandom());
@@ -798,7 +924,7 @@ class HelidonClientQuicTLSEngineTest {
         transcript.add(ByteBuffer.wrap(serverHelloBytes));
         byte[] serverHelloTranscriptHash = transcript.hash(cipherSuite);
 
-        byte[] encryptedExtensions = copy(encryptedExtensions(transportParameters, applicationProtocol));
+        byte[] encryptedExtensions = copy(encryptedExtensions(transportParameters, applicationProtocol, additionalExtensions));
         transcript.add(ByteBuffer.wrap(encryptedExtensions));
 
         byte[] certificate = copy(certificateMessage(QuicTlsRfc8448Vectors.rsaCertificateDer()));

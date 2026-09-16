@@ -119,7 +119,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     private final boolean unsafeRawData;
     private final ReentrantLock closeLock = new ReentrantLock();
     private final ReentrantLock routeLock = new ReentrantLock();
-    private QuicDatagram queuedWriteInFlight;
     private final AtomicInteger activeChannelWrites = new AtomicInteger();
     // A ConcurrentMap to store registered connections.
     // The connection IDs might come from external sources. They implement Comparable
@@ -143,6 +142,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     // A synchronous scheduler to consume the writeQueue list;
     private final SequentialScheduler writeLoopScheduler =
             SequentialScheduler.lockingScheduler(this::writeLoop);
+    private QuicDatagram queuedWriteInFlight;
 
     private volatile boolean readingStalled;
     private volatile boolean expectExceptions;
@@ -214,6 +214,35 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             endpoint.log(System.Logger.Level.DEBUG, "endpoint registered with selector");
+        }
+    }
+
+    static void logDatagram(boolean unsafeRawData,
+                            String direction,
+                            String logTag,
+                            SocketAddress peer,
+                            ByteBuffer payload) {
+        boolean debugEnabled = LOGGER.isLoggable(System.Logger.Level.DEBUG);
+        boolean traceEnabled = LOGGER.isLoggable(System.Logger.Level.TRACE);
+        if (!debugEnabled && !traceEnabled) {
+            return;
+        }
+
+        ByteBuffer duplicate = payload.duplicate();
+        int size = duplicate.remaining();
+        String peerDescription = Utils.socketAddressText(peer);
+        if (debugEnabled) {
+            LOGGER.log(System.Logger.Level.DEBUG,
+                       () -> "[%s] %s datagram (%d bytes) %s"
+                               .formatted(logTag, direction, size, peerDescription));
+        }
+        if (unsafeRawData && traceEnabled) {
+            byte[] bytes = new byte[size];
+            duplicate.get(bytes);
+            BufferData bufferData = BufferData.create(bytes);
+            LOGGER.log(System.Logger.Level.TRACE,
+                       () -> "[%s] UNSAFE raw %s datagram (%d bytes) %s%n%s"
+                               .formatted(logTag, direction, size, peerDescription, bufferData.debugDataHex(true)));
         }
     }
 
@@ -490,8 +519,11 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                       ByteBuffer payload,
                       QuicPathManager.SendPermit permit) {
         int tosend = payload.remaining();
-        String logTag = receiverTag(source, this);
-        logDebug(logTag, "attempting to send datagram [%s bytes]", tosend);
+        boolean debug = LOGGER.isLoggable(System.Logger.Level.DEBUG);
+        String logTag = debug ? receiverTag(source, this) : null;
+        if (debug) {
+            logDebug(logTag, "attempting to send datagram [%s bytes]", tosend);
+        }
         var datagram = QuicDatagram.create(source, destination, payload, permit);
         if (closed) {
             datagram.releasePermit();
@@ -527,8 +559,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 closeLock.unlock();
             }
             if (queued) {
-                logDebug(logTag, "datagram [%s bytes] added to write queue, queue size %s",
-                         tosend, writeQueue.size());
+                if (debug) {
+                    logDebug(logTag, "datagram [%s bytes] added to write queue, queue size %s",
+                             tosend, writeQueue.size());
+                }
                 try {
                     writeLoopScheduler.runOrSchedule(writeLoopExecutor());
                 } catch (Throwable failure) {
@@ -551,8 +585,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         } else {
             datagram.releasePermit();
             source.datagramDropped(datagram);
-            logDebug(logTag, "datagram [%s bytes] dropped: payload partially consumed, remaining %s",
-                     tosend, payload.remaining());
+            if (debug) {
+                logDebug(logTag, "datagram [%s bytes] dropped: payload partially consumed, remaining %s",
+                         tosend, payload.remaining());
+            }
         }
     }
 
@@ -622,17 +658,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
         draining(connection);
         pushDatagram(connection, destination, datagram, permit);
-    }
-
-    private Optional<QuicPathManager.SendPermit> reservePathDatagram(QuicConnectionImpl connection,
-                                                                     InetSocketAddress destination,
-                                                                     int size) {
-        Optional<QuicPathManager.SendPermit> reservation = connection.pathManager().reserve(destination, size);
-        if (reservation.isPresent() && reservation.orElseThrow().size() < size) {
-            reservation.orElseThrow().release();
-            return Optional.empty();
-        }
-        return reservation;
     }
 
     /**
@@ -1087,15 +1112,25 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         var payload = datagram.payload();
         var tosend = payload.remaining();
         var dest = datagram.address();
-        String logTag = receiverTag(datagram.connection(), this);
-        logDebug(logTag, "sending datagram(%d) to %s", tosend, dest);
-        logDatagram(unsafeRawData, "send", logTag, dest, payload);
+        boolean debug = LOGGER.isLoggable(System.Logger.Level.DEBUG);
+        boolean diagnostics = debug || LOGGER.isLoggable(System.Logger.Level.TRACE);
+        String logTag = diagnostics ? receiverTag(datagram.connection(), this) : null;
+        if (debug) {
+            logDebug(logTag, "sending datagram(%d) to %s", tosend, dest);
+        }
+        if (diagnostics) {
+            logDatagram(unsafeRawData, "send", logTag, dest, payload);
+        }
         sent = send(payload, dest, false);
         if (sent < 0) {
-            logDebug(logTag, "endpoint or channel closed; skipping sending of datagram(%d) to %s", tosend, dest);
+            if (debug) {
+                logDebug(logTag, "endpoint or channel closed; skipping sending of datagram(%d) to %s", tosend, dest);
+            }
             return sent;
         }
-        logDebug(logTag, "sent %d bytes to %s", sent, dest);
+        if (debug) {
+            logDebug(logTag, "sent %d bytes to %s", sent, dest);
+        }
         return sent;
     }
 
@@ -1183,70 +1218,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
     }
 
-    private void drainWriteQueue(List<QuicDatagram> datagrams) {
-        QuicDatagram datagram;
-        while ((datagram = writeQueue.poll()) != null) {
-            datagrams.add(datagram);
-        }
-    }
-
-    private void dropDatagrams(List<QuicDatagram> datagrams) {
-        for (QuicDatagram datagram : datagrams) {
-            if (datagram.connection != null) {
-                Throwable failure = null;
-                try {
-                    datagram.releasePermit();
-                } catch (Throwable releaseFailure) {
-                    failure = releaseFailure;
-                }
-                try {
-                    datagram.connection.datagramDropped(datagram);
-                } catch (Throwable callbackFailure) {
-                    if (failure == null) {
-                        failure = callbackFailure;
-                    } else {
-                        failure.addSuppressed(callbackFailure);
-                    }
-                }
-                if (failure != null && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    log(System.Logger.Level.DEBUG, "Failed to drop queued datagram", failure);
-                }
-            }
-        }
-    }
-
-    private Throwable discardDatagram(QuicDatagram datagram, Throwable failure) {
-        try {
-            datagram.releasePermit();
-        } catch (Throwable releaseFailure) {
-            if (failure == null) {
-                failure = releaseFailure;
-            } else {
-                failure.addSuppressed(releaseFailure);
-            }
-        }
-        try {
-            datagram.connection.datagramDiscarded(datagram);
-        } catch (Throwable callbackFailure) {
-            if (failure == null) {
-                failure = callbackFailure;
-            } else {
-                failure.addSuppressed(callbackFailure);
-            }
-        }
-        return failure;
-    }
-
-    private static void rethrow(Throwable failure) {
-        if (failure instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-        if (failure instanceof Error error) {
-            throw error;
-        }
-        throw new IllegalStateException(failure);
-    }
-
     // The readloop is triggered whenever new datagrams are
     // added to the read queue.
     void readLoop() {
@@ -1279,7 +1250,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     switch (datagram) {
                     case QuicDatagram quicDatagram -> {
                         var connection = quicDatagram.connection();
-                        logDatagram(unsafeRawData, "recv", receiverTag(connection, this), source, payload);
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)
+                                || LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                            logDatagram(unsafeRawData, "recv", receiverTag(connection, this), source, payload);
+                        }
                         var headersType = QuicPacketDecoder.peekHeaderType(payload, pos);
                         var destConnId = peekConnectionBytes(headersType, payload);
                         connection.processIncoming(source, destConnId, headersType, payload);
@@ -1291,7 +1265,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     }
                     case StatelessReset statelessReset -> {
                         var connection = statelessReset.connection();
-                        logDatagram(unsafeRawData, "recv", receiverTag(connection, this), source, payload);
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)
+                                || LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                            logDatagram(unsafeRawData, "recv", receiverTag(connection, this), source, payload);
+                        }
                         connection.processStatelessReset();
                     }
                     case SendStatelessReset _ -> {
@@ -1311,66 +1288,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         } catch (RuntimeException failure) {
             onReadError(failure);
         }
-    }
-
-    /**
-     * Checks if the received datagram contains a stateless reset token;
-     * returns the associated connection if true, null otherwise.
-     *
-     * @param source the sender's address
-     * @param buffer datagram contents
-     * @return connection associated with the stateless token, or {@code null}
-     */
-    private QuicPacketReceiver checkStatelessReset(SocketAddress source, ByteBuffer buffer) {
-        // We couldn't identify the connection: maybe that's a stateless reset?
-        if (closed) {
-            return null;
-        }
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            log(System.Logger.Level.DEBUG,
-                "Check if received datagram could be stateless reset (datagram[%d, %s])",
-                buffer.remaining(),
-                source);
-        }
-        if (buffer.remaining() < 21) {
-            // too short to be a stateless reset:
-            // RFC 9000:
-            // Endpoints MUST discard packets that are too small to be valid QUIC packets.
-            // To give an example, with the set of AEAD functions defined in [QUIC-TLS],
-            // short header packets that are smaller than 21 bytes are never valid.
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                log(System.Logger.Level.DEBUG,
-                    "Packet too short for a stateless reset (%s bytes < 21)",
-                    buffer.remaining());
-            }
-            return null;
-        }
-        byte[] tokenBytes = new byte[16];
-        buffer.get(buffer.limit() - 16, tokenBytes);
-        var token = new PeerIssuedResetToken(makeToken(tokenBytes), source);
-        QuicPacketReceiver connection = peerIssuedResetTokens.get(token);
-        if (closed) {
-            return null;
-        }
-        if (connection != null) {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                log(System.Logger.Level.DEBUG,
-                    "Received reset token (%s bytes) for connection: %s",
-                    tokenBytes.length,
-                    connection);
-            }
-            if (unsafeRawData && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                log(System.Logger.Level.TRACE,
-                    "UNSAFE raw reset token for connection %s: %s",
-                    connection,
-                    HexFormat.of().formatHex(tokenBytes));
-            }
-        } else {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                log(System.Logger.Level.DEBUG, "Not a stateless reset");
-            }
-        }
-        return connection;
     }
 
     /**
@@ -1486,15 +1403,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         return closed;
     }
 
-    private void awaitRoutePublications() {
-        routeLock.lock();
-        try {
-            // Wait for a publication that observed the endpoint before close won.
-        } finally {
-            routeLock.unlock();
-        }
-    }
-
     boolean forceSendAsync() {
         return datagramSendAsync || !writeQueue.isEmpty();
     }
@@ -1563,112 +1471,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         closing(connection, datagram, connection.pathManager().closingPath());
     }
 
-    private void closing(QuicConnectionImpl connection,
-                         ByteBuffer datagram,
-                         QuicPathManager.ClosingPath closingPath) {
-        ByteBuffer closingDatagram = ByteBuffer.allocate(datagram.limit());
-        closingDatagram.put(datagram.slice());
-        closingDatagram.flip();
-
-        long idleTimeout = connection.peerPtoMs() * 3; // 3 PTO
-        QuicConnectionImpl.EndpointRoutes routes = connection.freezeEndpointRoutes();
-        List<QuicConnectionId> connectionIds = routes.connectionIds();
-        List<QuicPacketReceiver.PeerResetToken> resetTokens = routes.resetTokens();
-        List<PeerIssuedResetToken> resetTokenKeys = routeResetTokens(resetTokens);
-        QuicEndpointRouteLifecycle routeLifecycle = connection.routeLifecycle();
-        var closingConnection = new ClosingConnection(connectionIds,
-                                                      resetTokens,
-                                                      idleTimeout,
-                                                      closingDatagram,
-                                                      closingPath,
-                                                      routeLifecycle);
-        QuicPacketReceiver ownerToRemove = null;
-        Throwable transferFailure = null;
-        boolean completeFailedRemoval = false;
-        boolean startTimer = false;
-        routeLock.lock();
-        try {
-            QuicPacketReceiver currentOwner = routeLifecycle.owner();
-            if (closed) {
-                ownerToRemove = currentOwner;
-            } else if (currentOwner == connection) {
-                closingConnection.prepareTimerForPublication();
-                if (!routeLifecycle.transfer(connection, closingConnection)) {
-                    return;
-                }
-                try {
-                    resetTokenKeys.forEach(resetToken -> peerIssuedResetTokens.replace(resetToken,
-                                                                                       connection,
-                                                                                       closingConnection));
-                    connectionIds.forEach(connectionId -> connections.replace(connectionId,
-                                                                              connection,
-                                                                              closingConnection));
-                    startTimer = true;
-                } catch (RuntimeException | Error failure) {
-                    transferFailure = failure;
-                    completeFailedRemoval = routeLifecycle.beginRemoval(closingConnection);
-                    if (completeFailedRemoval) {
-                        rollbackRouteTransfer(connection,
-                                              closingConnection,
-                                              connectionIds,
-                                              resetTokenKeys,
-                                              failure);
-                    }
-                }
-            }
-        } finally {
-            routeLock.unlock();
-        }
-        if (startTimer) {
-            try {
-                closingConnection.startTimer();
-            } catch (RuntimeException | Error failure) {
-                transferFailure = failure;
-                routeLock.lock();
-                try {
-                    completeFailedRemoval = routeLifecycle.beginRemoval(closingConnection);
-                    if (completeFailedRemoval) {
-                        rollbackRouteTransfer(connection,
-                                              closingConnection,
-                                              connectionIds,
-                                              resetTokenKeys,
-                                              failure);
-                    }
-                } finally {
-                    routeLock.unlock();
-                }
-            }
-        }
-        if (transferFailure != null) {
-            if (completeFailedRemoval) {
-                closingConnection.routesRemoved(transferFailure);
-            }
-            rethrow(transferFailure);
-        }
-        if (ownerToRemove != null) {
-            removeConnection(ownerToRemove);
-        }
-    }
-
-    private void rollbackRouteTransfer(QuicPacketReceiver previousOwner,
-                                       ClosedConnection transferredOwner,
-                                       List<QuicConnectionId> connectionIds,
-                                       List<PeerIssuedResetToken> resetTokenKeys,
-                                       Throwable transferFailure) {
-        try {
-            resetTokenKeys.forEach(token -> {
-                peerIssuedResetTokens.remove(token, transferredOwner);
-                peerIssuedResetTokens.remove(token, previousOwner);
-            });
-            connectionIds.forEach(connectionId -> {
-                connections.remove(connectionId, transferredOwner);
-                connections.remove(connectionId, previousOwner);
-            });
-        } catch (RuntimeException | Error cleanupFailure) {
-            transferFailure.addSuppressed(cleanupFailure);
-        }
-    }
-
     /**
      * A peer issues a stateless reset token which it can then send to close the connection. This
      * method links the peer issued token against the connection that needs to be closed if/when
@@ -1727,46 +1529,14 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
     }
 
-    private List<PeerIssuedResetToken> routeResetTokens(List<QuicPacketReceiver.PeerResetToken> resetTokens) {
-        if (resetTokens.isEmpty()) {
-            return List.of();
+    private static void rethrow(Throwable failure) {
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
         }
-        List<PeerIssuedResetToken> result = new ArrayList<>(resetTokens.size());
-        resetTokens.forEach(resetToken -> result.add(peerIssuedResetToken(resetToken)));
-        return result;
-    }
-
-    private PeerIssuedResetToken peerIssuedResetToken(QuicPacketReceiver.PeerResetToken resetToken) {
-        return new PeerIssuedResetToken(makeToken(resetToken.token()), resetToken.peerAddress());
-    }
-
-    static void logDatagram(boolean unsafeRawData,
-                            String direction,
-                            String logTag,
-                            SocketAddress peer,
-                            ByteBuffer payload) {
-        boolean debugEnabled = LOGGER.isLoggable(System.Logger.Level.DEBUG);
-        boolean traceEnabled = LOGGER.isLoggable(System.Logger.Level.TRACE);
-        if (!debugEnabled && !traceEnabled) {
-            return;
+        if (failure instanceof Error error) {
+            throw error;
         }
-
-        ByteBuffer duplicate = payload.duplicate();
-        int size = duplicate.remaining();
-        String peerDescription = Utils.socketAddressText(peer);
-        if (debugEnabled) {
-            LOGGER.log(System.Logger.Level.DEBUG,
-                       () -> "[%s] %s datagram (%d bytes) %s"
-                               .formatted(logTag, direction, size, peerDescription));
-        }
-        if (unsafeRawData && traceEnabled) {
-            byte[] bytes = new byte[size];
-            duplicate.get(bytes);
-            BufferData bufferData = BufferData.create(bytes);
-            LOGGER.log(System.Logger.Level.TRACE,
-                       () -> "[%s] UNSAFE raw %s datagram (%d bytes) %s%n%s"
-                               .formatted(logTag, direction, size, peerDescription, bufferData.debugDataHex(true)));
-        }
+        throw new IllegalStateException(failure);
     }
 
     private static String decorate(String logTag, String message) {
@@ -1919,6 +1689,259 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 }
             }
         }
+    }
+
+    private Optional<QuicPathManager.SendPermit> reservePathDatagram(QuicConnectionImpl connection,
+                                                                     InetSocketAddress destination,
+                                                                     int size) {
+        Optional<QuicPathManager.SendPermit> reservation = connection.pathManager().reserve(destination, size);
+        if (reservation.isPresent() && reservation.orElseThrow().size() < size) {
+            reservation.orElseThrow().release();
+            return Optional.empty();
+        }
+        return reservation;
+    }
+
+    private void drainWriteQueue(List<QuicDatagram> datagrams) {
+        QuicDatagram datagram;
+        while ((datagram = writeQueue.poll()) != null) {
+            datagrams.add(datagram);
+        }
+    }
+
+    private void dropDatagrams(List<QuicDatagram> datagrams) {
+        for (QuicDatagram datagram : datagrams) {
+            if (datagram.connection != null) {
+                Throwable failure = null;
+                try {
+                    datagram.releasePermit();
+                } catch (Throwable releaseFailure) {
+                    failure = releaseFailure;
+                }
+                try {
+                    datagram.connection.datagramDropped(datagram);
+                } catch (Throwable callbackFailure) {
+                    if (failure == null) {
+                        failure = callbackFailure;
+                    } else {
+                        failure.addSuppressed(callbackFailure);
+                    }
+                }
+                if (failure != null && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    log(System.Logger.Level.DEBUG, "Failed to drop queued datagram", failure);
+                }
+            }
+        }
+    }
+
+    private Throwable discardDatagram(QuicDatagram datagram, Throwable failure) {
+        try {
+            datagram.releasePermit();
+        } catch (Throwable releaseFailure) {
+            if (failure == null) {
+                failure = releaseFailure;
+            } else {
+                failure.addSuppressed(releaseFailure);
+            }
+        }
+        try {
+            datagram.connection.datagramDiscarded(datagram);
+        } catch (Throwable callbackFailure) {
+            if (failure == null) {
+                failure = callbackFailure;
+            } else {
+                failure.addSuppressed(callbackFailure);
+            }
+        }
+        return failure;
+    }
+
+    /**
+     * Checks if the received datagram contains a stateless reset token;
+     * returns the associated connection if true, null otherwise.
+     *
+     * @param source the sender's address
+     * @param buffer datagram contents
+     * @return connection associated with the stateless token, or {@code null}
+     */
+    private QuicPacketReceiver checkStatelessReset(SocketAddress source, ByteBuffer buffer) {
+        // We couldn't identify the connection: maybe that's a stateless reset?
+        if (closed) {
+            return null;
+        }
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            log(System.Logger.Level.DEBUG,
+                "Check if received datagram could be stateless reset (datagram[%d, %s])",
+                buffer.remaining(),
+                source);
+        }
+        if (buffer.remaining() < 21) {
+            // too short to be a stateless reset:
+            // RFC 9000:
+            // Endpoints MUST discard packets that are too small to be valid QUIC packets.
+            // To give an example, with the set of AEAD functions defined in [QUIC-TLS],
+            // short header packets that are smaller than 21 bytes are never valid.
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                log(System.Logger.Level.DEBUG,
+                    "Packet too short for a stateless reset (%s bytes < 21)",
+                    buffer.remaining());
+            }
+            return null;
+        }
+        byte[] tokenBytes = new byte[16];
+        buffer.get(buffer.limit() - 16, tokenBytes);
+        var token = new PeerIssuedResetToken(makeToken(tokenBytes), source);
+        QuicPacketReceiver connection = peerIssuedResetTokens.get(token);
+        if (closed) {
+            return null;
+        }
+        if (connection != null) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                log(System.Logger.Level.DEBUG,
+                    "Received reset token (%s bytes) for connection: %s",
+                    tokenBytes.length,
+                    connection);
+            }
+            if (unsafeRawData && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                log(System.Logger.Level.TRACE,
+                    "UNSAFE raw reset token for connection %s: %s",
+                    connection,
+                    HexFormat.of().formatHex(tokenBytes));
+            }
+        } else {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                log(System.Logger.Level.DEBUG, "Not a stateless reset");
+            }
+        }
+        return connection;
+    }
+
+    private void awaitRoutePublications() {
+        routeLock.lock();
+        try {
+            // Wait for a publication that observed the endpoint before close won.
+        } finally {
+            routeLock.unlock();
+        }
+    }
+
+    private void closing(QuicConnectionImpl connection,
+                         ByteBuffer datagram,
+                         QuicPathManager.ClosingPath closingPath) {
+        ByteBuffer closingDatagram = ByteBuffer.allocate(datagram.limit());
+        closingDatagram.put(datagram.slice());
+        closingDatagram.flip();
+
+        long idleTimeout = connection.peerPtoMs() * 3; // 3 PTO
+        QuicConnectionImpl.EndpointRoutes routes = connection.freezeEndpointRoutes();
+        List<QuicConnectionId> connectionIds = routes.connectionIds();
+        List<QuicPacketReceiver.PeerResetToken> resetTokens = routes.resetTokens();
+        List<PeerIssuedResetToken> resetTokenKeys = routeResetTokens(resetTokens);
+        QuicEndpointRouteLifecycle routeLifecycle = connection.routeLifecycle();
+        var closingConnection = new ClosingConnection(connectionIds,
+                                                      resetTokens,
+                                                      idleTimeout,
+                                                      closingDatagram,
+                                                      closingPath,
+                                                      routeLifecycle);
+        QuicPacketReceiver ownerToRemove = null;
+        Throwable transferFailure = null;
+        boolean completeFailedRemoval = false;
+        boolean startTimer = false;
+        routeLock.lock();
+        try {
+            QuicPacketReceiver currentOwner = routeLifecycle.owner();
+            if (closed) {
+                ownerToRemove = currentOwner;
+            } else if (currentOwner == connection) {
+                closingConnection.prepareTimerForPublication();
+                if (!routeLifecycle.transfer(connection, closingConnection)) {
+                    return;
+                }
+                try {
+                    resetTokenKeys.forEach(resetToken -> peerIssuedResetTokens.replace(resetToken,
+                                                                                       connection,
+                                                                                       closingConnection));
+                    connectionIds.forEach(connectionId -> connections.replace(connectionId,
+                                                                              connection,
+                                                                              closingConnection));
+                    startTimer = true;
+                } catch (RuntimeException | Error failure) {
+                    transferFailure = failure;
+                    completeFailedRemoval = routeLifecycle.beginRemoval(closingConnection);
+                    if (completeFailedRemoval) {
+                        rollbackRouteTransfer(connection,
+                                              closingConnection,
+                                              connectionIds,
+                                              resetTokenKeys,
+                                              failure);
+                    }
+                }
+            }
+        } finally {
+            routeLock.unlock();
+        }
+        if (startTimer) {
+            try {
+                closingConnection.startTimer();
+            } catch (RuntimeException | Error failure) {
+                transferFailure = failure;
+                routeLock.lock();
+                try {
+                    completeFailedRemoval = routeLifecycle.beginRemoval(closingConnection);
+                    if (completeFailedRemoval) {
+                        rollbackRouteTransfer(connection,
+                                              closingConnection,
+                                              connectionIds,
+                                              resetTokenKeys,
+                                              failure);
+                    }
+                } finally {
+                    routeLock.unlock();
+                }
+            }
+        }
+        if (transferFailure != null) {
+            if (completeFailedRemoval) {
+                closingConnection.routesRemoved(transferFailure);
+            }
+            rethrow(transferFailure);
+        }
+        if (ownerToRemove != null) {
+            removeConnection(ownerToRemove);
+        }
+    }
+
+    private void rollbackRouteTransfer(QuicPacketReceiver previousOwner,
+                                       ClosedConnection transferredOwner,
+                                       List<QuicConnectionId> connectionIds,
+                                       List<PeerIssuedResetToken> resetTokenKeys,
+                                       Throwable transferFailure) {
+        try {
+            resetTokenKeys.forEach(token -> {
+                peerIssuedResetTokens.remove(token, transferredOwner);
+                peerIssuedResetTokens.remove(token, previousOwner);
+            });
+            connectionIds.forEach(connectionId -> {
+                connections.remove(connectionId, transferredOwner);
+                connections.remove(connectionId, previousOwner);
+            });
+        } catch (RuntimeException | Error cleanupFailure) {
+            transferFailure.addSuppressed(cleanupFailure);
+        }
+    }
+
+    private List<PeerIssuedResetToken> routeResetTokens(List<QuicPacketReceiver.PeerResetToken> resetTokens) {
+        if (resetTokens.isEmpty()) {
+            return List.of();
+        }
+        List<PeerIssuedResetToken> result = new ArrayList<>(resetTokens.size());
+        resetTokens.forEach(resetToken -> result.add(peerIssuedResetToken(resetToken)));
+        return result;
+    }
+
+    private PeerIssuedResetToken peerIssuedResetToken(QuicPacketReceiver.PeerResetToken resetToken) {
+        return new PeerIssuedResetToken(makeToken(resetToken.token()), resetToken.peerAddress());
     }
 
     private int processPendingReadEvents(boolean nonBlocking, int totalpkt, int sincepkt) {
@@ -2282,6 +2305,11 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         return null;
     }
 
+    enum ChannelType {
+        NON_BLOCKING_WITH_SELECTOR,
+        BLOCKING_WITH_VIRTUAL_THREADS
+    }
+
     /**
      * This interface represent a UDP Datagram. This could be
      * either an incoming datagram or an outgoing datagram.
@@ -2472,11 +2500,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 permit.release();
             }
         }
-    }
-
-    enum ChannelType {
-        NON_BLOCKING_WITH_SELECTOR,
-        BLOCKING_WITH_VIRTUAL_THREADS
     }
 
     /**
@@ -2990,6 +3013,32 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
     }
 
+    private record StatelessResetToken(byte[] token) {
+        StatelessResetToken(byte[] token) {
+            this.token = token.clone();
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(token);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof StatelessResetToken other) {
+                return Arrays.equals(token, other.token);
+            }
+            return false;
+        }
+    }
+
+    private record PeerIssuedResetToken(StatelessResetToken token, SocketAddress peerAddress) {
+        private PeerIssuedResetToken {
+            Objects.requireNonNull(token);
+            Objects.requireNonNull(peerAddress);
+        }
+    }
+
     /**
      * Represent a closing or draining quic connection: if we receive any packet
      * for this connection we ignore them (if in draining state) or replay the
@@ -3191,62 +3240,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             }
         }
 
-        private void cancelTransferredTimer() {
-            TimerDetachAction action = detachTimer(TimerDetachMode.TRANSFER, null);
-            if (action.cancelTimer) {
-                timer().cancel(this);
-            }
-        }
-
-        private TimerDetachAction detachTimer(TimerDetachMode mode, Throwable removalFailure) {
-            timerRegistrationLock.lock();
-            try {
-                switch (timerRegistrationState) {
-                case CREATED, PUBLISHED -> {
-                    timerRegistrationState = TimerRegistrationState.DONE;
-                    return mode.action(false);
-                }
-                case ARMING -> {
-                    timerRegistrationState = TimerRegistrationState.REMOVE_AFTER_ARM;
-                    if (mode == TimerDetachMode.REMOVE_ROUTES) {
-                        completeRemovalAfterArm = true;
-                        deferredRemovalFailure = removalFailure;
-                    }
-                    return TimerDetachAction.NONE;
-                }
-                case ARMED -> {
-                    timerRegistrationState = TimerRegistrationState.DONE;
-                    return mode.action(true);
-                }
-                case HANDLING -> {
-                    timerRegistrationState = TimerRegistrationState.DONE;
-                    return mode.action(false);
-                }
-                case REMOVE_AFTER_ARM -> {
-                    if (mode == TimerDetachMode.REMOVE_ROUTES) {
-                        completeRemovalAfterArm = true;
-                        deferredRemovalFailure = removalFailure;
-                    }
-                    return TimerDetachAction.NONE;
-                }
-                case DONE -> {
-                    return mode.action(false);
-                }
-                default -> throw new IllegalStateException("Unexpected timer state " + timerRegistrationState);
-                }
-            } finally {
-                timerRegistrationLock.unlock();
-            }
-        }
-
-        private void completeRouteRemoval(Throwable removalFailure) {
-            if (removalFailure == null) {
-                routeLifecycle.completeRemoval();
-            } else {
-                routeLifecycle.completeRemovalExceptionally(removalFailure);
-            }
-        }
-
         @Override
         public final Deadline deadline() {
             return deadline;
@@ -3309,10 +3302,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             finishRoutes();
         }
 
-        private void finishRoutes() {
-            removeConnection(this);
-        }
-
         protected void handleIncoming(SocketAddress source, ByteBuffer idbytes,
                                       HeadersType headersType, ByteBuffer buffer) {
             dropIncoming(source, idbytes, headersType, buffer);
@@ -3327,6 +3316,66 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
 
         final QuicEndpointRouteLifecycle routeLifecycle() {
             return routeLifecycle;
+        }
+
+        private void cancelTransferredTimer() {
+            TimerDetachAction action = detachTimer(TimerDetachMode.TRANSFER, null);
+            if (action.cancelTimer) {
+                timer().cancel(this);
+            }
+        }
+
+        private TimerDetachAction detachTimer(TimerDetachMode mode, Throwable removalFailure) {
+            timerRegistrationLock.lock();
+            try {
+                switch (timerRegistrationState) {
+                case CREATED, PUBLISHED -> {
+                    timerRegistrationState = TimerRegistrationState.DONE;
+                    return mode.action(false);
+                }
+                case ARMING -> {
+                    timerRegistrationState = TimerRegistrationState.REMOVE_AFTER_ARM;
+                    if (mode == TimerDetachMode.REMOVE_ROUTES) {
+                        completeRemovalAfterArm = true;
+                        deferredRemovalFailure = removalFailure;
+                    }
+                    return TimerDetachAction.NONE;
+                }
+                case ARMED -> {
+                    timerRegistrationState = TimerRegistrationState.DONE;
+                    return mode.action(true);
+                }
+                case HANDLING -> {
+                    timerRegistrationState = TimerRegistrationState.DONE;
+                    return mode.action(false);
+                }
+                case REMOVE_AFTER_ARM -> {
+                    if (mode == TimerDetachMode.REMOVE_ROUTES) {
+                        completeRemovalAfterArm = true;
+                        deferredRemovalFailure = removalFailure;
+                    }
+                    return TimerDetachAction.NONE;
+                }
+                case DONE -> {
+                    return mode.action(false);
+                }
+                default -> throw new IllegalStateException("Unexpected timer state " + timerRegistrationState);
+                }
+            } finally {
+                timerRegistrationLock.unlock();
+            }
+        }
+
+        private void completeRouteRemoval(Throwable removalFailure) {
+            if (removalFailure == null) {
+                routeLifecycle.completeRemoval();
+            } else {
+                routeLifecycle.completeRemovalExceptionally(removalFailure);
+            }
+        }
+
+        private void finishRoutes() {
+            removeConnection(this);
         }
 
         private enum TimerRegistrationState {
@@ -3443,32 +3492,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     connectionIds(),
                     headersType);
             }
-        }
-    }
-
-    private record StatelessResetToken(byte[] token) {
-        StatelessResetToken(byte[] token) {
-            this.token = token.clone();
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(token);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof StatelessResetToken other) {
-                return Arrays.equals(token, other.token);
-            }
-            return false;
-        }
-    }
-
-    private record PeerIssuedResetToken(StatelessResetToken token, SocketAddress peerAddress) {
-        private PeerIssuedResetToken {
-            Objects.requireNonNull(token);
-            Objects.requireNonNull(peerAddress);
         }
     }
 }

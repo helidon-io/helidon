@@ -352,79 +352,6 @@ class QuicServerRuntimeTest {
                                      List.of(QuicVersion.QUIC_V1, QuicVersion.QUIC_V2));
     }
 
-    private void shouldRetryThenReuseNewToken(QuicVersion version,
-                                              List<QuicVersion> clientVersions) throws Exception {
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-        AtomicInteger admissionAttempts = new AtomicInteger();
-        AtomicInteger createdConnections = new AtomicInteger();
-        QuicConfig serverConfig = quicConfig(List.of(version));
-        QuicServerRuntime runtime = QuicServerRuntime.builder()
-                .executor(executor)
-                .quicConfig(serverConfig)
-                .retryEnabled(true)
-                .tls(serverTls())
-                .applicationProtocols(List.of(ALPN))
-                .bindAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0))
-                .connectionAdmission(() -> {
-                    admissionAttempts.incrementAndGet();
-                    return QuicServerRuntime.ConnectionPermit.accepted(() -> {
-                    }, () -> {
-                    });
-                })
-                .observer(new QuicServerRuntime.Observer() {
-                    @Override
-                    public void connectionCreated(QuicConnection connection) {
-                        createdConnections.incrementAndGet();
-                    }
-                })
-                .build();
-        QuicClientRuntime client = QuicClientRuntime.builder()
-                .executor(executor)
-                .quicConfig(quicConfig(clientVersions))
-                .tls(clientTls())
-                .build();
-        try (NatRebindingProxy proxy = new NatRebindingProxy(executor, runtime.localAddress())) {
-            InetSocketAddress peerAddress = proxy.clientAddress();
-            CompletableFuture<QuicConnection> firstAccepted = runtime.accept();
-            QuicClientConnection first = client.createConnection(peerAddress,
-                                                                 "localhost",
-                                                                 peerAddress.getPort(),
-                                                                 new String[] {ALPN});
-            first.startHandshake().get(20, TimeUnit.SECONDS);
-            firstAccepted.get(20, TimeUnit.SECONDS);
-            int retryPackets = proxy.retryPackets();
-            assertThat(retryPackets, greaterThan(0));
-
-            byte[] newToken = null;
-            long tokenDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-            while (newToken == null && System.nanoTime() < tokenDeadline) {
-                newToken = client.initialTokenFor(peerAddress, version).orElse(null);
-                if (newToken == null) {
-                    LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
-                }
-            }
-            assertThat(newToken == null, is(false));
-            client.registerInitialToken(peerAddress, version, newToken);
-            proxy.rebind();
-
-            CompletableFuture<QuicConnection> secondAccepted = runtime.accept();
-            QuicClientConnection second = client.createConnection(peerAddress,
-                                                                  "localhost",
-                                                                  peerAddress.getPort(),
-                                                                  new String[] {ALPN});
-            second.startHandshake().get(20, TimeUnit.SECONDS);
-            secondAccepted.get(20, TimeUnit.SECONDS);
-
-            assertThat(proxy.retryPackets(), is(retryPackets));
-            assertThat(admissionAttempts.get(), is(2));
-            assertThat(createdConnections.get(), is(2));
-        } finally {
-            client.close();
-            runtime.close();
-            executor.close();
-        }
-    }
-
     @Test
     void shouldIgnorePermitWhenAcceptingStopsDuringAdmission() throws Exception {
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -1212,6 +1139,79 @@ class QuicServerRuntimeTest {
                 .build();
     }
 
+    private void shouldRetryThenReuseNewToken(QuicVersion version,
+                                              List<QuicVersion> clientVersions) throws Exception {
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        AtomicInteger admissionAttempts = new AtomicInteger();
+        AtomicInteger createdConnections = new AtomicInteger();
+        QuicConfig serverConfig = quicConfig(List.of(version));
+        QuicServerRuntime runtime = QuicServerRuntime.builder()
+                .executor(executor)
+                .quicConfig(serverConfig)
+                .retryEnabled(true)
+                .tls(serverTls())
+                .applicationProtocols(List.of(ALPN))
+                .bindAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0))
+                .connectionAdmission(() -> {
+                    admissionAttempts.incrementAndGet();
+                    return QuicServerRuntime.ConnectionPermit.accepted(() -> {
+                    }, () -> {
+                    });
+                })
+                .observer(new QuicServerRuntime.Observer() {
+                    @Override
+                    public void connectionCreated(QuicConnection connection) {
+                        createdConnections.incrementAndGet();
+                    }
+                })
+                .build();
+        QuicClientRuntime client = QuicClientRuntime.builder()
+                .executor(executor)
+                .quicConfig(quicConfig(clientVersions))
+                .tls(clientTls())
+                .build();
+        try (NatRebindingProxy proxy = new NatRebindingProxy(executor, runtime.localAddress())) {
+            InetSocketAddress peerAddress = proxy.clientAddress();
+            CompletableFuture<QuicConnection> firstAccepted = runtime.accept();
+            QuicClientConnection first = client.createConnection(peerAddress,
+                                                                 "localhost",
+                                                                 peerAddress.getPort(),
+                                                                 new String[] {ALPN});
+            first.startHandshake().get(20, TimeUnit.SECONDS);
+            firstAccepted.get(20, TimeUnit.SECONDS);
+            int retryPackets = proxy.retryPackets();
+            assertThat(retryPackets, greaterThan(0));
+
+            byte[] newToken = null;
+            long tokenDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (newToken == null && System.nanoTime() < tokenDeadline) {
+                newToken = client.initialTokenFor(peerAddress, version).orElse(null);
+                if (newToken == null) {
+                    LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+                }
+            }
+            assertThat(newToken == null, is(false));
+            client.registerInitialToken(peerAddress, version, newToken);
+            proxy.rebind();
+
+            CompletableFuture<QuicConnection> secondAccepted = runtime.accept();
+            QuicClientConnection second = client.createConnection(peerAddress,
+                                                                  "localhost",
+                                                                  peerAddress.getPort(),
+                                                                  new String[] {ALPN});
+            second.startHandshake().get(20, TimeUnit.SECONDS);
+            secondAccepted.get(20, TimeUnit.SECONDS);
+
+            assertThat(proxy.retryPackets(), is(retryPackets));
+            assertThat(admissionAttempts.get(), is(2));
+            assertThat(createdConnections.get(), is(2));
+        } finally {
+            client.close();
+            runtime.close();
+            executor.close();
+        }
+    }
+
     private static final class NatRebindingProxy implements AutoCloseable {
         private static final int MAX_DATAGRAM_SIZE = 65535;
 
@@ -1260,6 +1260,21 @@ class QuicServerRuntimeTest {
             executor.submit(() -> forwardServerTraffic(reboundUpstream));
         }
 
+        @Override
+        public void close() throws IOException {
+            clientChannel.close();
+            initialUpstream.close();
+            reboundUpstream.close();
+        }
+
+        private static InetSocketAddress localAddress(DatagramChannel channel, String channelName) {
+            try {
+                return (InetSocketAddress) channel.getLocalAddress();
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to obtain the " + channelName + " proxy address.", e);
+            }
+        }
+
         private InetSocketAddress clientAddress() {
             return localAddress(clientChannel, "client");
         }
@@ -1286,14 +1301,6 @@ class QuicServerRuntimeTest {
 
         private void dropClientPackets() {
             forwardClientPackets = false;
-        }
-
-        private static InetSocketAddress localAddress(DatagramChannel channel, String channelName) {
-            try {
-                return (InetSocketAddress) channel.getLocalAddress();
-            } catch (IOException e) {
-                throw new UncheckedIOException("Failed to obtain the " + channelName + " proxy address.", e);
-            }
         }
 
         private void forwardClientTraffic() {
@@ -1358,13 +1365,6 @@ class QuicServerRuntimeTest {
                     }
                 }
             }
-        }
-
-        @Override
-        public void close() throws IOException {
-            clientChannel.close();
-            initialUpstream.close();
-            reboundUpstream.close();
         }
 
         private enum ServerPacketMode {

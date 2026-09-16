@@ -14,11 +14,11 @@
 # limitations under the License.
 #
 
-FROM eclipse-temurin:26.0.1_8-jdk-ubi10-minimal@sha256:9a1f9e0edf2da7d05d9bec7ff7a7b4cecb50f11acc77dfc7b2f36f31e2739281 AS java26
+FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9@sha256:7477f4f5b0deebce818b5c918c9f0aa6eafb1342eb2ed54628ebbcd0a1dd7ada AS java27
 
 FROM martenseemann/quic-network-simulator-endpoint@sha256:3b2b9e6fa317da238c8140a7b6d2bf8d4d45a8464b873eecac3ff2a32520b71a
 
-COPY --from=java26 /opt/java/openjdk /opt/java/openjdk
+COPY --from=java27 /usr/java/jdk-27 /opt/java/openjdk
 
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH="${JAVA_HOME}/bin:${PATH}"

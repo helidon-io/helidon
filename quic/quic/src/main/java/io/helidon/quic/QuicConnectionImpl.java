@@ -169,26 +169,23 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      */
     public static final long MAX_STREAMS_VALUE_LIMIT = 1L << 60; // cannot exceed 2^60 as per RFC
 
-    // Quic assumes a minimum packet size of 1200
-    // See https://www.rfc-editor.org/rfc/rfc9000#name-datagram-size
-    private static final QuicConfig DEFAULT_CONFIG = QuicConfig.create();
     /**
      * Default connection-level flow-control limit advertised in transport parameters.
      */
-    public static final long DEFAULT_INITIAL_MAX_DATA = DEFAULT_CONFIG.initialMaxData();
+    public static final long DEFAULT_INITIAL_MAX_DATA;
     // The default value for the initial_max_data transport parameter that a QuicConnectionImpl
     // will send to its peer, if no value is provided by the higher level protocol.
     /**
      * Default per-stream flow-control limit advertised in transport parameters.
      */
-    public static final long DEFAULT_INITIAL_STREAM_MAX_DATA = DEFAULT_CONFIG.initialMaxStreamData();
+    public static final long DEFAULT_INITIAL_STREAM_MAX_DATA;
     // The default value for the initial_max_stream_data_bidi_local, initial_max_stream_data_bidi_remote,
     // and initial_max_stream_data_uni transport parameters that a QuicConnectionImpl
     // will send to its peer, if no value is provided by the higher level protocol.
     /**
      * Default bidirectional stream limit advertised in transport parameters.
      */
-    public static final long DEFAULT_MAX_BIDI_STREAMS = DEFAULT_CONFIG.maxBidiStreams();
+    public static final long DEFAULT_MAX_BIDI_STREAMS;
     // The default value for the initial_max_streams_bidi transport parameter that a QuicConnectionImpl
     // will send to its peer, if no value is provided by the higher level protocol.
     // The Http3ClientImpl typically provides a value of 0, so this property has no effect
@@ -196,9 +193,13 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     /**
      * Default unidirectional stream limit advertised in transport parameters.
      */
-    public static final long DEFAULT_MAX_UNI_STREAMS = DEFAULT_CONFIG.maxUniStreams();
+    public static final long DEFAULT_MAX_UNI_STREAMS;
     // The default value for the initial_max_streams_uni transport parameter that a QuicConnectionImpl
     // will send to its peer, if no value is provided by the higher level protocol.
+
+    // Quic assumes a minimum packet size of 1200
+    // See https://www.rfc-editor.org/rfc/rfc9000#name-datagram-size
+    private static final QuicConfig DEFAULT_CONFIG = QuicConfig.create();
     private static final int MAX_IPV6_MTU = 65527;
     private static final int MAX_IPV4_MTU = 65507;
     private static final int INITIAL_SERVER_CONNECTION_ID_LENGTH = 17;
@@ -212,15 +213,21 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     private static final int MAX_INCOMING_CRYPTO_CAPACITY = 64 << 10;
     private static final int MAX_REASSEMBLY_NODES_PER_FLOW = 1024;
     private static final int MAX_REASSEMBLY_NODES_PER_CONNECTION = 4096;
-    private static final Random RANDOM = new SecureRandom();
+    private static final Random RANDOM;
     // Maximum size of the connection's Direct ByteBuffer Pool.
     // For a connection configured to attempt sending datagrams in thread
     // (QuicEndpoint.SEND_DGRAM_ASYNC == false), 2 should be enough, as we
     // shouldn't have more than 2 packet number spaces active at the same time.
     private static final int MAX_DBB_POOL_SIZE = 3;
-    private static final System.Logger LOGGER = System.getLogger(QuicConnectionImpl.class.getName());
+    private static final System.Logger LOGGER;
 
     static {
+        DEFAULT_INITIAL_MAX_DATA = DEFAULT_CONFIG.initialMaxData();
+        DEFAULT_INITIAL_STREAM_MAX_DATA = DEFAULT_CONFIG.initialMaxStreamData();
+        DEFAULT_MAX_BIDI_STREAMS = DEFAULT_CONFIG.maxBidiStreams();
+        DEFAULT_MAX_UNI_STREAMS = DEFAULT_CONFIG.maxUniStreams();
+        RANDOM = new SecureRandom();
+        LOGGER = System.getLogger(QuicConnectionImpl.class.getName());
         try {
             Lookup lookup = MethodHandles.lookup();
             VERSION_NEGOTIATED = lookup
@@ -255,8 +262,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     private final QuicRttEstimator rttEstimator;
     private final QuicCongestionController congestionController;
     private final ConnectionTerminatorImpl terminator;
-    // Number of unreleased byte buffers. This should eventually reach 0.
-    private final AtomicInteger bbUnreleased = new AtomicInteger();
     private final QuicRuntimeConfig runtimeConfig;
     private final QuicConfig quicConfig;
     private final Duration initialResponseTimeout;
@@ -317,13 +322,7 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     // of available byte buffers present in the pool. It will never exceed
     // MAX_DBB_POOL_SIZE.
     private final AtomicInteger bbAllocated = new AtomicInteger();
-    // Some counters used for printing debug statistics when trace logging is enabled
-    // Byte Buffers in flight: the number of byte buffers that were returned by
-    // outgoingByteBuffer() minus the number of byte buffers that were released
-    // through datagramReleased()
-    private final AtomicInteger bbInFlight = new AtomicInteger();
-    // Peak number of byte buffers in flight. Never decreases.
-    private final AtomicInteger bbPeak = new AtomicInteger();
+    private final SequentialScheduler incomingLoopScheduler;
 
     private volatile LongFunction<String> appErrorCodeToString;
     private volatile QuicConnectionId incomingInitialPacketSourceId;
@@ -346,6 +345,10 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     // starts at the configured default datagram size before peer transport parameters or path MTU adjustments
     private int maxPeerAdvertisedPayloadSize;
     private volatile MaxInitialTimer maxInitialTimer;
+
+    {
+        incomingLoopScheduler = SequentialScheduler.lockingScheduler(this::incoming);
+    }
 
     /**
      * Creates a connection implementation bound to the supplied peer and QUIC instance.
@@ -616,6 +619,16 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         params.intParameter(paramId, valueSupplier.get());
     }
 
+    static void closeUnclaimedLocalStream(QuicSenderStream stream) {
+        try {
+            stream.reset(0);
+        } finally {
+            if (stream instanceof QuicReceiverStream receiver) {
+                receiver.requestStopSending(0);
+            }
+        }
+    }
+
     /**
      * Returns the transport-internal numeric connection identifier.
      *
@@ -649,9 +662,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     public PeerInfo localPeer() {
         return localPeer;
     }
-
-    private final SequentialScheduler incomingLoopScheduler =
-            SequentialScheduler.lockingScheduler(this::incoming);
 
     /**
      * Stops the incoming datagram loop and releases any queued buffers.
@@ -1052,12 +1062,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         scheduleForDecryption(datagram);
     }
 
-    private void runPacketSpaceTransmitters() {
-        packetSpaces.initial.runTransmitter();
-        packetSpaces.handshake.runTransmitter();
-        packetSpaces.app.runTransmitter();
-    }
-
     /**
      * Processes the packets contained in a datagram after it has been queued for decryption.
      *
@@ -1081,149 +1085,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
                                 buffer);
     }
 
-    private void internalProcessIncoming(QuicPathManager.ReceiveContext receiveContext,
-                                         ByteBuffer destConnId,
-                                         QuicPacket.HeadersType headersType,
-                                         ByteBuffer buffer) {
-        try {
-            int packetIndex = 0;
-            while (buffer.hasRemaining()) {
-                int startPos = buffer.position();
-                packetIndex++;
-                boolean isLongHeader = QuicPacketDecoder.peekHeaderType(buffer, startPos) == QuicPacket.HeadersType.LONG;
-                // It's only safe to check version here if versionNegotiated is true.
-                // We might be receiving an INITIAL packet before the version negotiation
-                // has been handled.
-                if (isLongHeader) {
-                    var headerResult = QuicPacketDecoder.peekLongHeader(buffer);
-                    if (headerResult.isEmpty()) {
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            logDebug("Dropping long header packet (%s in datagram): too short",
-                                      packetIndex);
-                        }
-                        return;
-                    }
-                    LongHeader header = headerResult.orElseThrow();
-                    if (!header.destinationId().matches(destConnId)) {
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            logDebug("Dropping long header packet (%s in datagram):"
-                                              + " wrong connection id (received length %s, expected length %s)",
-                                      packetIndex,
-                                      header.destinationId().length(),
-                                      destConnId.remaining());
-                        }
-                        if (quicConfig.unsafeRawData() && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                            log(LOGGER,
-                                System.Logger.Level.TRACE,
-                                "UNSAFE raw connection IDs for dropped long header packet: %s vs %s",
-                                header.destinationId().toHexString(),
-                                Utils.asHexString(destConnId));
-                        }
-                        return;
-                    }
-                    var peekedVersion = header.version();
-                    var version = this.quicVersion.versionNumber();
-                    if (version != peekedVersion) {
-                        if (peekedVersion == 0) {
-                            if (!versionCompatible) {
-                                VersionNegotiationPacket packet = codingContext.parsePacket(buffer)
-                                        .map(VersionNegotiationPacket.class::cast)
-                                        .orElseThrow(() ->
-                                                             new IllegalStateException("Expected version negotiation packet"));
-                                processDecrypted(receiveContext, packet);
-                            } else {
-                                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                    logDebug("Versions packet (%s in datagram) ignored", packetIndex);
-                                }
-                            }
-                            return;
-                        }
-                        QuicVersion packetVersion = QuicVersion.of(peekedVersion).orElse(null);
-                        if (packetVersion == null) {
-                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                logDebug("Unknown Quic version in long header packet"
-                                                  + " (%s in datagram) %s: 0x%x",
-                                          packetIndex, headersType, peekedVersion);
-                            }
-                            return;
-                        } else if (versionNegotiated) {
-                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                logDebug("Dropping long header packet (%s in datagram)"
-                                                  + " with version %s, already negotiated %s",
-                                          packetIndex, packetVersion, quicVersion);
-                            }
-                            return;
-                        } else if (!quicInstance().isVersionAvailable(packetVersion)) {
-                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                logDebug("Dropping long header packet (%s in datagram)"
-                                                  + " with disabled version %s",
-                                          packetIndex, packetVersion);
-                            }
-                            return;
-                        } else {
-                            // do we need to be less trusting here?
-                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                                logDebug("Switching version to %s, previous: %s",
-                                          packetVersion, quicVersion);
-                            }
-                            switchVersion(packetVersion);
-                        }
-                    }
-                    if (decoder.peekPacketType(buffer) == PacketType.INITIAL
-                            && !quicTLSEngine.keysAvailable(KeySpace.INITIAL)) {
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            logDebug("Dropping INITIAL packet (%s in datagram): %s",
-                                      packetIndex, "keys discarded");
-                        }
-                        decoder.skipPacket(buffer, startPos, logTag());
-                        continue;
-                    }
-                } else {
-                    var cid = QuicPacketDecoder.peekShortConnectionId(buffer, destConnId.remaining()).orElse(null);
-                    if (cid == null) {
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            logDebug("Dropping short header packet (%s in datagram):"
-                                    + " too short", packetIndex);
-                        }
-                        return;
-                    }
-                    if (cid.mismatch(destConnId) != -1) {
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            logDebug("Dropping short header packet (%s in datagram):"
-                                              + " wrong connection id (received length %s, expected length %s)",
-                                      packetIndex, cid.remaining(), destConnId.remaining());
-                        }
-                        if (quicConfig.unsafeRawData() && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                            log(LOGGER,
-                                System.Logger.Level.TRACE,
-                                "UNSAFE raw connection IDs for dropped short header packet: %s vs %s",
-                                Utils.asHexString(cid),
-                                Utils.asHexString(destConnId));
-                        }
-
-                        return;
-                    }
-
-                }
-                ByteBuffer packet = decoder.nextPacketSlice(buffer, buffer.position(), logTag());
-                PacketType packetType = decoder.peekPacketType(packet);
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    logDebug("unprotecting packet (%s in datagram) %s(%s bytes)",
-                              packetIndex, packetType, packet.remaining());
-                }
-                decrypt(receiveContext, packet);
-            }
-        } catch (RuntimeException failure) {
-            processPacketFailure(decoder.peekPacketType(buffer), failure, true);
-        } catch (AssertionError failure) {
-            log(LOGGER,
-                System.Logger.Level.ERROR,
-                "Local failure while processing incoming packet",
-                failure);
-            terminator.terminate(QuicCloseCommand.transport(failure));
-        }
-    }
-
     /**
      * Called when an incoming packet has been decrypted.
      *
@@ -1231,117 +1092,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      */
     public void processDecrypted(QuicPacket quicPacket) {
         processDecrypted(pathManager.receive(peerAddress(), 0), quicPacket);
-    }
-
-    private void processDecrypted(QuicPathManager.ReceiveContext receiveContext, QuicPacket quicPacket) {
-        if (!stateHandle.opened()) {
-            return;
-        }
-        PacketType packetType = quicPacket.packetType();
-        long packetNumber = quicPacket.packetNumber();
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            logDebug("processDecrypted %s(%d)", packetType, packetNumber);
-        }
-        logPacket(true, quicPacket);
-        if (packetType != PacketType.VERSIONS) {
-            versionCompatible = true;
-            // versions will also set versionCompatible later
-        }
-        if (isClientConnection()
-                && quicPacket instanceof InitialPacket longPacket
-                && quicPacket.frames().stream().anyMatch(CryptoFrame.class::isInstance)) {
-            markVersionNegotiated(longPacket.version());
-        }
-        if (packetType != PacketType.ONERTT && !pathManager.knownPath(receiveContext)) {
-            return;
-        }
-        PacketSpace packetSpace = null;
-        if (packetNumber >= 0) {
-            packetSpace = packetSpace(quicPacket.numberSpace());
-
-            // From RFC 9000, Section 13.2.3:
-            // A receiver MUST retain an ACK Range unless it can ensure that
-            // it will not subsequently accept packets with numbers in
-            // that range. Maintaining a minimum packet number that increases
-            // as ranges are discarded is one way to achieve this with minimal
-            // state.
-            long threshold = packetSpace.minimumPacketNumberThreshold();
-            if (packetNumber <= threshold) {
-                // discard the packet, as we are no longer acknowledging
-                // packets in this range.
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    logDebug("discarding packet %s(%d) - threshold: %d",
-                              packetType, packetNumber, threshold);
-                }
-                return;
-            }
-            if (packetSpace.isAcknowledged(packetNumber)) {
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    logDebug("discarding packet %s(%d) - duplicated",
-                              packetType, packetNumber, threshold);
-                }
-                return;
-            }
-
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                logDebug("receiving packet %s(pn:%s, %s)", packetType,
-                          packetNumber, quicPacket.frames());
-            }
-        }
-        boolean nonProbing = false;
-        if (packetType == PacketType.ONERTT) {
-            for (QuicFrame frame : quicPacket.frames()) {
-                if (!(frame instanceof PathChallengeFrame)
-                        && !(frame instanceof PathResponseFrame)
-                        && !(frame instanceof NewConnectionIDFrame)
-                        && !(frame instanceof PaddingFrame)) {
-                    nonProbing = true;
-                    break;
-                }
-            }
-        }
-        boolean budgetIncreasedBeforeAuthentication = receiveContext.amplificationBudgetIncreased();
-        QuicPathManager.ReceiveResult pathResult = pathManager.authenticated(receiveContext,
-                                                                             packetNumber,
-                                                                             nonProbing,
-                                                                             pathValidationTimeoutSupplier);
-        discardRetiredPathControlFlights();
-        if (!pathResult.accepted()) {
-            return;
-        }
-        if (pathResult.pathChanged()) {
-            resetForPathChange(pathResult.generation());
-        }
-        if (!budgetIncreasedBeforeAuthentication && receiveContext.amplificationBudgetIncreased()) {
-            runPacketSpaceTransmitters();
-        }
-        schedulePathValidation();
-        if (!isClientConnection() && packetType == PacketType.HANDSHAKE) {
-            pathManager.addressValidated(receiveContext.source());
-        }
-        switch (packetType) {
-        case VERSIONS -> processVersionNegotiationPacket(quicPacket);
-        case INITIAL -> processInitialPacket(quicPacket);
-        case ONERTT -> processOneRTTPacket(receiveContext, quicPacket);
-        case HANDSHAKE -> processHandshakePacket(quicPacket);
-        case RETRY -> processRetryPacket(quicPacket);
-        case ZERORTT -> {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                logDebug("Ignoring unsupported 0-RTT packet");
-            }
-            return;
-        }
-        case NONE -> throw new IllegalStateException("Unrecognized packet type");
-        default -> throw new IllegalStateException("Unrecognized packet type");
-        }
-        // packet has been processed successfully - connection isn't idle (RFC-9000, section 10.1)
-        this.terminator.peerPacketProcessed();
-        if (packetSpace != null) {
-            packetSpace.packetReceived(
-                    packetType,
-                    packetNumber,
-                    quicPacket.isAckEliciting());
-        }
     }
 
     /**
@@ -1730,8 +1480,9 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
 
     @Override
     public void datagramDiscarded(QuicDatagram datagram) {
-        logDirectBuffer("DIRECTBB: datagram discarded %s, inFlight: %s, peak: %s, unreleased:%s",
-                        datagram.payload().isDirect(), bbInFlight.get(), bbPeak.get(), bbUnreleased.get());
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: datagram discarded %s", datagram.payload().isDirect());
+        }
         datagramReleased(datagram);
     }
 
@@ -1741,8 +1492,9 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      * @param datagram dropped datagram
      */
     public void datagramDropped(QuicDatagram datagram) {
-        logDirectBuffer("DIRECTBB: datagram dropped %s, inFlight: %s, peak: %s, unreleased:%s",
-                        datagram.payload().isDirect(), bbInFlight.get(), bbPeak.get(), bbUnreleased.get());
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: datagram dropped %s", datagram.payload().isDirect());
+        }
         datagramReleased(datagram);
     }
 
@@ -2159,19 +1911,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     }
 
     /**
-     * Get or open a peer initiated stream with the given stream ID.
-     *
-     * @param streamId  the id of the remote stream
-     * @param frameType type of the frame received, used in exceptions
-     * @return the remote initiated stream identified by the given
-     *        stream ID, or an empty optional
-     * @throws QuicTransportException if the streamID is higher than allowed
-     */
-    private Optional<QuicStream> openOrGetRemoteStream(long streamId, long frameType) throws QuicTransportException {
-        return streams.ensureRemoteStream(streamId, frameType);
-    }
-
-    /**
      * Called to process a {@link OneRttPacket} after it has been successfully decrypted.
      *
      * @param quicPacket the Quic packet
@@ -2180,18 +1919,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      */
     protected void processOneRTTPacket(QuicPacket quicPacket) {
         processOneRTTPacket(pathManager.receive(peerAddress(), 0), quicPacket);
-    }
-
-    private void processOneRTTPacket(QuicPathManager.ReceiveContext receiveContext, QuicPacket quicPacket) {
-        Objects.requireNonNull(quicPacket);
-        if (quicPacket.packetType() != PacketType.ONERTT) {
-            throw new IllegalArgumentException("Not a ONERTT packet: " + quicPacket.packetType().text());
-        }
-        try {
-            processApplicationPacket(receiveContext, quicPacket, PacketType.ONERTT);
-        } catch (RuntimeException failure) {
-            onProcessingError(quicPacket, failure);
-        }
     }
 
     /**
@@ -2857,6 +2584,21 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
                 params.versionInformationParameter(version_information);
         if (versionInformation.isPresent()) {
             VersionInformation vi = versionInformation.orElseThrow();
+            // RFC 9368 requires this membership only for client-sent Version Information.
+            if (!isClientConnection()) {
+                boolean chosenVersionAvailable = false;
+                for (int availableVersion : vi.availableVersions()) {
+                    if (availableVersion == vi.chosenVersion()) {
+                        chosenVersionAvailable = true;
+                        break;
+                    }
+                }
+                if (!chosenVersionAvailable) {
+                    throw new QuicTransportException(
+                            "[version_information] Chosen Version is not included in available versions",
+                            0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
+                }
+            }
             if (vi.chosenVersion() != quicVersion().versionNumber()) {
                 throw new QuicTransportException(
                         "[version_information] Chosen Version does not match version in use",
@@ -3179,10 +2921,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         }
     }
 
-    private QuicReceiverStream receivingStream(StreamFrame frame) throws QuicTransportException {
-        return receivingStream(frame.streamId(), frame.typeField(), frame);
-    }
-
     /**
      * Processes a CRYPTO frame received in application packet space.
      *
@@ -3191,46 +2929,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      */
     protected void incoming1RTTFrame(CryptoFrame frame) throws QuicTransportException {
         processIncomingCryptoFrame(frame, KeySpace.ONE_RTT, peerCryptoFlow);
-    }
-
-    private int processIncomingCryptoFrame(CryptoFrame frame, KeySpace keySpace, CryptoDataFlow flow) {
-        peerCryptoFlowLock.lock();
-        try {
-            boolean packetSpaceClosed = switch (keySpace) {
-                case INITIAL -> packetSpaces.initial.isClosed();
-                case HANDSHAKE -> packetSpaces.handshake.isClosed();
-                case ONE_RTT -> packetSpaces.app.isClosed();
-                case RETRY, ZERO_RTT -> throw new IllegalArgumentException(
-                        "No peer crypto reassembly flow exists for key space " + keySpace);
-            };
-            if (packetSpaceClosed) {
-                return 0;
-            }
-            long buffer = frame.offset() + frame.length() - flow.offset();
-            if (buffer > MAX_INCOMING_CRYPTO_CAPACITY) {
-                throw new QuicTransportException("Crypto buffer exceeded, required: " + buffer,
-                                                 keySpace,
-                                                 frame.frameType(),
-                                                 QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
-            }
-            int provided = 0;
-            var nextFrame = flow.receive(frame);
-            while (nextFrame.isPresent()) {
-                CryptoFrame readyFrame = nextFrame.orElseThrow();
-                if (keySpace == KeySpace.INITIAL && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    logDebug("Provide crypto frame to engine: %s", readyFrame);
-                }
-                packetTLSEngine().consumeHandshakeBytesBuffer(keySpace, readyFrame.payload());
-                provided += readyFrame.length();
-                nextFrame = flow.poll();
-                if (keySpace == KeySpace.INITIAL && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    logDebug("Provided: " + provided);
-                }
-            }
-            return provided;
-        } finally {
-            peerCryptoFlowLock.unlock();
-        }
     }
 
     /**
@@ -3487,21 +3185,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         incoming1RTTFrame(pathManager.receive(peerAddress(), 0), frame);
     }
 
-    private void incoming1RTTFrame(QuicPathManager.ReceiveContext receiveContext,
-                                   PathResponseFrame frame)
-            throws QuicTransportException {
-        boolean matched = pathManager.pathResponse(frame.data(), System.nanoTime(), pathValidationTimeoutNanos());
-        discardRetiredPathControlFlights();
-        if (!matched) {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                logDebug("Ignoring unmatched PATH_RESPONSE frame");
-            }
-            return;
-        }
-        schedulePathValidation();
-        packetSpaces.app.runTransmitter();
-    }
-
     /**
      * Processes a PATH_CHALLENGE frame received in application packet space.
      *
@@ -3511,13 +3194,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     protected void incoming1RTTFrame(PathChallengeFrame frame)
             throws QuicTransportException {
         incoming1RTTFrame(pathManager.receive(peerAddress(), 0), frame);
-    }
-
-    private void incoming1RTTFrame(QuicPathManager.ReceiveContext receiveContext,
-                                   PathChallengeFrame frame) {
-        pathManager.pathChallenge(receiveContext, frame.data());
-        discardRetiredPathControlFlights();
-        packetSpaces.app.runTransmitter();
     }
 
     /**
@@ -3530,42 +3206,41 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      * @param size the maximum size of the datagram
      */
     protected ByteBuffer outgoingByteBuffer(int size) {
-        bbUnreleased.incrementAndGet();
+        boolean trace = LOGGER.isLoggable(System.Logger.Level.TRACE);
         if (useDirectBufferPool) {
             if (size <= maxDatagramSize()) {
                 ByteBuffer buffer = bbPool.poll();
                 if (buffer != null) {
                     if (buffer.limit() >= maxDatagramSize()) {
-                        logDirectBuffer("DIRECTBB: got direct buffer from pool, inFlight: %s, peak: %s, unreleased:%s",
-                                        bbInFlight.get(), bbPeak.get(), bbUnreleased.get());
-                        int inFlight = bbInFlight.incrementAndGet();
-                        bbPeak.accumulateAndGet(inFlight, Math::max);
+                        if (trace) {
+                            log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: got direct buffer from pool");
+                        }
                         return buffer;
                     }
                     bbAllocated.decrementAndGet();
-                    logDirectBuffer("DIRECTBB: releasing direct buffer");
+                    if (trace) {
+                        log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: releasing direct buffer");
+                    }
                     buffer = null;
                 }
 
                 int allocated;
                 while ((allocated = bbAllocated.get()) < MAX_DBB_POOL_SIZE) {
                     if (bbAllocated.compareAndSet(allocated, allocated + 1)) {
-                        logDirectBuffer("DIRECTBB: allocating direct buffer #%s, inFlight: %s, peak: %s, unreleased:%s",
-                                        allocated + 1, bbInFlight.get(), bbPeak.get(), bbUnreleased.get());
-                        int inFlight = bbInFlight.incrementAndGet();
-                        bbPeak.accumulateAndGet(inFlight, Math::max);
+                        if (trace) {
+                            log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: allocating direct buffer #%s", allocated + 1);
+                        }
                         return ByteBuffer.allocateDirect(maxDatagramSize());
                     }
                 }
-                logDirectBuffer("DIRECTBB: too many buffers allocated: %s, inFlight: %s, peak: %s, unreleased:%s",
-                                allocated, bbInFlight.get(), bbPeak.get(), bbUnreleased.get());
+                if (trace) {
+                    log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: too many buffers allocated: %s", allocated);
+                }
 
-            } else {
-                logDirectBuffer("DIRECTBB: wrong size %s", size);
+            } else if (trace) {
+                log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: wrong size %s", size);
             }
         }
-        int inFlight = bbInFlight.incrementAndGet();
-        bbPeak.accumulateAndGet(inFlight, Math::max);
         return ByteBuffer.allocate(size);
     }
 
@@ -3619,22 +3294,64 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      */
     protected void datagramReleased(QuicDatagram datagram) {
         discardRetiredPathControlFlights();
-        bbUnreleased.decrementAndGet();
-        logDirectBuffer("DIRECTBB: datagram released %s, inFlight: %s, peak: %s, unreleased:%s",
-                        datagram.payload().isDirect(), bbInFlight.get(), bbPeak.get(), bbUnreleased.get());
-        bbInFlight.decrementAndGet();
+        boolean trace = LOGGER.isLoggable(System.Logger.Level.TRACE);
+        if (trace) {
+            log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: datagram released %s", datagram.payload().isDirect());
+        }
         if (useDirectBufferPool) {
             ByteBuffer buffer = datagram.payload();
             buffer.clear();
             if (buffer.isDirect()) {
                 if (buffer.limit() >= maxDatagramSize()) {
-                    logDirectBuffer("DIRECTBB: offering buffer to pool");
+                    if (trace) {
+                        log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: offering buffer to pool");
+                    }
                     bbPool.offer(buffer);
                 } else {
-                    logDirectBuffer("DIRECTBB: releasing direct buffer (too small)");
+                    if (trace) {
+                        log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: releasing direct buffer (too small)");
+                    }
                     bbAllocated.decrementAndGet();
                 }
             }
+        }
+    }
+
+    void stopPathValidation() {
+        pathValidationTimer.stop();
+    }
+
+    void discardRetiredPathControlFlights() {
+        while (true) {
+            OptionalLong retiredGeneration = pathManager.pollRetiredPathGeneration();
+            if (retiredGeneration.isEmpty()) {
+                return;
+            }
+            ((PacketSpaceManager) packetSpaces.app)
+                    .discardPathControlFlights(retiredGeneration.orElseThrow());
+        }
+    }
+
+    void pushConnectionCloseDatagram(InetSocketAddress destination,
+                                     ByteBuffer datagram,
+                                     QuicPathManager.SendPermit permit) {
+        if (stateHandle.isMarked(QuicConnectionState.DRAINING)) {
+            // a CONNECTION_CLOSE frame is being sent to the peer when the local
+            // connection state is in DRAINING. This implies that the local endpoint
+            // is responding to an incoming CONNECTION_CLOSE frame from the peer.
+            // we switch this connection to one that does not respond to incoming packets.
+            endpoint.pushClosedDatagram(this, destination, datagram, permit);
+        } else if (stateHandle.isMarked(QuicConnectionState.CLOSING)) {
+            // a CONNECTION_CLOSE frame is being sent to the peer when the local
+            // connection state is in CLOSING. For such cases, we switch this
+            // connection in the endpoint to one which responds with
+            // CONNECTION_CLOSE frame for any subsequent incoming packets
+            // from the peer.
+            endpoint.pushClosingDatagram(this, destination, datagram, permit);
+        } else {
+            // should not happen
+            throw new IllegalStateException("connection is neither draining nor closing,"
+                                                    + " cannot send a connection close frame");
         }
     }
 
@@ -3652,6 +3369,357 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
             }
         }
         return false;
+    }
+
+    private void runPacketSpaceTransmitters() {
+        packetSpaces.initial.runTransmitter();
+        packetSpaces.handshake.runTransmitter();
+        packetSpaces.app.runTransmitter();
+    }
+
+    private void internalProcessIncoming(QuicPathManager.ReceiveContext receiveContext,
+                                         ByteBuffer destConnId,
+                                         QuicPacket.HeadersType headersType,
+                                         ByteBuffer buffer) {
+        try {
+            int packetIndex = 0;
+            while (buffer.hasRemaining()) {
+                int startPos = buffer.position();
+                packetIndex++;
+                boolean isLongHeader = QuicPacketDecoder.peekHeaderType(buffer, startPos) == QuicPacket.HeadersType.LONG;
+                // It's only safe to check version here if versionNegotiated is true.
+                // We might be receiving an INITIAL packet before the version negotiation
+                // has been handled.
+                if (isLongHeader) {
+                    var headerResult = QuicPacketDecoder.peekLongHeader(buffer);
+                    if (headerResult.isEmpty()) {
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            logDebug("Dropping long header packet (%s in datagram): too short",
+                                      packetIndex);
+                        }
+                        return;
+                    }
+                    LongHeader header = headerResult.orElseThrow();
+                    if (!header.destinationId().matches(destConnId)) {
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            logDebug("Dropping long header packet (%s in datagram):"
+                                              + " wrong connection id (received length %s, expected length %s)",
+                                      packetIndex,
+                                      header.destinationId().length(),
+                                      destConnId.remaining());
+                        }
+                        if (quicConfig.unsafeRawData() && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                            log(LOGGER,
+                                System.Logger.Level.TRACE,
+                                "UNSAFE raw connection IDs for dropped long header packet: %s vs %s",
+                                header.destinationId().toHexString(),
+                                Utils.asHexString(destConnId));
+                        }
+                        return;
+                    }
+                    var peekedVersion = header.version();
+                    var version = this.quicVersion.versionNumber();
+                    if (version != peekedVersion) {
+                        if (peekedVersion == 0) {
+                            if (!versionCompatible) {
+                                VersionNegotiationPacket packet = codingContext.parsePacket(buffer)
+                                        .map(VersionNegotiationPacket.class::cast)
+                                        .orElseThrow(() ->
+                                                             new IllegalStateException("Expected version negotiation packet"));
+                                processDecrypted(receiveContext, packet);
+                            } else {
+                                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                    logDebug("Versions packet (%s in datagram) ignored", packetIndex);
+                                }
+                            }
+                            return;
+                        }
+                        QuicVersion packetVersion = QuicVersion.of(peekedVersion).orElse(null);
+                        if (packetVersion == null) {
+                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                logDebug("Unknown Quic version in long header packet"
+                                                  + " (%s in datagram) %s: 0x%x",
+                                          packetIndex, headersType, peekedVersion);
+                            }
+                            return;
+                        } else if (versionNegotiated) {
+                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                logDebug("Dropping long header packet (%s in datagram)"
+                                                  + " with version %s, already negotiated %s",
+                                          packetIndex, packetVersion, quicVersion);
+                            }
+                            return;
+                        } else if (!quicInstance().isVersionAvailable(packetVersion)) {
+                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                logDebug("Dropping long header packet (%s in datagram)"
+                                                  + " with disabled version %s",
+                                          packetIndex, packetVersion);
+                            }
+                            return;
+                        } else {
+                            // do we need to be less trusting here?
+                            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                logDebug("Switching version to %s, previous: %s",
+                                          packetVersion, quicVersion);
+                            }
+                            switchVersion(packetVersion);
+                        }
+                    }
+                    if (decoder.peekPacketType(buffer) == PacketType.INITIAL
+                            && !quicTLSEngine.keysAvailable(KeySpace.INITIAL)) {
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            logDebug("Dropping INITIAL packet (%s in datagram): %s",
+                                      packetIndex, "keys discarded");
+                        }
+                        decoder.skipPacket(buffer, startPos, logTag());
+                        continue;
+                    }
+                } else {
+                    var cid = QuicPacketDecoder.peekShortConnectionId(buffer, destConnId.remaining()).orElse(null);
+                    if (cid == null) {
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            logDebug("Dropping short header packet (%s in datagram):"
+                                    + " too short", packetIndex);
+                        }
+                        return;
+                    }
+                    if (cid.mismatch(destConnId) != -1) {
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            logDebug("Dropping short header packet (%s in datagram):"
+                                              + " wrong connection id (received length %s, expected length %s)",
+                                      packetIndex, cid.remaining(), destConnId.remaining());
+                        }
+                        if (quicConfig.unsafeRawData() && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                            log(LOGGER,
+                                System.Logger.Level.TRACE,
+                                "UNSAFE raw connection IDs for dropped short header packet: %s vs %s",
+                                Utils.asHexString(cid),
+                                Utils.asHexString(destConnId));
+                        }
+
+                        return;
+                    }
+
+                }
+                ByteBuffer packet = decoder.nextPacketSlice(buffer, buffer.position(), logTag());
+                PacketType packetType = decoder.peekPacketType(packet);
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    logDebug("unprotecting packet (%s in datagram) %s(%s bytes)",
+                              packetIndex, packetType, packet.remaining());
+                }
+                decrypt(receiveContext, packet);
+            }
+        } catch (RuntimeException failure) {
+            processPacketFailure(decoder.peekPacketType(buffer), failure, true);
+        } catch (AssertionError failure) {
+            log(LOGGER,
+                System.Logger.Level.ERROR,
+                "Local failure while processing incoming packet",
+                failure);
+            terminator.terminate(QuicCloseCommand.transport(failure));
+        }
+    }
+
+    private void processDecrypted(QuicPathManager.ReceiveContext receiveContext, QuicPacket quicPacket) {
+        if (!stateHandle.opened()) {
+            return;
+        }
+        PacketType packetType = quicPacket.packetType();
+        long packetNumber = quicPacket.packetNumber();
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            logDebug("processDecrypted %s(%d)", packetType, packetNumber);
+        }
+        logPacket(true, quicPacket);
+        if (packetType != PacketType.VERSIONS) {
+            versionCompatible = true;
+            // versions will also set versionCompatible later
+        }
+        if (isClientConnection()
+                && quicPacket instanceof InitialPacket longPacket
+                && quicPacket.frames().stream().anyMatch(CryptoFrame.class::isInstance)) {
+            markVersionNegotiated(longPacket.version());
+        }
+        if (packetType != PacketType.ONERTT && !pathManager.knownPath(receiveContext)) {
+            return;
+        }
+        PacketSpace packetSpace = null;
+        if (packetNumber >= 0) {
+            packetSpace = packetSpace(quicPacket.numberSpace());
+
+            // From RFC 9000, Section 13.2.3:
+            // A receiver MUST retain an ACK Range unless it can ensure that
+            // it will not subsequently accept packets with numbers in
+            // that range. Maintaining a minimum packet number that increases
+            // as ranges are discarded is one way to achieve this with minimal
+            // state.
+            long threshold = packetSpace.minimumPacketNumberThreshold();
+            if (packetNumber <= threshold) {
+                // discard the packet, as we are no longer acknowledging
+                // packets in this range.
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    logDebug("discarding packet %s(%d) - threshold: %d",
+                              packetType, packetNumber, threshold);
+                }
+                return;
+            }
+            if (packetSpace.isAcknowledged(packetNumber)) {
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    logDebug("discarding packet %s(%d) - duplicated",
+                              packetType, packetNumber, threshold);
+                }
+                return;
+            }
+
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                logDebug("receiving packet %s(pn:%s, %s)", packetType,
+                          packetNumber, quicPacket.frames());
+            }
+        }
+        boolean nonProbing = false;
+        if (packetType == PacketType.ONERTT) {
+            for (QuicFrame frame : quicPacket.frames()) {
+                if (!(frame instanceof PathChallengeFrame)
+                        && !(frame instanceof PathResponseFrame)
+                        && !(frame instanceof NewConnectionIDFrame)
+                        && !(frame instanceof PaddingFrame)) {
+                    nonProbing = true;
+                    break;
+                }
+            }
+        }
+        boolean budgetIncreasedBeforeAuthentication = receiveContext.amplificationBudgetIncreased();
+        QuicPathManager.ReceiveResult pathResult = pathManager.authenticated(receiveContext,
+                                                                             packetNumber,
+                                                                             nonProbing,
+                                                                             pathValidationTimeoutSupplier);
+        discardRetiredPathControlFlights();
+        if (!pathResult.accepted()) {
+            return;
+        }
+        if (pathResult.pathChanged()) {
+            resetForPathChange(pathResult.generation());
+        }
+        if (!budgetIncreasedBeforeAuthentication && receiveContext.amplificationBudgetIncreased()) {
+            runPacketSpaceTransmitters();
+        }
+        schedulePathValidation();
+        if (!isClientConnection() && packetType == PacketType.HANDSHAKE) {
+            pathManager.addressValidated(receiveContext.source());
+        }
+        switch (packetType) {
+        case VERSIONS -> processVersionNegotiationPacket(quicPacket);
+        case INITIAL -> processInitialPacket(quicPacket);
+        case ONERTT -> processOneRTTPacket(receiveContext, quicPacket);
+        case HANDSHAKE -> processHandshakePacket(quicPacket);
+        case RETRY -> processRetryPacket(quicPacket);
+        case ZERORTT -> {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                logDebug("Ignoring unsupported 0-RTT packet");
+            }
+            return;
+        }
+        case NONE -> throw new IllegalStateException("Unrecognized packet type");
+        default -> throw new IllegalStateException("Unrecognized packet type");
+        }
+        // packet has been processed successfully - connection isn't idle (RFC-9000, section 10.1)
+        this.terminator.peerPacketProcessed();
+        if (packetSpace != null) {
+            packetSpace.packetReceived(
+                    packetType,
+                    packetNumber,
+                    quicPacket.isAckEliciting());
+        }
+    }
+
+    /**
+     * Get or open a peer initiated stream with the given stream ID.
+     *
+     * @param streamId  the id of the remote stream
+     * @param frameType type of the frame received, used in exceptions
+     * @return the remote initiated stream identified by the given
+     *        stream ID, or an empty optional
+     * @throws QuicTransportException if the streamID is higher than allowed
+     */
+    private Optional<QuicStream> openOrGetRemoteStream(long streamId, long frameType) throws QuicTransportException {
+        return streams.ensureRemoteStream(streamId, frameType);
+    }
+
+    private void processOneRTTPacket(QuicPathManager.ReceiveContext receiveContext, QuicPacket quicPacket) {
+        Objects.requireNonNull(quicPacket);
+        if (quicPacket.packetType() != PacketType.ONERTT) {
+            throw new IllegalArgumentException("Not a ONERTT packet: " + quicPacket.packetType().text());
+        }
+        try {
+            processApplicationPacket(receiveContext, quicPacket, PacketType.ONERTT);
+        } catch (RuntimeException failure) {
+            onProcessingError(quicPacket, failure);
+        }
+    }
+
+    private QuicReceiverStream receivingStream(StreamFrame frame) throws QuicTransportException {
+        return receivingStream(frame.streamId(), frame.typeField(), frame);
+    }
+
+    private int processIncomingCryptoFrame(CryptoFrame frame, KeySpace keySpace, CryptoDataFlow flow) {
+        peerCryptoFlowLock.lock();
+        try {
+            boolean packetSpaceClosed = switch (keySpace) {
+                case INITIAL -> packetSpaces.initial.isClosed();
+                case HANDSHAKE -> packetSpaces.handshake.isClosed();
+                case ONE_RTT -> packetSpaces.app.isClosed();
+                case RETRY, ZERO_RTT -> throw new IllegalArgumentException(
+                        "No peer crypto reassembly flow exists for key space " + keySpace);
+            };
+            if (packetSpaceClosed) {
+                return 0;
+            }
+            long buffer = frame.offset() + frame.length() - flow.offset();
+            if (buffer > MAX_INCOMING_CRYPTO_CAPACITY) {
+                throw new QuicTransportException("Crypto buffer exceeded, required: " + buffer,
+                                                 keySpace,
+                                                 frame.frameType(),
+                                                 QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
+            }
+            int provided = 0;
+            var nextFrame = flow.receive(frame);
+            while (nextFrame.isPresent()) {
+                CryptoFrame readyFrame = nextFrame.orElseThrow();
+                if (keySpace == KeySpace.INITIAL && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    logDebug("Provide crypto frame to engine: %s", readyFrame);
+                }
+                packetTLSEngine().consumeHandshakeBytesBuffer(keySpace, readyFrame.payload());
+                provided += readyFrame.length();
+                nextFrame = flow.poll();
+                if (keySpace == KeySpace.INITIAL && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    logDebug("Provided: " + provided);
+                }
+            }
+            return provided;
+        } finally {
+            peerCryptoFlowLock.unlock();
+        }
+    }
+
+    private void incoming1RTTFrame(QuicPathManager.ReceiveContext receiveContext,
+                                   PathResponseFrame frame)
+            throws QuicTransportException {
+        boolean matched = pathManager.pathResponse(frame.data(), System.nanoTime(), pathValidationTimeoutNanos());
+        discardRetiredPathControlFlights();
+        if (!matched) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                logDebug("Ignoring unmatched PATH_RESPONSE frame");
+            }
+            return;
+        }
+        schedulePathValidation();
+        packetSpaces.app.runTransmitter();
+    }
+
+    private void incoming1RTTFrame(QuicPathManager.ReceiveContext receiveContext,
+                                   PathChallengeFrame frame) {
+        pathManager.pathChallenge(receiveContext, frame.data());
+        discardRetiredPathControlFlights();
+        packetSpaces.app.runTransmitter();
     }
 
     /*
@@ -3829,10 +3897,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         pathValidationTimer.schedule(timerDeadline);
     }
 
-    void stopPathValidation() {
-        pathValidationTimer.stop();
-    }
-
     private void resetForPathChange(long generation) {
         pathRecoveryState.transition(generation, () -> {
             rttEstimator.resetForPath();
@@ -3842,17 +3906,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
                 .discardObsoletePathControlFlights(pathRecoveryState.generation());
         pathManager.pathChangeCompleted(generation);
         runPacketSpaceTransmitters();
-    }
-
-    void discardRetiredPathControlFlights() {
-        while (true) {
-            OptionalLong retiredGeneration = pathManager.pollRetiredPathGeneration();
-            if (retiredGeneration.isEmpty()) {
-                return;
-            }
-            ((PacketSpaceManager) packetSpaces.app)
-                    .discardPathControlFlights(retiredGeneration.orElseThrow());
-        }
     }
 
     /**
@@ -3939,11 +3992,60 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         }
     }
 
-    private <T> CompletableFuture<T> openNewLocalStream(Supplier<CompletableFuture<T>> streamSupplier) {
+    private <T extends QuicSenderStream> CompletableFuture<T> openNewLocalStream(
+            Supplier<CompletableFuture<T>> streamSupplier) {
         if (!stateHandle.opened()) {
             return MinimalFuture.failedMinimalFuture(new ClosedChannelException());
         }
-        return handshakeFlow.handshakeCF().thenCompose(_ -> streamSupplier.get());
+        var handshake = handshakeFlow.handshakeCF();
+        if (handshake.isDone()) {
+            if (handshake.isCompletedExceptionally()) {
+                return handshake.thenCompose(_ -> streamSupplier.get());
+            }
+            try {
+                return streamSupplier.get();
+            } catch (RuntimeException | Error failure) {
+                return MinimalFuture.failedMinimalFuture(failure);
+            }
+        }
+        var result = MinimalFuture.<T>create();
+        var acquisition = new AtomicReference<CompletableFuture<T>>();
+        result.whenComplete((_, _) -> {
+            if (result.isCancelled()) {
+                CompletableFuture<T> pending = acquisition.get();
+                if (pending != null) {
+                    pending.cancel(false);
+                }
+            }
+        });
+        handshake.whenComplete((_, handshakeFailure) -> {
+            if (handshakeFailure != null) {
+                result.completeExceptionally(handshakeFailure);
+                return;
+            }
+            if (result.isDone()) {
+                return;
+            }
+            CompletableFuture<T> pending;
+            try {
+                pending = streamSupplier.get();
+            } catch (RuntimeException | Error failure) {
+                result.completeExceptionally(failure);
+                return;
+            }
+            acquisition.set(pending);
+            pending.whenComplete((stream, failure) -> {
+                if (failure != null) {
+                    result.completeExceptionally(failure);
+                } else if (!result.complete(stream)) {
+                    closeUnclaimedLocalStream(stream);
+                }
+            });
+            if (result.isCancelled()) {
+                pending.cancel(false);
+            }
+        });
+        return result;
     }
 
     private QuicConnectionId localConnectionIdOrThrow() {
@@ -4186,29 +4288,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
                                   protectionRecord.destination(),
                                   datagram,
                                   protectionRecord.permit());
-        }
-    }
-
-    void pushConnectionCloseDatagram(InetSocketAddress destination,
-                                     ByteBuffer datagram,
-                                     QuicPathManager.SendPermit permit) {
-        if (stateHandle.isMarked(QuicConnectionState.DRAINING)) {
-            // a CONNECTION_CLOSE frame is being sent to the peer when the local
-            // connection state is in DRAINING. This implies that the local endpoint
-            // is responding to an incoming CONNECTION_CLOSE frame from the peer.
-            // we switch this connection to one that does not respond to incoming packets.
-            endpoint.pushClosedDatagram(this, destination, datagram, permit);
-        } else if (stateHandle.isMarked(QuicConnectionState.CLOSING)) {
-            // a CONNECTION_CLOSE frame is being sent to the peer when the local
-            // connection state is in CLOSING. For such cases, we switch this
-            // connection in the endpoint to one which responds with
-            // CONNECTION_CLOSE frame for any subsequent incoming packets
-            // from the peer.
-            endpoint.pushClosingDatagram(this, destination, datagram, permit);
-        } else {
-            // should not happen
-            throw new IllegalStateException("connection is neither draining nor closing,"
-                                                    + " cannot send a connection close frame");
         }
     }
 
@@ -4860,12 +4939,16 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         log(LOGGER, System.Logger.Level.DEBUG, "%s", throwable, message);
     }
 
-    private void logDirectBuffer(String format, Object... args) {
-        if (args.length == 0) {
-            log(LOGGER, System.Logger.Level.TRACE, "%s", format);
-        } else {
-            log(LOGGER, System.Logger.Level.TRACE, format, args);
-        }
+    /**
+     * Connection-owned budget handle shared by QUIC reassembly structures.
+     */
+    @Api.Internal
+    public interface ReassemblyBudget extends OrderedFlow.ReassemblyBudget, AutoCloseable {
+        /**
+         * Stops this flow from retaining additional nodes. Existing permits can still be released.
+         */
+        @Override
+        void close();
     }
 
     /**
@@ -5008,234 +5091,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         @Override
         public String toString() {
             return toString(state());
-        }
-    }
-
-    /**
-     * Connection-owned budget handle shared by QUIC reassembly structures.
-     */
-    @Api.Internal
-    public interface ReassemblyBudget extends OrderedFlow.ReassemblyBudget, AutoCloseable {
-        /**
-         * Stops this flow from retaining additional nodes. Existing permits can still be released.
-         */
-        @Override
-        void close();
-    }
-
-    /**
-     * A state handle is a mutable implementation of {@link QuicConnectionState}
-     * that allows to view the volatile connection int variable {@code state} as
-     * a {@code QuicConnectionState}, and provides methods to mutate it in
-     * a thread safe atomic way.
-     */
-    protected final class StateHandle extends QuicConnectionState {
-        /**
-         * Creates a state handle backed by this connection's volatile state field.
-         */
-        protected StateHandle() {
-        }
-
-        @Override
-        public int state() {
-            return state;
-        }
-
-        /**
-         * Marks that the first Initial flight has been sent.
-         *
-         * @return {@code true} if the bit changed from unset to set
-         */
-        public boolean markHelloSent() {
-            return mark(HISENT);
-        }
-
-        /**
-         * Marks that the handshake completed.
-         *
-         * @return {@code true} if the bit changed from unset to set
-         */
-        public boolean markHandshakeComplete() {
-            return mark(HSCOMPLETE);
-        }
-
-        /**
-         * Updates the state to a new state value with the passed bit {@code mask} set.
-         *
-         * @param mask The state mask
-         * @return true if previously the state value didn't have the {@code mask} set and this
-         *        method successfully updated the state value to set the {@code mask}
-         */
-        boolean mark(int mask) {
-            int state;
-            int desired;
-            do {
-                state = state();
-                desired = state;
-                if ((state & mask) == mask) {
-                    return false; // already set
-                }
-                desired = state | mask;
-            } while (!STATE.compareAndSet(QuicConnectionImpl.this, state, desired));
-            return true; // compareAndSet switched the old state to the desired state
-        }
-    }
-
-    /**
-     * Keeps track of handshake state.
-     * <p>
-     * - handshakeCF   the handshake completable future
-     * - localInitial  the local initial crypto writer queue
-     * - peerInitial   the peer initial crypto flow
-     * - localHandshake the local handshake crypto queue
-     * - peerHandshake the peer handshake crypto flow
-     */
-    protected final class HandshakeFlow {
-
-        // a CompletableFuture which will get completed when the handshake initiated locally,
-        // has "reached" the peer i.e. when the peer acknowledges or replies to the first
-        // INITIAL packet sent by an endpoint
-        private final CompletableFuture<Void> handshakeReachedPeerCF;
-        private final CompletableFuture<HandshakeState> handshakeCF;
-        private final CryptoWriterQueue localInitial = CryptoWriterQueue.create();
-        private final ReassemblyBudget peerInitialBudget = newReassemblyBudget();
-        private final CryptoDataFlow peerInitial = CryptoDataFlow.create(peerInitialBudget, KeySpace.INITIAL);
-        private final CryptoWriterQueue localHandshake = CryptoWriterQueue.create();
-        private final ReassemblyBudget peerHandshakeBudget = newReassemblyBudget();
-        private final CryptoDataFlow peerHandshake = CryptoDataFlow.create(peerHandshakeBudget, KeySpace.HANDSHAKE);
-        private final AtomicBoolean handshakeStarted = new AtomicBoolean();
-
-        private HandshakeFlow() {
-            this.handshakeCF = MinimalFuture.<HandshakeState>create();
-            this.handshakeReachedPeerCF = MinimalFuture.<Void>create();
-            // ensure that the handshakeReachedPeerCF gets completed exceptionally
-            // if an exception is raised before the first INITIAL packet is
-            // acked by the peer.
-            handshakeCF.whenComplete((r, t) -> {
-                logDebug("handshake completed %s",
-                           t == null ? "successfully" : "exceptionally");
-                if (t != null) {
-                    handshakeReachedPeerCF.completeExceptionally(t);
-                }
-            });
-        }
-
-        /**
-         * Returns the CompletableFuture representing a handshake.
-         *
-         * @return the CompletableFuture representing a handshake.
-         */
-        public CompletableFuture<HandshakeState> handshakeCF() {
-            return this.handshakeCF;
-        }
-
-        /**
-         * Fails the handshake futures with the supplied cause.
-         *
-         * @param cause cause of the handshake failure
-         */
-        public void failHandshakeCFs(Throwable cause) {
-            QuicConnectionException connectionException = null;
-            if (!handshakeCF.isDone()) {
-                connectionException = connectionException(cause);
-                handshakeCF.completeExceptionally(connectionException);
-            }
-            if (!handshakeReachedPeerCF.isDone()) {
-                if (connectionException == null) {
-                    connectionException = connectionException(cause);
-                }
-                handshakeReachedPeerCF.completeExceptionally(connectionException);
-            }
-        }
-
-        private QuicConnectionException connectionException(Throwable cause) {
-            if (cause instanceof QuicConnectionException connectionException) {
-                return connectionException;
-            }
-            return new QuicConnectionException("QUIC connection establishment failed", cause);
-        }
-
-        /**
-         * Marks the start of a handshake.
-         *
-         * @throws IllegalStateException If handshake has already started
-         */
-        private void markHandshakeStart() {
-            if (!handshakeStarted.compareAndSet(false, true)) {
-                throw new IllegalStateException("Handshake has already started on "
-                                                        + QuicConnectionImpl.this.logTag());
-            }
-        }
-    }
-
-    /**
-     * Connection-local implementation of {@link CodingContext}.
-     */
-    protected class QuicCodingContext implements CodingContext {
-        /**
-         * Creates a coding context backed by this connection.
-         */
-        protected QuicCodingContext() {
-        }
-
-        @Override
-        public long largestProcessedPN(PacketNumberSpace packetSpace) {
-            return QuicConnectionImpl.this.largestProcessedPN(packetSpace);
-        }
-
-        @Override
-        public long largestAckedPN(PacketNumberSpace packetSpace) {
-            return QuicConnectionImpl.this.largestAckedPN(packetSpace);
-        }
-
-        @Override
-        public int connectionIdLength() {
-            return QuicConnectionImpl.this.connectionIdLength();
-        }
-
-        @Override
-        public int maxAckRangesPerFrame() {
-            return quicConfig.maxAckRangesPerFrame();
-        }
-
-        @Override
-        public int writePacket(QuicPacket packet, ByteBuffer buffer)
-                throws QuicKeyUnavailableException, QuicTransportException {
-            int start = buffer.position();
-            encoder.encode(packet, buffer, this, QuicConnectionImpl.this.logTag());
-            return buffer.position() - start;
-        }
-
-        @Override
-        public Optional<QuicPacket> parsePacket(ByteBuffer src)
-                throws QuicKeyUnavailableException, QuicTransportException {
-            return decoder.decodeOwned(src, this, QuicConnectionImpl.this.logTag())
-                    .map(QuicPacket.class::cast);
-        }
-
-        @Override
-        public QuicConnectionId originalServerConnId() {
-            return QuicConnectionImpl.this.originalServerConnId();
-        }
-
-        @Override
-        public QuicTLSEngine tlsEngine() {
-            return quicTLSEngine;
-        }
-
-        @Override
-        public String logTag() {
-            return QuicConnectionImpl.this.logTag();
-        }
-
-        @Override
-        public boolean unsafeRawData() {
-            return quicConfig.unsafeRawData();
-        }
-
-        @Override
-        public boolean verifyToken(QuicConnectionId destinationID, byte[] token) {
-            return QuicConnectionImpl.this.verifyToken(destinationID, token);
         }
     }
 
@@ -5461,6 +5316,347 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         }
     }
 
+    static final class ReassemblyBudgetOwner implements AutoCloseable {
+        private final ReentrantLock lock = new ReentrantLock();
+        private int retained;
+        private boolean accepting = true;
+
+        ReassemblyBudget newBudget() {
+            return new Budget();
+        }
+
+        @Override
+        public void close() {
+            lock.lock();
+            try {
+                accepting = false;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private final class Budget implements ReassemblyBudget {
+            private int retained;
+            private boolean accepting = true;
+
+            @Override
+            public boolean tryAcquire() {
+                lock.lock();
+                try {
+                    if (!ReassemblyBudgetOwner.this.accepting
+                            || !accepting
+                            || retained >= MAX_REASSEMBLY_NODES_PER_FLOW
+                            || ReassemblyBudgetOwner.this.retained >= MAX_REASSEMBLY_NODES_PER_CONNECTION) {
+                        return false;
+                    }
+                    retained++;
+                    ReassemblyBudgetOwner.this.retained++;
+                    return true;
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public void release(int count) {
+                if (count < 0) {
+                    throw new IllegalArgumentException("Reassembly permit release must not be negative: " + count);
+                }
+                lock.lock();
+                try {
+                    if (count > retained) {
+                        throw new IllegalStateException("Releasing " + count + " reassembly permits with only "
+                                                                + retained + " retained");
+                    }
+                    retained -= count;
+                    ReassemblyBudgetOwner.this.retained -= count;
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public void close() {
+                lock.lock();
+                try {
+                    accepting = false;
+                } finally {
+                    lock.unlock();
+                }
+            }
+        }
+    }
+
+    private static final class ClientConnection extends QuicConnectionImpl implements QuicClientConnection {
+        private ClientConnection(QuicInstance quicInstance,
+                                 QuicRuntimeConfig runtimeConfig,
+                                 InetSocketAddress peerAddress,
+                                 InetSocketAddress tlsPeer,
+                                 SSLParameters sslParameters,
+                                 Duration initialResponseTimeout,
+                                 long labelId) {
+            super(quicInstance,
+                  runtimeConfig,
+                  peerAddress,
+                  tlsPeer.getHostString(),
+                  tlsPeer.getPort(),
+                  sslParameters,
+                  initialResponseTimeout,
+                  "QuicClientConnection(%s)",
+                  labelId);
+        }
+    }
+
+    private static final class PathSendBlockedException extends IllegalStateException {
+        private PathSendBlockedException(String message) {
+            super(message);
+        }
+    }
+
+    private static final class IncomingDatagram extends QuicPathManager.ReceiveContext {
+        private final ByteBuffer destConnId;
+        private final QuicPacket.HeadersType headersType;
+        private final ByteBuffer buffer;
+
+        private IncomingDatagram(InetSocketAddress source,
+                                 ByteBuffer destConnId,
+                                 QuicPacket.HeadersType headersType,
+                                 ByteBuffer buffer) {
+            super(source, buffer.remaining());
+            this.destConnId = destConnId;
+            this.headersType = headersType;
+            this.buffer = buffer;
+        }
+
+        private ByteBuffer destConnId() {
+            return destConnId;
+        }
+
+        private QuicPacket.HeadersType headersType() {
+            return headersType;
+        }
+
+        private ByteBuffer buffer() {
+            return buffer;
+        }
+    }
+
+    /**
+     * A state handle is a mutable implementation of {@link QuicConnectionState}
+     * that allows to view the volatile connection int variable {@code state} as
+     * a {@code QuicConnectionState}, and provides methods to mutate it in
+     * a thread safe atomic way.
+     */
+    protected final class StateHandle extends QuicConnectionState {
+        /**
+         * Creates a state handle backed by this connection's volatile state field.
+         */
+        protected StateHandle() {
+        }
+
+        @Override
+        public int state() {
+            return state;
+        }
+
+        /**
+         * Marks that the first Initial flight has been sent.
+         *
+         * @return {@code true} if the bit changed from unset to set
+         */
+        public boolean markHelloSent() {
+            return mark(HISENT);
+        }
+
+        /**
+         * Marks that the handshake completed.
+         *
+         * @return {@code true} if the bit changed from unset to set
+         */
+        public boolean markHandshakeComplete() {
+            return mark(HSCOMPLETE);
+        }
+
+        /**
+         * Updates the state to a new state value with the passed bit {@code mask} set.
+         *
+         * @param mask The state mask
+         * @return true if previously the state value didn't have the {@code mask} set and this
+         *        method successfully updated the state value to set the {@code mask}
+         */
+        boolean mark(int mask) {
+            int state;
+            int desired;
+            do {
+                state = state();
+                desired = state;
+                if ((state & mask) == mask) {
+                    return false; // already set
+                }
+                desired = state | mask;
+            } while (!STATE.compareAndSet(QuicConnectionImpl.this, state, desired));
+            return true; // compareAndSet switched the old state to the desired state
+        }
+    }
+
+    /**
+     * Keeps track of handshake state.
+     * <p>
+     * - handshakeCF   the handshake completable future
+     * - localInitial  the local initial crypto writer queue
+     * - peerInitial   the peer initial crypto flow
+     * - localHandshake the local handshake crypto queue
+     * - peerHandshake the peer handshake crypto flow
+     */
+    protected final class HandshakeFlow {
+
+        // a CompletableFuture which will get completed when the handshake initiated locally,
+        // has "reached" the peer i.e. when the peer acknowledges or replies to the first
+        // INITIAL packet sent by an endpoint
+        private final CompletableFuture<Void> handshakeReachedPeerCF;
+        private final CompletableFuture<HandshakeState> handshakeCF;
+        private final CryptoWriterQueue localInitial = CryptoWriterQueue.create();
+        private final ReassemblyBudget peerInitialBudget = newReassemblyBudget();
+        private final CryptoDataFlow peerInitial = CryptoDataFlow.create(peerInitialBudget, KeySpace.INITIAL);
+        private final CryptoWriterQueue localHandshake = CryptoWriterQueue.create();
+        private final ReassemblyBudget peerHandshakeBudget = newReassemblyBudget();
+        private final CryptoDataFlow peerHandshake = CryptoDataFlow.create(peerHandshakeBudget, KeySpace.HANDSHAKE);
+        private final AtomicBoolean handshakeStarted = new AtomicBoolean();
+
+        private HandshakeFlow() {
+            this.handshakeCF = MinimalFuture.<HandshakeState>create();
+            this.handshakeReachedPeerCF = MinimalFuture.<Void>create();
+            // ensure that the handshakeReachedPeerCF gets completed exceptionally
+            // if an exception is raised before the first INITIAL packet is
+            // acked by the peer.
+            handshakeCF.whenComplete((r, t) -> {
+                logDebug("handshake completed %s",
+                           t == null ? "successfully" : "exceptionally");
+                if (t != null) {
+                    handshakeReachedPeerCF.completeExceptionally(t);
+                }
+            });
+        }
+
+        /**
+         * Returns the CompletableFuture representing a handshake.
+         *
+         * @return the CompletableFuture representing a handshake.
+         */
+        public CompletableFuture<HandshakeState> handshakeCF() {
+            return this.handshakeCF;
+        }
+
+        /**
+         * Fails the handshake futures with the supplied cause.
+         *
+         * @param cause cause of the handshake failure
+         */
+        public void failHandshakeCFs(Throwable cause) {
+            QuicConnectionException connectionException = null;
+            if (!handshakeCF.isDone()) {
+                connectionException = connectionException(cause);
+                handshakeCF.completeExceptionally(connectionException);
+            }
+            if (!handshakeReachedPeerCF.isDone()) {
+                if (connectionException == null) {
+                    connectionException = connectionException(cause);
+                }
+                handshakeReachedPeerCF.completeExceptionally(connectionException);
+            }
+        }
+
+        private QuicConnectionException connectionException(Throwable cause) {
+            if (cause instanceof QuicConnectionException connectionException) {
+                return connectionException;
+            }
+            return new QuicConnectionException("QUIC connection establishment failed", cause);
+        }
+
+        /**
+         * Marks the start of a handshake.
+         *
+         * @throws IllegalStateException If handshake has already started
+         */
+        private void markHandshakeStart() {
+            if (!handshakeStarted.compareAndSet(false, true)) {
+                throw new IllegalStateException("Handshake has already started on "
+                                                        + QuicConnectionImpl.this.logTag());
+            }
+        }
+    }
+
+    /**
+     * Connection-local implementation of {@link CodingContext}.
+     */
+    protected class QuicCodingContext implements CodingContext {
+        /**
+         * Creates a coding context backed by this connection.
+         */
+        protected QuicCodingContext() {
+        }
+
+        @Override
+        public long largestProcessedPN(PacketNumberSpace packetSpace) {
+            return QuicConnectionImpl.this.largestProcessedPN(packetSpace);
+        }
+
+        @Override
+        public long largestAckedPN(PacketNumberSpace packetSpace) {
+            return QuicConnectionImpl.this.largestAckedPN(packetSpace);
+        }
+
+        @Override
+        public int connectionIdLength() {
+            return QuicConnectionImpl.this.connectionIdLength();
+        }
+
+        @Override
+        public int maxAckRangesPerFrame() {
+            return quicConfig.maxAckRangesPerFrame();
+        }
+
+        @Override
+        public int writePacket(QuicPacket packet, ByteBuffer buffer)
+                throws QuicKeyUnavailableException, QuicTransportException {
+            int start = buffer.position();
+            encoder.encode(packet, buffer, this, QuicConnectionImpl.this.logTag());
+            return buffer.position() - start;
+        }
+
+        @Override
+        public Optional<QuicPacket> parsePacket(ByteBuffer src)
+                throws QuicKeyUnavailableException, QuicTransportException {
+            return decoder.decodeOwned(src, this, QuicConnectionImpl.this.logTag())
+                    .map(QuicPacket.class::cast);
+        }
+
+        @Override
+        public QuicConnectionId originalServerConnId() {
+            return QuicConnectionImpl.this.originalServerConnId();
+        }
+
+        @Override
+        public QuicTLSEngine tlsEngine() {
+            return quicTLSEngine;
+        }
+
+        @Override
+        public String logTag() {
+            return QuicConnectionImpl.this.logTag();
+        }
+
+        @Override
+        public boolean unsafeRawData() {
+            return quicConfig.unsafeRawData();
+        }
+
+        @Override
+        public boolean verifyToken(QuicConnectionId destinationID, byte[] token) {
+            return QuicConnectionImpl.this.verifyToken(destinationID, token);
+        }
+    }
+
     /**
      * Timer that drives connection path validation retries and reports a
      * {@link QuicTransportErrors#NO_VIABLE_PATH NO_VIABLE_PATH} transport error
@@ -5667,77 +5863,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
 
         private Deadline now() {
             return TimeSource.now();
-        }
-    }
-
-    static final class ReassemblyBudgetOwner implements AutoCloseable {
-        private final ReentrantLock lock = new ReentrantLock();
-        private int retained;
-        private boolean accepting = true;
-
-        ReassemblyBudget newBudget() {
-            return new Budget();
-        }
-
-        @Override
-        public void close() {
-            lock.lock();
-            try {
-                accepting = false;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private final class Budget implements ReassemblyBudget {
-            private int retained;
-            private boolean accepting = true;
-
-            @Override
-            public boolean tryAcquire() {
-                lock.lock();
-                try {
-                    if (!ReassemblyBudgetOwner.this.accepting
-                            || !accepting
-                            || retained >= MAX_REASSEMBLY_NODES_PER_FLOW
-                            || ReassemblyBudgetOwner.this.retained >= MAX_REASSEMBLY_NODES_PER_CONNECTION) {
-                        return false;
-                    }
-                    retained++;
-                    ReassemblyBudgetOwner.this.retained++;
-                    return true;
-                } finally {
-                    lock.unlock();
-                }
-            }
-
-            @Override
-            public void release(int count) {
-                if (count < 0) {
-                    throw new IllegalArgumentException("Reassembly permit release must not be negative: " + count);
-                }
-                lock.lock();
-                try {
-                    if (count > retained) {
-                        throw new IllegalStateException("Releasing " + count + " reassembly permits with only "
-                                                                + retained + " retained");
-                    }
-                    retained -= count;
-                    ReassemblyBudgetOwner.this.retained -= count;
-                } finally {
-                    lock.unlock();
-                }
-            }
-
-            @Override
-            public void close() {
-                lock.lock();
-                try {
-                    accepting = false;
-                } finally {
-                    lock.unlock();
-                }
-            }
         }
     }
 
@@ -6283,26 +6408,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         }
     }
 
-    private static final class ClientConnection extends QuicConnectionImpl implements QuicClientConnection {
-        private ClientConnection(QuicInstance quicInstance,
-                                 QuicRuntimeConfig runtimeConfig,
-                                 InetSocketAddress peerAddress,
-                                 InetSocketAddress tlsPeer,
-                                 SSLParameters sslParameters,
-                                 Duration initialResponseTimeout,
-                                 long labelId) {
-            super(quicInstance,
-                  runtimeConfig,
-                  peerAddress,
-                  tlsPeer.getHostString(),
-                  tlsPeer.getPort(),
-                  sslParameters,
-                  initialResponseTimeout,
-                  "QuicClientConnection(%s)",
-                  labelId);
-        }
-    }
-
     private final class ConnectionPeerInfo implements PeerInfo {
         private final boolean remote;
 
@@ -6363,40 +6468,6 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
                 certificates = session.getLocalCertificates();
             }
             return certificates == null ? Optional.empty() : Optional.of(certificates.clone());
-        }
-    }
-
-    private static final class PathSendBlockedException extends IllegalStateException {
-        private PathSendBlockedException(String message) {
-            super(message);
-        }
-    }
-
-    private static final class IncomingDatagram extends QuicPathManager.ReceiveContext {
-        private final ByteBuffer destConnId;
-        private final QuicPacket.HeadersType headersType;
-        private final ByteBuffer buffer;
-
-        private IncomingDatagram(InetSocketAddress source,
-                                 ByteBuffer destConnId,
-                                 QuicPacket.HeadersType headersType,
-                                 ByteBuffer buffer) {
-            super(source, buffer.remaining());
-            this.destConnId = destConnId;
-            this.headersType = headersType;
-            this.buffer = buffer;
-        }
-
-        private ByteBuffer destConnId() {
-            return destConnId;
-        }
-
-        private QuicPacket.HeadersType headersType() {
-            return headersType;
-        }
-
-        private ByteBuffer buffer() {
-            return buffer;
         }
     }
 }

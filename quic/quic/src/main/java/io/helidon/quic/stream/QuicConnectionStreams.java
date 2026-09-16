@@ -31,7 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -122,24 +121,20 @@ public final class QuicConnectionStreams {
     // A lock to ensure consistency between invocation of streamListeners and
     // the content of the newRemoteStreams queue.
     private final Lock newRemoteStreamsLock = new ReentrantLock();
-    // Accessed only while holding newRemoteStreamsLock.
-    private boolean remoteStreamsTerminated;
     private final Lock localStreamCreationLock = new ReentrantLock();
-    // Accessed only while holding localStreamCreationLock.
-    private RuntimeException localStreamTerminationCause;
-
     // The connection to which the streams managed by this
     // instance of QuicConnectionStreams belong to.
     private final QuicConnectionImpl connection;
     private final int maxSmallFragments;
-    private final int streamBufferSize;
 
+    private final int streamBufferSize;
     // will hold the highest limit from a STREAMS_BLOCKED frame that was sent by a peer for uni
     // streams. this indicates the peer isn't able to create any more uni streams, past this limit
     private final AtomicLong peerUniStreamsBlocked = new AtomicLong(-1);
     // will hold the highest limit from a STREAMS_BLOCKED frame that was sent by a peer for bidi
     // streams. this indicates the peer isn't able to create any more bidi streams, past this limit
     private final AtomicLong peerBidiStreamsBlocked = new AtomicLong(-1);
+
     // will hold the highest limit at which the local endpoint couldn't create a uni stream
     // and a STREAMS_BLOCKED was required to be sent. -1 indicates the local endpoint hasn't yet
     // been blocked for stream creation
@@ -161,7 +156,6 @@ public final class QuicConnectionStreams {
     // streams that have been blocked and aren't able to send data to the peer,
     // due to reaching flow control limit imposed on those streams by the peer.
     private final Set<Long> flowControlBlockedStreams = ConcurrentHashMap.newKeySet();
-
     // A QuicConnectionStream instance can be tied to a client connection
     // or a server connection.
     // If the connection is a client connection, then localFlag=0x00,
@@ -170,9 +164,14 @@ public final class QuicConnectionStreams {
     //   localBidi=0x01, remoteBidi=0x00, localUni=0x03, remoteUni=0x02
     private final int localFlag;
     private final int localBidi;
+
     private final int remoteBidi;
     private final int localUni;
     private final int remoteUni;
+    // Accessed only while holding newRemoteStreamsLock.
+    private boolean remoteStreamsTerminated;
+    // Accessed only while holding localStreamCreationLock.
+    private RuntimeException localStreamTerminationCause;
 
     /**
      * Creates a new instance of {@code QuicConnectionStreams} for the
@@ -207,6 +206,27 @@ public final class QuicConnectionStreams {
      */
     public static QuicConnectionStreams create(QuicConnectionImpl connection) {
         return new QuicConnectionStreams(connection);
+    }
+
+    /**
+     * {@return the sender part implementation of the given stream, or {@code null}}
+     * This method returns null if the given stream doesn't have a sending part
+     * (that is, if it is a unidirectional peer initiated stream).
+     *
+     * @param stream a sending or bidirectional stream
+     */
+    static QuicSenderStreamImpl senderImpl(QuicStream stream) {
+        if (stream instanceof QuicSenderStreamImpl sender) {
+            return sender;
+        } else if (stream instanceof QuicBidiStreamImpl bidi) {
+            return bidi.senderPart();
+        }
+        return null;
+    }
+
+    // Package access supports direct queue regression and benchmark coverage.
+    static ReadyStreamCollection serverReadyStreams() {
+        return new ReadyStreamDistinctQueue();
     }
 
     /**
@@ -391,69 +411,6 @@ public final class QuicConnectionStreams {
     public void processInitialRemoteStreamFrame(StreamFrame frame) throws QuicTransportException {
         Objects.requireNonNull(frame, "frame");
         ensureRemoteStream(frame.streamId(), frame.typeField(), frame);
-    }
-
-    private Optional<QuicStream> ensureRemoteStream(long streamId, long frameType, StreamFrame initialFrame)
-            throws QuicTransportException {
-        int streamType = streamType(streamId);
-        if ((streamId & SRV_MASK) == localFlag) {
-            throw new IllegalArgumentException("bad remote stream type %s for stream %s"
-                                                       .formatted(streamType, streamId));
-        }
-        boolean bidi = isBidirectional(streamId);
-        long maxStreamLimit = bidi ? this.remoteBidiStreamCredit.currentLimit()
-                : this.remoteUniStreamCredit.currentLimit();
-        if (maxStreamLimit <= (streamId >> 2)) {
-            throw new QuicTransportException("stream ID %s exceeds the number of allowed streams(%s)"
-                                                     .formatted(streamId, maxStreamLimit),
-                                             QuicTLSEngine.KeySpace.ONE_RTT,
-                                             frameType,
-                                             QuicTransportErrors.STREAM_LIMIT_ERROR,
-                                             streamId);
-        }
-
-        newRemoteStreamsLock.lock();
-        try {
-            if (remoteStreamsTerminated) {
-                return Optional.empty();
-            }
-            var id = nextStreamID.get(streamType);
-            long nextId = id.get();
-            if (nextId > streamId) {
-                // already created
-                QuicStream stream = streams.get(streamId);
-                if (stream != null && initialFrame != null) {
-                    receiverImpl(stream).processIncomingFrame(initialFrame);
-                }
-                return Optional.ofNullable(stream);
-            }
-            // id must not be modified outside newRemoteStreamsLock
-            id.getAndSet(streamId + 4);
-
-            AbstractQuicStream stream = null;
-            List<QuicReceiverStream> impliedRemoteStreams = null;
-            for (long i = nextId; i <= streamId; i += 4) {
-                stream = QuicStreams.createStream(connection, i, maxSmallFragments, streamBufferSize);
-                register(i, stream, initialFrame == null);
-                if (initialFrame != null && i < streamId) {
-                    if (impliedRemoteStreams == null) {
-                        impliedRemoteStreams = new ArrayList<>();
-                    }
-                    impliedRemoteStreams.add((QuicReceiverStream) stream);
-                }
-            }
-            if (initialFrame != null) {
-                receiverImpl(stream).processIncomingFrame(initialFrame);
-                if (impliedRemoteStreams != null) {
-                    newRemoteStreams.addAll(impliedRemoteStreams);
-                }
-                newRemoteStreams.add((QuicReceiverStream) stream);
-                acceptRemoteStreamsLocked();
-            }
-            return Optional.of(stream);
-        } finally {
-            newRemoteStreamsLock.unlock();
-        }
     }
 
     /**
@@ -1219,25 +1176,6 @@ public final class QuicConnectionStreams {
         return produced;
     }
 
-    private static QuicTransportException transportFailure(Throwable failure, long streamId) {
-        if (failure instanceof QuicTransportException transportException) {
-            return transportException;
-        }
-        if (streamId >= 0) {
-            return new QuicTransportException("Failed to compose frames for stream " + streamId,
-                                              KeySpace.ONE_RTT,
-                                              0,
-                                              QuicTransportErrors.INTERNAL_ERROR.code(),
-                                              failure,
-                                              streamId);
-        }
-        return new QuicTransportException("Failed to compose frames",
-                                          KeySpace.ONE_RTT,
-                                          0,
-                                          QuicTransportErrors.INTERNAL_ERROR.code(),
-                                          failure);
-    }
-
     /**
      * Completes dispatch receipts for stream frames handed to the connection packet path.
      *
@@ -1276,22 +1214,6 @@ public final class QuicConnectionStreams {
     }
 
     /**
-     * {@return the sender part implementation of the given stream, or {@code null}}
-     * This method returns null if the given stream doesn't have a sending part
-     * (that is, if it is a unidirectional peer initiated stream).
-     *
-     * @param stream a sending or bidirectional stream
-     */
-    static QuicSenderStreamImpl senderImpl(QuicStream stream) {
-        if (stream instanceof QuicSenderStreamImpl sender) {
-            return sender;
-        } else if (stream instanceof QuicBidiStreamImpl bidi) {
-            return bidi.senderPart();
-        }
-        return null;
-    }
-
-    /**
      * {@return the receiver part implementation of the given stream, or {@code null}}
      * This method returns null if the given stream doesn't have a receiver part
      * (that is, if it is a unidirectional local initiated stream).
@@ -1305,6 +1227,33 @@ public final class QuicConnectionStreams {
             return bidi.receiverPart();
         }
         return null;
+    }
+
+    QuicBidiStream openReservedLocalBidiStream() {
+        return (QuicBidiStream) openReservedLocalStream(localBidi, StreamMode.READ_WRITE);
+    }
+
+    void releaseLocalBidiStreamReservation() {
+        localBidiMaxStreamLimit.releaseAcquisition();
+    }
+
+    private static QuicTransportException transportFailure(Throwable failure, long streamId) {
+        if (failure instanceof QuicTransportException transportException) {
+            return transportException;
+        }
+        if (streamId >= 0) {
+            return new QuicTransportException("Failed to compose frames for stream " + streamId,
+                                              KeySpace.ONE_RTT,
+                                              0,
+                                              QuicTransportErrors.INTERNAL_ERROR.code(),
+                                              failure,
+                                              streamId);
+        }
+        return new QuicTransportException("Failed to compose frames",
+                                          KeySpace.ONE_RTT,
+                                          0,
+                                          QuicTransportErrors.INTERNAL_ERROR.code(),
+                                          failure);
     }
 
     private static String formatMessage(String format, Object... args) {
@@ -1336,6 +1285,79 @@ public final class QuicConnectionStreams {
                 return;
             }
             blockedOnLimit = blockedState.get();
+        }
+    }
+
+    private static boolean hasPendingZeroLengthEndOfStream(Iterable<? extends QuicSenderStream> senders) {
+        for (QuicSenderStream sender : senders) {
+            QuicSenderStreamImpl implementation = senderImpl(sender);
+            if (implementation != null && implementation.hasPendingZeroLengthEndOfStream()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Optional<QuicStream> ensureRemoteStream(long streamId, long frameType, StreamFrame initialFrame)
+            throws QuicTransportException {
+        int streamType = streamType(streamId);
+        if ((streamId & SRV_MASK) == localFlag) {
+            throw new IllegalArgumentException("bad remote stream type %s for stream %s"
+                                                       .formatted(streamType, streamId));
+        }
+        boolean bidi = isBidirectional(streamId);
+        long maxStreamLimit = bidi ? this.remoteBidiStreamCredit.currentLimit()
+                : this.remoteUniStreamCredit.currentLimit();
+        if (maxStreamLimit <= (streamId >> 2)) {
+            throw new QuicTransportException("stream ID %s exceeds the number of allowed streams(%s)"
+                                                     .formatted(streamId, maxStreamLimit),
+                                             QuicTLSEngine.KeySpace.ONE_RTT,
+                                             frameType,
+                                             QuicTransportErrors.STREAM_LIMIT_ERROR,
+                                             streamId);
+        }
+
+        newRemoteStreamsLock.lock();
+        try {
+            if (remoteStreamsTerminated) {
+                return Optional.empty();
+            }
+            var id = nextStreamID.get(streamType);
+            long nextId = id.get();
+            if (nextId > streamId) {
+                // already created
+                QuicStream stream = streams.get(streamId);
+                if (stream != null && initialFrame != null) {
+                    receiverImpl(stream).processIncomingFrame(initialFrame);
+                }
+                return Optional.ofNullable(stream);
+            }
+            // id must not be modified outside newRemoteStreamsLock
+            id.getAndSet(streamId + 4);
+
+            AbstractQuicStream stream = null;
+            List<QuicReceiverStream> impliedRemoteStreams = null;
+            for (long i = nextId; i <= streamId; i += 4) {
+                stream = QuicStreams.createStream(connection, i, maxSmallFragments, streamBufferSize);
+                register(i, stream, initialFrame == null);
+                if (initialFrame != null && i < streamId) {
+                    if (impliedRemoteStreams == null) {
+                        impliedRemoteStreams = new ArrayList<>();
+                    }
+                    impliedRemoteStreams.add((QuicReceiverStream) stream);
+                }
+            }
+            if (initialFrame != null) {
+                receiverImpl(stream).processIncomingFrame(initialFrame);
+                if (impliedRemoteStreams != null) {
+                    newRemoteStreams.addAll(impliedRemoteStreams);
+                }
+                newRemoteStreams.add((QuicReceiverStream) stream);
+                acceptRemoteStreamsLocked();
+            }
+            return Optional.of(stream);
+        } finally {
+            newRemoteStreamsLock.unlock();
         }
     }
 
@@ -1417,7 +1439,6 @@ public final class QuicConnectionStreams {
         boolean bidi = isBidirectional(localType);
         StreamCreationPermit permit = bidi ? this.localBidiMaxStreamLimit
                 : this.localUniMaxStreamLimit;
-        CompletableFuture<Boolean> permitAcquisitionCF;
         long currentLimit;
         boolean acquired;
         localStreamCreationLock.lock();
@@ -1431,36 +1452,58 @@ public final class QuicConnectionStreams {
             localStreamCreationLock.unlock();
         }
         if (acquired) {
-            permitAcquisitionCF = MinimalFuture.completedMinimalFuture(true);
-        } else {
-            // stream limit reached, request sending a STREAMS_BLOCKED frame
-            announceStreamsBlocked(bidi, currentLimit);
-            if (timeout.isPositive()) {
-                Executor executor = this.connection.quicInstance().executor();
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    log(System.Logger.Level.DEBUG, "stream creation limit = " + permit.currentLimit()
-                            + " reached; waiting for it to increase, timeout=" + timeout);
-                }
-                permitAcquisitionCF = permit.tryAcquire(timeout.toNanos(), NANOSECONDS, executor);
-            } else {
-                permitAcquisitionCF = MinimalFuture.completedMinimalFuture(false);
+            try {
+                return MinimalFuture.completedMinimalFuture(openReservedLocalStream(localType, mode));
+            } catch (RuntimeException | Error failure) {
+                permit.releaseAcquisition();
+                return MinimalFuture.failedMinimalFuture(failure);
             }
         }
-        CompletableFuture<? extends AbstractQuicStream> streamCF =
-                permitAcquisitionCF.thenCompose((acq) -> {
-                    if (!acq) {
-                        String msg = "Stream limit = " + permit.currentLimit()
-                                + " reached for locally initiated "
-                                + (bidi ? "bidi" : "uni") + " streams";
-                        return MinimalFuture.failedMinimalFuture(new QuicStreamLimitException(msg));
+        // stream limit reached, request sending a STREAMS_BLOCKED frame
+        announceStreamsBlocked(bidi, currentLimit);
+        if (timeout.isPositive() && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            log(System.Logger.Level.DEBUG, "stream creation limit = " + permit.currentLimit()
+                    + " reached; waiting for it to increase, timeout=" + timeout);
+        }
+        CompletableFuture<Boolean> permitAcquisitionCF = timeout.isPositive()
+                ? permit.tryAcquire(timeout.toNanos(), NANOSECONDS, connection.quicInstance().executor())
+                : MinimalFuture.completedMinimalFuture(false);
+        var streamCF = MinimalFuture.<AbstractQuicStream>create();
+        streamCF.whenComplete((_, _) -> {
+            if (streamCF.isCancelled()) {
+                permitAcquisitionCF.cancel(false);
+            }
+        });
+        permitAcquisitionCF.whenComplete((acq, failure) -> {
+            if (failure != null || !acq) {
+                streamCF.completeExceptionally(failure != null ? failure : new QuicStreamLimitException(
+                        "Stream limit = " + permit.currentLimit() + " reached for locally initiated "
+                                + (bidi ? "bidi" : "uni") + " streams"));
+                return;
+            }
+            if (streamCF.isDone()) {
+                permit.releaseAcquisition();
+                return;
+            }
+            AbstractQuicStream stream;
+            try {
+                stream = openReservedLocalStream(localType, mode);
+            } catch (RuntimeException | Error creationFailure) {
+                permit.releaseAcquisition();
+                streamCF.completeExceptionally(creationFailure);
+                return;
+            }
+            if (!streamCF.complete(stream)) {
+                // Stream creation consumed its ID and credit. Close it through the normal wire protocol.
+                try {
+                    senderImpl(stream).reset(0);
+                } finally {
+                    if (bidi) {
+                        receiverImpl(stream).requestStopSending(0);
                     }
-                    try {
-                        return MinimalFuture.completedMinimalFuture(openReservedLocalStream(localType, mode));
-                    } catch (RuntimeException | Error failure) {
-                        permit.releaseAcquisition();
-                        return MinimalFuture.failedMinimalFuture(failure);
-                    }
-                });
+                }
+            }
+        });
         return streamCF;
     }
 
@@ -1471,14 +1514,6 @@ public final class QuicConnectionStreams {
         } finally {
             localStreamCreationLock.unlock();
         }
-    }
-
-    QuicBidiStream openReservedLocalBidiStream() {
-        return (QuicBidiStream) openReservedLocalStream(localBidi, StreamMode.READ_WRITE);
-    }
-
-    void releaseLocalBidiStreamReservation() {
-        localBidiMaxStreamLimit.releaseAcquisition();
     }
 
     private AbstractQuicStream openReservedLocalStreamLocked(int localType, StreamMode mode) {
@@ -1812,21 +1847,6 @@ public final class QuicConnectionStreams {
         } else {
             throw new InternalError("Should not reach here - not a control frame: " + frame);
         }
-    }
-
-    private static boolean hasPendingZeroLengthEndOfStream(Iterable<? extends QuicSenderStream> senders) {
-        for (QuicSenderStream sender : senders) {
-            QuicSenderStreamImpl implementation = senderImpl(sender);
-            if (implementation != null && implementation.hasPendingZeroLengthEndOfStream()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Package access supports direct queue regression and benchmark coverage.
-    static ReadyStreamCollection serverReadyStreams() {
-        return new ReadyStreamDistinctQueue();
     }
 
     interface ReadyStreamCollection {

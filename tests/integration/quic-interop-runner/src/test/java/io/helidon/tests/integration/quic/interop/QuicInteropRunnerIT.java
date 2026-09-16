@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -61,7 +62,7 @@ class QuicInteropRunnerIT {
     @Timeout(value = 30, unit = TimeUnit.MINUTES)
     void shouldPassHttp3SmokeTestThroughQuicInteropRunner() throws Exception {
         Path artifactsDir = Files.createDirectories(Path.of("target", "quic-interop-runner"));
-        ImageFromDockerfile toolImage = new ImageFromDockerfile("helidon-quic-interop-tool-" + UUID.randomUUID(), false)
+        ImageFromDockerfile toolImage = new ImageFromDockerfile("helidon-quic-interop-tool-" + UUID.randomUUID(), true)
                 .withDockerfile(Path.of("./Dockerfile.runner-tool"));
         Network network = Network.newNetwork();
         GenericContainer<?> tool = new GenericContainer<>(toolImage)
@@ -76,7 +77,9 @@ class QuicInteropRunnerIT {
                              "--registry-mirror=" + registryMirror);
         }
 
-        try (network; tool) {
+        try (AutoCloseable _ = () -> DockerClientFactory.instance().client()
+                .removeImageCmd(toolImage.getDockerImageName()).exec();
+                network; tool) {
             tool.start();
             waitForDocker(tool);
             verifyNestedDockerEndpoint(tool);

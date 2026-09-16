@@ -206,39 +206,6 @@ final class PeerConnIdManager {
         }
     }
 
-    private void completePathUse(PathCidBinding binding, boolean sent) {
-        if (binding.used) {
-            int previous = binding.activeUses.getAndDecrement();
-            if (previous <= 0) {
-                binding.activeUses.incrementAndGet();
-                throw new IllegalStateException("Connection ID use already released: " + binding.sequence);
-            }
-            if (previous == 1 && !binding.valid) {
-                connection.runAppPacketSpaceTransmitter();
-            }
-            return;
-        }
-        boolean wakeTransmitter;
-        lock.lock();
-        try {
-            int previous = binding.activeUses.getAndDecrement();
-            if (previous <= 0) {
-                binding.activeUses.incrementAndGet();
-                throw new IllegalStateException("Connection ID use already released: " + binding.sequence);
-            }
-            binding.used |= sent;
-            if (previous == 1 && !binding.used) {
-                forgetResetToken(binding.sequence);
-            }
-            wakeTransmitter = previous == 1 && toRetire.contains(binding.sequence);
-        } finally {
-            lock.unlock();
-        }
-        if (wakeTransmitter) {
-            connection.runAppPacketSpaceTransmitter();
-        }
-    }
-
     /**
      * Produce a queued RETIRE_CONNECTION_ID frame, if it fits in the packet.
      *
@@ -610,6 +577,47 @@ final class PeerConnIdManager {
         }
     }
 
+    private static long saturatingAdd(long left, long right) {
+        return left > Long.MAX_VALUE - right ? Long.MAX_VALUE : left + right;
+    }
+
+    private static long saturatingMultiply(long value, int multiplier) {
+        return value > Long.MAX_VALUE / multiplier ? Long.MAX_VALUE : value * multiplier;
+    }
+
+    private void completePathUse(PathCidBinding binding, boolean sent) {
+        if (binding.used) {
+            int previous = binding.activeUses.getAndDecrement();
+            if (previous <= 0) {
+                binding.activeUses.incrementAndGet();
+                throw new IllegalStateException("Connection ID use already released: " + binding.sequence);
+            }
+            if (previous == 1 && !binding.valid) {
+                connection.runAppPacketSpaceTransmitter();
+            }
+            return;
+        }
+        boolean wakeTransmitter;
+        lock.lock();
+        try {
+            int previous = binding.activeUses.getAndDecrement();
+            if (previous <= 0) {
+                binding.activeUses.incrementAndGet();
+                throw new IllegalStateException("Connection ID use already released: " + binding.sequence);
+            }
+            binding.used |= sent;
+            if (previous == 1 && !binding.used) {
+                forgetResetToken(binding.sequence);
+            }
+            wakeTransmitter = previous == 1 && toRetire.contains(binding.sequence);
+        } finally {
+            lock.unlock();
+        }
+        if (wakeTransmitter) {
+            connection.runAppPacketSpaceTransmitter();
+        }
+    }
+
     private QuicConnectionId peerConnectionId(long sequenceNum) {
         return this.peerConnectionIds.get(sequenceNum);
     }
@@ -718,14 +726,6 @@ final class PeerConnIdManager {
         }
     }
 
-    private static long saturatingAdd(long left, long right) {
-        return left > Long.MAX_VALUE - right ? Long.MAX_VALUE : left + right;
-    }
-
-    private static long saturatingMultiply(long value, int multiplier) {
-        return value > Long.MAX_VALUE / multiplier ? Long.MAX_VALUE : value * multiplier;
-    }
-
     private void log(System.Logger.Level level, String format, Object... arguments) {
         if (arguments.length == 0) {
             connection.log(LOGGER, level, "%s", format);
@@ -734,13 +734,28 @@ final class PeerConnIdManager {
         }
     }
 
+    private enum State {
+        INITIAL_PKT_NOT_RECEIVED_FROM_PEER,
+        RETRY_PKT_RECEIVED_FROM_PEER,
+        PEER_CONN_ID_FINALIZED;
+
+        private String text() {
+            return name();
+        }
+    }
+
     static final class PathCidBinding {
         private final long sequence;
-        private volatile QuicConnectionId connectionId;
         private final InetSocketAddress peerAddress;
+        private final AtomicInteger activeUses;
+
+        private volatile QuicConnectionId connectionId;
         private volatile boolean valid = true;
         private volatile boolean used;
-        private final AtomicInteger activeUses = new AtomicInteger();
+
+        {
+            activeUses = new AtomicInteger();
+        }
 
         private PathCidBinding(long sequence,
                                QuicConnectionId connectionId,
@@ -760,16 +775,6 @@ final class PeerConnIdManager {
 
         boolean valid() {
             return valid;
-        }
-    }
-
-    private enum State {
-        INITIAL_PKT_NOT_RECEIVED_FROM_PEER,
-        RETRY_PKT_RECEIVED_FROM_PEER,
-        PEER_CONN_ID_FINALIZED;
-
-        private String text() {
-            return name();
         }
     }
 }

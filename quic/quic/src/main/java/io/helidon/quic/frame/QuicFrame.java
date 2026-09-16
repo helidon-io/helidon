@@ -208,13 +208,6 @@ public abstract sealed class QuicFrame permits
         return decode(buffer, true, checkMaxAckRangesPerFrame(maxAckRangesPerFrame));
     }
 
-    private static QuicFrame decode(ByteBuffer buffer,
-                                    boolean payloadOwned,
-                                    int maxAckRangesPerFrame) throws QuicTransportException {
-        int frameType = decodeFrameType(buffer);
-        return decodeFramePayload(buffer, payloadOwned, maxAckRangesPerFrame, frameType);
-    }
-
     /**
      * Validate and consume the next frame after an ACK-range policy violation has made the packet discardable.
      *
@@ -234,58 +227,6 @@ public abstract sealed class QuicFrame permits
             decodeFramePayload(buffer, false, Integer.MAX_VALUE, frameType);
         }
         return frameType;
-    }
-
-    private static int decodeFrameType(ByteBuffer buffer) throws QuicTransportException {
-        long frameTypeLong = VariableLengthEncoder.decode(buffer);
-        if (frameTypeLong < 0) {
-            throw new QuicTransportException("Error decoding frame type",
-                                             0, QuicTransportErrors.FRAME_ENCODING_ERROR);
-        }
-        if (frameTypeLong > Integer.MAX_VALUE) {
-            throw new QuicTransportException("Unrecognized frame",
-                                             frameTypeLong, QuicTransportErrors.FRAME_ENCODING_ERROR);
-        }
-        return (int) frameTypeLong;
-    }
-
-    private static QuicFrame decodeFramePayload(ByteBuffer buffer,
-                                                boolean payloadOwned,
-                                                int maxAckRangesPerFrame,
-                                                int frameType) throws QuicTransportException {
-        return switch (maskType(frameType)) {
-            case ACK -> new AckFrame(buffer, frameType, maxAckRangesPerFrame);
-            case STREAM -> payloadOwned
-                    ? StreamFrame.decodeOwned(buffer, frameType)
-                    : new StreamFrame(buffer, frameType);
-            case RESET_STREAM -> new ResetStreamFrame(buffer, frameType);
-            case PADDING -> new PaddingFrame(buffer, frameType);
-            case PING -> new PingFrame(buffer, frameType);
-            case STOP_SENDING -> new StopSendingFrame(buffer, frameType);
-            case CRYPTO -> new CryptoFrame(buffer, frameType);
-            case NEW_TOKEN -> new NewTokenFrame(buffer, frameType);
-            case DATA_BLOCKED -> new DataBlockedFrame(buffer, frameType);
-            case MAX_DATA -> new MaxDataFrame(buffer, frameType);
-            case MAX_STREAMS -> new MaxStreamsFrame(buffer, frameType);
-            case MAX_STREAM_DATA -> new MaxStreamDataFrame(buffer, frameType);
-            case STREAM_DATA_BLOCKED -> new StreamDataBlockedFrame(buffer, frameType);
-            case STREAMS_BLOCKED -> new StreamsBlockedFrame(buffer, frameType);
-            case NEW_CONNECTION_ID -> new NewConnectionIDFrame(buffer, frameType);
-            case RETIRE_CONNECTION_ID -> new RetireConnectionIDFrame(buffer, frameType);
-            case PATH_CHALLENGE -> new PathChallengeFrame(buffer, frameType);
-            case PATH_RESPONSE -> new PathResponseFrame(buffer, frameType);
-            case CONNECTION_CLOSE -> new ConnectionCloseFrame(buffer, frameType);
-            case HANDSHAKE_DONE -> new HandshakeDoneFrame(buffer, frameType);
-            default -> throw new QuicTransportException("Unrecognized frame",
-                                                        frameType, QuicTransportErrors.FRAME_ENCODING_ERROR);
-        };
-    }
-
-    private static int checkMaxAckRangesPerFrame(int maxAckRangesPerFrame) {
-        if (maxAckRangesPerFrame < 1) {
-            throw new IllegalArgumentException("maxAckRangesPerFrame must be positive: " + maxAckRangesPerFrame);
-        }
-        return maxAckRangesPerFrame;
     }
 
     /**
@@ -435,6 +376,40 @@ public abstract sealed class QuicFrame permits
         return VariableLengthEncoder.encodedSize(val);
     }
 
+    /**
+     * Tells whether a decoded frame type is valid in the given packet type.
+     *
+     * @param typeField decoded frame type field
+     * @param packetType packet type
+     * @return true if the frame type can be embedded in the packet type
+     */
+    @Api.Internal
+    public static boolean isValidIn(long typeField, QuicPacket.PacketType packetType) {
+        if (typeField < 0 || typeField > Integer.MAX_VALUE) {
+            return false;
+        }
+        return isValidIn(maskType((int) typeField), typeField, packetType);
+    }
+
+    static long decodeVLField(ByteBuffer buffer, String name, long typeField) throws QuicTransportException {
+        long v = VariableLengthEncoder.decode(buffer);
+        if (v < 0) {
+            throw new QuicTransportException("Error decoding field: " + name,
+                                             typeField, QuicTransportErrors.FRAME_ENCODING_ERROR);
+        }
+        return v;
+    }
+
+    static int decodeVLFieldAsInt(ByteBuffer buffer, String name, long typeField) throws QuicTransportException {
+        long l = decodeVLField(buffer, name, typeField);
+        int intval = (int) l;
+        if (((long) intval) != l) {
+            throw new QuicTransportException(name + ":field too long",
+                                             typeField, QuicTransportErrors.FRAME_ENCODING_ERROR);
+        }
+        return intval;
+    }
+
     @Override
     public String toString() {
         return this.getClass().getSimpleName();
@@ -537,18 +512,86 @@ public abstract sealed class QuicFrame permits
     }
 
     /**
-     * Tells whether a decoded frame type is valid in the given packet type.
+     * Decode a QUIC variable-length integer field from the buffer.
      *
-     * @param typeField decoded frame type field
-     * @param packetType packet type
-     * @return true if the frame type can be embedded in the packet type
+     * @param buffer source buffer
+     * @param name   field name used in error messages
+     * @return decoded value
+     * @throws QuicTransportException if the field cannot be decoded
      */
-    @Api.Internal
-    public static boolean isValidIn(long typeField, QuicPacket.PacketType packetType) {
-        if (typeField < 0 || typeField > Integer.MAX_VALUE) {
-            return false;
+    protected final long decodeVLField(ByteBuffer buffer, String name) throws QuicTransportException {
+        return decodeVLField(buffer, name, typeField());
+    }
+
+    /**
+     * Decode a QUIC variable-length integer field and narrow it to {@code int}.
+     *
+     * @param buffer source buffer
+     * @param name   field name used in error messages
+     * @return decoded integer value
+     * @throws QuicTransportException if the field cannot be decoded or does not fit in {@code int}
+     */
+    protected final int decodeVLFieldAsInt(ByteBuffer buffer, String name) throws QuicTransportException {
+        return decodeVLFieldAsInt(buffer, name, typeField());
+    }
+
+    private static QuicFrame decode(ByteBuffer buffer,
+                                    boolean payloadOwned,
+                                    int maxAckRangesPerFrame) throws QuicTransportException {
+        int frameType = decodeFrameType(buffer);
+        return decodeFramePayload(buffer, payloadOwned, maxAckRangesPerFrame, frameType);
+    }
+
+    private static int decodeFrameType(ByteBuffer buffer) throws QuicTransportException {
+        long frameTypeLong = VariableLengthEncoder.decode(buffer);
+        if (frameTypeLong < 0) {
+            throw new QuicTransportException("Error decoding frame type",
+                                             0, QuicTransportErrors.FRAME_ENCODING_ERROR);
         }
-        return isValidIn(maskType((int) typeField), typeField, packetType);
+        if (frameTypeLong > Integer.MAX_VALUE) {
+            throw new QuicTransportException("Unrecognized frame",
+                                             frameTypeLong, QuicTransportErrors.FRAME_ENCODING_ERROR);
+        }
+        return (int) frameTypeLong;
+    }
+
+    private static QuicFrame decodeFramePayload(ByteBuffer buffer,
+                                                boolean payloadOwned,
+                                                int maxAckRangesPerFrame,
+                                                int frameType) throws QuicTransportException {
+        return switch (maskType(frameType)) {
+            case ACK -> new AckFrame(buffer, frameType, maxAckRangesPerFrame);
+            case STREAM -> payloadOwned
+                    ? StreamFrame.decodeOwned(buffer, frameType)
+                    : new StreamFrame(buffer, frameType);
+            case RESET_STREAM -> new ResetStreamFrame(buffer, frameType);
+            case PADDING -> new PaddingFrame(buffer, frameType);
+            case PING -> new PingFrame(buffer, frameType);
+            case STOP_SENDING -> new StopSendingFrame(buffer, frameType);
+            case CRYPTO -> new CryptoFrame(buffer, frameType);
+            case NEW_TOKEN -> new NewTokenFrame(buffer, frameType);
+            case DATA_BLOCKED -> new DataBlockedFrame(buffer, frameType);
+            case MAX_DATA -> new MaxDataFrame(buffer, frameType);
+            case MAX_STREAMS -> new MaxStreamsFrame(buffer, frameType);
+            case MAX_STREAM_DATA -> new MaxStreamDataFrame(buffer, frameType);
+            case STREAM_DATA_BLOCKED -> new StreamDataBlockedFrame(buffer, frameType);
+            case STREAMS_BLOCKED -> new StreamsBlockedFrame(buffer, frameType);
+            case NEW_CONNECTION_ID -> new NewConnectionIDFrame(buffer, frameType);
+            case RETIRE_CONNECTION_ID -> new RetireConnectionIDFrame(buffer, frameType);
+            case PATH_CHALLENGE -> new PathChallengeFrame(buffer, frameType);
+            case PATH_RESPONSE -> new PathResponseFrame(buffer, frameType);
+            case CONNECTION_CLOSE -> new ConnectionCloseFrame(buffer, frameType);
+            case HANDSHAKE_DONE -> new HandshakeDoneFrame(buffer, frameType);
+            default -> throw new QuicTransportException("Unrecognized frame",
+                                                        frameType, QuicTransportErrors.FRAME_ENCODING_ERROR);
+        };
+    }
+
+    private static int checkMaxAckRangesPerFrame(int maxAckRangesPerFrame) {
+        if (maxAckRangesPerFrame < 1) {
+            throw new IllegalArgumentException("maxAckRangesPerFrame must be positive: " + maxAckRangesPerFrame);
+        }
+        return maxAckRangesPerFrame;
     }
 
     private static boolean isValidIn(int frameType, long typeField, QuicPacket.PacketType packetType) {
@@ -572,49 +615,6 @@ public abstract sealed class QuicFrame permits
             };
             default -> QuicPacket.PacketNumberSpace.of(packetType) == QuicPacket.PacketNumberSpace.APPLICATION;
         };
-    }
-
-    /**
-     * Decode a QUIC variable-length integer field from the buffer.
-     *
-     * @param buffer source buffer
-     * @param name   field name used in error messages
-     * @return decoded value
-     * @throws QuicTransportException if the field cannot be decoded
-     */
-    protected final long decodeVLField(ByteBuffer buffer, String name) throws QuicTransportException {
-        return decodeVLField(buffer, name, typeField());
-    }
-
-    static long decodeVLField(ByteBuffer buffer, String name, long typeField) throws QuicTransportException {
-        long v = VariableLengthEncoder.decode(buffer);
-        if (v < 0) {
-            throw new QuicTransportException("Error decoding field: " + name,
-                                             typeField, QuicTransportErrors.FRAME_ENCODING_ERROR);
-        }
-        return v;
-    }
-
-    /**
-     * Decode a QUIC variable-length integer field and narrow it to {@code int}.
-     *
-     * @param buffer source buffer
-     * @param name   field name used in error messages
-     * @return decoded integer value
-     * @throws QuicTransportException if the field cannot be decoded or does not fit in {@code int}
-     */
-    protected final int decodeVLFieldAsInt(ByteBuffer buffer, String name) throws QuicTransportException {
-        return decodeVLFieldAsInt(buffer, name, typeField());
-    }
-
-    static int decodeVLFieldAsInt(ByteBuffer buffer, String name, long typeField) throws QuicTransportException {
-        long l = decodeVLField(buffer, name, typeField);
-        int intval = (int) l;
-        if (((long) intval) != l) {
-            throw new QuicTransportException(name + ":field too long",
-                                             typeField, QuicTransportErrors.FRAME_ENCODING_ERROR);
-        }
-        return intval;
     }
 
     /**

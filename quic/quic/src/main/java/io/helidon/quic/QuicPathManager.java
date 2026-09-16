@@ -68,12 +68,12 @@ final class QuicPathManager implements AutoCloseable {
     private final Map<PathKey, Path> retiredResponsePaths = new LinkedHashMap<>();
     private final Map<PathKey, Path> retiredValidationPaths = new LinkedHashMap<>();
 
+    private final AtomicLong highestPathSelectionPacket = new AtomicLong(-1);
     private volatile Path current;
     private Path previous;
     private Path pendingPrevious;
     private Path candidate;
     private long nextGeneration;
-    private final AtomicLong highestPathSelectionPacket = new AtomicLong(-1);
     private volatile long validationDeadlineNanos = Long.MAX_VALUE;
     private volatile boolean closed;
 
@@ -541,46 +541,6 @@ final class QuicPathManager implements AutoCloseable {
         return pollSendableProbe(requestedBytes, true);
     }
 
-    private Optional<ProbeSend> pollSendableProbe(int requestedBytes, boolean responseOnly) {
-        if (requestedBytes <= 0) {
-            throw new IllegalArgumentException("Non-positive reservation size: " + requestedBytes);
-        }
-        lock.lock();
-        try {
-            Iterator<Probe> iterator = probes.iterator();
-            while (iterator.hasNext()) {
-                Probe probe = iterator.next();
-                if (responseOnly && probe.challenge) {
-                    continue;
-                }
-                Challenge challenge = probe.challenge ? challenges.get(probe.token) : null;
-                if (probe.challenge && (challenge == null || !challenge.path.validating)) {
-                    iterator.remove();
-                    discardQueuedProbe(probe);
-                    continue;
-                }
-                if (probe.path == current && !probe.path.sendReady) {
-                    continue;
-                }
-                Optional<SendPermit> reservation = reserve(probe.path, requestedBytes);
-                if (reservation.isEmpty()) {
-                    continue;
-                }
-                SendPermit permit = reservation.orElseThrow();
-                Optional<PeerConnIdManager.PathCidBinding> binding = cidBinding(permit);
-                if (binding.isEmpty()) {
-                    permit.release();
-                    continue;
-                }
-                iterator.remove();
-                return Optional.of(new ProbeSend(probe, permit, binding.orElseThrow()));
-            }
-            return Optional.empty();
-        } finally {
-            lock.unlock();
-        }
-    }
-
     boolean requeue(Probe probe) {
         lock.lock();
         try {
@@ -890,6 +850,65 @@ final class QuicPathManager implements AutoCloseable {
             previous = null;
             pendingPrevious = null;
             validationDeadlineNanos = Long.MAX_VALUE;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private static long token(ByteBuffer data) {
+        ByteBuffer copy = data.asReadOnlyBuffer();
+        if (copy.remaining() != Long.BYTES) {
+            throw new IllegalArgumentException("Path validation data must contain exactly 8 bytes");
+        }
+        return copy.getLong();
+    }
+
+    private static long saturatingAdd(long left, long right) {
+        if (right > 0 && left > Long.MAX_VALUE - right) {
+            return Long.MAX_VALUE;
+        }
+        return left + right;
+    }
+
+    private static long saturatingMultiply(long value, int multiplier) {
+        return value > Long.MAX_VALUE / multiplier ? Long.MAX_VALUE : value * multiplier;
+    }
+
+    private Optional<ProbeSend> pollSendableProbe(int requestedBytes, boolean responseOnly) {
+        if (requestedBytes <= 0) {
+            throw new IllegalArgumentException("Non-positive reservation size: " + requestedBytes);
+        }
+        lock.lock();
+        try {
+            Iterator<Probe> iterator = probes.iterator();
+            while (iterator.hasNext()) {
+                Probe probe = iterator.next();
+                if (responseOnly && probe.challenge) {
+                    continue;
+                }
+                Challenge challenge = probe.challenge ? challenges.get(probe.token) : null;
+                if (probe.challenge && (challenge == null || !challenge.path.validating)) {
+                    iterator.remove();
+                    discardQueuedProbe(probe);
+                    continue;
+                }
+                if (probe.path == current && !probe.path.sendReady) {
+                    continue;
+                }
+                Optional<SendPermit> reservation = reserve(probe.path, requestedBytes);
+                if (reservation.isEmpty()) {
+                    continue;
+                }
+                SendPermit permit = reservation.orElseThrow();
+                Optional<PeerConnIdManager.PathCidBinding> binding = cidBinding(permit);
+                if (binding.isEmpty()) {
+                    permit.release();
+                    continue;
+                }
+                iterator.remove();
+                return Optional.of(new ProbeSend(probe, permit, binding.orElseThrow()));
+            }
+            return Optional.empty();
         } finally {
             lock.unlock();
         }
@@ -1210,14 +1229,6 @@ final class QuicPathManager implements AutoCloseable {
         validationDeadlineNanos = deadline;
     }
 
-    private static long token(ByteBuffer data) {
-        ByteBuffer copy = data.asReadOnlyBuffer();
-        if (copy.remaining() != Long.BYTES) {
-            throw new IllegalArgumentException("Path validation data must contain exactly 8 bytes");
-        }
-        return copy.getLong();
-    }
-
     private Optional<SendPermit> reserve(Path path, int requestedBytes) {
         int reservedBytes = requestedBytes;
         if (!client && !path.validated) {
@@ -1231,17 +1242,6 @@ final class QuicPathManager implements AutoCloseable {
         path.reserved = saturatingAdd(path.reserved, reservedBytes);
         path.activePermits.incrementAndGet();
         return Optional.of(new PathSendPermit(this, path, reservedBytes));
-    }
-
-    private static long saturatingAdd(long left, long right) {
-        if (right > 0 && left > Long.MAX_VALUE - right) {
-            return Long.MAX_VALUE;
-        }
-        return left + right;
-    }
-
-    private static long saturatingMultiply(long value, int multiplier) {
-        return value > Long.MAX_VALUE / multiplier ? Long.MAX_VALUE : value * multiplier;
     }
 
     interface SendPermit {

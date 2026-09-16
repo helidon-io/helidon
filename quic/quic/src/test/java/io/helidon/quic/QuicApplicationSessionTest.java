@@ -29,10 +29,12 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.quic.stream.QuicBidiStream;
 import io.helidon.quic.stream.QuicReceiverStream;
 import io.helidon.quic.stream.QuicSenderStream;
 import io.helidon.quic.stream.QuicStreamException;
@@ -40,8 +42,13 @@ import io.helidon.quic.stream.QuicStreamReader;
 import io.helidon.quic.stream.QuicStreamWriter;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -51,11 +58,91 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class QuicApplicationSessionTest {
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldCancelPendingStreamOpenWhenInterrupted(boolean bidi) {
+        var opened = new CompletableFuture<QuicSenderStream>();
+        QuicSession session = streamOpeningSession(bidi, Duration.ofSeconds(1), opened);
+
+        try {
+            Thread.currentThread().interrupt();
+            QuicException failure = assertThrows(QuicException.class, () -> openStream(session, bidi));
+
+            assertThat(failure.getMessage(), containsString("stream open interrupted"));
+            assertThat(failure.getCause(), instanceOf(InterruptedException.class));
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+            assertThat(opened.isCancelled(), is(true));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldCancelPendingStreamOpenWhenTimedOut(boolean bidi) {
+        var opened = new CompletableFuture<QuicSenderStream>();
+        QuicSession session = streamOpeningSession(bidi, Duration.ofNanos(1), opened);
+
+        QuicException failure = assertThrows(QuicException.class, () -> openStream(session, bidi));
+
+        assertThat(failure.getMessage(), containsString("stream open timed out"));
+        assertThat(failure.getCause(), instanceOf(TimeoutException.class));
+        assertThat(opened.isCancelled(), is(true));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true, true", "true, false", "false, true", "false, false"})
+    void shouldDisposeUnclaimedStreamWhenCompletionWinsFailedWait(boolean bidi, boolean interrupted) {
+        QuicSenderStream rawStream = bidi ? mock(QuicBidiStream.class) : mock(QuicSenderStream.class);
+        var opened = new CompletedStreamFailedWait(rawStream, interrupted);
+        QuicSession session = streamOpeningSession(bidi, Duration.ofSeconds(1), opened);
+
+        try {
+            QuicException failure = assertThrows(QuicException.class, () -> openStream(session, bidi));
+
+            assertThat(failure.getCause(), instanceOf(interrupted ? InterruptedException.class : TimeoutException.class));
+            assertThat(opened.isCancelled(), is(false));
+            assertThat(opened.getNow(null), sameInstance(rawStream));
+            assertThat(Thread.currentThread().isInterrupted(), is(interrupted));
+            verify(rawStream).reset(0);
+            if (bidi) {
+                verify((QuicBidiStream) rawStream).requestStopSending(0);
+            }
+            verifyNoMoreInteractions(rawStream);
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void shouldStopReceivingAndRetainCleanupFailureWhenUnclaimedStreamResetFails() {
+        QuicBidiStream rawStream = mock(QuicBidiStream.class);
+        var resetFailure = new IllegalStateException("Test reset failure");
+        doThrow(resetFailure).when(rawStream).reset(0);
+        var opened = new CompletedStreamFailedWait(rawStream, true);
+        QuicSession session = streamOpeningSession(true, Duration.ofSeconds(1), opened);
+
+        try {
+            QuicException failure = assertThrows(QuicException.class, session::openBidirectionalStream);
+
+            assertThat(failure.getCause(), instanceOf(InterruptedException.class));
+            assertThat(failure.getSuppressed(), arrayContaining(resetFailure));
+            verify(rawStream).reset(0);
+            verify(rawStream).requestStopSending(0);
+            verifyNoMoreInteractions(rawStream);
+        } finally {
+            Thread.interrupted();
+        }
+    }
 
     @Test
     void shouldTranslateTransportFinAndCloseRegistration() {
@@ -218,6 +305,99 @@ class QuicApplicationSessionTest {
         verify(registration).close();
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldDisposeRemoteStreamWhenDeliveryWinsInterruptedAccept(boolean bidi) throws Exception {
+        QuicConnection connection = connection(new CompletableFuture<>());
+        QuicReceiverStream rawStream = bidi ? mock(QuicBidiStream.class) : mock(QuicReceiverStream.class);
+        QuicRemoteStreamRegistration registration = mock(QuicRemoteStreamRegistration.class);
+        var listener = new AtomicReference<Predicate<? super QuicReceiverStream>>();
+        when(connection.addRemoteStreamListener(any())).thenAnswer(invocation -> {
+            listener.set(invocation.getArgument(0));
+            return registration;
+        });
+        QuicSession session = new QuicApplicationSession(connection, Duration.ofSeconds(1));
+
+        interruptedAccept(session, () -> assertThat(listener.get().test(rawStream), is(true)));
+
+        if (bidi) {
+            verify((QuicBidiStream) rawStream).reset(0);
+        }
+        verify(rawStream).requestStopSending(0);
+        verifyNoMoreInteractions(rawStream);
+        verify(registration).close();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldLeaveRemoteStreamAvailableWhenCancellationWinsInterruptedAccept(boolean bidi) throws Exception {
+        QuicConnection connection = connection(new CompletableFuture<>());
+        QuicReceiverStream rawStream = bidi ? mock(QuicBidiStream.class) : mock(QuicReceiverStream.class);
+        QuicRemoteStreamRegistration interruptedRegistration = mock(QuicRemoteStreamRegistration.class);
+        var listener = new AtomicReference<Predicate<? super QuicReceiverStream>>();
+        when(connection.addRemoteStreamListener(any())).thenAnswer(invocation -> {
+            listener.set(invocation.getArgument(0));
+            return interruptedRegistration;
+        });
+        QuicSession session = new QuicApplicationSession(connection, Duration.ofSeconds(1));
+
+        interruptedAccept(session, () -> { });
+
+        assertThat(listener.get().test(rawStream), is(false));
+        verifyNoMoreInteractions(rawStream);
+        verify(interruptedRegistration).close();
+
+        QuicRemoteStreamRegistration successfulRegistration = mock(QuicRemoteStreamRegistration.class);
+        when(connection.addRemoteStreamListener(any())).thenAnswer(invocation -> {
+            Predicate<? super QuicReceiverStream> nextListener = invocation.getArgument(0);
+            assertThat(nextListener.test(rawStream), is(true));
+            return successfulRegistration;
+        });
+        long streamId = bidi ? 5L : 7L;
+        when(rawStream.streamId()).thenReturn(streamId);
+        if (bidi) {
+            when(((QuicBidiStream) rawStream).whenStopSendingReceived()).thenReturn(new CompletableFuture<>());
+        }
+
+        assertThat(session.acceptStream().streamId(), is(streamId));
+        verify(successfulRegistration).close();
+        verify(rawStream).streamId();
+        if (bidi) {
+            verify((QuicBidiStream) rawStream).whenStopSendingReceived();
+        }
+        verifyNoMoreInteractions(rawStream);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldRetainCleanupFailureWhenRemoteStreamDeliveryWinsInterruptedAccept(boolean bidi) throws Exception {
+        QuicConnection connection = connection(new CompletableFuture<>());
+        QuicReceiverStream rawStream = bidi ? mock(QuicBidiStream.class) : mock(QuicReceiverStream.class);
+        var cleanupFailure = new IllegalStateException("Test remote stream cleanup failure");
+        if (bidi) {
+            doThrow(cleanupFailure).when((QuicBidiStream) rawStream).reset(0);
+        } else {
+            doThrow(cleanupFailure).when(rawStream).requestStopSending(0);
+        }
+        QuicRemoteStreamRegistration registration = mock(QuicRemoteStreamRegistration.class);
+        var listener = new AtomicReference<Predicate<? super QuicReceiverStream>>();
+        when(connection.addRemoteStreamListener(any())).thenAnswer(invocation -> {
+            listener.set(invocation.getArgument(0));
+            return registration;
+        });
+        QuicSession session = new QuicApplicationSession(connection, Duration.ofSeconds(1));
+
+        QuicException failure = interruptedAccept(session, () -> assertThat(listener.get().test(rawStream), is(true)));
+
+        assertThat(failure.getSuppressed(), arrayContaining(cleanupFailure));
+        if (bidi) {
+            verify((QuicBidiStream) rawStream).reset(0);
+        }
+        verify(rawStream).requestStopSending(0);
+        verifyNoMoreInteractions(rawStream);
+        verify(registration).close();
+    }
+
     @Test
     void shouldRetainReadOutcomeWhenInterruptedDuringDelivery() throws Exception {
         var terminated = new CompletableFuture<QuicTermination>();
@@ -266,6 +446,47 @@ class QuicApplicationSessionTest {
         }
     }
 
+    private static QuicException interruptedAccept(QuicSession session, Runnable onInterruptRestored) throws Exception {
+        var outcome = new CompletableFuture<QuicException>();
+        var thread = new InterruptRestoringThread(() -> {
+            try {
+                QuicException failure = assertThrows(QuicException.class, session::acceptStream);
+                assertThat(failure.getMessage(), containsString("remote stream accept interrupted"));
+                assertThat(failure.getCause(), instanceOf(InterruptedException.class));
+                assertThat(Thread.currentThread().isInterrupted(), is(true));
+                outcome.complete(failure);
+            } catch (Throwable failure) {
+                outcome.completeExceptionally(failure);
+            } finally {
+                Thread.interrupted();
+            }
+        }, onInterruptRestored);
+        thread.start();
+        try {
+            return outcome.get(5, TimeUnit.SECONDS);
+        } finally {
+            thread.interrupt();
+            thread.join(TimeUnit.SECONDS.toMillis(5));
+            assertThat("accept thread finished", thread.isAlive(), is(false));
+        }
+    }
+
+    private static QuicSession streamOpeningSession(boolean bidi,
+                                                   Duration timeout,
+                                                   CompletableFuture<? extends QuicSenderStream> opened) {
+        QuicConnection connection = connection(new CompletableFuture<>());
+        if (bidi) {
+            doReturn(opened).when(connection).openNewLocalBidiStream(timeout);
+        } else {
+            doReturn(opened).when(connection).openNewLocalUniStream(timeout);
+        }
+        return new QuicApplicationSession(connection, timeout);
+    }
+
+    private static QuicSendStream openStream(QuicSession session, boolean bidi) {
+        return bidi ? session.openBidirectionalStream() : session.openUnidirectionalStream();
+    }
+
     private static QuicConnection connection(CompletableFuture<QuicTermination> terminated) {
         QuicConnection connection = mock(QuicConnection.class);
         when(connection.applicationProtocol()).thenReturn(Optional.of("example"));
@@ -274,6 +495,53 @@ class QuicApplicationSessionTest {
         when(connection.termination()).thenReturn(Optional.empty());
         when(connection.isOpen()).thenReturn(true);
         return connection;
+    }
+
+    private static final class InterruptRestoringThread extends Thread {
+        private final Runnable onInterruptRestored;
+
+        private boolean restoreExpected;
+
+        private InterruptRestoringThread(Runnable operation, Runnable onInterruptRestored) {
+            super(operation);
+            this.onInterruptRestored = onInterruptRestored;
+        }
+
+        @Override
+        public void run() {
+            super.interrupt();
+            restoreExpected = true;
+            super.run();
+        }
+
+        @Override
+        public void interrupt() {
+            if (Thread.currentThread() == this && restoreExpected) {
+                restoreExpected = false;
+                // Complete the real accept future after get() throws, before its cancellation is attempted.
+                onInterruptRestored.run();
+            }
+            super.interrupt();
+        }
+    }
+
+    private static final class CompletedStreamFailedWait extends CompletableFuture<QuicSenderStream> {
+        private final QuicSenderStream stream;
+        private final boolean interrupted;
+
+        private CompletedStreamFailedWait(QuicSenderStream stream, boolean interrupted) {
+            this.stream = stream;
+            this.interrupted = interrupted;
+        }
+
+        @Override
+        public QuicSenderStream get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+            complete(stream);
+            if (interrupted) {
+                throw new InterruptedException("Test stream completed while the wait was interrupted");
+            }
+            throw new TimeoutException("Test stream completed while the wait timed out");
+        }
     }
 
     private static final class TestReader extends QuicStreamReader {

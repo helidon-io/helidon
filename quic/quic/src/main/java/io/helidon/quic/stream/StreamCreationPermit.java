@@ -190,28 +190,6 @@ final class StreamCreationPermit {
         return enqueueAcquirer(future, executor);
     }
 
-    private CompletableFuture<Boolean> enqueueAcquirer(CompletableFuture<Boolean> future, Executor executor) {
-        var waiter = new Waiter(future, executor);
-        this.acquirers.add(waiter);
-        // If the future completes or is canceled, the Waiter should be removed from the list.
-        // because this is a queue it might not be too efficient...
-        future.whenComplete((r, t) -> acquirers.remove(waiter));
-        Throwable closed = terminationCause.get();
-        if (closed != null && acquirers.remove(waiter)) {
-            future.completeExceptionally(closed);
-            return future;
-        }
-        // if stream limit might have increased in the meantime,
-        // trigger the task to have this newly registered waiter notified
-        try {
-            permitAcquisitionScheduler.runOrSchedule(executor);
-        } catch (RejectedExecutionException e) {
-            acquirers.remove(waiter);
-            future.completeExceptionally(e);
-        }
-        return future;
-    }
-
     /**
      * {@return the current limit for stream creation}
      */
@@ -234,6 +212,28 @@ final class StreamCreationPermit {
         if (terminationCause.get() == null) {
             permitAcquisitionScheduler.runOrSchedule();
         }
+    }
+
+    private CompletableFuture<Boolean> enqueueAcquirer(CompletableFuture<Boolean> future, Executor executor) {
+        var waiter = new Waiter(future, executor);
+        this.acquirers.add(waiter);
+        // If the future completes or is canceled, the Waiter should be removed from the list.
+        // because this is a queue it might not be too efficient...
+        future.whenComplete((r, t) -> acquirers.remove(waiter));
+        Throwable closed = terminationCause.get();
+        if (closed != null && acquirers.remove(waiter)) {
+            future.completeExceptionally(closed);
+            return future;
+        }
+        // if stream limit might have increased in the meantime,
+        // trigger the task to have this newly registered waiter notified
+        try {
+            permitAcquisitionScheduler.runOrSchedule(executor);
+        } catch (RejectedExecutionException e) {
+            acquirers.remove(waiter);
+            future.completeExceptionally(e);
+        }
+        return future;
     }
 
     private record Waiter(CompletableFuture<Boolean> acquirer,

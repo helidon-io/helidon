@@ -104,6 +104,28 @@ public final class QuicClientInitialTokenCache implements AutoCloseable {
         register(peerAddress, version, token, true);
     }
 
+    @Override
+    public void close() {
+        lock.lock();
+        try {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            tokens.clear();
+            seenNewTokens.clear();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private static String peerHost(InetSocketAddress peerAddress) {
+        Objects.requireNonNull(peerAddress, "peerAddress");
+        return peerAddress.getAddress() == null
+                ? peerAddress.getHostString()
+                : peerAddress.getAddress().getHostAddress();
+    }
+
     private void register(InetSocketAddress peerAddress,
                           QuicVersion version,
                           byte[] token,
@@ -146,28 +168,6 @@ public final class QuicClientInitialTokenCache implements AutoCloseable {
         } finally {
             lock.unlock();
         }
-    }
-
-    @Override
-    public void close() {
-        lock.lock();
-        try {
-            if (closed) {
-                return;
-            }
-            closed = true;
-            tokens.clear();
-            seenNewTokens.clear();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    private static String peerHost(InetSocketAddress peerAddress) {
-        Objects.requireNonNull(peerAddress, "peerAddress");
-        return peerAddress.getAddress() == null
-                ? peerAddress.getHostString()
-                : peerAddress.getAddress().getHostAddress();
     }
 
     private record Recipient(String host, int port, QuicVersion version) {

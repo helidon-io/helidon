@@ -118,7 +118,7 @@ final class QuicServerImpl implements QuicServer {
         }
         QuicConnection connection = QuicBlockingSupport.await(accepted,
                                                                true,
-                                                               () -> accepted.cancel(false),
+                                                               () -> closeUnclaimedConnection(accepted),
                                                                "QUIC server accept");
         lifecycleLock.lock();
         try {
@@ -155,5 +155,18 @@ final class QuicServerImpl implements QuicServer {
             throw new QuicException("QUIC server did not complete graceful shutdown within " + timeout);
         }
         return this;
+    }
+
+    private static void closeUnclaimedConnection(CompletableFuture<QuicConnection> accepted) {
+        if (accepted.isDone() && !accepted.isCompletedExceptionally()) {
+            QuicConnection connection = accepted.resultNow();
+            // Closing can write to the shared interruptible channel. Keep caller interruption away from that I/O,
+            // and wait for cleanup to release admission before the interrupted accept returns.
+            CompletableFuture.runAsync(() -> connection.terminate(QuicCloseCommand.transport(
+                                               QuicTransportErrors.NO_ERROR,
+                                               "QUIC server accept interrupted")),
+                                       QuicPublicApiSupport.defaultExecutor())
+                    .join();
+        }
     }
 }

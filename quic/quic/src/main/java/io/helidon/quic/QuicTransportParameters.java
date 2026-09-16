@@ -90,9 +90,8 @@ import static io.helidon.common.buffers.BufferData.EMPTY_BYTES;
  */
 @Api.Internal
 public final class QuicTransportParameters {
-    private static final System.Logger LOGGER = System.getLogger(QuicTransportParameters.class.getName());
-
     static final int IPV6_SIZE = 16;
+
     static final int IPV4_SIZE = 4;
     static final int PORT_SIZE = 2;
     static final int TOKEN_SIZE = 16;
@@ -105,6 +104,7 @@ public final class QuicTransportParameters {
     static final int CID_OFFSET = CID_LEN_OFFSET + CIDLEN_SIZE;
     static final int MIN_PREF_ADDR_SIZE = CID_OFFSET + TOKEN_SIZE;
     static final int MAX_PORT = 0xFFFF;
+    private static final System.Logger LOGGER = System.getLogger(QuicTransportParameters.class.getName());
     /**
      * A map to store transport parameter values.
      * Contains a byte array corresponding to the encoded value

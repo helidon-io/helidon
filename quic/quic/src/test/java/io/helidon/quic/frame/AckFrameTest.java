@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AckFrameTest {
@@ -46,11 +46,11 @@ class AckFrameTest {
 
         AckFrame extended = original.withNextAcknowledged(11);
 
-        assertNotSame(original, extended);
+        assertThat(extended, not(sameInstance(original)));
         assertThat(original.largestAcknowledged(), is(10L));
         assertThat(original.ackDelay(), is(7L));
         assertThat(original.ackRanges(), is(List.of(AckFrame.AckRange.of(0, 4))));
-        assertArrayEquals(originalEncoding, encode(original));
+        assertThat(encode(original), is(originalEncoding));
 
         assertThat(extended.largestAcknowledged(), is(11L));
         assertThat(extended.ackDelay(), is(7L));
