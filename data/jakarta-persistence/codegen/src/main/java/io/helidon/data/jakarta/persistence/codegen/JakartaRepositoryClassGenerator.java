@@ -22,6 +22,7 @@ import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -66,6 +67,7 @@ final class JakartaRepositoryClassGenerator {
                                                                className,
                                                                "1",
                                                                ""))
+                .addAnnotation(Annotation.create(SuppressWarnings.class, Api.SUPPRESS_ALL))
                 .classType(ElementKind.CLASS)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addInterface(repositoryInterface);
