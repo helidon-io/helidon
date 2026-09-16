@@ -181,8 +181,9 @@ class QuicServerImplTest {
 
         private Handshake startHandshake() throws InterruptedException {
             InetSocketAddress serverAddress = server.localAddress();
+            // The RFC 8448 certificate identifies "rsa"; the network destination remains loopback.
             QuicClientConnection connection = client.createConnection(serverAddress,
-                                                                       "localhost",
+                                                                       "rsa",
                                                                        serverAddress.getPort(),
                                                                        new String[] {"h3"});
             try {
