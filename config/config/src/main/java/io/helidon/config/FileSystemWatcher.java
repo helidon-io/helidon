@@ -74,7 +74,6 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
      * Configurable options through builder.
      */
     private final List<WatchEvent.Modifier> watchServiceModifiers = new LinkedList<>();
-    private ScheduledExecutorService executor;
     private final boolean defaultExecutor;
     private final long initialDelay;
     private final long delay;
@@ -85,6 +84,8 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
      */
     private final Lock lifecycleLock = new ReentrantLock();
     private final List<TargetRuntime> runtimes = Collections.synchronizedList(new LinkedList<>());
+
+    private ScheduledExecutorService executor;
 
     private FileSystemWatcher(Builder builder) {
         ScheduledExecutorService executor = builder.executor;
