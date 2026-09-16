@@ -18,10 +18,12 @@ package io.helidon.http.http2;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
@@ -39,6 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
@@ -46,6 +49,87 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 class Http2ConnectionWriterTest {
+
+    @Test
+    void concurrentWritersDoNotReuseConnectionWindowCredit() throws InterruptedException {
+        // Rule 0.1 exception to Rule 1.5: the Helidon 4 Java 21 build does not enable unnamed variables.
+        ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((streamId, windowUpdate) -> { })
+                .blockTimeout(Duration.ofSeconds(5))
+                .build();
+        connection.outbound().decrementWindowSize(connection.outbound().getRemainingWindowSize());
+
+        AtomicInteger cuts = new AtomicInteger();
+        CountDownLatch fourthCut = new CountDownLatch(1);
+        CountDownLatch initialWait = new CountDownLatch(2);
+        CountDownLatch resumedWait = new CountDownLatch(2);
+        CountDownLatch thirdWait = new CountDownLatch(1);
+        FlowControl.Outbound firstFlowControl = trackingFlowControl(connection.createStreamFlowControl(1, 1024, 16384)
+                                                                           .outbound(),
+                                                                   cuts,
+                                                                   fourthCut,
+                                                                   initialWait,
+                                                                   resumedWait,
+                                                                   thirdWait);
+        FlowControl.Outbound secondFlowControl = trackingFlowControl(connection.createStreamFlowControl(3, 1024, 16384)
+                                                                            .outbound(),
+                                                                    cuts,
+                                                                    fourthCut,
+                                                                    initialWait,
+                                                                    resumedWait,
+                                                                    thirdWait);
+
+        AtomicInteger writes = new AtomicInteger();
+        AtomicReference<Thread> firstWritingThread = new AtomicReference<>();
+        CountDownLatch firstWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseFirstWrite = new CountDownLatch(1);
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(ignored -> {
+            if (writes.incrementAndGet() == 1) {
+                firstWritingThread.set(Thread.currentThread());
+                firstWriteStarted.countDown();
+                releaseFirstWrite.await();
+            }
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        Http2FrameData firstFrame = dataFrame(1, 1024);
+        Http2FrameData secondFrame = dataFrame(3, 1024);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread firstWriter = Thread.ofVirtual().start(() -> writeData(writer, firstFrame, firstFlowControl, failure));
+        Thread secondWriter = Thread.ofVirtual().start(() -> writeData(writer, secondFrame, secondFlowControl, failure));
+        try {
+            boolean bothWaiting = initialWait.await(1, TimeUnit.SECONDS);
+            assertThat("both writers must wait for connection credit",
+                       bothWaiting,
+                       is(true));
+
+            connection.incrementOutboundConnectionWindowSize(1024);
+            assertThat("first DATA write must start", firstWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+            assertThat("both connection-window waits must resume", resumedWait.await(1, TimeUnit.SECONDS), is(true));
+            Thread contender = firstWritingThread.get() == firstWriter ? secondWriter : firstWriter;
+            long contenderDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+            while (contender.getState() != Thread.State.WAITING && System.nanoTime() < contenderDeadline) {
+                Thread.onSpinWait();
+            }
+            assertThat("second writer must wait for the writer lock", contender.getState(), is(Thread.State.WAITING));
+            assertThat("second writer must not cut with stale connection credit", fourthCut.getCount(), is(1L));
+            releaseFirstWrite.countDown();
+
+            assertThat("second writer must wait for more connection credit",
+                       thirdWait.await(1, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("one connection-window update must fund one DATA frame", writes.get(), is(1));
+        } finally {
+            releaseFirstWrite.countDown();
+            connection.incrementOutboundConnectionWindowSize(1024);
+            firstWriter.join();
+            secondWriter.join();
+        }
+
+        assertThat(writes.get(), is(2));
+        assertThat(failure.get(), is(nullValue()));
+    }
 
     @Test
     void headerTableSizeChangesWaitForAcknowledgmentAndSuccessfulWrite() throws InterruptedException {
@@ -227,11 +311,52 @@ class Http2ConnectionWriterTest {
         return new Http2FrameData(header, BufferData.empty());
     }
 
+    private static FlowControl.Outbound trackingFlowControl(FlowControl.Outbound delegate,
+                                                            AtomicInteger cuts,
+                                                            CountDownLatch fourthCut,
+                                                            CountDownLatch initialWait,
+                                                            CountDownLatch resumedWait,
+                                                            CountDownLatch thirdWait) {
+        FlowControl.Outbound flowControl = mock(FlowControl.Outbound.class, delegatesTo(delegate));
+        AtomicBoolean firstWait = new AtomicBoolean(true);
+        doAnswer(invocation -> {
+            if (cuts.incrementAndGet() == 4) {
+                fourthCut.countDown();
+            }
+            return delegate.cut(invocation.getArgument(0));
+        }).when(flowControl).cut(any(Http2FrameData.class));
+        doAnswer(ignored -> {
+            boolean initial = firstWait.getAndSet(false);
+            if (initial) {
+                initialWait.countDown();
+            } else {
+                thirdWait.countDown();
+            }
+            delegate.blockTillUpdate();
+            if (initial) {
+                resumedWait.countDown();
+            }
+            return null;
+        }).when(flowControl).blockTillUpdate();
+        return flowControl;
+    }
+
     private static Http2FrameData dataFrame(int streamId, int length) {
         return new Http2FrameData(Http2FrameHeader.create(length,
                                                            Http2FrameTypes.DATA,
                                                            Http2Flag.DataFlags.create(0),
                                                            streamId),
                                   BufferData.create(new byte[length]));
+    }
+
+    private static void writeData(Http2ConnectionWriter writer,
+                                  Http2FrameData frame,
+                                  FlowControl.Outbound flowControl,
+                                  AtomicReference<Throwable> failure) {
+        try {
+            writer.writeData(frame, flowControl);
+        } catch (Throwable t) {
+            failure.compareAndSet(null, t);
+        }
     }
 }
