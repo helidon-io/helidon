@@ -70,4 +70,15 @@
         <Method name="encryptPacket"/>
         <Bug pattern="STATIC_IV"/>
     </Match>
+
+    <!--
+    LdapName parses the certificate's encoded X.500 subject locally to read its
+    common name. No LDAP query, directory context, or network operation uses
+    this name, so the constructor's LDAP injection warning is a false positive.
+    -->
+    <Match>
+        <Class name="io.helidon.quic.QuicTlsEndpointIdentity"/>
+        <Method name="commonName"/>
+        <Bug pattern="LDAP_INJECTION"/>
+    </Match>
 </FindBugsFilter>

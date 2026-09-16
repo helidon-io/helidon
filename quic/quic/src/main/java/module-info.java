@@ -36,6 +36,7 @@ module io.helidon.quic {
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.config;
     requires java.management;
+    requires java.naming;
     requires transitive io.helidon.common.tls;
 
     exports io.helidon.quic;
