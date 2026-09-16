@@ -196,7 +196,7 @@ class NonJaxRsResource {
         if (t instanceof WebApplicationException wae) {
             sendResponse(res, wae.getResponse());
         } else {
-            res.send(t);
+            res.status(Status.INTERNAL_SERVER_ERROR_500).send();
         }
     }
 
