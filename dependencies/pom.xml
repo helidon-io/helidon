@@ -91,7 +91,7 @@
         <version.lib.prometheus>1.7.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
-        <version.lib.snakeyaml>2.6</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.7</version.lib.snakeyaml>
         <version.lib.testcontainers>1.21.4</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.8</version.lib.typesafe-config>
         <version.lib.yasson>3.0.4</version.lib.yasson>
