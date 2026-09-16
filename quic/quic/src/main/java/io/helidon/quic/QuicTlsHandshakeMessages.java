@@ -62,6 +62,7 @@ final class QuicTlsHandshakeMessages {
     private static final int TLS_ALERT_DECODE_ERROR = 50;
     private static final int TLS_ALERT_DECRYPT_ERROR = 51;
     private static final int TLS_ALERT_MISSING_EXTENSION = 109;
+    private static final int TLS_ALERT_UNSUPPORTED_EXTENSION = 110;
     private static final int TLS_ALERT_UNRECOGNIZED_NAME = 112;
     private static final int TLS_ALERT_NO_APPLICATION_PROTOCOL = 120;
     private static final int TLS_ALERT_CERTIFICATE_REQUIRED = 116;
@@ -198,6 +199,10 @@ final class QuicTlsHandshakeMessages {
 
     static QuicTransportException missingExtension(String detail) {
         return alert(detail, TLS_ALERT_MISSING_EXTENSION, new SSLHandshakeException(detail));
+    }
+
+    static QuicTransportException unsupportedExtension(String detail) {
+        return alert(detail, TLS_ALERT_UNSUPPORTED_EXTENSION, new SSLHandshakeException(detail));
     }
 
     static QuicTransportException illegalParameter(String detail) {

@@ -514,10 +514,6 @@ class QuicReceiverStreamTest {
         assertThat(failure.getMessage(), is("connection closed"));
     }
 
-    private static QuicTermination termination(Throwable closeCause) {
-        return QuicTerminationTestSupport.local(QuicCloseCommand.transport(closeCause));
-    }
-
     @Test
     void shouldReachTerminalReadStateWhenEndOfStreamIsPolled() throws Exception {
         TestReassemblyBudget budget = new TestReassemblyBudget(1);
@@ -534,6 +530,10 @@ class QuicReceiverStreamTest {
         assertThat(budget.retained(), is(0));
         assertThat(stream.receivingState(), is(QuicReceiverStream.ReceivingStreamState.DATA_READ));
         verify(connection).notifyTerminalState(STREAM_ID, QuicReceiverStream.ReceivingStreamState.DATA_READ);
+    }
+
+    private static QuicTermination termination(Throwable closeCause) {
+        return QuicTerminationTestSupport.local(QuicCloseCommand.transport(closeCause));
     }
 
     private static QuicConnectionImpl connection() {

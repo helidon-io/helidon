@@ -339,24 +339,6 @@ final class QuicReceiverStreamImpl extends AbstractQuicStream implements QuicRec
         }
     }
 
-    private void log(System.Logger.Level level, String format, Object... arguments) {
-        if (!LOGGER.isLoggable(level)) {
-            return;
-        }
-        if (arguments.length == 0) {
-            connection().log(LOGGER, level, "%d: %s", streamId(), format);
-            return;
-        }
-        Object[] actualArguments = new Object[arguments.length + 1];
-        actualArguments[0] = streamId();
-        System.arraycopy(arguments, 0, actualArguments, 1, arguments.length);
-        connection().log(LOGGER, level, "%d: " + format, actualArguments);
-    }
-
-    private void log(System.Logger.Level level, String message, Throwable throwable) {
-        connection().log(LOGGER, level, "%d: %s", throwable, streamId(), message);
-    }
-
     /**
      * Receives a QuicFrame from the remote peer.
      *
@@ -468,6 +450,24 @@ final class QuicReceiverStreamImpl extends AbstractQuicStream implements QuicRec
                                          streamFrame.typeField(),
                                          QuicTransportErrors.FLOW_CONTROL_ERROR,
                                          streamFrame.streamId());
+    }
+
+    private void log(System.Logger.Level level, String format, Object... arguments) {
+        if (!LOGGER.isLoggable(level)) {
+            return;
+        }
+        if (arguments.length == 0) {
+            connection().log(LOGGER, level, "%d: %s", streamId(), format);
+            return;
+        }
+        Object[] actualArguments = new Object[arguments.length + 1];
+        actualArguments[0] = streamId();
+        System.arraycopy(arguments, 0, actualArguments, 1, arguments.length);
+        connection().log(LOGGER, level, "%d: " + format, actualArguments);
+    }
+
+    private void log(System.Logger.Level level, String message, Throwable throwable) {
+        connection().log(LOGGER, level, "%d: %s", throwable, streamId(), message);
     }
 
     private void demand(long additional) {

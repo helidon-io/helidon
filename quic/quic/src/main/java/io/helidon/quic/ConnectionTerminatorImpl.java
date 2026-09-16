@@ -207,6 +207,24 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         return termination.logMessage();
     }
 
+    private static Throwable attemptCleanup(Throwable previousFailure, Runnable cleanup) {
+        try {
+            cleanup.run();
+        } catch (Throwable failure) {
+            if (previousFailure == null) {
+                return failure;
+            }
+            if (previousFailure != failure) {
+                previousFailure.addSuppressed(failure);
+            }
+        }
+        return previousFailure;
+    }
+
+    private static TerminationScope currentTerminationScope() {
+        return COMPLETING_TERMINATION.isBound() ? COMPLETING_TERMINATION.get() : null;
+    }
+
     private void doTerminate(QuicCloseCommand command) {
         if (command.kind() == QuicCloseCommand.Kind.SILENT) {
             silentTerminate(QuicTermination.local(command, null));
@@ -519,20 +537,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         completeTermination(termination, null);
     }
 
-    private static Throwable attemptCleanup(Throwable previousFailure, Runnable cleanup) {
-        try {
-            cleanup.run();
-        } catch (Throwable failure) {
-            if (previousFailure == null) {
-                return failure;
-            }
-            if (previousFailure != failure) {
-                previousFailure.addSuppressed(failure);
-            }
-        }
-        return previousFailure;
-    }
-
     private void terminationFailed(Throwable failure) {
         ScopedValue.where(COMPLETING_TERMINATION,
                           new TerminationScope(connection.quicInstance(), currentTerminationScope())).run(() -> {
@@ -555,10 +559,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             cleanupComplete.completeExceptionally(failure);
             futureTermination.completeExceptionally(failure);
         }
-    }
-
-    private static TerminationScope currentTerminationScope() {
-        return COMPLETING_TERMINATION.isBound() ? COMPLETING_TERMINATION.get() : null;
     }
 
     private void failHandshakeCFs() {

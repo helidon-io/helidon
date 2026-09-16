@@ -63,8 +63,8 @@ unsupported wrapper branches are still easiest to validate manually with short
 
 The endpoint image is Dockerfile-only. It does not copy `${java.home}` or any
 other host runtime into the image. Instead, the Dockerfile uses a pinned,
-multi-platform Eclipse Temurin OpenJDK 26 stage and copies
-`/opt/java/openjdk` from that stage into the final interop image. The runner
+multi-platform Oracle OpenJDK 27 stage and copies
+`/usr/java/jdk-27` from that stage to `/opt/java/openjdk` in the final interop image. The runner
 smoke test also keeps its Python, Docker CLI, Compose, and Wireshark tooling
 inside `Dockerfile.runner-tool`, so the host does not need a local Python or
 `quic-interop-runner` installation.

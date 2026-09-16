@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -58,12 +59,16 @@ class H3iIT {
         Files.writeString(webRoot.resolve("index.html"), "hello from h3i", StandardCharsets.UTF_8);
         TestTlsSupport.exportServerPem(certChain, privateKey);
 
-        ImageFromDockerfile serverImage = new ImageFromDockerfile("helidon-h3i-server-" + UUID.randomUUID(), false)
+        ImageFromDockerfile serverImage = new ImageFromDockerfile("helidon-h3i-server-" + UUID.randomUUID(), true)
                 .withDockerfile(Path.of("./Dockerfile.server"));
-        ImageFromDockerfile toolImage = new ImageFromDockerfile("helidon-h3i-tool-" + UUID.randomUUID(), false)
+        ImageFromDockerfile toolImage = new ImageFromDockerfile("helidon-h3i-tool-" + UUID.randomUUID(), true)
                 .withDockerfile(Path.of("./Dockerfile.h3i"));
 
-        try (Network network = Network.newNetwork();
+        try (AutoCloseable _ = () -> DockerClientFactory.instance().client()
+                .removeImageCmd(serverImage.getDockerImageName()).exec();
+                AutoCloseable _ = () -> DockerClientFactory.instance().client()
+                        .removeImageCmd(toolImage.getDockerImageName()).exec();
+                Network network = Network.newNetwork();
                 GenericContainer<?> server = new GenericContainer<>(serverImage)
                         .withNetwork(network)
                         .withNetworkAliases(SERVER_ALIAS)

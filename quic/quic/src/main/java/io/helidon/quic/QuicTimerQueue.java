@@ -58,13 +58,17 @@ public final class QuicTimerQueue {
     private final Runnable notifier;
     private final Supplier<String> logTagSupplier;
     private final ReentrantLock stateLock = new ReentrantLock();
+    // A loop to process events which are due, or which need to
+    // be rescheduled.
+    private final SequentialScheduler processor;
+
     private volatile boolean closed;
     private volatile Deadline scheduledDeadline = Deadline.MAX;
     private volatile Deadline returnedDeadline = Deadline.MAX;
-    // A loop to process events which are due, or which need to
-    // be rescheduled.
-    private final SequentialScheduler processor =
-            SequentialScheduler.lockingScheduler(this::processDue);
+
+    {
+        processor = SequentialScheduler.lockingScheduler(this::processDue);
+    }
 
     /**
      * Creates a new timer queue with the given notifier.
@@ -117,14 +121,18 @@ public final class QuicTimerQueue {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 log(System.Logger.Level.DEBUG, "QuicTimerQueue: event %s will be rescheduled", event);
             }
-            var now = debugNow();
-            trace("QuicTimerQueue: event %s will be scheduled at %s (returned deadline: %s, nextDeadline: %s)",
-                  event, d(now, deadline), d(now, returnedDeadline), d(now, nextDeadline()));
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                var now = debugNow();
+                log(System.Logger.Level.TRACE,
+                    "QuicTimerQueue: event %s will be scheduled at %s (returned deadline: %s, nextDeadline: %s)",
+                    event, d(now, deadline), d(now, returnedDeadline), d(now, nextDeadline()));
+            }
             notifier.run();
-        } else {
+        } else if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             var now = debugNow();
-            trace("QuicTimerQueue: event %s will not be scheduled at %s (returned deadline: %s, nextDeadline: %s)",
-                  event, d(now, deadline), d(now, returnedDeadline), d(now, nextDeadline()));
+            log(System.Logger.Level.TRACE,
+                "QuicTimerQueue: event %s will not be scheduled at %s (returned deadline: %s, nextDeadline: %s)",
+                event, d(now, deadline), d(now, returnedDeadline), d(now, nextDeadline()));
         }
     }
 
@@ -225,12 +233,15 @@ public final class QuicTimerQueue {
         } finally {
             stateLock.unlock();
         }
-        if (next.equals(Deadline.MAX)) {
-            trace("TimerQueue: no deadline (scheduled: %s, rescheduled: %s, dues %s)",
-                  this.scheduled.size(), this.rescheduled.size(), this.due.size());
+        if (next.equals(Deadline.MAX) && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            log(System.Logger.Level.TRACE,
+                "TimerQueue: no deadline (scheduled: %s, rescheduled: %s, dues %s)",
+                this.scheduled.size(), this.rescheduled.size(), this.due.size());
         }
         if (drained > 0) {
-            trace("TimerQueue: %s events to handle (%s in dues)", drained, this.due.size());
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                log(System.Logger.Level.TRACE, "TimerQueue: %s events to handle (%s in dues)", drained, this.due.size());
+            }
             processor.runOrSchedule(executor);
         }
         return next;
@@ -254,9 +265,12 @@ public final class QuicTimerQueue {
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             log(System.Logger.Level.DEBUG, "QuicTimerQueue: event %s will be rescheduled", event);
         }
-        var now = debugNow();
-        trace("QuicTimerQueue: event %s will be rescheduled (returned deadline: %s, nextDeadline: %s)",
-              event, d(now, returnedDeadline), d(now, nextDeadline()));
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            var now = debugNow();
+            log(System.Logger.Level.TRACE,
+                "QuicTimerQueue: event %s will be rescheduled (returned deadline: %s, nextDeadline: %s)",
+                event, d(now, returnedDeadline), d(now, nextDeadline()));
+        }
         notifier.run();
     }
 
@@ -281,17 +295,21 @@ public final class QuicTimerQueue {
         // is already before the new deadline
 
         if (notify(deadline)) {
-            var now = debugNow();
-            trace("QuicTimerQueue: event %s will be rescheduled at %s (returned deadline: %s, nextDeadline: %s)",
-                  event, d(now, deadline), d(now, returnedDeadline), d(now, nextDeadline()));
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                var now = debugNow();
+                log(System.Logger.Level.TRACE,
+                    "QuicTimerQueue: event %s will be rescheduled at %s (returned deadline: %s, nextDeadline: %s)",
+                    event, d(now, deadline), d(now, returnedDeadline), d(now, nextDeadline()));
+            }
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 log(System.Logger.Level.DEBUG, "QuicTimerQueue: event %s will be rescheduled", event);
             }
             notifier.run();
-        } else {
+        } else if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             var now = debugNow();
-            trace("QuicTimerQueue: event %s will not be rescheduled at %s (returned deadline: %s, nextDeadline: %s)",
-                  event, d(now, deadline), d(now, returnedDeadline), d(now, nextDeadline()));
+            log(System.Logger.Level.TRACE,
+                "QuicTimerQueue: event %s will not be rescheduled at %s (returned deadline: %s, nextDeadline: %s)",
+                event, d(now, deadline), d(now, returnedDeadline), d(now, nextDeadline()));
         }
     }
 
@@ -326,12 +344,6 @@ public final class QuicTimerQueue {
     // For debug purposes only
     private Deadline debugNow() {
         return TimeSource.now();
-    }
-
-    private void trace(String format, Object... args) {
-        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-            log(System.Logger.Level.TRACE, format, args);
-        }
     }
 
     private void log(System.Logger.Level level, String format, Object... arguments) {
@@ -409,7 +421,9 @@ public final class QuicTimerQueue {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 log(System.Logger.Level.DEBUG, "QuicTimerQueue: processDue");
             }
-            trace("TimerQueue: process %s events", due.size());
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                log(System.Logger.Level.TRACE, "TimerQueue: process %s events", due.size());
+            }
             Deadline minDeadLine = Deadline.MAX;
             while ((event = due.poll()) != null) {
                 if (closed) {
@@ -430,10 +444,12 @@ public final class QuicTimerQueue {
 
             // wake up the selector thread if necessary
             if (notify(minDeadLine)) {
-                trace("TimerQueue: notify: minDeadline: %s", d(minDeadLine));
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    log(System.Logger.Level.TRACE, "TimerQueue: notify: minDeadline: %s", d(minDeadLine));
+                }
                 notifier.run();
-            } else if (!minDeadLine.equals(Deadline.MAX)) {
-                trace("TimerQueue: no need to notify: minDeadline: %s", d(minDeadLine));
+            } else if (!minDeadLine.equals(Deadline.MAX) && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                log(System.Logger.Level.TRACE, "TimerQueue: no need to notify: minDeadline: %s", d(minDeadLine));
             }
 
         } catch (Throwable t) {

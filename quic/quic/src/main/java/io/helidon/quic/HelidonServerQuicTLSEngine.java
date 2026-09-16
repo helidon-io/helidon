@@ -175,32 +175,6 @@ final class HelidonServerQuicTLSEngine implements QuicPacketTLSEngine {
         this.handshakeSession.sslParameters(copy);
     }
 
-    private static SSLParameters validatedSslParameters(SSLParameters sslParameters,
-                                                        X509TrustManager trustManager) {
-        SSLParameters copy = QuicTlsParameters.copy(Objects.requireNonNull(sslParameters, "sslParameters"));
-        QuicTlsParameters.validateSupported(copy);
-        String[] protocols = copy.getProtocols();
-        if (protocols == null || protocols.length == 0) {
-            throw new IllegalArgumentException("No TLS protocols set");
-        }
-
-        boolean tls13Present = false;
-        for (String protocol : protocols) {
-            if ("TLSv1.3".equals(protocol)) {
-                tls13Present = true;
-            } else {
-                throw new IllegalArgumentException("Unsupported TLS protocol version " + protocol);
-            }
-        }
-        if (!tls13Present) {
-            throw new IllegalArgumentException("required TLSv1.3 protocol version hasn't been set");
-        }
-        if ((copy.getNeedClientAuth() || copy.getWantClientAuth()) && trustManager == null) {
-            throw new IllegalArgumentException(QuicTlsTrustManagers.SERVER_CLIENT_AUTH_TRUST_MANAGER_REQUIRED_MESSAGE);
-        }
-        return copy;
-    }
-
     @Override
     public Optional<String> applicationProtocol() {
         return Optional.ofNullable(applicationProtocol);
@@ -479,6 +453,32 @@ final class HelidonServerQuicTLSEngine implements QuicPacketTLSEngine {
         }
     }
 
+    private static SSLParameters validatedSslParameters(SSLParameters sslParameters,
+                                                        X509TrustManager trustManager) {
+        SSLParameters copy = QuicTlsParameters.copy(Objects.requireNonNull(sslParameters, "sslParameters"));
+        QuicTlsParameters.validateSupported(copy);
+        String[] protocols = copy.getProtocols();
+        if (protocols == null || protocols.length == 0) {
+            throw new IllegalArgumentException("No TLS protocols set");
+        }
+
+        boolean tls13Present = false;
+        for (String protocol : protocols) {
+            if ("TLSv1.3".equals(protocol)) {
+                tls13Present = true;
+            } else {
+                throw new IllegalArgumentException("Unsupported TLS protocol version " + protocol);
+            }
+        }
+        if (!tls13Present) {
+            throw new IllegalArgumentException("required TLSv1.3 protocol version hasn't been set");
+        }
+        if ((copy.getNeedClientAuth() || copy.getWantClientAuth()) && trustManager == null) {
+            throw new IllegalArgumentException(QuicTlsTrustManagers.SERVER_CLIENT_AUTH_TRUST_MANAGER_REQUIRED_MESSAGE);
+        }
+        return copy;
+    }
+
     private static QuicTransportException unsupportedHandshakeMessage(int messageType, KeySpace keySpace) {
         return new QuicTransportException("Helidon-owned QUIC TLS engine does not yet process "
                                                   + handshakeMessageName(messageType)
@@ -507,6 +507,23 @@ final class HelidonServerQuicTLSEngine implements QuicPacketTLSEngine {
         byte[] result = new byte[duplicate.remaining()];
         duplicate.get(result);
         return result;
+    }
+
+    private static ServerConfig serverConfig(QuicTlsConfigSnapshot config,
+                                             QuicTlsServerSessionCache sessionCache) {
+        long configuredTimeoutSeconds = config.sessionTimeout().getSeconds();
+        if (config.sessionTimeout().getNano() > 0 && configuredTimeoutSeconds < MAX_SESSION_TICKET_LIFETIME_SECONDS) {
+            configuredTimeoutSeconds++;
+        }
+        long sessionTicketLifetimeSeconds = config.sessionTimeout().isZero()
+                ? MAX_SESSION_TICKET_LIFETIME_SECONDS
+                : Math.clamp(configuredTimeoutSeconds, 1L, MAX_SESSION_TICKET_LIFETIME_SECONDS);
+        return new ServerConfig(QuicTlsCompatibility.validatedSslContext(config),
+                                config.secureRandom(),
+                                QuicTlsKeyManagers.requiredKeyManager(config),
+                                QuicTlsTrustManagers.optionalTrustManager(config),
+                                sessionTicketLifetimeSeconds,
+                                Objects.requireNonNull(sessionCache, "serverSessionCache"));
     }
 
     private void consumeHandshakeMessageLocked(KeySpace keySpace, ByteBuffer message) throws QuicTransportException {
@@ -729,23 +746,6 @@ final class HelidonServerQuicTLSEngine implements QuicPacketTLSEngine {
         throw new QuicKeyUnavailableException(
                 oneRttKeysDiscarded ? "Keys have been discarded" : "Keys not available",
                 KeySpace.ONE_RTT);
-    }
-
-    private static ServerConfig serverConfig(QuicTlsConfigSnapshot config,
-                                             QuicTlsServerSessionCache sessionCache) {
-        long configuredTimeoutSeconds = config.sessionTimeout().getSeconds();
-        if (config.sessionTimeout().getNano() > 0 && configuredTimeoutSeconds < MAX_SESSION_TICKET_LIFETIME_SECONDS) {
-            configuredTimeoutSeconds++;
-        }
-        long sessionTicketLifetimeSeconds = config.sessionTimeout().isZero()
-                ? MAX_SESSION_TICKET_LIFETIME_SECONDS
-                : Math.clamp(configuredTimeoutSeconds, 1L, MAX_SESSION_TICKET_LIFETIME_SECONDS);
-        return new ServerConfig(QuicTlsCompatibility.validatedSslContext(config),
-                                config.secureRandom(),
-                                QuicTlsKeyManagers.requiredKeyManager(config),
-                                QuicTlsTrustManagers.optionalTrustManager(config),
-                                sessionTicketLifetimeSeconds,
-                                Objects.requireNonNull(sessionCache, "serverSessionCache"));
     }
 
     private record OutboundHandshakeMessage(KeySpace keySpace, ByteBuffer bytes) {

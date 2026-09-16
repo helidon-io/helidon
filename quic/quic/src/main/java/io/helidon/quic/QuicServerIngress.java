@@ -244,6 +244,10 @@ final class QuicServerIngress {
         }
     }
 
+    enum Drop implements Action {
+        INSTANCE
+    }
+
     sealed interface Action permits Admit, Respond, Drop {
     }
 
@@ -270,9 +274,5 @@ final class QuicServerIngress {
         Respond {
             datagram = Objects.requireNonNull(datagram, "datagram").asReadOnlyBuffer();
         }
-    }
-
-    enum Drop implements Action {
-        INSTANCE
     }
 }

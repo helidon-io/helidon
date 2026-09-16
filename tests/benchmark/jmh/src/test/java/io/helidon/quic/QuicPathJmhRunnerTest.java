@@ -16,6 +16,14 @@
 
 package io.helidon.quic;
 
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.regex.Pattern;
+
+import io.helidon.quic.QuicPathJmhBenchmark.AckPacketSpaceLifecycle;
+import io.helidon.quic.QuicPathJmhBenchmark.AckState;
+import io.helidon.quic.QuicPathJmhBenchmark.AckWorkload;
+
 import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.results.format.ResultFormatType;
@@ -27,48 +35,78 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 class QuicPathJmhRunnerTest {
-    @Test
-    void run() throws RunnerException {
-        String include = System.getProperty("quic.path.jmh.include", ".*QuicPathJmhBenchmark.*");
-        String result = System.getProperty("quic.path.jmh.result", "./target/quic-path-jmh-result.json");
+    private static final String PREFIX = "quic.path.jmh.";
+    private static final String ACK_BENCHMARK = QuicPathJmhBenchmark.class.getName() + ".establishedPathAckRanges";
+
+    static Options options(Properties properties) {
+        String include = properties.getProperty(PREFIX + "include", ".*QuicPathJmhBenchmark.*");
+        String result = properties.getProperty(PREFIX + "result", "./target/quic-path-jmh-result.json");
+        Pattern includePattern = Pattern.compile(include);
+        boolean ackSelected = includePattern.matcher(ACK_BENCHMARK).find()
+                || includePattern.matcher(ACK_BENCHMARK + "Allocation").find();
 
         ChainedOptionsBuilder optionsBuilder = new OptionsBuilder()
                 .include(include)
-                .forks(Integer.getInteger("quic.path.jmh.forks", 1))
-                .threads(Integer.getInteger("quic.path.jmh.threads", 4))
+                .forks(Integer.parseInt(properties.getProperty(PREFIX + "forks", "1")))
+                .threads(Integer.parseInt(properties.getProperty(PREFIX + "threads", "4")))
                 .resultFormat(ResultFormatType.JSON)
                 .result(result)
-                .warmupIterations(Integer.getInteger("quic.path.jmh.warmupIterations", 3))
-                .warmupTime(TimeValue.milliseconds(Long.getLong("quic.path.jmh.warmupMillis", 500)))
-                .measurementIterations(Integer.getInteger("quic.path.jmh.measurementIterations", 5))
-                .measurementTime(TimeValue.milliseconds(Long.getLong("quic.path.jmh.measurementMillis", 1000)))
+                .warmupIterations(Integer.parseInt(properties.getProperty(PREFIX + "warmupIterations", "3")))
+                .warmupTime(TimeValue.milliseconds(Long.parseLong(properties.getProperty(PREFIX + "warmupMillis",
+                                                                                       "500"))))
+                .measurementIterations(Integer.parseInt(properties.getProperty(PREFIX + "measurementIterations", "5")))
+                .measurementTime(TimeValue.milliseconds(Long.parseLong(properties.getProperty(PREFIX + "measurementMillis",
+                                                                                            "1000"))))
                 .shouldFailOnError(true);
 
-        String output = System.getProperty("quic.path.jmh.output");
+        String output = properties.getProperty(PREFIX + "output");
         if (output != null && !output.isBlank()) {
             optionsBuilder.output(output);
         }
-        String connectionCount = System.getProperty("quic.path.jmh.connectionCount");
-        if (connectionCount != null) {
-            optionsBuilder.param("connectionCount", connectionCount);
+        for (String name : new String[] {"connectionCount", "sendAsync", "inFlightPackets", "ackRangeCount",
+                "ackPacketSpaceLifecycle", "ackWorkload"}) {
+            if (properties.containsKey(PREFIX + name)) {
+                optionsBuilder.param(name, parameterValues(properties, name, ""));
+            }
         }
-        String sendAsync = System.getProperty("quic.path.jmh.sendAsync");
-        if (sendAsync != null) {
-            optionsBuilder.param("sendAsync", sendAsync);
+        if (ackSelected) {
+            for (String flight : parameterValues(properties, "inFlightPackets", "64")) {
+                for (String ranges : parameterValues(properties, "ackRangeCount", "1")) {
+                    for (String lifecycle : parameterValues(properties, "ackPacketSpaceLifecycle", "REUSED")) {
+                        for (String workload : parameterValues(properties, "ackWorkload", "NEW_ACK")) {
+                            AckState.validateParameters(Integer.parseInt(flight),
+                                                        Integer.parseInt(ranges),
+                                                        AckPacketSpaceLifecycle.valueOf(lifecycle),
+                                                        AckWorkload.valueOf(workload));
+                        }
+                    }
+                }
+            }
         }
-        String inFlightPackets = System.getProperty("quic.path.jmh.inFlightPackets");
-        if (inFlightPackets != null) {
-            optionsBuilder.param("inFlightPackets", inFlightPackets);
-        }
-        String ackRangeCount = System.getProperty("quic.path.jmh.ackRangeCount");
-        if (ackRangeCount != null) {
-            optionsBuilder.param("ackRangeCount", ackRangeCount);
-        }
-        if (Boolean.getBoolean("quic.path.jmh.gcProfiler")) {
+        if (Boolean.parseBoolean(properties.getProperty(PREFIX + "gcProfiler", "false"))) {
+            if (ackSelected) {
+                throw new IllegalArgumentException("GCProfiler includes ACK fixture allocation; select "
+                                                           + ACK_BENCHMARK + "Allocation for isolated ACK allocation");
+            }
             optionsBuilder.addProfiler(GCProfiler.class);
         }
+        return optionsBuilder.build();
+    }
 
-        Options options = optionsBuilder.build();
-        new Runner(options).run();
+    @Test
+    void run() throws RunnerException {
+        new Runner(options(System.getProperties())).run();
+    }
+
+    private static String[] parameterValues(Properties properties, String name, String defaultValue) {
+        String[] values = Arrays.stream(properties.getProperty(PREFIX + name, defaultValue).split(",", -1))
+                .map(String::trim)
+                .toArray(String[]::new);
+        for (String value : values) {
+            if (value.isEmpty()) {
+                throw new IllegalArgumentException("Empty value in " + PREFIX + name);
+            }
+        }
+        return values;
     }
 }

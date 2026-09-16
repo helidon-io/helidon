@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -47,7 +48,7 @@ class InteropContainerIT {
         Files.writeString(webRoot.resolve("index.html"), "hello from interop image", StandardCharsets.UTF_8);
         TestTlsSupport.exportServerPem(certChain, privateKey);
 
-        ImageFromDockerfile image = new ImageFromDockerfile("helidon-qir-it-" + UUID.randomUUID(), false)
+        ImageFromDockerfile image = new ImageFromDockerfile("helidon-qir-it-" + UUID.randomUUID(), true)
                 .withDockerfile(Path.of("./Dockerfile"));
         GenericContainer<?> container = new GenericContainer<>(image)
                 .withCopyFileToContainer(MountableFile.forHostPath(certChain), "/certs/cert.pem")
@@ -59,7 +60,9 @@ class InteropContainerIT {
                 .waitingFor(Wait.forLogMessage(".*Helidon HTTP/3 interop server listening on.*", 1)
                                     .withStartupTimeout(Duration.ofSeconds(60)));
 
-        try (container) {
+        try (AutoCloseable _ = () -> DockerClientFactory.instance().client()
+                .removeImageCmd(image.getDockerImageName()).exec();
+                container) {
             container.start();
             Container.ExecResult probe = container.execInContainer(
                     "java",

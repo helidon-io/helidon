@@ -356,10 +356,6 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
         }
     }
 
-    private String logTag() {
-        return logTagSupplier.get();
-    }
-
     abstract void runSelector();
 
     boolean done() {
@@ -370,6 +366,10 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
 
     private static String identityTag(Object instance) {
         return "0x" + HexFormat.of().toHexDigits(System.identityHashCode(instance));
+    }
+
+    private String logTag() {
+        return logTagSupplier.get();
     }
 
     /**

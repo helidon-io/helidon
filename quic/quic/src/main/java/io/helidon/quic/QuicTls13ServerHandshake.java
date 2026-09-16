@@ -127,6 +127,41 @@ final class QuicTls13ServerHandshake {
         }
     }
 
+    static List<SNIServerName> decodeRequestedServerNames(QuicTlsClientHelloMessage clientHello)
+            throws QuicTransportException {
+        QuicTlsExtension serverNameExtension = clientHello.extension(QuicTlsExtensions.SERVER_NAME).orElse(null);
+        if (serverNameExtension == null) {
+            return List.of();
+        }
+
+        ByteBuffer buffer = serverNameExtension.dataBuffer();
+        ByteBuffer serverNameList = QuicTlsCodecSupport.readVector(buffer,
+                                                                   QuicTlsCodecSupport.UINT16_LENGTH,
+                                                                   "server_name_list",
+                                                                   "server_name");
+        QuicTlsCodecSupport.ensureConsumed(buffer, "server_name");
+
+        List<SNIServerName> serverNames = new ArrayList<>();
+        Set<Integer> seenTypes = new LinkedHashSet<>();
+        while (serverNameList.hasRemaining()) {
+            int nameType = QuicTlsCodecSupport.readUnsigned(serverNameList,
+                                                            QuicTlsCodecSupport.UINT8_LENGTH,
+                                                            "name_type",
+                                                            "server_name");
+            byte[] encodedName = QuicTlsCodecSupport.copy(QuicTlsCodecSupport.readVector(serverNameList,
+                                                                                         QuicTlsCodecSupport.UINT16_LENGTH,
+                                                                                         "host_name",
+                                                                                         "server_name"));
+            if (!seenTypes.add(nameType)) {
+                throw QuicTlsHandshakeMessages.decodeError("Malformed server_name extension: duplicate name type");
+            }
+            if (nameType == StandardConstants.SNI_HOST_NAME) {
+                serverNames.add(new SNIHostName(encodedName));
+            }
+        }
+        return List.copyOf(serverNames);
+    }
+
     Result consumeClientHello(ByteBuffer message) throws QuicTransportException {
         return switch (state) {
             case EXPECT_CLIENT_HELLO -> consumeInitialClientHello(message);
@@ -471,8 +506,12 @@ final class QuicTls13ServerHandshake {
     }
 
     private static byte[] encodeEncryptedExtensions(String applicationProtocol,
-                                                    byte[] localTransportParameters) {
-        List<QuicTlsExtension> extensions = new ArrayList<>(2);
+                                                    byte[] localTransportParameters,
+                                                    boolean acknowledgeServerName) {
+        List<QuicTlsExtension> extensions = new ArrayList<>(acknowledgeServerName ? 3 : 2);
+        if (acknowledgeServerName) {
+            extensions.add(QuicTlsExtension.create(QuicTlsExtensions.SERVER_NAME, BufferData.EMPTY_BYTES));
+        }
         extensions.add(QuicTlsExtension.create(QuicTlsExtensions.APPLICATION_LAYER_PROTOCOL_NEGOTIATION,
                                                QuicTlsApplicationProtocols.encodeServerSelection(applicationProtocol)));
         extensions.add(QuicTlsExtension.create(QuicTlsExtensions.QUIC_TRANSPORT_PARAMETERS, localTransportParameters));
@@ -749,7 +788,9 @@ final class QuicTls13ServerHandshake {
         helloTranscriptHash = transcript.hash(selectedCipherSuite);
         serverHandshakeKeys = secrets.deriveHandshakeTrafficKeys(helloTranscriptHash);
 
-        encryptedExtensions = encodeEncryptedExtensions(selectedApplicationProtocol, localTransportParameters);
+        encryptedExtensions = encodeEncryptedExtensions(selectedApplicationProtocol,
+                                                        localTransportParameters,
+                                                        requestedServerName != null);
         transcript.add(ByteBuffer.wrap(encryptedExtensions));
 
         if (sslParameters.getNeedClientAuth() || sslParameters.getWantClientAuth()) {
@@ -906,7 +947,8 @@ final class QuicTls13ServerHandshake {
         serverHandshakeKeys = secrets.deriveHandshakeTrafficKeys(helloTranscriptHash);
 
         encryptedExtensions = encodeEncryptedExtensions(selectedApplicationProtocol,
-                                                        localTransportParameters);
+                                                        localTransportParameters,
+                                                        serverName != null);
         transcript.add(ByteBuffer.wrap(encryptedExtensions));
 
         QuicTls13SecretSchedule secretSchedule = new QuicTls13SecretSchedule(selectedCipherSuite);
@@ -1023,7 +1065,7 @@ final class QuicTls13ServerHandshake {
 
     private byte[] requiredClientTransportParameters(QuicTlsClientHelloMessage clientHello) throws QuicTransportException {
         QuicTlsExtension transportParameters = clientHello.extension(QuicTlsExtensions.QUIC_TRANSPORT_PARAMETERS)
-                .orElseThrow(() -> QuicTlsHandshakeMessages.handshakeFailure(
+                .orElseThrow(() -> QuicTlsHandshakeMessages.missingExtension(
                         "ClientHello missing quic_transport_parameters extension"));
         return transportParameters.data();
     }
@@ -1229,41 +1271,6 @@ final class QuicTls13ServerHandshake {
                                                    callbackEngine);
     }
 
-    static List<SNIServerName> decodeRequestedServerNames(QuicTlsClientHelloMessage clientHello)
-            throws QuicTransportException {
-        QuicTlsExtension serverNameExtension = clientHello.extension(QuicTlsExtensions.SERVER_NAME).orElse(null);
-        if (serverNameExtension == null) {
-            return List.of();
-        }
-
-        ByteBuffer buffer = serverNameExtension.dataBuffer();
-        ByteBuffer serverNameList = QuicTlsCodecSupport.readVector(buffer,
-                                                                   QuicTlsCodecSupport.UINT16_LENGTH,
-                                                                   "server_name_list",
-                                                                   "server_name");
-        QuicTlsCodecSupport.ensureConsumed(buffer, "server_name");
-
-        List<SNIServerName> serverNames = new ArrayList<>();
-        Set<Integer> seenTypes = new LinkedHashSet<>();
-        while (serverNameList.hasRemaining()) {
-            int nameType = QuicTlsCodecSupport.readUnsigned(serverNameList,
-                                                            QuicTlsCodecSupport.UINT8_LENGTH,
-                                                            "name_type",
-                                                            "server_name");
-            byte[] encodedName = QuicTlsCodecSupport.copy(QuicTlsCodecSupport.readVector(serverNameList,
-                                                                                         QuicTlsCodecSupport.UINT16_LENGTH,
-                                                                                         "host_name",
-                                                                                         "server_name"));
-            if (!seenTypes.add(nameType)) {
-                throw QuicTlsHandshakeMessages.decodeError("Malformed server_name extension: duplicate name type");
-            }
-            if (nameType == StandardConstants.SNI_HOST_NAME) {
-                serverNames.add(new SNIHostName(encodedName));
-            }
-        }
-        return List.copyOf(serverNames);
-    }
-
     private SSLEngine configuredServerEngine() {
         try {
             SSLEngine sslEngine = peerHost == null
@@ -1306,6 +1313,18 @@ final class QuicTls13ServerHandshake {
                 extensions);
     }
 
+    private enum State {
+        EXPECT_CLIENT_HELLO,
+        EXPECT_SECOND_CLIENT_HELLO,
+        EXPECT_CLIENT_CERTIFICATE,
+        EXPECT_CLIENT_CERTIFICATE_VERIFY,
+        EXPECT_CLIENT_FINISHED,
+        COMPLETE
+    }
+
+    sealed interface Result permits HelloRetryRequestResult, ServerFlight {
+    }
+
     record StartParameters(SSLContext sslContext,
                            SSLParameters sslParameters,
                            X509KeyManager keyManager,
@@ -1316,9 +1335,6 @@ final class QuicTls13ServerHandshake {
                            int peerPort,
                            QuicTlsServerSessionCache serverSessionCache,
                            QuicAeadLimits.Confidentiality confidentialityLimits) {
-    }
-
-    sealed interface Result permits HelloRetryRequestResult, ServerFlight {
     }
 
     record HelloRetryRequestResult(byte[] helloRetryRequest) implements Result {
@@ -1399,15 +1415,6 @@ final class QuicTls13ServerHandshake {
         public X509Certificate[] localCertificates() {
             return localCertificates == null ? null : localCertificates.clone();
         }
-    }
-
-    private enum State {
-        EXPECT_CLIENT_HELLO,
-        EXPECT_SECOND_CLIENT_HELLO,
-        EXPECT_CLIENT_CERTIFICATE,
-        EXPECT_CLIENT_CERTIFICATE_VERIFY,
-        EXPECT_CLIENT_FINISHED,
-        COMPLETE
     }
 
     private record ServerResumptionSelection(int selectedIdentity, QuicTlsResumptionTicket resumptionTicket) {

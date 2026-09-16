@@ -87,12 +87,12 @@ import io.helidon.quic.packet.QuicPacket.PacketType;
 public sealed class PacketSpaceManager implements PacketSpace
         permits PacketSpaceManager.OneRttPacketSpaceManager,
                 PacketSpaceManager.HandshakePacketSpaceManager {
-    private static final System.Logger LOGGER = System.getLogger(PacketSpaceManager.class.getName());
-
     /**
      * Threshold of ACK ranges after which a PING is piggybacked on the next ACK.
      */
     public static final int MAX_ACKRANGE_COUNT_BEFORE_PING = 10;
+
+    private static final System.Logger LOGGER = System.getLogger(PacketSpaceManager.class.getName());
     private static final int ACK_TIMER_SCHEDULING_SLACK_MILLIS = 16;
     // packet threshold for loss detection; RFC 9002 suggests 3
     private static final long PACKET_THRESHOLD = 3;
@@ -163,7 +163,6 @@ public sealed class PacketSpaceManager implements PacketSpace
     // Reused ACK/recovery state. All access is protected by transferLock.
     private final AcknowledgementScan acknowledgementScan = new AcknowledgementScan();
     private final AckProcessingState ackProcessingState = new AckProcessingState();
-    private long acknowledgementScanEpoch;
     // A task invoked by the QuicTimerQueue when some packet retransmission are
     // due. This task will move packets from the pendingAcknowledgement queue
     // into the triggeredForRetransmission queue (and pendingRetransmission queue)
@@ -176,6 +175,7 @@ public sealed class PacketSpaceManager implements PacketSpace
     private final int localAckDelayExponent;
     // max ACK delay; zero on initial and handshake, configured policy on application
     private final long maxAckDelay; // ms
+    private long acknowledgementScanEpoch;
     private volatile boolean closed;
     private volatile boolean blockedByCC;
     private volatile boolean blockedByPacer;
@@ -500,145 +500,6 @@ public sealed class PacketSpaceManager implements PacketSpace
         packetSent0(packet, previousPacketNumber, packetNumber, pathGeneration);
     }
 
-    private void packetSent0(QuicPacket packet,
-                             long previousPacketNumber,
-                             long packetNumber,
-                             long pathGeneration) {
-        if (packetNumber < 0) {
-            throw new IllegalArgumentException("Invalid packet number: " + packetNumber);
-        }
-        largestAckSent(AckFrame.largestAcknowledgedInPacket(packet));
-        boolean pathControl = false;
-        boolean applicationRecovery = false;
-        for (QuicFrame frame : packet.frames()) {
-            if (frame instanceof PathChallengeFrame || frame instanceof PathResponseFrame) {
-                pathControl = true;
-            } else if (!(frame instanceof AckFrame)
-                    && !(frame instanceof PaddingFrame)
-                    && !(frame instanceof PingFrame)) {
-                applicationRecovery = true;
-                break;
-            }
-        }
-        if (pathControl && !applicationRecovery) {
-            Deadline sent = now();
-            long accountingGeneration = pathRecoveryState.generation();
-            transferLock.lock();
-            try {
-                if (!isOpenForTransmission()) {
-                    return;
-                }
-                pathRecoveryState.runIfCurrent(accountingGeneration, () -> {
-                    pathControlFlights.put(packetNumber,
-                                           new PathControlFlight(packet,
-                                                                 sent,
-                                                                 packetNumber,
-                                                                 pathGeneration,
-                                                                 accountingGeneration));
-                    congestionController.packetSent(packet.size());
-                });
-            } finally {
-                transferLock.unlock();
-            }
-            return;
-        }
-        if (previousPacketNumber >= 0) {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                log(System.Logger.Level.DEBUG, "retransmitted packet %s(%d) as %d",
-                          packet.packetType(), previousPacketNumber, packetNumber);
-            }
-
-            boolean found = false;
-            transferLock.lock();
-            try {
-                // check for close and addAcknowledgement in the same lock
-                // to avoid races with close / clearAll
-                var closed = !this.isOpenForTransmission();
-                if (closed) {
-                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                        log(System.Logger.Level.DEBUG, "already closed: ignoring packet pn:%s",
-                                  packet.packetNumber());
-                    }
-                    return;
-                }
-                // Pending retransmissions are expected to be short; keep the linear scan
-                // so the queue representation remains simple.
-                var iterator = pendingRetransmission.iterator();
-                PendingAcknowledgement replacement;
-                while (iterator.hasNext()) {
-                    PendingAcknowledgement pending = iterator.next();
-                    if (pending.hasPreviousNumber(previousPacketNumber)) {
-                        // no need to retransmit twice, but can this happen?
-                        iterator.remove();
-                    } else if (!found && pending.hasExactNumber(previousPacketNumber)) {
-                        PreviousNumbers previous = new PreviousNumbers(
-                                previousPacketNumber,
-                                pending.sent,
-                                pending.largestAcknowledged,
-                                pending.pathGeneration,
-                                pending.previousNumbers);
-                        replacement =
-                                new PendingAcknowledgement(packet, now(), packetNumber, previous, pathGeneration);
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            log(System.Logger.Level.DEBUG, "Packet %s(pn:%s) previous %s(pn:%s) is pending acknowledgement",
-                                      packet.packetType(), packetNumber, packet.packetType(), previousPacketNumber);
-                        }
-                        if (lostPackets.remove(pending)) {
-                            lostPackets.add(replacement);
-                        }
-                        addAcknowledgement(replacement);
-                        iterator.remove();
-                        found = true;
-                    }
-                }
-            } finally {
-                transferLock.unlock();
-            }
-            if (found) {
-                packetTransmissionTask.reschedule();
-            }
-            if (!found) {
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    log(System.Logger.Level.DEBUG, "packetRetransmitted: packet not found - previous: %s for %s(%s)",
-                              previousPacketNumber, packet.packetType(), packetNumber);
-                }
-            }
-        } else {
-            if (packet.isAckEliciting()) {
-                // This method works with the following assumption:
-                // - Non ACK eliciting packet do not need to be retransmitted because:
-                //       - they only contain ack frames - which may/will we be retransmitted
-                //         anyway with the next ack eliciting packet
-                //       - they will not be acknowledged directly - we don't want to
-                //         resend them constantly
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    log(System.Logger.Level.DEBUG, "Packet %s(pn:%s) is pending acknowledgement",
-                              packet.packetType(), packetNumber);
-                }
-                PendingAcknowledgement pending = new PendingAcknowledgement(packet,
-                                                                            now(), packetNumber, null, pathGeneration);
-                transferLock.lock();
-                try {
-                    // check for close and addAcknowledgement in the same lock
-                    // to avoid races with close / clearAll
-                    var closed = !this.isOpenForTransmission();
-                    if (closed) {
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            log(System.Logger.Level.DEBUG, "already closed: ignoring packet pn:%s",
-                                      packet.packetNumber());
-                        }
-                        return;
-                    }
-                    addAcknowledgement(pending);
-                    packetTransmissionTask.reschedule();
-                } finally {
-                    transferLock.unlock();
-                }
-            }
-        }
-
-    }
-
     /**
      * Computes the next deadline for generating a non ACK eliciting
      * packet containing the next ACK frame, or for retransmitting
@@ -660,17 +521,23 @@ public sealed class PacketSpaceManager implements PacketSpace
      * @return next deadline, or {@link Deadline#MAX} when nothing is scheduled
      */
     public Deadline computeNextDeadline(boolean verbose) {
-
+        boolean trace = verbose && LOGGER.isLoggable(System.Logger.Level.TRACE);
         if (closed) {
-            logTraceIf(verbose, "closed - no deadline");
+            if (trace) {
+                log(System.Logger.Level.TRACE, "closed - no deadline");
+            }
             return Deadline.MAX;
         }
         if (transmitNow) {
-            logTraceIf(verbose, "transmit now");
+            if (trace) {
+                log(System.Logger.Level.TRACE, "transmit now");
+            }
             return Deadline.MIN;
         }
         if (pingRequested != null) {
-            logTraceIf(verbose, "ping requested");
+            if (trace) {
+                log(System.Logger.Level.TRACE, "ping requested");
+            }
             return Deadline.MIN;
         }
         var ack = nextAckFrame;
@@ -680,19 +547,21 @@ public sealed class PacketSpaceManager implements PacketSpace
                 : ack.deadline();
         if (blockedByPacer) {
             Deadline pacerDeadline = congestionController.pacerDeadline();
-            logTraceIf(verbose, "pacer deadline: %s, ackDeadline: %s, deadline in %s",
-                       pacerDeadline, ackDeadline, Utils.debugDeadline(now(), min(ackDeadline, pacerDeadline)));
+            if (trace) {
+                log(System.Logger.Level.TRACE, "pacer deadline: %s, ackDeadline: %s, deadline in %s",
+                    pacerDeadline, ackDeadline, Utils.debugDeadline(now(), min(ackDeadline, pacerDeadline)));
+            }
             return min(ackDeadline, pacerDeadline);
         }
         Deadline retryDeadline = blockedByCC ? Deadline.MAX : failedRetransmissionDeadline();
         Deadline pendingDeadline = min(ackDeadline, retryDeadline);
         Deadline lossDeadline = lossTimer();
         // if both loss deadline and PTO timer are set, loss deadline is always earlier
-        if (verbose && LOGGER.isLoggable(System.Logger.Level.TRACE) && lossDeadline != Deadline.MIN) {
+        if (trace && lossDeadline != Deadline.MIN) {
             log(System.Logger.Level.TRACE, "lossDeadline is: " + lossDeadline);
         }
         if (lossDeadline != null) {
-            if (verbose && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            if (trace) {
                 if (lossDeadline == Deadline.MIN) {
                     log(System.Logger.Level.TRACE, "lossDeadline is immediate");
                 } else if (!pendingDeadline.isBefore(lossDeadline)) {
@@ -702,19 +571,19 @@ public sealed class PacketSpaceManager implements PacketSpace
                     log(System.Logger.Level.TRACE, "pending deadline before lossDeadline in %s ms",
                               Deadline.between(now(), pendingDeadline).toMillis());
                 }
+                log(System.Logger.Level.TRACE, "loss deadline: %s, pending deadline: %s, deadline in %s",
+                    lossDeadline,
+                    pendingDeadline,
+                    Utils.debugDeadline(now(), min(pendingDeadline, lossDeadline)));
             }
-            logTraceIf(verbose, "loss deadline: %s, pending deadline: %s, deadline in %s",
-                       lossDeadline,
-                       pendingDeadline,
-                       Utils.debugDeadline(now(), min(pendingDeadline, lossDeadline)));
             return min(pendingDeadline, lossDeadline);
         }
         Deadline ptoDeadline = ptoDeadline();
-        if (verbose && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+        if (trace) {
             log(System.Logger.Level.TRACE, "ptoDeadline is: " + ptoDeadline);
         }
         if (ptoDeadline != null) {
-            if (verbose && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            if (trace) {
                 if (!pendingDeadline.isBefore(ptoDeadline)) {
                     log(System.Logger.Level.TRACE, "ptoDeadline in %s ms",
                               Deadline.between(now(), ptoDeadline).toMillis());
@@ -722,27 +591,27 @@ public sealed class PacketSpaceManager implements PacketSpace
                     log(System.Logger.Level.TRACE, "pending deadline before ptoDeadline in %s ms",
                               Deadline.between(now(), pendingDeadline).toMillis());
                 }
+                log(System.Logger.Level.TRACE, "PTO deadline: %s, pending deadline: %s, deadline in %s",
+                    ptoDeadline,
+                    pendingDeadline,
+                    Utils.debugDeadline(now(), min(pendingDeadline, ptoDeadline)));
             }
-            logTraceIf(verbose, "PTO deadline: %s, pending deadline: %s, deadline in %s",
-                       ptoDeadline,
-                       pendingDeadline,
-                       Utils.debugDeadline(now(), min(pendingDeadline, ptoDeadline)));
             return min(pendingDeadline, ptoDeadline);
         }
-        if (verbose && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+        if (trace) {
             if (pendingDeadline == Deadline.MAX) {
                 log(System.Logger.Level.TRACE, "pending deadline is: Deadline.MAX");
             } else {
                 log(System.Logger.Level.TRACE, "pending deadline in %s ms",
                           Deadline.between(now(), pendingDeadline).toMillis());
             }
-        }
-        if (pendingDeadline.equals(Deadline.MAX)) {
-            logTraceIf(verbose,
-                       "no deadline: pendingAcks: %s, triggered: %s, pendingRetransmit: %s",
-                       pendingAcknowledgements.size(), triggeredForRetransmission.size(), pendingRetransmission.size());
-        } else {
-            logTraceIf(verbose, "deadline is %s", Utils.debugDeadline(now(), pendingDeadline));
+            if (pendingDeadline.equals(Deadline.MAX)) {
+                log(System.Logger.Level.TRACE,
+                    "no deadline: pendingAcks: %s, triggered: %s, pendingRetransmit: %s",
+                    pendingAcknowledgements.size(), triggeredForRetransmission.size(), pendingRetransmission.size());
+            } else {
+                log(System.Logger.Level.TRACE, "deadline is %s", Utils.debugDeadline(now(), pendingDeadline));
+            }
         }
         return pendingDeadline;
     }
@@ -840,135 +709,6 @@ public sealed class PacketSpaceManager implements PacketSpace
             // RTT was updated, some packets might be lost, recompute timers
             packetTransmissionTask.reschedule();
         }
-    }
-
-    private void scanAcknowledgements(List<PendingAcknowledgement> recovered) {
-        for (Iterator<PendingAcknowledgement> iterator = pendingRetransmission.iterator(); iterator.hasNext();) {
-            PendingAcknowledgement pending = iterator.next();
-            boolean firstScan = pending.acknowledgementScanEpoch != acknowledgementScan.epoch();
-            if (acknowledgementScan.scan(pending)) {
-                iterator.remove();
-                if (firstScan) {
-                    trackAcknowledgement(pending, acknowledgementScan.trackedLargestAcknowledged());
-                }
-            }
-        }
-        for (Iterator<PendingAcknowledgement> iterator = triggeredForRetransmission.iterator(); iterator.hasNext();) {
-            PendingAcknowledgement pending = iterator.next();
-            boolean firstScan = pending.acknowledgementScanEpoch != acknowledgementScan.epoch();
-            if (acknowledgementScan.scan(pending)) {
-                iterator.remove();
-                if (firstScan) {
-                    trackAcknowledgement(pending, acknowledgementScan.trackedLargestAcknowledged());
-                }
-            }
-        }
-        resetFailedRetransmissionStateIfIdle();
-        for (Iterator<PendingAcknowledgement> iterator = pendingAcknowledgements.iterator(); iterator.hasNext();) {
-            PendingAcknowledgement pending = iterator.next();
-            boolean firstScan = pending.acknowledgementScanEpoch != acknowledgementScan.epoch();
-            if (acknowledgementScan.scan(pending)) {
-                iterator.remove();
-                ackProcessingState.addAcknowledged(pending);
-                if (firstScan) {
-                    trackAcknowledgement(pending, acknowledgementScan.trackedLargestAcknowledged());
-                }
-            }
-        }
-        for (Iterator<PendingAcknowledgement> iterator = lostPackets.iterator(); iterator.hasNext();) {
-            PendingAcknowledgement lost = iterator.next();
-            if (acknowledgementScan.scan(lost)) {
-                iterator.remove();
-                if (recovered != null) {
-                    recovered.add(lost);
-                }
-            }
-        }
-    }
-
-    private void accountAcknowledgements(AckFrame frame,
-                                         long largestAcknowledged,
-                                         boolean largestAckAdvanced,
-                                         Deadline now,
-                                         long ackGeneration) {
-        if (largestAckAdvanced) {
-            consumeRttSample(frame, largestAcknowledged, now, ackGeneration);
-        }
-        for (PendingAcknowledgement pending = ackProcessingState.acknowledged;
-                pending != null;
-                pending = pending.acknowledgedNext) {
-            if (pending.pathGeneration == ackGeneration) {
-                congestionController.packetAcked(pending.packet.size(), pending.sent);
-            }
-        }
-        ackProcessingState.lostCount = detectAndAccountLostPackets(now, ackGeneration);
-        ackProcessingState.pathControlCapacityReleased = completePathControlFlights(frame, now, ackGeneration);
-        if (largestAckAdvanced
-                && packetNumberSpace != PacketNumberSpace.INITIAL
-                && acknowledgementScan.newestAcknowledgedPathGeneration() == ackGeneration) {
-            rttEstimator.resetPtoBackoff();
-        }
-    }
-
-    private void consumeRttSample(AckFrame frame,
-                                  long largestAcknowledged,
-                                  Deadline now,
-                                  long ackGeneration) {
-        Deadline sentTime = acknowledgementScan.rttSent();
-        if (sentTime == null || acknowledgementScan.rttPathGeneration() != ackGeneration) {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                log(System.Logger.Level.DEBUG, "RTT sample on packet %s ignored: not ack eliciting",
-                          largestAcknowledged);
-            }
-            return;
-        }
-        long ackDelayMicros;
-        if (isApplicationSpace()) {
-            confirmHandshake();
-            long baseAckDelay = peerAckDelayToMicros(frame.ackDelay());
-            if (largestAcknowledged >= handshakeConfirmedPN) {
-                ackDelayMicros = Math.min(baseAckDelay,
-                                          TimeUnit.MILLISECONDS.toMicros(peerMaxAckDelayMillis));
-            } else {
-                ackDelayMicros = baseAckDelay;
-            }
-        } else {
-            ackDelayMicros = 0;
-        }
-        long rttSample = sentTime.until(now, ChronoUnit.MICROS);
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            log(System.Logger.Level.DEBUG, "New RTT sample on packet %s: %s us (delay %s us)",
-                      largestAcknowledged, rttSample, ackDelayMicros);
-        }
-        rttEstimator.consumeRttSample(rttSample, ackDelayMicros, now);
-    }
-
-    private boolean completePathControlFlights(AckFrame frame, Deadline now, long ackGeneration) {
-        if (pathControlFlights.isEmpty()) {
-            return false;
-        }
-        Deadline lossSendTime = now.minus(rttEstimator.lossThreshold());
-        List<QuicPacket> completed = ackProcessingState.completedPathControls;
-        completed.clear();
-        for (Iterator<PathControlFlight> iterator = pathControlFlights.values().iterator(); iterator.hasNext();) {
-            PathControlFlight flight = iterator.next();
-            boolean acknowledged = frame.isAcknowledging(flight.packetNumber);
-            boolean lost = flight.packetNumber < largestReceivedAckedPN
-                    && (flight.packetNumber < largestReceivedAckedPN - PACKET_THRESHOLD
-                            || !lossSendTime.isBefore(flight.sent));
-            if (!acknowledged && !lost) {
-                continue;
-            }
-            iterator.remove();
-            if (flight.accountingGeneration == ackGeneration) {
-                completed.add(flight.packet);
-            }
-        }
-        if (completed.isEmpty()) {
-            return false;
-        }
-        congestionController.packetDiscarded(completed);
-        return true;
     }
 
     @Override
@@ -1224,6 +964,291 @@ public sealed class PacketSpaceManager implements PacketSpace
         return two.isAfter(one) ? one : two;
     }
 
+    private static int nextOptimisticAckSkipInterval() {
+        return OPTIMISTIC_ACK_RANDOM.nextInt(OPTIMISTIC_ACK_SKIP_INTERVAL_MIN,
+                                             OPTIMISTIC_ACK_SKIP_INTERVAL_MAX + 1);
+    }
+
+    private static boolean hasRetransmittableFrames(QuicPacket packet) {
+        for (QuicFrame frame : packet.frames()) {
+            if (!(frame instanceof AckFrame)
+                    && !(frame instanceof PaddingFrame)
+                    && !(frame instanceof PathChallengeFrame)
+                    && !(frame instanceof PathResponseFrame)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void packetSent0(QuicPacket packet,
+                             long previousPacketNumber,
+                             long packetNumber,
+                             long pathGeneration) {
+        if (packetNumber < 0) {
+            throw new IllegalArgumentException("Invalid packet number: " + packetNumber);
+        }
+        largestAckSent(AckFrame.largestAcknowledgedInPacket(packet));
+        boolean pathControl = false;
+        boolean applicationRecovery = false;
+        for (QuicFrame frame : packet.frames()) {
+            if (frame instanceof PathChallengeFrame || frame instanceof PathResponseFrame) {
+                pathControl = true;
+            } else if (!(frame instanceof AckFrame)
+                    && !(frame instanceof PaddingFrame)
+                    && !(frame instanceof PingFrame)) {
+                applicationRecovery = true;
+                break;
+            }
+        }
+        if (pathControl && !applicationRecovery) {
+            Deadline sent = now();
+            long accountingGeneration = pathRecoveryState.generation();
+            transferLock.lock();
+            try {
+                if (!isOpenForTransmission()) {
+                    return;
+                }
+                pathRecoveryState.runIfCurrent(accountingGeneration, () -> {
+                    pathControlFlights.put(packetNumber,
+                                           new PathControlFlight(packet,
+                                                                 sent,
+                                                                 packetNumber,
+                                                                 pathGeneration,
+                                                                 accountingGeneration));
+                    congestionController.packetSent(packet.size());
+                });
+            } finally {
+                transferLock.unlock();
+            }
+            return;
+        }
+        if (previousPacketNumber >= 0) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                log(System.Logger.Level.DEBUG, "retransmitted packet %s(%d) as %d",
+                          packet.packetType(), previousPacketNumber, packetNumber);
+            }
+
+            boolean found = false;
+            transferLock.lock();
+            try {
+                // check for close and addAcknowledgement in the same lock
+                // to avoid races with close / clearAll
+                var closed = !this.isOpenForTransmission();
+                if (closed) {
+                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                        log(System.Logger.Level.DEBUG, "already closed: ignoring packet pn:%s",
+                                  packet.packetNumber());
+                    }
+                    return;
+                }
+                // Pending retransmissions are expected to be short; keep the linear scan
+                // so the queue representation remains simple.
+                var iterator = pendingRetransmission.iterator();
+                PendingAcknowledgement replacement;
+                while (iterator.hasNext()) {
+                    PendingAcknowledgement pending = iterator.next();
+                    if (pending.hasPreviousNumber(previousPacketNumber)) {
+                        // no need to retransmit twice, but can this happen?
+                        iterator.remove();
+                    } else if (!found && pending.hasExactNumber(previousPacketNumber)) {
+                        PreviousNumbers previous = new PreviousNumbers(
+                                previousPacketNumber,
+                                pending.sent,
+                                pending.largestAcknowledged,
+                                pending.pathGeneration,
+                                pending.previousNumbers);
+                        replacement =
+                                new PendingAcknowledgement(packet, now(), packetNumber, previous, pathGeneration);
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            log(System.Logger.Level.DEBUG, "Packet %s(pn:%s) previous %s(pn:%s) is pending acknowledgement",
+                                      packet.packetType(), packetNumber, packet.packetType(), previousPacketNumber);
+                        }
+                        if (lostPackets.remove(pending)) {
+                            lostPackets.add(replacement);
+                        }
+                        addAcknowledgement(replacement);
+                        iterator.remove();
+                        found = true;
+                    }
+                }
+            } finally {
+                transferLock.unlock();
+            }
+            if (found) {
+                packetTransmissionTask.reschedule();
+            }
+            if (!found) {
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    log(System.Logger.Level.DEBUG, "packetRetransmitted: packet not found - previous: %s for %s(%s)",
+                              previousPacketNumber, packet.packetType(), packetNumber);
+                }
+            }
+        } else {
+            if (packet.isAckEliciting()) {
+                // This method works with the following assumption:
+                // - Non ACK eliciting packet do not need to be retransmitted because:
+                //       - they only contain ack frames - which may/will we be retransmitted
+                //         anyway with the next ack eliciting packet
+                //       - they will not be acknowledged directly - we don't want to
+                //         resend them constantly
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    log(System.Logger.Level.DEBUG, "Packet %s(pn:%s) is pending acknowledgement",
+                              packet.packetType(), packetNumber);
+                }
+                PendingAcknowledgement pending = new PendingAcknowledgement(packet,
+                                                                            now(), packetNumber, null, pathGeneration);
+                transferLock.lock();
+                try {
+                    // check for close and addAcknowledgement in the same lock
+                    // to avoid races with close / clearAll
+                    var closed = !this.isOpenForTransmission();
+                    if (closed) {
+                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                            log(System.Logger.Level.DEBUG, "already closed: ignoring packet pn:%s",
+                                      packet.packetNumber());
+                        }
+                        return;
+                    }
+                    addAcknowledgement(pending);
+                    packetTransmissionTask.reschedule();
+                } finally {
+                    transferLock.unlock();
+                }
+            }
+        }
+
+    }
+
+    private void scanAcknowledgements(List<PendingAcknowledgement> recovered) {
+        for (Iterator<PendingAcknowledgement> iterator = pendingRetransmission.iterator(); iterator.hasNext();) {
+            PendingAcknowledgement pending = iterator.next();
+            boolean firstScan = pending.acknowledgementScanEpoch != acknowledgementScan.epoch();
+            if (acknowledgementScan.scan(pending)) {
+                iterator.remove();
+                if (firstScan) {
+                    trackAcknowledgement(pending, acknowledgementScan.trackedLargestAcknowledged());
+                }
+            }
+        }
+        for (Iterator<PendingAcknowledgement> iterator = triggeredForRetransmission.iterator(); iterator.hasNext();) {
+            PendingAcknowledgement pending = iterator.next();
+            boolean firstScan = pending.acknowledgementScanEpoch != acknowledgementScan.epoch();
+            if (acknowledgementScan.scan(pending)) {
+                iterator.remove();
+                if (firstScan) {
+                    trackAcknowledgement(pending, acknowledgementScan.trackedLargestAcknowledged());
+                }
+            }
+        }
+        resetFailedRetransmissionStateIfIdle();
+        for (Iterator<PendingAcknowledgement> iterator = pendingAcknowledgements.iterator(); iterator.hasNext();) {
+            PendingAcknowledgement pending = iterator.next();
+            boolean firstScan = pending.acknowledgementScanEpoch != acknowledgementScan.epoch();
+            if (acknowledgementScan.scan(pending)) {
+                iterator.remove();
+                ackProcessingState.addAcknowledged(pending);
+                if (firstScan) {
+                    trackAcknowledgement(pending, acknowledgementScan.trackedLargestAcknowledged());
+                }
+            }
+        }
+        for (Iterator<PendingAcknowledgement> iterator = lostPackets.iterator(); iterator.hasNext();) {
+            PendingAcknowledgement lost = iterator.next();
+            if (acknowledgementScan.scan(lost)) {
+                iterator.remove();
+                if (recovered != null) {
+                    recovered.add(lost);
+                }
+            }
+        }
+    }
+
+    private void accountAcknowledgements(AckFrame frame,
+                                         long largestAcknowledged,
+                                         boolean largestAckAdvanced,
+                                         Deadline now,
+                                         long ackGeneration) {
+        if (largestAckAdvanced) {
+            consumeRttSample(frame, largestAcknowledged, now, ackGeneration);
+        }
+        for (PendingAcknowledgement pending = ackProcessingState.acknowledged;
+                pending != null;
+                pending = pending.acknowledgedNext) {
+            if (pending.pathGeneration == ackGeneration) {
+                congestionController.packetAcked(pending.packet.size(), pending.sent);
+            }
+        }
+        ackProcessingState.lostCount = detectAndAccountLostPackets(now, ackGeneration);
+        ackProcessingState.pathControlCapacityReleased = completePathControlFlights(frame, now, ackGeneration);
+        if (largestAckAdvanced
+                && packetNumberSpace != PacketNumberSpace.INITIAL
+                && acknowledgementScan.newestAcknowledgedPathGeneration() == ackGeneration) {
+            rttEstimator.resetPtoBackoff();
+        }
+    }
+
+    private void consumeRttSample(AckFrame frame,
+                                  long largestAcknowledged,
+                                  Deadline now,
+                                  long ackGeneration) {
+        Deadline sentTime = acknowledgementScan.rttSent();
+        if (sentTime == null || acknowledgementScan.rttPathGeneration() != ackGeneration) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                log(System.Logger.Level.DEBUG, "RTT sample on packet %s ignored: not ack eliciting",
+                          largestAcknowledged);
+            }
+            return;
+        }
+        long ackDelayMicros;
+        if (isApplicationSpace()) {
+            confirmHandshake();
+            long baseAckDelay = peerAckDelayToMicros(frame.ackDelay());
+            if (largestAcknowledged >= handshakeConfirmedPN) {
+                ackDelayMicros = Math.min(baseAckDelay,
+                                          TimeUnit.MILLISECONDS.toMicros(peerMaxAckDelayMillis));
+            } else {
+                ackDelayMicros = baseAckDelay;
+            }
+        } else {
+            ackDelayMicros = 0;
+        }
+        long rttSample = sentTime.until(now, ChronoUnit.MICROS);
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            log(System.Logger.Level.DEBUG, "New RTT sample on packet %s: %s us (delay %s us)",
+                      largestAcknowledged, rttSample, ackDelayMicros);
+        }
+        rttEstimator.consumeRttSample(rttSample, ackDelayMicros, now);
+    }
+
+    private boolean completePathControlFlights(AckFrame frame, Deadline now, long ackGeneration) {
+        if (pathControlFlights.isEmpty()) {
+            return false;
+        }
+        Deadline lossSendTime = now.minus(rttEstimator.lossThreshold());
+        List<QuicPacket> completed = ackProcessingState.completedPathControls;
+        completed.clear();
+        for (Iterator<PathControlFlight> iterator = pathControlFlights.values().iterator(); iterator.hasNext();) {
+            PathControlFlight flight = iterator.next();
+            boolean acknowledged = frame.isAcknowledging(flight.packetNumber);
+            boolean lost = flight.packetNumber < largestReceivedAckedPN
+                    && (flight.packetNumber < largestReceivedAckedPN - PACKET_THRESHOLD
+                            || !lossSendTime.isBefore(flight.sent));
+            if (!acknowledged && !lost) {
+                continue;
+            }
+            iterator.remove();
+            if (flight.accountingGeneration == ackGeneration) {
+                completed.add(flight.packet);
+            }
+        }
+        if (completed.isEmpty()) {
+            return false;
+        }
+        congestionController.packetDiscarded(completed);
+        return true;
+    }
+
     private Deadline failedRetransmissionDeadline() {
         if (triggeredForRetransmission.isEmpty()) {
             return Deadline.MAX;
@@ -1240,11 +1265,6 @@ public sealed class PacketSpaceManager implements PacketSpace
     private void resetFailedRetransmissionState() {
         failedRetransmissionDeadline = Deadline.MAX;
         failedRetransmissionBackoff = 1;
-    }
-
-    private static int nextOptimisticAckSkipInterval() {
-        return OPTIMISTIC_ACK_RANDOM.nextInt(OPTIMISTIC_ACK_SKIP_INTERVAL_MIN,
-                                             OPTIMISTIC_ACK_SKIP_INTERVAL_MAX + 1);
     }
 
     // remove all pending acknowledgements and retransmissions.
@@ -1357,18 +1377,6 @@ public sealed class PacketSpaceManager implements PacketSpace
      */
     private boolean isOpenForTransmission() {
         return !this.closed && this.packetEmitter.isOpen();
-    }
-
-    private void logDebugIf(boolean enabled, String format, Object... args) {
-        if (enabled && LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            log(System.Logger.Level.DEBUG, format, args);
-        }
-    }
-
-    private void logTraceIf(boolean enabled, String format, Object... args) {
-        if (enabled && LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-            log(System.Logger.Level.TRACE, format, args);
-        }
     }
 
     private void log(System.Logger.Level level, String format, Object... arguments) {
@@ -1606,18 +1614,6 @@ public sealed class PacketSpaceManager implements PacketSpace
      */
     private void trackAcknowledgement(PendingAcknowledgement pending, long largestAcknowledged) {
         emittedAckTracker.trackAcknowledgement(pending, largestAcknowledged);
-    }
-
-    private static boolean hasRetransmittableFrames(QuicPacket packet) {
-        for (QuicFrame frame : packet.frames()) {
-            if (!(frame instanceof AckFrame)
-                    && !(frame instanceof PaddingFrame)
-                    && !(frame instanceof PathChallengeFrame)
-                    && !(frame instanceof PathResponseFrame)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private long peerAckDelayToMicros(long ackDelay) {
@@ -2357,6 +2353,363 @@ public sealed class PacketSpaceManager implements PacketSpace
     }
 
     /**
+     * A record to store previous numbers with which a packet has been
+     * retransmitted. If such a packet is acknowledged, we can stop
+     * retransmission.
+     *
+     * @param number              A packet number with which the content of this
+     *                           packet was previously sent.
+     * @param sent                The instant when the previous packet was sent.
+     * @param largestAcknowledged the largest packet number acknowledged by this
+     *                           previous packet, or {@code -1L} if no packet was
+     *                           acknowledged by this packet.
+     * @param pathGeneration      The path generation on which the previous packet was sent.
+     * @param previous            Further previous packet numbers, or {@code null}.
+     */
+    private record PreviousNumbers(long number,
+                                   Deadline sent,
+                                   long largestAcknowledged,
+                                   long pathGeneration,
+                                   PreviousNumbers previous) { }
+
+    /**
+     * A record used to implement {@link #requestSendPing()}.
+     *
+     * @param sent         when the ping frame was sent
+     * @param packetNumber the packet number of the packet containing the pingframe
+     * @param response     the response, which will be complete as soon as a packet whose number is
+     *                    >= to {@code packetNumber} is received.
+     */
+    private record PingRequest(Deadline sent, long packetNumber, CompletableFuture<Long> response) { }
+
+    private record PathControlFlight(QuicPacket packet,
+                                     Deadline sent,
+                                     long packetNumber,
+                                     long pathGeneration,
+                                     long accountingGeneration) {
+    }
+
+    /**
+     * A record to store a packet that hasn't been acknowledged, and should
+     * be scheduled for retransmission if not acknowledged when the deadline
+     * is reached.
+     *
+     * @param packet              the unacknowledged quic packet
+     * @param sent                the instant when the packet was sent.
+     * @param packetNumber        the packet number of the {@code packet}
+     * @param largestAcknowledged the largest packet number acknowledged by this
+     *                           packet, or {@code -1L} if no packet is acknowledged
+     *                           by this packet.
+     * @param previousNumbers     previous packet numbers with which the packet was
+     *                           transmitted, if any, {@code null} otherwise.
+     */
+    private static final class PendingAcknowledgement {
+        private final QuicPacket packet;
+        private final Deadline sent;
+        private final long packetNumber;
+        private final long largestAcknowledged;
+        private final PreviousNumbers previousNumbers;
+        private final long pathGeneration;
+        private long acknowledgementScanEpoch;
+        private boolean acknowledgedInScan;
+        private PendingAcknowledgement acknowledgedNext;
+
+        PendingAcknowledgement(QuicPacket packet, Deadline sent,
+                               long packetNumber, PreviousNumbers previousNumbers,
+                               long pathGeneration) {
+            this.packet = packet;
+            this.sent = sent;
+            this.packetNumber = packetNumber;
+            this.largestAcknowledged = AckFrame.largestAcknowledgedInPacket(packet);
+            this.previousNumbers = previousNumbers;
+            this.pathGeneration = pathGeneration;
+        }
+
+        QuicPacket packet() {
+            return packet;
+        }
+
+        Deadline sent() {
+            return sent;
+        }
+
+        long packetNumber() {
+            return packetNumber;
+        }
+
+        long largestAcknowledged() {
+            return largestAcknowledged;
+        }
+
+        PreviousNumbers previousNumbers() {
+            return previousNumbers;
+        }
+
+        long pathGeneration() {
+            return pathGeneration;
+        }
+
+        public int attempts() {
+            var pn = previousNumbers;
+            int count = 0;
+            while (pn != null) {
+                count++;
+                pn = pn.previous;
+            }
+            return count;
+        }
+
+        boolean hasPreviousNumber(long packetNumber) {
+            if (this.packetNumber <= packetNumber) {
+                return false;
+            }
+            var pn = previousNumbers;
+            while (pn != null) {
+                if (pn.number == packetNumber) {
+                    return true;
+                }
+                pn = pn.previous;
+            }
+            return false;
+        }
+
+        boolean hasExactNumber(long packetNumber) {
+            return this.packetNumber == packetNumber;
+        }
+
+        String prettyPrint() {
+            StringBuilder b = new StringBuilder();
+            b.append("pn:").append(packetNumber);
+            var ppn = previousNumbers;
+            if (ppn != null) {
+                var sep = " [";
+                while (ppn != null) {
+                    b.append(sep).append(ppn.number);
+                    ppn = ppn.previous;
+                    sep = ", ";
+                }
+                b.append("]");
+            }
+            return b.toString();
+        }
+
+        @Override
+        public String toString() {
+            return prettyPrint();
+        }
+    }
+
+    private static final class AcknowledgementScan {
+        private AckFrame frame;
+        private long epoch;
+        private long largestAcknowledged;
+        private long smallestAcknowledged;
+        private int rangeCount;
+        private long[] rangeBounds;
+        private boolean rangesIndexed;
+        private long trackedLargestAcknowledged;
+        private long newestAcknowledgedPathGeneration;
+        private Deadline rttSent;
+        private long rttPathGeneration;
+
+        void begin(AckFrame frame, long epoch) {
+            this.frame = frame;
+            this.epoch = epoch;
+            trackedLargestAcknowledged = -1;
+            newestAcknowledgedPathGeneration = -1;
+            rttSent = null;
+            rttPathGeneration = -1;
+
+            var ranges = frame.ackRanges();
+            rangeCount = ranges.size();
+            largestAcknowledged = frame.largestAcknowledged();
+            smallestAcknowledged = largestAcknowledged - ranges.getFirst().range();
+            rangesIndexed = false;
+        }
+
+        long epoch() {
+            return epoch;
+        }
+
+        boolean scan(PendingAcknowledgement pending) {
+            if (pending.acknowledgementScanEpoch == epoch) {
+                return pending.acknowledgedInScan;
+            }
+            trackedLargestAcknowledged = -1;
+            boolean acknowledged = isAcknowledging(pending.packetNumber);
+            if (acknowledged) {
+                trackedLargestAcknowledged = pending.largestAcknowledged;
+                recordAcknowledgedTransmission(pending.packetNumber, pending.sent, pending.pathGeneration);
+            } else {
+                PreviousNumbers previous = pending.previousNumbers;
+                while (previous != null) {
+                    if (isAcknowledging(previous.number)) {
+                        if (!acknowledged) {
+                            trackedLargestAcknowledged = previous.largestAcknowledged;
+                        }
+                        acknowledged = true;
+                        recordAcknowledgedTransmission(previous.number, previous.sent, previous.pathGeneration);
+                    }
+                    previous = previous.previous;
+                }
+            }
+            pending.acknowledgementScanEpoch = epoch;
+            pending.acknowledgedInScan = acknowledged;
+            return acknowledged;
+        }
+
+        long trackedLargestAcknowledged() {
+            return trackedLargestAcknowledged;
+        }
+
+        long newestAcknowledgedPathGeneration() {
+            return newestAcknowledgedPathGeneration;
+        }
+
+        Deadline rttSent() {
+            return rttSent;
+        }
+
+        long rttPathGeneration() {
+            return rttPathGeneration;
+        }
+
+        private boolean isAcknowledging(long packetNumber) {
+            if (packetNumber > largestAcknowledged) {
+                return false;
+            }
+            if (rangeCount == 1) {
+                return packetNumber >= smallestAcknowledged;
+            }
+            if (!rangesIndexed) {
+                indexRanges();
+            }
+            if (packetNumber < smallestAcknowledged) {
+                return false;
+            }
+            int first = 0;
+            int last = rangeCount - 1;
+            while (first <= last) {
+                int middle = (first + last) >>> 1;
+                int offset = middle * 2;
+                if (packetNumber < rangeBounds[offset]) {
+                    first = middle + 1;
+                } else if (packetNumber > rangeBounds[offset + 1]) {
+                    last = middle - 1;
+                } else {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void indexRanges() {
+            int requiredBounds = rangeCount * 2;
+            if (rangeBounds == null || rangeBounds.length < requiredBounds) {
+                rangeBounds = new long[Integer.highestOneBit(requiredBounds - 1) << 1];
+            }
+            // Descending, inclusive lower/upper pairs support lookups in any packet or retransmission order.
+            rangeBounds[0] = smallestAcknowledged;
+            rangeBounds[1] = largestAcknowledged;
+            var ranges = frame.ackRanges();
+            for (int i = 1; i < rangeCount; i++) {
+                var range = ranges.get(i);
+                long largest = smallestAcknowledged - range.gap() - 2;
+                smallestAcknowledged = largest - range.range();
+                rangeBounds[i * 2] = smallestAcknowledged;
+                rangeBounds[i * 2 + 1] = largest;
+            }
+            rangesIndexed = true;
+        }
+
+        private void recordAcknowledgedTransmission(long packetNumber, Deadline sent, long pathGeneration) {
+            newestAcknowledgedPathGeneration = Math.max(newestAcknowledgedPathGeneration, pathGeneration);
+            if (packetNumber == frame.largestAcknowledged()) {
+                rttSent = sent;
+                rttPathGeneration = pathGeneration;
+            }
+        }
+    }
+
+    private static final class AckProcessingState {
+        private final List<QuicPacket> lostPackets = new ArrayList<>();
+        private final List<QuicPacket> completedPathControls = new ArrayList<>();
+        private PendingAcknowledgement acknowledged;
+        private int lostCount;
+        private boolean pathControlCapacityReleased;
+
+        void reset() {
+            clearAcknowledged();
+            lostPackets.clear();
+            completedPathControls.clear();
+            lostCount = 0;
+            pathControlCapacityReleased = false;
+        }
+
+        void addAcknowledged(PendingAcknowledgement pending) {
+            pending.acknowledgedNext = acknowledged;
+            acknowledged = pending;
+        }
+
+        void clearAcknowledged() {
+            while (acknowledged != null) {
+                PendingAcknowledgement next = acknowledged.acknowledgedNext;
+                acknowledged.acknowledgedNext = null;
+                acknowledged = next;
+            }
+        }
+    }
+
+    // VarHandles provide the same atomic compareAndSet functionality
+    // as atomic classes, but without the additional cost in
+    // footprint.
+    private static final class Handles {
+        static final VarHandle DEADLINE;
+        static final VarHandle NEXTACK;
+        static final VarHandle LARGEST_PROCESSED_PN;
+        static final VarHandle LARGEST_ACK_ELICITING_RECEIVED_PN;
+        static final VarHandle LARGEST_RECEIVED_ACKED_PN;
+        static final VarHandle LARGEST_SENT_ACKED_PN;
+        static final VarHandle LARGEST_ACK_ACKED_PN;
+        static final VarHandle LAST_ACK_ELICITING_TIME;
+        static final VarHandle IGNORE_ALL_PN_BEFORE;
+
+        static {
+            Lookup lookup = MethodHandles.lookup();
+            try {
+                Class<?> srt = PacketTransmissionTask.class;
+                DEADLINE = lookup.findVarHandle(srt, "nextDeadline", Deadline.class);
+
+                Class<?> pmc = PacketSpaceManager.class;
+                LAST_ACK_ELICITING_TIME = lookup.findVarHandle(pmc,
+                                                               "lastAckElicitingTime", Deadline.class);
+                NEXTACK = lookup.findVarHandle(pmc, "nextAckFrame", NextAckFrame.class);
+                LARGEST_RECEIVED_ACKED_PN = lookup
+                        .findVarHandle(pmc, "largestReceivedAckedPN", long.class);
+                LARGEST_SENT_ACKED_PN = lookup
+                        .findVarHandle(pmc, "largestSentAckedPN", long.class);
+                LARGEST_PROCESSED_PN = lookup
+                        .findVarHandle(pmc, "largestProcessedPN", long.class);
+                LARGEST_ACK_ELICITING_RECEIVED_PN = lookup
+                        .findVarHandle(pmc, "largestAckElicitingReceivedPN", long.class);
+                LARGEST_ACK_ACKED_PN = lookup
+                        .findVarHandle(pmc, "largestAckedPNReceivedByPeer", long.class);
+
+                Class<?> eat = EmittedAckTracker.class;
+                IGNORE_ALL_PN_BEFORE = lookup
+                        .findVarHandle(eat, "ignoreAllPacketsBefore", long.class);
+            } catch (Exception e) {
+                throw new ExceptionInInitializerError(e);
+
+            }
+        }
+
+        private Handles() {
+            throw new InternalError();
+        }
+    }
+
+    /**
      * A task that sends packets to the peer.
      *
      * Packets are sent after a delay when:
@@ -2640,7 +2993,8 @@ public sealed class PacketSpaceManager implements PacketSpace
         private boolean transmitAvailablePackets(boolean needBackoff) throws QuicTransportException {
             int packetsSent = 0;
             boolean cwndAvailable;
-            long startTime = System.nanoTime();
+            boolean debug = LOGGER.isLoggable(System.Logger.Level.DEBUG);
+            long startTime = debug ? System.nanoTime() : 0;
             while (true) {
                 cwndAvailable = congestionController.canSendPacket();
                 if (!cwndAvailable && !(needBackoff && packetsSent < 2)) {
@@ -2680,16 +3034,17 @@ public sealed class PacketSpaceManager implements PacketSpace
                 if (!sentNew) {
                     congestionController.appLimited();
                     break;
-                } else {
-                    logDebugIf(needBackoff && packetsSent == 0,
-                               "OUT: transmitted new packet on PTO");
+                } else if (debug && needBackoff && packetsSent == 0) {
+                    log(System.Logger.Level.DEBUG, "OUT: transmitted new packet on PTO");
                 }
                 packetsSent++;
             }
-            logDebugIf(packetsSent != 0,
-                       "OUT: sent: %s packets in %s ns, cwnd limited: %s, pacer limited: %s",
-                       packetsSent, System.nanoTime() - startTime,
-                       congestionController.isCwndLimited(), congestionController.isPacerLimited());
+            if (debug && packetsSent != 0) {
+                log(System.Logger.Level.DEBUG,
+                    "OUT: sent: %s packets in %s ns, cwnd limited: %s, pacer limited: %s",
+                    packetsSent, System.nanoTime() - startTime,
+                    congestionController.isCwndLimited(), congestionController.isPacerLimited());
+            }
             blockedByCC = !cwndAvailable && congestionController.isCwndLimited();
             blockedByPacer = !cwndAvailable && congestionController.isPacerLimited();
             if (!cwndAvailable && isOpenForTransmission()) {
@@ -2751,304 +3106,6 @@ public sealed class PacketSpaceManager implements PacketSpace
             } finally {
                 logStateLock.unlock();
             }
-        }
-    }
-
-    /**
-     * A record to store previous numbers with which a packet has been
-     * retransmitted. If such a packet is acknowledged, we can stop
-     * retransmission.
-     *
-     * @param number              A packet number with which the content of this
-     *                           packet was previously sent.
-     * @param sent                The instant when the previous packet was sent.
-     * @param largestAcknowledged the largest packet number acknowledged by this
-     *                           previous packet, or {@code -1L} if no packet was
-     *                           acknowledged by this packet.
-     * @param pathGeneration      The path generation on which the previous packet was sent.
-     * @param previous            Further previous packet numbers, or {@code null}.
-     */
-    private record PreviousNumbers(long number,
-                                   Deadline sent,
-                                   long largestAcknowledged,
-                                   long pathGeneration,
-                                   PreviousNumbers previous) { }
-
-    /**
-     * A record used to implement {@link #requestSendPing()}.
-     *
-     * @param sent         when the ping frame was sent
-     * @param packetNumber the packet number of the packet containing the pingframe
-     * @param response     the response, which will be complete as soon as a packet whose number is
-     *                    >= to {@code packetNumber} is received.
-     */
-    private record PingRequest(Deadline sent, long packetNumber, CompletableFuture<Long> response) { }
-
-    private record PathControlFlight(QuicPacket packet,
-                                     Deadline sent,
-                                     long packetNumber,
-                                     long pathGeneration,
-                                     long accountingGeneration) {
-    }
-
-    /**
-     * A record to store a packet that hasn't been acknowledged, and should
-     * be scheduled for retransmission if not acknowledged when the deadline
-     * is reached.
-     *
-     * @param packet              the unacknowledged quic packet
-     * @param sent                the instant when the packet was sent.
-     * @param packetNumber        the packet number of the {@code packet}
-     * @param largestAcknowledged the largest packet number acknowledged by this
-     *                           packet, or {@code -1L} if no packet is acknowledged
-     *                           by this packet.
-     * @param previousNumbers     previous packet numbers with which the packet was
-     *                           transmitted, if any, {@code null} otherwise.
-     */
-    private static final class PendingAcknowledgement {
-        private final QuicPacket packet;
-        private final Deadline sent;
-        private final long packetNumber;
-        private final long largestAcknowledged;
-        private final PreviousNumbers previousNumbers;
-        private final long pathGeneration;
-        private long acknowledgementScanEpoch;
-        private boolean acknowledgedInScan;
-        private PendingAcknowledgement acknowledgedNext;
-
-        PendingAcknowledgement(QuicPacket packet, Deadline sent,
-                               long packetNumber, PreviousNumbers previousNumbers,
-                               long pathGeneration) {
-            this.packet = packet;
-            this.sent = sent;
-            this.packetNumber = packetNumber;
-            this.largestAcknowledged = AckFrame.largestAcknowledgedInPacket(packet);
-            this.previousNumbers = previousNumbers;
-            this.pathGeneration = pathGeneration;
-        }
-
-        QuicPacket packet() {
-            return packet;
-        }
-
-        Deadline sent() {
-            return sent;
-        }
-
-        long packetNumber() {
-            return packetNumber;
-        }
-
-        long largestAcknowledged() {
-            return largestAcknowledged;
-        }
-
-        PreviousNumbers previousNumbers() {
-            return previousNumbers;
-        }
-
-        long pathGeneration() {
-            return pathGeneration;
-        }
-
-        public int attempts() {
-            var pn = previousNumbers;
-            int count = 0;
-            while (pn != null) {
-                count++;
-                pn = pn.previous;
-            }
-            return count;
-        }
-
-        boolean hasPreviousNumber(long packetNumber) {
-            if (this.packetNumber <= packetNumber) {
-                return false;
-            }
-            var pn = previousNumbers;
-            while (pn != null) {
-                if (pn.number == packetNumber) {
-                    return true;
-                }
-                pn = pn.previous;
-            }
-            return false;
-        }
-
-        boolean hasExactNumber(long packetNumber) {
-            return this.packetNumber == packetNumber;
-        }
-
-        String prettyPrint() {
-            StringBuilder b = new StringBuilder();
-            b.append("pn:").append(packetNumber);
-            var ppn = previousNumbers;
-            if (ppn != null) {
-                var sep = " [";
-                while (ppn != null) {
-                    b.append(sep).append(ppn.number);
-                    ppn = ppn.previous;
-                    sep = ", ";
-                }
-                b.append("]");
-            }
-            return b.toString();
-        }
-
-        @Override
-        public String toString() {
-            return prettyPrint();
-        }
-    }
-
-    private static final class AcknowledgementScan {
-        private AckFrame frame;
-        private long epoch;
-        private long trackedLargestAcknowledged;
-        private long newestAcknowledgedPathGeneration;
-        private Deadline rttSent;
-        private long rttPathGeneration;
-
-        void begin(AckFrame frame, long epoch) {
-            this.frame = frame;
-            this.epoch = epoch;
-            trackedLargestAcknowledged = -1;
-            newestAcknowledgedPathGeneration = -1;
-            rttSent = null;
-            rttPathGeneration = -1;
-        }
-
-        long epoch() {
-            return epoch;
-        }
-
-        boolean scan(PendingAcknowledgement pending) {
-            if (pending.acknowledgementScanEpoch == epoch) {
-                return pending.acknowledgedInScan;
-            }
-            trackedLargestAcknowledged = -1;
-            boolean acknowledged = frame.isAcknowledging(pending.packetNumber);
-            if (acknowledged) {
-                trackedLargestAcknowledged = pending.largestAcknowledged;
-                recordAcknowledgedTransmission(pending.packetNumber, pending.sent, pending.pathGeneration);
-            } else {
-                PreviousNumbers previous = pending.previousNumbers;
-                while (previous != null) {
-                    if (frame.isAcknowledging(previous.number)) {
-                        if (!acknowledged) {
-                            trackedLargestAcknowledged = previous.largestAcknowledged;
-                        }
-                        acknowledged = true;
-                        recordAcknowledgedTransmission(previous.number, previous.sent, previous.pathGeneration);
-                    }
-                    previous = previous.previous;
-                }
-            }
-            pending.acknowledgementScanEpoch = epoch;
-            pending.acknowledgedInScan = acknowledged;
-            return acknowledged;
-        }
-
-        private void recordAcknowledgedTransmission(long packetNumber, Deadline sent, long pathGeneration) {
-            newestAcknowledgedPathGeneration = Math.max(newestAcknowledgedPathGeneration, pathGeneration);
-            if (packetNumber == frame.largestAcknowledged()) {
-                rttSent = sent;
-                rttPathGeneration = pathGeneration;
-            }
-        }
-
-        long trackedLargestAcknowledged() {
-            return trackedLargestAcknowledged;
-        }
-
-        long newestAcknowledgedPathGeneration() {
-            return newestAcknowledgedPathGeneration;
-        }
-
-        Deadline rttSent() {
-            return rttSent;
-        }
-
-        long rttPathGeneration() {
-            return rttPathGeneration;
-        }
-    }
-
-    private static final class AckProcessingState {
-        private final List<QuicPacket> lostPackets = new ArrayList<>();
-        private final List<QuicPacket> completedPathControls = new ArrayList<>();
-        private PendingAcknowledgement acknowledged;
-        private int lostCount;
-        private boolean pathControlCapacityReleased;
-
-        void reset() {
-            clearAcknowledged();
-            lostPackets.clear();
-            completedPathControls.clear();
-            lostCount = 0;
-            pathControlCapacityReleased = false;
-        }
-
-        void addAcknowledged(PendingAcknowledgement pending) {
-            pending.acknowledgedNext = acknowledged;
-            acknowledged = pending;
-        }
-
-        void clearAcknowledged() {
-            while (acknowledged != null) {
-                PendingAcknowledgement next = acknowledged.acknowledgedNext;
-                acknowledged.acknowledgedNext = null;
-                acknowledged = next;
-            }
-        }
-    }
-
-    // VarHandles provide the same atomic compareAndSet functionality
-    // as atomic classes, but without the additional cost in
-    // footprint.
-    private static final class Handles {
-        static final VarHandle DEADLINE;
-        static final VarHandle NEXTACK;
-        static final VarHandle LARGEST_PROCESSED_PN;
-        static final VarHandle LARGEST_ACK_ELICITING_RECEIVED_PN;
-        static final VarHandle LARGEST_RECEIVED_ACKED_PN;
-        static final VarHandle LARGEST_SENT_ACKED_PN;
-        static final VarHandle LARGEST_ACK_ACKED_PN;
-        static final VarHandle LAST_ACK_ELICITING_TIME;
-        static final VarHandle IGNORE_ALL_PN_BEFORE;
-
-        static {
-            Lookup lookup = MethodHandles.lookup();
-            try {
-                Class<?> srt = PacketTransmissionTask.class;
-                DEADLINE = lookup.findVarHandle(srt, "nextDeadline", Deadline.class);
-
-                Class<?> pmc = PacketSpaceManager.class;
-                LAST_ACK_ELICITING_TIME = lookup.findVarHandle(pmc,
-                                                               "lastAckElicitingTime", Deadline.class);
-                NEXTACK = lookup.findVarHandle(pmc, "nextAckFrame", NextAckFrame.class);
-                LARGEST_RECEIVED_ACKED_PN = lookup
-                        .findVarHandle(pmc, "largestReceivedAckedPN", long.class);
-                LARGEST_SENT_ACKED_PN = lookup
-                        .findVarHandle(pmc, "largestSentAckedPN", long.class);
-                LARGEST_PROCESSED_PN = lookup
-                        .findVarHandle(pmc, "largestProcessedPN", long.class);
-                LARGEST_ACK_ELICITING_RECEIVED_PN = lookup
-                        .findVarHandle(pmc, "largestAckElicitingReceivedPN", long.class);
-                LARGEST_ACK_ACKED_PN = lookup
-                        .findVarHandle(pmc, "largestAckedPNReceivedByPeer", long.class);
-
-                Class<?> eat = EmittedAckTracker.class;
-                IGNORE_ALL_PN_BEFORE = lookup
-                        .findVarHandle(eat, "ignoreAllPacketsBefore", long.class);
-            } catch (Exception e) {
-                throw new ExceptionInInitializerError(e);
-
-            }
-        }
-
-        private Handles() {
-            throw new InternalError();
         }
     }
 

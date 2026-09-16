@@ -18,6 +18,7 @@ package io.helidon.quic;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -47,6 +48,8 @@ import io.helidon.quic.packet.QuicPacket.HeadersType;
 import io.helidon.quic.packet.QuicPacket.PacketNumberSpace;
 import io.helidon.quic.packet.QuicPacket.PacketType;
 
+import com.sun.management.ThreadMXBean;
+import org.openjdk.jmh.annotations.AuxCounters;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -108,9 +111,40 @@ public class QuicPathJmhBenchmark {
         return path.ackAction.acknowledged;
     }
 
+    /**
+     * Measures one ACK-processing call, excluding flight preparation and cleanup.
+     *
+     * @param state packet-space fixture
+     * @return largest acknowledged packet number
+     */
     @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public long establishedPathAckRanges(AckState state) {
         state.packetSpace.processAckFrame(state.ackFrame);
+        return state.packetSpace.largestPeerAcknowledgedPacketNumber();
+    }
+
+    /**
+     * Measures worker-thread allocation inside ACK processing, excluding invocation fixtures.
+     * The allocation-counter reads make this method's timing unsuitable for latency comparisons.
+     *
+     * @param state packet-space fixture
+     * @param counters allocation and ACK-operation counters
+     * @return largest acknowledged packet number
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public long establishedPathAckRangesAllocation(AckState state, AckAllocationCounters counters) {
+        long before = counters.allocationBean.getThreadAllocatedBytes(counters.threadId);
+        state.packetSpace.processAckFrame(state.ackFrame);
+        long allocated = counters.allocationBean.getThreadAllocatedBytes(counters.threadId) - before;
+        if (before < 0 || allocated < 0) {
+            throw new IllegalStateException("Worker-thread allocation counter is unavailable or moved backwards");
+        }
+        counters.allocatedBytes += allocated;
+        counters.ackOperations++;
         return state.packetSpace.largestPeerAcknowledgedPacketNumber();
     }
 
@@ -152,6 +186,68 @@ public class QuicPathJmhBenchmark {
         QuicPathManager.SendPermit permit = manager.reserve(DATAGRAM_SIZE).orElseThrow();
         state.endpoint.pushDatagram(threadState.receiver, state.destination, threadState.payload, permit);
         return threadState.receiver.awaitCompletion();
+    }
+
+    private static QuicTLSEngine createTlsEngine() {
+        return (QuicTLSEngine) Proxy.newProxyInstance(
+                QuicTLSEngine.class.getClassLoader(),
+                new Class<?>[] {QuicTLSEngine.class},
+                (proxy, method, arguments) -> {
+                    Class<?> resultType = method.getReturnType();
+                    if (!resultType.isPrimitive() || resultType == void.class) {
+                        return null;
+                    }
+                    if (resultType == boolean.class) {
+                        return false;
+                    }
+                    if (resultType == char.class) {
+                        return '\0';
+                    }
+                    if (resultType == byte.class) {
+                        return (byte) 0;
+                    }
+                    if (resultType == short.class) {
+                        return (short) 0;
+                    }
+                    if (resultType == long.class) {
+                        return 0L;
+                    }
+                    if (resultType == float.class) {
+                        return 0F;
+                    }
+                    if (resultType == double.class) {
+                        return 0D;
+                    }
+                    return 0;
+                });
+    }
+
+    /**
+     * ACK workspace lifecycle measured by an ACK-processing invocation.
+     */
+    public enum AckPacketSpaceLifecycle {
+        /**
+         * Reuse a packet space whose ACK workspace has already handled the selected shape.
+         */
+        REUSED,
+        /**
+         * Process the first ACK on a new packet space, including initial ACK workspace allocation.
+         */
+        FIRST_ACK
+    }
+
+    /**
+     * Packet state visible to a measured ACK-processing call.
+     */
+    public enum AckWorkload {
+        /**
+         * Newly acknowledge packets from the prepared flight.
+         */
+        NEW_ACK,
+        /**
+         * Repeat the ACK after all packets have been acknowledged or discarded.
+         */
+        DUPLICATE
     }
 
     /**
@@ -301,81 +397,234 @@ public class QuicPathJmhBenchmark {
 
     /**
      * Real packet-space workload for ACK-range and in-flight scaling.
+     * Invocation setup and cleanup are excluded from timing, but remain visible to process-wide profilers.
      */
     @State(Scope.Thread)
     public static class AckState {
+        private static final int MAX_IN_FLIGHT_PACKETS = 16 * 1024 * 1024 / DATAGRAM_SIZE;
+        private static final int MAX_ACK_RANGES = 1024;
+        private static final long PATH_GENERATION = 1;
+
         /**
-         * Number of ack-eliciting packets outstanding before each measured ACK.
+         * Number of ack-eliciting packets in each prepared flight, bounded by the default 16 MiB flight limit.
          */
-        @Param({"64", "4096"})
+        @Param({"64"})
         public int inFlightPackets;
 
         /**
-         * Number of ranges in the measured ACK frame.
+         * Number of ranges spread across the complete flight.
+         * Fragmented ACKs acknowledge approximately half the packets.
          */
-        @Param({"1", "32"})
+        @Param({"1"})
         public int ackRangeCount;
 
-        private BenchmarkPacketEmitter emitter;
+        /**
+         * Whether the measured ACK uses a primed packet space or a new packet space with unused ACK workspace.
+         */
+        @Param({"REUSED"})
+        public AckPacketSpaceLifecycle ackPacketSpaceLifecycle;
+
+        /**
+         * Whether the ACK newly acknowledges the prepared flight or repeats an ACK after all flight state is removed.
+         */
+        @Param({"NEW_ACK"})
+        public AckWorkload ackWorkload;
+
+        private AckPacketEmitter emitter;
+        private QuicRuntimeConfig runtimeConfig;
         private QuicTLSEngine tlsEngine;
         private PacketSpaceManager packetSpace;
         private AckFrame ackFrame;
-        private BenchmarkPacket[] packets;
+        private List<AckRange> ranges;
 
-        @Setup(Level.Trial)
-        public void setUpTrial() {
-            emitter = new BenchmarkPacketEmitter();
-            tlsEngine = createTlsEngine();
-            packets = new BenchmarkPacket[inFlightPackets];
-            for (int i = 0; i < packets.length; i++) {
-                packets[i] = new BenchmarkPacket(i);
+        static void validateParameters(int inFlightPackets,
+                                       int ackRangeCount,
+                                       AckPacketSpaceLifecycle lifecycle,
+                                       AckWorkload workload) {
+            if (inFlightPackets < 1 || inFlightPackets > MAX_IN_FLIGHT_PACKETS) {
+                throw new IllegalArgumentException("inFlightPackets must be between 1 and " + MAX_IN_FLIGHT_PACKETS);
             }
-            List<AckRange> ranges = new ArrayList<>(ackRangeCount);
-            ranges.add(AckRange.of(0, ackRangeCount == 1 ? inFlightPackets - 1L : 0));
-            for (int i = 1; i < ackRangeCount; i++) {
-                ranges.add(AckRange.of(0, 0));
+            if (ackRangeCount < 1 || ackRangeCount > MAX_ACK_RANGES
+                    || ackRangeCount > (inFlightPackets + 1) / 2) {
+                throw new IllegalArgumentException("ackRangeCount must be between 1 and "
+                                                           + Math.min(MAX_ACK_RANGES, (inFlightPackets + 1) / 2)
+                                                           + " for inFlightPackets=" + inFlightPackets);
             }
-            ackFrame = AckFrame.create(inFlightPackets - 1L, 0, ranges);
+            if (lifecycle == AckPacketSpaceLifecycle.FIRST_ACK && workload == AckWorkload.DUPLICATE) {
+                throw new IllegalArgumentException("DUPLICATE requires a REUSED packet space");
+            }
         }
 
+        static List<AckRange> createRanges(int inFlightPackets, int ackRangeCount) {
+            if (ackRangeCount == 1) {
+                return List.of(AckRange.of(0, inFlightPackets - 1L));
+            }
+            int acknowledged = (inFlightPackets + 1) / 2;
+            int skipped = inFlightPackets - acknowledged;
+            List<AckRange> result = new ArrayList<>(ackRangeCount);
+            for (int i = 0; i < ackRangeCount; i++) {
+                int rangeLength = acknowledged / ackRangeCount + (i < acknowledged % ackRangeCount ? 1 : 0);
+                int gapLength = i == 0 ? 0
+                        : skipped / (ackRangeCount - 1) + (i <= skipped % (ackRangeCount - 1) ? 1 : 0);
+                result.add(AckRange.of(i == 0 ? 0 : gapLength - 1L, rangeLength - 1L));
+            }
+            return List.copyOf(result);
+        }
+
+        /**
+         * Creates the ACK shape, primes reusable packet-space capacity, and prepares duplicate ACK state once.
+         */
+        @Setup(Level.Trial)
+        public void setUpTrial() {
+            validateParameters(inFlightPackets, ackRangeCount, ackPacketSpaceLifecycle, ackWorkload);
+            runtimeConfig = QuicRuntimeConfig.create(QuicConfig.create());
+            tlsEngine = createTlsEngine();
+            ranges = createRanges(inFlightPackets, ackRangeCount);
+            if (ackPacketSpaceLifecycle == AckPacketSpaceLifecycle.REUSED) {
+                createPacketSpace();
+                setUpInvocation();
+                packetSpace.processAckFrame(ackFrame);
+                tearDownInvocation();
+            }
+        }
+
+        /**
+         * Prepares a fresh flight for a new ACK, or reuses the duplicate ACK state prepared during trial setup.
+         */
         @Setup(Level.Invocation)
         public void setUpInvocation() {
-            QuicRuntimeConfig runtimeConfig = QuicRuntimeConfig.create(QuicConfig.create());
+            if (ackWorkload == AckWorkload.DUPLICATE && ackFrame != null) {
+                return;
+            }
+            if (ackPacketSpaceLifecycle == AckPacketSpaceLifecycle.FIRST_ACK) {
+                createPacketSpace();
+            }
+            // Reset recovery and transmitter flags through the existing cleanup contract, preserving ACK workspace capacity.
+            packetSpace.retry();
+            emitter.acknowledgedPackets = 0;
+            long firstPacketNumber = packetSpace.allocateNextPN();
+            packetSpace.packetSent(new BenchmarkPacket(firstPacketNumber, PacketNumberSpace.HANDSHAKE),
+                                   -1, firstPacketNumber, PATH_GENERATION);
+            long packetNumber = firstPacketNumber;
+            for (int i = 1; i < inFlightPackets; i++) {
+                packetNumber = packetSpace.allocateNextPN();
+                if (packetNumber != firstPacketNumber + i) {
+                    throw new IllegalStateException("Unexpected QUIC benchmark packet number " + packetNumber);
+                }
+                packetSpace.packetSent(new BenchmarkPacket(packetNumber, PacketNumberSpace.HANDSHAKE),
+                                       -1, packetNumber, PATH_GENERATION);
+            }
+            ackFrame = AckFrame.create(packetNumber, 0, ranges);
+            if (ackWorkload == AckWorkload.DUPLICATE) {
+                packetSpace.processAckFrame(ackFrame);
+                packetSpace.retry();
+                emitter.acknowledgedPackets = 0;
+            }
+        }
+
+        /**
+         * Verifies callback accounting and removes unacknowledged state from a newly acknowledged flight.
+         */
+        @TearDown(Level.Invocation)
+        public void tearDownInvocation() {
+            try {
+                int expected = ackWorkload == AckWorkload.DUPLICATE ? 0
+                        : ackRangeCount == 1 ? inFlightPackets : (inFlightPackets + 1) / 2;
+                if (emitter.acknowledgedPackets != expected) {
+                    throw new IllegalStateException("Expected " + expected + " acknowledged packets, got "
+                                                            + emitter.acknowledgedPackets);
+                }
+                if (packetSpace.largestPeerAcknowledgedPacketNumber() != ackFrame.largestAcknowledged()) {
+                    throw new IllegalStateException("ACK did not advance to " + ackFrame.largestAcknowledged());
+                }
+            } finally {
+                if (ackPacketSpaceLifecycle == AckPacketSpaceLifecycle.FIRST_ACK) {
+                    closePacketSpace();
+                } else if (ackWorkload == AckWorkload.NEW_ACK) {
+                    packetSpace.discardOutstandingPackets(_ -> true);
+                }
+            }
+        }
+
+        /**
+         * Closes the packet space and its bounded timer queue.
+         */
+        @TearDown(Level.Trial)
+        public void tearDownTrial() {
+            closePacketSpace();
+        }
+
+        private void createPacketSpace() {
+            emitter = new AckPacketEmitter();
             QuicRttEstimator rttEstimator = QuicRttEstimator.create(runtimeConfig.recovery());
-            QuicCongestionController congestionController =
-                    QuicCubicCongestionController.create(runtimeConfig,
-                                                         "quic-path-jmh-ack",
-                                                         rttEstimator,
-                                                         DATAGRAM_SIZE);
+            QuicCongestionController congestionController = QuicCubicCongestionController.create(runtimeConfig,
+                                                                                                 "quic-path-jmh-ack",
+                                                                                                 rttEstimator,
+                                                                                                 DATAGRAM_SIZE);
             packetSpace = new PacketSpaceManager(PacketNumberSpace.HANDSHAKE,
                                                  emitter,
-                                                 TimeSource.source(),
+                                                 FIXED_TIME_LINE,
                                                  rttEstimator,
                                                  congestionController,
                                                  tlsEngine,
                                                  () -> "quic-path-jmh-ack",
-                                                 new PacketSpaceManager.PathRecoveryState(1),
+                                                 new PacketSpaceManager.PathRecoveryState(PATH_GENERATION),
                                                  runtimeConfig.transportParameters().ackDelayExponent(),
                                                  runtimeConfig.transportParameters().maxAckDelay().toMillis(),
                                                  _ -> {
                                                  });
-            for (BenchmarkPacket packet : packets) {
-                long packetNumber = packetSpace.allocateNextPN();
-                if (packetNumber != packet.packetNumber()) {
-                    throw new IllegalStateException("Unexpected QUIC benchmark packet number " + packetNumber);
+        }
+
+        private void closePacketSpace() {
+            try {
+                if (packetSpace != null) {
+                    packetSpace.close();
                 }
-                packetSpace.packetSent(packet, -1, packetNumber, 0);
+            } finally {
+                if (emitter != null) {
+                    emitter.timer().stop();
+                }
             }
         }
+    }
 
-        @TearDown(Level.Invocation)
-        public void tearDownInvocation() {
-            packetSpace.close();
-        }
+    /**
+     * Worker-thread bytes and ACK counts; their ratio is allocated bytes per ACK.
+     * JMH reports both as unnormalized event totals.
+     */
+    @AuxCounters(AuxCounters.Type.EVENTS)
+    @State(Scope.Thread)
+    public static class AckAllocationCounters {
+        /**
+         * Bytes allocated on the JMH worker inside measured ACK calls.
+         */
+        public long allocatedBytes;
 
-        @TearDown(Level.Trial)
-        public void tearDownTrial() {
-            emitter.timer.stop();
+        /**
+         * Number of ACK calls bracketed by the allocation counter.
+         */
+        public long ackOperations;
+
+        private ThreadMXBean allocationBean;
+        private long threadId;
+
+        /**
+         * Requires a supported, enabled allocation counter on the actual benchmark worker.
+         */
+        @Setup(Level.Trial)
+        public void setUp() {
+            var bean = ManagementFactory.getThreadMXBean();
+            if (!(bean instanceof ThreadMXBean extendedBean) || !extendedBean.isThreadAllocatedMemorySupported()) {
+                throw new IllegalStateException("This JVM does not support worker-thread allocation counters");
+            }
+            allocationBean = extendedBean;
+            if (!allocationBean.isThreadAllocatedMemoryEnabled()) {
+                allocationBean.setThreadAllocatedMemoryEnabled(true);
+            }
+            threadId = Thread.currentThread().threadId();
+            if (allocationBean.getThreadAllocatedBytes(threadId) < 0) {
+                throw new IllegalStateException("Worker-thread allocation counter is unavailable");
+            }
         }
     }
 
@@ -393,7 +642,7 @@ public class QuicPathJmhBenchmark {
      */
     @State(Scope.Thread)
     public static class PacketSentState {
-        private final BenchmarkPacket packet = new BenchmarkPacket(0);
+        private final BenchmarkPacket packet = new BenchmarkPacket(0, PacketNumberSpace.APPLICATION);
         private BenchmarkPacketEmitter emitter;
         private PacketSpaceManager packetSpace;
         private PacketSpaceManager.PathRecoveryState recoveryState;
@@ -500,40 +749,6 @@ public class QuicPathJmhBenchmark {
         }
     }
 
-    private static QuicTLSEngine createTlsEngine() {
-        return (QuicTLSEngine) Proxy.newProxyInstance(
-                QuicTLSEngine.class.getClassLoader(),
-                new Class<?>[] {QuicTLSEngine.class},
-                (proxy, method, arguments) -> {
-                    Class<?> resultType = method.getReturnType();
-                    if (!resultType.isPrimitive() || resultType == void.class) {
-                        return null;
-                    }
-                    if (resultType == boolean.class) {
-                        return false;
-                    }
-                    if (resultType == char.class) {
-                        return '\0';
-                    }
-                    if (resultType == byte.class) {
-                        return (byte) 0;
-                    }
-                    if (resultType == short.class) {
-                        return (short) 0;
-                    }
-                    if (resultType == long.class) {
-                        return 0L;
-                    }
-                    if (resultType == float.class) {
-                        return 0F;
-                    }
-                    if (resultType == double.class) {
-                        return 0D;
-                    }
-                    return 0;
-                });
-    }
-
     private static final class AckAction implements Runnable {
         private long acknowledged;
 
@@ -543,7 +758,7 @@ public class QuicPathJmhBenchmark {
         }
     }
 
-    private record BenchmarkPacket(long packetNumber) implements QuicPacket {
+    private record BenchmarkPacket(long packetNumber, PacketNumberSpace numberSpace) implements QuicPacket {
         private static final QuicConnectionId CONNECTION_ID = PeerConnectionId.create(new byte[0]);
         private static final List<QuicFrame> FRAMES = List.of(PingFrame.create());
 
@@ -553,23 +768,18 @@ public class QuicPathJmhBenchmark {
         }
 
         @Override
-        public PacketNumberSpace numberSpace() {
-            return PacketNumberSpace.APPLICATION;
-        }
-
-        @Override
         public int size() {
             return DATAGRAM_SIZE;
         }
 
         @Override
         public HeadersType headersType() {
-            return HeadersType.SHORT;
+            return numberSpace == PacketNumberSpace.HANDSHAKE ? HeadersType.LONG : HeadersType.SHORT;
         }
 
         @Override
         public PacketType packetType() {
-            return PacketType.ONERTT;
+            return numberSpace == PacketNumberSpace.HANDSHAKE ? PacketType.HANDSHAKE : PacketType.ONERTT;
         }
 
         @Override
@@ -578,7 +788,7 @@ public class QuicPathJmhBenchmark {
         }
     }
 
-    private static final class BenchmarkPacketEmitter implements PacketEmitter {
+    private static class BenchmarkPacketEmitter implements PacketEmitter {
         private final QuicTimerQueue timer = new QuicTimerQueue(() -> { }, () -> "quic-path-jmh-ack-timer");
 
         @Override
@@ -617,6 +827,15 @@ public class QuicPathJmhBenchmark {
         @Override
         public boolean isOpen() {
             return true;
+        }
+    }
+
+    private static final class AckPacketEmitter extends BenchmarkPacketEmitter {
+        private int acknowledgedPackets;
+
+        @Override
+        public void acknowledged(QuicPacket packet) {
+            acknowledgedPackets++;
         }
     }
 

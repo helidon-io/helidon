@@ -349,41 +349,6 @@ public class QuicPacketDecoder {
         return decode(buffer, context, logTag, true);
     }
 
-    private Optional<IncomingQuicPacket> decode(ByteBuffer buffer,
-                                                CodingContext context,
-                                                String logTag,
-                                                boolean payloadOwned)
-            throws QuicKeyUnavailableException, QuicTransportException {
-        Objects.requireNonNull(buffer, "buffer");
-        Objects.requireNonNull(context, "context");
-        Objects.requireNonNull(logTag, "logTag");
-
-        PacketType type = peekPacketType(buffer);
-        PacketReader packetReader = new PacketReader(buffer, context, type, logTag, payloadOwned);
-
-        if (type == PacketType.ZERORTT && context.tlsEngine().clientMode()) {
-            debug(packetReader, "QuicPacketDecoder.decode(%s): client mode ignores incoming 0-RTT packets", packetReader);
-            return Optional.empty();
-        }
-
-        QuicTLSEngine.KeySpace keySpace = type.keySpace().orElse(null);
-        if (keySpace != null && !context.tlsEngine().keysAvailable(keySpace)) {
-            debug(packetReader, "QuicPacketDecoder.decode(%s): no keys, skipping", packetReader);
-            return Optional.empty();
-        }
-
-        return Optional.ofNullable(switch (type) {
-            case RETRY -> IncomingRetryPacket.decode(packetReader, context);
-            case ONERTT -> IncomingOneRttPacket.decode(packetReader, context);
-            case ZERORTT -> IncomingZeroRttPacket.decode(packetReader, context);
-            case HANDSHAKE -> IncomingHandshakePacket.decode(packetReader, context);
-            case INITIAL -> IncomingInitialPacket.decode(packetReader, context);
-            case VERSIONS -> IncomingVersionNegotiationPacket.decode(packetReader, context);
-            case NONE -> throw new QuicPacketDecodeException("Unknown type: " + type.text());
-            default -> throw new QuicPacketDecodeException("Not implemented: " + type.text());
-        });
-    }
-
     /**
      * Peek at the size of the first packet present in the buffer.
      * The position of the buffer must be at the first byte of the
@@ -641,6 +606,41 @@ public class QuicPacketDecoder {
         return PeerConnectionId.create(destinationConnectionID);
     }
 
+    private Optional<IncomingQuicPacket> decode(ByteBuffer buffer,
+                                                CodingContext context,
+                                                String logTag,
+                                                boolean payloadOwned)
+            throws QuicKeyUnavailableException, QuicTransportException {
+        Objects.requireNonNull(buffer, "buffer");
+        Objects.requireNonNull(context, "context");
+        Objects.requireNonNull(logTag, "logTag");
+
+        PacketType type = peekPacketType(buffer);
+        PacketReader packetReader = new PacketReader(buffer, context, type, logTag, payloadOwned);
+
+        if (type == PacketType.ZERORTT && context.tlsEngine().clientMode()) {
+            debug(packetReader, "QuicPacketDecoder.decode(%s): client mode ignores incoming 0-RTT packets", packetReader);
+            return Optional.empty();
+        }
+
+        QuicTLSEngine.KeySpace keySpace = type.keySpace().orElse(null);
+        if (keySpace != null && !context.tlsEngine().keysAvailable(keySpace)) {
+            debug(packetReader, "QuicPacketDecoder.decode(%s): no keys, skipping", packetReader);
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(switch (type) {
+            case RETRY -> IncomingRetryPacket.decode(packetReader, context);
+            case ONERTT -> IncomingOneRttPacket.decode(packetReader, context);
+            case ZERORTT -> IncomingZeroRttPacket.decode(packetReader, context);
+            case HANDSHAKE -> IncomingHandshakePacket.decode(packetReader, context);
+            case INITIAL -> IncomingInitialPacket.decode(packetReader, context);
+            case VERSIONS -> IncomingVersionNegotiationPacket.decode(packetReader, context);
+            case NONE -> throw new QuicPacketDecodeException("Unknown type: " + type.text());
+            default -> throw new QuicPacketDecodeException("Not implemented: " + type.text());
+        });
+    }
+
     /**
      * Reads the Quic V1 packet type from the given byte.
      *
@@ -782,333 +782,6 @@ public class QuicPacketDecoder {
         @Override
         public final QuicConnectionId destinationId() {
             return destinationId;
-        }
-    }
-
-    /**
-     * A {@code PacketReader} to read a Quic packet.
-     * A {@code PacketReader} may have version specific code, and therefore
-     * has an implicit pointer to a {@code QuicPacketDecoder} instance.
-     * <p>
-     * A {@code PacketReader} offers high level helper methods to read
-     * data (such as Connection IDs or Packet Numbers) from a Quic packet.
-     * It has however no or little knowledge of the actual packet structure.
-     * It is driven by the {@code decode} method of the appropriate
-     * {@code IncomingQuicPacket} type.
-     * <p>
-     * A {@code PacketReader} is stateful: it encapsulates a {@code ByteBuffer}
-     * (or possibly a list of byte buffers - as a future enhancement) and
-     * advances the position on the buffer it is reading.
-     *
-     */
-    class PacketReader {
-        private static final int PACKET_NUMBER_MASK = 0x03;
-        private final ByteBuffer buffer;
-        private final int offset;
-        private final int initialLimit;
-        private final CodingContext context;
-        private final PacketType packetType;
-        private final String logTag;
-        private final boolean payloadOwned;
-
-        PacketReader(ByteBuffer buffer, CodingContext context) {
-            this(buffer, context, peekPacketType(buffer), "");
-        }
-
-        PacketReader(ByteBuffer buffer, CodingContext context, PacketType packetType) {
-            this(buffer, context, packetType, "");
-        }
-
-        PacketReader(ByteBuffer buffer, CodingContext context, PacketType packetType, String logTag) {
-            this(buffer, context, packetType, logTag, false);
-        }
-
-        PacketReader(ByteBuffer buffer,
-                     CodingContext context,
-                     PacketType packetType,
-                     String logTag,
-                     boolean payloadOwned) {
-            int pos = buffer.position();
-            int limit = buffer.limit();
-            this.buffer = buffer;
-            this.offset = pos;
-            this.initialLimit = limit;
-            this.context = context;
-            this.packetType = packetType;
-            this.logTag = Objects.requireNonNull(logTag, "logTag");
-            this.payloadOwned = payloadOwned;
-        }
-
-        public int offset() {
-            return offset;
-        }
-
-        public int position() {
-            return buffer.position();
-        }
-
-        public int remaining() {
-            return buffer.remaining();
-        }
-
-        public boolean hasRemaining() {
-            return buffer.hasRemaining();
-        }
-
-        public int bytesRead() {
-            return position() - offset;
-        }
-
-        public String logTag() {
-            return logTag;
-        }
-
-        public void reset() {
-            buffer.position(offset);
-            buffer.limit(initialLimit);
-        }
-
-        public byte headers() {
-            return buffer.get(offset);
-        }
-
-        public void headers(byte headers) {
-            buffer.put(offset, headers);
-        }
-
-        public PacketType packetType() {
-            return packetType;
-        }
-
-        public int packetNumberLength() {
-            return (headers() & PACKET_NUMBER_MASK) + 1;
-        }
-
-        public byte readHeaders() {
-            return buffer.get();
-        }
-
-        public int readVersion() {
-            return buffer.getInt();
-        }
-
-        public int[] readSupportedVersions() {
-            // Calculate payload length and retrieve payload
-            int payloadLen = buffer.remaining();
-            int versionsCount = payloadLen >> 2;
-
-            int[] versions = new int[versionsCount];
-            for (int i = 0; i < versionsCount; i++) {
-                versions[i] = buffer.getInt();
-            }
-            return versions;
-        }
-
-        public long readPacketLength() {
-            var packetLength = readVariableLength();
-            if (packetLength > remaining()) {
-                throw new BufferUnderflowException();
-            }
-            return packetLength;
-        }
-
-        public long readTokenLength() {
-            return readVariableLength();
-        }
-
-        public byte[] readToken(int tokenLength) {
-            // Check to ensure that tokenLength is within valid range
-            if (tokenLength < 0 || tokenLength > buffer.remaining()) {
-                throw new BufferUnderflowException();
-            }
-            byte[] token = tokenLength > 0 ? new byte[tokenLength] : BufferData.EMPTY_BYTES;
-            if (tokenLength > 0) {
-                buffer.get(token);
-            }
-            return token;
-        }
-
-        public long readVariableLength() {
-            return VariableLengthEncoder.decode(buffer);
-        }
-
-        public long readPacketNumber(int packetNumberLength) {
-            var packetNumberSpace = PacketNumberSpace.of(packetType);
-            var largestProcessedPN = context.largestProcessedPN(packetNumberSpace);
-            return QuicPacketNumbers.decodePacketNumber(largestProcessedPN, buffer, packetNumberLength);
-        }
-
-        public long readPacketNumber() {
-            return readPacketNumber(packetNumberLength());
-        }
-
-        public List<QuicFrame> parsePayloadSlice(ByteBuffer payload)
-                throws QuicTransportException {
-            if (!payload.hasRemaining()) {
-                throw new QuicTransportException("Packet with no frames",
-                                                 packetType().keySpace().get(), 0, QuicTransportErrors.PROTOCOL_VIOLATION);
-            }
-            try {
-                List<QuicFrame> frames = new ArrayList<>();
-                int maxAckRangesPerFrame = context.maxAckRangesPerFrame();
-                while (payload.hasRemaining()) {
-                    try {
-                        QuicFrame frame = payloadOwned
-                                ? QuicFrame.decodeOwnedWithAckRangeLimit(payload, maxAckRangesPerFrame)
-                                : QuicFrame.decodeWithAckRangeLimit(payload, maxAckRangesPerFrame);
-                        validateFrameType(frame.typeField());
-                        frames.add(frame);
-                    } catch (QuicPacketDiscardException firstFailure) {
-                        validateFrameType(firstFailure.frameType());
-                        frames.clear();
-                        // Complete structural and mandatory packet-type validation before discard. Connection-state ACK
-                        // validation runs only when retained frames are applied, so it is intentionally skipped here.
-                        while (payload.hasRemaining()) {
-                            long frameType = QuicFrame.validateAfterAckPolicyDiscard(payload);
-                            validateFrameType(frameType);
-                        }
-                        throw firstFailure;
-                    }
-                }
-                return frames;
-            } catch (QuicTransportException | QuicPacketDecodeException e) {
-                throw e;
-            } catch (RuntimeException e) {
-                throw new QuicTransportException(Utils.throwableText(e),
-                                                 packetType().keySpace().get(),
-                                                 0,
-                                                 QuicTransportErrors.INTERNAL_ERROR.code(),
-                                                 e);
-            }
-        }
-
-        private void validateFrameType(long frameType) throws QuicTransportException {
-            if (!QuicFrame.isValidIn(frameType, packetType)) {
-                throw new QuicTransportException("Invalid frame in %s packet".formatted(packetType.text()),
-                                                 packetType.keySpace().orElseThrow(),
-                                                 frameType,
-                                                 QuicTransportErrors.PROTOCOL_VIOLATION);
-            }
-        }
-
-        public void verifyRetry() throws QuicPacketAuthenticationException, QuicTransportException {
-            // assume the buffer position and limit are set to packet boundaries
-            QuicTLSEngine tlsEngine = context.tlsEngine();
-            QuicPacketTLSEngine.internal(tlsEngine)
-                    .verifyRetryPacketBuffer(quicVersion,
-                                             context.originalServerConnId().asReadOnlyBuffer(),
-                                             buffer.asReadOnlyBuffer());
-        }
-
-        public QuicConnectionId readLongConnectionId() {
-            return decodeConnectionID(buffer);
-        }
-
-        public QuicConnectionId readShortConnectionId() {
-            if (!buffer.hasRemaining()) {
-                throw new BufferUnderflowException();
-            }
-
-            // Retrieve connection ID length from endpoint via context
-            int len = context.connectionIdLength();
-            if (len > buffer.remaining()) {
-                throw new BufferUnderflowException();
-            }
-            byte[] destinationConnectionID = new byte[len];
-
-            buffer.get(destinationConnectionID);
-
-            return PeerConnectionId.create(destinationConnectionID);
-        }
-
-        @Override
-        public String toString() {
-            return "PacketReader(offset=%s, pos=%s, remaining=%s)"
-                    .formatted(offset, position(), remaining());
-        }
-
-        public void unprotectLong(long packetLength)
-                throws QuicKeyUnavailableException, QuicTransportException {
-            unprotect(packetLength, (byte) 0x0f);
-        }
-
-        public void unprotectShort()
-                throws QuicKeyUnavailableException, QuicTransportException {
-            unprotect(buffer.remaining(), (byte) 0x1f);
-        }
-
-        byte[] readRetryToken() {
-            var tokenLength = buffer.limit() - buffer.position() - 16;
-            byte[] retryToken = new byte[tokenLength];
-            buffer.get(retryToken);
-            return retryToken;
-        }
-
-        byte[] readRetryIntegrityTag() {
-            // The 16 last bytes in the datagram payload
-            byte[] retryIntegrityTag = new byte[16];
-            buffer.get(retryIntegrityTag);
-            return retryIntegrityTag;
-        }
-
-        private ByteBuffer peekPayloadSlice(int relativeOffset, int length) {
-            int payloadStart = buffer.position() + relativeOffset;
-            return buffer.slice(payloadStart, length);
-        }
-
-        private ByteBuffer decryptPayload(long packetNumber, int payloadLen, int keyPhase)
-                throws QuicPacketAuthenticationException, QuicKeyUnavailableException, QuicTransportException {
-            // Calculate payload length and retrieve payload
-            ByteBuffer output = buffer.slice();
-            // output's position is on the first byte of encrypted data
-            output.mark();
-            int payloadStart = buffer.position();
-            buffer.position(offset);
-            buffer.limit(payloadStart + payloadLen);
-            // buffer's position and limit are set to the boundaries of the encrypted packet
-            try {
-                QuicPacketTLSEngine.internal(context.tlsEngine())
-                        .decryptPacketBuffer(packetType.keySpace().get(),
-                                             packetNumber,
-                                             keyPhase,
-                                             buffer,
-                                             payloadStart - offset,
-                                             output);
-            } catch (BufferOverflowException e) {
-                throw new QuicTransportException("Decrypted packet output buffer is too small",
-                                                 packetType.keySpace().get(),
-                                                 0,
-                                                 QuicTransportErrors.INTERNAL_ERROR.code(),
-                                                 e);
-            }
-            // buffer's position and limit are both at end of the packet
-            output.limit(output.position());
-            output.reset();
-            // output's position and limit are set to the boundaries of decrypted frame data
-            buffer.limit(initialLimit);
-            return output;
-        }
-
-        private void unprotect(long packetLength, byte headerMask)
-                throws QuicKeyUnavailableException, QuicTransportException {
-            QuicTLSEngine tlsEngine = context.tlsEngine();
-            int sampleSize = tlsEngine.headerProtectionSampleSize(packetType.keySpace().get());
-            if (packetLength > buffer.remaining() || packetLength < sampleSize + 4) {
-                throw new BufferUnderflowException();
-            }
-            ByteBuffer sample = peekPayloadSlice(4, sampleSize);
-            long headerProtectionMask = QuicPacketTLSEngine.internal(tlsEngine)
-                    .computeHeaderProtectionMaskBits(packetType.keySpace().get(), true, sample);
-            byte headers = headers();
-            headers ^= (byte) ((headerProtectionMask >>> 32) & headerMask);
-            headers(headers);
-            int packetNumberLength = packetNumberLength();
-            int packetNumberStart = buffer.position();
-            for (int i = 0; i < packetNumberLength; i++) {
-                int shift = 24 - i * Byte.SIZE;
-                buffer.put(packetNumberStart + i,
-                           (byte) (buffer.get(packetNumberStart + i) ^ (headerProtectionMask >>> shift)));
-            }
         }
     }
 
@@ -1824,5 +1497,332 @@ public class QuicPacketDecoder {
     private static final class Decoders {
         static final QuicPacketDecoder QUIC_V1_DECODER = new QuicPacketDecoder(QuicVersion.QUIC_V1);
         static final QuicPacketDecoder QUIC_V2_DECODER = new QuicPacketDecoder(QuicVersion.QUIC_V2);
+    }
+
+    /**
+     * A {@code PacketReader} to read a Quic packet.
+     * A {@code PacketReader} may have version specific code, and therefore
+     * has an implicit pointer to a {@code QuicPacketDecoder} instance.
+     * <p>
+     * A {@code PacketReader} offers high level helper methods to read
+     * data (such as Connection IDs or Packet Numbers) from a Quic packet.
+     * It has however no or little knowledge of the actual packet structure.
+     * It is driven by the {@code decode} method of the appropriate
+     * {@code IncomingQuicPacket} type.
+     * <p>
+     * A {@code PacketReader} is stateful: it encapsulates a {@code ByteBuffer}
+     * (or possibly a list of byte buffers - as a future enhancement) and
+     * advances the position on the buffer it is reading.
+     *
+     */
+    class PacketReader {
+        private static final int PACKET_NUMBER_MASK = 0x03;
+        private final ByteBuffer buffer;
+        private final int offset;
+        private final int initialLimit;
+        private final CodingContext context;
+        private final PacketType packetType;
+        private final String logTag;
+        private final boolean payloadOwned;
+
+        PacketReader(ByteBuffer buffer, CodingContext context) {
+            this(buffer, context, peekPacketType(buffer), "");
+        }
+
+        PacketReader(ByteBuffer buffer, CodingContext context, PacketType packetType) {
+            this(buffer, context, packetType, "");
+        }
+
+        PacketReader(ByteBuffer buffer, CodingContext context, PacketType packetType, String logTag) {
+            this(buffer, context, packetType, logTag, false);
+        }
+
+        PacketReader(ByteBuffer buffer,
+                     CodingContext context,
+                     PacketType packetType,
+                     String logTag,
+                     boolean payloadOwned) {
+            int pos = buffer.position();
+            int limit = buffer.limit();
+            this.buffer = buffer;
+            this.offset = pos;
+            this.initialLimit = limit;
+            this.context = context;
+            this.packetType = packetType;
+            this.logTag = Objects.requireNonNull(logTag, "logTag");
+            this.payloadOwned = payloadOwned;
+        }
+
+        public int offset() {
+            return offset;
+        }
+
+        public int position() {
+            return buffer.position();
+        }
+
+        public int remaining() {
+            return buffer.remaining();
+        }
+
+        public boolean hasRemaining() {
+            return buffer.hasRemaining();
+        }
+
+        public int bytesRead() {
+            return position() - offset;
+        }
+
+        public String logTag() {
+            return logTag;
+        }
+
+        public void reset() {
+            buffer.position(offset);
+            buffer.limit(initialLimit);
+        }
+
+        public byte headers() {
+            return buffer.get(offset);
+        }
+
+        public void headers(byte headers) {
+            buffer.put(offset, headers);
+        }
+
+        public PacketType packetType() {
+            return packetType;
+        }
+
+        public int packetNumberLength() {
+            return (headers() & PACKET_NUMBER_MASK) + 1;
+        }
+
+        public byte readHeaders() {
+            return buffer.get();
+        }
+
+        public int readVersion() {
+            return buffer.getInt();
+        }
+
+        public int[] readSupportedVersions() {
+            // Calculate payload length and retrieve payload
+            int payloadLen = buffer.remaining();
+            int versionsCount = payloadLen >> 2;
+
+            int[] versions = new int[versionsCount];
+            for (int i = 0; i < versionsCount; i++) {
+                versions[i] = buffer.getInt();
+            }
+            return versions;
+        }
+
+        public long readPacketLength() {
+            var packetLength = readVariableLength();
+            if (packetLength > remaining()) {
+                throw new BufferUnderflowException();
+            }
+            return packetLength;
+        }
+
+        public long readTokenLength() {
+            return readVariableLength();
+        }
+
+        public byte[] readToken(int tokenLength) {
+            // Check to ensure that tokenLength is within valid range
+            if (tokenLength < 0 || tokenLength > buffer.remaining()) {
+                throw new BufferUnderflowException();
+            }
+            byte[] token = tokenLength > 0 ? new byte[tokenLength] : BufferData.EMPTY_BYTES;
+            if (tokenLength > 0) {
+                buffer.get(token);
+            }
+            return token;
+        }
+
+        public long readVariableLength() {
+            return VariableLengthEncoder.decode(buffer);
+        }
+
+        public long readPacketNumber(int packetNumberLength) {
+            var packetNumberSpace = PacketNumberSpace.of(packetType);
+            var largestProcessedPN = context.largestProcessedPN(packetNumberSpace);
+            return QuicPacketNumbers.decodePacketNumber(largestProcessedPN, buffer, packetNumberLength);
+        }
+
+        public long readPacketNumber() {
+            return readPacketNumber(packetNumberLength());
+        }
+
+        public List<QuicFrame> parsePayloadSlice(ByteBuffer payload)
+                throws QuicTransportException {
+            if (!payload.hasRemaining()) {
+                throw new QuicTransportException("Packet with no frames",
+                                                 packetType().keySpace().get(), 0, QuicTransportErrors.PROTOCOL_VIOLATION);
+            }
+            try {
+                List<QuicFrame> frames = new ArrayList<>();
+                int maxAckRangesPerFrame = context.maxAckRangesPerFrame();
+                while (payload.hasRemaining()) {
+                    try {
+                        QuicFrame frame = payloadOwned
+                                ? QuicFrame.decodeOwnedWithAckRangeLimit(payload, maxAckRangesPerFrame)
+                                : QuicFrame.decodeWithAckRangeLimit(payload, maxAckRangesPerFrame);
+                        validateFrameType(frame.typeField());
+                        frames.add(frame);
+                    } catch (QuicPacketDiscardException firstFailure) {
+                        validateFrameType(firstFailure.frameType());
+                        frames.clear();
+                        // Complete structural and mandatory packet-type validation before discard. Connection-state ACK
+                        // validation runs only when retained frames are applied, so it is intentionally skipped here.
+                        while (payload.hasRemaining()) {
+                            long frameType = QuicFrame.validateAfterAckPolicyDiscard(payload);
+                            validateFrameType(frameType);
+                        }
+                        throw firstFailure;
+                    }
+                }
+                return frames;
+            } catch (QuicTransportException | QuicPacketDecodeException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                throw new QuicTransportException(Utils.throwableText(e),
+                                                 packetType().keySpace().get(),
+                                                 0,
+                                                 QuicTransportErrors.INTERNAL_ERROR.code(),
+                                                 e);
+            }
+        }
+
+        public void verifyRetry() throws QuicPacketAuthenticationException, QuicTransportException {
+            // assume the buffer position and limit are set to packet boundaries
+            QuicTLSEngine tlsEngine = context.tlsEngine();
+            QuicPacketTLSEngine.internal(tlsEngine)
+                    .verifyRetryPacketBuffer(quicVersion,
+                                             context.originalServerConnId().asReadOnlyBuffer(),
+                                             buffer.asReadOnlyBuffer());
+        }
+
+        public QuicConnectionId readLongConnectionId() {
+            return decodeConnectionID(buffer);
+        }
+
+        public QuicConnectionId readShortConnectionId() {
+            if (!buffer.hasRemaining()) {
+                throw new BufferUnderflowException();
+            }
+
+            // Retrieve connection ID length from endpoint via context
+            int len = context.connectionIdLength();
+            if (len > buffer.remaining()) {
+                throw new BufferUnderflowException();
+            }
+            byte[] destinationConnectionID = new byte[len];
+
+            buffer.get(destinationConnectionID);
+
+            return PeerConnectionId.create(destinationConnectionID);
+        }
+
+        @Override
+        public String toString() {
+            return "PacketReader(offset=%s, pos=%s, remaining=%s)"
+                    .formatted(offset, position(), remaining());
+        }
+
+        public void unprotectLong(long packetLength)
+                throws QuicKeyUnavailableException, QuicTransportException {
+            unprotect(packetLength, (byte) 0x0f);
+        }
+
+        public void unprotectShort()
+                throws QuicKeyUnavailableException, QuicTransportException {
+            unprotect(buffer.remaining(), (byte) 0x1f);
+        }
+
+        byte[] readRetryToken() {
+            var tokenLength = buffer.limit() - buffer.position() - 16;
+            byte[] retryToken = new byte[tokenLength];
+            buffer.get(retryToken);
+            return retryToken;
+        }
+
+        byte[] readRetryIntegrityTag() {
+            // The 16 last bytes in the datagram payload
+            byte[] retryIntegrityTag = new byte[16];
+            buffer.get(retryIntegrityTag);
+            return retryIntegrityTag;
+        }
+
+        private void validateFrameType(long frameType) throws QuicTransportException {
+            if (!QuicFrame.isValidIn(frameType, packetType)) {
+                throw new QuicTransportException("Invalid frame in %s packet".formatted(packetType.text()),
+                                                 packetType.keySpace().orElseThrow(),
+                                                 frameType,
+                                                 QuicTransportErrors.PROTOCOL_VIOLATION);
+            }
+        }
+
+        private ByteBuffer peekPayloadSlice(int relativeOffset, int length) {
+            int payloadStart = buffer.position() + relativeOffset;
+            return buffer.slice(payloadStart, length);
+        }
+
+        private ByteBuffer decryptPayload(long packetNumber, int payloadLen, int keyPhase)
+                throws QuicPacketAuthenticationException, QuicKeyUnavailableException, QuicTransportException {
+            // Calculate payload length and retrieve payload
+            ByteBuffer output = buffer.slice();
+            // output's position is on the first byte of encrypted data
+            output.mark();
+            int payloadStart = buffer.position();
+            buffer.position(offset);
+            buffer.limit(payloadStart + payloadLen);
+            // buffer's position and limit are set to the boundaries of the encrypted packet
+            try {
+                QuicPacketTLSEngine.internal(context.tlsEngine())
+                        .decryptPacketBuffer(packetType.keySpace().get(),
+                                             packetNumber,
+                                             keyPhase,
+                                             buffer,
+                                             payloadStart - offset,
+                                             output);
+            } catch (BufferOverflowException e) {
+                throw new QuicTransportException("Decrypted packet output buffer is too small",
+                                                 packetType.keySpace().get(),
+                                                 0,
+                                                 QuicTransportErrors.INTERNAL_ERROR.code(),
+                                                 e);
+            }
+            // buffer's position and limit are both at end of the packet
+            output.limit(output.position());
+            output.reset();
+            // output's position and limit are set to the boundaries of decrypted frame data
+            buffer.limit(initialLimit);
+            return output;
+        }
+
+        private void unprotect(long packetLength, byte headerMask)
+                throws QuicKeyUnavailableException, QuicTransportException {
+            QuicTLSEngine tlsEngine = context.tlsEngine();
+            int sampleSize = tlsEngine.headerProtectionSampleSize(packetType.keySpace().get());
+            if (packetLength > buffer.remaining() || packetLength < sampleSize + 4) {
+                throw new BufferUnderflowException();
+            }
+            ByteBuffer sample = peekPayloadSlice(4, sampleSize);
+            long headerProtectionMask = QuicPacketTLSEngine.internal(tlsEngine)
+                    .computeHeaderProtectionMaskBits(packetType.keySpace().get(), true, sample);
+            byte headers = headers();
+            headers ^= (byte) ((headerProtectionMask >>> 32) & headerMask);
+            headers(headers);
+            int packetNumberLength = packetNumberLength();
+            int packetNumberStart = buffer.position();
+            for (int i = 0; i < packetNumberLength; i++) {
+                int shift = 24 - i * Byte.SIZE;
+                buffer.put(packetNumberStart + i,
+                           (byte) (buffer.get(packetNumberStart + i) ^ (headerProtectionMask >>> shift)));
+            }
+        }
     }
 }

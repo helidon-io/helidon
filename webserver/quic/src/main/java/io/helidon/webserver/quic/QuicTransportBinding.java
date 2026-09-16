@@ -165,6 +165,22 @@ final class QuicTransportBinding implements PortTransportBinding {
         start();
     }
 
+    private static int normalizePort(int port) {
+        return port < 1 ? 0 : port;
+    }
+
+    private static String inetEndpoint(InetSocketAddress address) {
+        String host = address.getHostString();
+        if (host.indexOf(':') >= 0 && !host.startsWith("[") && !host.endsWith("]")) {
+            host = "[" + host + "]";
+        }
+        return host + ":" + normalizePort(address.getPort());
+    }
+
+    private static String protocolId(QuicSubProtocolConfig config) {
+        return config.type() + "(" + config.name() + ")";
+    }
+
     private void startServer() {
         RuntimeState created = null;
         List<ResolvedRuntime> runtimes = List.of();
@@ -250,22 +266,6 @@ final class QuicTransportBinding implements PortTransportBinding {
             return InetSocketAddress.createUnresolved(inetSocketAddress.getHostString(), port);
         }
         return new InetSocketAddress(inetSocketAddress.getAddress(), port);
-    }
-
-    private static int normalizePort(int port) {
-        return port < 1 ? 0 : port;
-    }
-
-    private static String inetEndpoint(InetSocketAddress address) {
-        String host = address.getHostString();
-        if (host.indexOf(':') >= 0 && !host.startsWith("[") && !host.endsWith("]")) {
-            host = "[" + host + "]";
-        }
-        return host + ":" + normalizePort(address.getPort());
-    }
-
-    private static String protocolId(QuicSubProtocolConfig config) {
-        return config.type() + "(" + config.name() + ")";
     }
 
     private static final class RuntimeState implements AutoCloseable {
@@ -364,6 +364,66 @@ final class QuicTransportBinding implements PortTransportBinding {
                                                  this::discard,
                                                  this::acceptFailed,
                                                  context.listenerContext().executor());
+        }
+
+        @Override
+        public void close() {
+            if (!shutdownStarted.compareAndSet(false, true)) {
+                return;
+            }
+            acceptLoop.stop();
+
+            Throwable failure = null;
+            try {
+                quicServer.stopAccepting();
+            } catch (RuntimeException | Error e) {
+                failure = collectFailure(failure, e);
+            }
+            for (int i = runtimes.size() - 1; i >= 0; i--) {
+                try {
+                    runtimes.get(i).runtime().close();
+                } catch (RuntimeException | Error e) {
+                    failure = collectFailure(failure, e);
+                }
+            }
+            ConnectionOutcome closeOutcome = ConnectionOutcome.ERROR;
+            try {
+                quicServer.close();
+                closeOutcome = ConnectionOutcome.LOCAL_CLOSE;
+            } catch (RuntimeException | Error e) {
+                failure = collectFailure(failure, e);
+            } finally {
+                sniContexts.clear();
+                quicServerObserver.closeOutstanding(closeOutcome);
+            }
+
+            if (failure != null) {
+                if (failure instanceof RuntimeException runtimeException) {
+                    throw runtimeException;
+                }
+                throw (Error) failure;
+            }
+        }
+
+        private static LongFunction<String> defaultApplicationErrors(List<ResolvedRuntime> runtimes) {
+            if (runtimes.size() == 1) {
+                return runtimes.getFirst().runtime().applicationErrors();
+            }
+            return QuicSubProtocolRuntime::defaultApplicationErrorToString;
+        }
+
+        private static Throwable collectFailure(Throwable current, Throwable next) {
+            if (current == null) {
+                return next;
+            }
+            current.addSuppressed(next);
+            return current;
+        }
+
+        private static Throwable unwrap(Throwable throwable) {
+            return throwable instanceof CompletionException completionException && completionException.getCause() != null
+                    ? completionException.getCause()
+                    : throwable;
         }
 
         private InetSocketAddress start() {
@@ -495,45 +555,6 @@ final class QuicTransportBinding implements PortTransportBinding {
             return result;
         }
 
-        @Override
-        public void close() {
-            if (!shutdownStarted.compareAndSet(false, true)) {
-                return;
-            }
-            acceptLoop.stop();
-
-            Throwable failure = null;
-            try {
-                quicServer.stopAccepting();
-            } catch (RuntimeException | Error e) {
-                failure = collectFailure(failure, e);
-            }
-            for (int i = runtimes.size() - 1; i >= 0; i--) {
-                try {
-                    runtimes.get(i).runtime().close();
-                } catch (RuntimeException | Error e) {
-                    failure = collectFailure(failure, e);
-                }
-            }
-            ConnectionOutcome closeOutcome = ConnectionOutcome.ERROR;
-            try {
-                quicServer.close();
-                closeOutcome = ConnectionOutcome.LOCAL_CLOSE;
-            } catch (RuntimeException | Error e) {
-                failure = collectFailure(failure, e);
-            } finally {
-                sniContexts.clear();
-                quicServerObserver.closeOutstanding(closeOutcome);
-            }
-
-            if (failure != null) {
-                if (failure instanceof RuntimeException runtimeException) {
-                    throw runtimeException;
-                }
-                throw (Error) failure;
-            }
-        }
-
         private void reject(QuicConnection connection, String message) {
             connection.terminate(QuicCloseCommand.transport(new IllegalStateException(message), message));
         }
@@ -548,27 +569,6 @@ final class QuicTransportBinding implements PortTransportBinding {
             connection.whenTerminated().whenComplete((_, failure) ->
                                                               sniContexts.remove(connection, selectedContext));
             return selection.tls();
-        }
-
-        private static LongFunction<String> defaultApplicationErrors(List<ResolvedRuntime> runtimes) {
-            if (runtimes.size() == 1) {
-                return runtimes.getFirst().runtime().applicationErrors();
-            }
-            return QuicSubProtocolRuntime::defaultApplicationErrorToString;
-        }
-
-        private static Throwable collectFailure(Throwable current, Throwable next) {
-            if (current == null) {
-                return next;
-            }
-            current.addSuppressed(next);
-            return current;
-        }
-
-        private static Throwable unwrap(Throwable throwable) {
-            return throwable instanceof CompletionException completionException && completionException.getCause() != null
-                    ? completionException.getCause()
-                    : throwable;
         }
     }
 }

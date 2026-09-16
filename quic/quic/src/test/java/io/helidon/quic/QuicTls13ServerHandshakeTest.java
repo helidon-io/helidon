@@ -41,6 +41,8 @@ import javax.net.ssl.X509ExtendedTrustManager;
 import io.helidon.quic.spi.QuicPacketTLSEngine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static io.helidon.quic.QuicTLSEngine.KeySpace.HANDSHAKE;
 import static io.helidon.quic.QuicTLSEngine.KeySpace.INITIAL;
@@ -66,10 +68,16 @@ class QuicTls13ServerHandshakeTest {
     private static final byte[] CLIENT_TRANSPORT_PARAMETERS = bytes("010203040506");
     private static final byte[] SERVER_TRANSPORT_PARAMETERS = bytes("0a0b0c0d0e0f");
 
-    @Test
-    void shouldProduceServerFlightAndVerifyClientFinished() throws Exception {
+    @ParameterizedTest
+    @MethodSource("requestedServerNames")
+    void shouldProduceServerFlightAndVerifyClientFinished(List<SNIServerName> serverNames) throws Exception {
         HelidonClientQuicTLSEngine client = newClientEngine("example.com");
+        configureServerNames(client, serverNames);
         byte[] clientHello = copy(packetEngine(client).handshakeBytesBuffer(INITIAL));
+        assertThat("ClientHello server_name extension presence",
+                   QuicTlsClientHelloMessage.decode(ByteBuffer.wrap(clientHello))
+                           .extension(QuicTlsExtensions.SERVER_NAME).isPresent(),
+                   is(!serverNames.isEmpty()));
 
         RecordingKeyManager keyManager = new RecordingKeyManager(QuicTlsRfc8448Vectors.rsaCertificate(),
                                                                  QuicTlsRfc8448Vectors.rsaPrivateKey(),
@@ -93,6 +101,9 @@ class QuicTls13ServerHandshakeTest {
                    arrayContaining("RSASSA-PSS", "SHA256withRSA"));
         assertThat(keyManager.peerSupportedSignatureAlgorithms,
                    arrayContaining("RSASSA-PSS", "SHA256withRSA"));
+        assertThat(keyManager.requestedServerNames,
+                   equalTo(serverNames.stream().filter(SNIHostName.class::isInstance).toList()));
+        assertServerNameAcknowledgment(flight, serverNames);
         assertThat(serverHandshake.handshakeTrafficKeys(), notNullValue());
         assertThat(serverHandshake.oneRttTrafficKeys(), notNullValue());
 
@@ -141,10 +152,13 @@ class QuicTls13ServerHandshakeTest {
         assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 51));
     }
 
-    @Test
-    void shouldProduceHelloRetryRequestAndCompleteHandshakeOnRetriedClientHello() throws Exception {
+    @ParameterizedTest
+    @MethodSource("requestedServerNames")
+    void shouldProduceHelloRetryRequestAndCompleteHandshakeOnRetriedClientHello(List<SNIServerName> serverNames)
+            throws Exception {
         HelidonClientQuicTLSEngine client =
                 newClientEngine("example.com", new String[] {"x25519", "secp256r1"});
+        configureServerNames(client, serverNames);
         byte[] clientHello1 = copy(packetEngine(client).handshakeBytesBuffer(INITIAL));
 
         QuicTls13ServerHandshake serverHandshake =
@@ -167,6 +181,7 @@ class QuicTls13ServerHandshakeTest {
 
         QuicTls13ServerHandshake.ServerFlight flight =
                 (QuicTls13ServerHandshake.ServerFlight) serverHandshake.consumeClientHello(ByteBuffer.wrap(clientHello2));
+        assertServerNameAcknowledgment(flight, serverNames);
 
         client.versionNegotiated(VERSION);
         packetEngine(client).consumeHandshakeBytesBuffer(INITIAL, ByteBuffer.wrap(flight.serverHello()));
@@ -183,13 +198,15 @@ class QuicTls13ServerHandshakeTest {
         assertThat(client.serverHelloTranscriptHash(), equalTo(flight.serverHelloTranscriptHash()));
     }
 
-    @Test
-    void shouldResumeWithCachedPskAndAbbreviatedServerFlight() throws Exception {
-        QuicTlsResumptionTicket resumptionTicket = newResumptionTicket();
+    @ParameterizedTest
+    @MethodSource("requestedServerNames")
+    void shouldResumeWithCachedPskAndAbbreviatedServerFlight(List<SNIServerName> serverNames) throws Exception {
+        QuicTlsResumptionTicket resumptionTicket = newResumptionTicket(serverNames);
         QuicTlsServerSessionCache serverSessionCache = new QuicTlsServerSessionCache();
         serverSessionCache.cache(resumptionTicket);
 
         HelidonClientQuicTLSEngine resumedClient = newClientEngine("example.com", resumptionTicket);
+        configureServerNames(resumedClient, serverNames);
         byte[] resumedClientHello = copy(packetEngine(resumedClient).handshakeBytesBuffer(INITIAL));
 
         QuicTls13ServerHandshake resumedServerHandshake = newServerHandshake("h3",
@@ -210,6 +227,7 @@ class QuicTls13ServerHandshakeTest {
         assertThat(resumedFlight.certificate(), is((byte[]) null));
         assertThat(resumedFlight.certificateVerify(), is((byte[]) null));
         assertThat(resumedFlight.localCertificates(), is((X509Certificate[]) null));
+        assertServerNameAcknowledgment(resumedFlight, serverNames);
 
         resumedClient.versionNegotiated(VERSION);
         packetEngine(resumedClient).consumeHandshakeBytesBuffer(INITIAL, ByteBuffer.wrap(resumedFlight.serverHello()));
@@ -618,6 +636,31 @@ class QuicTls13ServerHandshakeTest {
 
         assertThat(thrown.reason(), containsString("changed an extension that must remain identical"));
         assertThat(thrown.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 47));
+    }
+
+    @Test
+    void shouldRejectClientHelloWithoutTransportParametersAsMissingExtension() throws Exception {
+        HelidonClientQuicTLSEngine client = newClientEngine("example.com");
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(
+                ByteBuffer.wrap(copy(packetEngine(client).handshakeBytesBuffer(INITIAL))));
+        QuicTlsClientHelloMessage missingTransportParameters = QuicTlsClientHelloMessage.create(
+                clientHello.legacyVersion(),
+                clientHello.random(),
+                clientHello.legacySessionId(),
+                clientHello.cipherSuites(),
+                clientHello.legacyCompressionMethods(),
+                clientHello.extensions().stream()
+                        .filter(extension -> extension.type() != QuicTlsExtensions.QUIC_TRANSPORT_PARAMETERS)
+                        .toList());
+        QuicTls13ServerHandshake serverHandshake = newServerHandshake("h3");
+
+        QuicTransportException failure = assertThrows(
+                QuicTransportException.class,
+                () -> serverHandshake.consumeClientHello(missingTransportParameters.encode()));
+
+        assertThat(failure.errorCode(), is(0x016dL));
+        assertThat(failure.reason(), containsString("missing quic_transport_parameters extension"));
+        assertThat(serverHandshake.complete(), is(false));
     }
 
     @Test
@@ -1062,8 +1105,25 @@ class QuicTls13ServerHandshakeTest {
         assertThat(thrown.getCause(), sameInstance(failure));
     }
 
+    private static List<List<SNIServerName>> requestedServerNames() {
+        return List.of(List.of(new SNIHostName("example.com")),
+                       List.of(),
+                       List.of(new SNIServerName(1, bytes("010203")) { }));
+    }
+
+    private static void configureServerNames(HelidonClientQuicTLSEngine client, List<SNIServerName> serverNames) {
+        SSLParameters parameters = client.sslParameters();
+        parameters.setServerNames(serverNames);
+        client.sslParameters(parameters);
+    }
+
     private static QuicTlsResumptionTicket newResumptionTicket() throws Exception {
+        return newResumptionTicket(List.of(new SNIHostName("example.com")));
+    }
+
+    private static QuicTlsResumptionTicket newResumptionTicket(List<SNIServerName> serverNames) throws Exception {
         HelidonClientQuicTLSEngine initialClient = newClientEngine("example.com");
+        configureServerNames(initialClient, serverNames);
         byte[] initialClientHello = copy(packetEngine(initialClient).handshakeBytesBuffer(INITIAL));
         QuicTls13ServerHandshake initialServerHandshake = newServerHandshake("h3");
         QuicTls13ServerHandshake.ServerFlight initialFlight =
@@ -1248,6 +1308,17 @@ class QuicTls13ServerHandshakeTest {
         List<QuicTlsExtension> extensions = QuicTlsExtensions.decode(body, "EncryptedExtensions");
         QuicTlsCodecSupport.ensureConsumed(body, "EncryptedExtensions");
         return extensions;
+    }
+
+    private static void assertServerNameAcknowledgment(QuicTls13ServerHandshake.ServerFlight flight,
+                                                      List<SNIServerName> serverNames) throws QuicTransportException {
+        List<QuicTlsExtension> acknowledgments = encryptedExtensions(flight).stream()
+                .filter(extension -> extension.type() == QuicTlsExtensions.SERVER_NAME)
+                .toList();
+        List<QuicTlsExtension> expected = serverNames.stream().anyMatch(SNIHostName.class::isInstance)
+                ? List.of(QuicTlsExtension.create(QuicTlsExtensions.SERVER_NAME, new byte[0]))
+                : List.of();
+        assertThat("EncryptedExtensions server_name acknowledgment", acknowledgments, equalTo(expected));
     }
 
     private static void completeForeignClientHandshake(ForeignClientHello clientHello,
@@ -1631,6 +1702,7 @@ class QuicTls13ServerHandshakeTest {
         private final boolean chooseAlias;
         private String[] localSupportedSignatureAlgorithms;
         private String[] peerSupportedSignatureAlgorithms;
+        private List<SNIServerName> requestedServerNames;
 
         private RecordingKeyManager(X509Certificate certificate, PrivateKey privateKey, boolean chooseAlias) {
             super(certificate, privateKey);
@@ -1642,6 +1714,8 @@ class QuicTls13ServerHandshakeTest {
             ExtendedSSLSession session = (ExtendedSSLSession) engine.getHandshakeSession();
             localSupportedSignatureAlgorithms = session.getLocalSupportedSignatureAlgorithms();
             peerSupportedSignatureAlgorithms = session.getPeerSupportedSignatureAlgorithms();
+            List<SNIServerName> serverNames = engine.getSSLParameters().getServerNames();
+            requestedServerNames = serverNames == null ? List.of() : List.copyOf(serverNames);
             return chooseAlias ? super.chooseEngineServerAlias(keyType, issuers, engine) : null;
         }
     }

@@ -60,6 +60,40 @@ final class QuicApplicationSession implements QuicSession {
         delegateTermination.whenComplete((termination, failure) -> failPendingAccept(termination, failure));
     }
 
+    static Throwable publicFailure(Throwable failure) {
+        Throwable unwrapped = Objects.requireNonNull(failure, "failure");
+        while ((unwrapped instanceof CompletionException || unwrapped instanceof ExecutionException)
+                && unwrapped.getCause() != null) {
+            unwrapped = unwrapped.getCause();
+        }
+        if (unwrapped instanceof QuicStreamException streamFailure) {
+            return new QuicStreamTerminationException(
+                    streamFailure.streamId(),
+                    switch (streamFailure.kind()) {
+                        case CLOSED -> QuicStreamTerminationException.Kind.CLOSED;
+                        case RESET_LOCALLY -> QuicStreamTerminationException.Kind.RESET_LOCALLY;
+                        case RESET_BY_PEER -> QuicStreamTerminationException.Kind.RESET_BY_PEER;
+                        case STOP_SENDING -> QuicStreamTerminationException.Kind.STOP_SENDING;
+                    },
+                    streamFailure.errorCode(),
+                    failureMessage(streamFailure),
+                    streamFailure);
+        }
+        if (unwrapped instanceof QuicException
+                || unwrapped instanceof CancellationException
+                || unwrapped instanceof Error) {
+            return unwrapped;
+        }
+        return new QuicException(failureMessage(unwrapped), unwrapped);
+    }
+
+    static RuntimeException runtimeFailure(RuntimeException failure) {
+        Throwable mapped = publicFailure(failure);
+        return mapped instanceof RuntimeException runtimeException
+                ? runtimeException
+                : new QuicException(failureMessage(mapped), mapped);
+    }
+
     @Override
     public String applicationProtocol() {
         return applicationProtocol;
@@ -81,7 +115,11 @@ final class QuicApplicationSession implements QuicSession {
         var opened = delegate.openNewLocalBidiStream(streamCreditTimeout);
         var stream = QuicBlockingSupport.await(opened,
                                                streamCreditTimeout,
-                                               () -> opened.cancel(false),
+                                               () -> {
+                                                   if (opened.isDone() && !opened.isCompletedExceptionally()) {
+                                                       QuicConnectionImpl.closeUnclaimedLocalStream(opened.resultNow());
+                                                   }
+                                               },
                                                "QUIC bidirectional stream open");
         return new ApplicationBidiStream(stream);
     }
@@ -97,7 +135,11 @@ final class QuicApplicationSession implements QuicSession {
         var opened = delegate.openNewLocalUniStream(streamCreditTimeout);
         var stream = QuicBlockingSupport.await(opened,
                                                streamCreditTimeout,
-                                               () -> opened.cancel(false),
+                                               () -> {
+                                                   if (opened.isDone() && !opened.isCompletedExceptionally()) {
+                                                       QuicConnectionImpl.closeUnclaimedLocalStream(opened.resultNow());
+                                                   }
+                                               },
                                                "QUIC unidirectional stream open");
         return new ApplicationSendStream(stream);
     }
@@ -125,6 +167,15 @@ final class QuicApplicationSession implements QuicSession {
                                                    () -> { },
                                                    "QUIC remote stream accept");
             return wrapReceiveStream(stream);
+        } catch (QuicException failure) {
+            if (accepted.isDone() && !accepted.isCompletedExceptionally()) {
+                try {
+                    closeUnclaimedRemoteStream(accepted.resultNow());
+                } catch (RuntimeException | Error cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            throw failure;
         } finally {
             if (registration != null) {
                 registration.close();
@@ -197,56 +248,13 @@ final class QuicApplicationSession implements QuicSession {
         return delegate.childSocketId();
     }
 
-    static Throwable publicFailure(Throwable failure) {
-        Throwable unwrapped = Objects.requireNonNull(failure, "failure");
-        while ((unwrapped instanceof CompletionException || unwrapped instanceof ExecutionException)
-                && unwrapped.getCause() != null) {
-            unwrapped = unwrapped.getCause();
-        }
-        if (unwrapped instanceof QuicStreamException streamFailure) {
-            return new QuicStreamTerminationException(
-                    streamFailure.streamId(),
-                    switch (streamFailure.kind()) {
-                        case CLOSED -> QuicStreamTerminationException.Kind.CLOSED;
-                        case RESET_LOCALLY -> QuicStreamTerminationException.Kind.RESET_LOCALLY;
-                        case RESET_BY_PEER -> QuicStreamTerminationException.Kind.RESET_BY_PEER;
-                        case STOP_SENDING -> QuicStreamTerminationException.Kind.STOP_SENDING;
-                    },
-                    streamFailure.errorCode(),
-                    failureMessage(streamFailure),
-                    streamFailure);
-        }
-        if (unwrapped instanceof QuicException
-                || unwrapped instanceof CancellationException
-                || unwrapped instanceof Error) {
-            return unwrapped;
-        }
-        return new QuicException(failureMessage(unwrapped), unwrapped);
-    }
-
-    static RuntimeException runtimeFailure(RuntimeException failure) {
-        Throwable mapped = publicFailure(failure);
-        return mapped instanceof RuntimeException runtimeException
-                ? runtimeException
-                : new QuicException(failureMessage(mapped), mapped);
-    }
-
-    private void failPendingAccept(QuicTermination termination, Throwable failure) {
-        MinimalFuture<QuicReceiverStream> accepted;
-        acceptStateLock.lock();
+    private static void closeUnclaimedRemoteStream(QuicReceiverStream stream) {
         try {
-            accepted = pendingAccept;
-            pendingAccept = null;
+            if (stream instanceof QuicSenderStream sender) {
+                sender.reset(0);
+            }
         } finally {
-            acceptStateLock.unlock();
-        }
-        if (accepted == null) {
-            return;
-        }
-        if (failure == null) {
-            accepted.completeExceptionally(termination.closeCause());
-        } else {
-            accepted.completeExceptionally(publicFailure(failure));
+            stream.requestStopSending(0);
         }
     }
 
@@ -290,6 +298,25 @@ final class QuicApplicationSession implements QuicSession {
         return message == null || message.isBlank()
                 ? failure.getClass().getSimpleName()
                 : message;
+    }
+
+    private void failPendingAccept(QuicTermination termination, Throwable failure) {
+        MinimalFuture<QuicReceiverStream> accepted;
+        acceptStateLock.lock();
+        try {
+            accepted = pendingAccept;
+            pendingAccept = null;
+        } finally {
+            acceptStateLock.unlock();
+        }
+        if (accepted == null) {
+            return;
+        }
+        if (failure == null) {
+            accepted.completeExceptionally(termination.closeCause());
+        } else {
+            accepted.completeExceptionally(publicFailure(failure));
+        }
     }
 
     private abstract static class ApplicationStream implements QuicStream {

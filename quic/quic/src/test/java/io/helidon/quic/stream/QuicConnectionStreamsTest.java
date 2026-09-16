@@ -18,6 +18,7 @@ package io.helidon.quic.stream;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,6 +38,7 @@ import io.helidon.quic.QuicConfig;
 import io.helidon.quic.QuicConnectionImpl;
 import io.helidon.quic.QuicConnectionImpl.ReassemblyBudget;
 import io.helidon.quic.QuicInstance;
+import io.helidon.quic.QuicStreamLimitException;
 import io.helidon.quic.QuicTLSEngine.KeySpace;
 import io.helidon.quic.QuicTermination;
 import io.helidon.quic.QuicTerminationTestSupport;
@@ -50,6 +52,8 @@ import io.helidon.quic.frame.StreamFrame;
 import io.helidon.quic.frame.StreamsBlockedFrame;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.quic.QuicTransportParameters.ParameterId.initial_max_stream_data_uni;
 import static io.helidon.quic.QuicTransportParameters.ParameterId.initial_max_streams_bidi;
@@ -439,6 +443,79 @@ class QuicConnectionStreamsTest {
         QuicBidiStreamReservation reservation = streams.reserveNewLocalBidiStream().join();
         assertThat(streams.peekNextStreamId(0), equalTo(0L));
         assertThat(reservation.open().streamId(), equalTo(0L));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void canceledLocalStreamOpenDoesNotConsumeLaterCredit(boolean bidi) {
+        QuicConnectionImpl connection = mock(QuicConnectionImpl.class);
+        QuicConnectionStreams streams = bidi ? localBidiStreams(connection, 0) : localUniStreams(connection, 0);
+        int streamType = bidi ? 0 : 2;
+        CompletableFuture<? extends QuicSenderStream> canceled = openLocalStream(streams, bidi, Duration.ofMinutes(1));
+
+        assertThat(canceled.isDone(), equalTo(false));
+        assertThat(canceled.cancel(false), equalTo(true));
+        assertThat(streams.tryIncreaseStreamLimit(MaxStreamsFrame.create(bidi, 1)), equalTo(true));
+
+        assertThat(streams.peekNextStreamId(streamType), equalTo((long) streamType));
+        assertThat(streams.findStream(streamType), equalTo(Optional.empty()));
+        assertThat(openLocalStream(streams, bidi, Duration.ZERO).join().streamId(), equalTo((long) streamType));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void cancelingLocalStreamOpenReturnsCreditBeforeAcquisitionDelivery(boolean bidi) {
+        QuicConnectionImpl connection = mock(QuicConnectionImpl.class);
+        QuicConnectionStreams streams = bidi ? localBidiStreams(connection, 0) : localUniStreams(connection, 0);
+        int streamType = bidi ? 0 : 2;
+        var completions = new ArrayDeque<Runnable>();
+        when(connection.quicInstance().executor()).thenReturn(completions::add);
+        CompletableFuture<? extends QuicSenderStream> canceled = openLocalStream(streams, bidi, Duration.ofMinutes(1));
+        assertThat(completions.size(), equalTo(1));
+        completions.remove().run();
+
+        assertThat(streams.tryIncreaseStreamLimit(MaxStreamsFrame.create(bidi, 1)), equalTo(true));
+        assertThat(completions.size(), equalTo(1));
+        assertThrows(CompletionException.class, () -> openLocalStream(streams, bidi, Duration.ZERO).join());
+        assertThat(canceled.cancel(false), equalTo(true));
+        completions.remove().run();
+
+        assertThat(streams.peekNextStreamId(streamType), equalTo((long) streamType));
+        assertThat(streams.findStream(streamType), equalTo(Optional.empty()));
+        assertThat(openLocalStream(streams, bidi, Duration.ZERO).join().streamId(), equalTo((long) streamType));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void cancelingLocalStreamOpenDuringCreationDisposesUnclaimedStream(boolean bidi) {
+        QuicConnectionImpl connection = mock(QuicConnectionImpl.class);
+        QuicConnectionStreams streams = bidi ? localBidiStreams(connection, 0) : localUniStreams(connection, 0);
+        int streamType = bidi ? 0 : 2;
+        when(connection.isOpen()).thenReturn(true);
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(connection).runWithStreamDispatchLock(any(Runnable.class));
+        CompletableFuture<? extends QuicSenderStream> canceled = openLocalStream(streams, bidi, Duration.ofMinutes(1));
+        Optional<QuicTransportParameters> parameters = connection.peerTransportParameters();
+        when(connection.peerTransportParameters()).thenAnswer(_ -> {
+            canceled.cancel(false);
+            return parameters;
+        });
+
+        assertThat(streams.tryIncreaseStreamLimit(MaxStreamsFrame.create(bidi, 1)), equalTo(true));
+
+        assertThat(canceled.isCancelled(), equalTo(true));
+        QuicSenderStream unclaimed = (QuicSenderStream) streams.findStream(streamType).orElseThrow();
+        assertThat(unclaimed.sendingState(), equalTo(QuicSenderStream.SendingStreamState.RESET_SENT));
+        verify(connection).requestResetStream(streamType, 0);
+        if (bidi) {
+            verify(connection).scheduleStopSendingFrame(streamType, 0);
+        }
+        assertThat(streams.peekNextStreamId(streamType), equalTo(streamType + 4L));
+        CompletionException failure = assertThrows(CompletionException.class,
+                                                   () -> openLocalStream(streams, bidi, Duration.ZERO).join());
+        assertThat(failure.getCause(), instanceOf(QuicStreamLimitException.class));
     }
 
     @Test
@@ -1078,6 +1155,12 @@ class QuicConnectionStreamsTest {
         streams.streamFramesDispatched(frames);
 
         assertThat(dispatch.isDone(), equalTo(true));
+    }
+
+    private static CompletableFuture<? extends QuicSenderStream> openLocalStream(QuicConnectionStreams streams,
+                                                                                boolean bidi,
+                                                                                Duration timeout) {
+        return bidi ? streams.createNewLocalBidiStream(timeout) : streams.createNewLocalUniStream(timeout);
     }
 
     private static QuicConnectionStreams localBidiStreams(QuicConnectionImpl connection, long initialLimit) {
