@@ -87,7 +87,7 @@ public final class TypeFactory {
             return new WildcardTypeImpl(typeName);
         }
 
-        if (typeName.array() && !typeName.typeArguments().isEmpty()) {
+        if (typeName.array() && hasTypeArguments(typeName)) {
             throw new IllegalArgumentException("Cannot convert parameterized array type: " + typeName.resolvedName());
         }
 
@@ -97,6 +97,13 @@ public final class TypeFactory {
         }
 
         return new ParameterizedTypeImpl(typeName, toClass(typeName));
+    }
+
+    private static boolean hasTypeArguments(TypeName typeName) {
+        if (!typeName.typeArguments().isEmpty()) {
+            return true;
+        }
+        return typeName.array() && typeName.componentType().map(TypeFactory::hasTypeArguments).orElse(false);
     }
 
     private static class WildcardTypeImpl implements WildcardType {

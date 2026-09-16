@@ -104,4 +104,22 @@ class TypeFactoryTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> TypeFactory.toType(typeName));
         assertThat(exception.getMessage(), containsString(typeName.resolvedName()));
     }
+
+    @Test
+    void rejectsParameterizedBuilderArrayComponents() {
+        TypeName componentType = TypeName.create("java.util.List<java.lang.String>");
+        for (Class<?> arrayClass : List.of(List[].class, List[][].class, List[][][].class)) {
+            TypeName typeName = TypeName.builder(TypeName.create(List.class))
+                    .array(true)
+                    .componentType(componentType)
+                    .build();
+
+            assertThat(arrayClass.getTypeName(), TypeFactory.toClass(typeName), sameInstance(arrayClass));
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                             () -> TypeFactory.toType(typeName),
+                                                             arrayClass.getTypeName());
+            assertThat(exception.getMessage(), containsString(typeName.resolvedName()));
+            componentType = typeName;
+        }
+    }
 }
