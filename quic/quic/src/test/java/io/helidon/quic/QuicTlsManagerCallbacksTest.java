@@ -110,6 +110,8 @@ class QuicTlsManagerCallbacksTest {
     void adaptsLegacyManagersForEngineCallbacks() {
         LegacyKeyManager keyManager = new LegacyKeyManager();
         LegacyTrustManager trustManager = new LegacyTrustManager();
+        SSLParameters clientParameters = sslParameters();
+        clientParameters.setEndpointIdentificationAlgorithm(null);
         QuicTlsCallbackEngine serverEngine =
                 QuicTlsManagerCallbacks.callbackEngine(false,
                                                         sslParameters(),
@@ -119,7 +121,7 @@ class QuicTlsManagerCallbacksTest {
                                                         443);
         QuicTlsCallbackEngine clientEngine =
                 QuicTlsManagerCallbacks.callbackEngine(true,
-                                                        sslParameters(),
+                                                        clientParameters,
                                                         new String[] {"rsa_pss_rsae_sha256"},
                                                         new String[0],
                                                         "example.com",

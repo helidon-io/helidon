@@ -273,7 +273,7 @@ class QuicServerRuntimeTest {
                 CompletableFuture<QuicConnection> accepted = runtime.accept();
                 InetSocketAddress serverAddress = runtime.localAddress();
                 QuicClientConnection clientConnection = client.createConnection(serverAddress,
-                                                                                 "localhost",
+                                                                                 "rsa",
                                                                                  serverAddress.getPort(),
                                                                                  new String[] {"h3"});
                 clientConnection.startHandshake().get(10, TimeUnit.SECONDS);
@@ -333,7 +333,7 @@ class QuicServerRuntimeTest {
                 CompletableFuture<QuicConnection> accepted = runtime.accept();
                 InetSocketAddress serverAddress = runtime.localAddress();
                 QuicClientConnection clientConnection = client.createConnection(serverAddress,
-                                                                                 "localhost",
+                                                                                 "rsa",
                                                                                  serverAddress.getPort(),
                                                                                  new String[] {"h3"});
                 clientConnection.startHandshake().get(10, TimeUnit.SECONDS);
@@ -423,7 +423,7 @@ class QuicServerRuntimeTest {
                 CompletableFuture<QuicConnection> accepted = runtime.accept();
                 InetSocketAddress serverAddress = runtime.localAddress();
                 QuicClientConnection clientConnection = client.createConnection(serverAddress,
-                                                                                 "localhost",
+                                                                                 "rsa",
                                                                                  serverAddress.getPort(),
                                                                                  new String[] {"h3"});
                 clientConnection.startHandshake().get(10, TimeUnit.SECONDS);
