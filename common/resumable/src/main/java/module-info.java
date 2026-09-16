@@ -26,7 +26,7 @@ module io.helidon.common.resumable {
 
     requires static io.helidon.common;
 
-    uses io.helidon.common.resumable.ResumableSupport;
-
     exports io.helidon.common.resumable;
+
+    uses io.helidon.common.resumable.ResumableSupport;
 }

@@ -23,8 +23,8 @@ module io.helidon.testing.junit5.suite {
     requires io.helidon.common;
     requires io.helidon.logging.common;
 
-    uses io.helidon.testing.junit5.suite.spi.SuiteProvider;
-
     exports io.helidon.testing.junit5.suite;
     exports io.helidon.testing.junit5.suite.spi;
+
+    uses io.helidon.testing.junit5.suite.spi.SuiteProvider;
 }

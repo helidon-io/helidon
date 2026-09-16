@@ -44,6 +44,10 @@ module io.helidon.metrics.providers.micrometer {
     exports io.helidon.metrics.providers.micrometer;
     exports io.helidon.metrics.providers.micrometer.spi;
 
+    uses io.helidon.metrics.spi.MeterBuilderCustomizer;
+    uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
+    uses io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
+
     provides io.helidon.metrics.spi.MetricsFactoryProvider with
             io.helidon.metrics.providers.micrometer.MicrometerMetricsFactoryProvider;
     provides io.helidon.metrics.spi.MeterRegistryFormatterProvider
@@ -51,9 +55,5 @@ module io.helidon.metrics.providers.micrometer {
     provides io.helidon.metrics.spi.MetricsPublisherProvider
             with io.helidon.metrics.providers.micrometer.PrometheusPublisherProvider,
             io.helidon.metrics.providers.micrometer.OtlpPublisherProvider;
-
-    uses io.helidon.metrics.spi.MeterBuilderCustomizer;
-    uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
-    uses io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 
 }

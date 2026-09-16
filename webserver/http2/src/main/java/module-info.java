@@ -45,6 +45,8 @@ module io.helidon.webserver.http2 {
     exports io.helidon.webserver.http2;
     exports io.helidon.webserver.http2.spi;
 
+    uses io.helidon.webserver.http2.spi.Http2SubProtocolProvider;
+
     // to support prior knowledge for h2c
     provides io.helidon.webserver.spi.ServerConnectionSelectorProvider
             with io.helidon.webserver.http2.Http2ConnectionProvider;
@@ -53,7 +55,5 @@ module io.helidon.webserver.http2 {
             with io.helidon.webserver.http2.Http2UpgradeProvider;
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http2.Http2ProtocolConfigProvider;
-
-    uses io.helidon.webserver.http2.spi.Http2SubProtocolProvider;
 
 }

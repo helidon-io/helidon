@@ -36,11 +36,11 @@ module io.helidon.webclient.http1 {
 
     exports io.helidon.webclient.http1;
 
+    uses io.helidon.webclient.spi.SourceHandlerProvider;
+
     provides io.helidon.webclient.spi.HttpClientSpiProvider
             with io.helidon.webclient.http1.Http1ClientSpiProvider;
     provides io.helidon.webclient.spi.ProtocolConfigProvider
             with io.helidon.webclient.http1.Http1ProtocolConfigProvider;
-
-    uses io.helidon.webclient.spi.SourceHandlerProvider;
 
 }

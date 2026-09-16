@@ -261,10 +261,19 @@ Example: [io.helidon.common.mapper.MappersConfigBlueprint](common/mapper/src/mai
 <a id="rule-9-2"></a>**Rule 9.2 — Declare provided services only in `module-info.java`.** A Maven plugin generates
 `META-INF/services`; checked-in service descriptors in released modules fail the build.
 
-<a id="rule-9-3"></a>**Rule 9.3 — Document modules.** Add Javadoc to `module-info.java`.
+<a id="rule-9-3"></a>**Rule 9.3 — Document modules.** Add Javadoc to the module declaration in `module-info.java`,
+before any annotations or the `open` keyword. Checkstyle enforces its presence.
 
 <a id="rule-9-4"></a>**Rule 9.4 — Qualify service types.** Use fully qualified class names for provided and used
 services.
+
+<a id="rule-9-5"></a>**Rule 9.5 — Order module directives.** Group directives in this order: `requires`, `exports`,
+`uses`, `provides`, `opens`. Blank lines may separate logical groups within a directive kind. Ordering within a kind,
+including `requires` modifiers, is not prescribed.
+
+<a id="rule-9-6"></a>**Rule 9.6 — Name modules in the Helidon namespace.** Use `io.helidon` or a name starting with
+`io.helidon.`. Each additional dot-separated component starts with a lowercase ASCII letter and contains only lowercase
+ASCII letters or digits, matching `^io\.helidon(\.[a-z][a-z0-9]*)*$`.
 
 <a id="testing"></a>
 <a id="chapter-10"></a>
