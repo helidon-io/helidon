@@ -347,7 +347,7 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
                 URI diff = prefixUri.relativize(uriInfoUri);
                 if (diff == uriInfoUri) {
                     // Relativization "failed"; see
-                    // https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URI.html#relativize(java.net.URI). No
+                    // https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/net/URI.html#relativize(java.net.URI). No
                     // problem; we just didn't match this particular prefix. Carry on to the next one.
                     if (LOGGER.isLoggable(DEBUG)) {
                         LOGGER.log(DEBUG,

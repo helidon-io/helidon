@@ -77,13 +77,10 @@ Component dependency:
 
 ## The `helidon-maven-plugin`
 
-Helidon provides a Maven plugin that, among other things, provides the following
-goals:
+The Helidon Maven plugin provides the `jlink-image` goal to build a
+[custom Java runtime image](jlink.md).
 
-1.  jlink-image: Build a [custom runtime Java image](jlink.md).
-2.  native-image: Build a [GraalVM native
-    image](native-image.md). Note: this capability is now
-    provided via the [Maven plugin for GraalVM Native Image][maven-plugin-for]
+GraalVM Native Image is not supported in Helidon 27.
 
 For full documentation of the plugin please see the [Helidon Maven Plugin
 README][helidon-maven-pl].
@@ -102,7 +99,7 @@ You can override many of the plugin attributes by passing a system property to
 the `mvn` command:
 
 ```shell [Terminal]
-mvn -Djlink.image.addClassDataSharingArchive=false package
+mvn package -Pjlink-image -Djlink.image.aotCache=false
 ```
 
 ### Set Property in pom.xml
@@ -111,8 +108,7 @@ Or you can set the properties in your project’s pom.xml:
 
 ```xml
 <properties>
-    <jlink.image.addClassDataSharingArchive>false</jlink.image.addClassDataSharingArchive>
-    <native.image.reportExceptionStackTraces>true</native.image.reportExceptionStackTraces>
+    <jlink.image.aotCache>false</jlink.image.aotCache>
 </properties>
 ```
 
@@ -121,7 +117,7 @@ Or you can set the properties in your project’s pom.xml:
 For full control you can override the plugin’s configuration using
 `pluginManagement`:
 
-Turn off generation of the CDS Archive when generating a custom Java runtime
+Turn off generation of the AOT cache when generating a custom Java runtime
 image:
 
 ```xml [pom.xml]
@@ -135,7 +131,7 @@ image:
           <execution>
             <id>jlink-image</id>
             <configuration>
-              <addClassDataSharingArchive>false</addClassDataSharingArchive>
+              <aotCache>false</aotCache>
             </configuration>
           </execution>
         </executions>
@@ -146,5 +142,4 @@ image:
 ```
 
 [standalone-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/quickstarts/helidon-standalone-quickstart-se
-[maven-plugin-for]: https://graalvm.github.io/native-build-tools/latest/maven-plugin.html
 [helidon-maven-pl]: https://github.com/helidon-io/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin

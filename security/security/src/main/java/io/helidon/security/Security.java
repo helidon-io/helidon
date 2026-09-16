@@ -1298,9 +1298,6 @@ public interface Security {
             try {
                 Constructor<? extends ProviderSelectionPolicy> constructor = pspClass
                         .getConstructor(ProviderSelectionPolicy.Providers.class, Config.class);
-                // java9
-                //if (constructor.canAccess(null)) {
-                // java8
                 if (ReflectionUtil.canAccess(getClass(), constructor)) {
                     return providers -> {
                         try {
@@ -1320,9 +1317,6 @@ public interface Security {
             try {
                 Constructor<? extends ProviderSelectionPolicy> constructor = pspClass
                         .getConstructor(ProviderSelectionPolicy.Providers.class);
-                // java9
-                //if (constructor.canAccess(null)) {
-                // java8
                 if (ReflectionUtil.canAccess(getClass(), constructor)) {
                     return providers -> {
                         try {

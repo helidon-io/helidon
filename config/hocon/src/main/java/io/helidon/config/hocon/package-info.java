@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(io.helidon.config.spi.ConfigParser)
  * registered programmatically} using {@link io.helidon.config.hocon.HoconConfigParserBuilder builder API}.
  * <p>
- * HOCON (Typesafe Config) integration is placed in {@code io.helidon.config.hocon} Java 9 module.
+ * HOCON (Typesafe Config) integration is provided by the {@code io.helidon.config.hocon} Java module.
  * Maven coordinates are {@code io.helidon.config:helidon-config-hocon}.
  *
  * @see io.helidon.config Configuration API

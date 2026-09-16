@@ -271,7 +271,7 @@ public class HeadersServerTest {
                                                             HttpResponse.BodyHandlers.ofString());
 
                 int status = response.statusCode();
-                // since Java 24, we get a 400 back and not an exception
+                // The client can report the rejected headers as a 400 response.
                 assertThat("IOException or status 400 was expected, but got status " + response.statusCode()
                                    + ", headers: " + response.headers()
                                    + ", and response: " + response.body(),

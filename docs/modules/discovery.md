@@ -259,13 +259,13 @@ webclient:
 [io-helidon-disco]: https://helidon.io/docs/v27/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html
 [uris-string-uri]: <https://helidon.io/docs/v27/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)>
 [io-helidon-disco-2]: https://helidon.io/docs/v27/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html
-[uri]: https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/net/URI.html
+[uri]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/net/URI.html
 [helidon-inject]: injection/injection.md#injection-points
 [io-helidon-servi]: https://helidon.io/docs/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html
 [service-registry]: injection/injection.md#programmatic-lookup
 [io-helidon-servi-2]: https://helidon.io/docs/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html
 [io-helidon-servi-3]: <https://helidon.io/docs/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html#get(java.lang.Class)>
-[sequencedset]: https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/util/SequencedSet.html
+[sequencedset]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/util/SequencedSet.html
 [uri-method]: <https://helidon.io/docs/v27/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html#uri()>
 [fully-specified]: <https://helidon.io/docs/v27/apidocs/io.helidon.webclient.discovery/io/helidon/webclient/discovery/WebClientDiscovery.html#handle(io.helidon.webclient.spi.WebClientService.Chain,io.helidon.webclient.api.WebClientServiceRequest)>
 [web-client-servi]: webclient.md#adding-service-to-webclient

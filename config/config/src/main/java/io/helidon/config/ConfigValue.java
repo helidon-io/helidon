@@ -26,7 +26,7 @@ import io.helidon.common.mapper.OptionalValue;
  * A typed value of a {@link Config} node.
  * <p>
  * You can use accessor methods on {@link Config} to obtain this value, such as {@link Config#as(Class)}.
- * A typed value that has all the methods of {@link Optional} - including the ones added in JDK9 and newer.
+ * It provides {@link Optional}-style access to the value.
  * In addition it has methods to access config values as {@link #supplier()}.
  *
  * @param <T> type of the value

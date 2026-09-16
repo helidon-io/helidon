@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Provider;
@@ -31,6 +32,9 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -121,6 +125,37 @@ public class FileConfigSourceTest {
         assertThat(maybeStamp, not(Optional.empty()));
         Object stamp = maybeStamp.get();
         assertThat(configSource.isModified((byte[]) stamp), is(false));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "application.conf, src/test/resources/io/helidon/config/application.conf",
+            "src/test/resources/io/helidon/config/application.conf, application.conf"
+    })
+    void testRelativeResolver(String configPath, String includePath) throws IOException {
+        FileConfigSource configSource = ConfigSources.file(configPath).build();
+
+        try (InputStream data = configSource.relativeResolver().apply(includePath).orElseThrow()) {
+            assertThat(new String(data.readAllBytes(), StandardCharsets.UTF_8), containsString("greeting = \"Hello\""));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application.conf", "src/test/resources/io/helidon/config/application.conf"})
+    void testRelativeResolverAbsoluteInclude(String configPath) throws IOException {
+        FileConfigSource configSource = ConfigSources.file(configPath).build();
+        Path includePath = Path.of("src/test/resources/io/helidon/config/application.conf").toAbsolutePath();
+
+        try (InputStream data = configSource.relativeResolver().apply(includePath.toString()).orElseThrow()) {
+            assertThat(new String(data.readAllBytes(), StandardCharsets.UTF_8), containsString("greeting = \"Hello\""));
+        }
+    }
+
+    @Test
+    void testRelativeResolverMissingIncludeWithoutParent() {
+        FileConfigSource configSource = ConfigSources.file("application.conf").build();
+
+        assertThat(configSource.relativeResolver().apply("missing-application.conf"), is(Optional.empty()));
     }
 
     @Test

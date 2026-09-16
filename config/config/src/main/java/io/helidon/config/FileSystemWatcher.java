@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import io.helidon.config.spi.ChangeEventType;
@@ -72,7 +74,6 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
      * Configurable options through builder.
      */
     private final List<WatchEvent.Modifier> watchServiceModifiers = new LinkedList<>();
-    private ScheduledExecutorService executor;
     private final boolean defaultExecutor;
     private final long initialDelay;
     private final long delay;
@@ -81,7 +82,10 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
     /*
      * Runtime options.
      */
+    private final Lock lifecycleLock = new ReentrantLock();
     private final List<TargetRuntime> runtimes = Collections.synchronizedList(new LinkedList<>());
+
+    private ScheduledExecutorService executor;
 
     private FileSystemWatcher(Builder builder) {
         ScheduledExecutorService executor = builder.executor;
@@ -118,30 +122,40 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
     }
 
     @Override
-    public synchronized void start(Path target, Consumer<ChangeEvent<Path>> listener) {
-        if (defaultExecutor && executor.isShutdown()) {
-            executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
+    public void start(Path target, Consumer<ChangeEvent<Path>> listener) {
+        lifecycleLock.lock();
+        try {
+            if (defaultExecutor && executor.isShutdown()) {
+                executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
+            }
+            if (executor.isShutdown()) {
+                throw new ConfigException("Cannot start a watcher for path " + target + ", as the executor service is shutdown");
+            }
+
+            Monitor monitor = new Monitor(
+                    listener,
+                    target,
+                    watchServiceModifiers);
+
+            ScheduledFuture<?> future = executor.scheduleWithFixedDelay(monitor, initialDelay, delay, timeUnit);
+
+            this.runtimes.add(new TargetRuntime(monitor, future));
+        } finally {
+            lifecycleLock.unlock();
         }
-        if (executor.isShutdown()) {
-            throw new ConfigException("Cannot start a watcher for path " + target + ", as the executor service is shutdown");
-        }
-
-        Monitor monitor = new Monitor(
-                listener,
-                target,
-                watchServiceModifiers);
-
-        ScheduledFuture<?> future = executor.scheduleWithFixedDelay(monitor, initialDelay, delay, timeUnit);
-
-        this.runtimes.add(new TargetRuntime(monitor, future));
     }
 
     @Override
-    public synchronized void stop() {
-        runtimes.forEach(TargetRuntime::stop);
+    public void stop() {
+        lifecycleLock.lock();
+        try {
+            runtimes.forEach(TargetRuntime::stop);
 
-        if (defaultExecutor) {
-            ConfigUtils.shutdownExecutor(executor);
+            if (defaultExecutor) {
+                ConfigUtils.shutdownExecutor(executor);
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
     }
 

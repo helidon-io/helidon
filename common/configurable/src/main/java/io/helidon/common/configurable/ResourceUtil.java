@@ -28,8 +28,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Utilities to move private static methods from interface,
- * as javadoc fails when using source 8.
+ * Utilities for creating resources and opening their input streams.
  */
 final class ResourceUtil {
 

@@ -17,7 +17,7 @@ _Prerequisite product versions for Helidon 27.0.0-SNAPSHOT_:
 
 | Requirement                                     | Description                                                                       |
 |-------------------------------------------------|-----------------------------------------------------------------------------------|
-| [Java 26][java-26] ([Open JDK 26][open-jdk-26]) | Helidon requires Java 26+.                                      |
+| [Java 27][java-27] ([Open JDK 27][open-jdk-27]) | Helidon requires Java 27+.                                      |
 | [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                                                      |
 | [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
 | [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
@@ -35,11 +35,11 @@ Setting JAVA_HOME:
 
 ```shell [Terminal]
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 26`
+export JAVA_HOME=`/usr/libexec/java_home -v 27`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-26
+export JAVA_HOME=/usr/lib/jvm/jdk-27
 ```
 
 ## Introduction
@@ -72,7 +72,7 @@ DB Client.
 Create the following files:
 
 ```dockerfile [dockerfile.h2]
-FROM openjdk:11-jre-slim
+FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9
 
 ENV H2_VERSION "1.4.199"
 
@@ -729,8 +729,8 @@ The select-book statement was invoked four times.
 This guide provided an introduction to the Helidon DB Client’s key features. If
 you want to learn more, see the Helidon DB Client samples in [GitHub][github].
 
-[java-26]: https://www.oracle.com/technetwork/java/javase/downloads
-[open-jdk-26]: http://jdk.java.net
+[java-27]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-27]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
