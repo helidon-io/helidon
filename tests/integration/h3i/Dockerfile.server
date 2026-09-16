@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM eclipse-temurin:26.0.1_8-jdk-ubi10-minimal@sha256:9a1f9e0edf2da7d05d9bec7ff7a7b4cecb50f11acc77dfc7b2f36f31e2739281
+FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9@sha256:7477f4f5b0deebce818b5c918c9f0aa6eafb1342eb2ed54628ebbcd0a1dd7ada
 
 WORKDIR /opt/helidon
 

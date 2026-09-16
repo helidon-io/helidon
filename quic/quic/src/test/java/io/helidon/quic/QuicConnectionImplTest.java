@@ -32,12 +32,14 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
@@ -53,8 +55,11 @@ import javax.net.ssl.SSLSession;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.quic.QuicEndpoint.QuicDatagram;
 import io.helidon.quic.QuicTLSEngine.HandshakeState;
 import io.helidon.quic.QuicTLSEngine.KeySpace;
+import io.helidon.quic.QuicTransportParameters.ParameterId;
+import io.helidon.quic.QuicTransportParameters.VersionInformation;
 import io.helidon.quic.frame.AckFrame;
 import io.helidon.quic.frame.AckFrame.AckRange;
 import io.helidon.quic.frame.ConnectionCloseFrame;
@@ -82,18 +87,29 @@ import io.helidon.quic.stream.QuicStreamReader;
 import io.helidon.quic.stream.QuicStreamWriter;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Isolated("Changes JUL logger levels and handlers")
+@ResourceLock("java.util.logging")
 class QuicConnectionImplTest {
     private static final byte[] PEER_CONNECTION_ID = new byte[] {0x11, 0x22, 0x33, 0x44};
     private static final int MAX_INCOMING_CRYPTO_CAPACITY = 64 << 10;
@@ -126,6 +142,111 @@ class QuicConnectionImplTest {
             harness.instance().executor = Runnable::run;
 
             assertThat(reservation.isCancelled(), is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void cancelingLocalStreamOpenBeforeHandshakePreservesCredit(boolean bidi) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))) {
+            var opened = openLocalStream(harness.connection(), bidi, Duration.ofSeconds(30));
+
+            assertThat(opened.isDone(), is(false));
+            assertThat(opened.cancel(false), is(true));
+
+            harness.connection().completeHandshakeCF();
+            harness.connection().incoming1RTTFrame(MaxStreamsFrame.create(bidi, 1));
+
+            assertThat(opened.isCancelled(), is(true));
+            var next = openLocalStream(harness.connection(), bidi, Duration.ZERO).get(1, TimeUnit.SECONDS);
+            assertThat(next.streamId(), is(bidi ? 0L : 2L));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void cancelingLocalStreamOpenRacingHandshakeCompletionPreservesCredit(boolean bidi) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))) {
+            var handshakeCompletion = new AtomicReference<Runnable>();
+            harness.instance().executor = handshakeCompletion::set;
+            var opened = openLocalStream(harness.connection(), bidi, Duration.ofSeconds(30));
+
+            try {
+                harness.connection().completeHandshakeCF();
+                assertThat(handshakeCompletion.get(), notNullValue());
+                assertThat(opened.cancel(false), is(true));
+                handshakeCompletion.get().run();
+            } finally {
+                harness.instance().executor = Runnable::run;
+            }
+            harness.connection().incoming1RTTFrame(MaxStreamsFrame.create(bidi, 1));
+
+            assertThat(opened.isCancelled(), is(true));
+            var next = openLocalStream(harness.connection(), bidi, Duration.ZERO).get(1, TimeUnit.SECONDS);
+            assertThat(next.streamId(), is(bidi ? 0L : 2L));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true, true", "true, false", "false, true", "false, false"})
+    void cancelingLocalStreamOpenWhileWaitingForCreditPreservesCredit(boolean bidi,
+                                                                     boolean handshakeComplete) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))) {
+            if (handshakeComplete) {
+                harness.connection().completeHandshakeCF();
+            }
+            var opened = openLocalStream(harness.connection(), bidi, Duration.ofSeconds(30));
+            if (!handshakeComplete) {
+                harness.connection().completeHandshakeCF();
+            }
+
+            assertThat(opened.isDone(), is(false));
+            assertThat(opened.cancel(false), is(true));
+            harness.connection().incoming1RTTFrame(MaxStreamsFrame.create(bidi, 1));
+
+            assertThat(opened.isCancelled(), is(true));
+            var next = openLocalStream(harness.connection(), bidi, Duration.ZERO).get(1, TimeUnit.SECONDS);
+            assertThat(next.streamId(), is(bidi ? 0L : 2L));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void cancelingLocalStreamOpenWithQueuedAcquisitionPreservesCredit(boolean bidi) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))) {
+            harness.connection().completeHandshakeCF();
+            var deferCompletion = new AtomicBoolean();
+            var acquisitionCompletion = new AtomicReference<Runnable>();
+            harness.instance().executor = task -> {
+                if (deferCompletion.get()) {
+                    acquisitionCompletion.set(task);
+                } else {
+                    task.run();
+                }
+            };
+            var opened = openLocalStream(harness.connection(), bidi, Duration.ofSeconds(30));
+
+            try {
+                assertThat(opened.isDone(), is(false));
+                deferCompletion.set(true);
+                harness.connection().incoming1RTTFrame(MaxStreamsFrame.create(bidi, 1));
+
+                assertThat(acquisitionCompletion.get(), notNullValue());
+                assertThat(opened.isDone(), is(false));
+                deferCompletion.set(false);
+                ExecutionException noCredit = assertThrows(ExecutionException.class,
+                                                           () -> openLocalStream(harness.connection(), bidi, Duration.ZERO)
+                                                                   .get(1, TimeUnit.SECONDS));
+                assertThat(noCredit.getCause(), instanceOf(QuicStreamLimitException.class));
+                assertThat(opened.cancel(false), is(true));
+                acquisitionCompletion.get().run();
+            } finally {
+                harness.instance().executor = Runnable::run;
+            }
+
+            assertThat(opened.isCancelled(), is(true));
+            var next = openLocalStream(harness.connection(), bidi, Duration.ZERO).get(1, TimeUnit.SECONDS);
+            assertThat(next.streamId(), is(bidi ? 0L : 2L));
         }
     }
 
@@ -224,6 +345,90 @@ class QuicConnectionImplTest {
             }
         } finally {
             logger.setLevel(previousLevel);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"QUIC_V1, false", "QUIC_V1, true", "QUIC_V2, false", "QUIC_V2, true"})
+    void rejectsClientVersionInformationWithoutChosenVersion(QuicVersion version, boolean emptyAvailable) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.createForVersion(version, false)) {
+            TestQuicConnection connection = harness.connection();
+            QuicVersion otherVersion = version == QuicVersion.QUIC_V1 ? QuicVersion.QUIC_V2 : QuicVersion.QUIC_V1;
+            int[] available = emptyAvailable ? new int[0] : new int[] {otherVersion.versionNumber()};
+            QuicTransportParameters parameters = peerTransportParameters(connection);
+            parameters.versionInformationParameter(ParameterId.version_information,
+                                                   VersionInformation.create(version.versionNumber(), available));
+
+            QuicTransportException failure = assertThrows(QuicTransportException.class,
+                                                         () -> connection.consumeQuicParameters(encodeParameters(parameters)));
+
+            assertThat(failure.errorCode(), is(0x08L));
+            assertThat(connection.peerTransportParameters().isEmpty(), is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(QuicVersion.class)
+    void acceptsClientVersionInformationContainingChosenVersion(QuicVersion version) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.createForVersion(version, false)) {
+            TestQuicConnection connection = harness.connection();
+            QuicVersion otherVersion = version == QuicVersion.QUIC_V1 ? QuicVersion.QUIC_V2 : QuicVersion.QUIC_V1;
+            VersionInformation versionInformation = VersionInformation.create(
+                    version.versionNumber(),
+                    new int[] {otherVersion.versionNumber(), version.versionNumber()});
+            QuicTransportParameters parameters = peerTransportParameters(connection);
+            parameters.versionInformationParameter(ParameterId.version_information, versionInformation);
+
+            connection.consumeQuicParameters(encodeParameters(parameters));
+
+            assertThat(connection.peerTransportParameters().orElseThrow()
+                               .versionInformationParameter(ParameterId.version_information).orElseThrow(),
+                       is(versionInformation));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"QUIC_V1, false", "QUIC_V1, true", "QUIC_V2, false", "QUIC_V2, true"})
+    void acceptsServerVersionInformationWithoutChosenVersion(QuicVersion version, boolean emptyAvailable) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.createForVersion(version, true)) {
+            TestQuicConnection connection = harness.connection();
+            connection.startHandshake();
+            harness.seedPeerConnectionId();
+            QuicVersion otherVersion = version == QuicVersion.QUIC_V1 ? QuicVersion.QUIC_V2 : QuicVersion.QUIC_V1;
+            int[] available = emptyAvailable ? new int[0] : new int[] {otherVersion.versionNumber()};
+            VersionInformation versionInformation = VersionInformation.create(version.versionNumber(), available);
+            QuicTransportParameters parameters = peerTransportParameters(connection);
+            parameters.versionInformationParameter(ParameterId.version_information, versionInformation);
+
+            connection.consumeQuicParameters(encodeParameters(parameters));
+
+            assertThat(connection.peerTransportParameters().orElseThrow()
+                               .versionInformationParameter(ParameterId.version_information).orElseThrow(),
+                       is(versionInformation));
+        }
+    }
+
+    @Test
+    void acceptsV1FallbackWithoutVersionInformation() throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.createForVersion(QuicVersion.QUIC_V2, true)) {
+            TestQuicConnection connection = harness.connection();
+            connection.startHandshake();
+            QuicPacket versions = QuicPacketEncoder.newVersionNegotiationPacket(
+                    connection.originalServerConnId(),
+                    connection.localConnectionId().orElseThrow(),
+                    new int[] {QuicVersion.QUIC_V1.versionNumber()});
+
+            connection.processVersionNegotiationPacket(versions);
+
+            assertThat(connection.quicVersion(), is(QuicVersion.QUIC_V1));
+            harness.seedPeerConnectionId();
+            QuicTransportParameters parameters = peerTransportParameters(connection);
+            parameters.intParameter(ParameterId.initial_max_data, 1234);
+            connection.consumeQuicParameters(encodeParameters(parameters));
+
+            QuicTransportParameters published = connection.peerTransportParameters().orElseThrow();
+            assertThat(published.isPresent(ParameterId.version_information), is(false));
+            assertThat(published.intParameter(ParameterId.initial_max_data), is(1234L));
         }
     }
 
@@ -591,6 +796,95 @@ class QuicConnectionImplTest {
                            is(advertised));
                 assertThat(harness.connection.maxDatagramSize(), is(QuicRuntimeConfig.DEFAULT_DATAGRAM_SIZE));
             }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INFO", "FINE", "FINER"})
+    void reusesReleasedDirectBufferAfterPoolExhaustion(String level) throws Exception {
+        try (var logs = new TestLogCapture(Level.parse(level), QuicConnectionImpl.class);
+             ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))) {
+            TestQuicConnection connection = harness.connection();
+            int size = connection.maxDatagramSize();
+            ByteBuffer first = connection.outgoingByteBuffer(size);
+            ByteBuffer second = connection.outgoingByteBuffer(size);
+            ByteBuffer third = connection.outgoingByteBuffer(size);
+            ByteBuffer overflow = connection.outgoingByteBuffer(size);
+
+            assertThat(first.isDirect(), is(true));
+            assertThat(second.isDirect(), is(true));
+            assertThat(third.isDirect(), is(true));
+            assertThat(overflow.isDirect(), is(false));
+            assertThat(overflow.remaining(), is(size));
+
+            first.putLong(0x0102030405060708L).flip();
+            connection.datagramReleased(QuicDatagram.create(connection, connection.peerAddress(), first));
+            ByteBuffer reused = connection.outgoingByteBuffer(size);
+
+            assertThat(reused, sameInstance(first));
+            assertThat(reused.position(), is(0));
+            assertThat(reused.limit(), is(size));
+            assertThat(reused.isDirect(), is(true));
+
+            for (ByteBuffer buffer : List.of(reused, second, third, overflow)) {
+                connection.datagramReleased(QuicDatagram.create(connection, connection.peerAddress(), buffer));
+            }
+            List<String> bufferMessages = logs.records().stream()
+                    .map(LogRecord::getMessage)
+                    .filter(message -> message.contains("DIRECTBB:"))
+                    .toList();
+            if (level.equals("FINER")) {
+                assertThat(bufferMessages, hasItem(containsString("allocating direct buffer")));
+                assertThat(bufferMessages, hasItem(containsString("got direct buffer from pool")));
+                assertThat(bufferMessages, hasItem(containsString("offering buffer to pool")));
+            } else {
+                assertThat(bufferMessages, empty());
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INFO", "FINE", "FINER"})
+    void oversizedDatagramUsesHeapWithoutConsumingDirectPoolCapacity(String level) throws Exception {
+        try (var _ = new TestLogCapture(Level.parse(level), QuicConnectionImpl.class);
+             ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))) {
+            TestQuicConnection connection = harness.connection();
+            int size = connection.maxDatagramSize();
+            ByteBuffer oversized = connection.outgoingByteBuffer(size + 1);
+
+            assertThat(oversized.isDirect(), is(false));
+            assertThat(oversized.remaining(), is(size + 1));
+            connection.datagramReleased(QuicDatagram.create(connection, connection.peerAddress(), oversized));
+
+            List<ByteBuffer> pooled = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                ByteBuffer buffer = connection.outgoingByteBuffer(size);
+                assertThat(buffer.isDirect(), is(true));
+                assertThat(buffer.remaining(), is(size));
+                pooled.add(buffer);
+            }
+            for (ByteBuffer buffer : pooled) {
+                connection.datagramReleased(QuicDatagram.create(connection, connection.peerAddress(), buffer));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INFO", "FINE", "FINER"})
+    void disabledDirectPoolAllocatesIndependentHeapBuffers(String level) throws Exception {
+        try (var _ = new TestLogCapture(Level.parse(level), QuicConnectionImpl.class);
+             ConnectionHarness harness = ConnectionHarness.createWithDirectBufferPool(false)) {
+            TestQuicConnection connection = harness.connection();
+            ByteBuffer first = connection.outgoingByteBuffer(64);
+            assertThat(first.isDirect(), is(false));
+            assertThat(first.remaining(), is(64));
+            connection.datagramReleased(QuicDatagram.create(connection, connection.peerAddress(), first));
+
+            ByteBuffer second = connection.outgoingByteBuffer(64);
+            assertThat(second.isDirect(), is(false));
+            assertThat(second.remaining(), is(64));
+            assertThat(second, not(sameInstance(first)));
+            connection.datagramReleased(QuicDatagram.create(connection, connection.peerAddress(), second));
         }
     }
 
@@ -2109,6 +2403,21 @@ class QuicConnectionImplTest {
         }
     }
 
+    private static QuicTransportParameters peerTransportParameters(TestQuicConnection connection) {
+        QuicTransportParameters parameters = QuicTransportParameters.create();
+        parameters.parameter(ParameterId.initial_source_connection_id, PEER_CONNECTION_ID);
+        if (connection.isClientConnection()) {
+            parameters.parameter(ParameterId.original_destination_connection_id,
+                                 connection.originalServerConnId().bufferData().readBytes());
+        }
+        return parameters;
+    }
+
+    private static ByteBuffer encodeParameters(QuicTransportParameters parameters) {
+        ByteBuffer buffer = ByteBuffer.allocate(parameters.size());
+        parameters.encode(buffer);
+        return buffer.flip();
+    }
 
     private static QuicTLSContext quicTlsContext(FakeQuicTLSEngine engine) {
         QuicTLSContext context = mock(QuicTLSContext.class);
@@ -2149,6 +2458,12 @@ class QuicConnectionImplTest {
         }
     }
 
+    private static CompletableFuture<? extends QuicSenderStream> openLocalStream(QuicConnection connection,
+                                                                               boolean bidi,
+                                                                               Duration timeout) {
+        return bidi ? connection.openNewLocalBidiStream(timeout) : connection.openNewLocalUniStream(timeout);
+    }
+
     private static ByteBuffer initialPacket() {
         ByteBuffer packet = ByteBuffer.allocate(30);
         packet.put((byte) 0xc0);
@@ -2183,6 +2498,10 @@ class QuicConnectionImplTest {
         };
 
         private TestLogCapture(Class<?>... sources) {
+            this(Level.ALL, sources);
+        }
+
+        private TestLogCapture(Level level, Class<?>... sources) {
             handler.setLevel(Level.ALL);
             for (Class<?> source : sources) {
                 Logger logger = Logger.getLogger(source.getName());
@@ -2191,12 +2510,8 @@ class QuicConnectionImplTest {
                 parentHandlers.add(logger.getUseParentHandlers());
                 logger.addHandler(handler);
                 logger.setUseParentHandlers(false);
-                logger.setLevel(Level.ALL);
+                logger.setLevel(level);
             }
-        }
-
-        private List<LogRecord> records() {
-            return List.copyOf(records);
         }
 
         @Override
@@ -2208,6 +2523,10 @@ class QuicConnectionImplTest {
                 logger.setUseParentHandlers(parentHandlers.get(i));
             }
             handler.close();
+        }
+
+        private List<LogRecord> records() {
+            return List.copyOf(records);
         }
     }
 
@@ -2224,11 +2543,38 @@ class QuicConnectionImplTest {
         }
 
         static ConnectionHarness create(EnumSet<KeySpace> availableKeys, QuicConfig config) throws Exception {
+            return create(availableKeys, config, QuicRuntimeConfig.create(config));
+        }
+
+        static ConnectionHarness createWithDirectBufferPool(boolean useDirectBufferPool) throws Exception {
+            QuicConfig config = QuicConfig.create();
+            QuicRuntimeConfig defaults = QuicRuntimeConfig.create(config);
+            QuicRuntimeConfig.Endpoint endpoint = defaults.endpoint();
+            QuicRuntimeConfig runtimeConfig = new QuicRuntimeConfig(
+                    config,
+                    new QuicRuntimeConfig.Endpoint(endpoint.channelType(),
+                                                   endpoint.selectorThreading(),
+                                                   endpoint.pollerUsePlatformThreads(),
+                                                   endpoint.maxEndpoints(),
+                                                   endpoint.sendAsync(),
+                                                   endpoint.maxBufferedHigh(),
+                                                   endpoint.maxBufferedLow(),
+                                                   useDirectBufferPool,
+                                                   endpoint.defaultDatagramSize()),
+                    defaults.recovery(),
+                    defaults.transportParameters(),
+                    defaults.confidentialityLimits());
+            return create(EnumSet.of(KeySpace.ONE_RTT), config, runtimeConfig);
+        }
+
+        static ConnectionHarness create(EnumSet<KeySpace> availableKeys,
+                                        QuicConfig config,
+                                        QuicRuntimeConfig runtimeConfig) throws Exception {
             FakeQuicTLSEngine engine = new FakeQuicTLSEngine(availableKeys);
             TestQuicInstance instance = new TestQuicInstance(quicTlsContext(engine), true, config);
             TestQuicConnection connection = new TestQuicConnection(QuicVersion.QUIC_V1,
                                                                    instance,
-                                                                   QuicRuntimeConfig.create(config));
+                                                                   runtimeConfig);
             connection.seedPeerConnectionId(PEER_CONNECTION_ID);
             return new ConnectionHarness(instance, engine, connection);
         }
@@ -2241,8 +2587,25 @@ class QuicConnectionImplTest {
             FakeQuicTLSEngine engine = new FakeQuicTLSEngine(availableKeys);
             TestQuicInstance instance = new TestQuicInstance(quicTlsContext(engine), false, config);
             QuicRuntimeConfig runtimeConfig = QuicRuntimeConfig.create(instance.quicConfig());
-            TestQuicConnection connection = new TestServerQuicConnection(instance, runtimeConfig);
+            TestQuicConnection connection = new TestServerQuicConnection(QuicVersion.QUIC_V1, instance, runtimeConfig);
             connection.seedPeerConnectionId(PEER_CONNECTION_ID);
+            return new ConnectionHarness(instance, engine, connection);
+        }
+
+        static ConnectionHarness createForVersion(QuicVersion version, boolean client) throws Exception {
+            QuicConfig config = QuicConfig.builder()
+                    .availableVersions(List.of(QuicVersion.QUIC_V2, QuicVersion.QUIC_V1))
+                    .maxUniStreams(4)
+                    .buildPrototype();
+            FakeQuicTLSEngine engine = new FakeQuicTLSEngine(EnumSet.of(KeySpace.INITIAL));
+            TestQuicInstance instance = new TestQuicInstance(quicTlsContext(engine), client, config);
+            QuicRuntimeConfig runtimeConfig = QuicRuntimeConfig.create(config);
+            TestQuicConnection connection = client
+                    ? new TestQuicConnection(version, instance, runtimeConfig)
+                    : new TestServerQuicConnection(version, instance, runtimeConfig);
+            if (!client) {
+                connection.seedPeerConnectionId(PEER_CONNECTION_ID);
+            }
             return new ConnectionHarness(instance, engine, connection);
         }
 
@@ -2443,6 +2806,13 @@ class QuicConnectionImplTest {
             recordApplicationPacket(packet, permit);
         }
 
+        private static SSLParameters sslParameters() {
+            SSLParameters parameters = new SSLParameters();
+            parameters.setProtocols(new String[] {"TLSv1.3"});
+            parameters.setApplicationProtocols(new String[] {"h3"});
+            return parameters;
+        }
+
         private void recordApplicationPacket(QuicPacket packet, QuicPathManager.SendPermit permit) {
             applicationPackets.add(packet);
             packetSpace(packet.numberSpace()).packetSent(packet, -1L, packet.packetNumber(), permit.generation());
@@ -2470,19 +2840,13 @@ class QuicConnectionImplTest {
                         .ifPresent(_ -> onHandshakeDoneSent());
             }
         }
-
-        private static SSLParameters sslParameters() {
-            SSLParameters parameters = new SSLParameters();
-            parameters.setProtocols(new String[] {"TLSv1.3"});
-            parameters.setApplicationProtocols(new String[] {"h3"});
-            return parameters;
-        }
     }
 
     private static final class TestServerQuicConnection extends TestQuicConnection {
-        private TestServerQuicConnection(TestQuicInstance quicInstance,
+        private TestServerQuicConnection(QuicVersion version,
+                                         TestQuicInstance quicInstance,
                                          QuicRuntimeConfig runtimeConfig) throws Exception {
-            super(QuicVersion.QUIC_V1, quicInstance, runtimeConfig);
+            super(version, quicInstance, runtimeConfig);
         }
 
         @Override
@@ -2496,8 +2860,8 @@ class QuicConnectionImplTest {
         private final boolean client;
         private final QuicConfig quicConfig;
         private final List<QuicVersion> requestedTokenVersions = new ArrayList<>();
-        private Executor executor = Runnable::run;
         private final QuicEndpoint endpoint;
+        private Executor executor = Runnable::run;
         private RuntimeException appErrorFailure;
 
         private TestQuicInstance(QuicTLSContext quicTLSContext, boolean client, QuicConfig quicConfig) {
@@ -2658,10 +3022,6 @@ class QuicConnectionImplTest {
             return handshakeState;
         }
 
-        private void setHandshakeState(HandshakeState handshakeState) {
-            this.handshakeState = handshakeState;
-        }
-
         @Override
         public boolean isTLSHandshakeComplete() {
             return false;
@@ -2778,12 +3138,6 @@ class QuicConnectionImplTest {
             return Optional.of(result);
         }
 
-        private void queueHandshakeFlight(KeySpace keySpace, ByteBuffer bytes) {
-            currentSendKeySpace = keySpace;
-            outboundHandshakeBytes = bytes;
-            handshakeState = HandshakeState.NEED_SEND_CRYPTO;
-        }
-
         @Override
         public void consumeHandshakeBytesBuffer(KeySpace keySpace, ByteBuffer payload) {
             consumedCryptoBytes.addAndGet(payload.remaining());
@@ -2815,6 +3169,16 @@ class QuicConnectionImplTest {
         @Override
         public void oneRttContext(QuicOneRttContext ctx) {
             oneRttContext = ctx;
+        }
+
+        private void setHandshakeState(HandshakeState handshakeState) {
+            this.handshakeState = handshakeState;
+        }
+
+        private void queueHandshakeFlight(KeySpace keySpace, ByteBuffer bytes) {
+            currentSendKeySpace = keySpace;
+            outboundHandshakeBytes = bytes;
+            handshakeState = HandshakeState.NEED_SEND_CRYPTO;
         }
     }
 

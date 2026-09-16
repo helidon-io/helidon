@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -63,12 +64,16 @@ class H3SpecIT {
         Files.writeString(webRoot.resolve("index.html"), "hello from h3spec", StandardCharsets.UTF_8);
         TestTlsSupport.exportServerPem(certChain, privateKey);
 
-        ImageFromDockerfile serverImage = new ImageFromDockerfile("helidon-h3spec-server-" + UUID.randomUUID(), false)
+        ImageFromDockerfile serverImage = new ImageFromDockerfile("helidon-h3spec-server-" + UUID.randomUUID(), true)
                 .withDockerfile(Path.of("./Dockerfile.server"));
-        ImageFromDockerfile toolImage = new ImageFromDockerfile("helidon-h3spec-tool-" + UUID.randomUUID(), false)
+        ImageFromDockerfile toolImage = new ImageFromDockerfile("helidon-h3spec-tool-" + UUID.randomUUID(), true)
                 .withDockerfile(Path.of("./Dockerfile.h3spec"));
 
-        try (Network network = Network.newNetwork();
+        try (AutoCloseable _ = () -> DockerClientFactory.instance().client()
+                .removeImageCmd(serverImage.getDockerImageName()).exec();
+                AutoCloseable _ = () -> DockerClientFactory.instance().client()
+                        .removeImageCmd(toolImage.getDockerImageName()).exec();
+                Network network = Network.newNetwork();
                 GenericContainer<?> server = new GenericContainer<>(serverImage)
                         .withNetwork(network)
                         .withNetworkAliases(SERVER_ALIAS)

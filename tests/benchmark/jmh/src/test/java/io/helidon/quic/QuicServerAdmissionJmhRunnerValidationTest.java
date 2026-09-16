@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.infra.ThreadParams;
 import org.openjdk.jmh.profile.GCProfiler;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class QuicServerAdmissionJmhRunnerValidationTest {
     @Test
@@ -35,8 +35,8 @@ class QuicServerAdmissionJmhRunnerValidationTest {
 
         runtimeState.setUp();
         try {
-            assertTrue(benchmark.serverEstablishedConnectionLifecycle(runtimeState, initialState));
-            assertTrue(benchmark.serverEstablishedConnectionLifecycle(runtimeState, initialState));
+            assertThat(benchmark.serverEstablishedConnectionLifecycle(runtimeState, initialState), is(true));
+            assertThat(benchmark.serverEstablishedConnectionLifecycle(runtimeState, initialState), is(true));
         } finally {
             runtimeState.tearDown();
         }
@@ -68,7 +68,7 @@ class QuicServerAdmissionJmhRunnerValidationTest {
 
     @Test
     void acceptsProcessAllocationForFullLifecycle() {
-        assertDoesNotThrow(() -> validate(false, true, false, true, false, null, 5));
+        validate(false, true, false, true, false, null, 5);
     }
 
     @Test
@@ -83,10 +83,7 @@ class QuicServerAdmissionJmhRunnerValidationTest {
                              true,
                              null,
                              "output.log"));
-        assertDoesNotThrow(() -> QuicServerAdmissionJmhRunnerTest.validateEvidenceOutputOverrides(
-                false,
-                "result.json",
-                "output.log"));
+        QuicServerAdmissionJmhRunnerTest.validateEvidenceOutputOverrides(false, "result.json", "output.log");
     }
 
     private static void validate(boolean lifecycleHandshakeReadySelected,

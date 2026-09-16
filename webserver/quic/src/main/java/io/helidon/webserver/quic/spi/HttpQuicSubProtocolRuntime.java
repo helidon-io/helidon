@@ -34,6 +34,19 @@ import io.helidon.webserver.SniContext;
 @Api.Internal
 public interface HttpQuicSubProtocolRuntime extends QuicSubProtocolRuntime {
     /**
+     * Returns whether a QUIC termination is a normal close under the default HTTP classification.
+     *
+     * @param termination immutable QUIC termination
+     * @return {@code true} for a normal default close
+     */
+    static boolean defaultNormalTermination(QuicTermination termination) {
+        Objects.requireNonNull(termination, "termination");
+        return termination.cause().isEmpty()
+                && (termination.kind() == QuicTermination.Kind.SILENT
+                        || termination.errorCode().orElse(-1) == QuicTransportErrors.NO_ERROR.code());
+    }
+
+    /**
      * Accept a negotiated QUIC connection and its HTTP transport observation.
      *
      * @param connection accepted QUIC connection
@@ -72,18 +85,5 @@ public interface HttpQuicSubProtocolRuntime extends QuicSubProtocolRuntime {
      */
     default boolean isNormalTermination(QuicTermination termination) {
         return defaultNormalTermination(termination);
-    }
-
-    /**
-     * Returns whether a QUIC termination is a normal close under the default HTTP classification.
-     *
-     * @param termination immutable QUIC termination
-     * @return {@code true} for a normal default close
-     */
-    static boolean defaultNormalTermination(QuicTermination termination) {
-        Objects.requireNonNull(termination, "termination");
-        return termination.cause().isEmpty()
-                && (termination.kind() == QuicTermination.Kind.SILENT
-                        || termination.errorCode().orElse(-1) == QuicTransportErrors.NO_ERROR.code());
     }
 }

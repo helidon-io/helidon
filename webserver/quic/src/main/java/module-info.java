@@ -40,8 +40,8 @@ module io.helidon.webserver.quic {
     exports io.helidon.webserver.quic;
     exports io.helidon.webserver.quic.spi;
 
+    uses io.helidon.webserver.quic.spi.QuicSubProtocolProvider;
+
     provides io.helidon.webserver.spi.TransportBindingFactoryProvider
             with io.helidon.webserver.quic.QuicTransportBindingProvider;
-
-    uses io.helidon.webserver.quic.spi.QuicSubProtocolProvider;
 }

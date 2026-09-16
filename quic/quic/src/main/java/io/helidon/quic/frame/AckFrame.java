@@ -108,69 +108,6 @@ public final class AckFrame extends QuicFrame {
         size = computeSize();
     }
 
-    static void validateStructure(ByteBuffer buffer, int type) throws QuicTransportException {
-        boolean countsPresent = (type & COUNTS_PRESENT) != 0;
-        long largestAcknowledged = decodeVLField(buffer, "largestAcknowledged", type);
-        decodeVLField(buffer, "ackDelay", type);
-        int ackRangeCount = decodeVLFieldAsInt(buffer, "ackRangeCount", type);
-        validateRangeCount(buffer, type, ackRangeCount, countsPresent);
-        long firstAckRange = decodeVLField(buffer, "firstAckRange", type);
-        long smallestAcknowledged = validateFirstRange(type, largestAcknowledged, firstAckRange);
-        decodeAdditionalRanges(buffer, type, ackRangeCount, smallestAcknowledged, NO_ACK_RANGES, false);
-        if (countsPresent) {
-            decodeVLField(buffer, "ect0Count", type);
-            decodeVLField(buffer, "ect1Count", type);
-            decodeVLField(buffer, "ecnCECount", type);
-        }
-    }
-
-    private static void validateRangeCount(ByteBuffer buffer,
-                                           int type,
-                                           int ackRangeCount,
-                                           boolean countsPresent) throws QuicTransportException {
-        int minimumTrailingFields = 1 + (countsPresent ? 3 : 0);
-        int remaining = buffer.remaining();
-        if (remaining < minimumTrailingFields
-                || ackRangeCount > (remaining - minimumTrailingFields) / 2) {
-            throw new QuicTransportException("ACK range count exceeds remaining payload: " + ackRangeCount,
-                                             type,
-                                             QuicTransportErrors.FRAME_ENCODING_ERROR);
-        }
-    }
-
-    private static long validateFirstRange(int type,
-                                           long largestAcknowledged,
-                                           long firstAckRange) throws QuicTransportException {
-        long smallestAcknowledged = largestAcknowledged - firstAckRange;
-        if (smallestAcknowledged < 0) {
-            throw new QuicTransportException("Negative PN acknowledged",
-                                             type,
-                                             QuicTransportErrors.FRAME_ENCODING_ERROR);
-        }
-        return smallestAcknowledged;
-    }
-
-    private static void decodeAdditionalRanges(ByteBuffer buffer,
-                                               int type,
-                                               int ackRangeCount,
-                                               long smallestAcknowledged,
-                                               List<AckRange> ackRanges,
-                                               boolean captureRanges) throws QuicTransportException {
-        for (int i = 1; i <= ackRangeCount; i++) {
-            long gap = decodeVLField(buffer, "gap", type);
-            long len = decodeVLField(buffer, "range length", type);
-            if (captureRanges) {
-                ackRanges.add(i, AckRange.of(gap, len));
-            }
-            smallestAcknowledged -= gap + len + 2;
-            if (smallestAcknowledged < 0) {
-                // verify after each range to avoid wrap around
-                throw new QuicTransportException("Negative PN acknowledged",
-                                                 type, QuicTransportErrors.FRAME_ENCODING_ERROR);
-            }
-        }
-    }
-
     private AckFrame(long largestAcknowledged, long ackDelay, List<AckRange> ackRanges) {
         this(largestAcknowledged, ackDelay, ackRanges, -1, -1, -1);
     }
@@ -220,6 +157,22 @@ public final class AckFrame extends QuicFrame {
         this.ect1Count = source.ect1Count;
         this.ecnCECount = source.ecnCECount;
         this.size = size;
+    }
+
+    static void validateStructure(ByteBuffer buffer, int type) throws QuicTransportException {
+        boolean countsPresent = (type & COUNTS_PRESENT) != 0;
+        long largestAcknowledged = decodeVLField(buffer, "largestAcknowledged", type);
+        decodeVLField(buffer, "ackDelay", type);
+        int ackRangeCount = decodeVLFieldAsInt(buffer, "ackRangeCount", type);
+        validateRangeCount(buffer, type, ackRangeCount, countsPresent);
+        long firstAckRange = decodeVLField(buffer, "firstAckRange", type);
+        long smallestAcknowledged = validateFirstRange(type, largestAcknowledged, firstAckRange);
+        decodeAdditionalRanges(buffer, type, ackRangeCount, smallestAcknowledged, NO_ACK_RANGES, false);
+        if (countsPresent) {
+            decodeVLField(buffer, "ect0Count", type);
+            decodeVLField(buffer, "ect1Count", type);
+            decodeVLField(buffer, "ecnCECount", type);
+        }
     }
 
     /**
@@ -498,6 +451,53 @@ public final class AckFrame extends QuicFrame {
         }
         res += ")";
         return res;
+    }
+
+    private static void validateRangeCount(ByteBuffer buffer,
+                                           int type,
+                                           int ackRangeCount,
+                                           boolean countsPresent) throws QuicTransportException {
+        int minimumTrailingFields = 1 + (countsPresent ? 3 : 0);
+        int remaining = buffer.remaining();
+        if (remaining < minimumTrailingFields
+                || ackRangeCount > (remaining - minimumTrailingFields) / 2) {
+            throw new QuicTransportException("ACK range count exceeds remaining payload: " + ackRangeCount,
+                                             type,
+                                             QuicTransportErrors.FRAME_ENCODING_ERROR);
+        }
+    }
+
+    private static long validateFirstRange(int type,
+                                           long largestAcknowledged,
+                                           long firstAckRange) throws QuicTransportException {
+        long smallestAcknowledged = largestAcknowledged - firstAckRange;
+        if (smallestAcknowledged < 0) {
+            throw new QuicTransportException("Negative PN acknowledged",
+                                             type,
+                                             QuicTransportErrors.FRAME_ENCODING_ERROR);
+        }
+        return smallestAcknowledged;
+    }
+
+    private static void decodeAdditionalRanges(ByteBuffer buffer,
+                                               int type,
+                                               int ackRangeCount,
+                                               long smallestAcknowledged,
+                                               List<AckRange> ackRanges,
+                                               boolean captureRanges) throws QuicTransportException {
+        for (int i = 1; i <= ackRangeCount; i++) {
+            long gap = decodeVLField(buffer, "gap", type);
+            long len = decodeVLField(buffer, "range length", type);
+            if (captureRanges) {
+                ackRanges.add(i, AckRange.of(gap, len));
+            }
+            smallestAcknowledged -= gap + len + 2;
+            if (smallestAcknowledged < 0) {
+                // verify after each range to avoid wrap around
+                throw new QuicTransportException("Negative PN acknowledged",
+                                                 type, QuicTransportErrors.FRAME_ENCODING_ERROR);
+            }
+        }
     }
 
     // This is described in RFC 9000, Section 19.3.1 ACK Ranges

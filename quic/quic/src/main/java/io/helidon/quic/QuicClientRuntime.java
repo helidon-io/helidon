@@ -49,12 +49,17 @@ import io.helidon.quic.packet.QuicPacket;
  */
 @Api.Internal
 public final class QuicClientRuntime implements QuicInstance, AutoCloseable {
+    static final Duration DEFAULT_INITIAL_RESPONSE_TIMEOUT;
+    static final int MAX_INITIAL_TOKENS = 1024;
+
     private static final System.Logger LOGGER = System.getLogger(QuicClientRuntime.class.getName());
     private static final AtomicLong IDS = new AtomicLong();
     private static final AtomicLong CONNECTIONS = new AtomicLong();
     private static final int MAX_ENDPOINTS_LIMIT = 16;
-    static final Duration DEFAULT_INITIAL_RESPONSE_TIMEOUT = Duration.ofSeconds(30);
-    static final int MAX_INITIAL_TOKENS = 1024;
+
+    static {
+        DEFAULT_INITIAL_RESPONSE_TIMEOUT = Duration.ofSeconds(30);
+    }
 
     private final String clientId;
     private final String name;
@@ -200,78 +205,6 @@ public final class QuicClientRuntime implements QuicInstance, AutoCloseable {
                                         tlsPeerPort,
                                         applicationProtocols,
                                         serverNamesOverride);
-    }
-
-    private QuicClientConnection createConnectionInternal(InetSocketAddress peerAddress,
-                                                          String tlsPeerName,
-                                                          int tlsPeerPort,
-                                                          String[] applicationProtocols,
-                                                          List<SNIServerName> serverNamesOverride) {
-        Objects.requireNonNull(peerAddress, "peerAddress");
-        Objects.requireNonNull(tlsPeerName, "tlsPeerName");
-        Objects.requireNonNull(applicationProtocols, "applicationProtocols");
-        if (applicationProtocols.length == 0) {
-            throw new IllegalArgumentException("at least one ALPN is needed");
-        }
-
-        SSLParameters connectionParameters = tlsConfig.sslParameters();
-        connectionParameters.setApplicationProtocols(applicationProtocols);
-        if (serverNamesOverride != null) {
-            connectionParameters.setServerNames(serverNamesOverride);
-        }
-        //= https://www.rfc-editor.org/rfc/rfc9001#section-4.2
-        //# Clients MUST NOT offer TLS versions older than 1.3.
-        connectionParameters.setProtocols(new String[] {"TLSv1.3"});
-
-        long connectionId;
-        QuicClientConnection connection;
-        OwnedConnection ownedConnection;
-        lock.lock();
-        try {
-            if (closed) {
-                throw new IllegalStateException("QUIC client runtime is closed");
-            }
-            if (tls.generation() != tlsGeneration) {
-                throw new IllegalStateException("TLS configuration was reloaded; create a new QUIC client runtime");
-            }
-            connectionId = CONNECTIONS.incrementAndGet();
-            QuicConnectionImpl.ClientConnectionCreation created = QuicConnectionImpl.create(
-                    this,
-                    runtimeConfig,
-                    peerAddress,
-                    InetSocketAddress.createUnresolved(tlsPeerName, tlsPeerPort),
-                    connectionParameters,
-                    initialResponseTimeout,
-                    connectionId);
-            connection = created.connection();
-            QuicEndpoint connectionEndpoint = created.endpoint();
-            ownedConnection = new OwnedConnection(connection, connectionEndpoint);
-            connections.put(connectionId, ownedConnection);
-            endpointConnectionCounts.merge(connectionEndpoint, 1, Integer::sum);
-        } finally {
-            lock.unlock();
-        }
-        connection.whenTerminated().whenComplete((_, throwable) -> {
-            lock.lock();
-            try {
-                if (connections.remove(connectionId, ownedConnection)) {
-                    endpointConnectionCounts.computeIfPresent(ownedConnection.endpoint(),
-                                                              (endpoint, count) -> count == 1 ? null : count - 1);
-                }
-            } finally {
-                lock.unlock();
-            }
-        });
-        try {
-            observer.connectionCreated(connection);
-        } catch (Throwable observerFailure) {
-            if (LOGGER.isLoggable(System.Logger.Level.WARNING)) {
-                LOGGER.log(System.Logger.Level.WARNING,
-                           "[" + name + "] QUIC client observer failed during connection creation",
-                           observerFailure);
-            }
-        }
-        return connection;
     }
 
     /**
@@ -642,6 +575,78 @@ public final class QuicClientRuntime implements QuicInstance, AutoCloseable {
             current.addSuppressed(next);
         }
         return current;
+    }
+
+    private QuicClientConnection createConnectionInternal(InetSocketAddress peerAddress,
+                                                          String tlsPeerName,
+                                                          int tlsPeerPort,
+                                                          String[] applicationProtocols,
+                                                          List<SNIServerName> serverNamesOverride) {
+        Objects.requireNonNull(peerAddress, "peerAddress");
+        Objects.requireNonNull(tlsPeerName, "tlsPeerName");
+        Objects.requireNonNull(applicationProtocols, "applicationProtocols");
+        if (applicationProtocols.length == 0) {
+            throw new IllegalArgumentException("at least one ALPN is needed");
+        }
+
+        SSLParameters connectionParameters = tlsConfig.sslParameters();
+        connectionParameters.setApplicationProtocols(applicationProtocols);
+        if (serverNamesOverride != null) {
+            connectionParameters.setServerNames(serverNamesOverride);
+        }
+        //= https://www.rfc-editor.org/rfc/rfc9001#section-4.2
+        //# Clients MUST NOT offer TLS versions older than 1.3.
+        connectionParameters.setProtocols(new String[] {"TLSv1.3"});
+
+        long connectionId;
+        QuicClientConnection connection;
+        OwnedConnection ownedConnection;
+        lock.lock();
+        try {
+            if (closed) {
+                throw new IllegalStateException("QUIC client runtime is closed");
+            }
+            if (tls.generation() != tlsGeneration) {
+                throw new IllegalStateException("TLS configuration was reloaded; create a new QUIC client runtime");
+            }
+            connectionId = CONNECTIONS.incrementAndGet();
+            QuicConnectionImpl.ClientConnectionCreation created = QuicConnectionImpl.create(
+                    this,
+                    runtimeConfig,
+                    peerAddress,
+                    InetSocketAddress.createUnresolved(tlsPeerName, tlsPeerPort),
+                    connectionParameters,
+                    initialResponseTimeout,
+                    connectionId);
+            connection = created.connection();
+            QuicEndpoint connectionEndpoint = created.endpoint();
+            ownedConnection = new OwnedConnection(connection, connectionEndpoint);
+            connections.put(connectionId, ownedConnection);
+            endpointConnectionCounts.merge(connectionEndpoint, 1, Integer::sum);
+        } finally {
+            lock.unlock();
+        }
+        connection.whenTerminated().whenComplete((_, throwable) -> {
+            lock.lock();
+            try {
+                if (connections.remove(connectionId, ownedConnection)) {
+                    endpointConnectionCounts.computeIfPresent(ownedConnection.endpoint(),
+                                                              (endpoint, count) -> count == 1 ? null : count - 1);
+                }
+            } finally {
+                lock.unlock();
+            }
+        });
+        try {
+            observer.connectionCreated(connection);
+        } catch (Throwable observerFailure) {
+            if (LOGGER.isLoggable(System.Logger.Level.WARNING)) {
+                LOGGER.log(System.Logger.Level.WARNING,
+                           "[" + name + "] QUIC client observer failed during connection creation",
+                           observerFailure);
+            }
+        }
+        return connection;
     }
 
     private void log(System.Logger.Level level, String format, Object... arguments) {

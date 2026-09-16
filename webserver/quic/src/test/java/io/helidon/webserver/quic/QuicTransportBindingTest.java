@@ -241,56 +241,6 @@ class QuicTransportBindingTest {
                                    new String[] {ALPHA_ALPN, BETA_ALPN});
     }
 
-    private static void assertConsistentPreference(TransportBindingFactory bindingFactory,
-                                                   List<? extends QuicSubProtocolConfig> protocols,
-                                                   String expectedProtocolName,
-                                                   String expectedAlpn,
-                                                   String unexpectedProtocolName,
-                                                   String[] clientAlpns) throws Exception {
-        ACCEPTED_CONNECTIONS.clear();
-        TlsContexts tlsContexts = tlsContexts();
-        ListenerConfig listenerConfig = ListenerConfig.builder()
-                .name(LISTENER_NAME)
-                .tls(tlsContexts.serverTls())
-                .protocols(protocols)
-                .build();
-
-        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-             QuicClientRuntime client = QuicClientRuntime.builder()
-                     .executor(executor)
-                     .quicConfig(QuicConfig.builder()
-                                         .availableVersions(List.of(QuicVersion.QUIC_V1))
-                                         .buildPrototype())
-                     .tls(tlsContexts.clientTls())
-                     .build()) {
-            TransportBindingContext context = new TestTransportBindingContext(listenerConfig, executor);
-            PortTransportBinding binding = (PortTransportBinding) bindingFactory.create(context);
-
-            try {
-                binding.start();
-                InetSocketAddress serverAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), binding.port());
-
-                for (int i = 0; i < 16; i++) {
-                    QuicClientConnection connection = client.createConnection(serverAddress,
-                                                                              serverAddress.getHostString(),
-                                                                              serverAddress.getPort(),
-                                                                              clientAlpns);
-                    connection.startHandshake().get(20, TimeUnit.SECONDS);
-
-                    assertThat(connection.applicationProtocol().orElseThrow(), is(expectedAlpn));
-                    QuicConnection accepted = awaitAcceptedConnection(expectedProtocolName);
-                    assertThat(accepted, notNullValue());
-                    accepted.terminate(QuicCloseCommand.application(0, "test preference connection complete"));
-                }
-                assertThat(acceptedConnections(unexpectedProtocolName).poll(200, TimeUnit.MILLISECONDS), nullValue());
-            } finally {
-                binding.stop(Duration.ofSeconds(5));
-            }
-        } finally {
-            ACCEPTED_CONNECTIONS.clear();
-        }
-    }
-
     @Test
     void shouldDispatchAcceptedConnectionsThroughListenerExecutor() throws Exception {
         ACCEPTED_CONNECTIONS.clear();
@@ -905,6 +855,56 @@ class QuicTransportBindingTest {
         }
     }
 
+    private static void assertConsistentPreference(TransportBindingFactory bindingFactory,
+                                                   List<? extends QuicSubProtocolConfig> protocols,
+                                                   String expectedProtocolName,
+                                                   String expectedAlpn,
+                                                   String unexpectedProtocolName,
+                                                   String[] clientAlpns) throws Exception {
+        ACCEPTED_CONNECTIONS.clear();
+        TlsContexts tlsContexts = tlsContexts();
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .name(LISTENER_NAME)
+                .tls(tlsContexts.serverTls())
+                .protocols(protocols)
+                .build();
+
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+             QuicClientRuntime client = QuicClientRuntime.builder()
+                     .executor(executor)
+                     .quicConfig(QuicConfig.builder()
+                                         .availableVersions(List.of(QuicVersion.QUIC_V1))
+                                         .buildPrototype())
+                     .tls(tlsContexts.clientTls())
+                     .build()) {
+            TransportBindingContext context = new TestTransportBindingContext(listenerConfig, executor);
+            PortTransportBinding binding = (PortTransportBinding) bindingFactory.create(context);
+
+            try {
+                binding.start();
+                InetSocketAddress serverAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), binding.port());
+
+                for (int i = 0; i < 16; i++) {
+                    QuicClientConnection connection = client.createConnection(serverAddress,
+                                                                              serverAddress.getHostString(),
+                                                                              serverAddress.getPort(),
+                                                                              clientAlpns);
+                    connection.startHandshake().get(20, TimeUnit.SECONDS);
+
+                    assertThat(connection.applicationProtocol().orElseThrow(), is(expectedAlpn));
+                    QuicConnection accepted = awaitAcceptedConnection(expectedProtocolName);
+                    assertThat(accepted, notNullValue());
+                    accepted.terminate(QuicCloseCommand.application(0, "test preference connection complete"));
+                }
+                assertThat(acceptedConnections(unexpectedProtocolName).poll(200, TimeUnit.MILLISECONDS), nullValue());
+            } finally {
+                binding.stop(Duration.ofSeconds(5));
+            }
+        } finally {
+            ACCEPTED_CONNECTIONS.clear();
+        }
+    }
+
     private static void assertRoundTrip(QuicClientRuntime client,
                                         InetSocketAddress serverAddress,
                                         String protocolName,
@@ -1149,40 +1149,6 @@ class QuicTransportBindingTest {
             this.delegate = delegate;
         }
 
-        private void holdNext() {
-            hold(HOLD_ANY, Thread.currentThread());
-        }
-
-        private void hold(Runnable task) {
-            hold(task, null);
-        }
-
-        private void hold(Runnable task, Thread thread) {
-            CompletableFuture<Runnable> heldTask = new CompletableFuture<>();
-            held.set(heldTask);
-            targetThread.set(thread);
-            if (!target.compareAndSet(null, task)) {
-                throw new IllegalStateException("A listener executor task is already held");
-            }
-        }
-
-        private Runnable awaitHeld() throws Exception {
-            return held.get().get(20, TimeUnit.SECONDS);
-        }
-
-        private void release(Runnable task) throws Exception {
-            CompletableFuture<Void> completed = new CompletableFuture<>();
-            delegate.execute(() -> {
-                try {
-                    task.run();
-                    completed.complete(null);
-                } catch (RuntimeException | Error t) {
-                    completed.completeExceptionally(t);
-                }
-            });
-            completed.get(20, TimeUnit.SECONDS);
-        }
-
         @Override
         public void shutdown() {
             delegate.shutdown();
@@ -1221,6 +1187,40 @@ class QuicTransportBindingTest {
                 return;
             }
             delegate.execute(command);
+        }
+
+        private void holdNext() {
+            hold(HOLD_ANY, Thread.currentThread());
+        }
+
+        private void hold(Runnable task) {
+            hold(task, null);
+        }
+
+        private void hold(Runnable task, Thread thread) {
+            CompletableFuture<Runnable> heldTask = new CompletableFuture<>();
+            held.set(heldTask);
+            targetThread.set(thread);
+            if (!target.compareAndSet(null, task)) {
+                throw new IllegalStateException("A listener executor task is already held");
+            }
+        }
+
+        private Runnable awaitHeld() throws Exception {
+            return held.get().get(20, TimeUnit.SECONDS);
+        }
+
+        private void release(Runnable task) throws Exception {
+            CompletableFuture<Void> completed = new CompletableFuture<>();
+            delegate.execute(() -> {
+                try {
+                    task.run();
+                    completed.complete(null);
+                } catch (RuntimeException | Error t) {
+                    completed.completeExceptionally(t);
+                }
+            });
+            completed.get(20, TimeUnit.SECONDS);
         }
     }
 

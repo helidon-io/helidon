@@ -148,12 +148,6 @@ public class QuicPacer {
         appLimited = false;
     }
 
-    private void log(System.Logger.Level level, String format, Object... arguments) {
-        LOGGER.log(level,
-                   () -> "[" + logTagSupplier.get() + "] "
-                           + (arguments.length == 0 ? format : format.formatted(arguments)));
-    }
-
     /**
      * Returns the deadline when quota will increase to two packets.
      *
@@ -186,5 +180,11 @@ public class QuicPacer {
         appLimited = true;
         quota = 0;
         lastUpdate = null;
+    }
+
+    private void log(System.Logger.Level level, String format, Object... arguments) {
+        LOGGER.log(level,
+                   () -> "[" + logTagSupplier.get() + "] "
+                           + (arguments.length == 0 ? format : format.formatted(arguments)));
     }
 }

@@ -128,6 +128,20 @@ final class QuicHandshakeMessageReassembler {
         }
     }
 
+    private static QuicTLSEngine.KeySpace expectedKeySpace(byte messageType) {
+        return QuicTlsHandshakeMessages.expectedKeySpace(messageType & 0xFF);
+    }
+
+    private static int handshakeMessageSize(ByteBuffer buffer, int offset) {
+        return ((buffer.get(offset + 1) & 0xFF) << 16)
+                | ((buffer.get(offset + 2) & 0xFF) << 8)
+                | (buffer.get(offset + 3) & 0xFF);
+    }
+
+    private static QuicTransportException unexpectedMessage(String detail) {
+        return QuicTlsHandshakeMessages.unexpectedMessage(detail);
+    }
+
     private void validateMessageType(QuicTLSEngine.KeySpace actual, byte messageType) throws QuicTransportException {
         if (clientMode
                 && actual == ONE_RTT
@@ -142,20 +156,6 @@ final class QuicHandshakeMessageReassembler {
             throw QuicTlsHandshakeMessages.unexpectedMessage(
                     "Message " + messageType + " received in " + actual + " but should be " + expected);
         }
-    }
-
-    private static QuicTLSEngine.KeySpace expectedKeySpace(byte messageType) {
-        return QuicTlsHandshakeMessages.expectedKeySpace(messageType & 0xFF);
-    }
-
-    private static int handshakeMessageSize(ByteBuffer buffer, int offset) {
-        return ((buffer.get(offset + 1) & 0xFF) << 16)
-                | ((buffer.get(offset + 2) & 0xFF) << 8)
-                | (buffer.get(offset + 3) & 0xFF);
-    }
-
-    private static QuicTransportException unexpectedMessage(String detail) {
-        return QuicTlsHandshakeMessages.unexpectedMessage(detail);
     }
 
     private void validateHandshakeState(QuicTLSEngine.KeySpace keySpace) throws QuicTransportException {

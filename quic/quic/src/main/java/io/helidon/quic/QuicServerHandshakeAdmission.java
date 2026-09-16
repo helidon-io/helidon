@@ -113,6 +113,26 @@ final class QuicServerHandshakeAdmission {
         }
     }
 
+    enum Establishment {
+        ESTABLISHED,
+        EXPIRED,
+        LOST
+    }
+
+    static final class ReleaseClaim {
+        private final Permit permit;
+        private final Permit.State previous;
+
+        private ReleaseClaim(Permit permit, Permit.State previous) {
+            this.permit = permit;
+            this.previous = previous;
+        }
+
+        boolean established() {
+            return previous == Permit.State.ESTABLISHED;
+        }
+    }
+
     final class Permit implements QuicTimedEvent {
         private final long eventId = QuicTimerQueue.newEventId();
         private final Deadline deadline;
@@ -348,25 +368,5 @@ final class QuicServerHandshakeAdmission {
             RELEASE_CLAIMED,
             RELEASED
         }
-    }
-
-    static final class ReleaseClaim {
-        private final Permit permit;
-        private final Permit.State previous;
-
-        private ReleaseClaim(Permit permit, Permit.State previous) {
-            this.permit = permit;
-            this.previous = previous;
-        }
-
-        boolean established() {
-            return previous == Permit.State.ESTABLISHED;
-        }
-    }
-
-    enum Establishment {
-        ESTABLISHED,
-        EXPIRED,
-        LOST
     }
 }

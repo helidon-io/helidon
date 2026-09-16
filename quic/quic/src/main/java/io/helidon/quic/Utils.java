@@ -225,20 +225,6 @@ public final class Utils {
                                        sendBufSize);
     }
 
-    private static <T extends NetworkChannel> T configureChannelBuffers(Optional<Consumer<String>> logSink,
-                                                                        T channel,
-                                                                        int receiveBufSize,
-                                                                        int sendBufSize) {
-        Objects.requireNonNull(channel, "channel");
-        if (receiveBufSize > 0) {
-            trySetOption(logSink, channel, StandardSocketOptions.SO_RCVBUF, receiveBufSize, "receive");
-        }
-        if (sendBufSize > 0) {
-            trySetOption(logSink, channel, StandardSocketOptions.SO_SNDBUF, sendBufSize, "send");
-        }
-        return channel;
-    }
-
     /**
      * Creates a defensive copy of SSL parameters needed by QUIC channels.
      *
@@ -347,6 +333,20 @@ public final class Utils {
             return Optional.of("local endpoint (loopback) and remote endpoint (wildcard) ports conflict");
         }
         return Optional.empty();
+    }
+
+    private static <T extends NetworkChannel> T configureChannelBuffers(Optional<Consumer<String>> logSink,
+                                                                        T channel,
+                                                                        int receiveBufSize,
+                                                                        int sendBufSize) {
+        Objects.requireNonNull(channel, "channel");
+        if (receiveBufSize > 0) {
+            trySetOption(logSink, channel, StandardSocketOptions.SO_RCVBUF, receiveBufSize, "receive");
+        }
+        if (sendBufSize > 0) {
+            trySetOption(logSink, channel, StandardSocketOptions.SO_SNDBUF, sendBufSize, "send");
+        }
+        return channel;
     }
 
     private static void appendOp(StringBuilder builder, int ops, int mask, String label) {

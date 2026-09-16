@@ -317,58 +317,6 @@ class QuicServerIngressTest {
         assertThat(admitted.token(), is(wrongAddressToken));
     }
 
-    private void assertRetryRoundTrip(QuicVersion version, int firstByte) {
-        RetryExchange exchange = retryExchange(version, firstByte);
-        assertThat(exchange.responseSize(), lessThanOrEqualTo(3 * QuicServerIngress.MIN_INITIAL_DATAGRAM_SIZE));
-
-        QuicAddressTokenService.ValidatedToken validated = tokenService.validate(
-                PEER,
-                version,
-                PeerConnectionId.create(exchange.retrySourceId()),
-                PeerConnectionId.create(exchange.clientSourceId()),
-                exchange.token()).orElseThrow();
-        assertThat(validated.kind(), is(QuicAddressTokenService.TokenKind.RETRY));
-        assertThat(validated.originalDestinationId().bytes(), is(exchange.originalDestinationId()));
-        assertThat(validated.retrySourceId().bytes(), is(exchange.retrySourceId()));
-    }
-
-    private RetryExchange retryExchange(QuicVersion version, int firstByte) {
-        byte[] originalDestinationId = bytes(8, 11);
-        byte[] clientSourceId = bytes(8, 31);
-        ByteBuffer request = initialDatagram(version, firstByte, originalDestinationId, clientSourceId, new byte[0]);
-        int requestPosition = request.position();
-        QuicServerIngress.Action action = retryIngress().inspect(PEER, connectionIdFactory, request);
-        assertThat(action, instanceOf(QuicServerIngress.Respond.class));
-        assertThat(request.position(), is(requestPosition));
-
-        ByteBuffer response = ((QuicServerIngress.Respond) action).datagram();
-        QuicRetryIntegrity.verify(version,
-                                  ByteBuffer.wrap(originalDestinationId),
-                                  response.asReadOnlyBuffer());
-        int expectedType = version == QuicVersion.QUIC_V1 ? 0xf0 : 0xc0;
-        assertThat(response.get() & 0xf0, is(expectedType));
-        assertThat(response.getInt(), is(version.versionNumber()));
-        assertThat(readConnectionId(response), is(clientSourceId));
-        byte[] retrySourceId = readConnectionId(response);
-        assertThat(Arrays.equals(retrySourceId, originalDestinationId), is(false));
-        byte[] token = new byte[response.remaining() - 16];
-        response.get(token);
-        assertThat(response.remaining(), is(16));
-        return new RetryExchange(originalDestinationId,
-                                 clientSourceId,
-                                 retrySourceId,
-                                 token,
-                                 response.limit());
-    }
-
-    private QuicServerIngress retryIngress() {
-        return new QuicServerIngress(List.of(QuicVersion.QUIC_V2, QuicVersion.QUIC_V1), true, tokenService);
-    }
-
-    private QuicServerIngress.Action inspect(ByteBuffer packet) {
-        return ingress.inspect(PEER, connectionIdFactory, packet);
-    }
-
     private static ByteBuffer initialDatagram(QuicVersion version, int firstByte) {
         return initialDatagram(version,
                                firstByte,
@@ -488,6 +436,58 @@ class QuicServerIngressTest {
         } catch (UnknownHostException e) {
             throw new AssertionError(e);
         }
+    }
+
+    private void assertRetryRoundTrip(QuicVersion version, int firstByte) {
+        RetryExchange exchange = retryExchange(version, firstByte);
+        assertThat(exchange.responseSize(), lessThanOrEqualTo(3 * QuicServerIngress.MIN_INITIAL_DATAGRAM_SIZE));
+
+        QuicAddressTokenService.ValidatedToken validated = tokenService.validate(
+                PEER,
+                version,
+                PeerConnectionId.create(exchange.retrySourceId()),
+                PeerConnectionId.create(exchange.clientSourceId()),
+                exchange.token()).orElseThrow();
+        assertThat(validated.kind(), is(QuicAddressTokenService.TokenKind.RETRY));
+        assertThat(validated.originalDestinationId().bytes(), is(exchange.originalDestinationId()));
+        assertThat(validated.retrySourceId().bytes(), is(exchange.retrySourceId()));
+    }
+
+    private RetryExchange retryExchange(QuicVersion version, int firstByte) {
+        byte[] originalDestinationId = bytes(8, 11);
+        byte[] clientSourceId = bytes(8, 31);
+        ByteBuffer request = initialDatagram(version, firstByte, originalDestinationId, clientSourceId, new byte[0]);
+        int requestPosition = request.position();
+        QuicServerIngress.Action action = retryIngress().inspect(PEER, connectionIdFactory, request);
+        assertThat(action, instanceOf(QuicServerIngress.Respond.class));
+        assertThat(request.position(), is(requestPosition));
+
+        ByteBuffer response = ((QuicServerIngress.Respond) action).datagram();
+        QuicRetryIntegrity.verify(version,
+                                  ByteBuffer.wrap(originalDestinationId),
+                                  response.asReadOnlyBuffer());
+        int expectedType = version == QuicVersion.QUIC_V1 ? 0xf0 : 0xc0;
+        assertThat(response.get() & 0xf0, is(expectedType));
+        assertThat(response.getInt(), is(version.versionNumber()));
+        assertThat(readConnectionId(response), is(clientSourceId));
+        byte[] retrySourceId = readConnectionId(response);
+        assertThat(Arrays.equals(retrySourceId, originalDestinationId), is(false));
+        byte[] token = new byte[response.remaining() - 16];
+        response.get(token);
+        assertThat(response.remaining(), is(16));
+        return new RetryExchange(originalDestinationId,
+                                 clientSourceId,
+                                 retrySourceId,
+                                 token,
+                                 response.limit());
+    }
+
+    private QuicServerIngress retryIngress() {
+        return new QuicServerIngress(List.of(QuicVersion.QUIC_V2, QuicVersion.QUIC_V1), true, tokenService);
+    }
+
+    private QuicServerIngress.Action inspect(ByteBuffer packet) {
+        return ingress.inspect(PEER, connectionIdFactory, packet);
     }
 
     private record RetryExchange(byte[] originalDestinationId,

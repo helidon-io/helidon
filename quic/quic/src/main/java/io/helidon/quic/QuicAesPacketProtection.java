@@ -74,23 +74,6 @@ final class QuicAesPacketProtection implements QuicPacketProtection {
         return computeHeaderProtectionMask(sample, headerProtectionBlock);
     }
 
-    private long computeHeaderProtectionMask(ByteBuffer sample, byte[] output) throws QuicTransportException {
-        if (sample.remaining() != HEADER_PROTECTION_SAMPLE_SIZE) {
-            throw new IllegalArgumentException("Invalid sample size");
-        }
-        headerProtectionCipherLock.lock();
-        try {
-            sample.get(output);
-            headerProtectionCipher.init(Cipher.ENCRYPT_MODE, headerProtectionKey);
-            headerProtectionCipher.doFinal(output, 0, output.length, output, 0);
-            return QuicPacketProtection.packHeaderProtectionMask(output);
-        } catch (GeneralSecurityException | ProviderException e) {
-            throw QuicPacketProtection.internalError("Failed to compute header protection mask", e);
-        } finally {
-            headerProtectionCipherLock.unlock();
-        }
-    }
-
     @Override
     public void encryptPacket(long packetNumber,
                               ByteBuffer packetHeader,
@@ -147,5 +130,22 @@ final class QuicAesPacketProtection implements QuicPacketProtection {
     @Override
     public long integrityLimit() {
         return INTEGRITY_LIMIT;
+    }
+
+    private long computeHeaderProtectionMask(ByteBuffer sample, byte[] output) throws QuicTransportException {
+        if (sample.remaining() != HEADER_PROTECTION_SAMPLE_SIZE) {
+            throw new IllegalArgumentException("Invalid sample size");
+        }
+        headerProtectionCipherLock.lock();
+        try {
+            sample.get(output);
+            headerProtectionCipher.init(Cipher.ENCRYPT_MODE, headerProtectionKey);
+            headerProtectionCipher.doFinal(output, 0, output.length, output, 0);
+            return QuicPacketProtection.packHeaderProtectionMask(output);
+        } catch (GeneralSecurityException | ProviderException e) {
+            throw QuicPacketProtection.internalError("Failed to compute header protection mask", e);
+        } finally {
+            headerProtectionCipherLock.unlock();
+        }
     }
 }

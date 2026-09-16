@@ -21,11 +21,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.Executor;
+import java.util.stream.LongStream;
 
 import io.helidon.quic.QuicTLSEngine.HandshakeState;
 import io.helidon.quic.QuicTLSEngine.KeySpace;
 import io.helidon.quic.frame.AckFrame;
+import io.helidon.quic.frame.AckFrame.AckFrameBuilder;
 import io.helidon.quic.frame.AckFrame.AckRange;
 import io.helidon.quic.frame.PingFrame;
 import io.helidon.quic.frame.QuicFrame;
@@ -36,14 +40,17 @@ import io.helidon.quic.packet.QuicPacket.PacketNumberSpace;
 import io.helidon.quic.packet.QuicPacket.PacketType;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -78,24 +85,142 @@ class PacketSpaceManagerAckTest {
         assertThat(context.rttEstimator.ptoBackoff(), is(2L));
     }
 
-    @Test
-    void processesLargeAckRangeSetOncePerPacket() throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 128, 1024})
+    void processesSparseAckRangesOncePerPacket(int rangeCount) throws Exception {
         TestContext context = TestContext.create(false);
-        for (int i = 0; i < 256; i++) {
+        Deadline sent = context.timeLine.instant();
+        for (int i = 0; i < 2 * rangeCount; i++) {
             context.send();
         }
         List<AckRange> ranges = new ArrayList<>();
-        for (int i = 0; i < 128; i++) {
+        for (int i = 0; i < rangeCount; i++) {
             ranges.add(AckRange.of(0, 0));
         }
+        AckFrame oddPackets = AckFrame.create(2L * rangeCount - 1, 0, ranges);
+        List<Long> expectedOddPackets = LongStream.range(0, rangeCount).map(number -> 2 * number + 1).boxed().toList();
+        context.timeLine.advance(Duration.ofMillis(10));
 
-        context.manager.processAckFrame(AckFrame.create(255, 0, ranges));
+        context.manager.processAckFrame(oddPackets);
 
-        assertThat(context.emitter.acknowledged.size(), is(128));
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).sorted().toList(),
+                   is(expectedOddPackets));
+        verify(context.congestionController, times(rangeCount)).packetAcked(1200, sent);
+        assertThat(context.rttEstimator.state().rttSampleCount(), is(1L));
 
-        context.manager.processAckFrame(AckFrame.create(254, 0, ranges));
+        context.manager.processAckFrame(oddPackets);
 
-        assertThat(context.emitter.acknowledged.size(), is(256));
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).sorted().toList(),
+                   is(expectedOddPackets));
+        verify(context.congestionController, times(rangeCount)).packetAcked(1200, sent);
+        assertThat(context.rttEstimator.state().rttSampleCount(), is(1L));
+
+        context.manager.processAckFrame(AckFrame.create(2L * rangeCount - 2, 0, ranges));
+
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).sorted().toList(),
+                   is(LongStream.range(0, 2L * rangeCount).boxed().toList()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0, false",
+            "0, true",
+            "2147483648, false",
+            "2147483648, true",
+            "4611686018427387856, false",
+            "4611686018427387856, true"
+    })
+    void acknowledgesOnlyPacketsWithinFragmentedRangeBounds(long firstPacketNumber, boolean reverseOrder) throws Exception {
+        TestContext context = TestContext.create(false);
+        List<Long> packetNumbers = LongStream.range(firstPacketNumber, firstPacketNumber + 35).boxed().toList();
+        for (long packetNumber : reverseOrder ? packetNumbers.reversed() : packetNumbers) {
+            context.send(packetNumber);
+        }
+        AckFrame frame = AckFrame.create(firstPacketNumber + 31,
+                                         0,
+                                         List.of(AckRange.of(0, 3),
+                                                 AckRange.of(2, 0),
+                                                 AckRange.of(0, 2),
+                                                 AckRange.of(4, 4),
+                                                 AckRange.of(0, 1)));
+        List<Long> expected = List.of(7L, 8L, 10L, 11L, 12L, 13L, 14L, 20L, 21L, 22L, 24L, 28L, 29L, 30L, 31L)
+                .stream()
+                .map(offset -> firstPacketNumber + offset)
+                .toList();
+
+        context.manager.processAckFrame(frame);
+
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).sorted().toList(), is(expected));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void reusesAcknowledgementRangesAcrossFrames(boolean reverseOrder) throws Exception {
+        TestContext context = TestContext.create(false);
+        List<Long> packetNumbers = LongStream.range(0, 36).boxed().toList();
+        for (long packetNumber : reverseOrder ? packetNumbers.reversed() : packetNumbers) {
+            context.send(packetNumber);
+        }
+        List<List<Long>> acknowledgements = List.of(List.of(30L, 32L),
+                                                    LongStream.range(0, 17).map(number -> 2 * number).boxed().toList(),
+                                                    List.of(3L, 7L, 11L),
+                                                    List.of(17L, 18L, 19L),
+                                                    List.of(1L, 5L, 9L, 13L, 21L),
+                                                    packetNumbers);
+        SortedSet<Long> expected = new TreeSet<>();
+        for (List<Long> acknowledged : acknowledgements) {
+            AckFrame frame = acknowledging(acknowledged);
+            expected.addAll(acknowledged);
+
+            context.manager.processAckFrame(frame);
+
+            assertThat("Acknowledged packets after " + acknowledged,
+                       context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).sorted().toList(),
+                       is(List.copyOf(expected)));
+
+            context.manager.processAckFrame(frame);
+
+            assertThat("Duplicate acknowledgement of " + acknowledged,
+                       context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).sorted().toList(),
+                       is(List.copyOf(expected)));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2, 6500000", "3, 4500000"})
+    void matchesFragmentedAcknowledgementsAcrossRetransmissionHistory(long largestAcknowledged,
+                                                                     long expectedRttMicros) throws Exception {
+        TestContext context = TestContext.create(true);
+        context.send();
+        context.send();
+        context.manager.processAckFrame(AckFrame.create(1, 0, List.of(AckRange.of(0, 1))));
+        context.send();
+        context.timeLine.advance(Duration.ofSeconds(2));
+        context.emitter.fireTimer();
+        context.timeLine.advance(Duration.ofSeconds(4));
+        context.emitter.fireTimer();
+        Deadline retransmissionSent = context.timeLine.instant();
+        assertThat(context.emitter.retransmissionAttempts, is(2));
+        context.timeLine.advance(Duration.ofMillis(500));
+        AckFrame frame = AckFrame.create(largestAcknowledged,
+                                         0,
+                                         List.of(AckRange.of(0, largestAcknowledged - 2), AckRange.of(0, 0)));
+
+        context.manager.processAckFrame(frame);
+
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).sorted().toList(),
+                   is(List.of(0L, 1L, 4L)));
+        assertThat(context.rttEstimator.state().rttSampleCount(), is(2L));
+        assertThat(context.rttEstimator.state().latestRttMicros(), is(expectedRttMicros));
+        assertThat(context.rttEstimator.ptoBackoff(), is(1L));
+        verify(context.congestionController).packetAcked(1200, retransmissionSent);
+
+        context.manager.processAckFrame(frame);
+
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).sorted().toList(),
+                   is(List.of(0L, 1L, 4L)));
+        assertThat(context.rttEstimator.state().rttSampleCount(), is(2L));
+        verify(context.congestionController).packetAcked(1200, retransmissionSent);
     }
 
     @Test
@@ -260,8 +385,8 @@ class PacketSpaceManagerAckTest {
 
         assertThat(context.emitter.retransmissionAttempts, is(3));
         assertThat(context.emitter.retransmitted.size(), is(3));
-        assertSame(context.emitter.retransmitted.get(0), context.emitter.retransmitted.get(1));
-        assertSame(context.emitter.retransmitted.get(1), context.emitter.retransmitted.get(2));
+        assertThat(context.emitter.retransmitted.get(1), sameInstance(context.emitter.retransmitted.get(0)));
+        assertThat(context.emitter.retransmitted.get(2), sameInstance(context.emitter.retransmitted.get(1)));
         StreamFrame retransmittedTail = (StreamFrame) context.emitter.retransmitted.get(2).frames().get(0);
         assertThat(retransmittedTail.streamId(), is(0L));
         assertThat(retransmittedTail.offset(), is(65_530L));
@@ -269,7 +394,7 @@ class PacketSpaceManagerAckTest {
         ByteBuffer retransmittedPayload = retransmittedTail.payload();
         byte[] actualPayload = new byte[retransmittedPayload.remaining()];
         retransmittedPayload.get(actualPayload);
-        assertArrayEquals(payload, actualPayload);
+        assertThat(actualPayload, is(payload));
     }
 
     @Test
@@ -344,7 +469,7 @@ class PacketSpaceManagerAckTest {
 
         assertThat(context.manager.nextAckFrame(true).isEmpty(), is(true));
         AckFrame second = context.manager.nextAckFrame(false).orElseThrow();
-        assertNotSame(first, second);
+        assertThat(second, not(sameInstance(first)));
         assertSingleRange(first, 30, 30);
         assertSingleRange(second, 30, 31);
     }
@@ -398,6 +523,34 @@ class PacketSpaceManagerAckTest {
         context.manager.packetReceived(PacketType.ONERTT, 62, true);
         assertThat(context.manager.nextAckFrame(true).isEmpty(), is(true));
         assertSingleRange(context.manager.nextAckFrame(false).orElseThrow(), 61, 62);
+    }
+
+    @Test
+    void fragmentedAckDoesNotPruneSnapshotCarriedByPacketInGap() throws Exception {
+        TestContext context = TestContext.create(false);
+        context.manager.packetReceived(PacketType.ONERTT, 60, true);
+        AckFrame firstSnapshot = context.manager.nextAckFrame(false).orElseThrow();
+        context.send(List.of(firstSnapshot));
+        context.manager.packetReceived(PacketType.ONERTT, 61, true);
+        AckFrame secondSnapshot = context.manager.nextAckFrame(false).orElseThrow();
+        long packetInGap = context.send(List.of(secondSnapshot));
+        long largestAcknowledged = context.send();
+        context.manager.packetReceived(PacketType.ONERTT, 62, true);
+
+        context.manager.processAckFrame(AckFrame.create(largestAcknowledged,
+                                                        0,
+                                                        List.of(AckRange.of(0, 0), AckRange.of(0, 0))));
+
+        assertThat(context.manager.minimumPacketNumberThreshold(), is(60L));
+        assertSingleRange(context.manager.nextAckFrame(false).orElseThrow(), 61, 62);
+        assertSingleRange(firstSnapshot, 60, 60);
+        assertSingleRange(secondSnapshot, 60, 61);
+
+        context.manager.processAckFrame(acknowledging(packetInGap));
+        context.manager.packetReceived(PacketType.ONERTT, 63, true);
+
+        assertThat(context.manager.minimumPacketNumberThreshold(), is(61L));
+        assertSingleRange(context.manager.nextAckFrame(false).orElseThrow(), 62, 63);
     }
 
     @Test
@@ -471,6 +624,12 @@ class PacketSpaceManagerAckTest {
 
     private static AckFrame acknowledging(long packetNumber) {
         return AckFrame.create(packetNumber, 0, List.of(AckRange.of(0, 0)));
+    }
+
+    private static AckFrame acknowledging(List<Long> packetNumbers) {
+        var builder = AckFrameBuilder.create();
+        packetNumbers.forEach(builder::addAck);
+        return builder.build();
     }
 
     private static void assertSingleRange(AckFrame frame, long smallest, long largest) {
@@ -550,6 +709,11 @@ class PacketSpaceManagerAckTest {
             long packetNumber = manager.nextPacketNumber().getAndIncrement();
             manager.packetSent(packet(packetNumber, frames), -1, packetNumber, recoveryState.generation());
             return packetNumber;
+        }
+
+        void send(long packetNumber) {
+            manager.nextPacketNumber().accumulateAndGet(packetNumber + 1, Math::max);
+            manager.packetSent(packet(packetNumber), -1, packetNumber, recoveryState.generation());
         }
     }
 

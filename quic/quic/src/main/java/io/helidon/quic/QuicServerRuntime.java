@@ -56,14 +56,19 @@ import io.helidon.quic.packet.QuicPacket;
  */
 @Api.Internal
 public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
+    static final Duration DEFAULT_HANDSHAKE_TIMEOUT;
+    static final int DEFAULT_MAX_PENDING_HANDSHAKES = 256;
+
     private static final System.Logger LOGGER = System.getLogger(QuicServerRuntime.class.getName());
     private static final AtomicLong IDS = new AtomicLong();
     private static final AtomicLong CONNECTIONS = new AtomicLong();
     private static final ScopedValue<StopAcceptingCleanupScope> STOP_ACCEPTING_CLEANUP = ScopedValue.newInstance();
     private static final ScopedValue<UnpublishedAdmissionReleaseScope> UNPUBLISHED_ADMISSION_RELEASE =
             ScopedValue.newInstance();
-    static final Duration DEFAULT_HANDSHAKE_TIMEOUT = Duration.ofSeconds(10);
-    static final int DEFAULT_MAX_PENDING_HANDSHAKES = 256;
+
+    static {
+        DEFAULT_HANDSHAKE_TIMEOUT = Duration.ofSeconds(10);
+    }
 
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition connectionSetupChanged = lock.newCondition();
@@ -663,25 +668,6 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
         }
     }
 
-    private void completeConnectionSetup() {
-        lock.lock();
-        try {
-            completeConnectionSetupLocked();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    private void completeConnectionSetupLocked() {
-        if (initializingConnections == 0) {
-            throw new IllegalStateException("No QUIC server connection setup is active");
-        }
-        initializingConnections--;
-        if (initializingConnections == 0) {
-            connectionSetupChanged.signalAll();
-        }
-    }
-
     @Override
     public void runtimeFailed(Throwable failure) {
         abortRuntime(failure);
@@ -773,6 +759,203 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
             return close(timeout.toNanos());
         } catch (ArithmeticException e) {
             return close(Long.MAX_VALUE);
+        }
+    }
+
+    /**
+     * Aborts this runtime after a fatal transport failure.
+     *
+     * @param failure fatal failure
+     * @throws IllegalStateException if called from an unpublished connection-permit release callback or synchronous
+     *                               stop-rejection callback
+     */
+    public void abort(Throwable failure) {
+        Objects.requireNonNull(failure, "failure");
+        rejectLifecycleReentry("abort the runtime");
+        rejectStopAcceptingCleanupReentry("abort the runtime");
+        abort(failure, seal(false));
+    }
+
+    boolean handshakeSucceeded(QuicConnection connection) {
+        OwnedConnection ownedConnection;
+        QuicServerHandshakeAdmission.Establishment establishment;
+        lock.lock();
+        try {
+            ownedConnection = connections.get(connection);
+            establishment = ownedConnection == null || !connection.isOpen()
+                    ? QuicServerHandshakeAdmission.Establishment.LOST
+                    : ownedConnection.handshakePermit().claimEstablishment();
+        } finally {
+            lock.unlock();
+        }
+        if (establishment == QuicServerHandshakeAdmission.Establishment.EXPIRED) {
+            try {
+                dispatchHandshakeTimeout(ownedConnection.handshakePermit());
+            } finally {
+                ownedConnection.handshakePermit().completeEstablishment(establishment);
+            }
+            return false;
+        }
+        if (ownedConnection != null) {
+            ownedConnection.handshakePermit().completeEstablishment(establishment);
+        }
+        if (establishment != QuicServerHandshakeAdmission.Establishment.ESTABLISHED) {
+            return false;
+        }
+        try {
+            observer.handshakeSucceeded(connection);
+        } catch (Throwable observerFailure) {
+            observerFailed("handshake completion", observerFailure);
+        }
+        return true;
+    }
+
+    Optional<byte[]> newToken(InetSocketAddress peerAddress, QuicVersion version) {
+        if (!retryEnabled || closed) {
+            return Optional.empty();
+        }
+        return tokenService.newToken(peerAddress, version);
+    }
+
+    void acceptedConnection(QuicConnectionImpl connection) {
+        for (;;) {
+            CompletableFuture<QuicConnection> waiter;
+            boolean reject;
+            lock.lock();
+            try {
+                if (closed || !accepting) {
+                    waiter = null;
+                    reject = true;
+                } else {
+                    OwnedConnection owned = connections.get(connection);
+                    if (owned == null || !connection.isOpen()) {
+                        waiter = null;
+                        reject = true;
+                    } else {
+                        reject = false;
+                        waiter = pendingAccepts.poll();
+                        if (waiter == null) {
+                            acceptedConnections.add(connection);
+                            return;
+                        }
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+            if (reject) {
+                rejectAcceptedConnection(connection);
+                return;
+            }
+            if (waiter.complete(connection)) {
+                return;
+            }
+        }
+    }
+
+    private static StopAcceptingCleanupScope currentStopAcceptingCleanup() {
+        return STOP_ACCEPTING_CLEANUP.isBound() ? STOP_ACCEPTING_CLEANUP.get() : null;
+    }
+
+    private static UnpublishedAdmissionReleaseScope currentUnpublishedAdmissionRelease() {
+        return UNPUBLISHED_ADMISSION_RELEASE.isBound() ? UNPUBLISHED_ADMISSION_RELEASE.get() : null;
+    }
+
+    private static Throwable terminate(QuicConnection connection, QuicCloseCommand command) {
+        Throwable failure = null;
+        try {
+            if (connection.isOpen()) {
+                connection.terminate(command);
+            }
+        } catch (Throwable terminationFailure) {
+            failure = terminationFailure;
+        }
+        return failure;
+    }
+
+    private static Throwable collectFailure(Throwable current, Throwable next) {
+        if (next == null) {
+            return current;
+        }
+        if (current == null) {
+            return next;
+        }
+        if (current != next) {
+            current.addSuppressed(next);
+        }
+        return current;
+    }
+
+    private static Throwable abortSelector(QuicSelector<?> selector, Throwable failure) {
+        try {
+            selector.abort(failure);
+        } catch (RuntimeException | Error abortFailure) {
+            failure = collectFailure(failure, abortFailure);
+        }
+        return failure;
+    }
+
+    private static void failAccepts(List<CompletableFuture<QuicConnection>> accepts, Throwable failure) {
+        accepts.forEach(accept -> accept.completeExceptionally(failure));
+    }
+
+    private static Throwable closeEndpoint(QuicEndpoint endpoint, Throwable failure) {
+        if (endpoint == null) {
+            return failure;
+        }
+        try {
+            endpoint.close();
+        } catch (Throwable closeFailure) {
+            if (failure == null) {
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    LOGGER.log(System.Logger.Level.DEBUG, "Failed to close QUIC server endpoint", closeFailure);
+                }
+            } else {
+                failure.addSuppressed(closeFailure);
+            }
+            return failure == null ? closeFailure : failure;
+        }
+        return failure;
+    }
+
+    private static boolean closeSelector(QuicSelector<?> selector, Throwable failure) {
+        if (selector == null) {
+            return true;
+        }
+        try {
+            return selector.close(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (Throwable closeFailure) {
+            if (failure == null) {
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    LOGGER.log(System.Logger.Level.DEBUG, "Failed to close QUIC server selector", closeFailure);
+                }
+            } else {
+                failure.addSuppressed(closeFailure);
+            }
+            return false;
+        }
+    }
+
+    private static String identityTag(Object instance) {
+        return "0x" + HexFormat.of().toHexDigits(System.identityHashCode(instance));
+    }
+
+    private void completeConnectionSetup() {
+        lock.lock();
+        try {
+            completeConnectionSetupLocked();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void completeConnectionSetupLocked() {
+        if (initializingConnections == 0) {
+            throw new IllegalStateException("No QUIC server connection setup is active");
+        }
+        initializingConnections--;
+        if (initializingConnections == 0) {
+            connectionSetupChanged.signalAll();
         }
     }
 
@@ -887,20 +1070,6 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
         return selectorTerminated && cleanupFailure == null;
     }
 
-    /**
-     * Aborts this runtime after a fatal transport failure.
-     *
-     * @param failure fatal failure
-     * @throws IllegalStateException if called from an unpublished connection-permit release callback or synchronous
-     *                               stop-rejection callback
-     */
-    public void abort(Throwable failure) {
-        Objects.requireNonNull(failure, "failure");
-        rejectLifecycleReentry("abort the runtime");
-        rejectStopAcceptingCleanupReentry("abort the runtime");
-        abort(failure, seal(false));
-    }
-
     private void abort(Throwable failure, RuntimeSnapshot snapshot) {
         QuicEndpoint endpointToAbort = snapshot == null ? closingEndpoint.get() : snapshot.endpoint();
         QuicSelector<?> selectorToAbort = snapshot == null ? closingSelector.get() : snapshot.selector();
@@ -939,83 +1108,6 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
             if (snapshot != null) {
                 observeConnectionTermination(snapshot.connections(), failure);
                 closePreparationOwner.compareAndSet(currentThread, null);
-            }
-        }
-    }
-
-    boolean handshakeSucceeded(QuicConnection connection) {
-        OwnedConnection ownedConnection;
-        QuicServerHandshakeAdmission.Establishment establishment;
-        lock.lock();
-        try {
-            ownedConnection = connections.get(connection);
-            establishment = ownedConnection == null || !connection.isOpen()
-                    ? QuicServerHandshakeAdmission.Establishment.LOST
-                    : ownedConnection.handshakePermit().claimEstablishment();
-        } finally {
-            lock.unlock();
-        }
-        if (establishment == QuicServerHandshakeAdmission.Establishment.EXPIRED) {
-            try {
-                dispatchHandshakeTimeout(ownedConnection.handshakePermit());
-            } finally {
-                ownedConnection.handshakePermit().completeEstablishment(establishment);
-            }
-            return false;
-        }
-        if (ownedConnection != null) {
-            ownedConnection.handshakePermit().completeEstablishment(establishment);
-        }
-        if (establishment != QuicServerHandshakeAdmission.Establishment.ESTABLISHED) {
-            return false;
-        }
-        try {
-            observer.handshakeSucceeded(connection);
-        } catch (Throwable observerFailure) {
-            observerFailed("handshake completion", observerFailure);
-        }
-        return true;
-    }
-
-    Optional<byte[]> newToken(InetSocketAddress peerAddress, QuicVersion version) {
-        if (!retryEnabled || closed) {
-            return Optional.empty();
-        }
-        return tokenService.newToken(peerAddress, version);
-    }
-
-    void acceptedConnection(QuicConnectionImpl connection) {
-        for (;;) {
-            CompletableFuture<QuicConnection> waiter;
-            boolean reject;
-            lock.lock();
-            try {
-                if (closed || !accepting) {
-                    waiter = null;
-                    reject = true;
-                } else {
-                    OwnedConnection owned = connections.get(connection);
-                    if (owned == null || !connection.isOpen()) {
-                        waiter = null;
-                        reject = true;
-                    } else {
-                        reject = false;
-                        waiter = pendingAccepts.poll();
-                        if (waiter == null) {
-                            acceptedConnections.add(connection);
-                            return;
-                        }
-                    }
-                }
-            } finally {
-                lock.unlock();
-            }
-            if (reject) {
-                rejectAcceptedConnection(connection);
-                return;
-            }
-            if (waiter.complete(connection)) {
-                return;
             }
         }
     }
@@ -1246,10 +1338,6 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
         return null;
     }
 
-    private static StopAcceptingCleanupScope currentStopAcceptingCleanup() {
-        return STOP_ACCEPTING_CLEANUP.isBound() ? STOP_ACCEPTING_CLEANUP.get() : null;
-    }
-
     private void abortRuntime(Throwable failure) {
         Objects.requireNonNull(failure, "failure");
         StopAcceptingCleanupScope cleanupScope = stopAcceptingCleanupScope();
@@ -1271,10 +1359,6 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
         return false;
     }
 
-    private static UnpublishedAdmissionReleaseScope currentUnpublishedAdmissionRelease() {
-        return UNPUBLISHED_ADMISSION_RELEASE.isBound() ? UNPUBLISHED_ADMISSION_RELEASE.get() : null;
-    }
-
     private List<CompletableFuture<QuicConnection>> drainPendingAccepts() {
         List<CompletableFuture<QuicConnection>> result = new ArrayList<>(pendingAccepts);
         pendingAccepts.clear();
@@ -1290,40 +1374,6 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
     private void rejectAcceptedConnection(QuicConnectionImpl connection) {
         connection.terminate(QuicCloseCommand.transport(QuicTransportErrors.NO_ERROR,
                                                         "QUIC server runtime is not accepting new connections"));
-    }
-
-    private static Throwable terminate(QuicConnection connection, QuicCloseCommand command) {
-        Throwable failure = null;
-        try {
-            if (connection.isOpen()) {
-                connection.terminate(command);
-            }
-        } catch (Throwable terminationFailure) {
-            failure = terminationFailure;
-        }
-        return failure;
-    }
-
-    private static Throwable collectFailure(Throwable current, Throwable next) {
-        if (next == null) {
-            return current;
-        }
-        if (current == null) {
-            return next;
-        }
-        if (current != next) {
-            current.addSuppressed(next);
-        }
-        return current;
-    }
-
-    private static Throwable abortSelector(QuicSelector<?> selector, Throwable failure) {
-        try {
-            selector.abort(failure);
-        } catch (RuntimeException | Error abortFailure) {
-            failure = collectFailure(failure, abortFailure);
-        }
-        return failure;
     }
 
     private void observeConnectionTermination(List<OwnedConnection> ownedConnections, Throwable initialFailure) {
@@ -1348,51 +1398,6 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
                     }
                     closePreparation.complete(result);
                 });
-    }
-
-    private static void failAccepts(List<CompletableFuture<QuicConnection>> accepts, Throwable failure) {
-        accepts.forEach(accept -> accept.completeExceptionally(failure));
-    }
-
-    private static Throwable closeEndpoint(QuicEndpoint endpoint, Throwable failure) {
-        if (endpoint == null) {
-            return failure;
-        }
-        try {
-            endpoint.close();
-        } catch (Throwable closeFailure) {
-            if (failure == null) {
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    LOGGER.log(System.Logger.Level.DEBUG, "Failed to close QUIC server endpoint", closeFailure);
-                }
-            } else {
-                failure.addSuppressed(closeFailure);
-            }
-            return failure == null ? closeFailure : failure;
-        }
-        return failure;
-    }
-
-    private static boolean closeSelector(QuicSelector<?> selector, Throwable failure) {
-        if (selector == null) {
-            return true;
-        }
-        try {
-            return selector.close(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (Throwable closeFailure) {
-            if (failure == null) {
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    LOGGER.log(System.Logger.Level.DEBUG, "Failed to close QUIC server selector", closeFailure);
-                }
-            } else {
-                failure.addSuppressed(closeFailure);
-            }
-            return false;
-        }
-    }
-
-    private static String identityTag(Object instance) {
-        return "0x" + HexFormat.of().toHexDigits(System.identityHashCode(instance));
     }
 
     private void observerFailed(String phase, Throwable failure) {
@@ -1490,6 +1495,40 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
             tlsStates.clear();
         } finally {
             tlsStateLock.unlock();
+        }
+    }
+
+    private enum RejectedConnectionPermit implements ConnectionPermit {
+        INSTANCE;
+
+        @Override
+        public boolean accepted() {
+            return false;
+        }
+
+        @Override
+        public void releaseBeforeEstablished() {
+        }
+
+        @Override
+        public void releaseEstablished() {
+        }
+    }
+
+    private enum UnlimitedConnectionPermit implements ConnectionPermit {
+        INSTANCE;
+
+        @Override
+        public boolean accepted() {
+            return true;
+        }
+
+        @Override
+        public void releaseBeforeEstablished() {
+        }
+
+        @Override
+        public void releaseEstablished() {
         }
     }
 
@@ -1948,40 +1987,6 @@ public final class QuicServerRuntime implements QuicInstance, AutoCloseable {
         @Override
         public void releaseEstablished() {
             establishedAction.run();
-        }
-    }
-
-    private enum RejectedConnectionPermit implements ConnectionPermit {
-        INSTANCE;
-
-        @Override
-        public boolean accepted() {
-            return false;
-        }
-
-        @Override
-        public void releaseBeforeEstablished() {
-        }
-
-        @Override
-        public void releaseEstablished() {
-        }
-    }
-
-    private enum UnlimitedConnectionPermit implements ConnectionPermit {
-        INSTANCE;
-
-        @Override
-        public boolean accepted() {
-            return true;
-        }
-
-        @Override
-        public void releaseBeforeEstablished() {
-        }
-
-        @Override
-        public void releaseEstablished() {
         }
     }
 }

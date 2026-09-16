@@ -117,10 +117,6 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
     void resetAlgorithmState() {
     }
 
-    private static long initialWindow(int maxDatagramSize) {
-        return Math.min(10L * maxDatagramSize, Math.max(2L * maxDatagramSize, 14720L));
-    }
-
     @Override
     public void packetSent(int packetBytes) {
         lock.lock();
@@ -462,6 +458,10 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
     abstract void onCongestionEvent(Deadline sentTime);
 
     abstract boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime);
+
+    private static long initialWindow(int maxDatagramSize) {
+        return Math.min(10L * maxDatagramSize, Math.max(2L * maxDatagramSize, 14720L));
+    }
 
     private static boolean inFlight(QuicPacket packet) {
         // packet is in flight if it contains anything other than a single ACK frame

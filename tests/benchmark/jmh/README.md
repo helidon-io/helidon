@@ -295,6 +295,68 @@ prefix. Treat the direct QUIC benchmark as a relative manager-path comparison, n
 measurement. Invocation-level Mockito fixture setup also makes its optional GC-profiler allocation data unsuitable for
 attributing the timed path alone.
 
+### QUIC ACK accounting
+
+`QuicPathJmhBenchmark.establishedPathAckRanges` measures one real `PacketSpaceManager.processAckFrame` call in
+microseconds per ACK. Flight construction, ACK-frame construction, and cleanup occur outside its timed invocation.
+`ackPacketSpaceLifecycle=REUSED` retains one packet space per worker and primes its ACK workspace before measurement;
+`FIRST_ACK` creates a new packet space before each invocation, exposing first-use ACK workspace allocation. These modes
+use identical flights and reset recovery state through the existing packet-space cleanup API before each flight.
+
+The fixture uses Handshake packet numbering to avoid random application-space packet-number skips, a fixed packet-space
+clock to avoid setup-duration-dependent time-threshold loss, current-path congestion accounting, and the production
+CUBIC controller. It does not send or retransmit datagrams. Packet-threshold loss detection and synchronous recovery
+callbacks remain inside the measured operation. This isolates ACK accounting, not handshake or network performance.
+
+One ACK range acknowledges the whole flight. Fragmented shapes acknowledge approximately half the packets, with positive
+gaps and ranges spread from the first through the last packet. The bounded comparison matrix is:
+
+| In-flight packets | Approximate flight size | ACK ranges |
+| ---: | ---: | --- |
+| 64 | 75 KiB | 1, 32 |
+| 4096 | 4.69 MiB | 1, 32, 1024 |
+| 13981 | 16 MiB | 1, 32, 1024 |
+
+The largest flight is `floor(16 MiB / 1200)`, and 1024 ranges is the default incoming ACK-range limit. Defaults select
+only `64 / 1 / REUSED / NEW_ACK`. The runner accepts comma-separated parameter values and rejects combinations exceeding
+1024 ranges, `ceil(inFlightPackets / 2)` ranges, or the default flight limit. Run the small and larger flights separately
+to avoid the invalid `64 / 1024` Cartesian combination. For example, after preparing reactor artifacts:
+
+```shell
+mvn -Ptests,jmh -pl :helidon-tests-benchmark-jmh \
+    -Dtest=QuicPathJmhRunnerTest \
+    '-Dquic.path.jmh.include=^io\.helidon\.quic\.QuicPathJmhBenchmark\.establishedPathAckRanges$' \
+    -Dquic.path.jmh.inFlightPackets=64 \
+    -Dquic.path.jmh.ackRangeCount=1,32 \
+    -Dquic.path.jmh.ackPacketSpaceLifecycle=REUSED,FIRST_ACK \
+    -Dquic.path.jmh.ackWorkload=NEW_ACK \
+    -Dquic.path.jmh.threads=1 -Dquic.path.jmh.forks=2 \
+    -Dquic.path.jmh.warmupIterations=3 -Dquic.path.jmh.warmupMillis=500 \
+    -Dquic.path.jmh.measurementIterations=5 -Dquic.path.jmh.measurementMillis=1000 \
+    -Dquic.path.jmh.result=./target/quic-ack-accounting-1.json \
+    -Dquic.path.jmh.output=./target/quic-ack-accounting-1.log test
+```
+
+Repeat with `inFlightPackets=4096,13981` and `ackRangeCount=1,32,1024`, using the next numbered output paths. To check
+duplicate ACK handling with no tracked packets, select `ackWorkload=DUPLICATE`, `ackPacketSpaceLifecycle=REUSED`,
+`inFlightPackets=13981`, and `ackRangeCount=1,1024`. Duplicate trial setup prepares one flight, consumes its ACK, and clears
+residual gap packets. Every measured invocation repeats that same ACK on the now-empty packet space; invocation setup is
+a no-op and teardown only verifies callback accounting. This avoids flight reconstruction limiting duplicate-ACK JIT
+warmup. `FIRST_ACK` cannot be combined with `DUPLICATE`.
+
+For allocation, repeat the same explicit matrices selecting only `establishedPathAckRangesAllocation`. This method
+brackets the production call with the JMH worker's `com.sun.management.ThreadMXBean` allocated-byte counter. Its
+`allocatedBytes` and `ackOperations` auxiliary results are unnormalized JMH event totals; divide the former by the latter
+for **bytes per ACK**. This includes synchronous callbacks on that worker and excludes fixture setup/cleanup. Unsupported
+or unavailable allocation counters fail the run. Allocation-counter reads add timing overhead, so use only the separate
+uninstrumented method for timing comparisons.
+
+The runner rejects `gcProfiler=true` when either ACK method is selected: JMH's GC profiler includes invocation fixture
+allocation and cannot isolate ACK allocation here. Even with operation-only timing and allocation boundaries, fixture
+work can affect cache and GC conditions. Keep identical benchmark bytecode, JVM settings, matrix, and timing settings
+for before/after runs, changing only the production implementation, and use distinct numbered outputs. Local results are
+diagnostic; a controlled Linux run is needed for release-level performance claims.
+
 ### QUIC ordered ACK publication
 
 `QuicPathJmhBenchmark.orderedAckPublication` measures the normal application packet-space path that publishes a
@@ -426,7 +488,7 @@ physical network, QUIC packet protection or decryption, congestion control, stre
 `QuicEndpointIngressJmhRunnerTest` is an evidence runner, not a regression-threshold test. It intentionally skips unless
 `quic.endpoint.ingress.jmh.include` selects a bounded scenario. Use an anchored include so an invocation cannot
 accidentally run the entire matrix. The focused runner command expects current `27.0.0-SNAPSHOT` reactor artifacts in the
-local Maven repository. From a clean checkout, first seed them with the repository's Java 26 baseline:
+local Maven repository. From a clean checkout, first seed them with the repository's Java 27 baseline:
 
 ```shell
 mvn -T 1C clean install -Ptests -DskipTests -ntp
@@ -518,7 +580,7 @@ atomically published under a content-addressed immutable Resolver prefix only af
 
 JMH emits the complete `META-INF/BenchmarkList` registry in nondeterministic order, so directory hashing sorts only those
 intact registry records; every record's contents and every other class or resource byte remain exact. Choose a durable,
-absolute campaign root outside the Helidon checkout and every Maven `target` directory, then use Java 26 to run the generator
+absolute campaign root outside the Helidon checkout and every Maven `target` directory, then use Java 27 to run the generator
 only after the intended source is final:
 
 ```shell
@@ -740,6 +802,140 @@ mode, and shape. For adverse-network impact, use the paired exchange-delta distr
 for lifecycle and small writes, use the raw per-scenario SampleTime distribution. Do not set a portable performance
 limit from these loopback results. Packet-protection benchmarks cover crypto separately, and
 `Http3EligibilityJmhBenchmark` covers shared-cache route cardinality separately.
+
+### QUIC diagnostic hot paths
+
+`QuicDiagnosticsJmhBenchmark` compares the actual timer queue, packet-space deadline calculation,
+connection outgoing-buffer pool, and endpoint sync/async send and receive-dispatch paths with `logLevel=OFF,DEBUG,TRACE`.
+DEBUG and TRACE use a JUL handler retaining only a message count and the most recent message; it does not write to the console.
+The fixture checks that `System.Logger` honors the selected level and restores logger levels, handlers, and parent routing
+at trial teardown. Run one JMH worker in a fork because logging configuration is process-wide.
+
+| Method | Measured operation |
+| --- | --- |
+| `timerOffer` | Offer and cancel one event with `queueDepth` other future timers retained. |
+| `timerReschedule` | Reschedule, refresh, and cancel one future event with the same bounded timer population. |
+| `packetDeadline` | Repeated `PacketSpaceManager.computeNextDeadline()` with `deadlineWorkload=IDLE,ACK,PTO`. |
+| `outgoingBuffer` | Real `QuicConnectionImpl` buffer acquisition and release, including the datagram wrapper, with `bufferPool=true,false`. |
+| `synchronousDatagram` | One actual synchronous endpoint send and sender completion over loopback. |
+| `queuedDatagrams` | 64 real `QuicEndpoint.pushDatagram` submissions, reported per datagram, against a preserved async backlog. |
+| `receiveDispatch` | 64 prepared datagrams through the endpoint's actual scheduled read loop, reported per datagram, with `receivePath=PACKET,STATELESS_RESET` and `receiverKind=SOCKET_CONTEXT,FALLBACK`. |
+
+Timer and packet-space fixtures are created once per trial. Packet-space deadlines remain stable while diagnostic reads
+use the production monotonic clock. The buffer fixture primes one direct buffer when pooling is
+enabled; the measured disabled-pool path allocates a fresh heap buffer. TLS is a trial fixture and no handshake is measured.
+The queued-submission fixture allocates its payload ring once and parks a real writer in its completion callback.
+It initially retains `queueDepth` datagrams and each measured batch grows this to `queueDepth + 64`. Invocation teardown
+lets exactly 64 sends complete and parks the writer again, preserving the original backlog without rebuilding it.
+The sink remains bound on loopback; only sender completion is checked. Socket writes, draining,
+buffer recycling, and the writer rendezvous are outside submission timing. This isolates queued submission costs and does
+not model endpoint throughput, congestion, or producer/writer contention.
+The synchronous variant includes its socket call and buffer-recycling completion callback, so syscall cost can dominate it.
+Both endpoint variants measure sender acceptance.
+
+Receive invocation setup sends 64 small loopback datagrams and drains the nonblocking channel into the real endpoint queue,
+retaining the read-loop task through the endpoint's executor. The measured method runs that task on the JMH worker, including
+queue polling/release, packet header inspection, diagnostic tag/log work, the scheduler, and minimal receiver counters.
+The packet receiver records a payload checksum and the last callback metadata; teardown checks counts, content, and an empty
+queue. Stateless resets must match a registered token and peer address before entering the measured queue. Both receiver
+shapes use the same callback implementation; `SOCKET_CONTEXT` adds the socket-ID accessors used by production connections,
+while `FALLBACK` exercises ordinary receiver identity tags. Endpoint creation, UDP sends, channel reads, ingress heap copies,
+route/token lookup, and fixture verification are excluded from both timing and operation-scoped allocation. This is receive
+dispatch cost, not full connection processing, packet decryption, network throughput, or an end-to-end latency measurement.
+No receive thread, selector thread, or background executor is started. The fixture closes both channels at trial teardown.
+Raw packet logging remains disabled; TRACE includes DEBUG metadata without raw payload dumps.
+
+Run only named diagnostic methods; the runner generates an anchored include for this class and the selected methods:
+
+```shell
+mvn test -pl tests/benchmark/jmh -Ptests,jmh \
+    -Dtest=QuicDiagnosticsJmhRunnerTest \
+    -Dquic.diagnostics.jmh.methods=timerOffer,timerReschedule,packetDeadline,outgoingBuffer,synchronousDatagram,queuedDatagrams \
+    -Dquic.diagnostics.jmh.logLevel=OFF,TRACE \
+    -Dquic.diagnostics.jmh.queueDepth=0,64 \
+    -Dquic.diagnostics.jmh.forks=2 \
+    -Dquic.diagnostics.jmh.result=./target/quic-diagnostics-timing-1.json
+```
+
+For a focused receive comparison, select only the new method (use `receiveDispatchAllocation` in a separate allocation run):
+
+```shell
+mvn test -pl tests/benchmark/jmh -Ptests,jmh \
+    -Dtest=QuicDiagnosticsJmhRunnerTest \
+    -Dquic.diagnostics.jmh.methods=receiveDispatch \
+    -Dquic.diagnostics.jmh.logLevel=OFF,DEBUG,TRACE \
+    -Dquic.diagnostics.jmh.receivePath=PACKET,STATELESS_RESET \
+    -Dquic.diagnostics.jmh.receiverKind=SOCKET_CONTEXT,FALLBACK \
+    -Dquic.diagnostics.jmh.forks=2 \
+    -Dquic.diagnostics.jmh.warmupIterations=3 -Dquic.diagnostics.jmh.warmupMillis=500 \
+    -Dquic.diagnostics.jmh.measurementIterations=5 -Dquic.diagnostics.jmh.measurementMillis=500 \
+    -Dquic.diagnostics.jmh.result=./target/quic-receive-timing-1.json
+```
+
+Each method has a separate `Allocation` variant, for example
+`-Dquic.diagnostics.jmh.methods=queuedDatagramsAllocation`. These use supported `ThreadMXBean` worker-allocation counters
+around only the operation. Divide the `allocatedBytes` event total by the `operations` event total to obtain bytes per
+operation. For queued submissions and receive dispatch, one operation is one datagram. Instrumented timing includes counter
+overhead and must not be used as latency evidence. Allocation excludes fixture setup/cleanup, the async writer, retained/native direct-buffer
+memory, and other threads. The runner rejects `gcProfiler=true` because a process-wide profiler would count that excluded
+work. Keep the benchmark harness, JVM, selected parameters, and runtime classpath identical across baseline/candidate runs.
+
+Defaults are one fork, one worker, three 1-second warmups, and five 1-second measurements. The runner bounds forks to 1–4,
+iteration counts to 1–10, and iteration durations to 500–10000 milliseconds; shorter runs are diagnostic smoke checks.
+`queueDepth` is bounded to 0–4096 and defaults to `0,64`; select `4096` explicitly for a longer queue-size traversal.
+Use `warmupIterations`, `measurementIterations`, `warmupMillis`, `measurementMillis`, `result`, and `output` under the
+`quic.diagnostics.jmh.` prefix to configure a targeted run. `QuicDiagnosticsJmhRunnerValidationTest` exercises reusable
+fixtures, backlog preservation through payload-ring wraparound, receive dispatch and content checks across all path/receiver/level
+combinations, logger restoration, and owned-writer termination.
+
+### QUIC 1-RTT codec diagnostics
+
+`QuicCodecDiagnosticsJmhBenchmark` measures the actual 1-RTT packet codec with `OFF` and `DEBUG` logging.
+`encodeOneRtt` includes packet construction, STREAM frame serialization, AES-128-GCM encryption, and header protection.
+`decodeOneRtt` uses the production `decodeOwned` path to remove header protection, authenticate and decrypt the packet,
+and parse its STREAM frame. `payloadSize=64,1200` specifies STREAM data bytes; frame and packet headers and the
+authentication tag add to the protected packet size. The decoded packet or encoded buffer is returned to JMH.
+
+The fixture loads existing benchmark TLS material once per trial. Each iteration completes an in-memory handshake between
+the actual Helidon client and server TLS engines, restricted to AES-128-GCM, and prepares one immutable protected decode
+input. Handshakes, key derivation, and input preparation are excluded from the measurements. Invocation setup copies the
+ciphertext into reusable heap storage because decoding modifies the header and payload in place. The caller releases the
+decoded packet before that storage is reused. Decode measures repeated authentication of the same valid ciphertext; it
+does not include connection-level duplicate-packet filtering. Encoding advances packet numbers beyond the boxing caches,
+with a stable two-byte encoded packet number. Fresh iteration keys avoid nonce reuse when the sequence restarts. If an
+iteration reaches the production AES-GCM confidentiality limit, the fixture fails and the run must use shorter iterations.
+No sockets, network transport, congestion control, or application callbacks are involved.
+
+DEBUG uses a bounded in-memory handler retaining a count and the latest message; it includes codec formatting and logger
+dispatch but excludes console or file I/O. Raw protocol logging stays disabled. Logger settings are restored after the trial.
+Run only explicitly named methods; omitting `methods` fails instead of selecting the whole benchmark class:
+
+```shell
+mvn test -pl tests/benchmark/jmh -Ptests,jmh \
+    -Dtest=QuicCodecDiagnosticsJmhRunnerTest \
+    -Dquic.codec.diagnostics.jmh.methods=encodeOneRtt,decodeOneRtt \
+    -Dquic.codec.diagnostics.jmh.payloadSize=64,1200 \
+    -Dquic.codec.diagnostics.jmh.logLevel=OFF,DEBUG \
+    -Dquic.codec.diagnostics.jmh.forks=2 \
+    -Dquic.codec.diagnostics.jmh.warmupIterations=3 -Dquic.codec.diagnostics.jmh.warmupMillis=500 \
+    -Dquic.codec.diagnostics.jmh.measurementIterations=5 -Dquic.codec.diagnostics.jmh.measurementMillis=500 \
+    -Dquic.codec.diagnostics.jmh.result=./target/quic-codec-timing-1.json
+```
+
+Run `encodeOneRttAllocation,decodeOneRttAllocation` separately for allocation. Divide the `allocatedBytes` event total by
+the `operations` event total to obtain worker-allocated bytes per packet. Those methods bracket only the codec call using
+`ThreadMXBean`; their timing includes counter overhead and is not latency evidence. Fixture setup, ciphertext restoration,
+TLS handshakes, and allocations on other threads are excluded. The runner rejects `gcProfiler=true` because it would count
+excluded work. Both event totals also include codec calls in JMH's iteration synchronization loops, so their ratio is
+worker allocation per codec invocation rather than allocation restricted to the primary timing window. Before/after
+comparisons must use the same compiled harness, JVM arguments, dependencies, and parameters.
+
+The runner fixes one worker, runs forks serially, and bounds forks to 1–4, iteration counts to 1–10, and iteration times to
+500–10000 milliseconds. Defaults are one fork, three 1-second warmups, and five 1-second measurements. It accepts only the
+four named methods, the two payload sizes, and OFF/DEBUG. Configure `result` and `output` under `quic.codec.diagnostics.jmh.`
+for JSON and text output. `QuicCodecDiagnosticsJmhRunnerValidationTest` exercises all method/size/level combinations,
+repeated invocation and iteration preparation, packet metadata, exact STREAM payloads, ciphertext authentication failure,
+logging and restoration, allocation operation counts, and bounded runner selection.
 
 ### Process-profiler interpretation
 

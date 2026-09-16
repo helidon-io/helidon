@@ -483,6 +483,9 @@ final class QuicTls13ClientHandshake {
         if (selectedVersion != QuicTlsSupportedVersions.TLS_1_3 || !supportedVersions.contains(selectedVersion)) {
             throw QuicTlsHandshakeMessages.illegalParameter("ServerHello selected an unsupported TLS version");
         }
+        QuicTlsExtensions.validateServerResponse(serverHello.extensions(),
+                                                currentClientHello,
+                                                QuicTlsHandshakeMessages.SERVER_HELLO);
         if (helloRetryRequest != null && serverHello.cipherSuite() != helloRetryRequest.cipherSuite()) {
             throw QuicTlsHandshakeMessages.illegalParameter(
                     "ServerHello cipher suite does not match the HelloRetryRequest");
@@ -603,6 +606,9 @@ final class QuicTls13ClientHandshake {
         }
     }
 
+    sealed interface Result permits HelloRetryRequestResult, CompleteResult {
+    }
+
     record ClientHelloParameters(byte[] random,
                                  byte[] legacySessionId,
                                  List<QuicTls13CipherSuite> cipherSuites,
@@ -610,9 +616,6 @@ final class QuicTls13ClientHandshake {
                                  List<QuicTlsNamedGroup> initialKeyShareGroups,
                                  List<QuicTlsExtension> additionalExtensions,
                                  QuicTlsResumptionTicket resumptionTicket) {
-    }
-
-    sealed interface Result permits HelloRetryRequestResult, CompleteResult {
     }
 
     record HelloRetryRequestResult(QuicTlsServerHelloMessage helloRetryRequest,

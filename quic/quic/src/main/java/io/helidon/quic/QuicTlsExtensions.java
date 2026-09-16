@@ -101,6 +101,36 @@ final class QuicTlsExtensions {
         return Optional.empty();
     }
 
+    static void validateServerResponse(List<QuicTlsExtension> extensions,
+                                       QuicTlsClientHelloMessage clientHello,
+                                       int messageType) throws QuicTransportException {
+        String messageName = switch (messageType) {
+        case QuicTlsHandshakeMessages.SERVER_HELLO -> "ServerHello";
+        case QuicTlsHandshakeMessages.ENCRYPTED_EXTENSIONS -> "EncryptedExtensions";
+        default -> throw new IllegalArgumentException("Unexpected server response message type: " + messageType);
+        };
+        for (QuicTlsExtension extension : extensions) {
+            int type = extension.type();
+            // RFC 8446 section 4.2 and RFC 9001 section 8.2 define the permitted message contexts.
+            boolean permitted = switch (type) {
+            case SUPPORTED_VERSIONS, KEY_SHARE, PRE_SHARED_KEY -> messageType == QuicTlsHandshakeMessages.SERVER_HELLO;
+            case SERVER_NAME, SUPPORTED_GROUPS, APPLICATION_LAYER_PROTOCOL_NEGOTIATION, EARLY_DATA,
+                 QUIC_TRANSPORT_PARAMETERS -> messageType == QuicTlsHandshakeMessages.ENCRYPTED_EXTENSIONS;
+            case SIGNATURE_ALGORITHMS, PADDING, COOKIE, PSK_KEY_EXCHANGE_MODES, CERTIFICATE_AUTHORITIES,
+                 SIGNATURE_ALGORITHMS_CERT -> false;
+            default -> true;
+            };
+            if (!permitted) {
+                throw QuicTlsHandshakeMessages.illegalParameter(
+                        String.format("%s included extension 0x%04x in a forbidden message context", messageName, type));
+            }
+            if (clientHello.extension(type).isEmpty()) {
+                throw QuicTlsHandshakeMessages.unsupportedExtension(
+                        String.format("%s extension 0x%04x was not offered by the client", messageName, type));
+            }
+        }
+    }
+
     static List<QuicTlsExtension> copyOf(List<QuicTlsExtension> extensions) {
         Objects.requireNonNull(extensions, "extensions");
         List<QuicTlsExtension> copy = new ArrayList<>(extensions.size());

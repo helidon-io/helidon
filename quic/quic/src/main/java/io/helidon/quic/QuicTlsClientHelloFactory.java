@@ -135,6 +135,12 @@ final class QuicTlsClientHelloFactory {
         return QuicTlsApplicationProtocols.decodeServerSelection(extensionData);
     }
 
+    boolean compatibleResumptionTicket(QuicTlsResumptionTicket resumptionTicket,
+                                       QuicVersion version,
+                                       SSLParameters sslParameters) {
+        return compatibleResumptionTicket(resumptionTicket, version, sslParameters, cipherSuites(sslParameters));
+    }
+
     private static boolean applicationProtocolMismatch(QuicTlsResumptionTicket resumptionTicket,
                                                        SSLParameters sslParameters) {
         Optional<String> applicationProtocol = resumptionTicket.applicationProtocol();
@@ -284,12 +290,6 @@ final class QuicTlsClientHelloFactory {
         } catch (ProviderException | UnsupportedOperationException | IllegalStateException | IllegalArgumentException e) {
             throw QuicTlsHandshakeMessages.internalError("Failed to configure the client TLS engine", e);
         }
-    }
-
-    boolean compatibleResumptionTicket(QuicTlsResumptionTicket resumptionTicket,
-                                       QuicVersion version,
-                                       SSLParameters sslParameters) {
-        return compatibleResumptionTicket(resumptionTicket, version, sslParameters, cipherSuites(sslParameters));
     }
 
     private boolean compatibleResumptionTicket(QuicTlsResumptionTicket resumptionTicket,

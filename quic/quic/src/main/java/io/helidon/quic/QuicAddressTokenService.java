@@ -101,6 +101,14 @@ final class QuicAddressTokenService implements AutoCloseable {
                                            random);
     }
 
+    static TokenKind kind(ByteBuffer token) {
+        Objects.requireNonNull(token, "token");
+        if (token.remaining() < 2 || token.get(token.position()) != FORMAT_VERSION) {
+            return null;
+        }
+        return TokenKind.of(token.get(token.position() + 1));
+    }
+
     Optional<byte[]> retryToken(InetSocketAddress peerAddress,
                                 QuicVersion version,
                                 QuicConnectionId originalDestinationId,
@@ -241,14 +249,6 @@ final class QuicAddressTokenService implements AutoCloseable {
         }
     }
 
-    static TokenKind kind(ByteBuffer token) {
-        Objects.requireNonNull(token, "token");
-        if (token.remaining() < 2 || token.get(token.position()) != FORMAT_VERSION) {
-            return null;
-        }
-        return TokenKind.of(token.get(token.position() + 1));
-    }
-
     @Override
     public void close() {
         if (!closed.compareAndSet(false, true)) {
@@ -266,6 +266,37 @@ final class QuicAddressTokenService implements AutoCloseable {
         } finally {
             lifecycleLock.writeLock().unlock();
         }
+    }
+
+    private static byte[] addressBytes(InetSocketAddress address) {
+        InetAddress inetAddress = address.getAddress();
+        return inetAddress == null ? null : inetAddress.getAddress();
+    }
+
+    private static byte[] readConnectionId(ByteBuffer content) {
+        int length = Byte.toUnsignedInt(content.get());
+        if (length > QuicConnectionId.MAX_CONNECTION_ID_LENGTH || content.remaining() < length) {
+            throw new IllegalArgumentException("Invalid connection ID length");
+        }
+        byte[] result = new byte[length];
+        content.get(result);
+        return result;
+    }
+
+    private static void putConnectionId(ByteBuffer target, byte[] connectionId) {
+        if (connectionId.length > QuicConnectionId.MAX_CONNECTION_ID_LENGTH) {
+            throw new IllegalArgumentException("Invalid connection ID length");
+        }
+        target.put((byte) connectionId.length);
+        target.put(connectionId);
+    }
+
+    private static long positiveNanos(Duration duration, String name) {
+        Objects.requireNonNull(duration, name);
+        if (duration.isNegative() || duration.isZero()) {
+            throw new IllegalArgumentException(name + " must be positive: " + duration);
+        }
+        return duration.toNanos();
     }
 
     private Optional<byte[]> mint(TokenKind kind,
@@ -382,37 +413,6 @@ final class QuicAddressTokenService implements AutoCloseable {
         } finally {
             Arrays.fill(material, (byte) 0);
         }
-    }
-
-    private static byte[] addressBytes(InetSocketAddress address) {
-        InetAddress inetAddress = address.getAddress();
-        return inetAddress == null ? null : inetAddress.getAddress();
-    }
-
-    private static byte[] readConnectionId(ByteBuffer content) {
-        int length = Byte.toUnsignedInt(content.get());
-        if (length > QuicConnectionId.MAX_CONNECTION_ID_LENGTH || content.remaining() < length) {
-            throw new IllegalArgumentException("Invalid connection ID length");
-        }
-        byte[] result = new byte[length];
-        content.get(result);
-        return result;
-    }
-
-    private static void putConnectionId(ByteBuffer target, byte[] connectionId) {
-        if (connectionId.length > QuicConnectionId.MAX_CONNECTION_ID_LENGTH) {
-            throw new IllegalArgumentException("Invalid connection ID length");
-        }
-        target.put((byte) connectionId.length);
-        target.put(connectionId);
-    }
-
-    private static long positiveNanos(Duration duration, String name) {
-        Objects.requireNonNull(duration, name);
-        if (duration.isNegative() || duration.isZero()) {
-            throw new IllegalArgumentException(name + " must be positive: " + duration);
-        }
-        return duration.toNanos();
     }
 
     enum TokenKind {

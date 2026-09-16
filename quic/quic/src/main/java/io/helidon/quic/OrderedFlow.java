@@ -162,55 +162,6 @@ public abstract sealed class OrderedFlow<T extends QuicFrame> {
         return availableFrame != null;
     }
 
-    private T receive(T frame, int retainedPermits) {
-        long start = this.position.applyAsLong(frame);
-        int length = this.length.applyAsInt(frame);
-        long end = start + length;
-        long offset = this.offset;
-        if (end <= offset || length == 0) {
-            // late arrival or empty frame. Just drop it; No overlap
-            // if we reach here!
-            budget.release(retainedPermits);
-            return null;
-        } else if (start > offset) {
-            if (retainedPermits != 0) {
-                budget.release(retainedPermits);
-                throw new AssertionError("Retained frame is not ready for delivery");
-            }
-            // the frame is after the offset.
-            // insert or slice it, depending on what we
-            // have already received.
-            enqueue(frame, start, length);
-            return null;
-        } else {
-            // case where the frame is either at offset, or is below
-            // offset but has a length that provides bytes that
-            // overlap with the current offset. In the later case
-            // we will return a slice.
-            int todeliver = (int) (end - offset);
-            T delivery;
-            try {
-                delivery = start == offset ? frame : slice(frame, offset, todeliver);
-            } catch (RuntimeException | Error failure) {
-                budget.release(retainedPermits);
-                throw failure;
-            }
-
-            // update the offset with the new position
-            this.offset = end;
-            // cleanup the queue
-            int released;
-            try {
-                released = retainedPermits + dropuntil(end);
-            } catch (RuntimeException | Error failure) {
-                budget.release(retainedPermits);
-                throw failure;
-            }
-            budget.release(released);
-            return delivery;
-        }
-    }
-
     /**
      * Removes and return the head of the queue if it is at the
      * current offset. Otherwise, returns an empty optional.
@@ -271,12 +222,6 @@ public abstract sealed class OrderedFlow<T extends QuicFrame> {
         budget.release(size);
     }
 
-    private void requireNoAvailableFrame() {
-        if (availableFrame != null) {
-            throw new IllegalStateException("Contiguous frame has not been retrieved");
-        }
-    }
-
     /**
      * Returns a slice of the given frame.
      *
@@ -297,6 +242,61 @@ public abstract sealed class OrderedFlow<T extends QuicFrame> {
      * @return transport exception to throw
      */
     protected abstract QuicTransportException budgetExceeded(T frame);
+
+    private T receive(T frame, int retainedPermits) {
+        long start = this.position.applyAsLong(frame);
+        int length = this.length.applyAsInt(frame);
+        long end = start + length;
+        long offset = this.offset;
+        if (end <= offset || length == 0) {
+            // late arrival or empty frame. Just drop it; No overlap
+            // if we reach here!
+            budget.release(retainedPermits);
+            return null;
+        } else if (start > offset) {
+            if (retainedPermits != 0) {
+                budget.release(retainedPermits);
+                throw new AssertionError("Retained frame is not ready for delivery");
+            }
+            // the frame is after the offset.
+            // insert or slice it, depending on what we
+            // have already received.
+            enqueue(frame, start, length);
+            return null;
+        } else {
+            // case where the frame is either at offset, or is below
+            // offset but has a length that provides bytes that
+            // overlap with the current offset. In the later case
+            // we will return a slice.
+            int todeliver = (int) (end - offset);
+            T delivery;
+            try {
+                delivery = start == offset ? frame : slice(frame, offset, todeliver);
+            } catch (RuntimeException | Error failure) {
+                budget.release(retainedPermits);
+                throw failure;
+            }
+
+            // update the offset with the new position
+            this.offset = end;
+            // cleanup the queue
+            int released;
+            try {
+                released = retainedPermits + dropuntil(end);
+            } catch (RuntimeException | Error failure) {
+                budget.release(retainedPermits);
+                throw failure;
+            }
+            budget.release(released);
+            return delivery;
+        }
+    }
+
+    private void requireNoAvailableFrame() {
+        if (availableFrame != null) {
+            throw new IllegalStateException("Contiguous frame has not been retrieved");
+        }
+    }
 
     private T peekFirst() {
         if (queue.isEmpty()) {
@@ -493,6 +493,38 @@ public abstract sealed class OrderedFlow<T extends QuicFrame> {
     }
 
     /**
+     * Budget for nodes retained while reassembling an ordered QUIC flow.
+     *
+     * <p>One permit represents one frame node currently retained by an
+     * {@link OrderedFlow}. Implementations can combine a flow-local limit with
+     * a connection-wide limit. Acquisition and release methods must be safe to
+     * invoke concurrently when budgets are shared by multiple flow owners.
+     */
+    @Api.Internal
+    public interface ReassemblyBudget {
+        /**
+         * Attempts to acquire one retained-node permit.
+         *
+         * @return {@code true} if the permit was acquired
+         */
+        boolean tryAcquire();
+
+        /**
+         * Releases one retained-node permit.
+         */
+        default void release() {
+            release(1);
+        }
+
+        /**
+         * Releases retained-node permits.
+         *
+         * @param count non-negative number of permits to release; zero is a no-op
+         */
+        void release(int count);
+    }
+
+    /**
      * A subclass of {@link OrderedFlow} used to reorder instances of
      * {@link CryptoFrame}.
      */
@@ -577,37 +609,5 @@ public abstract sealed class OrderedFlow<T extends QuicFrame> {
                                               INTERNAL_ERROR,
                                               streamId);
         }
-    }
-
-    /**
-     * Budget for nodes retained while reassembling an ordered QUIC flow.
-     *
-     * <p>One permit represents one frame node currently retained by an
-     * {@link OrderedFlow}. Implementations can combine a flow-local limit with
-     * a connection-wide limit. Acquisition and release methods must be safe to
-     * invoke concurrently when budgets are shared by multiple flow owners.
-     */
-    @Api.Internal
-    public interface ReassemblyBudget {
-        /**
-         * Attempts to acquire one retained-node permit.
-         *
-         * @return {@code true} if the permit was acquired
-         */
-        boolean tryAcquire();
-
-        /**
-         * Releases one retained-node permit.
-         */
-        default void release() {
-            release(1);
-        }
-
-        /**
-         * Releases retained-node permits.
-         *
-         * @param count non-negative number of permits to release; zero is a no-op
-         */
-        void release(int count);
     }
 }

@@ -730,6 +730,9 @@ final class HelidonClientQuicTLSEngine implements QuicPacketTLSEngine {
         ByteBuffer body = QuicTlsCodecSupport.handshakeBody(message, "EncryptedExtensions");
         List<QuicTlsExtension> extensions = QuicTlsExtensions.decode(body, "EncryptedExtensions");
         QuicTlsCodecSupport.ensureConsumed(body, "EncryptedExtensions");
+        QuicTlsExtensions.validateServerResponse(extensions,
+                                                helloHandshake.clientHelloMessage(),
+                                                QuicTlsHandshakeMessages.ENCRYPTED_EXTENSIONS);
 
         QuicTlsExtension earlyData = QuicTlsExtensions.find(extensions, QuicTlsExtensions.EARLY_DATA).orElse(null);
         if (earlyData != null) {
@@ -741,17 +744,22 @@ final class HelidonClientQuicTLSEngine implements QuicPacketTLSEngine {
 
         QuicTlsExtension transportParameters =
                 QuicTlsExtensions.find(extensions, QuicTlsExtensions.QUIC_TRANSPORT_PARAMETERS).orElse(null);
-        if (transportParameters != null) {
-            byte[] transportParametersData = transportParameters.data();
-            remoteTransportParameters = transportParametersData;
-            remoteTransportParametersConsumer.accept(ByteBuffer.wrap(transportParametersData).asReadOnlyBuffer());
+        if (transportParameters == null) {
+            throw QuicTlsHandshakeMessages.missingExtension(
+                    "EncryptedExtensions missing quic_transport_parameters extension");
         }
         QuicTlsExtension alpn = QuicTlsExtensions.find(extensions,
                                                        QuicTlsExtensions.APPLICATION_LAYER_PROTOCOL_NEGOTIATION)
                 .orElse(null);
-        if (alpn != null) {
-            applicationProtocol = selectedApplicationProtocol(alpn);
+        if (alpn == null) {
+            throw QuicTlsHandshakeMessages.noApplicationProtocol(
+                    "EncryptedExtensions missing application_layer_protocol_negotiation extension");
         }
+        String selectedProtocol = selectedApplicationProtocol(alpn);
+        byte[] transportParametersData = transportParameters.data();
+        remoteTransportParameters = transportParametersData;
+        remoteTransportParametersConsumer.accept(ByteBuffer.wrap(transportParametersData).asReadOnlyBuffer());
+        applicationProtocol = selectedProtocol;
         transcript.add(message.asReadOnlyBuffer());
     }
 

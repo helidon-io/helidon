@@ -216,6 +216,11 @@ class PeerConnIdManagerTest {
                                PeerConnIdManager manager,
                                QuicPathManager pathManager,
                                QuicEndpoint endpoint) implements AutoCloseable {
+        @Override
+        public void close() {
+            endpoint.close();
+        }
+
         private static TestContext create() throws Exception {
             QuicConnectionImpl connection = mock(QuicConnectionImpl.class);
             QuicConfig config = QuicConfig.builder()
@@ -251,11 +256,6 @@ class PeerConnIdManagerTest {
                     .when(connection)
                     .freezeEndpointRoutes();
             return new TestContext(connection, manager, pathManager, endpoint);
-        }
-
-        @Override
-        public void close() {
-            endpoint.close();
         }
     }
 }

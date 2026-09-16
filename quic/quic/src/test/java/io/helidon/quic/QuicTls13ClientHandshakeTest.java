@@ -19,12 +19,15 @@ package io.helidon.quic;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 
 import javax.crypto.SecretKey;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -36,6 +39,7 @@ class QuicTls13ClientHandshakeTest {
     private static final HexFormat HEX = HexFormat.of();
     private static final QuicVersion VERSION = QuicVersion.QUIC_V1;
     private static final QuicTls13CipherSuite CIPHER_SUITE = QuicTls13CipherSuite.TLS_AES_128_GCM_SHA256;
+    private static final int UNKNOWN_EXTENSION_TYPE = 0xFFA5;
 
     // Fixed hello random keeps the generated ClientHello stable enough for the HRR assertions without trying to pin
     // the ephemeral key share itself to a published vector.
@@ -113,6 +117,102 @@ class QuicTls13ClientHandshakeTest {
                 assertThrows(QuicTransportException.class, () -> handshake.consumeServerHello(serverHello.encode()));
 
         assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 47));
+    }
+
+    @ParameterizedTest
+    @MethodSource("serverHelloExtensionsInWrongContext")
+    void shouldRejectServerHelloExtensionInWrongContext(QuicTlsExtension extension) throws Exception {
+        SecureRandom secureRandom = new SecureRandom();
+        QuicTls13ClientHandshake handshake = startHandshake(secureRandom);
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(handshake.clientHello());
+        QuicTlsKeySharePossession serverKeyShare = QuicTlsKeySharePossession.create(QuicTlsNamedGroup.X25519, secureRandom);
+        QuicTlsServerHelloMessage serverHello = serverHello(clientHello.legacySessionId(),
+                                                            CIPHER_SUITE,
+                                                            QuicTlsSupportedVersions.TLS_1_3,
+                                                            serverKeyShare.keyShareEntry());
+        QuicTlsServerHelloMessage invalidServerHello = withServerHelloExtension(serverHello, extension);
+
+        QuicTransportException failure = assertThrows(QuicTransportException.class,
+                                                       () -> handshake.consumeServerHello(invalidServerHello.encode()));
+
+        assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 47));
+        assertCompletesHandshake(handshake, clientHello, serverHello, serverKeyShare,
+                                 QuicTlsCodecSupport.copy(clientHello.encode()));
+    }
+
+    @Test
+    void shouldRejectUnofferedUnknownServerHelloExtension() throws Exception {
+        SecureRandom secureRandom = new SecureRandom();
+        QuicTls13ClientHandshake handshake = startHandshake(secureRandom);
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(handshake.clientHello());
+        QuicTlsKeySharePossession serverKeyShare = QuicTlsKeySharePossession.create(QuicTlsNamedGroup.X25519, secureRandom);
+        QuicTlsServerHelloMessage serverHello = serverHello(clientHello.legacySessionId(),
+                                                            CIPHER_SUITE,
+                                                            QuicTlsSupportedVersions.TLS_1_3,
+                                                            serverKeyShare.keyShareEntry());
+        QuicTlsServerHelloMessage invalidServerHello = withServerHelloExtension(
+                serverHello, QuicTlsExtension.create(UNKNOWN_EXTENSION_TYPE, new byte[0]));
+
+        assertThat(clientHello.extension(UNKNOWN_EXTENSION_TYPE).isPresent(), is(false));
+        QuicTransportException failure = assertThrows(QuicTransportException.class,
+                                                       () -> handshake.consumeServerHello(invalidServerHello.encode()));
+
+        assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 110));
+        assertCompletesHandshake(handshake, clientHello, serverHello, serverKeyShare,
+                                 QuicTlsCodecSupport.copy(clientHello.encode()));
+    }
+
+    @Test
+    void shouldAcceptOfferedUnknownServerHelloExtension() throws Exception {
+        SecureRandom secureRandom = new SecureRandom();
+        QuicTlsExtension extension = QuicTlsExtension.create(UNKNOWN_EXTENSION_TYPE, new byte[0]);
+        QuicTls13ClientHandshake handshake = QuicTls13ClientHandshake.start(
+                VERSION,
+                new QuicTls13ClientHandshake.ClientHelloParameters(
+                        CLIENT_HELLO_RANDOM,
+                        SESSION_ID,
+                        List.of(CIPHER_SUITE),
+                        List.of(QuicTlsNamedGroup.X25519, QuicTlsNamedGroup.SECP256_R1),
+                        List.of(QuicTlsNamedGroup.X25519),
+                        List.of(QuicTlsExtension.create(QuicTlsExtensions.QUIC_TRANSPORT_PARAMETERS, TRANSPORT_PARAMETERS),
+                                extension),
+                        null),
+                secureRandom);
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(handshake.clientHello());
+        QuicTlsKeySharePossession serverKeyShare = QuicTlsKeySharePossession.create(QuicTlsNamedGroup.X25519, secureRandom);
+        QuicTlsServerHelloMessage serverHello = withServerHelloExtension(
+                serverHello(clientHello.legacySessionId(),
+                            CIPHER_SUITE,
+                            QuicTlsSupportedVersions.TLS_1_3,
+                            serverKeyShare.keyShareEntry()),
+                extension);
+
+        assertThat(clientHello.extension(UNKNOWN_EXTENSION_TYPE).orElseThrow(), is(extension));
+        assertCompletesHandshake(handshake, clientHello, serverHello, serverKeyShare,
+                                 QuicTlsCodecSupport.copy(clientHello.encode()));
+    }
+
+    @Test
+    void shouldRejectUnofferedPreSharedKeyServerHelloExtension() throws Exception {
+        SecureRandom secureRandom = new SecureRandom();
+        QuicTls13ClientHandshake handshake = startHandshake(secureRandom);
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(handshake.clientHello());
+        QuicTlsKeySharePossession serverKeyShare = QuicTlsKeySharePossession.create(QuicTlsNamedGroup.X25519, secureRandom);
+        QuicTlsServerHelloMessage serverHello = serverHello(clientHello.legacySessionId(),
+                                                            CIPHER_SUITE,
+                                                            QuicTlsSupportedVersions.TLS_1_3,
+                                                            serverKeyShare.keyShareEntry());
+        QuicTlsServerHelloMessage invalidServerHello = withServerHelloExtension(
+                serverHello,
+                QuicTlsExtension.create(QuicTlsExtensions.PRE_SHARED_KEY, QuicTlsPreSharedKeys.encodeServerHello(0)));
+
+        assertThat(clientHello.extension(QuicTlsExtensions.PRE_SHARED_KEY).isPresent(), is(false));
+        QuicTransportException failure = assertThrows(QuicTransportException.class,
+                                                       () -> handshake.consumeServerHello(invalidServerHello.encode()));
+
+        assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 110));
+        assertCompletesHandshake(handshake, clientHello, serverHello, serverKeyShare,
+                                 QuicTlsCodecSupport.copy(clientHello.encode()));
     }
 
     @Test
@@ -194,6 +294,7 @@ class QuicTls13ClientHandshakeTest {
                                                             secureRandom,
                                                             resumptionTicket());
         QuicTlsClientHelloMessage clientHello1 = QuicTlsClientHelloMessage.decode(handshake.clientHello());
+        assertThat(clientHello1.extension(QuicTlsExtensions.PRE_SHARED_KEY).isPresent(), is(true));
         byte[] encodedHelloRetryRequest = QuicTlsCodecSupport.copy(helloRetryRequest(clientHello1.legacySessionId(),
                                                                                      QuicTls13CipherSuite.TLS_AES_256_GCM_SHA384,
                                                                                      QuicTlsNamedGroup.SECP256_R1,
@@ -205,6 +306,25 @@ class QuicTls13ClientHandshakeTest {
 
         assertThat(clientHello2.extension(QuicTlsExtensions.EARLY_DATA).isPresent(), is(false));
         assertThat(clientHello2.extension(QuicTlsExtensions.PRE_SHARED_KEY).isPresent(), is(false));
+
+        QuicTlsKeySharePossession serverKeyShare = QuicTlsKeySharePossession.create(QuicTlsNamedGroup.SECP256_R1, secureRandom);
+        QuicTlsServerHelloMessage serverHello = serverHello(clientHello2.legacySessionId(),
+                                                            QuicTls13CipherSuite.TLS_AES_256_GCM_SHA384,
+                                                            QuicTlsSupportedVersions.TLS_1_3,
+                                                            serverKeyShare.keyShareEntry());
+        QuicTlsServerHelloMessage invalidServerHello = withServerHelloExtension(
+                serverHello,
+                QuicTlsExtension.create(QuicTlsExtensions.PRE_SHARED_KEY, QuicTlsPreSharedKeys.encodeServerHello(0)));
+
+        QuicTransportException failure = assertThrows(QuicTransportException.class,
+                                                       () -> handshake.consumeServerHello(invalidServerHello.encode()));
+
+        assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 110));
+        assertCompletesHandshake(handshake, clientHello2, serverHello, serverKeyShare,
+                                 syntheticMessageHash(QuicTls13CipherSuite.TLS_AES_256_GCM_SHA384.digest(
+                                         QuicTlsCodecSupport.copy(clientHello1.encode()))),
+                                 encodedHelloRetryRequest,
+                                 QuicTlsCodecSupport.copy(clientHello2.encode()));
     }
 
     @Test
@@ -394,6 +514,15 @@ class QuicTls13ClientHandshakeTest {
                    is("ServerHello key_share group does not match the HelloRetryRequest selected group"));
     }
 
+    private static List<QuicTlsExtension> serverHelloExtensionsInWrongContext() {
+        return List.of(
+                QuicTlsExtension.create(QuicTlsExtensions.APPLICATION_LAYER_PROTOCOL_NEGOTIATION, bytes("0003026833")),
+                QuicTlsExtension.create(QuicTlsExtensions.QUIC_TRANSPORT_PARAMETERS, TRANSPORT_PARAMETERS),
+                QuicTlsExtension.create(QuicTlsExtensions.SUPPORTED_GROUPS,
+                                        QuicTlsSupportedGroups.encode(List.of(QuicTlsNamedGroup.X25519))),
+                QuicTlsExtension.create(QuicTlsExtensions.COOKIE, QuicTlsCookie.encode(HRR_COOKIE)));
+    }
+
     private static QuicTls13ClientHandshake startHandshake(SecureRandom secureRandom) throws Exception {
         return startHandshake(List.of(CIPHER_SUITE), secureRandom, null);
     }
@@ -480,6 +609,47 @@ class QuicTls13ClientHandshakeTest {
                                            "h3",
                                            TRANSPORT_PARAMETERS,
                                            System.currentTimeMillis() - 5000);
+    }
+
+    private static QuicTlsServerHelloMessage withServerHelloExtension(QuicTlsServerHelloMessage serverHello,
+                                                                      QuicTlsExtension extension) {
+        List<QuicTlsExtension> extensions = new ArrayList<>(serverHello.extensions());
+        extensions.add(extension);
+        return QuicTlsServerHelloMessage.create(serverHello.legacyVersion(),
+                                                serverHello.random(),
+                                                serverHello.legacySessionIdEcho(),
+                                                serverHello.cipherSuite(),
+                                                serverHello.legacyCompressionMethod(),
+                                                extensions);
+    }
+
+    private static void assertCompletesHandshake(QuicTls13ClientHandshake handshake,
+                                                 QuicTlsClientHelloMessage clientHello,
+                                                 QuicTlsServerHelloMessage serverHello,
+                                                 QuicTlsKeySharePossession serverKeyShare,
+                                                 byte[]... precedingTranscriptMessages) throws Exception {
+        QuicTls13ClientHandshake.CompleteResult result =
+                (QuicTls13ClientHandshake.CompleteResult) handshake.consumeServerHello(serverHello.encode());
+        QuicTls13CipherSuite cipherSuite = QuicTls13CipherSuite.forCodePoint(serverHello.cipherSuite());
+        MessageDigest digest = cipherSuite.newDigest();
+        for (byte[] message : precedingTranscriptMessages) {
+            digest.update(message);
+        }
+        digest.update(serverHello.encode());
+        byte[] expectedTranscriptHash = digest.digest();
+        QuicTls13ConnectionSecrets serverSecrets = QuicTls13ConnectionSecrets.create(VERSION,
+                                                                                     cipherSuite,
+                                                                                     serverKeyShare,
+                                                                                     clientHello.keyShares().getFirst(),
+                                                                                     false);
+
+        assertThat(result.preSharedKeySelected(), is(false));
+        assertThat(result.serverHelloTranscriptHash(), equalTo(expectedTranscriptHash));
+        assertThat(hex(result.connectionSecrets().handshakeSecret()), is(hex(serverSecrets.handshakeSecret())));
+        assertThat(hex(result.handshakeTrafficKeys().computeHeaderProtectionMask(false,
+                                                                                 ByteBuffer.wrap(HEADER_PROTECTION_SAMPLE))),
+                   is(hex(serverSecrets.deriveHandshakeTrafficKeys(expectedTranscriptHash)
+                                  .computeHeaderProtectionMask(true, ByteBuffer.wrap(HEADER_PROTECTION_SAMPLE)))));
     }
 
     private static byte[] pskKeyExchangeModes() {
