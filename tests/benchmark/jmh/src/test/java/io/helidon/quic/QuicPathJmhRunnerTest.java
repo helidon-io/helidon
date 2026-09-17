@@ -88,9 +88,8 @@ class QuicPathJmhRunnerTest {
             }
         }
         if (ackRecoverySelected) {
-            for (String scenario : parameterValues(properties,
-                                                    "ackRecoveryScenario",
-                                                    "APPLICATION,SERVER_INITIAL,CLIENT_INITIAL")) {
+            String defaultScenarios = "APPLICATION,SERVER_INITIAL,CLIENT_INITIAL,APPLICATION_REORDERED";
+            for (String scenario : parameterValues(properties, "ackRecoveryScenario", defaultScenarios)) {
                 AckRecoveryScenario.valueOf(scenario);
             }
         }
