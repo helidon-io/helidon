@@ -282,6 +282,21 @@ public class TlsTest {
         assertThat(tls.generation(), is(0L));
     }
 
+    @Test
+    public void disabledTlsExposesNoKeyOrTrustMaterial() {
+        Tls tls = Tls.builder()
+                .enabled(false)
+                .build();
+
+        tls.reload(TlsMaterial.builder().trustAll(true).build());
+        tls.reload(Tls.create(it -> it.trustAll(true)));
+
+        assertThat(tls.keyManager().isEmpty(), is(true));
+        assertThat(tls.trustManager().isEmpty(), is(true));
+        assertThat(tls.resolvedTrustManager().isEmpty(), is(true));
+        assertThat(tls.generation(), is(0L));
+    }
+
     private static SSLContext createSslContext() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -353,20 +368,5 @@ public class TlsTest {
     }
 
     private static final class CustomTlsManager extends ConfiguredTlsManager {
-    }
-
-    @Test
-    public void disabledTlsExposesNoKeyOrTrustMaterial() {
-        Tls tls = Tls.builder()
-                .enabled(false)
-                .build();
-
-        tls.reload(TlsMaterial.builder().trustAll(true).build());
-        tls.reload(Tls.create(it -> it.trustAll(true)));
-
-        assertThat(tls.keyManager().isEmpty(), is(true));
-        assertThat(tls.trustManager().isEmpty(), is(true));
-        assertThat(tls.resolvedTrustManager().isEmpty(), is(true));
-        assertThat(tls.generation(), is(0L));
     }
 }
