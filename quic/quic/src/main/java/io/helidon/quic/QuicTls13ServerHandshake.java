@@ -607,9 +607,11 @@ final class QuicTls13ServerHandshake {
         if (!clientHello.supportedVersions().contains(QuicTlsSupportedVersions.TLS_1_3)) {
             throw QuicTlsHandshakeMessages.illegalParameter("ClientHello did not offer TLS 1.3");
         }
-        if (clientHello.keyShares().isEmpty()) {
-            throw QuicTlsHandshakeMessages.decodeError("Malformed ClientHello message: missing key_share extension");
-        }
+        QuicTlsExtension keyShareExtension = clientHello.extension(QuicTlsExtensions.KEY_SHARE)
+                .orElseThrow(() -> QuicTlsHandshakeMessages.missingExtension(
+                        "ClientHello is missing key_share extension"));
+        // An empty usable-share list can require HelloRetryRequest; the encoded vector must still be valid.
+        QuicTlsKeyShares.decodeClientHello(keyShareExtension.dataBuffer());
         validateResumptionOffer(clientHello);
     }
 
