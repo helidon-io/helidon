@@ -28,6 +28,7 @@ import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
@@ -35,6 +36,7 @@ import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
 import io.helidon.webserver.http1.spi.Http1RoutedUpgrader;
 import io.helidon.webserver.http1.spi.Http1UpgradeResult;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
@@ -44,8 +46,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -56,6 +60,8 @@ class Http1ReceiveListenerTest {
     private static final String REQUEST = "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n";
     private static final String UPGRADE_REQUEST =
             "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nUpgrade: test\r\n\r\n";
+    private static final String KEEP_ALIVE_UPGRADE_REQUEST =
+            "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: upgrade\r\nUpgrade: test\r\n\r\n";
 
     @Test
     void receivesProtocolDetectionPrefetchAndRemainingRequestOnce() throws InterruptedException {
@@ -132,6 +138,76 @@ class Http1ReceiveListenerTest {
 
         verify(upgrader).upgrade(any(), any(), any());
         assertThat(listener.received, contains(UPGRADE_REQUEST, "prepare"));
+    }
+
+    @Test
+    void declinedUpgradeRestoresHttp1ListenerAfterReplacement() throws InterruptedException {
+        DataReader reader = reader(KEEP_ALIVE_UPGRADE_REQUEST, REQUEST);
+        var original = new RecordingListener();
+        var replacement = new RecordingListener();
+        var upgrader = mock(Http1Upgrader.class);
+        when(upgrader.upgrade(any(), any(), any())).thenAnswer(invocation -> {
+            ConnectionContext context = invocation.getArgument(0);
+            reader.listener(replacement, context);
+            return null;
+        });
+
+        connection(reader, original, Map.of("test", upgrader)).handle(FixedLimit.create());
+
+        verify(upgrader).upgrade(any(), any(), any());
+        assertAll(
+                () -> assertThat(original.prologues, hasSize(2)),
+                () -> assertThat(original.received, contains(KEEP_ALIVE_UPGRADE_REQUEST, REQUEST)),
+                () -> assertThat(replacement.received, empty())
+        );
+    }
+
+    @Test
+    void emptyRoutedUpgradeRestoresHttp1ListenerAfterReplacement() throws InterruptedException {
+        DataReader reader = reader(KEEP_ALIVE_UPGRADE_REQUEST, REQUEST);
+        var original = new RecordingListener();
+        var replacement = new RecordingListener();
+        var upgrader = mock(Http1RoutedUpgrader.class);
+        when(upgrader.routedUpgrade(any(), any(), any())).thenAnswer(invocation -> {
+            ConnectionContext context = invocation.getArgument(0);
+            reader.listener(replacement, context);
+            return Optional.empty();
+        });
+
+        connection(reader, original, Map.of("test", upgrader)).handle(FixedLimit.create());
+
+        verify(upgrader).routedUpgrade(any(), any(), any());
+        assertAll(
+                () -> assertThat(original.prologues, hasSize(2)),
+                () -> assertThat(original.received, contains(KEEP_ALIVE_UPGRADE_REQUEST, REQUEST)),
+                () -> assertThat(replacement.received, empty())
+        );
+    }
+
+    @Test
+    void respondedRoutedUpgradeRestoresHttp1ListenerForNextRequest() throws InterruptedException {
+        DataReader reader = reader(KEEP_ALIVE_UPGRADE_REQUEST, REQUEST);
+        var original = new RecordingListener();
+        var replacement = new RecordingListener();
+        var upgrader = mock(Http1RoutedUpgrader.class);
+        when(upgrader.routedUpgrade(any(), any(), any())).thenAnswer(invocation -> {
+            ConnectionContext context = invocation.getArgument(0);
+            Http1RoutedUpgrade prepared = response -> {
+                reader.listener(replacement, context);
+                response.send(Status.BAD_REQUEST_400);
+                return Http1UpgradeResult.responded();
+            };
+            return Optional.of(prepared);
+        });
+
+        connection(reader, original, Map.of("test", upgrader)).handle(FixedLimit.create());
+
+        verify(upgrader).routedUpgrade(any(), any(), any());
+        assertAll(
+                () -> assertThat(original.prologues, hasSize(2)),
+                () -> assertThat(original.received, contains(KEEP_ALIVE_UPGRADE_REQUEST, REQUEST)),
+                () -> assertThat(replacement.received, empty())
+        );
     }
 
     @Test
