@@ -16,6 +16,7 @@
 
 package io.helidon.quic.packet;
 
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -26,8 +27,11 @@ import java.util.stream.Stream;
 
 import javax.crypto.AEADBadTagException;
 
+import io.helidon.common.tls.Tls;
 import io.helidon.quic.CodingContext;
+import io.helidon.quic.PeerConnectionId;
 import io.helidon.quic.QuicPacketAuthenticationException;
+import io.helidon.quic.QuicTLSContext;
 import io.helidon.quic.QuicTLSEngine;
 import io.helidon.quic.QuicTransportErrors;
 import io.helidon.quic.QuicTransportException;
@@ -41,7 +45,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -160,6 +166,61 @@ class QuicPacketDecoderTest {
         assertThat(QuicPacketDecoder.peekLongHeader(datagram).isEmpty(), is(true));
         assertThat(datagram.position(), is(1193));
         assertThat(datagram.limit(), is(1200));
+    }
+
+    @ParameterizedTest(name = "{0}: owned={1}, {2}")
+    @MethodSource("malformedRetryPackets")
+    void rejectsRetryConnectionIdsOverlappingIntegrityTag(QuicVersion version,
+                                                          boolean owned,
+                                                          String description,
+                                                          byte[] unsignedPacket) throws Exception {
+        CodingContext context = retryContext();
+        ByteBuffer packet = signedRetryPacket(version, unsignedPacket, context);
+
+        assertDiscardableRetry(version, owned, description, packet, context);
+    }
+
+    @ParameterizedTest(name = "{0}: owned={1}, packetLength={2}")
+    @MethodSource("retryPacketsWithTruncatedTags")
+    void rejectsRetryWithoutCompleteIntegrityTag(QuicVersion version, boolean owned, int packetLength) {
+        byte[] packetBytes = Arrays.copyOf(retryHeader(version, 8, 0), packetLength);
+        ByteBuffer packet = BufferKind.HEAP.wrap(packetBytes, 3).position(3);
+
+        assertDiscardableRetry(version, owned, "truncated integrity tag", packet, retryContext());
+    }
+
+    @ParameterizedTest(name = "{0}: owned={1}, destination={2}, source={3}, tokenLength={4}")
+    @MethodSource("validRetryPackets")
+    void decodesRetryTokensAtConnectionIdBoundaries(QuicVersion version,
+                                                   boolean owned,
+                                                   int destinationLength,
+                                                   int sourceLength,
+                                                   int tokenLength) throws Exception {
+        byte[] header = retryHeader(version, destinationLength, sourceLength);
+        byte[] token = connectionIdBytes(tokenLength, 0x70);
+        byte[] unsignedPacket = ByteBuffer.allocate(header.length + token.length)
+                .put(header)
+                .put(token)
+                .array();
+        CodingContext context = retryContext();
+        ByteBuffer packet = signedRetryPacket(version, unsignedPacket, context);
+        int originalLimit = packet.limit();
+        int expectedSize = packet.remaining();
+        QuicPacketDecoder decoder = QuicPacketDecoder.of(version);
+
+        var decoded = (owned ? decoder.decodeOwned(packet, context, "retry-boundaries") : decoder.decode(packet, context))
+                .orElseThrow();
+
+        assertThat(decoded, instanceOf(RetryPacket.class));
+        RetryPacket retry = (RetryPacket) decoded;
+        assertThat(retry.packetType(), is(QuicPacket.PacketType.RETRY));
+        assertThat(retry.version(), is(version.versionNumber()));
+        assertThat(retry.destinationId().bytes(), is(connectionIdBytes(destinationLength, 1)));
+        assertThat(retry.sourceId().bytes(), is(connectionIdBytes(sourceLength, 0x40)));
+        assertThat(retry.retryToken(), is(token));
+        assertThat(decoded.size(), is(expectedSize));
+        assertThat(packet.position(), is(originalLimit));
+        assertThat(packet.limit(), is(originalLimit));
     }
 
     @Test
@@ -449,6 +510,112 @@ class QuicPacketDecoderTest {
                         Arguments.of(bufferKind, 20, 0, 3),
                         Arguments.of(bufferKind, 0, 20, 6),
                         Arguments.of(bufferKind, 20, 20, 50)));
+    }
+
+    private static Stream<Arguments> malformedRetryPackets() {
+        return Stream.of(QuicVersion.QUIC_V1, QuicVersion.QUIC_V2)
+                .flatMap(version -> Stream.of(false, true)
+                        .flatMap(owned -> Stream.of(
+                                Arguments.of(version, owned, "one source ID byte in tag",
+                                             Arrays.copyOf(retryHeader(version, 12, 1), 19)),
+                                Arguments.of(version, owned, "source ID consumes entire tag",
+                                             Arrays.copyOf(retryHeader(version, 12, 16), 19)),
+                                Arguments.of(version, owned, "maximum source ID consumes entire tag",
+                                             Arrays.copyOf(retryHeader(version, 12, 20), 23)),
+                                Arguments.of(version, owned, "maximum source ID overlaps tag by one byte",
+                                             Arrays.copyOf(retryHeader(version, 12, 20), 38)),
+                                Arguments.of(version, owned, "source ID extends past packet limit",
+                                             Arrays.copyOf(retryHeader(version, 12, 20), 22)),
+                                Arguments.of(version, owned, "destination ID extends past packet limit",
+                                             Arrays.copyOf(retryHeader(version, 20, 0), 9)),
+                                Arguments.of(version, owned, "destination ID ends at packet limit",
+                                             Arrays.copyOf(retryHeader(version, 20, 0), 10)),
+                                Arguments.of(version, owned, "maximum destination ID overlaps tag by one byte",
+                                             Arrays.copyOf(retryHeader(version, 20, 0), 25)),
+                                Arguments.of(version, owned, "source ID length overlaps tag",
+                                             Arrays.copyOf(retryHeader(version, 20, 0), 26)))));
+    }
+
+    private static Stream<Arguments> retryPacketsWithTruncatedTags() {
+        return Stream.of(QuicVersion.QUIC_V1, QuicVersion.QUIC_V2)
+                .flatMap(version -> Stream.of(false, true)
+                        .flatMap(owned -> IntStream.of(15, 16)
+                                .mapToObj(packetLength -> Arguments.of(version, owned, packetLength))));
+    }
+
+    private static Stream<Arguments> validRetryPackets() {
+        return Stream.of(QuicVersion.QUIC_V1, QuicVersion.QUIC_V2)
+                .flatMap(version -> Stream.of(false, true)
+                        .flatMap(owned -> Stream.of(
+                                Arguments.of(version, owned, 0, 0, 0),
+                                Arguments.of(version, owned, 0, 0, 1),
+                                Arguments.of(version, owned, 20, 0, 1),
+                                Arguments.of(version, owned, 0, 20, 1),
+                                Arguments.of(version, owned, 20, 20, 4),
+                                Arguments.of(version, owned, 12, 8, 5))));
+    }
+
+    private static CodingContext retryContext() {
+        QuicTLSEngine engine = QuicTLSContext.create(Tls.builder().build()).createEngine("localhost", 443);
+        engine.clientMode(true);
+        CodingContext context = mock(CodingContext.class);
+        when(context.tlsEngine()).thenReturn(engine);
+        when(context.originalServerConnId()).thenReturn(PeerConnectionId.create(connectionIdBytes(8, 21)));
+        return context;
+    }
+
+    private static byte[] retryHeader(QuicVersion version, int destinationLength, int sourceLength) {
+        byte[] header = longHeader(connectionIdBytes(destinationLength, 1), connectionIdBytes(sourceLength, 0x40));
+        ByteBuffer.wrap(header)
+                .put((byte) (version == QuicVersion.QUIC_V1 ? 0xf0 : 0xc0))
+                .putInt(version.versionNumber());
+        return header;
+    }
+
+    private static ByteBuffer signedRetryPacket(QuicVersion version,
+                                               byte[] unsignedPacket,
+                                               CodingContext context) throws Exception {
+        int offset = 3;
+        ByteBuffer packet = ByteBuffer.allocate(offset + unsignedPacket.length + 16 + 8);
+        packet.position(offset).put(unsignedPacket);
+        ByteBuffer input = packet.asReadOnlyBuffer().flip().position(offset);
+        ByteBuffer originalId = context.originalServerConnId().asReadOnlyBuffer();
+        QuicPacketTLSEngine engine = QuicPacketTLSEngine.internal(context.tlsEngine());
+
+        engine.signRetryPacketBuffer(version, originalId, input, packet);
+
+        assertThat(input.position(), is(offset));
+        assertThat(input.limit(), is(offset + unsignedPacket.length));
+        assertThat(packet.position(), is(offset + unsignedPacket.length + 16));
+        packet.flip().position(offset);
+        engine.verifyRetryPacketBuffer(version, originalId, packet);
+        assertThat(originalId.position(), is(0));
+        assertThat(originalId.limit(), is(8));
+        assertThat(packet.position(), is(offset));
+        assertThat(packet.limit(), is(offset + unsignedPacket.length + 16));
+        return packet;
+    }
+
+    private static void assertDiscardableRetry(QuicVersion version,
+                                               boolean owned,
+                                               String description,
+                                               ByteBuffer packet,
+                                               CodingContext context) {
+        QuicPacketDecoder decoder = QuicPacketDecoder.of(version);
+        int originalLimit = packet.limit();
+        assertThat(decoder.peekPacketType(packet), is(QuicPacket.PacketType.RETRY));
+
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> {
+            if (owned) {
+                decoder.decodeOwned(packet, context, "retry-boundaries");
+            } else {
+                decoder.decode(packet, context);
+            }
+        });
+
+        assertThat(description, failure,
+                   anyOf(instanceOf(BufferUnderflowException.class), instanceOf(QuicPacketDecodeException.class)));
+        assertThat(packet.limit(), is(originalLimit));
     }
 
     private static byte[] longHeader(byte[] destinationId, byte[] sourceId) {
