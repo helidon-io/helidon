@@ -191,7 +191,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
-
                 if (http1Config.validatePrologue()) {
                     validatePrologue(prologue);
                 }
@@ -209,7 +208,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));
                 recvListener.headers(ctx, headers);
-
                 if (proxyProtocolData != null) {
                     String sourceAddress = proxyProtocolData.sourceAddress();
                     if (!sourceAddress.isEmpty()) {
