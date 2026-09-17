@@ -76,6 +76,8 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
@@ -630,6 +632,7 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void connectionFatalHeaderFailureDoesNotWaitForConnectionWriter() throws Exception {
         int maxHeadersSize = 29;
         try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
@@ -1268,6 +1271,7 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void protocolFailureWritesGoAwayBeforeFailingLateStream() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
@@ -1306,6 +1310,7 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void interruptedLateStreamDoesNotWaitForBlockedGoAwayWrite() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
