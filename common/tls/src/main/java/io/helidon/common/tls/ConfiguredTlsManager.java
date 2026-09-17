@@ -77,10 +77,6 @@ public class ConfiguredTlsManager implements TlsManager {
         this("@default", "tls-manager");
     }
 
-    static X509TrustManager defaultTrustManager() {
-        return DEFAULT_TRUST_MANAGER.get();
-    }
-
     /**
      * Configured tls manager constructor.
      *
@@ -91,6 +87,10 @@ public class ConfiguredTlsManager implements TlsManager {
                                    String type) {
         this.name = Objects.requireNonNull(name);
         this.type = Objects.requireNonNull(type);
+    }
+
+    static X509TrustManager defaultTrustManager() {
+        return DEFAULT_TRUST_MANAGER.get();
     }
 
     @Override // NamedService
