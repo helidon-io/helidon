@@ -61,4 +61,26 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs combine.children="append">
+                                <compilerArg>--add-modules</compilerArg>
+                                <compilerArg>java.logging</compilerArg>
+                                <compilerArg>--add-reads</compilerArg>
+                                <compilerArg>io.helidon.common.features=java.logging</compilerArg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

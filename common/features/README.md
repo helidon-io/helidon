@@ -97,7 +97,7 @@ when used outside Helidon repository, the `dependencies` section is not required
 ## Version 1
 
 Created by deprecated feature annotation processing.
-This is now obsolete and will be removed from Helidon in version 5.0.0
+This format is obsolete, but remains supported for compatibility with existing feature metadata.
 
 The registry is stored in each module in `META-INF/helidon/feature-metadata.properties`.
 The following keys are supported:
