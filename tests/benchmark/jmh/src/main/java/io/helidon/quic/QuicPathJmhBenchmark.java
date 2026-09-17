@@ -306,7 +306,11 @@ public class QuicPathJmhBenchmark {
         /**
          * Client Initial space before Handshake keys are available.
          */
-        CLIENT_INITIAL(PacketNumberSpace.INITIAL, true);
+        CLIENT_INITIAL(PacketNumberSpace.INITIAL, true),
+        /**
+         * Client application ACK newly covering an older packet without advancing the largest acknowledged number.
+         */
+        APPLICATION_REORDERED(PacketNumberSpace.APPLICATION, true);
 
         private final PacketNumberSpace packetNumberSpace;
         private final boolean client;
@@ -656,8 +660,9 @@ public class QuicPathJmhBenchmark {
     }
 
     /**
-     * Bounded two-packet ACK fixture with a deterministic 12 ms RTT after a 10 ms sample and PTO backoff four.
-     * The application scenario decodes ACK delay 125 with exponent three. Initial scenarios ignore ACK delay.
+     * Bounded ACK fixture with deterministic 10 ms and 12 ms RTT samples and PTO backoff four.
+     * Application scenarios decode ACK delay 125 with exponent three. Initial scenarios ignore ACK delay.
+     * The reordered case acknowledges a newer third packet first, then measures progress on the older second packet.
      * Packet construction, recovery priming, and verification remain outside the measured operation.
      */
     @State(Scope.Thread)
@@ -667,6 +672,7 @@ public class QuicPathJmhBenchmark {
         private static final Deadline SEND_DEADLINE = FIXED_DEADLINE.plusMillis(10);
         private static final Deadline ACK_DEADLINE = SEND_DEADLINE.plusMillis(12);
         private static final List<AckRange> ACK_RANGES = List.of(AckRange.of(0, 0));
+        private static final List<AckRange> REORDERED_ACK_RANGES = List.of(AckRange.of(0, 1));
         private static final QuicRttEstimatorState APPLICATION_ESTIMATE =
                 QuicRttEstimatorState.create(12_000, 10_000, 10_125, 4_000, 2);
         private static final QuicRttEstimatorState INITIAL_ESTIMATE =
@@ -675,7 +681,7 @@ public class QuicPathJmhBenchmark {
         /**
          * Packet space and connection role whose ACK-recovery path is measured.
          */
-        @Param({"APPLICATION", "SERVER_INITIAL", "CLIENT_INITIAL"})
+        @Param({"APPLICATION", "SERVER_INITIAL", "CLIENT_INITIAL", "APPLICATION_REORDERED"})
         public AckRecoveryScenario ackRecoveryScenario;
 
         private AckRecoveryEmitter emitter;
@@ -708,6 +714,7 @@ public class QuicPathJmhBenchmark {
 
         /**
          * Acknowledges a first packet to prime RTT and ACK workspace, then prepares a second packet with backoff four.
+         * The reordered scenario acknowledges a third packet outside timing, leaving the second packet pending.
          * A fresh packet space bounds the flight and excludes growing optimistic-ACK packet-number skip history.
          */
         @Setup(Level.Invocation)
@@ -734,7 +741,7 @@ public class QuicPathJmhBenchmark {
             long primingPacketNumber = packetSpace.allocateNextPN();
             packetSpace.packetSent(new BenchmarkPacket(primingPacketNumber, ackRecoveryScenario.packetNumberSpace),
                                    -1, primingPacketNumber, PATH_GENERATION);
-            if (ackRecoveryScenario == AckRecoveryScenario.APPLICATION) {
+            if (ackRecoveryScenario.packetNumberSpace == PacketNumberSpace.APPLICATION) {
                 // A nonzero confirmation boundary precedes the second, measured ACK.
                 packetSpace.confirmHandshake();
             }
@@ -746,18 +753,36 @@ public class QuicPathJmhBenchmark {
             long packetNumber = packetSpace.allocateNextPN();
             packetSpace.packetSent(new BenchmarkPacket(packetNumber, ackRecoveryScenario.packetNumberSpace),
                                    -1, packetNumber, PATH_GENERATION);
-            // The measured ACK covers only the second packet; the first has already been acknowledged.
-            ackFrame = AckFrame.create(packetNumber, ENCODED_ACK_DELAY, ACK_RANGES);
+            boolean reordered = ackRecoveryScenario == AckRecoveryScenario.APPLICATION_REORDERED;
+            if (reordered) {
+                long newerPacketNumber = packetSpace.allocateNextPN();
+                packetSpace.packetSent(new BenchmarkPacket(newerPacketNumber, PacketNumberSpace.APPLICATION),
+                                       -1, newerPacketNumber, PATH_GENERATION);
+                now = ACK_DEADLINE;
+                packetSpace.processAckFrame(AckFrame.create(newerPacketNumber, ENCODED_ACK_DELAY, ACK_RANGES));
+                if (newerPacketNumber != 2 || emitter.acknowledgedPackets != 1
+                        || packetSpace.largestPeerAcknowledgedPacketNumber() != newerPacketNumber) {
+                    throw new IllegalStateException("Reordered ACK setup did not acknowledge only the newer packet");
+                }
+                rttEstimator.increasePtoBackoff();
+                rttEstimator.increasePtoBackoff();
+                emitter.acknowledgedPackets = 0;
+                // Largest stays at two; only packet one is newly acknowledged by the measured range.
+                ackFrame = AckFrame.create(newerPacketNumber, ENCODED_ACK_DELAY, REORDERED_ACK_RANGES);
+            } else {
+                // The measured ACK covers only the second packet; the first has already been acknowledged.
+                ackFrame = AckFrame.create(packetNumber, ENCODED_ACK_DELAY, ACK_RANGES);
+            }
             now = ACK_DEADLINE;
             if (primingPacketNumber != 0 || packetNumber != 1
-                    || rttEstimator.state().rttSampleCount() != 1 || rttEstimator.ptoBackoff() != 4
+                    || rttEstimator.state().rttSampleCount() != (reordered ? 2 : 1) || rttEstimator.ptoBackoff() != 4
                     || tlsEngine.clientMode() != ackRecoveryScenario.client) {
                 throw new IllegalStateException("ACK recovery fixture was not primed for " + ackRecoveryScenario);
             }
         }
 
         /**
-         * Checks ACK eligibility and RTT without imposing the candidate's server backoff behavior,
+         * Checks ACK eligibility and RTT without imposing the candidate's PTO-reset behavior,
          * then closes the packet space.
          */
         @TearDown(Level.Invocation)
@@ -767,7 +792,8 @@ public class QuicPathJmhBenchmark {
                         || packetSpace.largestPeerAcknowledgedPacketNumber() != ackFrame.largestAcknowledged()) {
                     throw new IllegalStateException("ACK recovery did not acknowledge the prepared packet");
                 }
-                QuicRttEstimatorState expected = ackRecoveryScenario == AckRecoveryScenario.APPLICATION
+                // The reordered ACK retains the two prior samples because its largest acknowledged number is unchanged.
+                QuicRttEstimatorState expected = ackRecoveryScenario.packetNumberSpace == PacketNumberSpace.APPLICATION
                         ? APPLICATION_ESTIMATE : INITIAL_ESTIMATE;
                 QuicRttEstimatorState actual = rttEstimator.state();
                 if (!expected.equals(actual)) {
@@ -802,6 +828,10 @@ public class QuicPathJmhBenchmark {
 
         long packetNumber() {
             return ackFrame.largestAcknowledged();
+        }
+
+        long largestAcknowledgedPacketNumber() {
+            return packetSpace.largestPeerAcknowledgedPacketNumber();
         }
 
         PacketNumberSpace packetNumberSpace() {

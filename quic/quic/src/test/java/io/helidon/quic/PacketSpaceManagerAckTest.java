@@ -119,7 +119,7 @@ class PacketSpaceManagerAckTest {
     }
 
     @Test
-    void resetsServerInitialBackoffOnlyForAdvancingCurrentPathProgress() throws Exception {
+    void resetsServerInitialBackoffOnlyForCurrentPathProgress() throws Exception {
         TestContext context = recoveryContext(PacketNumberSpace.INITIAL, false);
         long firstPacketNumber = sendRecoveryPacket(context, true);
         long secondPacketNumber = sendRecoveryPacket(context, true);
@@ -133,9 +133,11 @@ class PacketSpaceManagerAckTest {
         assertThat(context.emitter.acknowledged.size(), is(1));
 
         context.manager.processAckFrame(acknowledging(firstPacketNumber));
-        assertThat("Newly acknowledged packet without advancing largest ACK", context.rttEstimator.ptoBackoff(), is(4L));
+        assertThat("Newly acknowledged packet without advancing largest ACK", context.rttEstimator.ptoBackoff(), is(1L));
         assertThat(context.rttEstimator.state().rttSampleCount(), is(1L));
         assertThat(context.emitter.acknowledged.size(), is(2));
+        context.rttEstimator.increasePtoBackoff();
+        context.rttEstimator.increasePtoBackoff();
 
         long ackOnlyPacketNumber = sendRecoveryPacket(context, false);
         context.manager.processAckFrame(acknowledging(ackOnlyPacketNumber));
@@ -161,6 +163,98 @@ class PacketSpaceManagerAckTest {
         assertThat(context.rttEstimator.state().latestRttMicros(), is(100_000L));
         assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).toList(),
                    is(List.of(secondPacketNumber, firstPacketNumber, previousPathPacketNumber, currentPathPacketNumber)));
+    }
+
+    @Test
+    void reorderedAckOfRetainedPacketResetsPtoForIndependentPendingData() throws Exception {
+        TestContext context = TestContext.create(true);
+        StreamFrame firstData = StreamFrame.createOwned(0, 0, 1, false, ByteBuffer.wrap(new byte[] {1}));
+        long originalPacketNumber = context.send(List.of(firstData));
+        long ackOnlyPacketNumber = sendRecoveryPacket(context, false);
+        Duration basePto = context.manager.ptoDuration();
+        assertThat(context.emitter.nextScheduledDeadline(), is(context.timeLine.instant().plus(basePto)));
+        context.timeLine.advance(basePto);
+
+        context.emitter.fireTimer();
+
+        assertThat(context.emitter.retransmissionAttempts, is(1));
+        assertThat(context.emitter.retransmitted.getFirst().packetNumber(), is(originalPacketNumber));
+        assertThat(context.rttEstimator.ptoBackoff(), is(2L));
+        long retransmittedPacketNumber = context.manager.nextPacketNumber().get() - 1;
+        StreamFrame independentData = StreamFrame.createOwned(4, 0, 1, false, ByteBuffer.wrap(new byte[] {2}));
+        Deadline independentSent = context.timeLine.instant();
+        long independentPacketNumber = context.send(List.of(independentData));
+        assertThat(independentPacketNumber, is(ackOnlyPacketNumber + 2));
+        QuicRttEstimator.QuicRttEstimatorState rttBeforeAcknowledgements = context.rttEstimator.state();
+
+        context.manager.processAckFrame(acknowledging(ackOnlyPacketNumber));
+
+        Duration backedOffPto = basePto.multipliedBy(2);
+        assertThat("Largest ACK advances without tracked progress", context.rttEstimator.ptoBackoff(), is(2L));
+        assertThat(context.emitter.acknowledged.isEmpty(), is(true));
+        assertThat(context.manager.ptoDuration(), is(backedOffPto));
+        assertThat(context.emitter.nextScheduledDeadline(), is(independentSent.plus(backedOffPto)));
+        AckFrame retainedPacketAck = AckFrame.create(ackOnlyPacketNumber,
+                                                     0,
+                                                     List.of(AckRange.of(0, ackOnlyPacketNumber - originalPacketNumber)));
+
+        context.manager.processAckFrame(retainedPacketAck);
+
+        assertAll(
+                () -> assertThat(context.rttEstimator.ptoBackoff(), is(1L)),
+                () -> assertThat(context.rttEstimator.state(), is(rttBeforeAcknowledgements)),
+                () -> assertThat(context.manager.ptoDuration(), is(basePto)),
+                () -> assertThat(context.emitter.nextScheduledDeadline(), is(independentSent.plus(basePto))),
+                () -> assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).toList(),
+                                 is(List.of(retransmittedPacketNumber))));
+
+        context.timeLine.advance(Deadline.between(context.timeLine.instant(), context.emitter.nextScheduledDeadline()));
+        context.emitter.fireTimer();
+        assertThat(context.emitter.retransmitted.stream().map(QuicPacket::packetNumber).toList(),
+                   is(List.of(originalPacketNumber, independentPacketNumber)));
+        assertThat(context.rttEstimator.ptoBackoff(), is(2L));
+        Deadline deadlineBeforeDuplicate = context.emitter.nextScheduledDeadline();
+
+        context.manager.processAckFrame(retainedPacketAck);
+
+        assertThat("Repeated ACK has no remaining tracked progress", context.rttEstimator.ptoBackoff(), is(2L));
+        assertThat(context.rttEstimator.state(), is(rttBeforeAcknowledgements));
+        assertThat(context.manager.ptoDuration(), is(backedOffPto));
+        assertThat(context.emitter.nextScheduledDeadline(), is(deadlineBeforeDuplicate));
+        assertThat(context.emitter.acknowledged.size(), is(1));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"APPLICATION, false, true", "INITIAL, true, false"})
+    void retainsBackoffForIneligibleNonAdvancingAcknowledgements(PacketNumberSpace packetNumberSpace,
+                                                                boolean clientMode,
+                                                                boolean previousPath) throws Exception {
+        TestContext context = recoveryContext(packetNumberSpace, clientMode);
+        long originalPacketNumber = sendRecoveryPacket(context, true);
+        long ackOnlyPacketNumber = sendRecoveryPacket(context, false);
+        if (previousPath) {
+            context.recoveryState.transition(1, context.rttEstimator::resetForPath);
+        }
+        context.rttEstimator.increasePtoBackoff();
+        context.rttEstimator.increasePtoBackoff();
+        context.manager.processAckFrame(acknowledging(ackOnlyPacketNumber));
+        assertThat(context.rttEstimator.ptoBackoff(), is(4L));
+        QuicRttEstimator.QuicRttEstimatorState rttBeforeProgress = context.rttEstimator.state();
+        AckFrame retainedPacketAck = AckFrame.create(ackOnlyPacketNumber,
+                                                     0,
+                                                     List.of(AckRange.of(0, ackOnlyPacketNumber - originalPacketNumber)));
+
+        context.manager.processAckFrame(retainedPacketAck);
+
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).toList(),
+                   is(List.of(originalPacketNumber)));
+        assertThat(context.rttEstimator.ptoBackoff(), is(4L));
+        assertThat(context.rttEstimator.state(), is(rttBeforeProgress));
+
+        context.manager.processAckFrame(retainedPacketAck);
+
+        assertThat(context.rttEstimator.ptoBackoff(), is(4L));
+        assertThat(context.emitter.acknowledged.size(), is(1));
     }
 
     @Test

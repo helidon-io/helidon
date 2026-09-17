@@ -1181,9 +1181,8 @@ public sealed class PacketSpaceManager implements PacketSpace
         }
         ackProcessingState.lostCount = detectAndAccountLostPackets(now, ackGeneration);
         ackProcessingState.pathControlCapacityReleased = completePathControlFlights(frame, now, ackGeneration);
-        if (largestAckAdvanced
-                && (packetNumberSpace != PacketNumberSpace.INITIAL || !quicTLSEngine.clientMode())
-                && acknowledgementScan.newestAcknowledgedPathGeneration() == ackGeneration) {
+        if (acknowledgementScan.newestAcknowledgedPathGeneration() == ackGeneration
+                && (packetNumberSpace != PacketNumberSpace.INITIAL || !quicTLSEngine.clientMode())) {
             rttEstimator.resetPtoBackoff();
         }
     }
