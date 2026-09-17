@@ -44,6 +44,9 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
      * The rate limiting algorithm to apply.
      * <p>
      * Rate limiting algorithm is by default {@link RateLimitingAlgorithmType#TOKEN_BUCKET}.
+     * Rates above one operation per nanosecond retain fractional refill credit and can admit multiple operations
+     * at the same clock reading. For {@code FIXED_RATE}, an idle period does not accumulate additional credit
+     * beyond the current nanosecond's allowance.
      * @return the rate limiting algorithm to be applied
      */
     @Option.Configured
