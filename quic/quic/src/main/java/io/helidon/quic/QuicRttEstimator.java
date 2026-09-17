@@ -111,7 +111,7 @@ public class QuicRttEstimator {
             } else {
                 minRttMicros = Math.min(minRttMicros, latestRttMicros);
                 long adjustedRtt;
-                if (latestRttMicros >= minRttMicros + ackDelayMicros) {
+                if (ackDelayMicros <= latestRttMicros - minRttMicros) {
                     adjustedRtt = latestRttMicros - ackDelayMicros;
                 } else {
                     adjustedRtt = latestRttMicros;

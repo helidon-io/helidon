@@ -25,6 +25,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import io.helidon.quic.QuicTLSEngine.HandshakeState;
 import io.helidon.quic.QuicTLSEngine.KeySpace;
@@ -41,13 +42,16 @@ import io.helidon.quic.packet.QuicPacket.PacketType;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -433,6 +437,63 @@ class PacketSpaceManagerAckTest {
         assertThat(secondRetryDelay, is(firstRetryDelay));
     }
 
+    @ParameterizedTest(name = "exponent={0}, delay={1}, capped={2}")
+    @MethodSource("peerAckDelaySamples")
+    void appliesPeerAckDelayWithoutOverflow(int exponent,
+                                           long encodedDelay,
+                                           boolean capped,
+                                           long expectedAdjustedRttMicros) throws Exception {
+        TestContext context = TestContext.create(false);
+        context.manager.updatePeerTransportParameters(25, exponent);
+        Deadline sent = context.timeLine.instant();
+        long firstPacketNumber = context.send();
+        // Confirm at PN 1 for a capped second sample, or at PN 2 to leave it uncapped.
+        if (capped) {
+            context.manager.confirmHandshake();
+        }
+        long secondPacketNumber = context.send();
+        if (!capped) {
+            context.manager.confirmHandshake();
+        }
+        context.timeLine.advance(Duration.ofMillis(100));
+
+        context.manager.processAckFrame(AckFrame.create(firstPacketNumber, encodedDelay, List.of(AckRange.of(0, 0))));
+
+        QuicRttEstimator.QuicRttEstimatorState firstSample = context.rttEstimator.state();
+        assertAll("First RTT sample ignores the reported ACK delay",
+                  () -> assertThat(firstSample.rttSampleCount(), is(1L)),
+                  () -> assertThat(firstSample.latestRttMicros(), is(100_000L)),
+                  () -> assertThat(firstSample.minRttMicros(), is(100_000L)),
+                  () -> assertThat(firstSample.smoothedRttMicros(), is(100_000L)),
+                  () -> assertThat(firstSample.rttVarMicros(), is(50_000L)),
+                  () -> assertThat(context.manager.ptoDuration(), is(Duration.ofMillis(325))));
+        context.timeLine.advance(Duration.ofMillis(50));
+        AckFrame secondAck = AckFrame.create(secondPacketNumber, encodedDelay, List.of(AckRange.of(0, 0)));
+
+        context.manager.processAckFrame(secondAck);
+
+        QuicRttEstimator.QuicRttEstimatorState secondSample = context.rttEstimator.state();
+        long expectedSmoothedRtt = (700_000 + expectedAdjustedRttMicros) / 8;
+        long expectedRttVariation = (150_000 + Math.abs(100_000 - expectedAdjustedRttMicros)) / 4;
+        Duration expectedPto = Duration.ofMillis(25).plusNanos((expectedSmoothedRtt + 4 * expectedRttVariation) * 1_000);
+        assertAll("Second RTT sample applies the peer exponent and the confirmation-PN delay policy",
+                  () -> assertThat(secondSample.rttSampleCount(), is(2L)),
+                  () -> assertThat(secondSample.latestRttMicros(), is(150_000L)),
+                  () -> assertThat(secondSample.minRttMicros(), is(100_000L)),
+                  () -> assertThat(secondSample.smoothedRttMicros(), is(expectedSmoothedRtt)),
+                  () -> assertThat(secondSample.rttVarMicros(), is(expectedRttVariation)),
+                  () -> assertThat(context.manager.ptoDuration(), is(expectedPto)));
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).toList(),
+                   is(List.of(firstPacketNumber, secondPacketNumber)));
+        verify(context.congestionController, times(2)).packetAcked(1200, sent);
+
+        context.manager.processAckFrame(secondAck);
+
+        assertThat(context.rttEstimator.state(), is(secondSample));
+        assertThat(context.manager.ptoDuration(), is(expectedPto));
+        verify(context.congestionController, times(2)).packetAcked(1200, sent);
+    }
+
     @Test
     void appliesConfiguredLocalAckPolicy() {
         TestContext context = TestContext.create(false, 4, Duration.ofMillis(30));
@@ -608,6 +669,22 @@ class PacketSpaceManagerAckTest {
                 QuicTransportException.class,
                 () -> context.manager.processAckFrame(acknowledging(skipped.skippedPacketNumber())));
         assertThat(exception.errorCode(), is(QuicTransportErrors.PROTOCOL_VIOLATION.code()));
+    }
+
+    private static Stream<Arguments> peerAckDelaySamples() {
+        return Stream.of(false, true).flatMap(capped -> {
+            long largeDelayAdjustedRtt = capped ? 125_000L : 150_000L;
+            return Stream.of(
+                    Arguments.of(0, 10_000L, capped, 140_000L),
+                    Arguments.of(1, 5_000L, capped, 140_000L),
+                    Arguments.of(2, 10_000L, capped, capped ? 125_000L : 110_000L),
+                    Arguments.of(0, (1L << 62) - 1, capped, largeDelayAdjustedRtt),
+                    Arguments.of(1, (1L << 62) - 1, capped, largeDelayAdjustedRtt),
+                    Arguments.of(2, (1L << 61) - 1, capped, largeDelayAdjustedRtt),
+                    Arguments.of(2, 1L << 61, capped, largeDelayAdjustedRtt),
+                    Arguments.of(20, (1L << 43) - 1, capped, largeDelayAdjustedRtt),
+                    Arguments.of(20, 1L << 43, capped, largeDelayAdjustedRtt));
+        });
     }
 
     private static SkippedPacket sendUntilPacketNumberGap(TestContext context) throws QuicTransportException {
