@@ -171,7 +171,8 @@ For more information about configuring these Concurrency Limit strategies see:
 
 The Concurrency Limit module also has built-in support for metrics in order to
 monitor the chosen strategy. These metrics are disabled by default, but can be
-enabled as follows:
+enabled by setting `enable-metrics: true` under the selected strategy (`fixed`,
+`aimd`, or `throughput`). For example:
 
 ```yaml
 server:
@@ -218,6 +219,20 @@ AIMD:
 | `aimd_queue_wait_time`     | Distribution summary of queue wait times                                          |
 | `aimd_concurrent_requests` | Gauge that returns the number of requests being processed at a certain time       |
 | `aimd_limit`               | Gauge that returns the actual limit at a certain time                             |
+
+Throughput:
+
+These names use the default limit name, `throughput`. A different name set using
+the builder changes the metric name prefix. The queue-length gauge is registered
+only when the limit has a semaphore.
+
+| Name                             | Description                                                                      |
+|----------------------------------|----------------------------------------------------------------------------------|
+| `throughput_queue_length`        | Gauge that returns the number of requests waiting on the queue at a certain time |
+| `throughput_rejected_requests`   | Gauge that returns the number of requests that have been rejected so far         |
+| `throughput_rtt`                 | Timer of round-trip times, excluding any time waiting in the queue                |
+| `throughput_queue_wait_time`     | Timer of queue wait times                                                        |
+| `throughput_concurrent_requests` | Gauge that returns the number of requests being processed at a certain time      |
 
 For more information regarding metrics support in Helidon and the dependencies
 that are required for metrics to work, see [Helidon

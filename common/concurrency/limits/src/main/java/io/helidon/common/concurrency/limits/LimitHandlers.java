@@ -101,6 +101,7 @@ class LimitHandlers {
             try {
                 return wait ? tryAcquireWithWait() : tryAcquireWithoutWait();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 return Optional.empty();
             }
         }
