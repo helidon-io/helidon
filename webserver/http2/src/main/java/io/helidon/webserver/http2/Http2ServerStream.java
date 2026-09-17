@@ -1554,10 +1554,14 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                     LimitAlgorithm.Token permit = accepted.token();
+                    boolean routingCompleted = false;
                     try {
                         routing.route(ctx, request, response);
+                        routingCompleted = true;
                     } finally {
-                        if (response.status() == Status.NOT_FOUND_404) {
+                        if (!routingCompleted) {
+                            permit.dropped();
+                        } else if (response.status() == Status.NOT_FOUND_404) {
                             permit.ignore();
                         } else {
                             switch (response.status().family()) {
