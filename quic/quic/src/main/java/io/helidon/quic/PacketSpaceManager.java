@@ -1182,7 +1182,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         ackProcessingState.lostCount = detectAndAccountLostPackets(now, ackGeneration);
         ackProcessingState.pathControlCapacityReleased = completePathControlFlights(frame, now, ackGeneration);
         if (largestAckAdvanced
-                && packetNumberSpace != PacketNumberSpace.INITIAL
+                && (packetNumberSpace != PacketNumberSpace.INITIAL || !quicTLSEngine.clientMode())
                 && acknowledgementScan.newestAcknowledgedPathGeneration() == ackGeneration) {
             rttEstimator.resetPtoBackoff();
         }

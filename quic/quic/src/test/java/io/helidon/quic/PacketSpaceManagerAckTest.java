@@ -90,6 +90,110 @@ class PacketSpaceManagerAckTest {
     }
 
     @ParameterizedTest
+    @CsvSource({
+            "INITIAL, false, 1",
+            "INITIAL, true, 4",
+            "HANDSHAKE, false, 1",
+            "HANDSHAKE, true, 1",
+            "APPLICATION, false, 1",
+            "APPLICATION, true, 1"
+    })
+    void resetsPtoBackoffAccordingToRoleAndPacketSpace(PacketNumberSpace packetNumberSpace,
+                                                      boolean clientMode,
+                                                      long expectedBackoff) throws Exception {
+        TestContext context = recoveryContext(packetNumberSpace, clientMode);
+        long packetNumber = sendRecoveryPacket(context, true);
+        context.rttEstimator.increasePtoBackoff();
+        context.rttEstimator.increasePtoBackoff();
+        assertThat(context.rttEstimator.ptoBackoff(), is(4L));
+        context.timeLine.advance(Duration.ofMillis(100));
+
+        context.manager.processAckFrame(acknowledging(packetNumber));
+
+        assertAll(
+                () -> assertThat(context.rttEstimator.ptoBackoff(), is(expectedBackoff)),
+                () -> assertThat(context.rttEstimator.state().rttSampleCount(), is(1L)),
+                () -> assertThat(context.rttEstimator.state().latestRttMicros(), is(100_000L)),
+                () -> assertThat(context.manager.ptoDuration(), is(Duration.ofMillis(300).multipliedBy(expectedBackoff))),
+                () -> assertThat(context.emitter.acknowledged.size(), is(1)));
+    }
+
+    @Test
+    void resetsServerInitialBackoffOnlyForAdvancingCurrentPathProgress() throws Exception {
+        TestContext context = recoveryContext(PacketNumberSpace.INITIAL, false);
+        long firstPacketNumber = sendRecoveryPacket(context, true);
+        long secondPacketNumber = sendRecoveryPacket(context, true);
+        context.timeLine.advance(Duration.ofMillis(100));
+        context.manager.processAckFrame(acknowledging(secondPacketNumber));
+        context.rttEstimator.increasePtoBackoff();
+        context.rttEstimator.increasePtoBackoff();
+
+        context.manager.processAckFrame(acknowledging(secondPacketNumber));
+        assertThat("Duplicate ACK", context.rttEstimator.ptoBackoff(), is(4L));
+        assertThat(context.emitter.acknowledged.size(), is(1));
+
+        context.manager.processAckFrame(acknowledging(firstPacketNumber));
+        assertThat("Newly acknowledged packet without advancing largest ACK", context.rttEstimator.ptoBackoff(), is(4L));
+        assertThat(context.rttEstimator.state().rttSampleCount(), is(1L));
+        assertThat(context.emitter.acknowledged.size(), is(2));
+
+        long ackOnlyPacketNumber = sendRecoveryPacket(context, false);
+        context.manager.processAckFrame(acknowledging(ackOnlyPacketNumber));
+        assertThat("Advancing ACK without tracked recovery progress", context.rttEstimator.ptoBackoff(), is(4L));
+        assertThat(context.rttEstimator.state().rttSampleCount(), is(1L));
+        assertThat(context.emitter.acknowledged.size(), is(2));
+
+        long previousPathPacketNumber = sendRecoveryPacket(context, true);
+        context.recoveryState.transition(1, context.rttEstimator::resetForPath);
+        context.rttEstimator.increasePtoBackoff();
+        context.rttEstimator.increasePtoBackoff();
+        context.timeLine.advance(Duration.ofMillis(100));
+        context.manager.processAckFrame(acknowledging(previousPathPacketNumber));
+        assertThat("Previous path generation", context.rttEstimator.ptoBackoff(), is(4L));
+        assertThat(context.rttEstimator.state().rttSampleCount(), is(0L));
+
+        long currentPathPacketNumber = sendRecoveryPacket(context, true);
+        context.timeLine.advance(Duration.ofMillis(100));
+        context.manager.processAckFrame(acknowledging(currentPathPacketNumber));
+
+        assertThat("Advancing ACK with current-path progress", context.rttEstimator.ptoBackoff(), is(1L));
+        assertThat(context.rttEstimator.state().rttSampleCount(), is(1L));
+        assertThat(context.rttEstimator.state().latestRttMicros(), is(100_000L));
+        assertThat(context.emitter.acknowledged.stream().map(QuicPacket::packetNumber).toList(),
+                   is(List.of(secondPacketNumber, firstPacketNumber, previousPathPacketNumber, currentPathPacketNumber)));
+    }
+
+    @Test
+    void serverInitialProgressReducesSharedHandshakePtoWhileHandshakeDataRemainsPending() throws Exception {
+        TestContext initial = recoveryContext(PacketNumberSpace.INITIAL, false);
+        long firstInitialPacketNumber = sendRecoveryPacket(initial, true);
+        initial.timeLine.advance(Duration.ofMillis(100));
+        initial.manager.processAckFrame(acknowledging(firstInitialPacketNumber));
+        TestContext handshake = initial.shareRecovery(PacketNumberSpace.HANDSHAKE, false);
+        Deadline handshakeSent = handshake.timeLine.instant();
+        sendRecoveryPacket(handshake, true);
+        long secondInitialPacketNumber = sendRecoveryPacket(initial, true);
+        initial.rttEstimator.increasePtoBackoff();
+        initial.rttEstimator.increasePtoBackoff();
+        assertThat(handshake.rttEstimator, sameInstance(initial.rttEstimator));
+        assertThat(handshake.manager.ptoDuration(), is(Duration.ofMillis(1200)));
+        assertThat(handshake.manager.computeNextDeadline(), is(handshakeSent.plus(Duration.ofMillis(1200))));
+        initial.timeLine.advance(Duration.ofMillis(100));
+
+        initial.manager.processAckFrame(acknowledging(secondInitialPacketNumber));
+
+        assertAll(
+                () -> assertThat(initial.rttEstimator.ptoBackoff(), is(1L)),
+                () -> assertThat(initial.rttEstimator.state().rttSampleCount(), is(2L)),
+                () -> assertThat(initial.rttEstimator.state().smoothedRttMicros(), is(100_000L)),
+                () -> assertThat(handshake.manager.ptoDuration(), is(Duration.ofMillis(250))),
+                () -> assertThat(handshake.manager.computeNextDeadline(), is(handshakeSent.plus(Duration.ofMillis(250)))),
+                () -> assertThat(handshake.emitter.acknowledged.isEmpty(), is(true)));
+        assertThat(initial.emitter.acknowledged.stream().map(QuicPacket::packetType).toList(),
+                   is(List.of(PacketType.INITIAL, PacketType.INITIAL)));
+    }
+
+    @ParameterizedTest
     @ValueSource(ints = {1, 2, 128, 1024})
     void processesSparseAckRangesOncePerPacket(int rangeCount) throws Exception {
         TestContext context = TestContext.create(false);
@@ -671,6 +775,35 @@ class PacketSpaceManagerAckTest {
         assertThat(exception.errorCode(), is(QuicTransportErrors.PROTOCOL_VIOLATION.code()));
     }
 
+    private static TestContext recoveryContext(PacketNumberSpace packetNumberSpace, boolean clientMode) {
+        return TestContext.create(false,
+                                  QuicTransportParametersConfigSupport.DEFAULT_ACK_DELAY_EXPONENT,
+                                  QuicTransportParametersConfigSupport.DEFAULT_MAX_ACK_DELAY,
+                                  packetNumberSpace,
+                                  recoveryTlsEngine(packetNumberSpace, clientMode));
+    }
+
+    private static QuicTLSEngine recoveryTlsEngine(PacketNumberSpace packetNumberSpace, boolean clientMode) {
+        QuicTLSEngine tlsEngine = mock(QuicTLSEngine.class);
+        when(tlsEngine.clientMode()).thenReturn(clientMode);
+        when(tlsEngine.keysAvailable(KeySpace.HANDSHAKE)).thenReturn(true);
+        when(tlsEngine.handshakeState()).thenReturn(packetNumberSpace == PacketNumberSpace.APPLICATION
+                                                          ? HandshakeState.HANDSHAKE_CONFIRMED
+                                                          : HandshakeState.NEED_RECV_CRYPTO);
+        return tlsEngine;
+    }
+
+    private static long sendRecoveryPacket(TestContext context, boolean ackEliciting) {
+        long packetNumber = context.manager.nextPacketNumber().getAndIncrement();
+        List<QuicFrame> frames = ackEliciting ? List.of(PingFrame.create()) : List.of(acknowledging(0));
+        QuicPacket packet = packet(packetNumber, frames);
+        when(packet.isAckEliciting()).thenReturn(ackEliciting);
+        when(packet.packetType()).thenReturn(context.manager.packetType());
+        when(packet.numberSpace()).thenReturn(context.manager.packetNumberSpace());
+        context.manager.packetSent(packet, -1, packetNumber, context.recoveryState.generation());
+        return packetNumber;
+    }
+
     private static Stream<Arguments> peerAckDelaySamples() {
         return Stream.of(false, true).flatMap(capped -> {
             long largeDelayAdjustedRtt = capped ? 125_000L : 150_000L;
@@ -776,6 +909,25 @@ class PacketSpaceManagerAckTest {
                                                                 });
             emitter.manager = manager;
             return new TestContext(manager, recoveryState, rttEstimator, congestionController, timeLine, emitter);
+        }
+
+        TestContext shareRecovery(PacketNumberSpace packetNumberSpace, boolean clientMode) {
+            TestPacketEmitter sharedEmitter = new TestPacketEmitter(recoveryState, false);
+            PacketSpaceManager sharedManager = new PacketSpaceManager(packetNumberSpace,
+                                                                      sharedEmitter,
+                                                                      timeLine,
+                                                                      rttEstimator,
+                                                                      congestionController,
+                                                                      recoveryTlsEngine(packetNumberSpace, clientMode),
+                                                                      () -> "ack-test",
+                                                                      recoveryState,
+                                                                      QuicTransportParametersConfigSupport
+                                                                              .DEFAULT_ACK_DELAY_EXPONENT,
+                                                                      0,
+                                                                      _ -> {
+                                                                      });
+            sharedEmitter.manager = sharedManager;
+            return new TestContext(sharedManager, recoveryState, rttEstimator, congestionController, timeLine, sharedEmitter);
         }
 
         long send() {
