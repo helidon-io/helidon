@@ -610,8 +610,12 @@ final class QuicTls13ServerHandshake {
         QuicTlsExtension keyShareExtension = clientHello.extension(QuicTlsExtensions.KEY_SHARE)
                 .orElseThrow(() -> QuicTlsHandshakeMessages.missingExtension(
                         "ClientHello is missing key_share extension"));
+        QuicTlsExtension supportedGroupsExtension = clientHello.extension(QuicTlsExtensions.SUPPORTED_GROUPS)
+                .orElseThrow(() -> QuicTlsHandshakeMessages.missingExtension(
+                        "ClientHello is missing supported_groups extension"));
         // An empty usable-share list can require HelloRetryRequest; the encoded vector must still be valid.
         QuicTlsKeyShares.decodeClientHello(keyShareExtension.dataBuffer());
+        QuicTlsSupportedGroups.decode(supportedGroupsExtension.dataBuffer());
         validateResumptionOffer(clientHello);
     }
 
@@ -677,16 +681,16 @@ final class QuicTls13ServerHandshake {
     private ClientKeyShareSelection selectClientKeyShare(QuicTlsClientHelloMessage clientHello)
             throws QuicTransportException {
         List<QuicTlsNamedGroup> supportedGroups = supportedGroups();
+        List<QuicTlsNamedGroup> clientSupportedGroups = clientHello.supportedGroups();
         List<QuicTlsKeyShareEntry> clientKeyShares = clientHello.keyShares();
         for (QuicTlsNamedGroup supportedGroup : supportedGroups) {
             for (QuicTlsKeyShareEntry clientKeyShare : clientKeyShares) {
-                if (clientKeyShare.namedGroup() == supportedGroup) {
+                if (clientKeyShare.namedGroup() == supportedGroup && clientSupportedGroups.contains(supportedGroup)) {
                     return ClientKeyShareSelection.keyShare(clientKeyShare);
                 }
             }
         }
 
-        List<QuicTlsNamedGroup> clientSupportedGroups = clientHello.supportedGroups();
         for (QuicTlsNamedGroup supportedGroup : supportedGroups) {
             if (clientSupportedGroups.contains(supportedGroup)) {
                 return ClientKeyShareSelection.helloRetryRequest(supportedGroup);
