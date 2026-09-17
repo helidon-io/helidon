@@ -31,6 +31,7 @@ import io.helidon.metadata.hson.Hson;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,7 +42,39 @@ class FeatureCodegenExtensionTest {
 
     @Test
     void invalidFlavorIsGeneratedAsInvalidFlavor() throws IOException {
-        var result = TestCompiler.builder()
+        var result = compile("@Features.InvalidFlavor(HelidonFlavor.MP)");
+
+        FeatureMetadata metadata = metadata(result);
+        assertThat(metadata.flavors(), not(hasItem(Flavor.MP)));
+        assertThat(metadata.invalidFlavors(), contains(Flavor.MP));
+    }
+
+    @Test
+    void disjointFlavorsAreGenerated() throws IOException {
+        var result = compile("""
+                @Features.Flavor(HelidonFlavor.SE)
+                @Features.InvalidFlavor(HelidonFlavor.MP)
+                """);
+
+        FeatureMetadata metadata = metadata(result);
+        assertThat(metadata.flavors(), contains(Flavor.SE));
+        assertThat(metadata.invalidFlavors(), contains(Flavor.MP));
+    }
+
+    @Test
+    void conflictingFlavorsAreRejected() {
+        var result = compile("""
+                @Features.Flavor(HelidonFlavor.SE)
+                @Features.InvalidFlavor(HelidonFlavor.SE)
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat("Compilation diagnostics: " + diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("SE is configured both as valid and invalid"));
+    }
+
+    private static TestCompiler.Result compile(String annotations) {
+        return TestCompiler.builder()
                 .currentRelease()
                 .addModulepath(Features.class)
                 .addModulepath(FeatureMetadata.class)
@@ -56,14 +89,16 @@ class FeatureCodegenExtensionTest {
                         import io.helidon.common.features.api.HelidonFlavor;
 
                         @Features.Name("Test Feature")
-                        @Features.InvalidFlavor(HelidonFlavor.MP)
+                        %s
                         module test.module {
                             requires io.helidon.common.features.api;
                         }
-                        """)
+                        """.formatted(annotations))
                 .build()
                 .compile();
+    }
 
+    private static FeatureMetadata metadata(TestCompiler.Result result) throws IOException {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat("Compilation diagnostics: " + diagnostics, result.success(), is(true));
 
@@ -73,12 +108,9 @@ class FeatureCodegenExtensionTest {
                 .resolve(MetadataConstants.FEATURE_REGISTRY_FILE);
         assertThat(Files.exists(registry), is(true));
 
-        FeatureMetadata metadata;
         try (var input = Files.newInputStream(registry)) {
-            metadata = FeatureRegistry.metadata("test", Hson.parse(input).asArray())
+            return FeatureRegistry.metadata("test", Hson.parse(input).asArray())
                     .getFirst();
         }
-        assertThat(metadata.flavors(), not(hasItem(Flavor.MP)));
-        assertThat(metadata.invalidFlavors(), contains(Flavor.MP));
     }
 }

@@ -310,6 +310,10 @@
             <artifactId>helidon-common-testing-http-junit5</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-virtual-threads</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
         </dependency>

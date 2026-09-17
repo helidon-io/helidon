@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,16 @@ import java.util.ServiceLoader;
 
 final class ResumableLookup {
 
-    /**
-     * Lazy singleton instance, either abstraction over actual CRaC API or no-op if integration module
-     * is missing on classpath.
-     */
-    private static ResumableSupport singleton;
-
     private ResumableLookup() {
     }
 
     static ResumableSupport get() {
-        if (singleton == null) {
-            singleton = ServiceLoader.load(ResumableSupport.class)
-                    .findFirst()
-                    .orElseGet(NoopResumable::new);
-        }
-        return singleton;
+        return Holder.INSTANCE;
+    }
+
+    private static final class Holder {
+        private static final ResumableSupport INSTANCE = ServiceLoader.load(ResumableSupport.class)
+                .findFirst()
+                .orElseGet(NoopResumable::new);
     }
 }

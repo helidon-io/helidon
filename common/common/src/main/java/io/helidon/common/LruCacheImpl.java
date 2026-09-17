@@ -115,13 +115,6 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
         }
     }
 
-    private void reduceSize() {
-
-        while (backingMap.size() > capacity) {
-            backingMap.pollFirstEntry();
-        }
-    }
-
     @Override
     public Optional<V> computeValue(K key, Supplier<Optional<V>> valueSupplier) {
         Objects.requireNonNull(key);
@@ -161,6 +154,13 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
             backingMap.clear();
         } finally {
             writeLock.unlock();
+        }
+    }
+
+    private void reduceSize() {
+
+        while (backingMap.size() > capacity) {
+            backingMap.pollFirstEntry();
         }
     }
 }

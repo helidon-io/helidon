@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ final class MultiInterval implements Multi<Long> {
         public void request(long n) {
             if (n <= 0L) {
                 canceled = BAD_REQUEST;
+                TerminatedFuture.cancel(future);
                 n = 1L;
             }
             SubscriptionHelper.addRequest(requested, n);

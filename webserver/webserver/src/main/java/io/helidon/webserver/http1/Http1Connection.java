@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.ParserHelper;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataListener;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
@@ -103,6 +104,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private final long maxPayloadSize;
     private final Http1ConnectionListener recvListener;
     private final Http1ConnectionListener sendListener;
+    private final DataListener<ConnectionContext> readerListener;
     private final Header altSvcHeader;
 
     // overall connection
@@ -149,7 +151,16 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.canUpgrade = !upgradeProviderMap.isEmpty();
         this.recvListener = http1Config.compositeReceiveListener();
         this.sendListener = http1Config.compositeSendListener();
-        this.reader.listener(recvListener, ctx);
+        // Stop forwarding on handoff without overwriting a listener installed by the upgrader.
+        this.readerListener = new DataListener<>() {
+            @Override
+            public void data(ConnectionContext context, byte[] data, int position, int length) {
+                if (upgradeConnection == null) {
+                    recvListener.data(context, data, position, length);
+                }
+            }
+        };
+        this.reader.listener(readerListener, ctx);
         this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateRequestHeaders());
         this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
@@ -180,7 +191,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
-
                 if (http1Config.validatePrologue()) {
                     validatePrologue(prologue);
                 }
@@ -198,7 +208,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));
                 recvListener.headers(ctx, headers);
-
                 if (proxyProtocolData != null) {
                     String sourceAddress = proxyProtocolData.sourceAddress();
                     if (!sourceAddress.isEmpty()) {
@@ -273,6 +282,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                         handleUpgradeConnection(limit, routedUpgradeConnection);
                                         return;
                                     }
+                                    reader.listener(readerListener, ctx);
                                     continue;
                                 }
                             } else {
@@ -283,6 +293,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                     return;
                                 }
                             }
+                            reader.listener(readerListener, ctx);
                         }
                     }
                 }

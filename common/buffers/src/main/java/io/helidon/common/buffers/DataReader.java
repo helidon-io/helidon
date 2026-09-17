@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import io.helidon.common.Api;
@@ -457,21 +458,44 @@ public class DataReader {
     }
 
     /**
-     * Configure data listener.
+     * Configure a listener for raw input data. Each non-empty chunk obtained from the byte supplier is reported once,
+     * using {@link io.helidon.common.buffers.DataListener#data(Object, byte[], int, int)}. Lookahead and consumption of
+     * already buffered bytes do not produce additional notifications. A chunk may include bytes beyond the current
+     * message boundary.
+     * <p>
+     * The first registration immediately reports any buffered, unread bytes, without fetching more data or replaying
+     * consumed bytes. Replacing the listener or its context affects only chunks fetched after the replacement.
+     * <p>
+     * The callback receives the supplier's byte array directly and must not modify it or consume data from this reader.
      *
      * @param listener listener to write information to
      * @param context  context
      * @param <T>      type of the context
+     * @throws java.lang.NullPointerException if the listener or context is {@code null}
      */
     public <T> void listener(DataListener<T> listener, T context) {
+        Objects.requireNonNull(listener);
+        Objects.requireNonNull(context);
+        boolean firstListener = this.listener == null;
         this.listener = listener;
         this.context = context;
+        if (firstListener) {
+            for (Node node = head; node != null; node = node.next) {
+                if (node.hasAvailable()) {
+                    listener.data(context, node.bytes, node.position, node.available());
+                }
+            }
+        }
     }
 
+    @SuppressWarnings("unchecked")
     private byte[] pullBytes() {
         byte[] bytes = bytesSupplier.get();
         if (bytes == null) {
             throw new InsufficientDataAvailableException();
+        }
+        if (listener != null && bytes.length != 0) {
+            listener.data(context, bytes, 0, bytes.length);
         }
         return bytes;
     }
