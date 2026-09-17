@@ -145,6 +145,11 @@ permit is generated at the necessary rate to achieve the configured throughput.
 This algorithm is also called "leaky bucket". It is very important to configure
 queuing as this algorithm almost always has a backlog.
 
+Rates above one operation per nanosecond are supported. Fractional refill
+credit is retained, so multiple operations can be admitted at the same clock
+reading. At these rates, `FIXED_RATE` does not accumulate idle credit beyond
+the current nanosecond's allowance.
+
 Here is the same example showing the configuration of the `FIXED_RATE` rate
 limiting algorithm:
 
