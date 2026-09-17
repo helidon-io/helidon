@@ -74,7 +74,10 @@ public interface Awaitable<T> {
             return this.toCompletableFuture().get(timeout, unit);
         } catch (ExecutionException e) {
             throw new CompletionException(e.getCause());
-        } catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CompletionException(e);
+        } catch (TimeoutException e) {
             throw new CompletionException(e);
         }
     }
@@ -93,7 +96,10 @@ public interface Awaitable<T> {
             return this.toCompletableFuture().get(duration.toNanos(), TimeUnit.NANOSECONDS);
         } catch (ExecutionException e) {
             throw new CompletionException(e.getCause());
-        } catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CompletionException(e);
+        } catch (TimeoutException e) {
             throw new CompletionException(e);
         }
     }
