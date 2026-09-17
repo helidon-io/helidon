@@ -20,11 +20,14 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static io.helidon.quic.QuicTransportParameters.ParameterId.ack_delay_exponent;
 import static io.helidon.quic.QuicTransportParameters.ParameterId.active_connection_id_limit;
@@ -38,9 +41,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class QuicTransportParametersTest {
+    private static final long MAX_INITIAL_STREAM_COUNT = 1L << 60;
+
     @Test
     void shouldRenderTransportParameterText() {
         assertThat(max_udp_payload_size.text(), is("max_udp_payload_size"));
@@ -147,6 +153,67 @@ class QuicTransportParametersTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(value = QuicTransportParameters.ParameterId.class,
+                names = {"initial_max_streams_bidi", "initial_max_streams_uni"})
+    void shouldRoundTripInitialStreamCountsThroughInclusiveMaximum(QuicTransportParameters.ParameterId id) throws Exception {
+        for (long value : List.of(MAX_INITIAL_STREAM_COUNT - 1, MAX_INITIAL_STREAM_COUNT)) {
+            QuicTransportParameters parameters = QuicTransportParameters.create();
+            parameters.intParameter(id, value);
+            assertThat(parameters.intParameter(id), is(value));
+            BufferData bufferData = BufferData.create(parameters.size());
+            ByteBuffer byteBuffer = ByteBuffer.allocate(parameters.size());
+            assertThat(parameters.encode(bufferData), is(parameters.size()));
+            assertThat(parameters.encode(byteBuffer), is(parameters.size()));
+            byteBuffer.flip();
+
+            assertAll(id.text() + "=" + value,
+                      () -> assertThat(QuicTransportParameters.decode(bufferData).intParameter(id), is(value)),
+                      () -> assertThat(QuicTransportParameters.decode(byteBuffer).intParameter(id), is(value)));
+            assertThat(bufferData.available(), is(0));
+            assertThat(byteBuffer.remaining(), is(0));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = QuicTransportParameters.ParameterId.class,
+                names = {"initial_max_streams_bidi", "initial_max_streams_uni"})
+    void shouldDecodePeerInitialStreamCountsThroughInclusiveMaximum(QuicTransportParameters.ParameterId id) {
+        for (long value : List.of(MAX_INITIAL_STREAM_COUNT - 1, MAX_INITIAL_STREAM_COUNT)) {
+            byte[] encoded = rawInitialStreamCount(id, value);
+
+            assertAll(id.text() + "=" + value,
+                      () -> assertThat(QuicTransportParameters.decode(BufferData.create(encoded)).intParameter(id), is(value)),
+                      () -> assertThat(QuicTransportParameters.decode(ByteBuffer.wrap(encoded)).intParameter(id), is(value)));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = QuicTransportParameters.ParameterId.class,
+                names = {"initial_max_streams_bidi", "initial_max_streams_uni"})
+    void shouldRejectInitialStreamCountsAboveInclusiveMaximum(QuicTransportParameters.ParameterId id) {
+        long value = MAX_INITIAL_STREAM_COUNT + 1;
+        byte[] encoded = rawInitialStreamCount(id, value);
+        String expectedReason = id.text() + ": value out of range [0,2^60]; found " + value;
+
+        IllegalArgumentException localFailure = assertThrows(
+                IllegalArgumentException.class,
+                () -> QuicTransportParameters.create().intParameter(id, value));
+        QuicTransportException bufferDataFailure = assertThrows(
+                QuicTransportException.class,
+                () -> QuicTransportParameters.decode(BufferData.create(encoded)));
+        QuicTransportException byteBufferFailure = assertThrows(
+                QuicTransportException.class,
+                () -> QuicTransportParameters.decode(ByteBuffer.wrap(encoded)));
+
+        assertAll(
+                () -> assertThat(localFailure.getMessage(), is(expectedReason)),
+                () -> assertThat(bufferDataFailure.errorCode(), is(QuicTransportErrors.TRANSPORT_PARAMETER_ERROR.code())),
+                () -> assertThat(bufferDataFailure.reason(), containsString(expectedReason)),
+                () -> assertThat(byteBufferFailure.errorCode(), is(QuicTransportErrors.TRANSPORT_PARAMETER_ERROR.code())),
+                () -> assertThat(byteBufferFailure.reason(), containsString(expectedReason)));
+    }
+
     @Test
         //= https://www.rfc-editor.org/rfc/rfc9000#section-18.2
         //# The value of the
@@ -196,5 +263,14 @@ class QuicTransportParametersTest {
 
         assertThat(ex.errorCode(), is(QuicTransportErrors.TRANSPORT_PARAMETER_ERROR.code()));
         assertThat(ex.reason(), containsString("Duplicate transport parameter disable_active_migration"));
+    }
+
+    private static byte[] rawInitialStreamCount(QuicTransportParameters.ParameterId id, long value) {
+        // These boundary values use an eight-byte QUIC varint; construct the peer TLV without a local setter.
+        return ByteBuffer.allocate(2 + Long.BYTES)
+                .put((byte) id.idx())
+                .put((byte) Long.BYTES)
+                .putLong(0xc000000000000000L | value)
+                .array();
     }
 }

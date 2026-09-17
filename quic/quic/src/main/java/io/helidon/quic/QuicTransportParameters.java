@@ -957,9 +957,9 @@ public final class QuicTransportParameters {
                     }
                 }
                 case initial_max_streams_bidi, initial_max_streams_uni -> {
-                    if (intvalue >= 1L << 60) {
+                    if (intvalue > 1L << 60) {
                         throw new IllegalArgumentException(id.text()
-                                                                   + ": value out of range [0,2^60); found "
+                                                                   + ": value out of range [0,2^60]; found "
                                                                    + intvalue);
                     }
                 }
