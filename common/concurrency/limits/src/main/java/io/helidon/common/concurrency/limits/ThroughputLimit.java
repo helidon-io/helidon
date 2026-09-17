@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -160,6 +162,12 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
     }
 
     private static PermitStrategy permitStrategy(ThroughputLimitConfig config, Supplier<Long> clock) {
+        if (config.amount() > 0) {
+            long durationNanos = config.duration().toNanos();
+            if (durationNanos > 0 && durationNanos < config.amount()) {
+                return new SubNanosecondPermitStrategy(config, clock, durationNanos);
+            }
+        }
         return switch (config.rateLimitingAlgorithm()) {
             case FIXED_RATE -> new FixedRatePermitStrategy(config, clock);
             case TOKEN_BUCKET -> new TokenBucketPermitStrategy(config, clock);
@@ -240,15 +248,15 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
 
         @Override
         public long maxWaitMillis() {
-            return nanosPerToken / 1000000L;
+            return Math.ceilDiv(nanosPerToken, 1_000_000L);
         }
 
         @Override
         public void refillPermits() {
             long lastRefillTime = lastRefillTimeNanos.get();
-            int newTokens = (int) ((clock.get() - lastRefillTime) / nanosPerToken);
+            long newTokens = (clock.get() - lastRefillTime) / nanosPerToken;
             if (newTokens > 0) {
-                int permitsToRefill = Math.min(newTokens, amount - semaphore.availablePermits());
+                int permitsToRefill = (int) Math.min(newTokens, amount - semaphore.availablePermits());
                 if (permitsToRefill > 0 && lastRefillTimeNanos.compareAndSet(
                         lastRefillTime, lastRefillTime + (permitsToRefill * nanosPerToken))) {
                     // Last refill time has been set to time when most recent token was generated
@@ -282,7 +290,7 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
 
         @Override
         public long maxWaitMillis() {
-            return nanosPerRequest / 1000000L;
+            return Math.ceilDiv(nanosPerRequest, 1_000_000L);
         }
 
         @Override
@@ -300,6 +308,79 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
         public Optional<Semaphore> semaphore() {
             return Optional.ofNullable(semaphore);
         }
+    }
+
+    private static class SubNanosecondPermitStrategy implements PermitStrategy {
+        private final long durationNanos;
+        private final int amount;
+        private final boolean tokenBucket;
+        private final int capacity;
+        private final Supplier<Long> clock;
+        private final Semaphore semaphore;
+        private final Lock refillLock = new ReentrantLock();
+
+        private long lastRefillTimeNanos;
+        private int lastRefillFraction;
+        private long lastObservedTimeNanos;
+
+        SubNanosecondPermitStrategy(ThroughputLimitConfig config, Supplier<Long> clock, long durationNanos) {
+            this.durationNanos = durationNanos;
+            this.amount = config.amount();
+            this.tokenBucket = config.rateLimitingAlgorithm() == RateLimitingAlgorithmType.TOKEN_BUCKET;
+            this.capacity = tokenBucket ? amount : 1;
+            this.clock = clock;
+            this.semaphore = config.semaphore().orElseGet(() -> new Semaphore(capacity, config.fair()));
+            long now = clock.get();
+            this.lastRefillTimeNanos = now;
+            this.lastObservedTimeNanos = now;
+        }
+
+        @Override
+        public long maxWaitMillis() {
+            return 1;
+        }
+
+        @Override
+        public void refillPermits() {
+            refillLock.lock();
+            try {
+                long now = clock.get();
+                long refillNanos = lastRefillTimeNanos;
+                int fraction = lastRefillFraction;
+                if (!tokenBucket && now - lastObservedTimeNanos > 1) {
+                    // Fixed rate admits the current nanosecond's allowance, without replaying idle credit.
+                    refillNanos = now - 1;
+                    fraction = 0;
+                }
+                long elapsedNanos = now - refillNanos;
+                int missingPermits = capacity - semaphore.availablePermits();
+                if (elapsedNanos <= 0 || missingPermits <= 0) {
+                    return;
+                }
+
+                // durationNanos < amount <= Integer.MAX_VALUE, so the bounded multiplication cannot overflow.
+                long newTokens = elapsedNanos > durationNanos
+                        ? missingPermits
+                        : (elapsedNanos * amount - fraction) / durationNanos;
+                int permitsToRefill = (int) Math.min(newTokens, missingPermits);
+                if (permitsToRefill > 0) {
+                    // Fractional nanoseconds use the configured amount as their denominator.
+                    long generatedNanos = fraction + permitsToRefill * durationNanos;
+                    lastRefillTimeNanos = refillNanos + generatedNanos / amount;
+                    lastRefillFraction = (int) (generatedNanos % amount);
+                    lastObservedTimeNanos = now;
+                    semaphore.release(permitsToRefill);
+                }
+            } finally {
+                refillLock.unlock();
+            }
+        }
+
+        @Override
+        public Optional<Semaphore> semaphore() {
+            return Optional.of(semaphore);
+        }
+
     }
 
     private static class ThroughputToken implements LimitAlgorithm.Token {
