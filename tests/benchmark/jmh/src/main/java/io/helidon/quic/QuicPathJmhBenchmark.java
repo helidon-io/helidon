@@ -37,7 +37,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.Keys;
+import io.helidon.common.tls.Tls;
 import io.helidon.quic.QuicEndpoint.QuicDatagram;
+import io.helidon.quic.QuicRttEstimator.QuicRttEstimatorState;
 import io.helidon.quic.frame.AckFrame;
 import io.helidon.quic.frame.AckFrame.AckRange;
 import io.helidon.quic.frame.PingFrame;
@@ -137,6 +141,43 @@ public class QuicPathJmhBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public long establishedPathAckRangesAllocation(AckState state, AckAllocationCounters counters) {
+        long before = counters.allocationBean.getThreadAllocatedBytes(counters.threadId);
+        state.packetSpace.processAckFrame(state.ackFrame);
+        long allocated = counters.allocationBean.getThreadAllocatedBytes(counters.threadId) - before;
+        if (before < 0 || allocated < 0) {
+            throw new IllegalStateException("Worker-thread allocation counter is unavailable or moved backwards");
+        }
+        counters.allocatedBytes += allocated;
+        counters.ackOperations++;
+        return state.packetSpace.largestPeerAcknowledgedPacketNumber();
+    }
+
+    /**
+     * Measures ACK recovery with a previous positive RTT sample and PTO backoff already primed.
+     *
+     * @param state recovery fixture
+     * @return largest acknowledged packet number
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public long ackRecovery(AckRecoveryState state) {
+        state.packetSpace.processAckFrame(state.ackFrame);
+        return state.packetSpace.largestPeerAcknowledgedPacketNumber();
+    }
+
+    /**
+     * Measures only worker allocation inside the primed ACK-recovery call.
+     * Allocation-counter overhead makes this method unsuitable for timing comparisons.
+     *
+     * @param state recovery fixture
+     * @param counters allocation and ACK-operation counters
+     * @return largest acknowledged packet number
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public long ackRecoveryAllocation(AckRecoveryState state, AckAllocationCounters counters) {
         long before = counters.allocationBean.getThreadAllocatedBytes(counters.threadId);
         state.packetSpace.processAckFrame(state.ackFrame);
         long allocated = counters.allocationBean.getThreadAllocatedBytes(counters.threadId) - before;
@@ -248,6 +289,32 @@ public class QuicPathJmhBenchmark {
          * Repeat the ACK after all packets have been acknowledged or discarded.
          */
         DUPLICATE
+    }
+
+    /**
+     * Connection role and packet space used by the targeted ACK-recovery measurements.
+     */
+    public enum AckRecoveryScenario {
+        /**
+         * Client application space after packet-space handshake confirmation, with a normal encoded ACK delay.
+         */
+        APPLICATION(PacketNumberSpace.APPLICATION, true),
+        /**
+         * Server Initial space before Handshake keys are available.
+         */
+        SERVER_INITIAL(PacketNumberSpace.INITIAL, false),
+        /**
+         * Client Initial space before Handshake keys are available.
+         */
+        CLIENT_INITIAL(PacketNumberSpace.INITIAL, true);
+
+        private final PacketNumberSpace packetNumberSpace;
+        private final boolean client;
+
+        AckRecoveryScenario(PacketNumberSpace packetNumberSpace, boolean client) {
+            this.packetNumberSpace = packetNumberSpace;
+            this.client = client;
+        }
     }
 
     /**
@@ -589,6 +656,171 @@ public class QuicPathJmhBenchmark {
     }
 
     /**
+     * Bounded two-packet ACK fixture with a deterministic 12 ms RTT after a 10 ms sample and PTO backoff four.
+     * The application scenario decodes ACK delay 125 with exponent three. Initial scenarios ignore ACK delay.
+     * Packet construction, recovery priming, and verification remain outside the measured operation.
+     */
+    @State(Scope.Thread)
+    public static class AckRecoveryState {
+        private static final long PATH_GENERATION = 1;
+        private static final long ENCODED_ACK_DELAY = 125;
+        private static final Deadline SEND_DEADLINE = FIXED_DEADLINE.plusMillis(10);
+        private static final Deadline ACK_DEADLINE = SEND_DEADLINE.plusMillis(12);
+        private static final List<AckRange> ACK_RANGES = List.of(AckRange.of(0, 0));
+        private static final QuicRttEstimatorState APPLICATION_ESTIMATE =
+                QuicRttEstimatorState.create(12_000, 10_000, 10_125, 4_000, 2);
+        private static final QuicRttEstimatorState INITIAL_ESTIMATE =
+                QuicRttEstimatorState.create(12_000, 10_000, 10_250, 4_250, 2);
+
+        /**
+         * Packet space and connection role whose ACK-recovery path is measured.
+         */
+        @Param({"APPLICATION", "SERVER_INITIAL", "CLIENT_INITIAL"})
+        public AckRecoveryScenario ackRecoveryScenario;
+
+        private AckRecoveryEmitter emitter;
+        private QuicRuntimeConfig runtimeConfig;
+        private QuicRttEstimator rttEstimator;
+        private PacketSpaceManager packetSpace;
+        private QuicTLSEngine tlsEngine;
+        private AckFrame ackFrame;
+        private Deadline now = FIXED_DEADLINE;
+
+        /**
+         * Builds a reusable real TLS role and non-transmitting emitter.
+         * No TLS handshake, crypto operation, timer dispatch, or network traffic is measured.
+         */
+        @Setup(Level.Trial)
+        public void setUpTrial() {
+            runtimeConfig = QuicRuntimeConfig.create(QuicConfig.create());
+            Keys keys = Keys.builder()
+                    .keystore(store -> store.keystore(Resource.create("io/helidon/quic/benchmark/server-keystore.p12"))
+                            .passphrase("changeit")
+                            .keyAlias("server"))
+                    .build();
+            Tls tls = Tls.builder().privateKey(keys).privateKeyCertChain(keys).sessionCacheSize(0).build();
+            tlsEngine = QuicTLSContext.create(tls).createEngine();
+            tlsEngine.clientMode(ackRecoveryScenario.client);
+            // Initialize the production role implementation before any measured Initial clientMode() call.
+            tlsEngine.handshakeState();
+            emitter = new AckRecoveryEmitter();
+        }
+
+        /**
+         * Acknowledges a first packet to prime RTT and ACK workspace, then prepares a second packet with backoff four.
+         * A fresh packet space bounds the flight and excludes growing optimistic-ACK packet-number skip history.
+         */
+        @Setup(Level.Invocation)
+        public void setUpInvocation() {
+            now = FIXED_DEADLINE;
+            rttEstimator = QuicRttEstimator.create(runtimeConfig.recovery());
+            QuicCongestionController congestionController =
+                    QuicCubicCongestionController.create(runtimeConfig,
+                                                         "quic-path-jmh-recovery",
+                                                         rttEstimator,
+                                                         DATAGRAM_SIZE);
+            packetSpace = new PacketSpaceManager(ackRecoveryScenario.packetNumberSpace,
+                                                 emitter,
+                                                 () -> now,
+                                                 rttEstimator,
+                                                 congestionController,
+                                                 tlsEngine,
+                                                 () -> "quic-path-jmh-recovery",
+                                                 new PacketSpaceManager.PathRecoveryState(PATH_GENERATION),
+                                                 3,
+                                                 25,
+                                                 _ -> { });
+            packetSpace.updatePeerTransportParameters(25, 3);
+            long primingPacketNumber = packetSpace.allocateNextPN();
+            packetSpace.packetSent(new BenchmarkPacket(primingPacketNumber, ackRecoveryScenario.packetNumberSpace),
+                                   -1, primingPacketNumber, PATH_GENERATION);
+            if (ackRecoveryScenario == AckRecoveryScenario.APPLICATION) {
+                // A nonzero confirmation boundary precedes the second, measured ACK.
+                packetSpace.confirmHandshake();
+            }
+            now = SEND_DEADLINE;
+            packetSpace.processAckFrame(AckFrame.create(primingPacketNumber, ENCODED_ACK_DELAY, ACK_RANGES));
+            rttEstimator.increasePtoBackoff();
+            rttEstimator.increasePtoBackoff();
+            emitter.acknowledgedPackets = 0;
+            long packetNumber = packetSpace.allocateNextPN();
+            packetSpace.packetSent(new BenchmarkPacket(packetNumber, ackRecoveryScenario.packetNumberSpace),
+                                   -1, packetNumber, PATH_GENERATION);
+            // The measured ACK covers only the second packet; the first has already been acknowledged.
+            ackFrame = AckFrame.create(packetNumber, ENCODED_ACK_DELAY, ACK_RANGES);
+            now = ACK_DEADLINE;
+            if (primingPacketNumber != 0 || packetNumber != 1
+                    || rttEstimator.state().rttSampleCount() != 1 || rttEstimator.ptoBackoff() != 4
+                    || tlsEngine.clientMode() != ackRecoveryScenario.client) {
+                throw new IllegalStateException("ACK recovery fixture was not primed for " + ackRecoveryScenario);
+            }
+        }
+
+        /**
+         * Checks ACK eligibility and RTT without imposing the candidate's server backoff behavior,
+         * then closes the packet space.
+         */
+        @TearDown(Level.Invocation)
+        public void tearDownInvocation() {
+            try {
+                if (emitter.acknowledgedPackets != 1
+                        || packetSpace.largestPeerAcknowledgedPacketNumber() != ackFrame.largestAcknowledged()) {
+                    throw new IllegalStateException("ACK recovery did not acknowledge the prepared packet");
+                }
+                QuicRttEstimatorState expected = ackRecoveryScenario == AckRecoveryScenario.APPLICATION
+                        ? APPLICATION_ESTIMATE : INITIAL_ESTIMATE;
+                QuicRttEstimatorState actual = rttEstimator.state();
+                if (!expected.equals(actual)) {
+                    throw new IllegalStateException("ACK recovery expected " + expected + ", got " + actual);
+                }
+            } finally {
+                closePacketSpace();
+            }
+        }
+
+        /**
+         * Closes the packet space and the emitter's unused timer queue.
+         */
+        @TearDown(Level.Trial)
+        public void tearDownTrial() {
+            try {
+                closePacketSpace();
+            } finally {
+                if (emitter != null) {
+                    emitter.timer().stop();
+                }
+            }
+        }
+
+        QuicRttEstimatorState rttState() {
+            return rttEstimator.state();
+        }
+
+        long ptoBackoff() {
+            return rttEstimator.ptoBackoff();
+        }
+
+        long packetNumber() {
+            return ackFrame.largestAcknowledged();
+        }
+
+        PacketNumberSpace packetNumberSpace() {
+            return packetSpace.packetNumberSpace();
+        }
+
+        boolean clientMode() {
+            return tlsEngine.clientMode();
+        }
+
+        private void closePacketSpace() {
+            if (packetSpace != null) {
+                packetSpace.close();
+                packetSpace = null;
+            }
+        }
+    }
+
+    /**
      * Worker-thread bytes and ACK counts; their ratio is allocated bytes per ACK.
      * JMH reports both as unnormalized event totals.
      */
@@ -774,12 +1006,19 @@ public class QuicPathJmhBenchmark {
 
         @Override
         public HeadersType headersType() {
-            return numberSpace == PacketNumberSpace.HANDSHAKE ? HeadersType.LONG : HeadersType.SHORT;
+            return switch (numberSpace) {
+                case INITIAL, HANDSHAKE -> HeadersType.LONG;
+                case APPLICATION, NONE -> HeadersType.SHORT;
+            };
         }
 
         @Override
         public PacketType packetType() {
-            return numberSpace == PacketNumberSpace.HANDSHAKE ? PacketType.HANDSHAKE : PacketType.ONERTT;
+            return switch (numberSpace) {
+                case INITIAL -> PacketType.INITIAL;
+                case HANDSHAKE -> PacketType.HANDSHAKE;
+                case APPLICATION, NONE -> PacketType.ONERTT;
+            };
         }
 
         @Override
@@ -836,6 +1075,23 @@ public class QuicPathJmhBenchmark {
         @Override
         public void acknowledged(QuicPacket packet) {
             acknowledgedPackets++;
+        }
+    }
+
+    private static final class AckRecoveryEmitter extends BenchmarkPacketEmitter {
+        private int acknowledgedPackets;
+
+        @Override
+        public void acknowledged(QuicPacket packet) {
+            acknowledgedPackets++;
+        }
+
+        @Override
+        public void reschedule(QuicTimedEvent event) {
+        }
+
+        @Override
+        public void reschedule(QuicTimedEvent event, Deadline deadline) {
         }
     }
 

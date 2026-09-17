@@ -20,13 +20,19 @@ import java.util.Properties;
 
 import io.helidon.quic.QuicPathJmhBenchmark.AckAllocationCounters;
 import io.helidon.quic.QuicPathJmhBenchmark.AckPacketSpaceLifecycle;
+import io.helidon.quic.QuicPathJmhBenchmark.AckRecoveryScenario;
+import io.helidon.quic.QuicPathJmhBenchmark.AckRecoveryState;
 import io.helidon.quic.QuicPathJmhBenchmark.AckState;
 import io.helidon.quic.QuicPathJmhBenchmark.AckWorkload;
+import io.helidon.quic.QuicRttEstimator.QuicRttEstimatorState;
 import io.helidon.quic.frame.AckFrame;
+import io.helidon.quic.packet.QuicPacket.PacketNumberSpace;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -38,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class QuicPathJmhRunnerValidationTest {
     private static final String PREFIX = "quic.path.jmh.";
     private static final String ACK_INCLUDE = "^io\\.helidon\\.quic\\.QuicPathJmhBenchmark\\.establishedPathAckRanges$";
+    private static final String ACK_RECOVERY_INCLUDE = "^io\\.helidon\\.quic\\.QuicPathJmhBenchmark\\.ackRecovery$";
 
     @ParameterizedTest
     @CsvSource({"64,1", "64,32", "4096,1", "4096,32", "4096,1024", "13981,1", "13981,32", "13981,1024"})
@@ -126,6 +133,99 @@ class QuicPathJmhRunnerValidationTest {
         } finally {
             state.tearDownTrial();
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(AckRecoveryScenario.class)
+    void recoveryInvocationsHaveTheRequestedRoleAndAPreviousRttSample(AckRecoveryScenario scenario) {
+        var benchmark = new QuicPathJmhBenchmark();
+        var state = new AckRecoveryState();
+        state.ackRecoveryScenario = scenario;
+        try {
+            state.setUpTrial();
+            for (int invocation = 0; invocation < 3; invocation++) {
+                state.setUpInvocation();
+                try {
+                    assertThat(state.clientMode(), is(scenario != AckRecoveryScenario.SERVER_INITIAL));
+                    assertThat(state.packetNumberSpace(), is(scenario == AckRecoveryScenario.APPLICATION
+                            ? PacketNumberSpace.APPLICATION : PacketNumberSpace.INITIAL));
+                    assertThat(state.rttState(), is(QuicRttEstimatorState.create(10_000, 10_000, 10_000, 5_000, 1)));
+                    assertThat(state.ptoBackoff(), is(4L));
+                    long packetNumber = state.packetNumber();
+                    assertThat(packetNumber, is(1L));
+                    assertThat(benchmark.ackRecovery(state), is(packetNumber));
+                    assertThat(state.rttState().rttSampleCount(), is(2L));
+                } finally {
+                    // The shared benchmark must also run against the former server-Initial backoff behavior.
+                    state.tearDownInvocation();
+                }
+            }
+        } finally {
+            state.tearDownTrial();
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(AckRecoveryScenario.class)
+    void recoveryAllocationCountersExcludeFixturePreparation(AckRecoveryScenario scenario) {
+        var benchmark = new QuicPathJmhBenchmark();
+        var state = new AckRecoveryState();
+        var counters = new AckAllocationCounters();
+        state.ackRecoveryScenario = scenario;
+        try {
+            counters.setUp();
+            state.setUpTrial();
+            assertThat(counters.ackOperations, is(0L));
+            for (int invocation = 0; invocation < 2; invocation++) {
+                state.setUpInvocation();
+                try {
+                    assertThat(benchmark.ackRecoveryAllocation(state, counters), is(state.packetNumber()));
+                } finally {
+                    state.tearDownInvocation();
+                }
+            }
+            assertThat(counters.ackOperations, is(2L));
+            assertThat(counters.allocatedBytes, greaterThanOrEqualTo(0L));
+        } finally {
+            state.tearDownTrial();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ackRecovery", "ackRecoveryAllocation"})
+    void runnerPassesRecoveryScenariosWithAnExactInclude(String method) {
+        String include = "^io\\.helidon\\.quic\\.QuicPathJmhBenchmark\\." + method + "$";
+        var properties = new Properties();
+        properties.setProperty(PREFIX + "include", include);
+        properties.setProperty(PREFIX + "ackRecoveryScenario", "APPLICATION, SERVER_INITIAL, CLIENT_INITIAL");
+
+        var options = QuicPathJmhRunnerTest.options(properties);
+
+        assertThat(options.getIncludes(), contains(include));
+        assertThat(options.getParameter("ackRecoveryScenario").get(),
+                   contains("APPLICATION", "SERVER_INITIAL", "CLIENT_INITIAL"));
+    }
+
+    @Test
+    void invalidRecoveryScenarioFailsBeforeJmh() {
+        var properties = new Properties();
+        properties.setProperty(PREFIX + "include", ACK_RECOVERY_INCLUDE);
+        properties.setProperty(PREFIX + "ackRecoveryScenario", "UNKNOWN");
+
+        assertThrows(IllegalArgumentException.class, () -> QuicPathJmhRunnerTest.options(properties));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ackRecovery", "ackRecoveryAllocation"})
+    void gcProfilerCannotBeMistakenForIsolatedRecoveryAllocation(String method) {
+        var properties = new Properties();
+        properties.setProperty(PREFIX + "include", "^io\\.helidon\\.quic\\.QuicPathJmhBenchmark\\." + method + "$");
+        properties.setProperty(PREFIX + "gcProfiler", "true");
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> QuicPathJmhRunnerTest.options(properties));
+
+        assertThat(exception.getMessage(), containsString("GCProfiler includes ACK fixture allocation"));
+        assertThat(exception.getMessage(), containsString("ackRecoveryAllocation"));
     }
 
     @Test
