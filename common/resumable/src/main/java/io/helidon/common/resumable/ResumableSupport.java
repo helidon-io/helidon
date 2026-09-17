@@ -51,7 +51,7 @@ public interface ResumableSupport {
     void checkpointResume();
 
     /**
-     * Requests checkpoint and returns upon a successful resume when {@code -Dio.helidon.crac.checkpoint=onStartup} is set.
+     * Requests checkpoint and returns upon a successful resume when {@code -Dio.helidon.resumable.checkpoint=onStart} is set.
      */
     default void checkpointResumeOnStartup(){
         if ("onStart".equalsIgnoreCase(System.getProperty("io.helidon.resumable.checkpoint"))) {
