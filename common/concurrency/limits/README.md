@@ -59,6 +59,9 @@ however, permits are never returned but only generated as time passes based on t
 
 When the amount is set to 0, an unlimited implementation is used.
 
+See the [concurrency limits guide](../../../docs/modules/webserver/concurrency-limits.md)
+for configuration examples and the behavior of rates above one operation per nanosecond.
+
 The throughput limit also provides support for defining a queue. If set to a value above `0`, queuing is enabled. In such a case we enqueue a certain number of requests (with a configurable timeout).
 
 Defaults are:
