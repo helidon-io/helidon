@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.ParserHelper;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataListener;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
@@ -149,7 +150,15 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.canUpgrade = !upgradeProviderMap.isEmpty();
         this.recvListener = http1Config.compositeReceiveListener();
         this.sendListener = http1Config.compositeSendListener();
-        this.reader.listener(recvListener, ctx);
+        // Stop forwarding on handoff without overwriting a listener installed by the upgrader.
+        this.reader.listener(new DataListener<ConnectionContext>() {
+            @Override
+            public void data(ConnectionContext context, byte[] data, int position, int length) {
+                if (upgradeConnection == null) {
+                    recvListener.data(context, data, position, length);
+                }
+            }
+        }, ctx);
         this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateRequestHeaders());
         this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
