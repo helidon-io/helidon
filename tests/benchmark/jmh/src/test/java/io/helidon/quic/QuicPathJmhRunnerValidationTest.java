@@ -141,22 +141,30 @@ class QuicPathJmhRunnerValidationTest {
         var benchmark = new QuicPathJmhBenchmark();
         var state = new AckRecoveryState();
         state.ackRecoveryScenario = scenario;
+        boolean reordered = scenario == AckRecoveryScenario.APPLICATION_REORDERED;
+        PacketNumberSpace expectedSpace = switch (scenario) {
+            case APPLICATION, APPLICATION_REORDERED -> PacketNumberSpace.APPLICATION;
+            case SERVER_INITIAL, CLIENT_INITIAL -> PacketNumberSpace.INITIAL;
+        };
+        QuicRttEstimatorState expectedBefore = reordered
+                ? QuicRttEstimatorState.create(12_000, 10_000, 10_125, 4_000, 2)
+                : QuicRttEstimatorState.create(10_000, 10_000, 10_000, 5_000, 1);
         try {
             state.setUpTrial();
             for (int invocation = 0; invocation < 3; invocation++) {
                 state.setUpInvocation();
                 try {
                     assertThat(state.clientMode(), is(scenario != AckRecoveryScenario.SERVER_INITIAL));
-                    assertThat(state.packetNumberSpace(), is(scenario == AckRecoveryScenario.APPLICATION
-                            ? PacketNumberSpace.APPLICATION : PacketNumberSpace.INITIAL));
-                    assertThat(state.rttState(), is(QuicRttEstimatorState.create(10_000, 10_000, 10_000, 5_000, 1)));
+                    assertThat(state.packetNumberSpace(), is(expectedSpace));
+                    assertThat(state.rttState(), is(expectedBefore));
                     assertThat(state.ptoBackoff(), is(4L));
+                    assertThat(state.largestAcknowledgedPacketNumber(), is(reordered ? 2L : 0L));
                     long packetNumber = state.packetNumber();
-                    assertThat(packetNumber, is(1L));
+                    assertThat(packetNumber, is(reordered ? 2L : 1L));
                     assertThat(benchmark.ackRecovery(state), is(packetNumber));
                     assertThat(state.rttState().rttSampleCount(), is(2L));
                 } finally {
-                    // The shared benchmark must also run against the former server-Initial backoff behavior.
+                    // The shared benchmark must also run against the former PTO-reset policies.
                     state.tearDownInvocation();
                 }
             }
@@ -197,13 +205,14 @@ class QuicPathJmhRunnerValidationTest {
         String include = "^io\\.helidon\\.quic\\.QuicPathJmhBenchmark\\." + method + "$";
         var properties = new Properties();
         properties.setProperty(PREFIX + "include", include);
-        properties.setProperty(PREFIX + "ackRecoveryScenario", "APPLICATION, SERVER_INITIAL, CLIENT_INITIAL");
+        properties.setProperty(PREFIX + "ackRecoveryScenario",
+                               "APPLICATION, SERVER_INITIAL, CLIENT_INITIAL, APPLICATION_REORDERED");
 
         var options = QuicPathJmhRunnerTest.options(properties);
 
         assertThat(options.getIncludes(), contains(include));
         assertThat(options.getParameter("ackRecoveryScenario").get(),
-                   contains("APPLICATION", "SERVER_INITIAL", "CLIENT_INITIAL"));
+                   contains("APPLICATION", "SERVER_INITIAL", "CLIENT_INITIAL", "APPLICATION_REORDERED"));
     }
 
     @Test
