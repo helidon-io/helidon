@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.declarative.tests</groupId>
         <artifactId>helidon-declarative-tests-compatibility</artifactId>
-        <version>27.0.0-SNAPSHOT</version>
+        <version>27.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

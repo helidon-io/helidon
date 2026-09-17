@@ -13,7 +13,7 @@ Helidon DbClient.
 
 For this 15 minute tutorial, you will need the following:
 
-_Prerequisite product versions for Helidon 27.0.0-SNAPSHOT_:
+_Prerequisite product versions for Helidon 27.0.0_:
 
 | Requirement                                     | Description                                                                       |
 |-------------------------------------------------|-----------------------------------------------------------------------------------|
