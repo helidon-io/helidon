@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.quic.QuicTLSEngine.KeySpace.HANDSHAKE;
 import static io.helidon.quic.QuicTLSEngine.KeySpace.INITIAL;
@@ -355,6 +356,167 @@ class QuicTls13ServerHandshakeTest {
         assertThat(description, failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 50));
         assertThat(failure.reason(), containsString("key_share"));
         assertThat(serverHandshake.complete(), is(false));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldRejectMissingSupportedGroupsBeforeCipherSelection(boolean noCommonCipher) throws Exception {
+        HelidonClientQuicTLSEngine client = newClientEngine("example.com", new String[] {"x25519"});
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(
+                ByteBuffer.wrap(copy(packetEngine(client).handshakeBytesBuffer(INITIAL))));
+        QuicTlsClientHelloMessage missingGroups = withSupportedGroups(clientHello, null, noCommonCipher);
+        assertThat(missingGroups.keyShares().stream().map(QuicTlsKeyShareEntry::namedGroup).toList(),
+                   equalTo(List.of(QuicTlsNamedGroup.X25519)));
+        QuicTls13ServerHandshake serverHandshake = newServerHandshake("h3", new String[] {"x25519"});
+
+        QuicTransportException failure = assertThrows(
+                QuicTransportException.class,
+                () -> serverHandshake.consumeClientHello(missingGroups.encode()));
+
+        assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 109));
+        assertThat(failure.reason(), containsString("supported_groups"));
+        assertThat(serverHandshake.complete(), is(false));
+    }
+
+    @ParameterizedTest(name = "{0}: noCommonCipher={2}")
+    @MethodSource("malformedSupportedGroups")
+    void shouldRejectMalformedSupportedGroupsBeforeCipherSelection(String description,
+                                                                   byte[] supportedGroups,
+                                                                   boolean noCommonCipher) throws Exception {
+        HelidonClientQuicTLSEngine client = newClientEngine("example.com", new String[] {"x25519"});
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(
+                ByteBuffer.wrap(copy(packetEngine(client).handshakeBytesBuffer(INITIAL))));
+        QuicTlsClientHelloMessage malformedGroups = withSupportedGroups(clientHello, supportedGroups, noCommonCipher);
+        assertThat(malformedGroups.keyShares().stream().map(QuicTlsKeyShareEntry::namedGroup).toList(),
+                   equalTo(List.of(QuicTlsNamedGroup.X25519)));
+        QuicTls13ServerHandshake serverHandshake = newServerHandshake("h3", new String[] {"x25519"});
+
+        QuicTransportException failure = assertThrows(
+                QuicTransportException.class,
+                () -> serverHandshake.consumeClientHello(malformedGroups.encode()));
+
+        assertThat(description, failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 50));
+        assertThat(failure.reason(), containsString("supported_groups"));
+        assertThat(serverHandshake.complete(), is(false));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("invalidRetriedSupportedGroups")
+    void shouldRejectInvalidSupportedGroupsOnRetriedClientHello(String description,
+                                                               byte[] supportedGroups,
+                                                               int alert) throws Exception {
+        HelidonClientQuicTLSEngine client = newClientEngine("example.com", new String[] {"x25519", "secp256r1"});
+        byte[] initialClientHello = copy(packetEngine(client).handshakeBytesBuffer(INITIAL));
+        QuicTls13ServerHandshake serverHandshake = newServerHandshake("h3", new String[] {"secp256r1"});
+        var retryRequest = (QuicTls13ServerHandshake.HelloRetryRequestResult) serverHandshake.consumeClientHello(
+                ByteBuffer.wrap(initialClientHello));
+        packetEngine(client).consumeHandshakeBytesBuffer(INITIAL, ByteBuffer.wrap(retryRequest.helloRetryRequest()));
+        QuicTlsClientHelloMessage retried = QuicTlsClientHelloMessage.decode(
+                ByteBuffer.wrap(copy(packetEngine(client).handshakeBytesBuffer(INITIAL))));
+        assertThat(retried.keyShares().stream().map(QuicTlsKeyShareEntry::namedGroup).toList(),
+                   equalTo(List.of(QuicTlsNamedGroup.SECP256_R1)));
+        QuicTlsClientHelloMessage invalidGroups = withSupportedGroups(retried, supportedGroups, false);
+
+        QuicTransportException failure = assertThrows(
+                QuicTransportException.class,
+                () -> serverHandshake.consumeClientHello(invalidGroups.encode()));
+
+        assertThat(description, failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + alert));
+        assertThat(failure.reason(), containsString("supported_groups"));
+        assertThat(serverHandshake.complete(), is(false));
+    }
+
+    @Test
+    void shouldSelectKeyShareOnlyFromSupportedGroups() throws Exception {
+        ForeignClientHello clientHello = foreignClientHelloWithSupportedGroups(
+                bytes("00020017"), List.of(QuicTlsNamedGroup.X25519, QuicTlsNamedGroup.SECP256_R1));
+        QuicTls13ServerHandshake serverHandshake = newServerHandshake("h3", new String[] {"x25519", "secp256r1"});
+
+        var result = serverHandshake.consumeClientHello(ByteBuffer.wrap(clientHello.encoded()));
+
+        assertThat(result, instanceOf(QuicTls13ServerHandshake.ServerFlight.class));
+        var flight = (QuicTls13ServerHandshake.ServerFlight) result;
+        QuicTlsServerHelloMessage serverHello = QuicTlsServerHelloMessage.decode(ByteBuffer.wrap(flight.serverHello()));
+        assertThat("selected key_share group was advertised", serverHello.keyShare().orElseThrow().namedGroup(),
+                   is(QuicTlsNamedGroup.SECP256_R1));
+        completeForeignClientHandshake(clientHello, serverHandshake, flight);
+    }
+
+    @Test
+    void shouldRetryForSupportedGroupsWhenOnlyShareIsUnadvertised() throws Exception {
+        ForeignClientHello initialClientHello = foreignClientHelloWithSupportedGroups(
+                bytes("00020017"), List.of(QuicTlsNamedGroup.X25519));
+        QuicTls13ServerHandshake serverHandshake = newServerHandshake("h3", new String[] {"x25519", "secp256r1"});
+
+        var initialResult = serverHandshake.consumeClientHello(ByteBuffer.wrap(initialClientHello.encoded()));
+
+        assertThat(initialResult, instanceOf(QuicTls13ServerHandshake.HelloRetryRequestResult.class));
+        var retryRequest = (QuicTls13ServerHandshake.HelloRetryRequestResult) initialResult;
+        QuicTlsServerHelloMessage retry =
+                QuicTlsServerHelloMessage.decode(ByteBuffer.wrap(retryRequest.helloRetryRequest()));
+        assertThat(retry.helloRetryRequestSelectedGroup().orElseThrow(), is(QuicTlsNamedGroup.SECP256_R1));
+        QuicTlsClientHelloMessage initial =
+                QuicTlsClientHelloMessage.decode(ByteBuffer.wrap(initialClientHello.encoded()));
+        QuicTlsLocalKeyShares retriedKeyShares =
+                QuicTlsLocalKeyShares.create(List.of(QuicTlsNamedGroup.SECP256_R1), new SecureRandom());
+        QuicTlsClientHelloMessage retried = QuicTlsClientHelloMessage.create(
+                initial.legacyVersion(),
+                initial.random(),
+                initial.legacySessionId(),
+                initial.cipherSuites(),
+                initial.legacyCompressionMethods(),
+                replaceExtension(initial.extensions(), QuicTlsExtensions.KEY_SHARE,
+                                 copy(QuicTlsKeyShares.encodeClientHello(retriedKeyShares.keyShareEntries()))));
+        ForeignClientHello retriedClientHello = new ForeignClientHello(copy(retried.encode()),
+                                                                       retriedKeyShares,
+                                                                       null,
+                                                                       initialClientHello.encoded(),
+                                                                       retryRequest.helloRetryRequest());
+
+        var retriedResult = serverHandshake.consumeClientHello(ByteBuffer.wrap(retriedClientHello.encoded()));
+
+        assertThat(retriedResult, instanceOf(QuicTls13ServerHandshake.ServerFlight.class));
+        var flight = (QuicTls13ServerHandshake.ServerFlight) retriedResult;
+        QuicTlsServerHelloMessage serverHello = QuicTlsServerHelloMessage.decode(ByteBuffer.wrap(flight.serverHello()));
+        assertThat(serverHello.keyShare().orElseThrow().namedGroup(), is(QuicTlsNamedGroup.SECP256_R1));
+        completeForeignClientHandshake(retriedClientHello, serverHandshake, flight);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("nonMutualSupportedGroups")
+    void shouldFailWithoutCompatibleSupportedGroupsDespiteUsableKeyShare(String description,
+                                                                       byte[] supportedGroups,
+                                                                       List<QuicTlsNamedGroup> knownGroups)
+            throws Exception {
+        ForeignClientHello clientHello = foreignClientHelloWithSupportedGroups(
+                supportedGroups, List.of(QuicTlsNamedGroup.X25519));
+        QuicTlsClientHelloMessage decoded = QuicTlsClientHelloMessage.decode(ByteBuffer.wrap(clientHello.encoded()));
+        assertThat(description, decoded.supportedGroups(), equalTo(knownGroups));
+        QuicTls13ServerHandshake serverHandshake = newServerHandshake("h3", new String[] {"x25519"});
+
+        QuicTransportException failure = assertThrows(
+                QuicTransportException.class,
+                () -> serverHandshake.consumeClientHello(ByteBuffer.wrap(clientHello.encoded())));
+
+        assertThat(description, failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 40));
+        assertThat(serverHandshake.complete(), is(false));
+    }
+
+    @Test
+    void shouldCompleteWithUnknownAndKnownSupportedGroups() throws Exception {
+        ForeignClientHello clientHello = foreignClientHelloWithSupportedGroups(
+                bytes("0004fe00001d"), List.of(QuicTlsNamedGroup.X25519));
+        QuicTlsClientHelloMessage decoded = QuicTlsClientHelloMessage.decode(ByteBuffer.wrap(clientHello.encoded()));
+        assertThat(decoded.supportedGroups(), equalTo(List.of(QuicTlsNamedGroup.X25519)));
+        QuicTls13ServerHandshake serverHandshake = newServerHandshake("h3", new String[] {"x25519", "secp256r1"});
+
+        var result = serverHandshake.consumeClientHello(ByteBuffer.wrap(clientHello.encoded()));
+
+        assertThat(result, instanceOf(QuicTls13ServerHandshake.ServerFlight.class));
+        var flight = (QuicTls13ServerHandshake.ServerFlight) result;
+        QuicTlsServerHelloMessage serverHello = QuicTlsServerHelloMessage.decode(ByteBuffer.wrap(flight.serverHello()));
+        assertThat(serverHello.keyShare().orElseThrow().namedGroup(), is(QuicTlsNamedGroup.X25519));
+        completeForeignClientHandshake(clientHello, serverHandshake, flight);
     }
 
     @ParameterizedTest
@@ -1278,6 +1440,27 @@ class QuicTls13ServerHandshakeTest {
                         Arguments.of("truncated unsupported key share", bytes("0005fe00000201"), noCommonCipher)));
     }
 
+    private static Stream<Arguments> malformedSupportedGroups() {
+        return Stream.of(false, true)
+                .flatMap(noCommonCipher -> Stream.of(
+                        Arguments.of("missing vector length", new byte[0], noCommonCipher),
+                        Arguments.of("empty vector", bytes("0000"), noCommonCipher),
+                        Arguments.of("odd vector length", bytes("0003001d00"), noCommonCipher),
+                        Arguments.of("truncated vector", bytes("0004001d"), noCommonCipher),
+                        Arguments.of("trailing group bytes", bytes("0002001d0017"), noCommonCipher)));
+    }
+
+    private static Stream<Arguments> invalidRetriedSupportedGroups() {
+        return Stream.of(Arguments.of("missing retried supported_groups", null, 109),
+                         Arguments.of("truncated retried supported_groups", bytes("00040017"), 50));
+    }
+
+    private static Stream<Arguments> nonMutualSupportedGroups() {
+        return Stream.of(Arguments.of("advertised group is not configured", bytes("00020017"),
+                                      List.of(QuicTlsNamedGroup.SECP256_R1)),
+                         Arguments.of("valid unknown-only vector", bytes("0002fe00"), List.of()));
+    }
+
     private static List<List<SNIServerName>> requestedServerNames() {
         return List.of(List.of(new SNIHostName("example.com")),
                        List.of(),
@@ -1345,6 +1528,41 @@ class QuicTls13ServerHandshakeTest {
                                           List.of(QuicTlsPskKeyExchangeModes.PSK_DHE_KE))),
                                   true,
                                   keyShares);
+    }
+
+    private static ForeignClientHello foreignClientHelloWithSupportedGroups(byte[] supportedGroups,
+                                                                           List<QuicTlsNamedGroup> keyShareGroups)
+            throws Exception {
+        HelidonClientQuicTLSEngine templateClient = newClientEngine("example.com");
+        QuicTlsClientHelloMessage template = QuicTlsClientHelloMessage.decode(
+                ByteBuffer.wrap(copy(packetEngine(templateClient).handshakeBytesBuffer(INITIAL))));
+        QuicTlsLocalKeyShares localKeyShares = QuicTlsLocalKeyShares.create(keyShareGroups, new SecureRandom());
+        QuicTlsClientHelloMessage withGroups = withSupportedGroups(template, supportedGroups, false);
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.create(
+                withGroups.legacyVersion(),
+                withGroups.random(),
+                withGroups.legacySessionId(),
+                withGroups.cipherSuites(),
+                withGroups.legacyCompressionMethods(),
+                replaceExtension(withGroups.extensions(), QuicTlsExtensions.KEY_SHARE,
+                                 copy(QuicTlsKeyShares.encodeClientHello(localKeyShares.keyShareEntries()))));
+        return new ForeignClientHello(copy(clientHello.encode()), localKeyShares, null, null, null);
+    }
+
+    private static QuicTlsClientHelloMessage withSupportedGroups(QuicTlsClientHelloMessage clientHello,
+                                                                 byte[] supportedGroups,
+                                                                 boolean noCommonCipher) {
+        List<QuicTlsExtension> extensions = supportedGroups == null
+                ? clientHello.extensions().stream()
+                        .filter(extension -> extension.type() != QuicTlsExtensions.SUPPORTED_GROUPS)
+                        .toList()
+                : replaceExtension(clientHello.extensions(), QuicTlsExtensions.SUPPORTED_GROUPS, supportedGroups);
+        return QuicTlsClientHelloMessage.create(clientHello.legacyVersion(),
+                                                clientHello.random(),
+                                                clientHello.legacySessionId(),
+                                                noCommonCipher ? List.of(0xffff) : clientHello.cipherSuites(),
+                                                clientHello.legacyCompressionMethods(),
+                                                extensions);
     }
 
     private static ForeignClientHello foreignClientHello(QuicTlsResumptionTicket resumptionTicket,
