@@ -355,7 +355,7 @@ public final class HelidonFeatures {
 
         FeatureMetadata feat = node.descriptor;
         if (feat == null) {
-            System.out.println("  ".repeat(level) + name);
+            LOGGER.log(Level.INFO, "  ".repeat(level) + name);
         } else {
             String prefix = " ".repeat(level * 2);
             // start on index 10 or a tab spaces after tree
@@ -383,7 +383,7 @@ public final class HelidonFeatures {
                 }
             }
 
-            System.out.println(
+            LOGGER.log(Level.INFO,
                     prefix
                             + name
                             + suffix
