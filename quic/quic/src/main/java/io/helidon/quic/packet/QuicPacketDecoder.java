@@ -854,13 +854,16 @@ public class QuicPacketDecoder {
          */
         static IncomingRetryPacket decode(PacketReader reader, CodingContext context)
                 throws QuicTransportException {
+            int size = reader.remaining();
+            if (size < 16) {
+                throw new BufferUnderflowException();
+            }
             try {
                 reader.verifyRetry();
             } catch (QuicPacketAuthenticationException e) {
                 throw new QuicPacketDecodeException("Bad integrity tag", e);
             }
 
-            int size = reader.remaining();
             debug(reader, "IncomingRetryPacket.decode(%s)", reader);
 
             byte headers = reader.readHeaders(); // read headers
@@ -1743,6 +1746,9 @@ public class QuicPacketDecoder {
 
         byte[] readRetryToken() {
             var tokenLength = buffer.limit() - buffer.position() - 16;
+            if (tokenLength < 0) {
+                throw new BufferUnderflowException();
+            }
             byte[] retryToken = new byte[tokenLength];
             buffer.get(retryToken);
             return retryToken;

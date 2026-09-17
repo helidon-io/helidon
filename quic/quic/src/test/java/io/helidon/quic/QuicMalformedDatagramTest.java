@@ -29,15 +29,18 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.tls.Tls;
 import io.helidon.quic.QuicTLSEngine.HandshakeState;
 import io.helidon.quic.QuicTLSEngine.KeySpace;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
@@ -47,11 +50,38 @@ class QuicMalformedDatagramTest {
     private static final int UNSUPPORTED_VERSION = 0x0a0a0a0a;
     private static final String APPLICATION_PROTOCOL = "quic-test";
 
-    @Test
-    void shouldPreserveEstablishedConnectionAfterTruncatedCoalescedHeaderFromAnotherSource() throws Exception {
+    @ParameterizedTest
+    @EnumSource(value = QuicVersion.class, names = {"QUIC_V1", "QUIC_V2"})
+    void shouldPreserveEstablishedConnectionAfterTruncatedCoalescedHeaderFromAnotherSource(QuicVersion version)
+            throws Exception {
+        assertEstablishedConnectionSurvives(version, connection -> {
+            byte[] destinationId = connection.localConnectionId().orElseThrow().bytes();
+            return malformedDatagram(version, destinationId);
+        });
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = QuicVersion.class, names = {"QUIC_V1", "QUIC_V2"})
+    void shouldPreserveEstablishedConnectionAfterRetrySourceIdOverlapsIntegrityTagFromAnotherSource(QuicVersion version)
+            throws Exception {
+        assertEstablishedConnectionSurvives(version, connection -> {
+            QuicConnectionId admittedId = connection.initialConnectionId().orElseThrow();
+            assertThat("admitted Initial destination ID remains a routing alias", connection.connectionIds(),
+                       hasItem(admittedId));
+            assertThat("Retry integrity uses the admitted Initial destination ID", connection.originalServerConnId(),
+                       is(admittedId));
+            assertThat("public Retry integrity keys remain available",
+                       connection.tlsEngine().keysAvailable(KeySpace.RETRY), is(true));
+            return malformedRetryDatagram(version, admittedId);
+        });
+    }
+
+    private static void assertEstablishedConnectionSurvives(QuicVersion version,
+                                                            Function<QuicServerConnection, byte[]> datagramFactory)
+            throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         QuicConfig config = QuicConfig.builder()
-                .availableVersions(List.of(QuicVersion.QUIC_V1))
+                .availableVersions(List.of(version))
                 .idleTimeout(Duration.ZERO)
                 .buildPrototype();
         Tls serverTls = Tls.builder()
@@ -83,11 +113,13 @@ class QuicMalformedDatagramTest {
                                                                                  serverAddress.getPort(),
                                                                                  new String[] {APPLICATION_PROTOCOL});
                 clientConnection.startHandshake().get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-                var serverConnection = (QuicConnectionImpl) accepted.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                var serverConnection = (QuicServerConnection) accepted.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                 var clientSession = new QuicApplicationSession(clientConnection, TIMEOUT);
                 var serverSession = new QuicApplicationSession(serverConnection, TIMEOUT);
 
                 assertExchange(executor, clientSession, serverSession, "before malformed datagram");
+                assertThat("client negotiated the configured version", clientConnection.quicVersion(), is(version));
+                assertThat("server negotiated the configured version", serverConnection.quicVersion(), is(version));
                 assertThat("server handshake is confirmed", serverConnection.tlsEngine().handshakeState(),
                            is(HandshakeState.HANDSHAKE_CONFIRMED));
                 assertThat("server has naturally discarded Initial keys", serverConnection.tlsEngine().keysAvailable(
@@ -96,9 +128,9 @@ class QuicMalformedDatagramTest {
                            not(serverConnection.peerAddress()));
                 byte[] destinationId = serverConnection.localConnectionId().orElseThrow().bytes();
 
-                byte[] malformed = malformedDatagram(destinationId);
+                byte[] malformed = datagramFactory.apply(serverConnection);
                 source.send(new DatagramPacket(malformed, malformed.length, serverAddress));
-                awaitReceiveMarker(source, serverAddress, destinationId);
+                awaitReceiveMarker(source, serverAddress, destinationId, version);
 
                 assertThat("server remains unterminated after malformed datagram processing",
                            serverConnection.termination(), is(Optional.empty()));
@@ -115,9 +147,13 @@ class QuicMalformedDatagramTest {
         }
     }
 
-    private static byte[] malformedDatagram(byte[] destinationId) {
+    private static byte[] malformedDatagram(QuicVersion version, byte[] destinationId) {
+        int initialFlags = switch (version) {
+            case QUIC_V1 -> 0xc0;
+            case QUIC_V2 -> 0xd0;
+        };
         ByteBuffer datagram = ByteBuffer.allocate(DATAGRAM_SIZE);
-        datagram.put((byte) 0xc0).putInt(QuicVersion.QUIC_V1.versionNumber());
+        datagram.put((byte) initialFlags).putInt(version.versionNumber());
         datagram.put((byte) destinationId.length).put(destinationId);
         datagram.put((byte) 0); // Empty source connection ID.
         datagram.put((byte) 0); // Empty Initial token.
@@ -127,13 +163,31 @@ class QuicMalformedDatagramTest {
         // The discarded Initial keys cause this unauthenticated, zero-filled packet to be skipped.
         datagram.position(tailOffset);
         // The second header claims 20 destination-ID bytes, but the datagram contains only one.
-        datagram.put((byte) 0xc0).putInt(QuicVersion.QUIC_V1.versionNumber()).put((byte) 20).put((byte) 0);
+        datagram.put((byte) initialFlags).putInt(version.versionNumber()).put((byte) 20).put((byte) 0);
+        return datagram.array();
+    }
+
+    private static byte[] malformedRetryDatagram(QuicVersion version, QuicConnectionId admittedId) {
+        int retryFlags = switch (version) {
+            case QUIC_V1 -> 0xf0;
+            case QUIC_V2 -> 0xc0;
+        };
+        ByteBuffer datagram = ByteBuffer.allocate(7 + admittedId.length() + 16);
+        datagram.put((byte) retryFlags).putInt(version.versionNumber());
+        // The admitted Initial ID is both a live server routing alias and the public Retry integrity input.
+        datagram.put((byte) admittedId.length()).put(admittedId.asReadOnlyBuffer());
+        datagram.put((byte) 1); // Claim one source-ID byte, but append the integrity tag immediately.
+        QuicRetryIntegrity.sign(version,
+                                admittedId.asReadOnlyBuffer(),
+                                datagram.asReadOnlyBuffer().flip(),
+                                datagram);
         return datagram.array();
     }
 
     private static void awaitReceiveMarker(DatagramSocket source,
                                            InetSocketAddress serverAddress,
-                                           byte[] destinationId) throws Exception {
+                                           byte[] destinationId,
+                                           QuicVersion version) throws Exception {
         byte[] markerId = {7, 6, 5, 4, 3, 2, 1, 0};
         ByteBuffer marker = ByteBuffer.allocate(DATAGRAM_SIZE);
         marker.put((byte) 0xc0).putInt(UNSUPPORTED_VERSION);
@@ -154,8 +208,7 @@ class QuicMalformedDatagramTest {
         assertThat("marker response is Version Negotiation", packet.getInt(), is(0));
         assertThat("marker destination connection ID", readConnectionId(packet), is(markerId));
         assertThat("marker source connection ID", readConnectionId(packet), is(destinationId));
-        assertThat("marker advertises the configured version", packet.getInt(),
-                   is(QuicVersion.QUIC_V1.versionNumber()));
+        assertThat("marker advertises the configured version", packet.getInt(), is(version.versionNumber()));
         assertThat("marker response has no unexpected trailing bytes", packet.hasRemaining(), is(false));
     }
 
