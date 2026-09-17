@@ -30,6 +30,8 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.quic.QuicEndpoint.ChannelType.BLOCKING_WITH_VIRTUAL_THREADS;
+import static io.helidon.quic.QuicTransportParameters.ParameterId.initial_max_streams_bidi;
+import static io.helidon.quic.QuicTransportParameters.ParameterId.initial_max_streams_uni;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -114,6 +116,28 @@ class QuicConfigTest {
                 () -> assertThat(config.congestionAlgorithm(), is(QuicCongestionAlgorithm.RENO)),
                 () -> assertThat(config.maxBytesInFlight(), is(65_536L)),
                 () -> assertThat(config.unsafeRawData(), is(true)));
+    }
+
+    @Test
+    void shouldRepresentMaximumConfiguredStreamCountsAsTransportParameters() {
+        long maximumStreamCount = 1L << 60;
+        QuicConfig config = QuicConfig.builder()
+                .maxBidiStreams(maximumStreamCount)
+                .maxUniStreams(maximumStreamCount)
+                .buildPrototype();
+        QuicTransportParameters parameters = QuicTransportParameters.create();
+
+        assertAll(
+                () -> {
+                    assertThat(config.maxBidiStreams(), is(maximumStreamCount));
+                    parameters.intParameter(initial_max_streams_bidi, config.maxBidiStreams());
+                    assertThat(parameters.intParameter(initial_max_streams_bidi), is(maximumStreamCount));
+                },
+                () -> {
+                    assertThat(config.maxUniStreams(), is(maximumStreamCount));
+                    parameters.intParameter(initial_max_streams_uni, config.maxUniStreams());
+                    assertThat(parameters.intParameter(initial_max_streams_uni), is(maximumStreamCount));
+                });
     }
 
     @Test
