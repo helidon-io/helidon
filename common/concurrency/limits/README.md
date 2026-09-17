@@ -37,6 +37,20 @@ The additive-increase/multiplicative-decrease (AIMD) algorithm is a feedback con
 
 This implementation provides variable concurrency limit with fixed minimal/maximal number of permits.
 
+AIMD can queue requests when no permit is available. The queue length is an estimate under concurrent access;
+requests that cannot obtain a permit within the queue timeout are rejected.
+Metrics can be enabled to monitor the current limit, concurrent and rejected requests, queue length, and request and queue times.
+
+Defaults are:
+
+- `queue-length: 0` - no queuing
+- `queue-timeout: PT1S` - 1 second timeout in queue, if queuing is enabled
+- `fair: false` - semaphore fairness disabled
+- `enable-metrics: false` - metrics disabled
+
+See the [AIMD configuration reference](../../../docs/config/io.helidon.common.concurrency.limits.AimdLimit.md)
+for all configuration options and defaults.
+
 # Throughput limit
 
 The throughput limit throttles requests to a configured amount of requests over a duration. 
