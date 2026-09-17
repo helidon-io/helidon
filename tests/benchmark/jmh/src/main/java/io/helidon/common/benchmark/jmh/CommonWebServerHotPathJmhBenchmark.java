@@ -76,6 +76,18 @@ public class CommonWebServerHotPathJmhBenchmark {
     }
 
     @Benchmark
+    public void dataReaderWithListener(ListenerDataReaderState state, Blackhole blackhole) {
+        readRequest(state.prologue, state.headers, blackhole);
+        blackhole.consume(state.bytesRead);
+    }
+
+    @Benchmark
+    public void dataReaderPipelinedWithListener(ListenerDataReaderState state, Blackhole blackhole) {
+        readRequest(state.pipelinedPrologue, state.pipelinedHeaders, blackhole);
+        blackhole.consume(state.pipelinedBytesRead);
+    }
+
+    @Benchmark
     public UriPath uriPathHelperAndNoParam(SimpleUriPathState state) {
         UriPath path = UriPath.create(state.path);
         path.path();
@@ -201,6 +213,28 @@ public class CommonWebServerHotPathJmhBenchmark {
             headers = new Http1Headers(reader, 4096, false);
             prologue = new Http1Prologue(reader, 1024, false);
             DataReader pipelinedReader = DataReader.create(() -> PIPELINED_REQUESTS);
+            pipelinedHeaders = new Http1Headers(pipelinedReader, 4096, false);
+            pipelinedPrologue = new Http1Prologue(pipelinedReader, 1024, false);
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class ListenerDataReaderState {
+        private Http1Headers headers;
+        private Http1Prologue prologue;
+        private Http1Headers pipelinedHeaders;
+        private Http1Prologue pipelinedPrologue;
+        private long bytesRead;
+        private long pipelinedBytesRead;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            DataReader reader = DataReader.create(() -> REQUEST);
+            reader.listener((state, _, _, length) -> state.bytesRead += length, this);
+            headers = new Http1Headers(reader, 4096, false);
+            prologue = new Http1Prologue(reader, 1024, false);
+            DataReader pipelinedReader = DataReader.create(() -> PIPELINED_REQUESTS);
+            pipelinedReader.listener((state, _, _, length) -> state.pipelinedBytesRead += length, this);
             pipelinedHeaders = new Http1Headers(pipelinedReader, 4096, false);
             pipelinedPrologue = new Http1Prologue(pipelinedReader, 1024, false);
         }
