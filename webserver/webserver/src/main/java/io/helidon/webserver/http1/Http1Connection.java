@@ -115,6 +115,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private final long maxPayloadSize;
     private final Http1ConnectionListener recvListener;
     private final Http1ConnectionListener sendListener;
+    private final DataListener<ConnectionContext> readerListener;
     private final Header altSvcHeader;
     private final ConnectionObservation transportObservation;
     private final boolean transportObserved;
@@ -170,14 +171,15 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.recvListener = http1Config.compositeReceiveListener();
         this.sendListener = http1Config.compositeSendListener();
         // Stop forwarding on handoff without overwriting a listener installed by the upgrader.
-        this.reader.listener(new DataListener<ConnectionContext>() {
+        this.readerListener = new DataListener<>() {
             @Override
             public void data(ConnectionContext context, byte[] data, int position, int length) {
                 if (upgradeConnection == null) {
                     recvListener.data(context, data, position, length);
                 }
             }
-        }, ctx);
+        };
+        this.reader.listener(readerListener, ctx);
         this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateRequestHeaders());
         this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
@@ -309,6 +311,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                         return;
                                     }
                                     closeStream(StreamOutcome.COMPLETED);
+                                    reader.listener(readerListener, ctx);
                                     continue;
                                 }
                             } else {
@@ -322,6 +325,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                 }
                                 applicationProcessing(false);
                             }
+                            reader.listener(readerListener, ctx);
                         }
                     }
                 }
