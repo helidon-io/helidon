@@ -353,7 +353,18 @@ security:
           password: "${CLEAR=changeit}"
 ```
 
-Outbound target HTTP method names are exact, case-sensitive selectors.
+For all security providers, outbound target `methods` loaded from configuration
+temporarily match the exact configured token and its standard uppercase form
+when the token names a known method in lowercase or mixed case. For example,
+`get` matches `get` and `GET`, but does not match `Get`. Uppercase known methods
+and custom methods remain exact and case-sensitive. Programmatic builder method
+selectors remain exact.
+
+Loading a non-uppercase known method logs a warning. Update ordinary method
+names to uppercase now: this compatibility will be removed in a future major
+version, when configuration will match only the exact token. See the
+[upgrade guide](../../guides/upgrade/27.md#http-method-case-sensitivity) for
+the known methods and the scope of this compatibility.
 
 ### Example
 
@@ -482,8 +493,20 @@ purposes.
 
 Support for HTTP Signatures.
 
-Method names in `sign-headers` entries and outbound targets are exact,
-case-sensitive selectors.
+Inbound and outbound `sign-headers` method selectors loaded from configuration
+temporarily match the exact configured token and, for a non-uppercase known
+method, its standard uppercase form. For example, `PoSt` matches `PoSt` and
+`POST`, but does not match `post`. An explicit uppercase entry takes precedence
+over a compatibility entry regardless of configuration order. If several case
+variants imply the same uppercase entry and no explicit uppercase entry exists,
+the last configured variant supplies that uppercase entry's signed headers.
+
+Loading a non-uppercase known method logs a warning. Update ordinary method
+names to uppercase now; compatibility will be removed in a future major
+version, when selectors will match only the exact configured token.
+Programmatic builder method selectors remain exact. Outbound target `methods`
+use the same configuration compatibility described in the
+[upgrade guide](../../guides/upgrade/27.md#http-method-case-sensitivity).
 
 ### Maven Coordinates
 
@@ -576,8 +599,9 @@ which requires that lowercase representation. Consequently,
 legacy signed component when a trust boundary must distinguish method case.
 
 Use `sign-headers` to require additional signed fields such as `digest`,
-`content-length`, or `content-type` for selected methods. Each entry uses its
-configured method as an exact, case-sensitive selector.
+`content-length`, or `content-type` for selected methods. Configured method
+selectors use the temporary compatibility described above; this does not
+change `(request-target)` canonicalization.
 
 If a request carries the signature in the `Authorization` header, that header
 value cannot be combined with any other authorization scheme. Use the standalone

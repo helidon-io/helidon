@@ -31,7 +31,13 @@ import io.helidon.webserver.WebServer;
 @Prototype.CustomMethods(SecurityConfigSupport.PathConfigCustomMethods.class)
 interface PathsConfigBlueprint {
     /**
-     * Exact, case-sensitive HTTP methods to match when applying this configured path.
+     * HTTP methods to match exactly when applying this configured path; non-uppercase known methods also match their uppercase
+     * names and log a warning that this compatibility will be removed in a future major version.
+     * Configuration retains each exact method name and also matches its uppercase form when that form is a known
+     * {@link io.helidon.http.Method HTTP method}. For example, configured {@code get} matches both {@code get} and
+     * {@code GET}, but not {@code Get}. Custom methods such as {@code Follow} remain case-sensitive.
+     * Non-uppercase known methods produce a warning: automatic uppercasing will be removed in a future major version.
+     * Use uppercase names for known methods in configuration. Programmatically supplied methods are matched exactly.
      *
      * @return list of methods to secure
      */

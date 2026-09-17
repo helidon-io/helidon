@@ -16,10 +16,12 @@
 
 package io.helidon.security.providers.common;
 
+import java.lang.System.Logger.Level;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -57,9 +59,14 @@ public final class OutboundTarget {
 
     /**
      * Configuration key for string array of HTTP methods. If not provided or empty, all methods are supported.
-     * The values must contain exact names of HTTP methods that should propagate.
+     * Values are matched exactly. For compatibility, non-uppercase known HTTP methods also match their uppercase names
+     * and log a warning. Use uppercase names for known HTTP methods; this compatibility will be removed in a future major version.
      */
     public static final String CONFIG_METHODS = "methods";
+
+    private static final System.Logger LOGGER = System.getLogger(OutboundTarget.class.getName());
+    private static final Set<String> KNOWN_METHODS = Set.of("GET", "POST", "QUERY", "PUT", "DELETE", "HEAD", "PATCH", "OPTIONS",
+                                                           "TRACE", "CONNECT");
 
     private final String name;
     private final Set<String> transports = new HashSet<>();
@@ -119,8 +126,21 @@ public final class OutboundTarget {
                 .forEach(builder::addHost);
         config.get(CONFIG_PATHS).asList(String.class).orElse(List.of())
                 .forEach(builder::addPath);
-        config.get(CONFIG_METHODS).asList(String.class).orElse(List.of())
-                .forEach(builder::addMethod);
+        Config methodsConfig = config.get(CONFIG_METHODS);
+        for (String method : methodsConfig.asList(String.class).orElse(List.of())) {
+            builder.addMethod(method);
+            String uppercase = method.toUpperCase(Locale.ROOT);
+            if (!method.equals(uppercase)
+                    && KNOWN_METHODS.contains(uppercase)
+                    && method.chars().allMatch(character -> character < 128)) {
+                builder.addMethod(uppercase);
+                LOGGER.log(Level.WARNING,
+                           "Configuration key \"{0}\" uses non-uppercase HTTP method \"{1}\". Use \"{2}\" instead. "
+                                   + "Automatic uppercasing will be removed in a future major version; "
+                                   + "the configured value will then be matched case-sensitively.",
+                           methodsConfig.key(), method, uppercase);
+            }
+        }
 
         return builder.build();
     }
@@ -377,7 +397,10 @@ public final class OutboundTarget {
          * @param method supported method
          * @return updated builder instance
          */
-        @ConfiguredOption(key = "methods", kind = ConfiguredOption.Kind.LIST)
+        @ConfiguredOption(key = "methods", kind = ConfiguredOption.Kind.LIST,
+                          description = "HTTP methods matched exactly. Non-uppercase known HTTP methods also match their "
+                                  + "uppercase names and log a warning. Use uppercase names for known HTTP methods; this "
+                                  + "compatibility will be removed in a future major version. Custom methods retain exact case.")
         public Builder addMethod(String method) {
             this.methods.add(Objects.requireNonNull(method));
             return this;

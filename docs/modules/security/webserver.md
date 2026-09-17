@@ -74,7 +74,19 @@ security:
 1. Configuration of integration with web server
 <!--@mdc :: -->
 
-Configured security method names use exact, case-sensitive matching.
+Security path `methods` loaded from configuration temporarily match both the
+configured token and, for a known method written in lowercase or mixed case,
+its standard uppercase form. For example, `get` matches `get` and `GET`, but
+does not match `Get`. An uppercase `GET` matches only `GET`; a custom method
+such as `Follow` remains exact and case-sensitive. Duplicate methods are
+ignored, and an absent or empty `methods` list continues to match all methods.
+
+Loading a non-uppercase known method logs a warning. This compatibility will
+be removed in a future major version, when configuration will match only the
+exact token. Update ordinary method names to uppercase now. Programmatic
+builder method selectors already use exact, case-sensitive matching. See the
+[upgrade guide](../../guides/upgrade/27.md#http-method-case-sensitivity) for
+the known methods and other affected security configuration.
 
 Note: `defaults` section in configuration is related to paths on WebServer
 configured below in `paths` section, it will not apply to any other path on the

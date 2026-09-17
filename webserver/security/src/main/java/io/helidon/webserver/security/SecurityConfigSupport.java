@@ -16,9 +16,13 @@
 
 package io.helidon.webserver.security;
 
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.buffers.Ascii;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -168,12 +172,41 @@ class SecurityConfigSupport {
     }
 
     static class PathConfigCustomMethods {
+        private static final System.Logger LOGGER = System.getLogger(PathsConfig.class.getName());
+        private static final Set<Method> KNOWN_METHODS = Set.of(Method.GET,
+                                                               Method.POST,
+                                                               Method.QUERY,
+                                                               Method.PUT,
+                                                               Method.DELETE,
+                                                               Method.HEAD,
+                                                               Method.PATCH,
+                                                               Method.OPTIONS,
+                                                               Method.TRACE,
+                                                               Method.CONNECT);
+
         private PathConfigCustomMethods() {
         }
 
         @Prototype.ConfigFactoryMethod("methods")
-        static Method createMethods(Config config) {
-            return config.asString().map(Method::create).orElseThrow();
+        static List<Method> createMethods(Config config) {
+            Set<Method> methods = new LinkedHashSet<>();
+            for (String name : config.asList(String.class).orElseThrow()) {
+                Method method = Method.create(name);
+                if (!methods.add(method)) {
+                    continue;
+                }
+                Method uppercase = Method.create(Ascii.toUpperCase(name));
+                if (!method.equals(uppercase) && KNOWN_METHODS.contains(uppercase)) {
+                    methods.add(uppercase);
+                    LOGGER.log(System.Logger.Level.WARNING,
+                               "Security configuration " + config.key() + " contains HTTP method \"" + name
+                                       + "\". For compatibility, both \"" + name + "\" and \"" + uppercase
+                                       + "\" are matched. Automatic uppercasing will be removed in a future major version;"
+                                       + " change the configured value to \"" + uppercase
+                                       + "\", otherwise it will be matched case-sensitively.");
+                }
+            }
+            return List.copyOf(methods);
         }
 
     }

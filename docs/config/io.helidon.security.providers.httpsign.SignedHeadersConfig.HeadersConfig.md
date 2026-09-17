@@ -41,7 +41,7 @@ Configuration of headers to be signed
 <td>
 <code>String</code>
 </td>
-<td>Exact HTTP method this header configuration is bound to. If not present, it is considered default header configuration</td>
+<td>Exact HTTP method this header configuration is bound to. Non-uppercase known HTTP methods also configure their uppercase names and log a warning; an explicit uppercase configuration takes precedence. Use uppercase names for known HTTP methods; this compatibility will be removed in a future major version. Custom methods retain exact case. If not present, it is considered default header configuration</td>
 </tr>
 </tbody>
 </table>

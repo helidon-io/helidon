@@ -17,15 +17,26 @@
 package io.helidon.security.providers.common;
 
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Test for {@link io.helidon.security.providers.common.OutboundTarget}.
@@ -100,13 +111,105 @@ public class OutboundTargetTest {
     }
 
     @Test
-    public void testConfiguredMethodUsesExactCase() {
+    public void testConfiguredKnownMethodsMatchOriginalAndUppercase() {
+        Map.of("get", "GET", "Post", "POST", "query", "QUERY", "Put", "PUT", "delete", "DELETE", "Head", "HEAD",
+               "patch", "PATCH", "Options", "OPTIONS", "trace", "TRACE", "Connect", "CONNECT")
+                .forEach((configured, uppercase) -> {
+                    OutboundTarget instance = OutboundTarget.create(Config.create(ConfigSources.create(Map.of(
+                            "name", "test",
+                            "methods.0", configured))));
+
+                    assertThat("Uppercase alias for " + configured, instance.matches(null, null, null, uppercase), is(true));
+                    assertThat("Original method " + configured, instance.matches(null, null, null, configured), is(true));
+                    assertThat("Unconfigured custom method for " + configured,
+                               instance.matches(null, null, null, "Follow"), is(false));
+                });
+    }
+
+    @Test
+    public void testConfiguredNonUppercaseMethodWarnsWithMigrationGuidance() {
+        var logger = Logger.getLogger(OutboundTarget.class.getName());
+        Level previousLevel = logger.getLevel();
+        var handler = mock(Handler.class);
+        logger.addHandler(handler);
+        try {
+            logger.setLevel(Level.ALL);
+            OutboundTarget.create(Config.create(ConfigSources.create(Map.of(
+                    "security.outbound.0.name", "test",
+                    "security.outbound.0.methods.0", "PoSt"))).get("security.outbound.0"));
+            OutboundTarget.create(Config.create(ConfigSources.create(Map.of(
+                    "name", "test",
+                    "methods.0", "POST",
+                    "methods.1", "Follow"))));
+            OutboundTarget.builder("test").addMethod("get").build();
+
+            ArgumentCaptor<LogRecord> records = ArgumentCaptor.forClass(LogRecord.class);
+            verify(handler).publish(records.capture());
+            verifyNoMoreInteractions(handler);
+            LogRecord warning = records.getValue();
+            assertThat(warning.getLevel(), is(Level.WARNING));
+            assertThat(new SimpleFormatter().formatMessage(warning),
+                       allOf(containsString("security.outbound.0.methods"),
+                             containsString("HTTP method \"PoSt\""),
+                             containsString("Use \"POST\" instead"),
+                             containsString("will be removed in a future major version"),
+                             containsString("will then be matched case-sensitively")));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+        }
+    }
+
+    @Test
+    public void testConfiguredUppercaseMethodUsesExactCase() {
         OutboundTarget instance = OutboundTarget.create(Config.create(ConfigSources.create(Map.of(
                 "name", "test",
-                "methods.0", "get"))));
+                "methods.0", "GET"))));
 
-        assertThat("Differently cased method", instance.matches(null, null, null, "GET"), is(false));
-        assertThat("Exact method", instance.matches(null, null, null, "get"), is(true));
+        assertThat("Uppercase method", instance.matches(null, null, null, "GET"), is(true));
+        assertThat("Lowercase method", instance.matches(null, null, null, "get"), is(false));
+        assertThat("Mixed-case method", instance.matches(null, null, null, "Get"), is(false));
+    }
+
+    @Test
+    public void testConfiguredCustomMethodsUseExactCase() {
+        Map.of("Follow", "FOLLOW", "po\u017ft", "POST", "opt\u0131ons", "OPTIONS")
+                .forEach((configured, uppercase) -> {
+                    OutboundTarget instance = OutboundTarget.create(Config.create(ConfigSources.create(Map.of(
+                            "name", "test",
+                            "methods.0", configured))));
+
+                    assertThat("Custom method " + configured, instance.matches(null, null, null, configured), is(true));
+                    assertThat("No uppercase alias for " + configured,
+                               instance.matches(null, null, null, uppercase), is(false));
+                    assertThat("No lowercase custom alias", instance.matches(null, null, null, "follow"), is(false));
+                });
+    }
+
+    @Test
+    public void testConfiguredDuplicateMethods() {
+        OutboundTarget instance = OutboundTarget.create(Config.create(ConfigSources.create(Map.of(
+                "name", "test",
+                "methods.0", "get",
+                "methods.1", "GET",
+                "methods.2", "get"))));
+
+        assertThat("Uppercase method", instance.matches(null, null, null, "GET"), is(true));
+        assertThat("Original method", instance.matches(null, null, null, "get"), is(true));
+        assertThat("Unconfigured case", instance.matches(null, null, null, "Get"), is(false));
+    }
+
+    @Test
+    public void testConfiguredMethodsDefaultAndLiteralAsterisk() {
+        OutboundTarget defaultTarget = OutboundTarget.create(Config.create(ConfigSources.create(Map.of("name", "test"))));
+        OutboundTarget literalAsterisk = OutboundTarget.create(Config.create(ConfigSources.create(Map.of(
+                "name", "test",
+                "methods.0", "*"))));
+
+        assertThat("Unrestricted default", defaultTarget.matches(null, null, null, "Follow"), is(true));
+        assertThat("Default without a method", defaultTarget.matches(null, null, null, null), is(true));
+        assertThat("Literal asterisk", literalAsterisk.matches(null, null, null, "*"), is(true));
+        assertThat("Asterisk does not match all methods", literalAsterisk.matches(null, null, null, "GET"), is(false));
     }
 
     @Test

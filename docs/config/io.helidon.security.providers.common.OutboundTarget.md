@@ -32,7 +32,7 @@ Configuration of outbound target
 <td>
 <code>List&lt;<wbr>String&gt;</code>
 </td>
-<td>Add an exactly matched supported method for this target</td>
+<td>HTTP methods matched exactly. Non-uppercase known HTTP methods also match their uppercase names and log a warning. Use uppercase names for known HTTP methods; this compatibility will be removed in a future major version. Custom methods retain exact case</td>
 </tr>
 <tr>
 <td>

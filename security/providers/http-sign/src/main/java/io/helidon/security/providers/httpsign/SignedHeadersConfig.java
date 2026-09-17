@@ -16,12 +16,15 @@
 
 package io.helidon.security.providers.httpsign;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -55,6 +58,10 @@ public final class SignedHeadersConfig {
      */
     public static final String REQUEST_TARGET = "(request-target)";
 
+    private static final System.Logger LOGGER = System.getLogger(SignedHeadersConfig.class.getName());
+    private static final Set<String> KNOWN_METHODS = Set.of("GET", "POST", "QUERY", "PUT", "DELETE", "HEAD", "PATCH", "OPTIONS",
+                                                           "TRACE", "CONNECT");
+
     private final HeadersConfig defaultConfig;
     private final Map<String, HeadersConfig> methodConfigs;
 
@@ -65,20 +72,39 @@ public final class SignedHeadersConfig {
 
     /**
      * Load header configuration from config.
+     * Non-uppercase known HTTP methods also configure their uppercase names for compatibility and log a warning.
+     * An explicit uppercase configuration takes precedence over this compatibility configuration. Otherwise, the last
+     * non-uppercase configuration for a known method supplies its uppercase configuration. Custom methods retain exact case.
+     * Use uppercase names for known HTTP methods; this compatibility will be removed in a future major version.
      *
      * @param config config instance, expecting object array as children
      * @return signed headers configuration loaded from config
      */
     public static SignedHeadersConfig create(Config config) {
         Builder builder = builder();
+        Map<String, HeadersConfig> uppercaseConfigs = new HashMap<>();
         config.asNodeList().get().forEach(methodConfig -> {
             HeadersConfig mc = HeadersConfig.create(methodConfig);
 
-            methodConfig.get("method")
+            Config methodNode = methodConfig.get("method");
+            methodNode
                     .asString()
-                    .ifPresentOrElse(method -> builder.config(method, mc),
-                                     () -> builder.defaultConfig(mc));
+                    .ifPresentOrElse(method -> {
+                        builder.config(method, mc);
+                        String uppercase = method.toUpperCase(Locale.ROOT);
+                        if (!method.equals(uppercase)
+                                && KNOWN_METHODS.contains(uppercase)
+                                && method.chars().allMatch(character -> character < 128)) {
+                            uppercaseConfigs.put(uppercase, mc);
+                            LOGGER.log(Level.WARNING,
+                                       "Configuration key \"{0}\" uses non-uppercase HTTP method \"{1}\". Use \"{2}\" instead. "
+                                               + "Automatic uppercasing will be removed in a future major version; "
+                                               + "the configured value will then be matched case-sensitively.",
+                                       methodNode.key(), method, uppercase);
+                        }
+                    }, () -> builder.defaultConfig(mc));
         });
+        uppercaseConfigs.forEach(builder.methodConfigs::putIfAbsent);
 
         return builder.build();
     }
@@ -224,6 +250,10 @@ public final class SignedHeadersConfig {
                           description = "Headers that must be signed if present in request.")
         @ConfiguredOption(key = "method", type = String.class,
                           description = "Exact HTTP method this header configuration is bound to. "
+                                  + "Non-uppercase known HTTP methods also configure their uppercase names and log a warning; "
+                                  + "an explicit uppercase configuration takes precedence. Use uppercase names for known HTTP "
+                                  + "methods; this compatibility will be removed in a future major version. "
+                                  + "Custom methods retain exact case. "
                                   + "If not present, it is considered default header configuration.")
         public static HeadersConfig create(Config config) {
             return create(config.get("always").asList(String.class).orElse(List.of()),
