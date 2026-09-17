@@ -16,6 +16,12 @@
 
 package io.helidon.service.tests.interception;
 
+import java.util.Optional;
+
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.InterceptionException;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -31,6 +37,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -97,6 +105,29 @@ class InterceptionTest {
         );
 
         assertThat(response, is("hello"));
+    }
+
+    @Test
+    void testElementInfo() {
+        assertThat(service.intercepted("hello", false, false, false), is("hello"));
+
+        Invocation invocation = ReturningInterceptor.lastCall();
+        assertThat(invocation, notNullValue());
+        TypedElementInfo element = invocation.elementInfo();
+        assertAll(
+                () -> assertThat(element.enclosingType(), is(Optional.of(TypeName.create(TheService.class)))),
+                () -> assertThat(element.kind(), is(ElementKind.METHOD)),
+                () -> assertThat(element.signature().text(), is("intercepted(java.lang.String,boolean,boolean,boolean)")),
+                () -> assertThat(element.typeName(), is(TypeName.create(String.class))),
+                () -> assertThat(element.parameterArguments().stream().map(TypedElementInfo::elementName).toList(),
+                                 contains("message", "modify", "repeat", "doReturn")),
+                () -> assertThat(element.parameterArguments().stream().map(TypedElementInfo::typeName).toList(),
+                                 contains(TypeName.create(String.class), TypeName.create(boolean.class),
+                                          TypeName.create(boolean.class), TypeName.create(boolean.class))),
+                () -> assertThat(element.annotations().stream().map(Annotation::typeName).toList(),
+                                 containsInAnyOrder(TypeName.create(Modify.class), TypeName.create(Repeat.class),
+                                                    TypeName.create(Return.class)))
+        );
     }
 
     @Test

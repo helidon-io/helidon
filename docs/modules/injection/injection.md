@@ -1050,6 +1050,11 @@ If no custom executor service is provided, the system defaults to a
 thread-per-task executor using Virtual Threads, with thread names prefixed as
 `inject-event-manager-`.
 
+When the registry shuts down, its default event executor stops accepting new
+tasks. Tasks already submitted can finish; registry shutdown does not wait for
+them. The event manager does not shut down a custom executor supplied by the
+application.
+
 ### Asynchronous Event Producer
 
 All asynchronous event producers must use the `Event.Emitter.emitAsync(..)`
@@ -1177,6 +1182,12 @@ var registryManager = ServiceRegistryManager.create();
 // Once ServiceRegistryManager is no longer needed, it needs to be closed
 registryManager.shutdown();
 ```
+
+## JNDI support
+
+The `helidon-service-jndi` module is a supporting module for Helidon Data.
+It provides limited JNDI lookup support for persistence integration and does
+not offer full JNDI compatibility.
 
 ## Startup
 

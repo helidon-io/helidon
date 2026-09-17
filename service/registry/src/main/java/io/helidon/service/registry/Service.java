@@ -24,6 +24,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -625,7 +626,7 @@ public final class Service {
          * @return a new qualified instance
          */
         static <T> QualifiedInstance<T> create(T instance, io.helidon.service.registry.Qualifier... qualifiers) {
-            return new QualifiedInstanceImpl<>(instance, Set.of(qualifiers));
+            return create(instance, Set.of(qualifiers));
         }
 
         /**
@@ -637,7 +638,8 @@ public final class Service {
          * @return a new qualified instance
          */
         static <T> QualifiedInstance<T> create(T instance, Set<io.helidon.service.registry.Qualifier> qualifiers) {
-            return new QualifiedInstanceImpl<>(instance, qualifiers);
+            Objects.requireNonNull(instance, "instance");
+            return new QualifiedInstanceImpl<>(instance, Set.copyOf(qualifiers));
         }
 
         /**

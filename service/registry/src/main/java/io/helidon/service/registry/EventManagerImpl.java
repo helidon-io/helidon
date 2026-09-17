@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,13 @@ class EventManagerImpl implements EventManager {
     private final Map<RegistrationKey, List<Consumer<?>>> asyncListeners = new HashMap<>();
     private final ReadWriteLock listenersLock = new ReentrantReadWriteLock();
     private final ExecutorService executor;
+    private final boolean executorOwned;
 
     @Service.Inject
     EventManagerImpl(Supplier<List<EventObserverRegistration>> registrations,
                      @Service.NamedByType(EventManager.class) Optional<ExecutorService> executorService) {
         this.registrations = registrations;
+        this.executorOwned = executorService.isEmpty();
         this.executor = executorService.orElseGet(() -> Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual()
                         .name("inject-event-manager-", 0)
@@ -58,9 +60,8 @@ class EventManagerImpl implements EventManager {
     public <T> void register(ResolvedType eventType, Consumer<T> eventConsumer, Set<Qualifier> qualifiers) {
         listenersLock.writeLock().lock();
         try {
-            listeners.computeIfAbsent(new RegistrationKey(eventType, qualifiers),
-                                      k -> new ArrayList<>())
-                    .add(eventConsumer);
+            listeners.compute(new RegistrationKey(eventType, qualifiers),
+                              (_, consumers) -> addConsumer(consumers, eventConsumer));
         } finally {
             listenersLock.writeLock().unlock();
         }
@@ -70,9 +71,8 @@ class EventManagerImpl implements EventManager {
     public <T> void registerAsync(ResolvedType eventType, Consumer<T> eventConsumer, Set<Qualifier> qualifiers) {
         listenersLock.writeLock().lock();
         try {
-            asyncListeners.computeIfAbsent(new RegistrationKey(eventType, qualifiers),
-                                           k -> new ArrayList<>())
-                    .add(eventConsumer);
+            asyncListeners.compute(new RegistrationKey(eventType, qualifiers),
+                                   (_, consumers) -> addConsumer(consumers, eventConsumer));
         } finally {
             listenersLock.writeLock().unlock();
         }
@@ -136,6 +136,23 @@ class EventManagerImpl implements EventManager {
     void init() {
         var registrationList = registrations.get();
         registrationList.forEach(reg -> reg.register(this));
+    }
+
+    @Service.PreDestroy
+    void shutdown() {
+        if (executorOwned) {
+            executor.shutdown();
+        }
+    }
+
+    private static List<Consumer<?>> addConsumer(List<Consumer<?>> consumers, Consumer<?> consumer) {
+        if (consumers == null) {
+            return List.of(consumer);
+        }
+        // Dispatch retains this immutable snapshot after releasing the read lock.
+        var updated = new ArrayList<>(consumers);
+        updated.add(consumer);
+        return List.copyOf(updated);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

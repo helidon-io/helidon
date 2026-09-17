@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ class ModifyingInterceptor implements Interception.Interceptor {
 
     @Override
     public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
-        LAST_CALL.set(new Invocation(ctx.elementInfo().elementName(), Arrays.copyOf(args, args.length)));
+        LAST_CALL.set(new Invocation(ctx.elementInfo(), Arrays.copyOf(args, args.length)));
         if (args.length < 2) {
             // safeguard
             return chain.proceed(args);
