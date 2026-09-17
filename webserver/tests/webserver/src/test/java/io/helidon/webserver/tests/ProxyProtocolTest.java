@@ -37,6 +37,8 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.is;
@@ -188,6 +190,7 @@ class ProxyProtocolTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testProxyProtocolV2UnixDoesNotCreateForwardedHeaders() {
         byte[] header = new byte[16 + 216];
         byte[] prefix = hexFormat.parseHex(V2_PREFIX);
