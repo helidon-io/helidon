@@ -1617,7 +1617,8 @@ public sealed class PacketSpaceManager implements PacketSpace
     }
 
     private long peerAckDelayToMicros(long ackDelay) {
-        return ackDelay << peerAckDelayExponent;
+        long exponent = peerAckDelayExponent;
+        return ackDelay > (Long.MAX_VALUE >>> exponent) ? Long.MAX_VALUE : ackDelay << exponent;
     }
 
     private NextAckFrame nextAck(boolean onlyOverdue, int maxSize) {
