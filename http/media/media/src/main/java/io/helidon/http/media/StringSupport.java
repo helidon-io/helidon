@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.http.media;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -225,6 +226,8 @@ public class StringSupport implements MediaSupport {
     }
 
     private static final class StringReader implements EntityReader<String> {
+        private static final int INITIAL_BUFFER_SIZE = 256;
+
         @Override
         public String read(GenericType<String> type, InputStream stream, Headers headers) {
             return read(stream, headers.contentType());
@@ -245,7 +248,17 @@ public class StringSupport implements MediaSupport {
                     .orElse(StandardCharsets.UTF_8);
 
             try (stream) {
-                return new String(stream.readAllBytes(), charset);
+                // Avoid a large temporary bulk-read buffer for small entities.
+                byte[] bytes = new byte[INITIAL_BUFFER_SIZE];
+                int length = stream.readNBytes(bytes, 0, bytes.length);
+                if (length < bytes.length) {
+                    return new String(bytes, 0, length, charset);
+                }
+
+                var output = new ByteArrayOutputStream(INITIAL_BUFFER_SIZE * 2);
+                output.writeBytes(bytes);
+                stream.transferTo(output);
+                return output.toString(charset);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
