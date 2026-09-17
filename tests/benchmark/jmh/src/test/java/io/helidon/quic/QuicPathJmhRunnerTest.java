@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import io.helidon.quic.QuicPathJmhBenchmark.AckPacketSpaceLifecycle;
+import io.helidon.quic.QuicPathJmhBenchmark.AckRecoveryScenario;
 import io.helidon.quic.QuicPathJmhBenchmark.AckState;
 import io.helidon.quic.QuicPathJmhBenchmark.AckWorkload;
 
@@ -37,13 +38,16 @@ import org.openjdk.jmh.runner.options.TimeValue;
 class QuicPathJmhRunnerTest {
     private static final String PREFIX = "quic.path.jmh.";
     private static final String ACK_BENCHMARK = QuicPathJmhBenchmark.class.getName() + ".establishedPathAckRanges";
+    private static final String ACK_RECOVERY_BENCHMARK = QuicPathJmhBenchmark.class.getName() + ".ackRecovery";
 
     static Options options(Properties properties) {
         String include = properties.getProperty(PREFIX + "include", ".*QuicPathJmhBenchmark.*");
         String result = properties.getProperty(PREFIX + "result", "./target/quic-path-jmh-result.json");
         Pattern includePattern = Pattern.compile(include);
-        boolean ackSelected = includePattern.matcher(ACK_BENCHMARK).find()
+        boolean ackRangesSelected = includePattern.matcher(ACK_BENCHMARK).find()
                 || includePattern.matcher(ACK_BENCHMARK + "Allocation").find();
+        boolean ackRecoverySelected = includePattern.matcher(ACK_RECOVERY_BENCHMARK).find()
+                || includePattern.matcher(ACK_RECOVERY_BENCHMARK + "Allocation").find();
 
         ChainedOptionsBuilder optionsBuilder = new OptionsBuilder()
                 .include(include)
@@ -64,12 +68,12 @@ class QuicPathJmhRunnerTest {
             optionsBuilder.output(output);
         }
         for (String name : new String[] {"connectionCount", "sendAsync", "inFlightPackets", "ackRangeCount",
-                "ackPacketSpaceLifecycle", "ackWorkload"}) {
+                "ackPacketSpaceLifecycle", "ackWorkload", "ackRecoveryScenario"}) {
             if (properties.containsKey(PREFIX + name)) {
                 optionsBuilder.param(name, parameterValues(properties, name, ""));
             }
         }
-        if (ackSelected) {
+        if (ackRangesSelected) {
             for (String flight : parameterValues(properties, "inFlightPackets", "64")) {
                 for (String ranges : parameterValues(properties, "ackRangeCount", "1")) {
                     for (String lifecycle : parameterValues(properties, "ackPacketSpaceLifecycle", "REUSED")) {
@@ -83,10 +87,19 @@ class QuicPathJmhRunnerTest {
                 }
             }
         }
+        if (ackRecoverySelected) {
+            for (String scenario : parameterValues(properties,
+                                                    "ackRecoveryScenario",
+                                                    "APPLICATION,SERVER_INITIAL,CLIENT_INITIAL")) {
+                AckRecoveryScenario.valueOf(scenario);
+            }
+        }
         if (Boolean.parseBoolean(properties.getProperty(PREFIX + "gcProfiler", "false"))) {
-            if (ackSelected) {
+            if (ackRangesSelected || ackRecoverySelected) {
+                String selectedBenchmark = ackRecoverySelected ? ACK_RECOVERY_BENCHMARK : ACK_BENCHMARK;
                 throw new IllegalArgumentException("GCProfiler includes ACK fixture allocation; select "
-                                                           + ACK_BENCHMARK + "Allocation for isolated ACK allocation");
+                                                           + selectedBenchmark
+                                                           + "Allocation for isolated ACK allocation");
             }
             optionsBuilder.addProfiler(GCProfiler.class);
         }
