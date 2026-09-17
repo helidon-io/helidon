@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.time.Duration.ofMillis;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -245,6 +248,31 @@ public class AwaitTest {
     @Test
     void testAwaitWithDurationPositive() {
         assertThat(testSingle().await(Duration.of(2, ChronoUnit.SECONDS)), is(0 + 1 + 2 + 3 + 4L));
+    }
+
+    @SuppressWarnings("deprecation")
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void timedAwaitPreservesInterrupt(boolean durationOverload) {
+        var future = new CompletableFuture<String>();
+        Awaitable<String> awaitable = () -> future;
+
+        Thread.currentThread().interrupt();
+        try {
+            CompletionException exception = assertThrows(CompletionException.class, () -> {
+                if (durationOverload) {
+                    awaitable.await(Duration.ofSeconds(5));
+                } else {
+                    awaitable.await(5, TimeUnit.SECONDS);
+                }
+            });
+
+            assertThat(exception.getCause(), instanceOf(InterruptedException.class));
+            assertThat("Timed await must preserve the caller's interruption", Thread.currentThread().isInterrupted(), is(true));
+        } finally {
+            Thread.interrupted();
+            future.cancel(false);
+        }
     }
 
     /**
