@@ -567,10 +567,10 @@ final class QuicTls13ServerHandshake {
     private Result consumeInitialClientHello(ByteBuffer message) throws QuicTransportException {
         byte[] clientHelloBytes = copy(message);
         QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(ByteBuffer.wrap(clientHelloBytes));
-        validateClientHello(clientHello);
+        List<QuicTlsNamedGroup> clientSupportedGroups = validateClientHello(clientHello);
 
         QuicTls13CipherSuite selectedCipherSuite = selectCipherSuite(clientHello);
-        ClientKeyShareSelection keyShareSelection = selectClientKeyShare(clientHello);
+        ClientKeyShareSelection keyShareSelection = selectClientKeyShare(clientHello, clientSupportedGroups);
         if (keyShareSelection.helloRetryRequest()) {
             return helloRetryRequest(clientHelloBytes,
                                      clientHello,
@@ -595,7 +595,7 @@ final class QuicTls13ServerHandshake {
         return createServerFlight(clientHelloBytes, clientHello, retryState.cipherSuite(), clientKeyShare);
     }
 
-    private void validateClientHello(QuicTlsClientHelloMessage clientHello) throws QuicTransportException {
+    private List<QuicTlsNamedGroup> validateClientHello(QuicTlsClientHelloMessage clientHello) throws QuicTransportException {
         rejectMiddleboxCompatibility(clientHello);
         if (clientHello.legacyVersion() != LEGACY_TLS_VERSION) {
             throw QuicTlsHandshakeMessages.illegalParameter("ClientHello legacy_version is not TLS 1.2 compatibility mode");
@@ -615,8 +615,9 @@ final class QuicTls13ServerHandshake {
                         "ClientHello is missing supported_groups extension"));
         // An empty usable-share list can require HelloRetryRequest; the encoded vector must still be valid.
         QuicTlsKeyShares.decodeClientHello(keyShareExtension.dataBuffer());
-        QuicTlsSupportedGroups.decode(supportedGroupsExtension.dataBuffer());
+        List<QuicTlsNamedGroup> clientSupportedGroups = QuicTlsSupportedGroups.decode(supportedGroupsExtension.dataBuffer());
         validateResumptionOffer(clientHello);
+        return clientSupportedGroups;
     }
 
     private void validateResumptionOffer(QuicTlsClientHelloMessage clientHello) throws QuicTransportException {
@@ -678,10 +679,10 @@ final class QuicTls13ServerHandshake {
         return List.copyOf(cipherSuites);
     }
 
-    private ClientKeyShareSelection selectClientKeyShare(QuicTlsClientHelloMessage clientHello)
+    private ClientKeyShareSelection selectClientKeyShare(QuicTlsClientHelloMessage clientHello,
+                                                        List<QuicTlsNamedGroup> clientSupportedGroups)
             throws QuicTransportException {
         List<QuicTlsNamedGroup> supportedGroups = supportedGroups();
-        List<QuicTlsNamedGroup> clientSupportedGroups = clientHello.supportedGroups();
         List<QuicTlsKeyShareEntry> clientKeyShares = clientHello.keyShares();
         for (QuicTlsNamedGroup supportedGroup : supportedGroups) {
             for (QuicTlsKeyShareEntry clientKeyShare : clientKeyShares) {
