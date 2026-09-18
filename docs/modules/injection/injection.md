@@ -1050,6 +1050,11 @@ If no custom executor service is provided, the system defaults to a
 thread-per-task executor using Virtual Threads, with thread names prefixed as
 `inject-event-manager-`.
 
+When the registry shuts down, its default event executor stops accepting new
+tasks. Tasks already submitted can finish; registry shutdown does not wait for
+them. The event manager does not shut down a custom executor supplied by the
+application.
+
 ### Asynchronous Event Producer
 
 All asynchronous event producers must use the `Event.Emitter.emitAsync(..)`
@@ -1177,6 +1182,49 @@ var registryManager = ServiceRegistryManager.create();
 // Once ServiceRegistryManager is no longer needed, it needs to be closed
 registryManager.shutdown();
 ```
+
+## JNDI support
+
+The `helidon-service-jndi` module provides limited JNDI lookup support backed
+by the global service registry. The naming context does not support direct
+binding, rebinding, unbinding, renaming, or listing bindings, and does not
+offer full JNDI compatibility.
+
+To expose a service through JNDI, add the
+`io.helidon.service:helidon-service-jndi` dependency and declare a named service
+using the service descriptor generation described in [Build time](#build-time):
+
+```java
+import io.helidon.service.registry.Service;
+
+@Service.Singleton
+@Service.Named("helidon:jndi/my/service")
+class MyService {
+}
+```
+
+The JNDI name is the service's `@Service.Named` value with the optional
+`helidon:jndi/` prefix removed. A service without a name is exposed using its
+fully qualified service type name. In this example, the JNDI name is
+`my/service`.
+
+Once the service is available in the global service registry, look it up as
+follows. `NamingFactory.register()` configures Helidon's initial context
+factory if no other initial context factory is already configured:
+
+```java
+import javax.naming.InitialContext;
+
+import io.helidon.service.jndi.NamingFactory;
+
+NamingFactory.register();
+MyService service = (MyService) new InitialContext().lookup("my/service");
+```
+
+The lookup can throw `javax.naming.NamingException`. The naming context
+captures the available service names when it is created, so register services
+before creating the context. Lookup obtains the service instance from the
+registry; no call to `Context.bind()` is needed or supported.
 
 ## Startup
 

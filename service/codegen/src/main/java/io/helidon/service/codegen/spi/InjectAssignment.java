@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.service.codegen.spi;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -61,6 +62,8 @@ public interface InjectAssignment {
          * @return a new assignment
          */
         static Assignment create(TypeName usedType, Consumer<ContentBuilder<?>> codeGenerator) {
+            Objects.requireNonNull(usedType, "usedType");
+            Objects.requireNonNull(codeGenerator, "codeGenerator");
             return new AssignmentImpl(usedType, codeGenerator);
         }
 
