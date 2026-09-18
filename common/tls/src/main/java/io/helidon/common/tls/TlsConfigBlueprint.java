@@ -145,7 +145,8 @@ interface TlsConfigBlueprint extends TlsMaterialBlueprint, Prototype.Factory<Tls
     List<String> enabledProtocols();
 
     /**
-     * SSL session cache size.
+     * SSL session cache size, where {@code 0} means no cache size limit, as defined by
+     * {@link javax.net.ssl.SSLSessionContext#setSessionCacheSize(int)}.
      *
      * @return session cache size, defaults to {@value TlsConfigSupport.CustomMethods#DEFAULT_SESSION_CACHE_SIZE}.
      */
@@ -154,7 +155,8 @@ interface TlsConfigBlueprint extends TlsMaterialBlueprint, Prototype.Factory<Tls
     int sessionCacheSize();
 
     /**
-     * SSL session timeout.
+     * SSL session timeout, where {@link java.time.Duration#ZERO} means no configured timeout limit;
+     * the TLS protocol's session-ticket lifetime still applies.
      *
      * @return session timeout, defaults to {@value TlsConfigSupport.CustomMethods#DEFAULT_SESSION_TIMEOUT}.
      */

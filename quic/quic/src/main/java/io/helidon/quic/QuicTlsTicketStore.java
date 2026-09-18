@@ -30,6 +30,7 @@ final class QuicTlsTicketStore<K> implements AutoCloseable {
     private final int capacity;
     private final long timeoutMillis;
     private final LongSupplier currentTimeMillis;
+    private final boolean enabled;
 
     private boolean closed;
 
@@ -37,7 +38,15 @@ final class QuicTlsTicketStore<K> implements AutoCloseable {
         this(capacity, timeout, System::currentTimeMillis);
     }
 
+    QuicTlsTicketStore(int capacity, Duration timeout, boolean enabled) {
+        this(capacity, timeout, System::currentTimeMillis, enabled);
+    }
+
     QuicTlsTicketStore(int capacity, Duration timeout, LongSupplier currentTimeMillis) {
+        this(capacity, timeout, currentTimeMillis, true);
+    }
+
+    private QuicTlsTicketStore(int capacity, Duration timeout, LongSupplier currentTimeMillis, boolean enabled) {
         if (capacity < 0) {
             throw new IllegalArgumentException("TLS session cache size must not be negative: " + capacity);
         }
@@ -54,6 +63,11 @@ final class QuicTlsTicketStore<K> implements AutoCloseable {
         }
         this.timeoutMillis = timeout.isZero() ? Long.MAX_VALUE : configuredTimeoutMillis;
         this.currentTimeMillis = Objects.requireNonNull(currentTimeMillis, "currentTimeMillis");
+        this.enabled = enabled;
+    }
+
+    static <K> QuicTlsTicketStore<K> disabled() {
+        return new QuicTlsTicketStore<>(0, Duration.ZERO, System::currentTimeMillis, false);
     }
 
     boolean put(K key, QuicTlsResumptionTicket ticket) {
@@ -61,7 +75,7 @@ final class QuicTlsTicketStore<K> implements AutoCloseable {
         Objects.requireNonNull(ticket, "ticket");
         lock.lock();
         try {
-            if (closed || capacity == 0) {
+            if (closed || !enabled) {
                 return false;
             }
             long now = currentTimeMillis.getAsLong();
@@ -70,7 +84,7 @@ final class QuicTlsTicketStore<K> implements AutoCloseable {
                 return false;
             }
             entries.put(key, ticket);
-            while (entries.size() > capacity) {
+            while (capacity > 0 && entries.size() > capacity) {
                 var iterator = entries.entrySet().iterator();
                 iterator.next();
                 iterator.remove();
@@ -85,7 +99,7 @@ final class QuicTlsTicketStore<K> implements AutoCloseable {
         Objects.requireNonNull(key, "key");
         lock.lock();
         try {
-            if (closed || capacity == 0) {
+            if (closed || !enabled) {
                 return Optional.empty();
             }
             long now = currentTimeMillis.getAsLong();
@@ -104,7 +118,7 @@ final class QuicTlsTicketStore<K> implements AutoCloseable {
     }
 
     boolean enabled() {
-        return capacity > 0;
+        return enabled;
     }
 
     int size() {

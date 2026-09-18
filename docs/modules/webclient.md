@@ -152,6 +152,12 @@ and use a configured TCP protocol. Disabled endpoint identification and
 TLS trust and endpoint identification according to the security requirements
 of the application.
 
+HTTP/3 uses `tls.session-cache-size` and `tls.session-timeout` for TLS session
+resumption. As with JSSE, cache size `0` means no size limit, not disabled
+resumption; the default remains 20,480. Timeout `PT0S` means no configured timeout
+limit, but the TLS ticket lifetime still applies. A positive cache size bounds
+retained session state.
+
 Each supporting protocol provider accounts for `Age` and apparent age derived
 from `Date`, honors `ma`, `clear`, and `persist`, and keeps discovery state in
 its own connection cache. Advertisement freshness controls creation of new

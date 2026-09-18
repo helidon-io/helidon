@@ -59,12 +59,86 @@ class QuicTlsServerSessionCacheTest {
     }
 
     @Test
-    void zeroCapacityDoesNotIssueTickets() {
+    void zeroCapacityIsUnlimited() {
         AtomicLong clock = new AtomicLong(1_000);
         QuicTlsServerSessionCache cache = new QuicTlsServerSessionCache(0, Duration.ZERO, clock::get);
 
-        assertThat(cache.cache(resumptionTicket(1, clock.get(), 60)), is(false));
+        for (int id = 1; id <= 4; id++) {
+            assertThat(cache.cache(resumptionTicket(id, clock.get(), 60)), is(true));
+        }
+
+        assertThat(cache.size(), is(4));
+        for (int id = 1; id <= 4; id++) {
+            assertThat(cache.cached(new byte[] {(byte) id}).orElseThrow().ticket(), is(new byte[] {(byte) id}));
+        }
+    }
+
+    @Test
+    void unlimitedCapacityAndZeroTimeoutStillHonorTicketExpiry() {
+        AtomicLong clock = new AtomicLong(1_000);
+        QuicTlsServerSessionCache cache = new QuicTlsServerSessionCache(0, Duration.ZERO, clock::get);
+        assertThat(cache.cache(resumptionTicket(1, clock.get(), 60)), is(true));
+
+        clock.addAndGet(59_999);
+        assertThat(cache.cached(new byte[] {1}).orElseThrow().ticket(), is(new byte[] {1}));
+        clock.incrementAndGet();
+
+        assertThat(cache.cached(new byte[] {1}), is(Optional.empty()));
         assertThat(cache.size(), is(0));
+    }
+
+    @Test
+    void unlimitedCapacityHonorsConfiguredTimeout() {
+        AtomicLong clock = new AtomicLong(1_000);
+        QuicTlsServerSessionCache cache = new QuicTlsServerSessionCache(0, Duration.ofSeconds(2), clock::get);
+        assertThat(cache.cache(resumptionTicket(1, clock.get(), 60)), is(true));
+
+        clock.addAndGet(1_999);
+        assertThat(cache.cached(new byte[] {1}).orElseThrow().ticket(), is(new byte[] {1}));
+        clock.incrementAndGet();
+
+        assertThat(cache.cached(new byte[] {1}), is(Optional.empty()));
+        assertThat(cache.size(), is(0));
+    }
+
+    @Test
+    void unlimitedCacheClearIsReusableAndCloseIsTerminal() {
+        AtomicLong clock = new AtomicLong(1_000);
+        QuicTlsServerSessionCache cache = new QuicTlsServerSessionCache(0, Duration.ZERO, clock::get);
+        assertThat(cache.cache(resumptionTicket(1, clock.get(), 60)), is(true));
+        cache.clear();
+        assertThat(cache.size(), is(0));
+        assertThat(cache.cached(new byte[] {1}), is(Optional.empty()));
+
+        assertThat(cache.cache(resumptionTicket(2, clock.get(), 60)), is(true));
+        assertThat(cache.cached(new byte[] {2}).orElseThrow().ticket(), is(new byte[] {2}));
+        cache.close();
+        cache.clear();
+
+        assertThat(cache.size(), is(0));
+        assertThat(cache.cache(resumptionTicket(3, clock.get(), 60)), is(false));
+        assertThat(cache.cached(new byte[] {2}), is(Optional.empty()));
+        assertThat(cache.cached(new byte[] {3}), is(Optional.empty()));
+    }
+
+    @Test
+    void disabledCacheRemainsDisabledAfterClearAndClose() {
+        try (QuicTlsServerSessionCache cache = QuicTlsServerSessionCache.disabled()) {
+            QuicTlsResumptionTicket ticket = resumptionTicket(1, System.currentTimeMillis(), 60);
+            assertThat(cache.cache(ticket), is(false));
+            assertThat(cache.size(), is(0));
+            assertThat(cache.cached(ticket.ticket()), is(Optional.empty()));
+
+            cache.clear();
+            assertThat(cache.cache(ticket), is(false));
+            assertThat(cache.size(), is(0));
+
+            cache.close();
+            cache.clear();
+            assertThat(cache.cache(ticket), is(false));
+            assertThat(cache.size(), is(0));
+            assertThat(cache.cached(ticket.ticket()), is(Optional.empty()));
+        }
     }
 
     private static QuicTlsResumptionTicket resumptionTicket(int id,
