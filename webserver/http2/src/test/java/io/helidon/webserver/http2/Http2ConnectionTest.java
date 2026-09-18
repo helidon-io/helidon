@@ -48,6 +48,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
@@ -99,6 +100,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
@@ -119,6 +121,100 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 class Http2ConnectionTest {
+    private static final HeaderName LIMIT_HEADER = HeaderNames.create("x-limit");
+
+    @Test
+    void localHeaderSizeRejectsOversizedRequestBelowAdvertisedLimit() throws InterruptedException {
+        Http2Config config = Http2Config.builder()
+                .maxHeadersSize(256)
+                .maxHeaderListSize(4096)
+                .build();
+        Http2FrameData[] frames = headerLimitFrames(headerLimitRequest("a".repeat(300)),
+                                                   Http2Headers.DynamicTable.create(
+                                                           Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                                                   true,
+                                                   false);
+        assertThat("Compressed request fits below the local decoded-header limit",
+                   frames[0].header().length(), is(lessThan(config.maxHeadersSize())));
+        HeaderLimitTestContext test = new HeaderLimitTestContext(frames);
+
+        test.handle(config);
+
+        test.assertHeaderSizeRejected();
+        verify(test.executor, never()).submit(any(Runnable.class));
+    }
+
+    @Test
+    void localHeaderSizeAllowsRequestAboveAdvertisedLimit() throws InterruptedException {
+        Http2Config config = Http2Config.builder()
+                .maxHeadersSize(4096)
+                .maxHeaderListSize(64)
+                .build();
+        HeaderLimitTestContext test = new HeaderLimitTestContext(headerLimitFrames(
+                headerLimitRequest("a".repeat(300)),
+                Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                true,
+                true));
+
+        test.handle(config);
+
+        assertThat(test.frames(Http2FrameType.GO_AWAY), hasSize(0));
+        verify(test.executor).submit(any(Runnable.class));
+    }
+
+    @Test
+    void localHeaderSizeRejectsOversizedTrailersBelowAdvertisedLimit() throws InterruptedException {
+        Http2Config config = Http2Config.builder()
+                .maxHeadersSize(256)
+                .maxHeaderListSize(4096)
+                .build();
+        Http2Headers.DynamicTable table = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        Http2FrameData[] request = headerLimitFrames(headerLimitRequest(""), table, false, false);
+        Http2FrameData[] trailers = headerLimitFrames(Http2Headers.create(WritableHeaders.create()
+                                                                                   .set(LIMIT_HEADER, "a".repeat(300))),
+                                                      table,
+                                                      true,
+                                                      false);
+        assertThat("Compressed trailers fit below the local decoded-header limit",
+                   trailers[0].header().length(), is(lessThan(config.maxHeadersSize())));
+        HeaderLimitTestContext test = new HeaderLimitTestContext(request[0], trailers[0]);
+
+        test.handle(config);
+
+        test.assertHeaderSizeRejected();
+        verify(test.executor).submit(any(Runnable.class));
+    }
+
+    @Test
+    void localHeaderSizeAllowsTrailersAboveAdvertisedLimit() throws InterruptedException {
+        Http2Config config = Http2Config.builder()
+                .maxHeadersSize(4096)
+                .maxHeaderListSize(64)
+                .build();
+        Http2Headers.DynamicTable table = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        Http2FrameData[] request = headerLimitFrames(headerLimitRequest(""), table, false, false);
+        Http2FrameData[] trailers = headerLimitFrames(Http2Headers.create(WritableHeaders.create()
+                                                                                   .set(LIMIT_HEADER, "a".repeat(300))),
+                                                      table,
+                                                      true,
+                                                      true);
+        HeaderLimitTestContext test = new HeaderLimitTestContext(request[0], trailers[0], trailers[1]);
+
+        test.handle(config);
+
+        assertThat(test.frames(Http2FrameType.GO_AWAY), hasSize(0));
+        verify(test.executor).submit(any(Runnable.class));
+    }
+
+    @Test
+    void advertisedHeaderListSizeCanExceedLocalHeaderSize() throws InterruptedException {
+        assertAdvertisedHeaderListSize(256, 4096);
+    }
+
+    @Test
+    void advertisedHeaderListSizeCanBeBelowLocalHeaderSize() throws InterruptedException {
+        assertAdvertisedHeaderListSize(4096, 64);
+    }
 
     @Test
     void zeroInitialWindowStillCreatesConnection() {
@@ -1264,6 +1360,62 @@ class Http2ConnectionTest {
         assertThat(connection.canInterrupt(), is(true));
     }
 
+    private static void assertAdvertisedHeaderListSize(int localLimit, long advertisedLimit) throws InterruptedException {
+        HeaderLimitTestContext test = new HeaderLimitTestContext();
+        test.handle(Http2Config.builder()
+                            .maxHeadersSize(localLimit)
+                            .maxHeaderListSize(advertisedLimit)
+                            .build());
+
+        List<Http2FrameData> settingsFrames = test.frames(Http2FrameType.SETTINGS).stream()
+                .filter(frame -> !frame.header().flags(Http2FrameTypes.SETTINGS).ack())
+                .toList();
+        assertThat(settingsFrames, hasSize(1));
+        Http2Settings settings = Http2Settings.create(settingsFrames.getFirst().data());
+        assertThat(settings.presentValue(Http2Setting.MAX_HEADER_LIST_SIZE), is(Optional.of(advertisedLimit)));
+    }
+
+    private static Http2Headers headerLimitRequest(String value) {
+        return Http2Headers.create(WritableHeaders.create().set(LIMIT_HEADER, value))
+                .method(Method.GET)
+                .path("/")
+                .scheme("http")
+                .authority("localhost");
+    }
+
+    private static Http2FrameData[] headerLimitFrames(Http2Headers headers,
+                                                      Http2Headers.DynamicTable table,
+                                                      boolean endOfStream,
+                                                      boolean continuation) {
+        BufferData data = BufferData.growing(512);
+        headers.write(table, Http2HuffmanEncoder.create(), data);
+        int flags = endOfStream ? Http2Flag.END_OF_STREAM : 0;
+        if (!continuation) {
+            return new Http2FrameData[] {
+                    new Http2FrameData(Http2FrameHeader.create(data.available(),
+                                                               Http2FrameTypes.HEADERS,
+                                                               Http2Flag.HeaderFlags.create(flags | Http2Flag.END_OF_HEADERS),
+                                                               1),
+                                        data)
+            };
+        }
+        byte[] first = new byte[data.available() / 2];
+        data.read(first);
+        byte[] second = data.readBytes();
+        return new Http2FrameData[] {
+                new Http2FrameData(Http2FrameHeader.create(first.length,
+                                                           Http2FrameTypes.HEADERS,
+                                                           Http2Flag.HeaderFlags.create(flags),
+                                                           1),
+                                    BufferData.create(first)),
+                new Http2FrameData(Http2FrameHeader.create(second.length,
+                                                           Http2FrameTypes.CONTINUATION,
+                                                           Http2Flag.ContinuationFlags.create(Http2Flag.END_OF_HEADERS),
+                                                           1),
+                                    BufferData.create(second))
+        };
+    }
+
     private static ConnectionContext http2Context(DataWriter writer) {
         return http2Context(writer, mock(DataReader.class));
     }
@@ -1335,6 +1487,51 @@ class Http2ConnectionTest {
 
     private static byte[] frameBytes(Http2FrameData frameData) {
         return BufferData.create(frameData.header().write(), frameData.data()).readBytes();
+    }
+
+    private static final class HeaderLimitTestContext {
+        private final List<Http2FrameData> writtenFrames = new ArrayList<>();
+        private final ExecutorService executor = mock(ExecutorService.class);
+        private final ConnectionContext context;
+
+        private HeaderLimitTestContext(Http2FrameData... headerFrames) {
+            Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+            input.add(frameBytes(Http2Settings.create().toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))));
+            for (Http2FrameData frame : headerFrames) {
+                input.add(frameBytes(frame));
+            }
+            input.add(frameBytes(new Http2GoAway(1, Http2ErrorCode.NO_ERROR, "")
+                                         .toFrameData(Http2Settings.create(), 0, Http2Flag.NoFlags.create())));
+            DataWriter writer = mock(DataWriter.class);
+            doAnswer(invocation -> {
+                BufferData data = invocation.<BufferData>getArgument(0).copy();
+                Http2FrameHeader header = Http2FrameHeader.create(data);
+                writtenFrames.add(new Http2FrameData(header, data));
+                return null;
+            }).when(writer).writeNow(any(BufferData.class));
+            context = http2Context(writer, DataReader.create(input::poll));
+            // Keep request handlers queued while the connection decodes the complete request and trailers.
+            when(context.executor()).thenReturn(executor);
+            PeerInfo peerInfo = mock(PeerInfo.class);
+            when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+            when(context.remotePeer()).thenReturn(peerInfo);
+            when(context.proxyProtocolData()).thenReturn(Optional.empty());
+        }
+
+        private void handle(Http2Config config) throws InterruptedException {
+            new Http2Connection(context, config, List.of()).handle(mock(Limit.class));
+        }
+
+        private List<Http2FrameData> frames(Http2FrameType type) {
+            return writtenFrames.stream().filter(frame -> frame.header().type() == type).toList();
+        }
+
+        private void assertHeaderSizeRejected() {
+            List<Http2FrameData> goAwayFrames = frames(Http2FrameType.GO_AWAY);
+            assertThat("Oversized decoded headers must fail the connection", goAwayFrames, hasSize(1));
+            assertThat(Http2GoAway.create(goAwayFrames.getFirst().data()).errorCode(),
+                       is(Http2ErrorCode.ENHANCE_YOUR_CALM));
+        }
     }
 
     private static final class FailingTerminalSubProtocolHandler

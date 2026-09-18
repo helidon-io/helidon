@@ -188,7 +188,7 @@ class Http2ClientConnectionTest {
                                                      Http2Headers.DynamicTable dynamicTable,
                                                      Http2HuffmanEncoder huffman,
                                                      boolean endOfStream) {
-        BufferData data = BufferData.create(256);
+        BufferData data = BufferData.growing(256);
         headers.write(dynamicTable, huffman, data);
         data.rewind();
         int flags = endOfStream ? Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM : Http2Flag.END_OF_HEADERS;
@@ -337,6 +337,181 @@ class Http2ClientConnectionTest {
         byte[] bytes = new byte[serialized.available()];
         serialized.read(bytes);
         return bytes;
+    }
+
+    private static void assertResponseExceedsLocalHeaderSize(Http2ClientProtocolConfig config, String value) {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(config)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            try {
+                Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+                stream.writeHeaders(requestHeaders(), true);
+                Http2Headers headers = Http2Headers.create(WritableHeaders.create()
+                                                                  .set(HeaderValues.create(SHARED_HEADER, true, false, value)))
+                        .status(Status.OK_200);
+                Http2FrameData frame = encodedHeaderFrame(stream.streamId(),
+                                                          headers,
+                                                          Http2Headers.DynamicTable.create(
+                                                                  Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                                                          Http2HuffmanEncoder.create(),
+                                                          true);
+                assertThat("Compressed response fits below the local decoded-header limit",
+                           frame.header().length(), is(lessThan(config.maxHeadersSize())));
+                test.offerInbound(frame);
+
+                Http2Exception failure = assertThrows(Http2Exception.class, stream::readHeaders);
+                assertThat(failure.code(), is(Http2ErrorCode.PROTOCOL));
+            } finally {
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void defaultLocalHeaderSizeRejectsOversizedResponseWithoutAdvertisedLimit() {
+        Http2ClientProtocolConfig config = Http2ClientProtocolConfig.create();
+        assertThat(config.maxHeadersSize(), is(16 * 1024));
+        assertThat(config.maxHeaderListSize(), is(-1L));
+        assertResponseExceedsLocalHeaderSize(config, "a".repeat(17 * 1024));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"-1", "4096"})
+    void localHeaderSizeRejectsOversizedResponseRegardlessOfAdvertisedLimit(long advertisedLimit) {
+        Http2ClientProtocolConfig config = Http2ClientProtocolConfig.builder()
+                .maxHeadersSize(256)
+                .maxHeaderListSize(advertisedLimit)
+                .build();
+        assertResponseExceedsLocalHeaderSize(config, "a".repeat(300));
+    }
+
+    @Test
+    void localHeaderSizeAllowsResponseAboveAdvertisedLimit() {
+        Http2ClientProtocolConfig config = Http2ClientProtocolConfig.builder()
+                .maxHeadersSize(4096)
+                .maxHeaderListSize(64)
+                .build();
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(config)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            try {
+                Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+                stream.writeHeaders(requestHeaders(), true);
+                String value = "a".repeat(300);
+                Http2Headers headers = Http2Headers.create(WritableHeaders.create().set(SHARED_HEADER, value))
+                        .status(Status.OK_200);
+                test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                     headers,
+                                                     Http2Headers.DynamicTable.create(
+                                                             Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                                                     Http2HuffmanEncoder.create(),
+                                                     true));
+
+                assertThat(stream.readHeaders().httpHeaders().get(SHARED_HEADER).get(), is(value));
+            } finally {
+                connection.close();
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"-1", "4096"})
+    void localHeaderSizeRejectsOversizedTrailersRegardlessOfAdvertisedLimit(long advertisedLimit) throws Exception {
+        Http2ClientProtocolConfig config = Http2ClientProtocolConfig.builder()
+                .maxHeadersSize(256)
+                .maxHeaderListSize(advertisedLimit)
+                .build();
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(config)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            try {
+                Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+                stream.writeHeaders(requestHeaders(), true);
+                Http2Headers.DynamicTable table = Http2Headers.DynamicTable.create(
+                        Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+                Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+                test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                     Http2Headers.create(WritableHeaders.create()).status(Status.OK_200),
+                                                     table,
+                                                     huffman));
+                assertThat(stream.readHeaders().status(), is(Status.OK_200));
+                Http2Headers trailers = Http2Headers.create(WritableHeaders.create()
+                                                                   .set(SHARED_HEADER, "a".repeat(300)));
+                Http2FrameData frame = encodedHeaderFrame(stream.streamId(), trailers, table, huffman, true);
+                assertThat("Compressed trailers fit below the local decoded-header limit",
+                           frame.header().length(), is(lessThan(config.maxHeadersSize())));
+                test.offerInbound(frame);
+
+                Http2Exception entityFailure = assertThrows(Http2Exception.class, stream::read);
+                assertThat(entityFailure.code(), is(Http2ErrorCode.PROTOCOL));
+                ExecutionException failure = assertThrows(ExecutionException.class,
+                                                          () -> stream.trailers().get(TEST_WAIT_TIMEOUT.toMillis(),
+                                                                                     TimeUnit.MILLISECONDS));
+                assertThat(failure.getCause(), instanceOf(Http2Exception.class));
+                assertThat(((Http2Exception) failure.getCause()).code(),
+                           is(Http2ErrorCode.PROTOCOL));
+            } finally {
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void localHeaderSizeAllowsTrailersAboveAdvertisedLimit() throws Exception {
+        Http2ClientProtocolConfig config = Http2ClientProtocolConfig.builder()
+                .maxHeadersSize(4096)
+                .maxHeaderListSize(64)
+                .build();
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(config)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            try {
+                Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+                stream.writeHeaders(requestHeaders(), true);
+                Http2Headers.DynamicTable table = Http2Headers.DynamicTable.create(
+                        Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+                Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+                test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                     Http2Headers.create(WritableHeaders.create()).status(Status.OK_200),
+                                                     table,
+                                                     huffman));
+                assertThat(stream.readHeaders().status(), is(Status.OK_200));
+                String value = "a".repeat(300);
+                test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                     Http2Headers.create(WritableHeaders.create().set(SHARED_HEADER, value)),
+                                                     table,
+                                                     huffman,
+                                                     true));
+
+                assertThat(stream.read().available(), is(0));
+                Headers trailers = stream.trailers().get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                assertThat(trailers.get(SHARED_HEADER).get(), is(value));
+            } finally {
+                connection.close();
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"256, 4096", "4096, 64", "256, -1"})
+    void advertisedHeaderListSizeIsIndependentOfLocalHeaderSize(int localLimit, long advertisedLimit) throws Exception {
+        Http2ClientProtocolConfig config = Http2ClientProtocolConfig.builder()
+                .maxHeadersSize(localLimit)
+                .maxHeaderListSize(advertisedLimit)
+                .build();
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(config)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(true);
+            try {
+                Http2FrameData frame = test.awaitWrittenFrame(Http2FrameType.SETTINGS);
+                assertThat(frame.header().flags(Http2FrameTypes.SETTINGS).ack(), is(false));
+                Http2Settings settings = Http2Settings.create(frame.data());
+                Optional<Long> expected = advertisedLimit == -1 ? Optional.empty() : Optional.of(advertisedLimit);
+                assertThat(settings.presentValue(Http2Setting.MAX_HEADER_LIST_SIZE), is(expected));
+            } finally {
+                connection.close();
+            }
+        }
     }
 
     @Test
@@ -3279,18 +3454,14 @@ class Http2ClientConnectionTest {
                                             long maxHeaderListSize,
                                             Integer maxHeadersSize,
                                             Size maxBufferedEntitySize) {
-            Http2ClientProtocolConfig.Builder protocolConfigBuilder = Http2ClientProtocolConfig.builder()
-                    .ping(true)
-                    .pingTimeout(Duration.ofMillis(100))
-                    .maxHeaderListSize(maxHeaderListSize);
-            if (maxHeadersSize != null) {
-                protocolConfigBuilder.maxHeadersSize(maxHeadersSize);
-            }
-            if (maxBufferedEntitySize != null) {
-                protocolConfigBuilder.maxBufferedEntitySize(maxBufferedEntitySize);
-            }
-            Http2ClientProtocolConfig protocolConfig = protocolConfigBuilder.build();
+            this(clientConnection, protocolConfig(maxHeaderListSize, maxHeadersSize, maxBufferedEntitySize));
+        }
 
+        private MockedConnectionTestContext(Http2ClientProtocolConfig protocolConfig) {
+            this(mock(ClientConnection.class), protocolConfig);
+        }
+
+        private MockedConnectionTestContext(ClientConnection clientConnection, Http2ClientProtocolConfig protocolConfig) {
             this.clientConfig = Http2ClientConfig.builder()
                     .protocolConfig(protocolConfig)
                     .buildPrototype();
@@ -3343,6 +3514,22 @@ class Http2ClientConnectionTest {
             }).when(clientConnection).closeResource();
             when(socket.socketId()).thenReturn("test-socket");
             when(socket.childSocketId()).thenReturn("0");
+        }
+
+        private static Http2ClientProtocolConfig protocolConfig(long maxHeaderListSize,
+                                                                Integer maxHeadersSize,
+                                                                Size maxBufferedEntitySize) {
+            Http2ClientProtocolConfig.Builder protocolConfigBuilder = Http2ClientProtocolConfig.builder()
+                    .ping(true)
+                    .pingTimeout(Duration.ofMillis(100))
+                    .maxHeaderListSize(maxHeaderListSize);
+            if (maxHeadersSize != null) {
+                protocolConfigBuilder.maxHeadersSize(maxHeadersSize);
+            }
+            if (maxBufferedEntitySize != null) {
+                protocolConfigBuilder.maxBufferedEntitySize(maxBufferedEntitySize);
+            }
+            return protocolConfigBuilder.build();
         }
 
         private Http2ClientConnection createConnection(boolean sendSettings) {

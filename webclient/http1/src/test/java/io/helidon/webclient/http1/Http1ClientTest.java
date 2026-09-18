@@ -979,6 +979,94 @@ class Http1ClientTest {
     }
 
     @Test
+    void testMaxHeadersSizeFail() {
+        Http1Client localClient = Http1Client.builder()
+                .protocolConfig(pc -> pc.maxHeadersSize(15))
+                .build();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+
+        try {
+            validateFailedResponse(localClient, connection, "Header size exceeded");
+        } finally {
+            connection.closeResource();
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void testMaxHeadersSizeSuccess() {
+        Http1Client localClient = Http1Client.builder()
+                .protocolConfig(pc -> pc.maxHeadersSize(500))
+                .build();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+
+        try {
+            validateSuccessfulResponse(localClient, connection);
+        } finally {
+            connection.closeResource();
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void testConfiguredMaxHeadersSizeFail() {
+        Http1ClientProtocolConfig protocolConfig = Http1ClientProtocolConfig.create(
+                Config.create(ConfigSources.create(Map.of("max-headers-size", "15"))));
+        Http1Client localClient = Http1Client.builder()
+                .protocolConfig(protocolConfig)
+                .build();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+
+        try {
+            assertThat(protocolConfig.maxHeadersSize(), is(15));
+            validateFailedResponse(localClient, connection, "Header size exceeded");
+        } finally {
+            connection.closeResource();
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void testMaxHeadersSizeTrailersFail() {
+        Http1Client localClient = Http1Client.builder()
+                .protocolConfig(pc -> pc.maxHeadersSize(128))
+                .build();
+        FakeHttp1ClientConnection connection = responseWithTrailers("a".repeat(256));
+
+        try (Http1ClientResponse response = localClient.get("http://localhost/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                           () -> response.entity().as(String.class));
+            assertThat(exception.getMessage(), containsString("Header size exceeded"));
+        } finally {
+            connection.closeResource();
+            localClient.closeResource();
+        }
+    }
+
+    @Test
+    void testMaxHeadersSizeTrailersSuccess() {
+        Http1Client localClient = Http1Client.builder()
+                .protocolConfig(pc -> pc.maxHeadersSize(512))
+                .build();
+        String trailerValue = "a".repeat(256);
+        FakeHttp1ClientConnection connection = responseWithTrailers(trailerValue);
+
+        try (Http1ClientResponse response = localClient.get("http://localhost/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().as(String.class), is("body"));
+            assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), trailerValue));
+        } finally {
+            connection.closeResource();
+            localClient.closeResource();
+        }
+    }
+
+    @Test
     void testMaxStatusLineLengthFail() {
         Http1Client client = Http1Client.builder()
                 .protocolConfig(it -> it.maxStatusLineLength(1))
@@ -2254,6 +2342,14 @@ class Http1ClientTest {
                 return 256;
             }
         };
+    }
+
+    private static FakeHttp1ClientConnection responseWithTrailers(String trailerValue) {
+        return new FakeHttp1ClientConnection("HTTP/1.1 200 OK\r\n"
+                                                     + "Transfer-Encoding: chunked\r\n"
+                                                     + "Trailer: X-Test\r\n\r\n"
+                                                     + "4\r\nbody\r\n0\r\n"
+                                                     + "X-Test: " + trailerValue + "\r\n\r\n");
     }
 
     private static void validateSuccessfulResponse(Http1Client client, ClientConnection connection) {
