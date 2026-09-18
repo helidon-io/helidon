@@ -29,7 +29,7 @@ For this 10 minute tutorial, you will need the following:
 | [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
 | [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
-Prerequisite product versions for Helidon 27.0.0-SNAPSHOT
+Prerequisite product versions for Helidon 27.0.1-SNAPSHOT
 
 Verify Prerequisites:
 
