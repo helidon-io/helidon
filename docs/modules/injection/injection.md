@@ -1190,6 +1190,42 @@ by the global service registry. The naming context does not support direct
 binding, rebinding, unbinding, renaming, or listing bindings, and does not
 offer full JNDI compatibility.
 
+To expose a service through JNDI, add the
+`io.helidon.service:helidon-service-jndi` dependency and declare a named service
+using the service descriptor generation described in [Build time](#build-time):
+
+```java
+import io.helidon.service.registry.Service;
+
+@Service.Singleton
+@Service.Named("helidon:jndi/my/service")
+class MyService {
+}
+```
+
+The JNDI name is the service's `@Service.Named` value with the optional
+`helidon:jndi/` prefix removed. A service without a name is exposed using its
+fully qualified service type name. In this example, the JNDI name is
+`my/service`.
+
+Once the service is available in the global service registry, look it up as
+follows. `NamingFactory.register()` configures Helidon's initial context
+factory if no other initial context factory is already configured:
+
+```java
+import javax.naming.InitialContext;
+
+import io.helidon.service.jndi.NamingFactory;
+
+NamingFactory.register();
+MyService service = (MyService) new InitialContext().lookup("my/service");
+```
+
+The lookup can throw `javax.naming.NamingException`. The naming context
+captures the available service names when it is created, so register services
+before creating the context. Lookup obtains the service instance from the
+registry; no call to `Context.bind()` is needed or supported.
+
 ## Startup
 
 Helidon provides a Maven plugin
