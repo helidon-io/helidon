@@ -80,7 +80,7 @@ Component dependency:
 The Helidon Maven plugin provides the `jlink-image` goal to build a
 [custom Java runtime image](jlink.md).
 
-GraalVM Native Image is not supported in Helidon 27.
+GraalVM Native Image is not supported.
 
 For full documentation of the plugin please see the [Helidon Maven Plugin
 README][helidon-maven-pl].

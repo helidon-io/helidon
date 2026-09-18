@@ -177,7 +177,7 @@ To remove the application from Kubernetes, run `kubectl delete -f app.yaml`.
 You can build a custom Java runtime image containing your application and the
 JDK modules it needs. See [Custom Java Runtime Images using `jlink`](jlink.md).
 
-GraalVM Native Image is not supported in Helidon 27.
+GraalVM Native Image is not supported.
 
 ## Next Steps
 
