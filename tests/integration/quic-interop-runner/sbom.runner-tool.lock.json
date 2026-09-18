@@ -2574,289 +2574,289 @@
     {
       "name": "helidon",
       "purls": [
-        "pkg:maven/io.helidon/helidon@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon/helidon@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-builder-api",
       "purls": [
-        "pkg:maven/io.helidon.builder/helidon-builder-api@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.builder/helidon-builder-api@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-buffers",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-buffers@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-buffers@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-concurrency-limits",
       "purls": [
-        "pkg:maven/io.helidon.common.concurrency/helidon-common-concurrency-limits@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common.concurrency/helidon-common-concurrency-limits@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-configurable",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-configurable@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-configurable@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-context",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-context@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-context@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-features",
       "purls": [
-        "pkg:maven/io.helidon.common.features/helidon-common-features@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common.features/helidon-common-features@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-features-api",
       "purls": [
-        "pkg:maven/io.helidon.common.features/helidon-common-features-api@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common.features/helidon-common-features-api@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-features-metadata",
       "purls": [
-        "pkg:maven/io.helidon.common.features/helidon-common-features-metadata@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common.features/helidon-common-features-metadata@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-key-util",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-key-util@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-key-util@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-mapper",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-mapper@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-mapper@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-media-type",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-media-type@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-media-type@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-parameters",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-parameters@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-parameters@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-resumable",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-resumable@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-resumable@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-security",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-security@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-security@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-socket",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-socket@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-socket@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-task",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-task@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-task@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-tls",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-tls@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-tls@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-types",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-types@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-types@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-common-uri",
       "purls": [
-        "pkg:maven/io.helidon.common/helidon-common-uri@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.common/helidon-common-uri@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-config",
       "purls": [
-        "pkg:maven/io.helidon.config/helidon-config@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.config/helidon-config@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-config-metadata",
       "purls": [
-        "pkg:maven/io.helidon.config.metadata/helidon-config-metadata@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.config.metadata/helidon-config-metadata@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-http",
       "purls": [
-        "pkg:maven/io.helidon.http/helidon-http@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.http/helidon-http@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-http-encoding",
       "purls": [
-        "pkg:maven/io.helidon.http.encoding/helidon-http-encoding@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.http.encoding/helidon-http-encoding@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-http-http1",
       "purls": [
-        "pkg:maven/io.helidon.http/helidon-http-http1@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.http/helidon-http-http1@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-http-http3",
       "purls": [
-        "pkg:maven/io.helidon.http/helidon-http-http3@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.http/helidon-http-http3@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-http-media",
       "purls": [
-        "pkg:maven/io.helidon.http.media/helidon-http-media@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.http.media/helidon-http-media@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-logging-common",
       "purls": [
-        "pkg:maven/io.helidon.logging/helidon-logging-common@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.logging/helidon-logging-common@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-logging-jul",
       "purls": [
-        "pkg:maven/io.helidon.logging/helidon-logging-jul@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.logging/helidon-logging-jul@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-metadata",
       "purls": [
-        "pkg:maven/io.helidon.metadata/helidon-metadata@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.metadata/helidon-metadata@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-metadata-hson",
       "purls": [
-        "pkg:maven/io.helidon.metadata/helidon-metadata-hson@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.metadata/helidon-metadata-hson@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-metrics-api",
       "purls": [
-        "pkg:maven/io.helidon.metrics/helidon-metrics-api@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.metrics/helidon-metrics-api@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-quic",
       "purls": [
-        "pkg:maven/io.helidon.quic/helidon-quic@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.quic/helidon-quic@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-service-metadata",
       "purls": [
-        "pkg:maven/io.helidon.service/helidon-service-metadata@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.service/helidon-service-metadata@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-service-registry",
       "purls": [
-        "pkg:maven/io.helidon.service/helidon-service-registry@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.service/helidon-service-registry@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-tests-integration-quic-interop-runner",
       "purls": [
-        "pkg:maven/io.helidon.tests.integration.quic/helidon-tests-integration-quic-interop-runner@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.tests.integration.quic/helidon-tests-integration-quic-interop-runner@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-webserver",
       "purls": [
-        "pkg:maven/io.helidon.webserver/helidon-webserver@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.webserver/helidon-webserver@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-webserver-http3",
       "purls": [
-        "pkg:maven/io.helidon.webserver/helidon-webserver-http3@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.webserver/helidon-webserver-http3@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-webserver-quic",
       "purls": [
-        "pkg:maven/io.helidon.webserver/helidon-webserver-quic@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.webserver/helidon-webserver-quic@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "helidon-webserver-static-content",
       "purls": [
-        "pkg:maven/io.helidon.webserver/helidon-webserver-static-content@27.0.0-SNAPSHOT"
+        "pkg:maven/io.helidon.webserver/helidon-webserver-static-content@28.0.0-SNAPSHOT"
       ],
-      "version": "27.0.0-SNAPSHOT"
+      "version": "28.0.0-SNAPSHOT"
     },
     {
       "name": "inih",
