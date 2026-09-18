@@ -1877,12 +1877,13 @@ class Http3WebServerIT {
 
     @Test
     void shouldNotCanonicalizeCaseSensitiveRequestMethod() throws Exception {
-        try (TestEnvironment environment = TestEnvironment.create(routing -> routing.any((req, res) -> res.send("routed")));
+        try (TestEnvironment environment = TestEnvironment.create(routing -> routing
+                .any((req, res) -> res.send(req.prologue().method().text())));
              LowLevelHttp3Client client = LowLevelHttp3Client.create(environment)) {
             DecodedResponse response = client.request(environment.uri("/method"), "connect", headers());
 
-            assertThat(response.status(), equalTo(501));
-            assertThat(new String(response.body(), StandardCharsets.UTF_8), equalTo("Not Implemented"));
+            assertThat(response.status(), equalTo(200));
+            assertThat(new String(response.body(), StandardCharsets.UTF_8), equalTo("connect"));
         }
     }
 
