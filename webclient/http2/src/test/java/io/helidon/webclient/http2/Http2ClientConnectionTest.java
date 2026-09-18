@@ -76,8 +76,6 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
@@ -632,12 +630,14 @@ class Http2ClientConnectionTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     void connectionFatalHeaderFailureDoesNotWaitForConnectionWriter() throws Exception {
         int maxHeadersSize = 29;
         try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
             test.offerInbound(settingsFrame(10));
             Http2ClientConnection connection = test.createConnection(false);
+            assertThat("Initial SETTINGS acknowledgement must finish before blocking writes",
+                       test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
             Http2ClientStream failingStream = connection.createStream(STREAM_CONFIG);
             Http2ClientStream siblingStream = connection.createStream(STREAM_CONFIG);
 
@@ -1271,11 +1271,13 @@ class Http2ClientConnectionTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     void protocolFailureWritesGoAwayBeforeFailingLateStream() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
             Http2ClientConnection connection = test.createConnection(false);
+            assertThat("Initial SETTINGS acknowledgement must finish before blocking writes",
+                       test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
             Http2ClientStream activeStream = connection.createStream(STREAM_CONFIG);
             Http2ClientStream lateStream = connection.createStream(STREAM_CONFIG);
             activeStream.writeHeaders(requestHeaders(), false);
@@ -1310,11 +1312,13 @@ class Http2ClientConnectionTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     void interruptedLateStreamDoesNotWaitForBlockedGoAwayWrite() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
             Http2ClientConnection connection = test.createConnection(false);
+            assertThat("Initial SETTINGS acknowledgement must finish before blocking writes",
+                       test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
             Http2ClientStream activeStream = connection.createStream(STREAM_CONFIG);
             Http2ClientStream lateStream = connection.createStream(STREAM_CONFIG);
             activeStream.writeHeaders(requestHeaders(), false);
