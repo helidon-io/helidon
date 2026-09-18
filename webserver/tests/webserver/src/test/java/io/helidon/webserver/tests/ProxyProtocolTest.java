@@ -190,8 +190,17 @@ class ProxyProtocolTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     void testProxyProtocolV2UnixDoesNotCreateForwardedHeaders() {
+        assertUnixDoesNotCreateForwardedHeaders("/tmp/source");
+    }
+
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Windows paths reject CR, LF, and colon characters")
+    void testProxyProtocolV2UnixPathDoesNotInjectForwardedHeaders() {
+        assertUnixDoesNotCreateForwardedHeaders("/tmp/source\r\nx-forwarded-for: attacker");
+    }
+
+    private void assertUnixDoesNotCreateForwardedHeaders(String source) {
         byte[] header = new byte[16 + 216];
         byte[] prefix = hexFormat.parseHex(V2_PREFIX);
         System.arraycopy(prefix, 0, header, 0, prefix.length);
@@ -199,7 +208,7 @@ class ProxyProtocolTest {
         header[13] = 0x31;            // UNIX family, stream protocol
         header[14] = 0x00;
         header[15] = (byte) 0xD8;     // two 108-byte UNIX paths
-        byte[] sourcePath = "/tmp/source\r\nx-forwarded-for: attacker".getBytes(US_ASCII);
+        byte[] sourcePath = source.getBytes(US_ASCII);
         System.arraycopy(sourcePath, 0, header, 16, sourcePath.length);
         byte[] destPath = "/tmp/destination".getBytes(US_ASCII);
         System.arraycopy(destPath, 0, header, 16 + 108, destPath.length);
