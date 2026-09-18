@@ -35,6 +35,8 @@ import javax.net.ssl.X509ExtendedTrustManager;
 import io.helidon.quic.spi.QuicPacketTLSEngine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.quic.QuicTLSEngine.HandshakeState.HANDSHAKE_CONFIRMED;
 import static io.helidon.quic.QuicTLSEngine.HandshakeState.NEED_RECV_CRYPTO;
@@ -358,29 +360,7 @@ class HelidonServerQuicTLSEngineTest {
         HelidonServerQuicTLSEngine server = newServerEngine("example.com");
         HelidonClientQuicTLSEngine client = newClientEngine("example.com");
 
-        packetEngine(server).consumeHandshakeBytesBuffer(INITIAL,
-                                                         ByteBuffer.wrap(copy(packetEngine(client).handshakeBytesBuffer(INITIAL))));
-
-        client.versionNegotiated(VERSION);
-        packetEngine(client).consumeHandshakeBytesBuffer(INITIAL,
-                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(INITIAL))));
-        packetEngine(client).consumeHandshakeBytesBuffer(HANDSHAKE,
-                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(
-                                                                 HANDSHAKE))));
-        packetEngine(client).consumeHandshakeBytesBuffer(HANDSHAKE,
-                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(
-                                                                 HANDSHAKE))));
-        packetEngine(client).consumeHandshakeBytesBuffer(HANDSHAKE,
-                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(
-                                                                 HANDSHAKE))));
-        packetEngine(client).consumeHandshakeBytesBuffer(HANDSHAKE,
-                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(
-                                                                 HANDSHAKE))));
-
-        packetEngine(server).consumeHandshakeBytesBuffer(HANDSHAKE,
-                                                         ByteBuffer.wrap(copy(packetEngine(client).handshakeBytesBuffer(
-                                                                 HANDSHAKE))));
-        assertThat(server.tryMarkHandshakeDone(), is(true));
+        completeHandshake(server, client);
 
         QuicTlsNewSessionTicket ticket =
                 QuicTlsNewSessionTicket.decode(required(packetEngine(server).handshakeBytesBuffer(ONE_RTT)));
@@ -389,6 +369,33 @@ class HelidonServerQuicTLSEngineTest {
         assertThat(server.currentSendKeySpace(), is(ONE_RTT));
         assertThat(ticket.ticketNonce().length > 0, is(true));
         assertThat(ticket.ticket().length > 0, is(true));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void defaultServerCacheDoesNotIssueTicketsWithUnlimitedTlsPolicy(boolean peerInformation) throws Exception {
+        SSLParameters sslParameters = new SSLParameters();
+        sslParameters.setProtocols(new String[] {"TLSv1.3"});
+        sslParameters.setApplicationProtocols(new String[] {"h3"});
+        sslParameters.setSignatureSchemes(new String[] {"rsa_pss_rsae_sha256", "rsa_pkcs1_sha256"});
+        var keyManager = new StaticKeyManager(QuicTlsRfc8448Vectors.rsaCertificate(),
+                                              QuicTlsRfc8448Vectors.rsaPrivateKey());
+        var tls = QuicTlsTestSupport.tlsBuilder(keyManager, null)
+                .sslParameters(sslParameters)
+                .sessionCacheSize(0)
+                .build();
+        QuicTlsConfigSnapshot config = QuicTlsConfigSnapshot.create(tls, QuicRuntimeConfig.create(QuicConfig.create()));
+        HelidonServerQuicTLSEngine server = initializeServerEngine(peerInformation
+                                                                         ? new HelidonServerQuicTLSEngine(config,
+                                                                                                         "example.com",
+                                                                                                         443)
+                                                                         : new HelidonServerQuicTLSEngine(config));
+
+        completeHandshake(server, newClientEngine("example.com"));
+
+        assertThat(server.handshakeState(), is(HANDSHAKE_CONFIRMED));
+        assertThat(server.currentSendKeySpace(), is(ONE_RTT));
+        assertThat(packetEngine(server).handshakeBytesBuffer(ONE_RTT), is(Optional.empty()));
     }
 
     @Test
@@ -499,6 +506,32 @@ class HelidonServerQuicTLSEngineTest {
         assertThat(server.handshakeState(), is(HANDSHAKE_CONFIRMED));
     }
 
+    private static void completeHandshake(HelidonServerQuicTLSEngine server, HelidonClientQuicTLSEngine client) {
+        packetEngine(server).consumeHandshakeBytesBuffer(INITIAL,
+                                                         ByteBuffer.wrap(copy(packetEngine(client).handshakeBytesBuffer(INITIAL))));
+
+        client.versionNegotiated(VERSION);
+        packetEngine(client).consumeHandshakeBytesBuffer(INITIAL,
+                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(INITIAL))));
+        packetEngine(client).consumeHandshakeBytesBuffer(HANDSHAKE,
+                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(
+                                                                 HANDSHAKE))));
+        packetEngine(client).consumeHandshakeBytesBuffer(HANDSHAKE,
+                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(
+                                                                 HANDSHAKE))));
+        packetEngine(client).consumeHandshakeBytesBuffer(HANDSHAKE,
+                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(
+                                                                 HANDSHAKE))));
+        packetEngine(client).consumeHandshakeBytesBuffer(HANDSHAKE,
+                                                         ByteBuffer.wrap(copy(packetEngine(server).handshakeBytesBuffer(
+                                                                 HANDSHAKE))));
+
+        packetEngine(server).consumeHandshakeBytesBuffer(HANDSHAKE,
+                                                         ByteBuffer.wrap(copy(packetEngine(client).handshakeBytesBuffer(
+                                                                 HANDSHAKE))));
+        assertThat(server.tryMarkHandshakeDone(), is(true));
+    }
+
     private static HelidonServerQuicTLSEngine newServerEngine(String peerHost) throws Exception {
         return newServerEngine(peerHost, null, false, false, null, new QuicTlsServerSessionCache());
     }
@@ -586,6 +619,10 @@ class HelidonServerQuicTLSEngineTest {
                 443,
                 serverSessionCache,
                 serverTlsSelector);
+        return initializeServerEngine(engine);
+    }
+
+    private static HelidonServerQuicTLSEngine initializeServerEngine(HelidonServerQuicTLSEngine engine) {
         engine.clientMode(false);
         packetEngine(engine).deriveInitialKeysBuffer(VERSION, ByteBuffer.wrap(bytes("8394c8f03e515708")));
         engine.versionNegotiated(VERSION);
@@ -612,7 +649,7 @@ class HelidonServerQuicTLSEngineTest {
                 QuicTlsConfigSnapshot.create(tls, QuicRuntimeConfig.create(QuicConfig.create()));
         return new QuicTlsServerSelector.Selection(config,
                                                    selectedParameters,
-                                                   new QuicTlsServerSessionCache(0, config.sessionTimeout()));
+                                                   QuicTlsServerSessionCache.disabled());
     }
 
     private static void assertUnsupportedSelectionRejected(SSLParameters selectedParameters,

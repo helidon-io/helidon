@@ -18,7 +18,6 @@ package io.helidon.quic;
 
 import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -185,7 +184,7 @@ public class QuicTlsGroupsJmhBenchmark {
                                                      template.legacyCompressionMethods(),
                                                      extensions)
                     .encode().asReadOnlyBuffer();
-            sessionCache = new QuicTlsServerSessionCache(0, Duration.ZERO);
+            sessionCache = QuicTlsServerSessionCache.disabled();
             serverParameters = new QuicTls13ServerHandshake.StartParameters(config.sslContext(),
                                                                              config.sslParameters(),
                                                                              config.keyManager().orElseThrow(),

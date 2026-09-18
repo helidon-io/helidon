@@ -1716,19 +1716,29 @@ public class QuicServerAdmissionJmhBenchmark {
     private static final class HandshakeClient {
         private final ExecutorService executor;
         private final QuicClientRuntime runtime;
+        private final QuicClientTlsSessionCache tlsSessionCache;
 
         private HandshakeClient() {
             executor = newBenchmarkExecutor("quic-valid-handshake-client-jmh", 4);
+            QuicClientTlsSessionCache sessionCache = null;
             try {
+                Tls tls = Tls.builder().trustAll(true).build();
+                sessionCache = QuicClientTlsSessionCache.create(tls, 0);
                 runtime = QuicClientRuntime.builder()
                         .executor(executor)
-                        .tls(Tls.builder()
-                                     .trustAll(true)
-                                     .sessionCacheSize(0)
-                                     .build())
+                        .tls(tls)
+                        .tlsSessionCache(sessionCache)
                         .quicConfig(benchmarkQuicConfig())
                         .build();
+                tlsSessionCache = sessionCache;
             } catch (RuntimeException | Error failure) {
+                if (sessionCache != null) {
+                    try {
+                        sessionCache.close();
+                    } catch (Throwable cleanupFailure) {
+                        failure.addSuppressed(cleanupFailure);
+                    }
+                }
                 try {
                     executor.close();
                 } catch (Throwable cleanupFailure) {
@@ -1742,7 +1752,11 @@ public class QuicServerAdmissionJmhBenchmark {
             try {
                 runtime.close();
             } finally {
-                executor.close();
+                try {
+                    tlsSessionCache.close();
+                } finally {
+                    executor.close();
+                }
             }
         }
     }
@@ -2038,7 +2052,7 @@ public class QuicServerAdmissionJmhBenchmark {
     }
 
     private static Tls serverTls() throws Exception {
-        return serverTls(0);
+        return serverTls(LIFECYCLE_SESSION_CACHE_SIZE);
     }
 
     private static Tls serverTls(int sessionCacheSize) throws Exception {

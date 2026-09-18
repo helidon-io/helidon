@@ -83,6 +83,11 @@ QuicSession clientSession = client.connect(target);
 QuicSession serverSession = acceptedSession.get();
 ```
 
+QUIC uses the session settings from `Tls`: `session-cache-size` limits the number of cached tickets and
+`session-timeout` limits their lifetime. As with JSSE, a cache size of `0` means no size limit; it does not disable
+resumption. The default cache size remains 20,480. A zero timeout removes the configured timeout limit, but tickets
+still expire at their TLS ticket lifetime. Prefer a positive cache size to bound retained session state.
+
 The ordered ALPN lists must be non-empty and contain no duplicates. Each Java character from U+0000 through U+00FF maps
 one-to-one to an opaque ALPN byte using ISO-8859-1; characters outside that byte range are rejected. Check
 `session.applicationProtocol()` before dispatching to application-protocol code.

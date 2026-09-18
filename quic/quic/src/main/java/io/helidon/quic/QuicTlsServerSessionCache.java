@@ -39,6 +39,14 @@ final class QuicTlsServerSessionCache implements AutoCloseable {
         this.tickets = new QuicTlsTicketStore<>(capacity, timeout, currentTimeMillis);
     }
 
+    private QuicTlsServerSessionCache(QuicTlsTicketStore<TicketKey> tickets) {
+        this.tickets = tickets;
+    }
+
+    static QuicTlsServerSessionCache disabled() {
+        return new QuicTlsServerSessionCache(QuicTlsTicketStore.disabled());
+    }
+
     boolean cache(QuicTlsResumptionTicket ticket) {
         Objects.requireNonNull(ticket, "ticket");
         if (!tickets.enabled()) {

@@ -86,7 +86,7 @@ final class HelidonServerQuicTLSEngine implements QuicPacketTLSEngine {
     private boolean serverTlsSelected;
 
     HelidonServerQuicTLSEngine(QuicTlsConfigSnapshot config) {
-        this(config, Optional.empty(), -1, new QuicTlsServerSessionCache(0, config.sessionTimeout()), null);
+        this(config, Optional.empty(), -1, QuicTlsServerSessionCache.disabled(), null);
     }
 
     HelidonServerQuicTLSEngine(QuicTlsConfigSnapshot config, QuicTlsServerSessionCache serverSessionCache) {
@@ -101,7 +101,7 @@ final class HelidonServerQuicTLSEngine implements QuicPacketTLSEngine {
 
     HelidonServerQuicTLSEngine(QuicTlsConfigSnapshot config, String peerHost, int peerPort) {
         this(config, Optional.of(Objects.requireNonNull(peerHost, "peerHost")),
-             peerPort, new QuicTlsServerSessionCache(0, config.sessionTimeout()), null);
+             peerPort, QuicTlsServerSessionCache.disabled(), null);
     }
 
     HelidonServerQuicTLSEngine(QuicTlsConfigSnapshot config,

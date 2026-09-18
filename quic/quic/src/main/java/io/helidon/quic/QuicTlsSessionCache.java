@@ -36,8 +36,20 @@ final class QuicTlsSessionCache implements AutoCloseable {
         this.tickets = new QuicTlsTicketStore<>(capacity, timeout);
     }
 
+    QuicTlsSessionCache(int capacity, Duration timeout, boolean enabled) {
+        this.tickets = new QuicTlsTicketStore<>(capacity, timeout, enabled);
+    }
+
     QuicTlsSessionCache(int capacity, Duration timeout, LongSupplier currentTimeMillis) {
         this.tickets = new QuicTlsTicketStore<>(capacity, timeout, currentTimeMillis);
+    }
+
+    private QuicTlsSessionCache(QuicTlsTicketStore<SessionKey> tickets) {
+        this.tickets = tickets;
+    }
+
+    static QuicTlsSessionCache disabled() {
+        return new QuicTlsSessionCache(QuicTlsTicketStore.disabled());
     }
 
     void cache(String peerHost, int peerPort, QuicTlsResumptionTicket ticket) {
