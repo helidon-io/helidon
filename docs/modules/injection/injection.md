@@ -1185,9 +1185,10 @@ registryManager.shutdown();
 
 ## JNDI support
 
-The `helidon-service-jndi` module is a supporting module for Helidon Data.
-It provides limited JNDI lookup support for persistence integration and does
-not offer full JNDI compatibility.
+The `helidon-service-jndi` module provides limited JNDI lookup support backed
+by the global service registry. The naming context does not support direct
+binding, rebinding, unbinding, renaming, or listing bindings, and does not
+offer full JNDI compatibility.
 
 ## Startup
 
