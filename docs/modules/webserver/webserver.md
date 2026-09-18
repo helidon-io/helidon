@@ -1601,6 +1601,12 @@ To enable HTTP/3 support add the following dependency to your project’s
 </dependency>
 ```
 
+HTTP/3 uses the listener's `tls.session-cache-size` and `tls.session-timeout`
+settings for TLS session resumption. As with JSSE, cache size `0` means no size
+limit, not disabled resumption; the default remains 20,480. Timeout `PT0S` means
+no configured timeout limit, but the TLS ticket lifetime still applies. A
+positive cache size bounds retained session state.
+
 QUIC 0-RTT early data is not supported.
 
 ### Static Content Support

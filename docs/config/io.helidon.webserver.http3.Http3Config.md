@@ -149,7 +149,7 @@ HTTP/3 listener protocol configuration
 <td>
 <code>16384</code>
 </td>
-<td>Configure the maximum allowed headers size</td>
+<td>Configure the maximum allowed headers size, which must be greater than <code>0</code></td>
 </tr>
 <tr>
 <td>

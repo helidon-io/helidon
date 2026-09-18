@@ -27,8 +27,8 @@ final class RoutingQuicTlsEngineFactory implements QuicTlsEngineFactory {
 
     RoutingQuicTlsEngineFactory(QuicTlsConfigSnapshot config) {
         this(config,
-             new QuicTlsSessionCache(0, config.sessionTimeout()),
-             new QuicTlsServerSessionCache(0, config.sessionTimeout()),
+             QuicTlsSessionCache.disabled(),
+             QuicTlsServerSessionCache.disabled(),
              null);
     }
 

@@ -144,14 +144,85 @@ class QuicTlsSessionCacheTest {
     }
 
     @Test
-    void zeroCapacityDisablesCaching() {
+    void zeroCapacityIsUnlimited() {
         AtomicLong clock = new AtomicLong(1_000);
         QuicTlsSessionCache cache = new QuicTlsSessionCache(0, Duration.ZERO, clock::get);
 
+        for (int id = 1; id <= 4; id++) {
+            cache.cache(id + ".example.com", 443, resumptionTicket(id, "h3", clock.get(), 60));
+        }
+
+        assertThat(cache.size(), is(4));
+        for (int id = 1; id <= 4; id++) {
+            assertThat(cached(cache, id + ".example.com", 443, "h3").ticket(), equalTo(new byte[] {(byte) id}));
+        }
+    }
+
+    @Test
+    void unlimitedCapacityAndZeroTimeoutStillHonorTicketExpiry() {
+        AtomicLong clock = new AtomicLong(1_000);
+        QuicTlsSessionCache cache = new QuicTlsSessionCache(0, Duration.ZERO, clock::get);
         cache.cache("example.com", 443, resumptionTicket(1, "h3", clock.get(), 60));
+
+        clock.addAndGet(59_999);
+        assertThat(cached(cache, "example.com", 443, "h3").ticket(), equalTo(new byte[] {1}));
+        clock.incrementAndGet();
+
+        assertThat(cache.cachedResumptionTicket("example.com", 443, new String[] {"h3"}), is(Optional.empty()));
+        assertThat(cache.size(), is(0));
+    }
+
+    @Test
+    void unlimitedCapacityHonorsConfiguredTimeout() {
+        AtomicLong clock = new AtomicLong(1_000);
+        QuicTlsSessionCache cache = new QuicTlsSessionCache(0, Duration.ofSeconds(2), clock::get);
+        cache.cache("example.com", 443, resumptionTicket(1, "h3", clock.get(), 60));
+
+        clock.addAndGet(1_999);
+        assertThat(cached(cache, "example.com", 443, "h3").ticket(), equalTo(new byte[] {1}));
+        clock.incrementAndGet();
+
+        assertThat(cache.cachedResumptionTicket("example.com", 443, new String[] {"h3"}), is(Optional.empty()));
+        assertThat(cache.size(), is(0));
+    }
+
+    @Test
+    void unlimitedCacheClearIsReusableAndCloseIsTerminal() {
+        AtomicLong clock = new AtomicLong(1_000);
+        QuicTlsSessionCache cache = new QuicTlsSessionCache(0, Duration.ZERO, clock::get);
+        cache.cache("example.com", 443, resumptionTicket(1, "h3", clock.get(), 60));
+        cache.clear();
+        assertThat(cache.size(), is(0));
+        assertThat(cache.cachedResumptionTicket("example.com", 443, new String[] {"h3"}), is(Optional.empty()));
+
+        cache.cache("example.com", 443, resumptionTicket(2, "h3", clock.get(), 60));
+        assertThat(cached(cache, "example.com", 443, "h3").ticket(), equalTo(new byte[] {2}));
+        cache.close();
+        cache.clear();
+        cache.cache("example.com", 443, resumptionTicket(3, "h3", clock.get(), 60));
 
         assertThat(cache.size(), is(0));
         assertThat(cache.cachedResumptionTicket("example.com", 443, new String[] {"h3"}), is(Optional.empty()));
+    }
+
+    @Test
+    void disabledCacheRemainsDisabledAfterClearAndClose() {
+        try (QuicTlsSessionCache cache = QuicTlsSessionCache.disabled()) {
+            QuicTlsResumptionTicket ticket = resumptionTicket(1, "h3", System.currentTimeMillis(), 60);
+            cache.cache("example.com", 443, ticket);
+            assertThat(cache.size(), is(0));
+            assertThat(cache.cachedResumptionTicket("example.com", 443, new String[] {"h3"}), is(Optional.empty()));
+
+            cache.clear();
+            cache.cache("example.com", 443, ticket);
+            assertThat(cache.size(), is(0));
+
+            cache.close();
+            cache.clear();
+            cache.cache("example.com", 443, ticket);
+            assertThat(cache.size(), is(0));
+            assertThat(cache.cachedResumptionTicket("example.com", 443, new String[] {"h3"}), is(Optional.empty()));
+        }
     }
 
     @Test

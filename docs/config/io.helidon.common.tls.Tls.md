@@ -41,7 +41,7 @@ TLS configuration, used by web server listeners, web client and other components
 <td>
 <code>PT24H</code>
 </td>
-<td>SSL session timeout</td>
+<td>SSL session timeout, where <code>java.<wbr>time.<wbr>Duration#<wbr>ZERO</code> means no configured timeout limit; the TLS protocol's session-ticket lifetime still applies</td>
 </tr>
 <tr>
 <td>
@@ -149,7 +149,7 @@ TLS configuration, used by web server listeners, web client and other components
 <td>
 <code>20480</code>
 </td>
-<td>SSL session cache size</td>
+<td>SSL session cache size, where <code>0</code> means no cache size limit, as defined by <code>javax.<wbr>net.<wbr>ssl.<wbr>SSLSession<wbr>Context#<wbr>setSession<wbr>Cache<wbr>Size(<wbr>int)</code></td>
 </tr>
 <tr>
 <td>

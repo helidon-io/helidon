@@ -16,7 +16,6 @@
 
 package io.helidon.quic;
 
-import java.time.Duration;
 import java.util.Objects;
 
 import io.helidon.common.Api;
@@ -28,7 +27,8 @@ import io.helidon.common.tls.TlsConfig;
  *
  * <p>A client runtime creates and closes one cache by default. Higher-level connection caches may instead share this
  * resource across short-lived runtimes using the same {@link Tls} identity and generation, then close it with that TLS
- * generation. A configured cache size of zero disables QUIC session resumption so this resource is always memory-bounded.
+ * generation. A configured cache size of zero imposes no size limit, matching
+ * {@link javax.net.ssl.SSLSessionContext#setSessionCacheSize(int)}.
  */
 @Api.Internal
 public final class QuicClientTlsSessionCache implements AutoCloseable {
@@ -36,10 +36,10 @@ public final class QuicClientTlsSessionCache implements AutoCloseable {
     private final long tlsGeneration;
     private final QuicTlsSessionCache delegate;
 
-    private QuicClientTlsSessionCache(Tls tls, long tlsGeneration, int capacity, Duration timeout) {
+    private QuicClientTlsSessionCache(Tls tls, long tlsGeneration, QuicTlsSessionCache delegate) {
         this.tls = tls;
         this.tlsGeneration = tlsGeneration;
-        this.delegate = new QuicTlsSessionCache(capacity, timeout);
+        this.delegate = delegate;
     }
 
     /**
@@ -56,7 +56,7 @@ public final class QuicClientTlsSessionCache implements AutoCloseable {
      * Creates a cache using the session policy from the supplied TLS configuration, capped by the supplied maximum.
      *
      * @param tls TLS configuration
-     * @param maximumSize maximum number of retained tickets
+     * @param maximumSize maximum number of retained tickets; zero disables this cache, regardless of the TLS cache size
      * @return a new client TLS session cache
      * @throws IllegalArgumentException if the maximum size is negative
      */
@@ -69,10 +69,17 @@ public final class QuicClientTlsSessionCache implements AutoCloseable {
             long generation = tls.generation();
             TlsConfig tlsConfig = tls.prototype();
             if (generation == tls.generation()) {
+                int configuredCapacity = tlsConfig.sessionCacheSize();
+                int capacity = configuredCapacity;
+                if (maximumSize != Integer.MAX_VALUE) {
+                    capacity = configuredCapacity == 0 ? maximumSize : Math.min(configuredCapacity, maximumSize);
+                }
+                QuicTlsSessionCache delegate = new QuicTlsSessionCache(capacity,
+                                                                       tlsConfig.sessionTimeout(),
+                                                                       maximumSize != 0);
                 return new QuicClientTlsSessionCache(tls,
                                                      generation,
-                                                     Math.min(tlsConfig.sessionCacheSize(), maximumSize),
-                                                     tlsConfig.sessionTimeout());
+                                                     delegate);
             }
         }
     }
