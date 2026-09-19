@@ -213,6 +213,6 @@ FixedRate.builder()
 - [Helidon Scheduling Javadoc][helidon-scheduli]
 
 [cron-utils]: https://github.com/jmrozanec/cron-utils
-[helidon-scheduli]: https://helidon.io/docs/v27/apidocs/io.helidon.scheduling/io/helidon/scheduling/package-summary.html
+[helidon-scheduli]: https://helidon.io/docs/core/v27/apidocs/io.helidon.scheduling/io/helidon/scheduling/package-summary.html
 [io-helidon-sched]: ../config/io.helidon.scheduling.FixedRate.md#configuration-options
 [io-helidon-sched-2]: ../config/io.helidon.scheduling.Cron.md#configuration-options

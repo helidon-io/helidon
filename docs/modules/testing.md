@@ -377,5 +377,5 @@ are required without real port opening. Instead of `WsClient`, use
 
 - [JUnit 5 User Guide][junit-5-user-gui]
 
-[webserverconfig]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
+[webserverconfig]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
 [junit-5-user-gui]: https://junit.org/junit5/docs/current/user-guide/
