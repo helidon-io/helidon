@@ -172,9 +172,9 @@ System.out.println("Always actual greeting value: " + greetingSupplier.get()); /
 > refreshed values only after changes have been detected by the polling
 > strategy.
 
-[timestamp-method]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#timestamp--
-[config-context]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/Config.Context.html
-[pollingstrategy]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[timestamp-method]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/Config.html#timestamp--
+[config-context]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/Config.Context.html
+[pollingstrategy]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
 [polling-strategi]: extensions.md#pollingstrategy-spi
-[pollingstrategie]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
-[config-onchange]: <https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#onChange(java.util.function.Consumer)>
+[pollingstrategie]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
+[config-onchange]: <https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/Config.html#onChange(java.util.function.Consumer)>

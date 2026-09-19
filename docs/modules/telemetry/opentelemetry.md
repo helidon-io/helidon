@@ -1018,13 +1018,13 @@ telemetry:
 - [HTTP semantic conventions][opentelemetry-se]
 - [Intro to OpenTelemetry Java][intro-to-opentel]
 
-[preview-feature]: https://helidon.io/docs/v27/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Features.Preview.html
+[preview-feature]: https://helidon.io/docs/core/v28/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Features.Preview.html
 [opentelemetry-se]: https://github.com/open-telemetry/semantic-conventions/blob/v1.43.0/docs/http/http-spans.md#http-server
 [publishing-helid]: ../metrics/metrics.md#publishing-metrics
 [signals]: https://opentelemetry.io/docs/concepts/signals/
-[helidon-opentele]: https://helidon.io/docs/v27/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html
-[opentelemetrycon]: https://helidon.io/docs/v27/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.html
-[builder]: https://helidon.io/docs/v27/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.BuilderBase.html
+[helidon-opentele]: https://helidon.io/docs/core/v28/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html
+[opentelemetrycon]: https://helidon.io/docs/core/v28/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.html
+[builder]: https://helidon.io/docs/core/v28/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.BuilderBase.html
 [opentelemetry-sd]: https://opentelemetry.io/docs/languages/java/sdk/#sdk-components
 [helidon-webclien]: ../webclient.md#configuring-telemetry
 [this-section-bel]: #additional-dependencies

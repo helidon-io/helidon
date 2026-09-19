@@ -989,8 +989,8 @@ Refer to the following references for additional information:
 [key-performance]: #collecting-basic-and-extended-key-performance-indicator-kpi-metrics
 [disable-metrics]: #disabling-metrics-subsystem-entirely
 [virtual-threads]: #configuring-virtual-threads-meters
-[keyperformancein]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html
-[builder]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html
-[metrics-config]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MetricsConfig.html
-[helidon-javadoc]: https://helidon.io/docs/v27/apidocs/index.html?overview-summary.html
+[keyperformancein]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html
+[builder]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html
+[metrics-config]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MetricsConfig.html
+[helidon-javadoc]: https://helidon.io/docs/core/v28/apidocs/index.html?overview-summary.html
 [prometheus-targets]: http://localhost:7090/targets
