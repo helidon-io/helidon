@@ -728,11 +728,11 @@ Config config = Config.create(
 4. Specifies the executor to use for loading and retries.
 <!--@mdc :: -->
 
-[configsources-ja]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
-[configsources-pr]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed(java.lang.String,java.util.function.Supplier)
-[configsources-fi]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file(java.lang.String)
+[configsources-ja]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
+[configsources-pr]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed(java.lang.String,java.util.function.Supplier)
+[configsources-fi]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file(java.lang.String)
 [hierarchical-fea]: hierarchical-features.md#access-by-key
 [filters]: extensions.md#configfilter-spi
-[value-resolving]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--
-[configfilter]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
-[simpleretrypolic]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/SimpleRetryPolicy.Builder.html
+[value-resolving]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--
+[configfilter]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
+[simpleretrypolic]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/SimpleRetryPolicy.Builder.html

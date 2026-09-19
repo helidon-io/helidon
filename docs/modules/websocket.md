@@ -127,4 +127,4 @@ non-browser clients continue to work.
 - [Helidon WebSocket Javadoc][helidon-websocke]
 
 [here]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/webserver/websocket
-[helidon-websocke]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver.websocket/module-summary.html
+[helidon-websocke]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webserver.websocket/module-summary.html

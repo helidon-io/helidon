@@ -373,4 +373,4 @@ endpoints:
 - [GraphQL Javadocs][graphql-javadocs]
 
 [graphql]: https://github.com/graphql-java/graphql-java
-[graphql-javadocs]: https://helidon.io/docs/v27/apidocs/io.helidon.graphql.server/module-summary.html
+[graphql-javadocs]: https://helidon.io/docs/core/v27/apidocs/io.helidon.graphql.server/module-summary.html

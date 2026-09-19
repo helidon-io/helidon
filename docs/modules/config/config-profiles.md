@@ -318,7 +318,7 @@ Config Profile Support for Built-in Change Watchers:
 <tbody>
 <tr>
 <td><code>file</code></td>
-<td>Filesystem monitoring - See <a href="https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/FileSystemWatcher.html"><code>File<wbr>System<wbr>Watcher</code></a> class</td>
+<td>Filesystem monitoring - See <a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/FileSystemWatcher.html"><code>File<wbr>System<wbr>Watcher</code></a> class</td>
 <td><code>initial-delay-millis</code> - delay between the start of the watcher and first check for changes
 <code>delay-millis</code> - how often do we check the watcher service for changes</td>
 </tr>
@@ -337,7 +337,7 @@ Config Profile Support for Built-in Retry Policies:
 <tbody>
 <tr>
 <td><code>repeat</code></td>
-<td>Regularly-scheduled - see <a href="https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html#repeat(int)"><code>Retry<wbr>Policies.<wbr>repeat</code></a>.</td>
+<td>Regularly-scheduled - see <a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html#repeat(int)"><code>Retry<wbr>Policies.<wbr>repeat</code></a>.</td>
 <td><code>retries</code> (<code>int</code>) - number of retries to perform<br />
 
 Optional:
@@ -438,8 +438,8 @@ public class MyProfiledConfigSource implements NodeConfigSource {
 }
 ```
 
-[fileconfigsource]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html
-[pollingstrategie]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html#regular(java.time.Duration)
-[retrypolicy]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
-[changewatcher]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
-[pollingstrategy]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[fileconfigsource]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html
+[pollingstrategie]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html#regular(java.time.Duration)
+[retrypolicy]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
+[changewatcher]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
+[pollingstrategy]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html

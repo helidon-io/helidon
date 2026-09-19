@@ -668,4 +668,4 @@ Refer to the following reference for additional information:
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[helidon-javadoc]: https://helidon.io/docs/v27/apidocs/index.html?overview-summary.html
+[helidon-javadoc]: https://helidon.io/docs/core/v27/apidocs/index.html?overview-summary.html

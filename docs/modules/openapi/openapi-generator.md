@@ -1165,6 +1165,6 @@ and then to wait for the result content.
 [helidon-server-g]: https://github.com/OpenAPITools/openapi-generator/blob/v7.6.0/docs/generators/java-helidon-server.md
 [planning-your-us]: #planning-your-use-of-the-openapi-generators
 [instructions]: https://github.com/OpenAPITools/openapi-generator#13---download-jar
-[webclient]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/WebClient.html
-[webclientconfig]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/WebClientConfig.Builder.html
+[webclient]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/WebClient.html
+[webclientconfig]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/WebClientConfig.Builder.html
 [openapi-generato]: https://github.com/OpenAPITools/openapi-generator
