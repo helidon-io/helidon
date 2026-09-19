@@ -1090,7 +1090,7 @@ server:
 [preview-feature]: https://helidon.io/docs/core/v28/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Features.Preview.html
 [this-later-secti]: #inferred-publisher
 [openmetrics-form]: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
-[prometheus-expos]: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
+[prometheus-expos]: https://github.com/prometheus/docs/blob/main/docs/instrumenting/exposition_formats.md
 [timeunit]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/util/concurrent/TimeUnit.html
 [meterregistry]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MeterRegistry.html
 [metricsfactory]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MetricsFactory.html
