@@ -101,7 +101,7 @@ Now that your environment is set up, you can get started with Helidon. Try the
 project and application.
 
 > [!TIP]
-> Read the [Helidon overview](modules/introduction.md) to learn more about
+> Read the [Helidon introduction](introduction.md) to learn more about
 > the programming model.
 
 [java-27]: https://www.oracle.com/technetwork/java/javase/downloads
