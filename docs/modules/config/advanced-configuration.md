@@ -733,6 +733,6 @@ Config config = Config.create(
 [configsources-fi]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file(java.lang.String)
 [hierarchical-fea]: hierarchical-features.md#access-by-key
 [filters]: extensions.md#configfilter-spi
-[value-resolving]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--
+[value-resolving]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving()
 [configfilter]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
 [simpleretrypolic]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/SimpleRetryPolicy.Builder.html

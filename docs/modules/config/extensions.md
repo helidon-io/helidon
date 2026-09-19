@@ -499,7 +499,7 @@ loader SPI `RetryPolicyProvider`.
 [overridesourcepr]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSourceProvider.html
 [configfilter]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
 [addfilter-method]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
-[disablefilterser]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableFilterServices--
+[disablefilterser]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableFilterServices()
 [configmappers]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html
 [configmapperprov]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
 [pollingstrategy]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
