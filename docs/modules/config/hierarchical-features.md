@@ -373,9 +373,9 @@ assert detachedFromAlternate.get("debug").equals("true"); // <2>
 
 [confignode]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigNode.html
 [hocon]: https://github.com/lightbend/config/blob/master/HOCON.md
-[name]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#name--
-[key]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#key--
-[type]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#type--
+[name]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#name()
+[key]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#key()
+[type]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#type()
 [configvalue]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigValue.html
 [application-prop]: config.md#accessing-config-values
-[config-detach]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#detach--
+[config-detach]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html#detach()
