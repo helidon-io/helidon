@@ -197,7 +197,7 @@ You can also specify `ConfigResolveOptions` using the
 `HoconConfigParser.builder().resolveOptions` method.
 
 
-[disableparserser]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableParserServices--
+[disableparserser]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableParserServices()
 [yamlconfigparser]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config.yaml/io/helidon/config/yaml/YamlConfigParser.html
 [hoconconfigparse]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config.hocon/io/helidon/config/hocon/HoconConfigParser.html
 [hocon-documentat]: https://github.com/lightbend/config/blob/master/HOCON.md#substitutions
