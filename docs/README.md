@@ -9,7 +9,7 @@ pages:
 # Helidon Documentation
 
 - [Get Started](get-started.md)
-- [Introduction](modules/introduction.md)
+- [Introduction](introduction.md)
 - [Modules](modules/README.md)
 - [Guides](guides/README.md)
 - [Helidon CLI](cli.md)
