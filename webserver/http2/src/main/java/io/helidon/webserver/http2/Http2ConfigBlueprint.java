@@ -17,6 +17,7 @@
 package io.helidon.webserver.http2;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
@@ -191,5 +192,18 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
      */
     default String type() {
         return Http2ConnectionProvider.CONFIG_NAME;
+    }
+
+    /**
+     * Compatibility decorator for HTTP/2 server configuration builders.
+     *
+     * @deprecated Retained for compatibility. HTTP/2 configuration builders apply these defaults automatically.
+     */
+    @Deprecated(since = "28.0.0", forRemoval = true)
+    class Http2ConfigDecorator implements Prototype.BuilderDecorator<Http2Config.BuilderBase<?, ?>> {
+        @Override
+        public void decorate(Http2Config.BuilderBase<?, ?> target) {
+            new Http2ConfigSupport.Decorator().decorate(Objects.requireNonNull(target, "target"));
+        }
     }
 }
