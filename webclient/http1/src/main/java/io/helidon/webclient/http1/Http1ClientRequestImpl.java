@@ -566,7 +566,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                                                        callChain.responseTrailers(),
                                                                        serviceResponse.trailers(),
                                                                        callChain.transportObservation());
-        response.serviceResponse(serviceResponse, callChain.rawServiceResponse());
+        response.serviceResponse(serviceResponse);
         if (callChain instanceof Http1CallOutputStreamChain outputStreamChain
                 && outputStreamChain.closeConnectionOnResponseClose()) {
             response.closeConnectionOnClose();
