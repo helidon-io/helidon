@@ -518,7 +518,11 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
 
     void closeResponse() {
         if (response != null) {
-            response.close();
+            if (rawServiceResponse == null) {
+                response.close();
+            } else {
+                rawServiceResponse.connection().closeResource();
+            }
         }
         if (stream != null) {
             try {
