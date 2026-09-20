@@ -274,94 +274,6 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         }
     }
 
-    private Http2ClientResponseImpl doOutputStream(OutputStreamHandler streamHandler,
-                                                   AtomicBoolean handlerClaimed,
-                                                   int followedRedirects) {
-        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
-        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        OutputStreamHandler claimedHandler = outputStream -> {
-            if (!handlerClaimed.compareAndSet(false, true)) {
-                throw new IllegalStateException("HTTP/2 request entity is one-shot and has already been consumed");
-            }
-            streamHandler.handle(outputStream);
-        };
-        Http2CallOutputStreamChain callChain = new Http2CallOutputStreamChain(http2Client,
-                                                                               this,
-                                                                               whenSent,
-                                                                               whenComplete,
-                                                                               claimedHandler,
-                                                                               followedRedirects);
-
-        Http2ClientResponseImpl response = invokeWithServices(callChain, whenSent, whenComplete);
-        if (!followRedirects() || !RedirectionProcessor.redirectionStatusCode(response.status())) {
-            return response;
-        }
-
-        Status redirectStatus = response.status();
-        ClientUri sourceUri = response.lastEndpointUri();
-        String location;
-        int totalFollowedRedirects = callChain.followedRedirects();
-        try (response) {
-            if (totalFollowedRedirects >= maxRedirects()) {
-                throw new IllegalStateException("Maximum number of request redirections ("
-                                                        + maxRedirects() + ") reached.");
-            }
-            RedirectionProcessor.checkRedirectHeaders(response.headers());
-            location = response.headers().get(HeaderNames.LOCATION).get();
-        }
-
-        ClientUri redirectUri = resolveRedirectUri(sourceUri, location);
-        boolean keepsEntity = RedirectionProcessor.keepsMethodAndEntity(response.serviceRequest().method(), redirectStatus);
-        boolean requestEntitySent = callChain.requestEntitySent();
-        if (keepsEntity && handlerClaimed.get() && requestEntitySent) {
-            throw new IllegalStateException("HTTP/2 cannot replay a one-shot request entity after it was sent; "
-                                                    + "redirect status was " + redirectStatus.code() + ".");
-        }
-        Http2ClientRequestImpl redirectRequest = new Http2ClientRequestImpl(this,
-                                                                            keepsEntity ? method() : Method.GET,
-                                                                            redirectUri,
-                                                                            properties(),
-                                                                            sourceUri,
-                                                                            keepsEntity
-                                                                                    && (!handlerClaimed.get()
-                                                                                            || requestEntitySent));
-        if (!keepsEntity) {
-            redirectRequest.discardEntityHeaders();
-        }
-        if (callChain.rawServiceResponse() == null
-                && canRetainRouting(resolvedUri(), headers(), sourceUri, redirectUri, redirectSecurityState())) {
-            ClientRequestHeaders targetHeaders = normalizedRequestHeaders(redirectRequest.headers());
-            ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(redirectUri, targetHeaders);
-            connection().ifPresent(value -> {
-                var inheritedOrigin = inheritedConnectionOrigin();
-                if (inheritedOrigin.isEmpty()) {
-                    redirectRequest.connection(value);
-                } else if (inheritedOrigin.get().equals(targetOrigin)) {
-                    redirectRequest.inheritedConnection(value, inheritedOrigin.get());
-                }
-            });
-        }
-        int nextRedirect = totalFollowedRedirects + 1;
-        Http2ClientResponseImpl redirectedResponse;
-        if (keepsEntity) {
-            if (handlerClaimed.get()) {
-                redirectedResponse = RedirectionProcessor.invokeWithFollowRedirects(redirectRequest,
-                                                                                     nextRedirect,
-                                                                                     BufferData.EMPTY_BYTES);
-            } else {
-                redirectedResponse = redirectRequest.doOutputStream(streamHandler,
-                                                                      handlerClaimed,
-                                                                      nextRedirect);
-            }
-        } else {
-            redirectedResponse = RedirectionProcessor.invokeWithFollowRedirects(redirectRequest,
-                                                                                 nextRedirect,
-                                                                                 BufferData.EMPTY_BYTES);
-        }
-        redirectSecurityState(redirectedResponse.redirectSecurityState());
-        return redirectedResponse;
-    }
-
     @Override
     public boolean priorKnowledge() {
         return priorKnowledge;
@@ -453,35 +365,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         headers().remove(HeaderNames.CONTENT_LOCATION);
     }
 
-    private void sanitizeRedirectHeaders(boolean retainRouting) {
-        headers().remove(HeaderNames.CONTENT_LENGTH);
-        headers().remove(HeaderNames.TRANSFER_ENCODING);
-        headers().remove(HeaderNames.EXPECT);
-        if (!retainRouting) {
-            headers().remove(HeaderNames.HOST);
-            headers().remove(Http2Headers.AUTHORITY_NAME);
-        }
-    }
-
     private static List<String> defaultTcpProtocolIds() {
         return List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID);
-    }
-
-    private static boolean canRetainRouting(ClientUri configuredSourceUri,
-                                            ClientRequestHeaders configuredHeaders,
-                                            ClientUri sourceUri,
-                                            ClientUri targetUri,
-                                            RedirectSecurityState securityState) {
-        ClientRequestOrigin sourceUriOrigin = ClientRequestOrigin.create(sourceUri);
-        ClientRequestHeaders originHeaders = Http2RequestHeaders.normalizedRequestHeaders(configuredHeaders);
-        ClientRequestOrigin configuredEffectiveOrigin = ClientRequestOrigin.create(configuredSourceUri,
-                                                                                    originHeaders);
-        return ClientRequestOrigin.create(configuredSourceUri).equals(sourceUriOrigin)
-                && securityState.lastUriOrigin().orElse(sourceUriOrigin).equals(sourceUriOrigin)
-                && securityState.lastEffectiveOrigin()
-                        .orElse(configuredEffectiveOrigin)
-                        .equals(configuredEffectiveOrigin)
-                && ClientRequestOrigin.create(targetUri).equals(sourceUriOrigin);
     }
 
     Http2ClientResponseImpl invokeEntity(Object entity) {
@@ -502,6 +387,121 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
 
     Http2ClientResponseImpl redirectProbe() {
         return (Http2ClientResponseImpl) requestWithoutRouteCleanup();
+    }
+
+    private static boolean canRetainRouting(ClientUri configuredSourceUri,
+                                            ClientRequestHeaders configuredHeaders,
+                                            ClientUri sourceUri,
+                                            ClientUri targetUri,
+                                            RedirectSecurityState securityState) {
+        ClientRequestOrigin sourceUriOrigin = ClientRequestOrigin.create(sourceUri);
+        ClientRequestHeaders originHeaders = Http2RequestHeaders.normalizedRequestHeaders(configuredHeaders);
+        ClientRequestOrigin configuredEffectiveOrigin = ClientRequestOrigin.create(configuredSourceUri,
+                                                                                    originHeaders);
+        return ClientRequestOrigin.create(configuredSourceUri).equals(sourceUriOrigin)
+                && securityState.lastUriOrigin().orElse(sourceUriOrigin).equals(sourceUriOrigin)
+                && securityState.lastEffectiveOrigin()
+                        .orElse(configuredEffectiveOrigin)
+                        .equals(configuredEffectiveOrigin)
+                && ClientRequestOrigin.create(targetUri).equals(sourceUriOrigin);
+    }
+
+    private Http2ClientResponseImpl doOutputStream(OutputStreamHandler streamHandler,
+                                                   AtomicBoolean handlerClaimed,
+                                                   int followedRedirects) {
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        OutputStreamHandler claimedHandler = outputStream -> {
+            if (!handlerClaimed.compareAndSet(false, true)) {
+                throw new IllegalStateException("HTTP/2 request entity is one-shot and has already been consumed");
+            }
+            streamHandler.handle(outputStream);
+        };
+        Http2CallOutputStreamChain callChain = new Http2CallOutputStreamChain(http2Client,
+                                                                               this,
+                                                                               whenSent,
+                                                                               whenComplete,
+                                                                               claimedHandler,
+                                                                               followedRedirects);
+
+        Http2ClientResponseImpl response = invokeWithServices(callChain, whenSent, whenComplete);
+        if (!followRedirects() || !RedirectionProcessor.redirectionStatusCode(response.status())) {
+            return response;
+        }
+
+        Status redirectStatus = response.status();
+        ClientUri sourceUri = response.lastEndpointUri();
+        String location;
+        int totalFollowedRedirects = callChain.followedRedirects();
+        try (response) {
+            if (totalFollowedRedirects >= maxRedirects()) {
+                throw new IllegalStateException("Maximum number of request redirections ("
+                                                        + maxRedirects() + ") reached.");
+            }
+            RedirectionProcessor.checkRedirectHeaders(response.headers());
+            location = response.headers().get(HeaderNames.LOCATION).get();
+        }
+
+        ClientUri redirectUri = resolveRedirectUri(sourceUri, location);
+        boolean keepsEntity = RedirectionProcessor.keepsMethodAndEntity(response.serviceRequest().method(), redirectStatus);
+        boolean requestEntitySent = callChain.requestEntitySent();
+        if (keepsEntity && handlerClaimed.get() && requestEntitySent) {
+            throw new IllegalStateException("HTTP/2 cannot replay a one-shot request entity after it was sent; "
+                                                    + "redirect status was " + redirectStatus.code() + ".");
+        }
+        Http2ClientRequestImpl redirectRequest = new Http2ClientRequestImpl(this,
+                                                                            keepsEntity ? method() : Method.GET,
+                                                                            redirectUri,
+                                                                            properties(),
+                                                                            sourceUri,
+                                                                            keepsEntity
+                                                                                    && (!handlerClaimed.get()
+                                                                                            || requestEntitySent));
+        if (!keepsEntity) {
+            redirectRequest.discardEntityHeaders();
+        }
+        if (callChain.rawServiceResponse() == null
+                && canRetainRouting(resolvedUri(), headers(), sourceUri, redirectUri, redirectSecurityState())) {
+            ClientRequestHeaders targetHeaders = normalizedRequestHeaders(redirectRequest.headers());
+            ClientRequestOrigin targetOrigin = ClientRequestOrigin.create(redirectUri, targetHeaders);
+            connection().ifPresent(value -> {
+                var inheritedOrigin = inheritedConnectionOrigin();
+                if (inheritedOrigin.isEmpty()) {
+                    redirectRequest.connection(value);
+                } else if (inheritedOrigin.get().equals(targetOrigin)) {
+                    redirectRequest.inheritedConnection(value, inheritedOrigin.get());
+                }
+            });
+        }
+        int nextRedirect = totalFollowedRedirects + 1;
+        Http2ClientResponseImpl redirectedResponse;
+        if (keepsEntity) {
+            if (handlerClaimed.get()) {
+                redirectedResponse = RedirectionProcessor.invokeWithFollowRedirects(redirectRequest,
+                                                                                     nextRedirect,
+                                                                                     BufferData.EMPTY_BYTES);
+            } else {
+                redirectedResponse = redirectRequest.doOutputStream(streamHandler,
+                                                                      handlerClaimed,
+                                                                      nextRedirect);
+            }
+        } else {
+            redirectedResponse = RedirectionProcessor.invokeWithFollowRedirects(redirectRequest,
+                                                                                 nextRedirect,
+                                                                                 BufferData.EMPTY_BYTES);
+        }
+        redirectSecurityState(redirectedResponse.redirectSecurityState());
+        return redirectedResponse;
+    }
+
+    private void sanitizeRedirectHeaders(boolean retainRouting) {
+        headers().remove(HeaderNames.CONTENT_LENGTH);
+        headers().remove(HeaderNames.TRANSFER_ENCODING);
+        headers().remove(HeaderNames.EXPECT);
+        if (!retainRouting) {
+            headers().remove(HeaderNames.HOST);
+            headers().remove(Http2Headers.AUTHORITY_NAME);
+        }
     }
 
     private Http2ClientResponseImpl invokeWithServices(Http2CallChainBase callChain,
