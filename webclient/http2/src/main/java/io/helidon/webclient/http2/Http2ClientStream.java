@@ -1046,7 +1046,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             connection.writer().writeData(frameData,
                                           flowControl().outbound());
         } catch (RuntimeException | Error failure) {
-            close(ERROR);
+            // Do not release the stream slot before the caller can send RST_STREAM.
+            finishTransportObservation(ERROR);
             if (failure instanceof Http2Exception e && e.code() == Http2ErrorCode.CANCEL) {
                 RuntimeException recordedFailure = connectionFailure;
                 if (recordedFailure != null) {

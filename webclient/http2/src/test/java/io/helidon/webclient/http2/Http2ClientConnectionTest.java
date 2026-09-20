@@ -1804,6 +1804,61 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void dataWriteTimeoutResetsBeforeReplacementStream() throws Exception {
+        Http2ClientProtocolConfig protocolConfig = Http2ClientProtocolConfig.builder()
+                .flowControlBlockTimeout(Duration.ofMillis(20))
+                .build();
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(protocolConfig)) {
+            Http2Settings settings = Http2Settings.builder()
+                    .add(Http2Setting.MAX_CONCURRENT_STREAMS, 1L)
+                    .add(Http2Setting.INITIAL_WINDOW_SIZE, 0L)
+                    .build();
+            test.offerInbound(settings.toFrameData(Http2Settings.create(), 0, Http2Flag.SettingsFlags.create(0)));
+            Http2ClientConnection connection = test.createConnection(false);
+            test.awaitWrittenFrame(Http2FrameType.SETTINGS);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream replacement = null;
+            try {
+                stream.writeHeaders(requestHeaders(), false);
+                test.awaitWrittenFrame(Http2FrameType.HEADERS);
+                assertThrows(Http2Exception.class,
+                             () -> stream.writeData(BufferData.create(new byte[] {1}), false));
+                verify(test.clientConnection, never()).closeResource();
+
+                replacement = connection.tryStream(STREAM_CONFIG);
+                if (replacement != null) {
+                    replacement.writeHeaders(requestHeaders(), true);
+                }
+                stream.cancel();
+
+                BufferData next = test.writtenFrames.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                assertThat(next, notNullValue());
+                Http2FrameHeader resetHeader = Http2FrameHeader.create(next);
+                assertThat("Cancellation must precede replacement HEADERS at the peer concurrency limit",
+                           resetHeader.type(),
+                           is(Http2FrameType.RST_STREAM));
+                assertThat(resetHeader.streamId(), is(stream.streamId()));
+
+                if (replacement == null) {
+                    replacement = connection.tryStream(STREAM_CONFIG);
+                    assertThat(replacement, notNullValue());
+                    replacement.writeHeaders(requestHeaders(), true);
+                }
+                Http2FrameData replacementHeaders = test.awaitWrittenFrame(Http2FrameType.HEADERS);
+                assertThat(replacementHeaders.header().streamId(), is(replacement.streamId()));
+            } finally {
+                if (replacement != null) {
+                    replacement.cancel();
+                    replacement.close();
+                }
+                stream.cancel();
+                stream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
     void cancelReleasesReservedStreamAfterRstWrite() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(1));
