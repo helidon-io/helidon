@@ -25,6 +25,7 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.InetSocketAddress;
 import java.net.StandardProtocolFamily;
@@ -110,6 +111,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -360,6 +362,177 @@ class Http1ClientTest {
             assertThat(connection.getPrologue(), startsWith("POST /synthetic-target "));
         } finally {
             localClient.closeResource();
+        }
+    }
+
+    @ParameterizedTest(name = "consume body {0}, fail cleanup {1}")
+    @CsvSource({"false, false", "true, false", "false, true"})
+    void earlyExpectRedirectClosesSyntheticTargetResourceOnce(boolean consumeBody, boolean failCleanup) {
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        AtomicInteger targetResourceCloses = new AtomicInteger();
+        AtomicInteger sourceCompletions = new AtomicInteger();
+        AtomicInteger targetCompletions = new AtomicInteger();
+        AtomicReference<Throwable> sourceFailure = new AtomicReference<>();
+        AtomicReference<Throwable> targetFailure = new AtomicReference<>();
+        IllegalStateException cleanupFailure = new IllegalStateException("synthetic resource cleanup failed");
+        CompletableFuture<WebClientServiceResponse> targetCompletion = new CompletableFuture<>();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+                "HTTP/1.1 307 Temporary Redirect\r\n"
+                        + "Location: /synthetic-target\r\n"
+                        + "Content-Length: 0\r\n\r\n");
+        Http1Client localClient = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .addService((chain, request) -> {
+                    if (request.uri().toUri().getPath().equals("/synthetic-target")) {
+                        request.whenComplete().whenComplete((_, failure) -> {
+                            targetCompletions.incrementAndGet();
+                            targetFailure.set(failure);
+                        });
+                        WritableHeaders<?> headers = WritableHeaders.create();
+                        headers.add(HeaderNames.CONTENT_LENGTH, "7");
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(targetCompletion)
+                                .connection(() -> {
+                                    targetResourceCloses.incrementAndGet();
+                                    if (failCleanup) {
+                                        throw cleanupFailure;
+                                    }
+                                })
+                                .status(Status.OK_200)
+                                .headers(ClientResponseHeaders.create(headers))
+                                .inputStream(new ByteArrayInputStream("payload".getBytes(StandardCharsets.UTF_8)))
+                                .build();
+                    }
+                    request.whenComplete().whenComplete((_, failure) -> {
+                        sourceCompletions.incrementAndGet();
+                        sourceFailure.set(failure);
+                    });
+                    return chain.proceed(request);
+                })
+                .build();
+
+        try (Http1ClientResponse response = localClient.post("http://localhost/early-expect-source")
+                .connection(connection)
+                .followRedirects(true)
+                .outputStream(output -> {
+                    handlerInvocations.incrementAndGet();
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(handlerInvocations.get(), is(1));
+            assertThat(connection.getPrologue(), startsWith("POST /early-expect-source "));
+            assertThat(connection.requestHeaders(), hasHeader(HeaderValues.EXPECT_100));
+            assertThat(connection.closeCount(), is(1));
+            assertThat(connection.releaseCount(), is(0));
+            assertThat(targetResourceCloses.get(), is(0));
+            assertThat(targetCompletion.isDone(), is(false));
+            assertThat(sourceCompletions.get(), is(0));
+            assertThat(targetCompletions.get(), is(0));
+
+            if (consumeBody) {
+                assertThat(response.as(String.class), is("payload"));
+            } else if (failCleanup) {
+                assertThat(assertThrows(IllegalStateException.class, response::close), sameInstance(cleanupFailure));
+            } else {
+                response.close();
+            }
+            assertThat("The final synthetic service resource must close with the response",
+                       targetResourceCloses.get(), is(1));
+            response.close();
+            response.close();
+            assertThat(targetResourceCloses.get(), is(1));
+            assertThat(targetCompletion.isDone(), is(true));
+            assertThat(targetCompletion.isCompletedExceptionally(), is(failCleanup));
+            assertThat(sourceCompletions.get(), is(1));
+            assertThat(targetCompletions.get(), is(1));
+            if (failCleanup) {
+                assertThat(sourceFailure.get(), sameInstance(cleanupFailure));
+                assertThat(targetFailure.get(), sameInstance(cleanupFailure));
+                assertThat(targetCompletion.handle((_, failure) -> failure).join(), sameInstance(cleanupFailure));
+            } else {
+                assertThat(sourceFailure.get(), nullValue());
+                assertThat(targetFailure.get(), nullValue());
+            }
+            assertThat(connection.closeCount(), is(1));
+            assertThat(connection.releaseCount(), is(0));
+        } finally {
+            localClient.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void earlyExpectRedirectClosesDecoratedTargetResourceOnce(boolean consumeBody) throws Exception {
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        AtomicInteger targetResourceCloses = new AtomicInteger();
+        AtomicInteger sourceCompletions = new AtomicInteger();
+        AtomicInteger targetCompletions = new AtomicInteger();
+        CompletableFuture<WebClientServiceResponse> targetCompletion = new CompletableFuture<>();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+                "HTTP/1.1 307 Temporary Redirect\r\n"
+                        + "Location: /decorated-target\r\n"
+                        + "Content-Length: 0\r\n\r\n");
+        try (RedirectTargetServer server = RedirectTargetServer.start()) {
+            Http1Client localClient = Http1Client.builder()
+                    .servicesDiscoverServices(false)
+                    .shareConnectionCache(false)
+                    .proxy(Proxy.noProxy())
+                    .sendExpectContinue(true)
+                    .addService((chain, request) -> {
+                        if (request.uri().toUri().getPath().equals("/decorated-target")) {
+                            request.whenComplete().thenAccept(_ -> targetCompletions.incrementAndGet());
+                            return WebClientServiceResponse.builder(chain.proceed(request))
+                                    .whenComplete(targetCompletion)
+                                    .connection(targetResourceCloses::incrementAndGet)
+                                    .build();
+                        }
+                        request.whenComplete().thenAccept(_ -> sourceCompletions.incrementAndGet());
+                        return chain.proceed(request);
+                    })
+                    .build();
+
+            try (Http1ClientResponse response = localClient.post(server.uri() + "/early-expect-source")
+                    .connection(connection)
+                    .followRedirects(true)
+                    .outputStream(output -> {
+                        handlerInvocations.incrementAndGet();
+                        output.write("payload".getBytes(StandardCharsets.UTF_8));
+                        output.close();
+                    })) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(handlerInvocations.get(), is(1));
+                assertThat(connection.closeCount(), is(1));
+                assertThat(connection.releaseCount(), is(0));
+                assertThat(targetResourceCloses.get(), is(0));
+                assertThat(targetCompletion.isDone(), is(false));
+                assertThat(sourceCompletions.get(), is(0));
+                assertThat(targetCompletions.get(), is(0));
+
+                if (consumeBody) {
+                    assertThat(response.as(String.class), is("payload"));
+                } else {
+                    response.close();
+                }
+                assertThat("The final decorated service resource must close with the response",
+                           targetResourceCloses.get(), is(1));
+                response.close();
+                response.close();
+                assertThat(targetResourceCloses.get(), is(1));
+                assertThat(targetCompletion.isDone(), is(true));
+                assertThat(targetCompletion.isCompletedExceptionally(), is(false));
+                assertThat(sourceCompletions.get(), is(1));
+                assertThat(targetCompletions.get(), is(1));
+                assertThat(connection.closeCount(), is(1));
+                assertThat(connection.releaseCount(), is(0));
+                assertThat(server.awaitCompletion(), is("payload"));
+            } finally {
+                localClient.closeResource();
+            }
         }
     }
 
@@ -3134,6 +3307,109 @@ class Http1ClientTest {
             while (response.hasRemaining()) {
                 socket.write(response);
             }
+        }
+    }
+
+    private record RedirectTargetServer(ServerSocket server,
+                                        AtomicReference<Socket> acceptedSocket,
+                                        Thread worker,
+                                        CompletableFuture<String> completion) implements AutoCloseable {
+        static RedirectTargetServer start() throws IOException {
+            ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
+            server.setSoTimeout(5_000);
+            AtomicReference<Socket> acceptedSocket = new AtomicReference<>();
+            CompletableFuture<String> completion = new CompletableFuture<>();
+            Thread worker = Thread.startVirtualThread(() -> {
+                try (Socket socket = server.accept()) {
+                    acceptedSocket.set(socket);
+                    socket.setSoTimeout(5_000);
+                    InputStream input = socket.getInputStream();
+                    OutputStream output = socket.getOutputStream();
+                    DataReader reader = DataReader.create(() -> {
+                        try {
+                            int next = input.read();
+                            return next == -1 ? null : new byte[] {(byte) next};
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+                    assertThat(readLine(reader), startsWith("POST /decorated-target "));
+                    WritableHeaders<?> headers = Http1HeadersParser.readHeaders(reader, 16_384, false);
+                    if (headers.contains(HeaderValues.EXPECT_100)) {
+                        output.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+                        output.flush();
+                    }
+                    String body = readBody(reader, headers);
+                    assertThat("The redirected request must preserve its payload", body, is("payload"));
+                    output.write(("HTTP/1.1 200 OK\r\n"
+                            + "Connection: close\r\n"
+                            + "Content-Length: 7\r\n\r\n"
+                            + "payload").getBytes(StandardCharsets.US_ASCII));
+                    output.flush();
+                    try {
+                        assertThat("The redirected transport must close with the response", input.read(), is(-1));
+                    } catch (SocketException _) {
+                        // Closing an unread response can reset the TCP connection instead of sending EOF.
+                    }
+                    completion.complete(body);
+                } catch (Throwable failure) {
+                    completion.completeExceptionally(failure);
+                }
+            });
+            return new RedirectTargetServer(server, acceptedSocket, worker, completion);
+        }
+
+        String uri() {
+            return "http://127.0.0.1:" + server.getLocalPort();
+        }
+
+        String awaitCompletion() throws Exception {
+            return completion.get(5, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() throws IOException, InterruptedException {
+            try {
+                server.close();
+                Socket socket = acceptedSocket.get();
+                if (socket != null) {
+                    socket.close();
+                }
+            } finally {
+                worker.interrupt();
+                assertThat("The redirected target server must terminate", worker.join(Duration.ofSeconds(5)), is(true));
+            }
+            completion.join();
+        }
+
+        private static String readBody(DataReader reader, Headers headers) {
+            if (!headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                assertThat(headers.contentLength().orElse(-1), is(7L));
+                return reader.readAsciiString(7);
+            }
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            while (true) {
+                int chunkLength = Integer.parseUnsignedInt(readLine(reader), 16);
+                if (chunkLength < 0 || chunkLength > 7 - body.size()) {
+                    throw new IllegalStateException("Redirected request body exceeds the expected seven bytes");
+                }
+                if (chunkLength == 0) {
+                    assertThat(readLine(reader), is(""));
+                    return body.toString(StandardCharsets.US_ASCII);
+                }
+                body.writeBytes(reader.readBytes(chunkLength));
+                assertThat(readLine(reader), is(""));
+            }
+        }
+
+        private static String readLine(DataReader reader) {
+            int length = reader.findNewLine(1_024);
+            if (length == 1_024) {
+                throw new IllegalStateException("Redirected request line exceeds 1024 bytes");
+            }
+            String line = reader.readAsciiString(length);
+            reader.skip(2);
+            return line;
         }
     }
 
