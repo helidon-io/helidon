@@ -198,6 +198,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         } else {
             this.hasTrailers = false;
             this.trailerNames = List.of();
+        }
+        if (headerTerminated || !hasTrailers) {
+            // Header-terminated responses have no trailer section, even when Trailer metadata is present.
             this.transportTrailers.complete(ClientResponseTrailers.create());
         }
     }

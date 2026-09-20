@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -55,6 +56,10 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -223,6 +228,146 @@ class Http1ClientResponseImplTest {
         assertThat(connection.closeCount(), is(0));
     }
 
+    @ParameterizedTest
+    @MethodSource("headerTerminatedResponses")
+    void headerTerminatedTrailerMetadataCompletesEmptyWithoutReading(Method method,
+                                                                     Status status,
+                                                                     ResponseCompletion completion) throws Exception {
+        AtomicInteger socketReads = new AtomicInteger();
+        TestConnection connection = new TestConnection(DataReader.create(() -> {
+            socketReads.incrementAndGet();
+            throw new AssertionError("Header-terminated responses must not read socket data");
+        }));
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        AtomicInteger lifecycleCompletions = new AtomicInteger();
+        lifecycle.thenRun(lifecycleCompletions::incrementAndGet);
+        CompletableFuture<ClientResponseTrailers> transportTrailers = new CompletableFuture<>();
+        AtomicInteger serviceCompletions = new AtomicInteger();
+        CompletableFuture<ClientResponseTrailers> serviceTrailers = transportTrailers.thenApply(trailers -> {
+            serviceCompletions.incrementAndGet();
+            return trailers;
+        });
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.TRAILER, "checksum");
+        if (method == Method.HEAD || status == Status.NOT_MODIFIED_304) {
+            headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        }
+        Http1ClientResponseImpl response = trailerResponse(method, status, ClientResponseHeaders.create(headers),
+                                                          connection, lifecycle, transportTrailers, serviceTrailers);
+
+        assertThat("Transport trailers must complete at the header boundary", transportTrailers.isDone(), is(true));
+        assertThat(transportTrailers.get(5, TimeUnit.SECONDS).size(), is(0));
+        assertThat(serviceTrailers.get(5, TimeUnit.SECONDS), sameInstance(transportTrailers.get(5, TimeUnit.SECONDS)));
+        assertThat(serviceCompletions.get(), is(1));
+        assertThat(lifecycle.isDone(), is(false));
+        assertThrows(IllegalStateException.class, response::trailers);
+
+        switch (completion) {
+        case DIRECT_CLOSE -> response.close();
+        case ENTITY_THEN_CLOSE -> {
+            response.entity();
+            response.close();
+        }
+        case WITHOUT_CLOSING_CONNECTION -> response.completeWithoutClosingConnection();
+        }
+        response.close();
+        response.completeWithoutClosingConnection();
+        response.entity();
+        assertThat(response.trailers().size(), is(0));
+        lifecycle.get(5, TimeUnit.SECONDS);
+        assertThat(lifecycleCompletions.get(), is(1));
+        assertThat(serviceCompletions.get(), is(1));
+        assertThat(transportTrailers.isCompletedExceptionally(), is(false));
+        assertThat(serviceTrailers.isCompletedExceptionally(), is(false));
+        assertThat(socketReads.get(), is(0));
+        assertThat(connection.releaseCount(), is(completion == ResponseCompletion.WITHOUT_CLOSING_CONNECTION ? 0 : 1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {200, 205})
+    void chunkedTrailersRemainPendingUntilFramingIsRead(int statusCode) throws Exception {
+        String entity = statusCode == 200 ? "4\r\ndata\r\n" : "";
+        TestConnection connection = new TestConnection(dataReader(entity + "0\r\nchecksum: match\r\n\r\n"));
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> transportTrailers = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> serviceTrailers = transportTrailers.thenApply(trailers -> trailers);
+        Http1ClientResponseImpl response = trailerResponse(Method.GET, Status.create(statusCode), chunkedTrailerHeaders(),
+                                                          connection, lifecycle, transportTrailers, serviceTrailers);
+
+        assertThat(transportTrailers.isDone(), is(false));
+        assertThat(serviceTrailers.isDone(), is(false));
+        if (statusCode == 200) {
+            assertThat(response.entity().as(String.class), is("data"));
+        } else {
+            response.entity();
+        }
+        assertThat(response.trailers().get(HeaderNames.create("checksum")).get(), is("match"));
+        assertThat(transportTrailers.get(5, TimeUnit.SECONDS).get(HeaderNames.create("checksum")).get(), is("match"));
+        assertThat(serviceTrailers.get(5, TimeUnit.SECONDS), sameInstance(transportTrailers.get(5, TimeUnit.SECONDS)));
+        response.close();
+        response.close();
+        lifecycle.get(5, TimeUnit.SECONDS);
+        assertThat(connection.reader().available(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {200, 205})
+    void unreadChunkedTrailersStillCompleteExceptionally(int statusCode) throws Exception {
+        TestConnection connection = new TestConnection(dataReader("0\r\nchecksum: match\r\n\r\n"));
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> transportTrailers = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> serviceTrailers = transportTrailers.thenApply(trailers -> trailers);
+        Http1ClientResponseImpl response = trailerResponse(Method.GET, Status.create(statusCode), chunkedTrailerHeaders(),
+                                                          connection, lifecycle, transportTrailers, serviceTrailers);
+
+        response.close();
+        response.close();
+
+        ExecutionException failure = assertThrows(ExecutionException.class,
+                                                  () -> transportTrailers.get(5, TimeUnit.SECONDS));
+        assertThat(failure.getCause().getMessage(), is("HTTP/1 response closed before trailers were read."));
+        ExecutionException serviceFailure = assertThrows(ExecutionException.class,
+                                                         () -> serviceTrailers.get(5, TimeUnit.SECONDS));
+        assertThat(serviceFailure.getCause(), sameInstance(failure.getCause()));
+        lifecycle.get(5, TimeUnit.SECONDS);
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void headerTerminatedTransportTrailersPreserveIndependentServiceFailure() throws Exception {
+        IllegalStateException expected = new IllegalStateException("simulated service trailer failure");
+        AtomicInteger socketReads = new AtomicInteger();
+        TestConnection connection = new TestConnection(DataReader.create(() -> {
+            socketReads.incrementAndGet();
+            throw new AssertionError("Header-terminated responses must not read socket data");
+        }));
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> transportTrailers = new CompletableFuture<>();
+        CompletableFuture<ClientResponseTrailers> serviceTrailers = CompletableFuture.failedFuture(expected);
+        Http1ClientResponseImpl response = trailerResponse(Method.HEAD, Status.OK_200, chunkedTrailerHeaders(),
+                                                          connection, lifecycle, transportTrailers, serviceTrailers);
+
+        assertThat(transportTrailers.isDone(), is(true));
+        assertThat(transportTrailers.get(5, TimeUnit.SECONDS).size(), is(0));
+        response.entity();
+        assertThat(assertThrows(IllegalStateException.class, response::trailers), sameInstance(expected));
+        ExecutionException serviceFailure = assertThrows(ExecutionException.class,
+                                                         () -> serviceTrailers.get(5, TimeUnit.SECONDS));
+        assertThat(serviceFailure.getCause(), sameInstance(expected));
+        ExecutionException lifecycleFailure = assertThrows(ExecutionException.class,
+                                                           () -> lifecycle.get(5, TimeUnit.SECONDS));
+        assertThat(lifecycleFailure.getCause(), sameInstance(expected));
+        response.close();
+        assertThat(transportTrailers.get(5, TimeUnit.SECONDS).size(), is(0));
+        assertThat(socketReads.get(), is(0));
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
     @Test
     void truncatedEntityCompletesLifecycleExceptionally() throws Exception {
         EOFException expected = new EOFException("simulated truncated HTTP/1 entity");
@@ -360,6 +505,48 @@ class Http1ClientResponseImplTest {
         assertThat(connection.closeCount(), is(1));
     }
 
+    private static Stream<Arguments> headerTerminatedResponses() {
+        return Stream.of(
+                Arguments.of(Method.HEAD, Status.OK_200, ResponseCompletion.DIRECT_CLOSE),
+                Arguments.of(Method.HEAD, Status.OK_200, ResponseCompletion.ENTITY_THEN_CLOSE),
+                Arguments.of(Method.GET, Status.NOT_MODIFIED_304, ResponseCompletion.ENTITY_THEN_CLOSE),
+                Arguments.of(Method.GET, Status.NO_CONTENT_204, ResponseCompletion.DIRECT_CLOSE),
+                Arguments.of(Method.GET, Status.CONTINUE_100, ResponseCompletion.WITHOUT_CLOSING_CONNECTION),
+                Arguments.of(Method.GET, Status.create(103), ResponseCompletion.WITHOUT_CLOSING_CONNECTION));
+    }
+
+    private static Http1ClientResponseImpl trailerResponse(Method method,
+                                                           Status status,
+                                                           ClientResponseHeaders headers,
+                                                           TestConnection connection,
+                                                           CompletableFuture<Void> lifecycle,
+                                                           CompletableFuture<ClientResponseTrailers> transportTrailers,
+                                                           CompletableFuture<ClientResponseTrailers> serviceTrailers) {
+        WebClientServiceResponse serviceResponse = Http1CallChainBase.createServiceResponse(
+                new Http1ClientImpl(null, Http1ClientConfig.builder().buildPrototype()),
+                new TestServiceRequest(method), connection, connection.reader(), status, headers, new CompletableFuture<>());
+        return new Http1ClientResponseImpl(HttpClientConfig.builder().readTimeout(Duration.ofSeconds(5)).build(),
+                                           Http1ClientProtocolConfig.create(),
+                                           status,
+                                           method,
+                                           ClientRequestHeaders.create(WritableHeaders.create()),
+                                           headers,
+                                           connection,
+                                           serviceResponse.inputStream().orElse(null),
+                                           MediaContext.create(),
+                                           ClientUri.create(URI.create("http://localhost/test")),
+                                           lifecycle,
+                                           transportTrailers,
+                                           serviceTrailers);
+    }
+
+    private static ClientResponseHeaders chunkedTrailerHeaders() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        headers.add(HeaderNames.TRAILER, "checksum");
+        return ClientResponseHeaders.create(headers);
+    }
+
     private static WebClientServiceResponse serviceResponse(Method method,
                                                             Status status,
                                                             ClientResponseHeaders headers) {
@@ -411,6 +598,10 @@ class Http1ClientResponseImplTest {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderNames.CONTENT_LENGTH, "4");
         return ClientResponseHeaders.create(headers);
+    }
+
+    private enum ResponseCompletion {
+        DIRECT_CLOSE, ENTITY_THEN_CLOSE, WITHOUT_CLOSING_CONNECTION
     }
 
     private static final class TestServiceRequest implements WebClientServiceRequest {
