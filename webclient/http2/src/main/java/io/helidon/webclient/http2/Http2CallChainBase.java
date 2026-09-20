@@ -403,7 +403,7 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
     /**
      * Prepare request state that must be finalized before protocol selection or fallback.
      *
-     * @param headers service-final request headers
+     * @param request service-final request
      */
     protected void prepareRequest(WebClientServiceRequest request) {
     }
