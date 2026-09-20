@@ -70,6 +70,7 @@ import io.helidon.webclient.spi.WebClientService;
  */
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
+    private static final int MULTIPLE_CHOICES_CODE = 300;
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     @SuppressWarnings("rawtypes")
     private static final List<SourceHandlerProvider> SOURCE_HANDLERS = HelidonServiceLoader.builder(
@@ -352,6 +353,10 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         }
 
         Status status = response.status();
+        if (status.code() == MULTIPLE_CHOICES_CODE && !response.headers().contains(HeaderNames.LOCATION)) {
+            // Multiple Choices can provide a choices representation without a preferred redirect target.
+            return response;
+        }
         ClientUri sourceUri = response.lastEndpointUri();
         String location;
         try (response) {
