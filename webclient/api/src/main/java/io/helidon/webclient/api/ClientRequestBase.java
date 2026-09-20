@@ -917,7 +917,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                     ? List.copyOf(invocationHeaders.get(HeaderNames.COOKIE).allValues())
                     : List.of();
             List<String> managerCookies = cookiePairs(provisionalCookies);
-            cookiePairs(explicitCookies).forEach(managerCookies::remove);
+            if (!explicitCookies.isEmpty() && !managerCookies.isEmpty()) {
+                Map<String, Integer> explicitCounts = cookiePairCounts(cookiePairs(explicitCookies));
+                managerCookies.removeIf(pair -> consumeCookiePair(explicitCounts, pair));
+            }
             cookieState = new CookieDispatchState(ClientUri.create(cookieUri),
                                                   cookieSnapshot(invocationHeaders),
                                                   List.copyOf(managerCookies));
@@ -1202,12 +1205,12 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             return;
         }
         Header currentCookieHeader = requestHeaders.get(HeaderNames.COOKIE);
-        List<String> remainingManagerCookies = new ArrayList<>(managerCookies);
+        Map<String, Integer> remainingManagerCookies = cookiePairCounts(managerCookies);
         List<String> retainedCookies = new ArrayList<>(currentCookieHeader.valueCount());
         for (String currentCookie : currentCookieHeader.allValues()) {
             List<String> retainedPairs = new ArrayList<>();
             for (String pair : cookiePairs(List.of(currentCookie))) {
-                if (!remainingManagerCookies.remove(pair)) {
+                if (!consumeCookiePair(remainingManagerCookies, pair)) {
                     retainedPairs.add(pair);
                 }
             }
@@ -1545,14 +1548,25 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         return equals < 0 ? pair : pair.substring(0, equals).trim();
     }
 
-    private static int occurrences(List<String> pairs, String expected) {
-        int result = 0;
+    private static Map<String, Integer> cookiePairCounts(List<String> pairs) {
+        Map<String, Integer> result = new HashMap<>();
         for (String pair : pairs) {
-            if (expected.equals(pair)) {
-                result++;
-            }
+            result.merge(pair, 1, Integer::sum);
         }
         return result;
+    }
+
+    private static boolean consumeCookiePair(Map<String, Integer> pairCounts, String pair) {
+        Integer count = pairCounts.get(pair);
+        if (count == null) {
+            return false;
+        }
+        if (count == 1) {
+            pairCounts.remove(pair);
+        } else {
+            pairCounts.put(pair, count - 1);
+        }
+        return true;
     }
 
     private record CookieDispatchState(ClientUri provisionalUri,
@@ -1581,20 +1595,21 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             if (before.present() && !after.present()) {
                 automaticAllowed = false;
             }
-            if (survivingManagerCookies.isEmpty()) {
+            if (survivingManagerCookies.isEmpty() || before.equals(after)) {
                 return;
             }
-            List<String> beforePairs = cookiePairs(before.values());
-            List<String> afterPairs = cookiePairs(after.values());
-            for (String managerCookie : new HashSet<>(survivingManagerCookies)) {
-                int removed = occurrences(beforePairs, managerCookie) - occurrences(afterPairs, managerCookie);
-                if (removed > 0) {
-                    suppressedNames.add(cookieName(managerCookie));
-                    while (removed-- > 0) {
-                        survivingManagerCookies.remove(managerCookie);
-                    }
-                }
+            Map<String, Integer> removedCounts = cookiePairCounts(cookiePairs(before.values()));
+            for (String pair : cookiePairs(after.values())) {
+                consumeCookiePair(removedCounts, pair);
             }
+            // A decrease is charged to managed copies first; added equal pairs do not acquire managed ownership.
+            survivingManagerCookies.removeIf(pair -> {
+                if (consumeCookiePair(removedCounts, pair)) {
+                    suppressedNames.add(cookieName(pair));
+                    return true;
+                }
+                return false;
+            });
         }
 
         private boolean automaticAllowed() {
