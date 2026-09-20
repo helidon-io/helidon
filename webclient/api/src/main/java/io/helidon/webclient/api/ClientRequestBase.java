@@ -239,8 +239,9 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public void inheritedAddress(SocketAddress socketAddress, ClientRequestOrigin origin) {
+        Objects.requireNonNull(origin);
         setAddress(socketAddress);
-        inheritedAddressOrigin = Objects.requireNonNull(origin);
+        inheritedAddressOrigin = origin;
     }
 
     private void setAddress(SocketAddress socketAddress) {
@@ -375,8 +376,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public void inheritedConnection(ClientConnection connection, ClientRequestOrigin origin) {
-        this.connection = Objects.requireNonNull(connection);
-        this.inheritedConnectionOrigin = Objects.requireNonNull(origin);
+        Objects.requireNonNull(connection);
+        Objects.requireNonNull(origin);
+        this.connection = connection;
+        this.inheritedConnectionOrigin = origin;
     }
 
     @Override
@@ -569,8 +572,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     @Api.Internal
     public void inheritedSelectedProxyRoute(ProxyRoute proxyRoute, ClientRequestOrigin origin) {
-        this.selectedProxyRoute = Objects.requireNonNull(proxyRoute);
-        this.inheritedSelectedProxyRouteOrigin = Objects.requireNonNull(origin);
+        Objects.requireNonNull(proxyRoute);
+        Objects.requireNonNull(origin);
+        this.selectedProxyRoute = proxyRoute;
+        this.inheritedSelectedProxyRouteOrigin = origin;
         this.lastSelectedProxyRoute = proxyRoute;
         this.inheritedLastSelectedProxyRouteOrigin = origin;
     }

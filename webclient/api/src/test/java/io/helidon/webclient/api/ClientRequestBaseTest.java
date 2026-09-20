@@ -16,16 +16,21 @@
 
 package io.helidon.webclient.api;
 
+import java.lang.reflect.InvocationHandler;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.UnixDomainSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -44,11 +49,17 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.spi.WebClientService;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static java.lang.reflect.Proxy.newProxyInstance;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientRequestBaseTest {
@@ -614,6 +625,150 @@ class ClientRequestBaseTest {
     }
 
     @Test
+    void inheritedAddressRejectsNullAddressWithoutChangingState() {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example/path?key=value");
+        URI uri = request.resolvedUri().toUri();
+        ClientRequestOrigin origin = ClientRequestOrigin.create(request.resolvedUri());
+        ClientRequestOrigin replacementOrigin = ClientRequestOrigin.create(ClientUri.create(URI.create("http://other.example")));
+        SocketAddress address = UnixDomainSocketAddress.of("inherited.sock");
+        request.inheritedAddress(address, origin);
+
+        assertThrows(NullPointerException.class, () -> request.inheritedAddress(null, replacementOrigin));
+
+        assertInheritedAddressState(request, address, origin, uri);
+    }
+
+    @ParameterizedTest
+    @MethodSource("replacementAddresses")
+    void inheritedAddressRejectsNullOriginWithoutChangingState(SocketAddress replacement) {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example/path?key=value");
+        URI uri = request.resolvedUri().toUri();
+        ClientRequestOrigin origin = ClientRequestOrigin.create(request.resolvedUri());
+        SocketAddress address = UnixDomainSocketAddress.of("inherited.sock");
+        request.inheritedAddress(address, origin);
+
+        assertThrows(NullPointerException.class, () -> request.inheritedAddress(replacement, null));
+
+        assertInheritedAddressState(request, address, origin, uri);
+    }
+
+    @Test
+    void inheritedConnectionRejectsNullConnectionWithoutChangingState() {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example");
+        ClientRequestOrigin origin = ClientRequestOrigin.create(request.resolvedUri());
+        ClientRequestOrigin replacementOrigin = ClientRequestOrigin.create(ClientUri.create(URI.create("http://other.example")));
+        ClientConnection connection = new TestConnection();
+        request.inheritedConnection(connection, origin);
+
+        assertThrows(NullPointerException.class, () -> request.inheritedConnection(null, replacementOrigin));
+
+        assertThat(request.connection().orElseThrow(), sameInstance(connection));
+        assertThat(request.inheritedConnectionOrigin().orElseThrow(), sameInstance(origin));
+    }
+
+    @Test
+    void inheritedConnectionRejectsNullOriginWithoutChangingState() {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example");
+        ClientRequestOrigin origin = ClientRequestOrigin.create(request.resolvedUri());
+        ClientConnection connection = new TestConnection();
+        request.inheritedConnection(connection, origin);
+
+        assertThrows(NullPointerException.class, () -> request.inheritedConnection(new TestConnection(), null));
+
+        assertThat(request.connection().orElseThrow(), sameInstance(connection));
+        assertThat(request.inheritedConnectionOrigin().orElseThrow(), sameInstance(origin));
+    }
+
+    @Test
+    void inheritedSelectedProxyRouteRejectsNullRouteWithoutChangingState() {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example");
+        ClientRequestOrigin origin = ClientRequestOrigin.create(request.resolvedUri());
+        ClientRequestOrigin replacementOrigin = ClientRequestOrigin.create(ClientUri.create(URI.create("http://other.example")));
+        ProxyRoute route = ProxyRoute.direct(Proxy.noProxy(), "http", "service.example", 80, false);
+        request.inheritedSelectedProxyRoute(route, origin);
+
+        assertThrows(NullPointerException.class, () -> request.inheritedSelectedProxyRoute(null, replacementOrigin));
+
+        assertInheritedProxyRouteState(request, route, origin);
+    }
+
+    @Test
+    void inheritedSelectedProxyRouteRejectsNullOriginWithoutChangingState() {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example");
+        ClientRequestOrigin origin = ClientRequestOrigin.create(request.resolvedUri());
+        ProxyRoute route = ProxyRoute.direct(Proxy.noProxy(), "http", "service.example", 80, false);
+        ProxyRoute replacement = ProxyRoute.direct(Proxy.noProxy(), "http", "other.example", 8080, false);
+        request.inheritedSelectedProxyRoute(route, origin);
+
+        assertThrows(NullPointerException.class, () -> request.inheritedSelectedProxyRoute(replacement, null));
+
+        assertInheritedProxyRouteState(request, route, origin);
+    }
+
+    @Test
+    void inheritedBindingsRetainNonNullValuesAndOrigins() {
+        TestRequest request = new TestRequest(Method.GET, "http://service.example/path?key=value");
+        URI uri = request.resolvedUri().toUri();
+        ClientRequestOrigin origin = ClientRequestOrigin.create(request.resolvedUri());
+        SocketAddress address = UnixDomainSocketAddress.of("inherited.sock");
+        ClientConnection connection = new TestConnection();
+        ProxyRoute route = ProxyRoute.direct(Proxy.noProxy(), "http", "service.example", 80, false);
+
+        request.inheritedAddress(address, origin);
+        request.inheritedConnection(connection, origin);
+        request.inheritedSelectedProxyRoute(route, origin);
+
+        assertInheritedAddressState(request, address, origin, uri);
+        assertThat(request.connection().orElseThrow(), sameInstance(connection));
+        assertThat(request.inheritedConnectionOrigin().orElseThrow(), sameInstance(origin));
+        assertInheritedProxyRouteState(request, route, origin);
+    }
+
+    @Test
+    void inheritedAddressDefaultRejectsNullArgumentsBeforeDelegation() {
+        SocketAddress address = InetSocketAddress.createUnresolved("service.example", 80);
+        ClientRequestOrigin origin = ClientRequestOrigin.create(ClientUri.create(URI.create("http://service.example")));
+
+        assertAll(() -> assertRejectedBeforeDelegation(request -> request.inheritedAddress(null, origin)),
+                  () -> assertRejectedBeforeDelegation(request -> request.inheritedAddress(address, null)));
+    }
+
+    @Test
+    void inheritedConnectionDefaultRejectsNullArgumentsBeforeDelegation() {
+        ClientConnection connection = new TestConnection();
+        ClientRequestOrigin origin = ClientRequestOrigin.create(ClientUri.create(URI.create("http://service.example")));
+
+        assertAll(() -> assertRejectedBeforeDelegation(request -> request.inheritedConnection(null, origin)),
+                  () -> assertRejectedBeforeDelegation(request -> request.inheritedConnection(connection, null)));
+    }
+
+    @Test
+    void inheritedSelectedProxyRouteDefaultRejectsNullArgumentsBeforeDelegation() {
+        ProxyRoute route = ProxyRoute.direct(Proxy.noProxy(), "http", "service.example", 80, false);
+        ClientRequestOrigin origin = ClientRequestOrigin.create(ClientUri.create(URI.create("http://service.example")));
+
+        assertAll(() -> assertRejectedBeforeDelegation(request -> request.inheritedSelectedProxyRoute(null, origin)),
+                  () -> assertRejectedBeforeDelegation(request -> request.inheritedSelectedProxyRoute(route, null)));
+    }
+
+    @Test
+    void inheritedBindingDefaultsDelegateNonNullValues() {
+        RecordingRequest recording = new RecordingRequest();
+        SocketAddress address = InetSocketAddress.createUnresolved("service.example", 80);
+        ClientConnection connection = new TestConnection();
+        ProxyRoute route = ProxyRoute.direct(Proxy.noProxy(), "http", "service.example", 80, false);
+        ClientRequestOrigin origin = ClientRequestOrigin.create(ClientUri.create(URI.create("http://service.example")));
+
+        recording.request.inheritedAddress(address, origin);
+        recording.request.inheritedConnection(connection, origin);
+        recording.request.inheritedSelectedProxyRoute(route, origin);
+
+        assertThat(recording.calls, contains(new SetterCall("address", address),
+                                             new SetterCall("connection", connection),
+                                             new SetterCall("selectedProxyRoute", route)));
+    }
+
+    @Test
     void finalizedHeadersAreDeepSnapshots() {
         HeaderName mutableName = HeaderNames.create("X-Mutable");
         byte[] mutableValue = "before".getBytes(StandardCharsets.UTF_8);
@@ -770,6 +925,57 @@ class ClientRequestBaseTest {
 
         assertThat(request.capturedHeaders().get(HeaderNames.COOKIE).allValues(),
                    is(List.of("explicit=value", "stored=value", "default=value", "service=value")));
+    }
+
+    private static Stream<SocketAddress> replacementAddresses() {
+        return Stream.of(UnixDomainSocketAddress.of("replacement.sock"),
+                         InetSocketAddress.createUnresolved("other.example", 8080));
+    }
+
+    private static void assertInheritedAddressState(TestRequest request,
+                                                    SocketAddress address,
+                                                    ClientRequestOrigin origin,
+                                                    URI uri) {
+        assertAll(() -> assertThat("transport address", request.address().orElseThrow(), sameInstance(address)),
+                  () -> assertThat("address origin", request.inheritedAddressOrigin().orElseThrow(), sameInstance(origin)),
+                  () -> assertThat("request URI", request.uri().toUri(), is(uri)),
+                  () -> assertThat("resolved URI", request.resolvedUri().toUri(), is(uri)));
+    }
+
+    private static void assertInheritedProxyRouteState(TestRequest request, ProxyRoute route, ClientRequestOrigin origin) {
+        assertAll(() -> assertThat("selected route", request.selectedProxyRoute().orElseThrow(), sameInstance(route)),
+                  () -> assertThat("selected route origin",
+                                   request.inheritedSelectedProxyRouteOrigin().orElseThrow(),
+                                   sameInstance(origin)),
+                  () -> assertThat("last route", request.lastSelectedProxyRoute().orElseThrow(), sameInstance(route)),
+                  () -> assertThat("last route origin",
+                                   request.inheritedLastSelectedProxyRouteOrigin().orElseThrow(),
+                                   sameInstance(origin)));
+    }
+
+    private static void assertRejectedBeforeDelegation(Consumer<FullClientRequest<?>> invocation) {
+        RecordingRequest recording = new RecordingRequest();
+        assertAll(() -> assertThrows(NullPointerException.class, () -> invocation.accept(recording.request)),
+                  () -> assertThat("setter calls for rejected arguments", recording.calls, empty()));
+    }
+
+    private record SetterCall(String method, Object argument) {
+    }
+
+    private static final class RecordingRequest {
+        private final List<SetterCall> calls = new ArrayList<>();
+        private final FullClientRequest<?> request = (FullClientRequest<?>) newProxyInstance(
+                FullClientRequest.class.getClassLoader(),
+                new Class<?>[] {FullClientRequest.class},
+                (proxy, method, arguments) -> switch (method.getName()) {
+                    case "inheritedAddress", "inheritedConnection", "inheritedSelectedProxyRoute" ->
+                            InvocationHandler.invokeDefault(proxy, method, arguments);
+                    case "address", "connection", "selectedProxyRoute" -> {
+                        calls.add(new SetterCall(method.getName(), arguments[0]));
+                        yield method.getReturnType() == void.class ? null : proxy;
+                    }
+                    default -> throw new UnsupportedOperationException(method.toString());
+                });
     }
 
     private static final class TestRequest extends ClientRequestBase<TestRequest, HttpClientResponse> {
