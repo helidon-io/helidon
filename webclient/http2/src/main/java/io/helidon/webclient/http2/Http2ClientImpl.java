@@ -63,8 +63,8 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final boolean altSvcNotificationsEnabled;
     private final boolean altSvcEnabled;
     private final boolean responseNotificationsManagedByWebClient;
-    private volatile boolean closed;
     private final boolean ownsWebClient;
+    private volatile boolean closed;
 
     Http2ClientImpl(WebClient webClient, Http2ClientConfig clientConfig) {
         this(webClient, clientConfig, false, false);
