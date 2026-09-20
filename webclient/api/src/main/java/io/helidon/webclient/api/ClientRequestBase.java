@@ -1247,6 +1247,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      */
     @Api.Internal
     public final void recordResponseCookies(ClientUri endpointUri, ClientResponseHeaders responseHeaders) {
+        Objects.requireNonNull(endpointUri, "endpointUri");
+        Objects.requireNonNull(responseHeaders, "responseHeaders");
         cookieManager.response(endpointUri, responseHeaders);
     }
 
