@@ -102,6 +102,8 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      */
     @Api.Internal
     default void inheritedAddress(SocketAddress address, ClientRequestOrigin origin) {
+        Objects.requireNonNull(address, "address");
+        Objects.requireNonNull(origin, "origin");
         address(address);
     }
 
@@ -164,6 +166,8 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      */
     @Api.Internal
     default void inheritedConnection(ClientConnection connection, ClientRequestOrigin origin) {
+        Objects.requireNonNull(connection, "connection");
+        Objects.requireNonNull(origin, "origin");
         connection(connection);
     }
 
@@ -243,6 +247,8 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      */
     @Api.Internal
     default void inheritedSelectedProxyRoute(ProxyRoute proxyRoute, ClientRequestOrigin origin) {
+        Objects.requireNonNull(proxyRoute, "proxyRoute");
+        Objects.requireNonNull(origin, "origin");
         selectedProxyRoute(proxyRoute);
     }
 
