@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
+import java.util.stream.Stream;
 
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderNames;
@@ -24,12 +25,31 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.WritableHeaders;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RedirectSecurityStateTest {
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("originBoundaryStates")
+    void wouldCrossOriginRejectsNullInputsBeforeStateChecks(String description,
+                                                            RedirectSecurityState state,
+                                                            ClientUri target,
+                                                            boolean expectedCrossing) {
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+
+        assertThat(description, state.wouldCrossOrigin(target, headers), is(expectedCrossing));
+        assertAll(() -> assertThrows(NullPointerException.class, () -> state.wouldCrossOrigin(null, headers)),
+                  () -> assertThrows(NullPointerException.class, () -> state.wouldCrossOrigin(target, null)));
+        assertThat(description, state.wouldCrossOrigin(target, headers), is(expectedCrossing));
+    }
 
     @Test
     void normalizesDefaultPortsAndHostNames() {
@@ -135,6 +155,20 @@ class RedirectSecurityStateTest {
 
         assertThat(state.crossedOrigin(), is(true));
         assertThat(state.replayingEntity(), is(true));
+    }
+
+    private static Stream<Arguments> originBoundaryStates() {
+        ClientUri source = uri("https://source.invalid/path");
+        ClientUri target = uri("https://target.invalid/path");
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        RedirectSecurityState initial = RedirectSecurityState.initial();
+        RedirectSecurityState pending = initial.finalized(source, headers).forRedirect(false);
+        RedirectSecurityState crossed = pending.finalized(target, headers);
+
+        return Stream.of(Arguments.of("initial", initial, source, false),
+                         Arguments.of("pending same origin", pending, source, false),
+                         Arguments.of("pending different origin", pending, target, true),
+                         Arguments.of("already crossed", crossed, target, true));
     }
 
     private static ClientUri uri(String uri) {

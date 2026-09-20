@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -112,6 +113,8 @@ public final class RedirectSecurityState {
      * @return whether the redirect is or would become cross-origin
      */
     public boolean wouldCrossOrigin(ClientUri uri, Headers headers) {
+        Objects.requireNonNull(uri, "uri");
+        Objects.requireNonNull(headers, "headers");
         if (crossedOrigin) {
             return true;
         }

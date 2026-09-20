@@ -51,6 +51,7 @@ import io.helidon.webclient.spi.WebClientService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -63,6 +64,35 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientRequestBaseTest {
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void recordResponseCookiesRejectsNullInputsRegardlessOfStorage(boolean automaticStoreEnabled) {
+        WebClientCookieManager cookieManager = WebClientCookieManager.builder()
+                .automaticStoreEnabled(automaticStoreEnabled)
+                .build();
+        TestRequest request = new TestRequest(HttpClientConfig.builder().build(),
+                                              cookieManager,
+                                              Method.GET,
+                                              "https://service.example/path");
+        ClientUri endpointUri = request.resolvedUri();
+        ClientResponseHeaders emptyHeaders = ClientResponseHeaders.create(WritableHeaders.create());
+
+        assertAll(() -> assertThrows(NullPointerException.class,
+                                     () -> request.recordResponseCookies(null, emptyHeaders)),
+                  () -> assertThrows(NullPointerException.class,
+                                     () -> request.recordResponseCookies(endpointUri, null)));
+
+        request.recordResponseCookies(endpointUri, emptyHeaders);
+        assertThat(cookieManager.getCookieStore().getCookies(), empty());
+
+        WritableHeaders<?> cookieHeaders = WritableHeaders.create();
+        cookieHeaders.set(HeaderNames.SET_COOKIE, "session=stored; Path=/");
+        request.recordResponseCookies(endpointUri, ClientResponseHeaders.create(cookieHeaders));
+
+        assertThat(cookieManager.getCookieStore().getCookies().stream().map(cookie -> cookie.getValue()).toList(),
+                   is(automaticStoreEnabled ? List.of("stored") : List.of()));
+    }
 
     @Test
     void redirectStateDoesNotUseRequestProperties() {
