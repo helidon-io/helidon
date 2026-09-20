@@ -834,6 +834,15 @@ public final class EntityWriterPreflight {
         }
 
         /**
+         * Empty writer-operation set.
+         *
+         * @return empty operations
+         */
+        public static HeaderChanges empty() {
+            return EMPTY;
+        }
+
+        /**
          * Whether no operations were captured.
          *
          * @return whether this change set is empty
@@ -885,15 +894,6 @@ public final class EntityWriterPreflight {
             combined.addAll(operations);
             combined.addAll(after.operations);
             return new HeaderChanges(List.copyOf(combined));
-        }
-
-        /**
-         * Empty writer-operation set.
-         *
-         * @return empty operations
-         */
-        public static HeaderChanges empty() {
-            return EMPTY;
         }
     }
 
@@ -1012,37 +1012,6 @@ public final class EntityWriterPreflight {
     }
 
     private record AppliedMutation(HeaderName name, Header before, Header after) {
-        private void rollback(ClientRequestHeaders headers) {
-            Header current = current(headers, name);
-            if (after == null) {
-                if (current == null && before != null) {
-                    headers.set(before);
-                }
-                return;
-            }
-            List<String> beforeValues = values(name, before);
-            List<String> afterValues = values(name, after);
-            List<String> currentValues = values(name, current);
-            if (!startsWith(currentValues, afterValues)) {
-                return;
-            }
-            List<String> restored = new ArrayList<>(beforeValues.size() + currentValues.size() - afterValues.size());
-            restored.addAll(beforeValues);
-            restored.addAll(currentValues.subList(afterValues.size(), currentValues.size()));
-            if (restored.isEmpty()) {
-                headers.remove(name);
-                return;
-            }
-            Header template = restored.size() == beforeValues.size() && before != null ? before : current;
-            String[] values = name.equals(HeaderNames.COOKIE)
-                    ? new String[] {String.join("; ", restored)}
-                    : restored.toArray(String[]::new);
-            headers.set(HeaderValues.create(name,
-                                            template != null && template.changing(),
-                                            template != null && template.sensitive(),
-                                            values));
-        }
-
         private static List<String> values(HeaderName name, Header header) {
             if (header == null) {
                 return List.of();
@@ -1072,6 +1041,37 @@ public final class EntityWriterPreflight {
                 }
             }
             return true;
+        }
+
+        private void rollback(ClientRequestHeaders headers) {
+            Header current = current(headers, name);
+            if (after == null) {
+                if (current == null && before != null) {
+                    headers.set(before);
+                }
+                return;
+            }
+            List<String> beforeValues = values(name, before);
+            List<String> afterValues = values(name, after);
+            List<String> currentValues = values(name, current);
+            if (!startsWith(currentValues, afterValues)) {
+                return;
+            }
+            List<String> restored = new ArrayList<>(beforeValues.size() + currentValues.size() - afterValues.size());
+            restored.addAll(beforeValues);
+            restored.addAll(currentValues.subList(afterValues.size(), currentValues.size()));
+            if (restored.isEmpty()) {
+                headers.remove(name);
+                return;
+            }
+            Header template = restored.size() == beforeValues.size() && before != null ? before : current;
+            String[] values = name.equals(HeaderNames.COOKIE)
+                    ? new String[] {String.join("; ", restored)}
+                    : restored.toArray(String[]::new);
+            headers.set(HeaderValues.create(name,
+                                            template != null && template.changing(),
+                                            template != null && template.sensitive(),
+                                            values));
         }
     }
 
