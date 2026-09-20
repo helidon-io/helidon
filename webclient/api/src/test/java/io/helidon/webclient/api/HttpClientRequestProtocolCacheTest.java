@@ -69,6 +69,9 @@ import io.helidon.webclient.spi.ProtocolConfig;
 import io.helidon.webclient.spi.WebClientService;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -301,6 +304,187 @@ class HttpClientRequestProtocolCacheTest {
         assertThat(context.dynamic().submittedEntities().size(), is(2));
         assertThat(context.dynamic().submittedEntities().get(0), sameInstance(entity));
         assertThat(((byte[]) context.dynamic().submittedEntities().get(1)).length, is(0));
+    }
+
+    @ParameterizedTest(name = "status {0} preserves {1} and its entity")
+    @CsvSource({
+            "301, PUT",
+            "301, DELETE",
+            "301, PATCH",
+            "301, QUERY",
+            "301, GET",
+            "301, CUSTOM",
+            "301, post",
+            "302, PUT",
+            "302, DELETE",
+            "302, PATCH",
+            "302, QUERY",
+            "302, GET",
+            "302, CUSTOM",
+            "302, post",
+            "307, POST",
+            "307, PUT",
+            "308, POST",
+            "308, PUT"
+    })
+    void shouldPreserveMethodAndEntityForRedirect(int statusCode, String methodName) {
+        TestContext context = TestContext.create();
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(statusCode));
+        Method method = Method.create(methodName);
+        byte[] payload = "payload".getBytes(StandardCharsets.UTF_8);
+
+        try (HttpClientResponse response = context.request(method)
+                .header(HeaderNames.CONTENT_TYPE, "application/custom")
+                .followRedirects(true)
+                .submit(payload)) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        assertThat("dispatched methods", context.dynamic().submittedMethods(), is(List.of(method, method)));
+        assertThat("submitted entity count", context.dynamic().submittedEntities().size(), is(2));
+        assertThat("source entity", context.dynamic().submittedEntities().get(0), is(payload));
+        assertThat("redirected entity", context.dynamic().submittedEntities().get(1), is(payload));
+        assertThat("submitted header count", context.dynamic().submittedHeaders().size(), is(2));
+        for (ClientRequestHeaders headers : context.dynamic().submittedHeaders()) {
+            assertThat("entity content type",
+                       headers.first(HeaderNames.CONTENT_TYPE).orElseThrow(),
+                       is("application/custom"));
+            assertThat("entity length", headers.contentLength().orElseThrow(), is((long) payload.length));
+        }
+    }
+
+    @ParameterizedTest(name = "status {0} preserves empty HEAD")
+    @ValueSource(ints = {301, 302})
+    void shouldPreserveEmptyHeadForMovedOrFoundRedirect(int statusCode) {
+        TestContext context = TestContext.create();
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(statusCode));
+
+        try (HttpClientResponse response = context.request(Method.HEAD)
+                .followRedirects(true)
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        assertThat("dispatched methods", context.dynamic().submittedMethods(), is(List.of(Method.HEAD, Method.HEAD)));
+        assertThat("submitted entity count", context.dynamic().submittedEntities().size(), is(2));
+        assertThat("source entity", context.dynamic().submittedEntities().get(0), is(new byte[0]));
+        assertThat("redirected entity", context.dynamic().submittedEntities().get(1), is(new byte[0]));
+        for (ClientRequestHeaders headers : context.dynamic().submittedHeaders()) {
+            assertThat("no entity content type", headers.contains(HeaderNames.CONTENT_TYPE), is(false));
+        }
+    }
+
+    @ParameterizedTest(name = "status {0} rewrites {1} to GET without its entity")
+    @CsvSource({"301, POST", "302, POST", "303, PUT"})
+    void shouldRewriteMethodAndDiscardEntityForRedirect(int statusCode, String methodName) {
+        TestContext context = TestContext.create();
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(statusCode));
+        Method method = Method.create(methodName);
+        byte[] payload = "payload".getBytes(StandardCharsets.UTF_8);
+
+        try (HttpClientResponse response = context.request(method)
+                .header(HeaderNames.CONTENT_TYPE, "application/custom")
+                .header(HeaderNames.ACCEPT, "application/json")
+                .followRedirects(true)
+                .submit(payload)) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        assertThat("dispatched methods", context.dynamic().submittedMethods(), is(List.of(method, Method.GET)));
+        assertThat("submitted entity count", context.dynamic().submittedEntities().size(), is(2));
+        assertThat("source entity", context.dynamic().submittedEntities().get(0), is(payload));
+        assertThat("redirected entity", context.dynamic().submittedEntities().get(1), is(new byte[0]));
+        assertThat("source content type",
+                   context.dynamic().submittedHeaders().get(0).first(HeaderNames.CONTENT_TYPE).orElseThrow(),
+                   is("application/custom"));
+        ClientRequestHeaders targetHeaders = context.dynamic().submittedHeaders().get(1);
+        assertThat("discarded entity content type", targetHeaders.contains(HeaderNames.CONTENT_TYPE), is(false));
+        assertThat("ordinary header", targetHeaders.first(HeaderNames.ACCEPT).orElseThrow(), is("application/json"));
+    }
+
+    @ParameterizedTest(name = "status {0} cannot replay a one-shot PUT entity")
+    @ValueSource(ints = {301, 302})
+    void shouldNotReplayOneShotPutEntityForMovedOrFoundRedirect(int statusCode) {
+        TestContext context = TestContext.createWithService();
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(statusCode));
+        InputStream entity = new ByteArrayInputStream("payload".getBytes(StandardCharsets.UTF_8));
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                      () -> context.request(Method.PUT)
+                                                              .header(HeaderNames.CONTENT_TYPE, "application/custom")
+                                                              .followRedirects(true)
+                                                              .submit(entity));
+
+        assertThat(failure.getMessage(),
+                   is("Cannot replay a one-shot request body after redirect status " + statusCode + "."));
+        assertThat("transport invocation count", context.dynamic().transportInvocations(), is(1));
+        assertThat("dispatched methods", context.dynamic().submittedMethods(), is(List.of(Method.PUT)));
+        assertThat("submitted entity count", context.dynamic().submittedEntities().size(), is(1));
+        assertThat("source one-shot entity", context.dynamic().submittedEntities().getFirst(), sameInstance(entity));
+    }
+
+    @ParameterizedTest(name = "status {0} rejects a cross-origin PUT entity by default")
+    @ValueSource(ints = {301, 302})
+    void shouldRejectCrossOriginPutEntityForMovedOrFoundRedirect(int statusCode) {
+        TestContext context = TestContext.createWithHandoffService((chain, request) -> chain.proceed(request));
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(statusCode));
+        context.dynamic().redirectLocation.set("http://other.test/target");
+        byte[] payload = "payload".getBytes(StandardCharsets.UTF_8);
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                      () -> context.request(Method.PUT)
+                                                              .uri("http://example.test/source")
+                                                              .header(HeaderNames.CONTENT_TYPE, "application/custom")
+                                                              .followRedirects(true)
+                                                              .submit(payload));
+
+        assertThat(failure.getMessage(), is("Cross-origin redirect with request entity is disabled."));
+        assertThat("transport invocation count", context.dynamic().transportInvocations(), is(1));
+        assertThat("dispatched methods", context.dynamic().submittedMethods(), is(List.of(Method.PUT)));
+        assertThat("submitted entity count", context.dynamic().submittedEntities().size(), is(1));
+        assertThat("source entity", context.dynamic().submittedEntities().getFirst(), is(payload));
+    }
+
+    @ParameterizedTest(name = "status {0} permits an explicitly allowed cross-origin PUT entity")
+    @ValueSource(ints = {301, 302})
+    void shouldAllowOptedInCrossOriginPutEntityForMovedOrFoundRedirect(int statusCode) {
+        WebClientConfig config = WebClientConfig.builder()
+                .baseUri("http://example.test")
+                .followCrossOriginEntityRedirects(true)
+                .addService((chain, request) -> chain.proceed(request))
+                .buildPrototype();
+        TestContext context = TestContext.create(config, true);
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(statusCode));
+        context.dynamic().redirectLocation.set("http://other.test/target");
+        byte[] payload = "payload".getBytes(StandardCharsets.UTF_8);
+
+        try (HttpClientResponse response = context.request(Method.PUT)
+                .uri("http://example.test/source")
+                .header(HeaderNames.CONTENT_TYPE, "application/custom")
+                .header(HeaderNames.AUTHORIZATION, "source-secret")
+                .followRedirects(true)
+                .submit(payload)) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        assertThat("dispatched methods", context.dynamic().submittedMethods(), is(List.of(Method.PUT, Method.PUT)));
+        assertThat("submitted entity count", context.dynamic().submittedEntities().size(), is(2));
+        assertThat("source entity", context.dynamic().submittedEntities().get(0), is(payload));
+        assertThat("redirected entity", context.dynamic().submittedEntities().get(1), is(payload));
+        assertThat("source authorization",
+                   context.dynamic().submittedHeaders().get(0).first(HeaderNames.AUTHORIZATION).orElseThrow(),
+                   is("source-secret"));
+        ClientRequestHeaders targetHeaders = context.dynamic().submittedHeaders().get(1);
+        assertThat("redirected content type",
+                   targetHeaders.first(HeaderNames.CONTENT_TYPE).orElseThrow(),
+                   is("application/custom"));
+        assertThat("stripped source authorization", targetHeaders.contains(HeaderNames.AUTHORIZATION), is(false));
     }
 
     @Test
@@ -1564,6 +1748,7 @@ class HttpClientRequestProtocolCacheTest {
         private final AtomicReference<String> redirectLocation = new AtomicReference<>("/target");
         private final AtomicReference<String> responseSetCookie = new AtomicReference<>();
         private final AtomicInteger transportInvocations = new AtomicInteger();
+        private final List<Method> submittedMethods = new ArrayList<>();
         private final List<Object> submittedEntities = new ArrayList<>();
         private final List<ClientRequestHeaders> submittedHeaders = new ArrayList<>();
         private final AtomicReference<byte[]> responseEntity = new AtomicReference<>();
@@ -1638,6 +1823,9 @@ class HttpClientRequestProtocolCacheTest {
                                                                          submittedEntities.add(arguments[0]);
                                                                      }
                                                                      WebClientServiceRequest request = serviceRequest.get();
+                                                                     submittedMethods.add(request == null
+                                                                                                  ? clientRequest.method()
+                                                                                                  : request.method());
                                                                      submittedHeaders.add(request == null
                                                                                                   ? transportHeaders
                                                                                                   : ClientRequestHeaders.create(
@@ -1845,6 +2033,10 @@ class HttpClientRequestProtocolCacheTest {
 
         private List<Object> submittedEntities() {
             return List.copyOf(submittedEntities);
+        }
+
+        private List<Method> submittedMethods() {
+            return List.copyOf(submittedMethods);
         }
 
         private List<ClientRequestHeaders> submittedHeaders() {
