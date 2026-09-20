@@ -70,16 +70,6 @@ class RedirectionProcessor {
         return invokeWithFollowRedirects(request, initial, entity, true);
     }
 
-    private static Http2ClientResponseImpl invokeWithFollowRedirects(Http2ClientRequestImpl request,
-                                                                     int initial,
-                                                                     Object entity,
-                                                                     boolean deferResponseCookies) {
-        return invokeWithFollowRedirects(request,
-                                         initial,
-                                         Http2CallEntityChain.RequestEntity.create(entity),
-                                         deferResponseCookies);
-    }
-
     static Http2ClientResponseImpl invokeWithFollowRedirects(Http2ClientRequestImpl request,
                                                              int initial,
                                                              Http2CallEntityChain.RequestEntity requestEntity) {
@@ -160,6 +150,16 @@ class RedirectionProcessor {
         } finally {
             requestEntity.cancelIfUnattached();
         }
+    }
+
+    private static Http2ClientResponseImpl invokeWithFollowRedirects(Http2ClientRequestImpl request,
+                                                                     int initial,
+                                                                     Object entity,
+                                                                     boolean deferResponseCookies) {
+        return invokeWithFollowRedirects(request,
+                                         initial,
+                                         Http2CallEntityChain.RequestEntity.create(entity),
+                                         deferResponseCookies);
     }
 
 }

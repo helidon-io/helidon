@@ -168,6 +168,26 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
     }
 
+    static void closeFailedStream(Http2ConnectionAttemptResult result, Throwable failure) {
+        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
+            Http2ClientStream failedStream = result.stream();
+            try {
+                failedStream.cancel();
+            } catch (RuntimeException | Error cleanupFailure) {
+                if (failure != cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            try {
+                failedStream.close();
+            } catch (RuntimeException | Error cleanupFailure) {
+                if (failure != cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+        }
+    }
+
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         ClientUri uri = serviceRequest.uri();
@@ -294,26 +314,6 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         } catch (RuntimeException | Error e) {
             closeFailedStream(result, e);
             throw e;
-        }
-    }
-
-    static void closeFailedStream(Http2ConnectionAttemptResult result, Throwable failure) {
-        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
-            Http2ClientStream failedStream = result.stream();
-            try {
-                failedStream.cancel();
-            } catch (RuntimeException | Error cleanupFailure) {
-                if (failure != cleanupFailure) {
-                    failure.addSuppressed(cleanupFailure);
-                }
-            }
-            try {
-                failedStream.close();
-            } catch (RuntimeException | Error cleanupFailure) {
-                if (failure != cleanupFailure) {
-                    failure.addSuppressed(cleanupFailure);
-                }
-            }
         }
     }
 
@@ -528,6 +528,15 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         }
     }
 
+    private static void validateAuthority(ClientRequestHeaders requestHeaders) {
+        String authority = requestHeaders.first(HeaderNames.HOST).orElseThrow();
+        try {
+            UriAuthority.create(authority);
+        } catch (IllegalArgumentException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
+        }
+    }
+
     private static void resetAndClose(Http2ClientStream stream, Http2Exception e) {
         stream.resetAndClose(e.code());
     }
@@ -638,15 +647,6 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
                                   uri,
                                   serviceRequest,
                                   http1FallbackHandler);
-    }
-
-    private static void validateAuthority(ClientRequestHeaders requestHeaders) {
-        String authority = requestHeaders.first(HeaderNames.HOST).orElseThrow();
-        try {
-            UriAuthority.create(authority);
-        } catch (IllegalArgumentException e) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
-        }
     }
 
     private static final class LogHeaderConsumer implements Consumer<Header> {

@@ -201,26 +201,6 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         return stream;
     }
 
-    private BufferData readBytes(int estimate) {
-        try {
-            // Empty buffer is considered as a fully consumed entity
-            // so estimate can't be less than 1
-            byte[] buffer = new byte[estimate > 0 ? estimate : 16];
-            int read = inputStream.read(buffer);
-            if (read < 1) {
-                return BufferData.empty();
-            }
-            return BufferData.create(buffer, 0, read);
-        } catch (IOException e) {
-            UncheckedIOException failure = new UncheckedIOException(e);
-            failResponse(failure);
-            throw failure;
-        } catch (RuntimeException | Error failure) {
-            failResponse(failure);
-            throw failure;
-        }
-    }
-
     @Override
     public ClientUri lastEndpointUri() {
         return lastEndpointUri;
@@ -242,6 +222,36 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
             if (failure instanceof Error error) {
                 throw error;
             }
+        }
+    }
+
+    private static Throwable mergeFailure(Throwable primary, Throwable secondary) {
+        if (primary == null) {
+            return secondary;
+        }
+        if (primary != secondary) {
+            primary.addSuppressed(secondary);
+        }
+        return primary;
+    }
+
+    private BufferData readBytes(int estimate) {
+        try {
+            // Empty buffer is considered as a fully consumed entity
+            // so estimate can't be less than 1
+            byte[] buffer = new byte[estimate > 0 ? estimate : 16];
+            int read = inputStream.read(buffer);
+            if (read < 1) {
+                return BufferData.empty();
+            }
+            return BufferData.create(buffer, 0, read);
+        } catch (IOException e) {
+            UncheckedIOException failure = new UncheckedIOException(e);
+            failResponse(failure);
+            throw failure;
+        } catch (RuntimeException | Error failure) {
+            failResponse(failure);
+            throw failure;
         }
     }
 
@@ -269,15 +279,5 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
             }
         }
         return failure;
-    }
-
-    private static Throwable mergeFailure(Throwable primary, Throwable secondary) {
-        if (primary == null) {
-            return secondary;
-        }
-        if (primary != secondary) {
-            primary.addSuppressed(secondary);
-        }
-        return primary;
     }
 }
