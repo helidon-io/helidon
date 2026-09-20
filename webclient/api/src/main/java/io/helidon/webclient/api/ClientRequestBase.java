@@ -245,6 +245,17 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     /**
+     * Whether two request URIs have the same normalized origin.
+     *
+     * @param sourceUri source request URI
+     * @param targetUri target request URI
+     * @return whether the scheme, host, and effective port are equal
+     */
+    protected static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
+        return ClientRequestOrigin.create(sourceUri).equals(ClientRequestOrigin.create(targetUri));
+    }
+
+    /**
      * Remove headers that must not cross redirect trust boundaries.
      * Cookie-store lookup uses the effective origin after sensitive headers have been removed.
      *
@@ -1517,17 +1528,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private static String nextRequestId(String protocolId) {
         AtomicLong counter = COUNTERS.computeIfAbsent(protocolId, it -> new AtomicLong());
         return "client-" + protocolId + "-" + Long.toHexString(counter.getAndIncrement());
-    }
-
-    /**
-     * Whether two request URIs have the same normalized origin.
-     *
-     * @param sourceUri source request URI
-     * @param targetUri target request URI
-     * @return whether the scheme, host, and effective port are equal
-     */
-    protected static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
-        return ClientRequestOrigin.create(sourceUri).equals(ClientRequestOrigin.create(targetUri));
     }
 
     private static List<String> cookiePairs(List<String> headerValues) {
