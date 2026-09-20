@@ -306,6 +306,95 @@ class HttpClientRequestProtocolCacheTest {
         assertThat(((byte[]) context.dynamic().submittedEntities().get(1)).length, is(0));
     }
 
+    @ParameterizedTest(name = "300 without Location: service handoff {0}, follow redirects {1}")
+    @CsvSource({"false, true", "true, true", "false, false", "true, false"})
+    void shouldReturnMultipleChoicesWithoutLocationUntilCallerCloses(boolean serviceHandoff, boolean followRedirects) {
+        TestContext context = serviceHandoff
+                ? TestContext.createWithHandoffService((chain, request) -> chain.proceed(request))
+                : TestContext.create();
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(300));
+        context.dynamic().redirectLocation.set(null);
+        context.dynamic().responseSetCookie.set("choice=first");
+        context.dynamic().responseEntity("available choices".getBytes(StandardCharsets.UTF_8));
+
+        try (HttpClientResponse response = context.request().followRedirects(followRedirects).request()) {
+            assertThat("returned status", response.status().code(), is(300));
+            assertThat("absent Location", response.headers().contains(HeaderNames.LOCATION), is(false));
+            assertThat("retained response header", response.headers().get(HeaderNames.SET_COOKIE).get(), is("choice=first"));
+            assertThat("transport invocation count", context.dynamic().transportInvocations(), is(1));
+            assertThat("response remains open for caller", context.dynamic().responseCloseCount(), is(0));
+        }
+
+        assertThat("caller closes response", context.dynamic().responseCloseCount(), is(1));
+    }
+
+    @ParameterizedTest(name = "300 choices body remains readable with follow redirects {0}")
+    @ValueSource(booleans = {true, false})
+    void shouldKeepMultipleChoicesEntityReadableWithoutLocation(boolean followRedirects) throws Exception {
+        AtomicReference<CompletableFuture<WebClientServiceResponse>> outerCompletion = new AtomicReference<>();
+        TestContext context = TestContext.createWithHandoffService((chain, request) -> {
+            outerCompletion.set(request.whenComplete().toCompletableFuture());
+            return chain.proceed(request);
+        });
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(300));
+        context.dynamic().redirectLocation.set(null);
+        byte[] choices = "available choices".getBytes(StandardCharsets.UTF_8);
+        context.dynamic().responseEntity(choices);
+
+        try (HttpClientResponse response = context.request().followRedirects(followRedirects).request()) {
+            assertThat("returned status", response.status().code(), is(300));
+            assertThat("response remains open before reading", context.dynamic().responseCloseCount(), is(0));
+            assertThat("raw lifecycle remains pending", context.dynamic().responseCompletion().isDone(), is(false));
+            assertThat("outer lifecycle remains pending", outerCompletion.get().isDone(), is(false));
+            try (InputStream inputStream = response.entity().inputStream()) {
+                assertThat("choices representation", inputStream.readAllBytes(), is(choices));
+            }
+            assertThat("raw lifecycle completes on consumption", context.dynamic().responseCompletion().isDone(), is(true));
+            assertThat("outer lifecycle completes on consumption", outerCompletion.get().isDone(), is(true));
+        }
+
+        assertThat("transport invocation count", context.dynamic().transportInvocations(), is(1));
+        assertThat("response closes once after consumption", context.dynamic().responseCloseCount(), is(1));
+    }
+
+    @ParameterizedTest(name = "300 with Location is followed with service handoff {0}")
+    @ValueSource(booleans = {true, false})
+    void shouldFollowMultipleChoicesWithLocation(boolean serviceHandoff) {
+        TestContext context = serviceHandoff
+                ? TestContext.createWithHandoffService((chain, request) -> chain.proceed(request))
+                : TestContext.create();
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(300));
+
+        try (HttpClientResponse response = context.request().followRedirects(true).request()) {
+            assertThat("redirected status", response.status(), is(Status.OK_200));
+            assertThat("transport invocation count", context.dynamic().transportInvocations(), is(2));
+            assertThat("only redirect response closed", context.dynamic().responseCloseCount(), is(1));
+        }
+
+        assertThat("caller closes target response", context.dynamic().responseCloseCount(), is(2));
+    }
+
+    @ParameterizedTest(name = "status {0} still requires Location")
+    @ValueSource(ints = {301, 302, 303, 307, 308})
+    void shouldStillRejectOtherRedirectsWithoutLocation(int statusCode) {
+        TestContext context = TestContext.create();
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        context.dynamic().redirectOnce(Status.create(statusCode));
+        context.dynamic().redirectLocation.set(null);
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                      () -> context.request().followRedirects(true).request());
+
+        assertThat("missing Location failure", failure.getMessage(),
+                   is("There is no " + HeaderNames.LOCATION
+                              + " header present in the response. It is not clear where to redirect."));
+        assertThat("transport invocation count", context.dynamic().transportInvocations(), is(1));
+        assertThat("invalid redirect response closed", context.dynamic().responseCloseCount(), is(1));
+    }
+
     @ParameterizedTest(name = "status {0} preserves {1} and its entity")
     @CsvSource({
             "301, PUT",
@@ -1839,7 +1928,8 @@ class HttpClientRequestProtocolCacheTest {
                                                                              : Status.OK_200;
                                                                      WritableHeaders<?> responseHeaderValues =
                                                                              WritableHeaders.create();
-                                                                     if (status.family() == Status.Family.REDIRECTION) {
+                                                                     if (status.family() == Status.Family.REDIRECTION
+                                                                             && redirectLocation.get() != null) {
                                                                          responseHeaderValues.set(HeaderNames.LOCATION,
                                                                                                   redirectLocation.get());
                                                                      }
