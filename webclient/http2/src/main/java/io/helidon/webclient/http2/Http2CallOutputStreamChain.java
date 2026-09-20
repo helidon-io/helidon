@@ -71,6 +71,23 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         this.followedRedirects = followedRedirects;
     }
 
+    static void closeRedirectStream(Http2ClientStream stream, Throwable failure) {
+        try {
+            stream.cancel();
+        } catch (RuntimeException | Error cleanupFailure) {
+            if (failure != cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+        }
+        try {
+            stream.close();
+        } catch (RuntimeException | Error cleanupFailure) {
+            if (failure != cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+        }
+    }
+
     @Override
     protected WebClientServiceResponse doProceed(WebClientServiceRequest serviceRequest,
                                                  ClientRequestHeaders headers,
@@ -141,23 +158,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
     int followedRedirects() {
         return followedRedirects;
-    }
-
-    static void closeRedirectStream(Http2ClientStream stream, Throwable failure) {
-        try {
-            stream.cancel();
-        } catch (RuntimeException | Error cleanupFailure) {
-            if (failure != cleanupFailure) {
-                failure.addSuppressed(cleanupFailure);
-            }
-        }
-        try {
-            stream.close();
-        } catch (RuntimeException | Error cleanupFailure) {
-            if (failure != cleanupFailure) {
-                failure.addSuppressed(cleanupFailure);
-            }
-        }
     }
 
     private static ClientUri responseCookieUri(RedirectSecurityState securityState, ClientUri endpointUri) {
