@@ -23,8 +23,10 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -38,13 +40,12 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.WritableHeaders;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class EntityWriterPreflightTest {
     private static final HeaderName X_HEADER = HeaderNames.create("X-Test");
@@ -52,16 +53,17 @@ class EntityWriterPreflightTest {
     private static final HeaderName Z_HEADER = HeaderNames.create("Z-Test");
 
     @Test
-    void boundsProducerUntilOneShotAttachAndDrainsExactBytes() {
-        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
-            byte[] expected = "0123456789abcdef".getBytes(StandardCharsets.UTF_8);
-            EntityWriterPreflight preflight = preflight(4, (output, _) -> {
-                write(output, expected);
-                close(output);
-            });
+    @Timeout(value = 5, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void boundsProducerUntilOneShotAttachAndDrainsExactBytes() throws Exception {
+        byte[] expected = "0123456789abcdef".getBytes(StandardCharsets.UTF_8);
+        EntityWriterPreflight preflight = preflight(4, (output, _) -> {
+            write(output, expected);
+            close(output);
+        });
+        try {
             preflight.prepare(headers());
 
-            assertFalse(preflight.whenTerminated().isDone(), "producer should block after filling the fixed ring");
+            assertThat("producer should block after filling the fixed ring", preflight.whenTerminated().isDone(), is(false));
 
             ByteArrayOutputStream actual = new ByteArrayOutputStream();
             preflight.writeTo(actual);
@@ -71,45 +73,49 @@ class EntityWriterPreflightTest {
             IllegalStateException failure = assertThrows(IllegalStateException.class,
                                                           () -> preflight.writeTo(OutputStream.nullOutputStream()));
             assertThat(failure.getMessage(), containsString("already been attached"));
-        });
+        } finally {
+            cancelAndAwaitTermination(preflight);
+        }
     }
 
     @Test
-    void acknowledgesFlushOnlyAfterDownstreamFlushCompletes() {
-        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
-            CountDownLatch flushEntered = new CountDownLatch(1);
-            CountDownLatch releaseFlush = new CountDownLatch(1);
-            CountDownLatch producerPastFlush = new CountDownLatch(1);
-            EntityWriterPreflight preflight = preflight(8, (output, _) -> {
-                write(output, new byte[] {1, 2});
-                flush(output);
-                producerPastFlush.countDown();
-                write(output, new byte[] {3});
-                close(output);
-            });
-            preflight.prepare(headers());
-
-            Thread consumer = Thread.ofVirtual().start(() -> {
-                try {
-                    preflight.writeTo(new ByteArrayOutputStream() {
-                        @Override
-                        public void flush() throws IOException {
-                            flushEntered.countDown();
-                            await(releaseFlush);
-                            super.flush();
-                        }
-                    });
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+    @Timeout(value = 5, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void acknowledgesFlushOnlyAfterDownstreamFlushCompletes() throws Exception {
+        CountDownLatch flushEntered = new CountDownLatch(1);
+        CountDownLatch releaseFlush = new CountDownLatch(1);
+        CountDownLatch producerPastFlush = new CountDownLatch(1);
+        EntityWriterPreflight preflight = preflight(8, (output, _) -> {
+            write(output, new byte[] {1, 2});
+            flush(output);
+            producerPastFlush.countDown();
+            write(output, new byte[] {3});
+            close(output);
+        });
+        FutureTask<Void> transfer = new FutureTask<>(() -> {
+            preflight.writeTo(new ByteArrayOutputStream() {
+                @Override
+                public void flush() throws IOException {
+                    flushEntered.countDown();
+                    await(releaseFlush);
+                    super.flush();
                 }
             });
+            return null;
+        });
+        Thread consumer = Thread.ofVirtual().unstarted(transfer);
+        try {
+            preflight.prepare(headers());
+            consumer.start();
 
             assertThat(flushEntered.await(1, TimeUnit.SECONDS), is(true));
             assertThat(producerPastFlush.getCount(), is(1L));
             releaseFlush.countDown();
-            consumer.join();
+            transfer.get(1, TimeUnit.SECONDS);
             assertThat(producerPastFlush.getCount(), is(0L));
-        });
+        } finally {
+            releaseFlush.countDown();
+            cancelAndAwaitTermination(preflight, consumer);
+        }
     }
 
     @Test
@@ -169,13 +175,13 @@ class EntityWriterPreflightTest {
         blocked.prepare(headers());
         blocked.cancelIfUnattached(new IllegalStateException("discard"));
         assertThrows(ExecutionException.class, () -> blocked.whenTerminated().get(1, TimeUnit.SECONDS));
-        assertFalse(blocked.canAttach());
+        assertThat("cancelled producer cannot attach", blocked.canAttach(), is(false));
 
         EntityWriterPreflight completed = preflight(4, (output, _) -> close(output));
         completed.prepare(headers());
         completed.whenTerminated().get(1, TimeUnit.SECONDS);
         completed.cancelIfUnattached(new IllegalStateException("late-discard"));
-        assertFalse(completed.canAttach());
+        assertThat("discarded completed producer cannot attach", completed.canAttach(), is(false));
     }
 
     @Test
@@ -221,7 +227,8 @@ class EntityWriterPreflightTest {
         preflight.whenTerminated().get(1, TimeUnit.SECONDS);
 
         assertThat(observed.get(), is(marker));
-        assertFalse(Contexts.context().flatMap(current -> current.get(Marker.class)).isPresent());
+        assertThat("request context is cleared", Contexts.context().flatMap(current -> current.get(Marker.class)).isPresent(),
+                   is(false));
     }
 
     @Test
@@ -241,7 +248,7 @@ class EntityWriterPreflightTest {
 
         assertThat(target.get(X_HEADER).allValues(), is(List.of("target", "writer-add")));
         assertThat(target.get(Y_HEADER).get(), is("writer-set"));
-        assertFalse(target.contains(Z_HEADER));
+        assertThat("removed header is absent", target.contains(Z_HEADER), is(false));
 
         target.set(Y_HEADER, "service-replacement");
         target.add(X_HEADER, "service-add");
@@ -273,7 +280,7 @@ class EntityWriterPreflightTest {
         ClientRequestHeaders removeTarget = headers();
         removeTarget.set(HeaderNames.COOKIE, "target-manager=two");
         removeRecorder.changes().apply(removeTarget);
-        assertFalse(removeTarget.contains(HeaderNames.COOKIE));
+        assertThat("removed cookie header is absent", removeTarget.contains(HeaderNames.COOKIE), is(false));
 
         EntityWriterPreflight.HeaderRecorder setRecorder = EntityWriterPreflight.record(source);
         setRecorder.set(HeaderNames.COOKIE, "writer=one");
@@ -298,6 +305,28 @@ class EntityWriterPreflightTest {
         preflight.writeTo(OutputStream.nullOutputStream());
 
         assertThat(target.get(X_HEADER).allValues(), is(List.of("first", "second")));
+    }
+
+    private static void cancelAndAwaitTermination(EntityWriterPreflight preflight, Thread... consumers) throws Exception {
+        boolean interrupted = Thread.interrupted();
+        try {
+            preflight.cancel();
+            for (Thread consumer : consumers) {
+                consumer.interrupt();
+                if (consumer.isAlive()) {
+                    assertThat("consumer terminates during cleanup", consumer.join(Duration.ofSeconds(1)), is(true));
+                }
+            }
+            try {
+                preflight.whenTerminated().get(1, TimeUnit.SECONDS);
+            } catch (CancellationException | ExecutionException _) {
+                // Cancellation or a previously reported producer failure is expected during cleanup.
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private static EntityWriterPreflight preflight(int capacity,
