@@ -156,6 +156,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                 Http1ClientRequestImpl redirectedRequest) {
         originalRequest().redirectSecurityState(redirectedRequest.redirectSecurityState());
         WebClientServiceResponse redirected = response.serviceResponse();
+        responseTrailers().whenComplete(response::completeTrailersAfterHandoff);
         whenComplete().whenComplete((_, failure) -> response.completeAfterHandoff(failure));
         return WebClientServiceResponse.builder(redirected)
                 .whenComplete(whenComplete())

@@ -374,6 +374,15 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.serviceResponse = serviceResponse;
     }
 
+    void completeTrailersAfterHandoff(ClientResponseTrailers trailers, Throwable failure) {
+        // Preserve service transformations by forwarding the outer framing result only to the raw transport stage.
+        if (failure == null) {
+            transportTrailers.complete(trailers);
+        } else {
+            transportTrailers.completeExceptionally(failure);
+        }
+    }
+
     void completeAfterHandoff(Throwable failure) {
         // The outer response has already handled the resources; settle the inner request and service lifecycles.
         closed.set(true);

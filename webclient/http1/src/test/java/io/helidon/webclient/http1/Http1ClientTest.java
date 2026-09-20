@@ -51,6 +51,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -74,6 +75,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -527,6 +529,126 @@ class Http1ClientTest {
                 assertThat(targetCompletion.isCompletedExceptionally(), is(false));
                 assertThat(sourceCompletions.get(), is(1));
                 assertThat(targetCompletions.get(), is(1));
+                assertThat(connection.closeCount(), is(1));
+                assertThat(connection.releaseCount(), is(0));
+                assertThat(server.awaitCompletion(), is("payload"));
+            } finally {
+                localClient.closeResource();
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "status {0}, trailers {1}, consume body {2}")
+    @CsvSource({"200, VALID, true", "200, VALID, false", "200, MALFORMED, true", "200, TRUNCATED, true", "205, VALID, true"})
+    void earlyExpectRedirectCompletesChunkedTargetTrailers(int statusCode,
+                                                          RedirectTrailerMode trailerMode,
+                                                          boolean consumeBody) throws Exception {
+        HeaderName checksum = HeaderNames.create("checksum");
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        AtomicInteger targetResourceCloses = new AtomicInteger();
+        AtomicInteger transformations = new AtomicInteger();
+        AtomicReference<WebClientServiceResponse> rawTarget = new AtomicReference<>();
+        AtomicReference<CompletableFuture<ClientResponseTrailers>> serviceTrailers = new AtomicReference<>();
+        CompletableFuture<WebClientServiceResponse> targetCompletion = new CompletableFuture<>();
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+                "HTTP/1.1 307 Temporary Redirect\r\n"
+                        + "Location: /decorated-target\r\n"
+                        + "Content-Length: 0\r\n\r\n");
+        String trailerBlock = switch (trailerMode) {
+        case VALID -> "checksum: match\r\n\r\n";
+        case MALFORMED -> "checksum match\r\n\r\n";
+        case TRUNCATED -> "checksum: match\r\n";
+        };
+        try (RedirectTargetServer server = RedirectTargetServer.startChunkedTrailers(
+                Status.create(statusCode), trailerBlock, trailerMode == RedirectTrailerMode.TRUNCATED)) {
+            Http1Client localClient = Http1Client.builder()
+                    .servicesDiscoverServices(false)
+                    .shareConnectionCache(false)
+                    .proxy(Proxy.noProxy())
+                    .sendExpectContinue(true)
+                    .readTimeout(Duration.ofSeconds(5))
+                    .addService((chain, request) -> {
+                        WebClientServiceResponse response = chain.proceed(request);
+                        if (!request.uri().toUri().getPath().equals("/decorated-target")) {
+                            return response;
+                        }
+                        rawTarget.set(response);
+                        CompletableFuture<ClientResponseTrailers> transformed = response.trailers().thenApply(trailers -> {
+                            transformations.incrementAndGet();
+                            WritableHeaders<?> headers = WritableHeaders.create(trailers);
+                            headers.set(checksum, "service-" + trailers.get(checksum).get());
+                            return ClientResponseTrailers.create(headers);
+                        });
+                        serviceTrailers.set(transformed);
+                        return WebClientServiceResponse.builder(response)
+                                .trailers(transformed)
+                                .whenComplete(targetCompletion)
+                                .connection(targetResourceCloses::incrementAndGet)
+                                .build();
+                    })
+                    .build();
+
+            try (Http1ClientResponse response = localClient.post(server.uri() + "/early-expect-source")
+                    .connection(connection)
+                    .followRedirects(true)
+                    .outputStream(output -> {
+                        handlerInvocations.incrementAndGet();
+                        output.write("payload".getBytes(StandardCharsets.UTF_8));
+                        output.close();
+                    })) {
+                CompletableFuture<ClientResponseTrailers> rawTrailers = rawTarget.get().trailers();
+                assertThat(response.status(), is(Status.create(statusCode)));
+                assertThat(rawTrailers.isDone(), is(false));
+                assertThat(serviceTrailers.get().isDone(), is(false));
+                RuntimeException parseFailure = null;
+                if (!consumeBody) {
+                    response.close();
+                } else if (statusCode == 205) {
+                    response.entity();
+                    assertThat(response.trailers().get(checksum).get(), is("service-match"));
+                    assertThat("Reading trailers must not complete the response lifecycle", targetCompletion.isDone(), is(false));
+                    assertThat(targetResourceCloses.get(), is(0));
+                } else if (trailerMode == RedirectTrailerMode.VALID) {
+                    assertThat(response.as(String.class), is("payload"));
+                } else {
+                    parseFailure = assertThrows(RuntimeException.class, () -> response.as(String.class));
+                }
+
+                assertThat("The redirected wire trailer stage must settle with the returned response",
+                           rawTrailers.isDone(), is(true));
+                assertThat(serviceTrailers.get().isDone(), is(true));
+                if (consumeBody && trailerMode == RedirectTrailerMode.VALID) {
+                    assertThat(rawTrailers.get(5, TimeUnit.SECONDS).get(checksum).get(), is("match"));
+                    assertThat(serviceTrailers.get().get(5, TimeUnit.SECONDS).get(checksum).get(), is("service-match"));
+                    assertThat(response.trailers().get(checksum).get(), is("service-match"));
+                    assertThat(transformations.get(), is(1));
+                } else {
+                    ExecutionException rawFailure = assertThrows(ExecutionException.class,
+                                                                 () -> rawTrailers.get(5, TimeUnit.SECONDS));
+                    ExecutionException serviceFailure = assertThrows(ExecutionException.class,
+                                                                     () -> serviceTrailers.get().get(5, TimeUnit.SECONDS));
+                    assertThat(serviceFailure.getCause(), sameInstance(rawFailure.getCause()));
+                    if (parseFailure == null) {
+                        assertThat(rawFailure.getCause().getMessage(),
+                                   is("HTTP/1 response closed before trailers were read."));
+                    } else {
+                        assertThat(rawFailure.getCause(), sameInstance(parseFailure));
+                    }
+                    assertThat(transformations.get(), is(0));
+                }
+                response.close();
+                if (parseFailure == null) {
+                    targetCompletion.get(5, TimeUnit.SECONDS);
+                } else {
+                    ExecutionException completionFailure = assertThrows(ExecutionException.class,
+                                                                         () -> targetCompletion.get(5, TimeUnit.SECONDS));
+                    assertThat(completionFailure.getCause(), sameInstance(parseFailure));
+                }
+                response.close();
+                response.close();
+                assertThat(targetResourceCloses.get(), is(1));
+                assertThat(handlerInvocations.get(), is(1));
                 assertThat(connection.closeCount(), is(1));
                 assertThat(connection.releaseCount(), is(0));
                 assertThat(server.awaitCompletion(), is("payload"));
@@ -2817,6 +2939,10 @@ class Http1ClientTest {
         UNSET, NO_PROXY, HTTP, HTTP_SET_NO_PROXY_HOST, SYSTEM_UNSET, SYSTEM_SET_PROXY, SYSTEM_SET_PROXY_AND_NON_PROXY_HOST
     }
 
+    private enum RedirectTrailerMode {
+        VALID, MALFORMED, TRUNCATED
+    }
+
     private static class FakeHttp1ClientConnection implements ClientConnection {
         private final DataReader clientReader;
         private final DataWriter clientWriter;
@@ -3315,6 +3441,24 @@ class Http1ClientTest {
                                         Thread worker,
                                         CompletableFuture<String> completion) implements AutoCloseable {
         static RedirectTargetServer start() throws IOException {
+            return start("HTTP/1.1 200 OK\r\n"
+                                 + "Connection: close\r\n"
+                                 + "Content-Length: 7\r\n\r\n"
+                                 + "payload", false);
+        }
+
+        static RedirectTargetServer startChunkedTrailers(Status status, String trailerBlock, boolean shutdownOutput)
+                throws IOException {
+            String entity = status == Status.RESET_CONTENT_205 ? "" : "7\r\npayload\r\n";
+            return start("HTTP/1.1 " + status.code() + " " + status.reasonPhrase() + "\r\n"
+                                 + "Connection: close\r\n"
+                                 + "Transfer-Encoding: chunked\r\n"
+                                 + "Trailer: checksum\r\n\r\n"
+                                 + entity + "0\r\n"
+                                 + trailerBlock, shutdownOutput);
+        }
+
+        static RedirectTargetServer start(String response, boolean shutdownOutput) throws IOException {
             ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
             server.setSoTimeout(5_000);
             AtomicReference<Socket> acceptedSocket = new AtomicReference<>();
@@ -3341,11 +3485,11 @@ class Http1ClientTest {
                     }
                     String body = readBody(reader, headers);
                     assertThat("The redirected request must preserve its payload", body, is("payload"));
-                    output.write(("HTTP/1.1 200 OK\r\n"
-                            + "Connection: close\r\n"
-                            + "Content-Length: 7\r\n\r\n"
-                            + "payload").getBytes(StandardCharsets.US_ASCII));
+                    output.write(response.getBytes(StandardCharsets.US_ASCII));
                     output.flush();
+                    if (shutdownOutput) {
+                        socket.shutdownOutput();
+                    }
                     try {
                         assertThat("The redirected transport must close with the response", input.read(), is(-1));
                     } catch (SocketException _) {
@@ -3368,7 +3512,7 @@ class Http1ClientTest {
         }
 
         @Override
-        public void close() throws IOException, InterruptedException {
+        public void close() throws IOException, InterruptedException, ExecutionException, TimeoutException {
             try {
                 server.close();
                 Socket socket = acceptedSocket.get();
@@ -3379,7 +3523,7 @@ class Http1ClientTest {
                 worker.interrupt();
                 assertThat("The redirected target server must terminate", worker.join(Duration.ofSeconds(5)), is(true));
             }
-            completion.join();
+            completion.get(5, TimeUnit.SECONDS);
         }
 
         private static String readBody(DataReader reader, Headers headers) {
