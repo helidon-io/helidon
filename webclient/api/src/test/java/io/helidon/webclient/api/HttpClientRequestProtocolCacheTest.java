@@ -74,6 +74,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.startsWith;
@@ -856,45 +857,190 @@ class HttpClientRequestProtocolCacheTest {
         assertThat(context.dynamic().submittedHeaders().getFirst().contains(HeaderNames.COOKIE), is(false));
     }
 
-    @Test
-    void shouldRetainWriterCookieMatchingRemovedManagerPair() {
-        AtomicReference<String> managedPair = new AtomicReference<>();
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldRetainWriterCookieMatchingRemovedManagerPair(boolean removeWholeHeader) {
         WebClientConfig config = WebClientConfig.builder()
                 .baseUri("http://example.test")
                 .mediaContext(writerMediaContext("payload".getBytes(StandardCharsets.UTF_8), headers -> {
                     headers.set(HeaderNames.HOST, "target.test");
-                    headers.add(HeaderNames.COOKIE, managedPair.get());
+                    headers.add(HeaderNames.COOKIE, "managed=cookie", "managed=cookie");
                 }))
                 .addService((chain, request) -> {
-                    String pair = request.headers().get(HeaderNames.COOKIE).allValues()
-                            .stream()
-                            .flatMap(value -> List.of(value.split(";", -1)).stream())
-                            .map(String::trim)
-                            .filter(value -> value.startsWith("managed="))
-                            .findFirst()
-                            .orElseThrow();
-                    managedPair.set(pair);
+                    assertThat(request.headers().get(HeaderNames.COOKIE).allValues(), is(List.of("managed=cookie")));
                     request.headers().remove(HeaderNames.COOKIE);
+                    if (!removeWholeHeader) {
+                        request.headers().set(HeaderNames.COOKIE, "service=retained");
+                    }
                     return chain.proceed(request);
                 })
                 .buildPrototype();
         TestContext context = TestContext.create(config, true);
         context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
-        HttpCookie storedCookie = new HttpCookie("managed", "cookie");
-        storedCookie.setPath("/");
-        context.webClient().cookieManager().getCookieStore().add(URI.create("http://localhost:80/"), storedCookie);
+        storeCookie(context, "http://localhost:80/", "managed", "cookie", "/");
+        storeCookie(context, "http://target.test/", "managed", "target", "/");
+        storeCookie(context, "http://target.test/", "other", "target", "/");
 
         try (HttpClientResponse response = context.request(Method.POST).submit(new Object())) {
             assertThat(response.status(), is(Status.OK_200));
         }
 
-        String submittedCookies = String.join("; ",
-                                              context.dynamic().submittedHeaders().getFirst()
-                                                      .get(HeaderNames.COOKIE)
-                                                      .allValues());
-        assertThat("Submitted cookies: " + submittedCookies,
-                   submittedCookies.contains(managedPair.get()),
-                   is(true));
+        List<String> expectedCookies = removeWholeHeader
+                ? List.of("managed=cookie", "managed=cookie")
+                : List.of("service=retained", "managed=cookie", "managed=cookie", "other=target");
+        assertThat(context.dynamic().submittedHeaders().getFirst().get(HeaderNames.COOKIE).allValues(),
+                   is(expectedCookies));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0, 2", "1, 2", "3, 1"})
+    void shouldRetainExplicitCookieMultiplicityWhenManagerPairsOverlap(int removedPairs, int retainedPairs) {
+        WebClientConfig config = WebClientConfig.builder()
+                .baseUri("http://example.test")
+                .addService((chain, request) -> {
+                    assertThat("explicit and managed duplicates before service changes",
+                               request.headers().get(HeaderNames.COOKIE).allValues(),
+                               is(List.of("shared=same; shared=same", "shared=same", "shared=same")));
+                    List<String> cookies = new ArrayList<>();
+                    cookies.add("first=one");
+                    for (int i = removedPairs; i < 4; i++) {
+                        cookies.add("shared=same");
+                    }
+                    cookies.add("last=two");
+                    request.headers().set(HeaderValues.create(HeaderNames.COOKIE, cookies));
+                    request.headers().set(HeaderNames.HOST, "target.test");
+                    return chain.proceed(request);
+                })
+                .buildPrototype();
+        TestContext context = TestContext.create(config, true);
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        storeCookie(context, "http://localhost:80/source", "shared", "same", "/");
+        storeCookie(context, "http://localhost:80/source", "shared", "same", "/source");
+        storeCookie(context, "http://target.test/source", "shared", "target", "/");
+
+        try (HttpClientResponse response = context.request()
+                .path("/source")
+                .header(HeaderNames.COOKIE, "shared=same; shared=same")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        List<String> expectedCookies = new ArrayList<>();
+        expectedCookies.add("first=one");
+        for (int i = 0; i < retainedPairs; i++) {
+            expectedCookies.add("shared=same");
+        }
+        expectedCookies.add("last=two");
+        if (removedPairs == 0) {
+            expectedCookies.add("shared=target");
+        }
+        assertThat(context.dynamic().submittedHeaders().getFirst().get(HeaderNames.COOKIE).allValues(),
+                   is(expectedCookies));
+    }
+
+    @Test
+    void shouldSuppressCookieNameWhenOnlyOneManagedValueIsReplaced() {
+        WebClientConfig config = WebClientConfig.builder()
+                .baseUri("http://example.test")
+                .addService((chain, request) -> {
+                    request.headers().set(HeaderNames.COOKIE, "session=service", "session=keep");
+                    request.headers().set(HeaderNames.HOST, "target.test");
+                    return chain.proceed(request);
+                })
+                .buildPrototype();
+        TestContext context = TestContext.create(config, true);
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        storeCookie(context, "http://localhost:80/source", "session", "source", "/");
+        storeCookie(context, "http://localhost:80/source", "session", "keep", "/source");
+        storeCookie(context, "http://target.test/source", "session", "target", "/");
+        storeCookie(context, "http://target.test/source", "other", "target", "/");
+
+        try (HttpClientResponse response = context.request().path("/source").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        assertThat(context.dynamic().submittedHeaders().getFirst().get(HeaderNames.COOKIE).allValues(),
+                   is(List.of("session=service", "other=target")));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, true", "true, false"})
+    void shouldRemoveEarliestManagedPairsAndPreserveCookieHeaderMetadata(boolean changing, boolean sensitive) {
+        WebClientConfig config = WebClientConfig.builder()
+                .baseUri("http://example.test")
+                .mediaContext(writerMediaContext("payload".getBytes(StandardCharsets.UTF_8), headers -> {
+                    headers.set(HeaderNames.HOST, "target.test");
+                    headers.set(HeaderValues.create(HeaderNames.COOKIE,
+                                                    changing,
+                                                    sensitive,
+                                                    " before=one; shared=same; ; keep=first ",
+                                                    " Shared=same ; shared=Same ; shared=same ; keep=second ",
+                                                    "shared=same; after=three"));
+                }))
+                .addService((chain, request) -> chain.proceed(request))
+                .buildPrototype();
+        TestContext context = TestContext.create(config, true);
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        storeCookie(context, "http://localhost:80/source", "shared", "same", "/");
+        storeCookie(context, "http://localhost:80/source", "shared", "same", "/source");
+
+        try (HttpClientResponse response = context.request(Method.POST)
+                .path("/source")
+                .header(HeaderNames.COOKIE, "shared=same")
+                .submit(new Object())) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        var cookieHeader = context.dynamic().submittedHeaders().getFirst().get(HeaderNames.COOKIE);
+        assertThat(cookieHeader.allValues(),
+                   is(List.of("before=one; keep=first",
+                              "Shared=same; shared=Same; keep=second",
+                              "shared=same; after=three")));
+        assertThat("changing flag", cookieHeader.changing(), is(changing));
+        assertThat("sensitive flag", cookieHeader.sensitive(), is(sensitive));
+    }
+
+    @Test
+    void shouldRetargetManyCookiesWithSelectiveServiceRemoval() {
+        List<String> explicitCookies = new ArrayList<>();
+        List<String> sourceCookies = new ArrayList<>();
+        List<String> targetCookies = new ArrayList<>();
+        for (int i = 0; i < 128; i++) {
+            explicitCookies.add("explicit" + i + "=value");
+            sourceCookies.add("stored" + i + "=source");
+            targetCookies.add("stored" + i + "=target");
+        }
+        String explicitHeader = String.join("; ", explicitCookies);
+        WebClientConfig config = WebClientConfig.builder()
+                .baseUri("http://example.test")
+                .mediaContext(writerMediaContext("payload".getBytes(StandardCharsets.UTF_8),
+                                                 headers -> headers.set(HeaderNames.HOST, "target.test")))
+                .addService((chain, request) -> {
+                    List<String> retainedCookies = new ArrayList<>();
+                    retainedCookies.add(explicitHeader);
+                    retainedCookies.addAll(sourceCookies.subList(32, sourceCookies.size()));
+                    request.headers().set(HeaderValues.create(HeaderNames.COOKIE, retainedCookies));
+                    return chain.proceed(request);
+                })
+                .buildPrototype();
+        TestContext context = TestContext.create(config, true);
+        context.dynamic().support(HttpClientSpi.SupportLevel.SUPPORTED);
+        for (int i = 0; i < 128; i++) {
+            storeCookie(context, "http://localhost:80/", "stored" + i, "source", "/");
+            storeCookie(context, "http://target.test/", "stored" + i, "target", "/");
+        }
+
+        try (HttpClientResponse response = context.request(Method.POST)
+                .header(HeaderNames.COOKIE, explicitHeader)
+                .submit(new Object())) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        List<String> expectedCookies = new ArrayList<>();
+        expectedCookies.add(explicitHeader);
+        expectedCookies.addAll(targetCookies.subList(32, targetCookies.size()));
+        assertThat(context.dynamic().submittedHeaders().getFirst().get(HeaderNames.COOKIE).allValues(),
+                   containsInAnyOrder(expectedCookies.toArray(String[]::new)));
     }
 
     @Test
@@ -1615,6 +1761,15 @@ class HttpClientRequestProtocolCacheTest {
         response.close();
         assertThat(rawCompletionCount.get(), is(1));
         assertThat(outerCompletionCount.get(), is(1));
+    }
+
+    private static void storeCookie(TestContext context, String uri, String name, String value, String path) {
+        URI cookieUri = URI.create(uri);
+        HttpCookie cookie = new HttpCookie(name, value);
+        cookie.setVersion(0);
+        cookie.setDomain(cookieUri.getHost());
+        cookie.setPath(path);
+        context.webClient().cookieManager().getCookieStore().add(cookieUri, cookie);
     }
 
     private static MediaContext redirectWriterMediaContext(HeaderName writerHeader,
