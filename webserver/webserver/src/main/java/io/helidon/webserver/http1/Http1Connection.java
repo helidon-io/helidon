@@ -225,8 +225,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     SniRequestSupport.validateAuthority(sniContext, prologue, headers, authority);
                 });
                 headers.remove(X_HELIDON_CN);
-                ctx.remotePeer().tlsCertificates()
-                        .flatMap(TlsUtils::parseCn)
+                ctx.remotePeer().tlsCertificates().flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));
                 // X-Forwarded-For is an IP list, so do not expose UNIX paths that may contain invalid header characters.
                 if (proxyProtocolData != null) {
@@ -329,7 +328,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         }
                     }
                 }
-
                 LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
