@@ -99,7 +99,6 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private boolean invalidNoEntityChunkedFraming;
     private boolean closeConnectionOnClose;
     private WebClientServiceResponse serviceResponse;
-    private WebClientServiceResponse rawServiceResponse;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
                             Http1ClientProtocolConfig protocolConfig,
@@ -416,9 +415,18 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         return serviceResponse;
     }
 
-    void serviceResponse(WebClientServiceResponse serviceResponse, WebClientServiceResponse rawServiceResponse) {
+    void serviceResponse(WebClientServiceResponse serviceResponse) {
         this.serviceResponse = serviceResponse;
-        this.rawServiceResponse = rawServiceResponse;
+    }
+
+    void completeAfterHandoff(Throwable failure) {
+        // The outer response has already handled the resources; settle the inner request and service lifecycles.
+        closed.set(true);
+        if (failure == null) {
+            whenComplete.complete(null);
+        } else {
+            whenComplete.completeExceptionally(failure);
+        }
     }
 
     void completeWithoutClosingConnection() {
@@ -653,8 +661,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             return failure;
         }
         ReleasableResource returnedResource = serviceResponse.connection();
-        ReleasableResource rawResource = rawServiceResponse == null ? null : rawServiceResponse.connection();
-        if (returnedResource == rawResource) {
+        // A redirect bridge can expose a service-owned resource as its raw response resource.
+        // Only the actual transport connection is already managed by this response's connection cleanup.
+        if (returnedResource == connection) {
             return failure;
         }
         try {
