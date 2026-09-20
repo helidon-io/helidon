@@ -181,6 +181,39 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                 Boolean sendExpectContinue,
                                 Map<String, String> properties,
                                 ClientUri redirectSourceUri) {
+        this(clientConfig,
+             cookieManager,
+             protocolId,
+             method,
+             clientUri,
+             sendExpectContinue,
+             properties,
+             redirectSourceUri,
+             false);
+    }
+
+    /**
+     * Create a new request.
+     *
+     * @param clientConfig client configuration
+     * @param cookieManager cookie manager
+     * @param protocolId protocol identifier
+     * @param method HTTP method
+     * @param clientUri request URI
+     * @param sendExpectContinue whether to send the {@code Expect: 100-Continue} header
+     * @param properties request properties
+     * @param redirectSourceUri original request URI for redirect handling
+     * @param crossOriginRedirect whether a previous redirect crossed an origin boundary
+     */
+    protected ClientRequestBase(HttpClientConfig clientConfig,
+                                WebClientCookieManager cookieManager,
+                                String protocolId,
+                                Method method,
+                                ClientUri clientUri,
+                                Boolean sendExpectContinue,
+                                Map<String, String> properties,
+                                ClientUri redirectSourceUri,
+                                boolean crossOriginRedirect) {
         this.clientConfig = clientConfig;
         this.cookieManager = cookieManager;
         this.protocolId = protocolId;
@@ -188,7 +221,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         this.clientUri = clientUri;
         this.sendExpectContinue = sendExpectContinue;
         this.properties = new HashMap<>(properties);
-        this.redirectSecurityState = RedirectSecurityState.legacy(redirectSourceUri, false);
+        this.redirectSecurityState = RedirectSecurityState.legacy(redirectSourceUri, crossOriginRedirect);
         this.filterRedirectHeaders = clientConfig.filterRedirectHeaders();
         this.redirectSensitiveHeaders = clientConfig.redirectSensitiveHeaders();
 
@@ -209,6 +242,45 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                 .filter(it -> !(it instanceof UnixDomainSocketAddress)
                         || redirectSourceUri == null)
                 .ifPresent(this::address);
+    }
+
+    /**
+     * Remove headers that must not cross redirect trust boundaries.
+     * Cookie-store lookup uses the effective origin after sensitive headers have been removed.
+     *
+     * @param requestUri URI that will be used for the request
+     * @param requestHeaders headers to sanitize
+     */
+    protected final void sanitizeRedirectSensitiveHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
+        Objects.requireNonNull(requestUri, "requestUri");
+        Objects.requireNonNull(requestHeaders, "requestHeaders");
+        if (!filterRedirectHeaders) {
+            return;
+        }
+        RedirectSecurityState state = redirectSecurityState;
+        ClientRequestHeaders normalizedHeaders = normalizedRequestHeaders(requestHeaders);
+        if (state.wouldCrossOrigin(requestUri, normalizedHeaders)) {
+            if (normalizedHeaders != requestHeaders) {
+                requestHeaders.clear();
+                normalizedHeaders.forEach(requestHeaders::set);
+            }
+            redirectSensitiveHeaders.forEach(requestHeaders::remove);
+            if (state.automaticCookiesAllowed()) {
+                ClientUri cookieUri = ClientRequestOrigin.create(requestUri, requestHeaders).apply(requestUri);
+                appendManagedCookies(cookieUri, requestHeaders, false, state.suppressedCookieNames());
+            }
+        }
+    }
+
+    /**
+     * Whether a redirect from this request to the provided URI would cross, or has already crossed, an origin boundary.
+     *
+     * @param requestUri redirect request URI
+     * @return whether redirect-sensitive headers should be stripped
+     */
+    protected final boolean crossesRedirectOriginBoundary(ClientUri requestUri) {
+        Objects.requireNonNull(requestUri, "requestUri");
+        return redirectSecurityState.crossedOrigin() || !sameOrigin(resolvedUri(), requestUri);
     }
 
     @Override
