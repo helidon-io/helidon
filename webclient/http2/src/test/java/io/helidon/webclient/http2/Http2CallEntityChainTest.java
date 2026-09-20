@@ -587,6 +587,14 @@ class Http2CallEntityChainTest {
                 .thenReturn((EntityWriter) writer);
     }
 
+    private static Http2ClientStream responseStream() {
+        Http2ClientStream stream = mock(Http2ClientStream.class, RETURNS_DEEP_STUBS);
+        when(stream.waitFor100Continue(any())).thenReturn(null);
+        when(stream.readHeaders()).thenReturn(Http2Headers.create(WritableHeaders.create()).status(Status.OK_200));
+        when(stream.hasEntity()).thenReturn(false);
+        return stream;
+    }
+
     private static final class FailingEntityRequest extends Http2ClientRequestImpl {
         private final Http2ClientStream stream;
         private WebClientServiceRequest serviceRequest;
@@ -625,11 +633,4 @@ class Http2CallEntityChainTest {
         }
     }
 
-    private static Http2ClientStream responseStream() {
-        Http2ClientStream stream = mock(Http2ClientStream.class, RETURNS_DEEP_STUBS);
-        when(stream.waitFor100Continue(any())).thenReturn(null);
-        when(stream.readHeaders()).thenReturn(Http2Headers.create(WritableHeaders.create()).status(Status.OK_200));
-        when(stream.hasEntity()).thenReturn(false);
-        return stream;
-    }
 }
