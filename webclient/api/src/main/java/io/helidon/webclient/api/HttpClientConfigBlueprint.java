@@ -168,9 +168,9 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
      * Whether redirects that preserve request method and entity may be followed across origins.
      * <p>
-     * When disabled, {@code 307} and {@code 308} redirects, and {@code 301} and {@code 302} redirects of a
-     * {@link io.helidon.http.Method#QUERY QUERY} request, to a different origin fail instead of replaying the request
-     * entity to the redirect target.
+     * When disabled, a redirect to a different origin fails if following it would preserve and replay a non-empty
+     * request entity. This includes {@code 307} and {@code 308} redirects, and any {@code 301} or {@code 302} redirect
+     * for which the client preserves the request method and entity.
      *
      * @return whether cross-origin redirects may replay request entities
      */

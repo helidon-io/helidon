@@ -24,9 +24,10 @@ Helidon WebClient provides the following features:
   correct endpoint by itself. After a redirect crosses an origin boundary,
   WebClient keeps redirect-sensitive headers stripped for the rest of the
   chain and replaces source-scoped cookies with cookies selected for each
-  actual target. By default, WebClient rejects cross-origin `307` and `308`
-  redirects with a request entity, and `301` and `302` redirects for `QUERY`,
-  because these redirects would resend the entity to the new origin.
+  actual target. By default, WebClient rejects cross-origin redirects that
+  would replay a non-empty request entity. For generic `WebClient`, this
+  includes `307` and `308` redirects, and `301` and `302` redirects for every
+  method other than exact, case-sensitive `POST`.
   Applications can explicitly enable such replay
   using `follow-cross-origin-entity-redirects`. A one-shot streaming entity
   cannot be replayed after transmission has begun. Generic `WebClient` also
@@ -326,12 +327,16 @@ var response = client.method(Method.QUERY)
         .submit(query);
 ```
 
-When redirects are enabled, WebClient preserves the request method and entity
-for `307` and `308` responses, and for QUERY requests receiving a `301` or
-`302` response. Other followed redirects change the request method to GET and
-discard the entity; a `304` response is not treated as a redirect. In
-particular, a `303` response changes a QUERY request to GET without the
-original query content, as required by
+When redirects are enabled, the clients preserve the request method and entity
+for `307` and `308` responses. For `301` and `302`, generic `WebClient`
+preserves every method except exact, case-sensitive `POST`, which changes to
+`GET` and discards the entity. Dedicated `Http1Client`, `Http2Client` and
+`Http3Client` currently preserve only `QUERY` for `301` and `302`; their other
+methods change to `GET` and discard the entity.
+
+Other followed redirects change the request method to `GET` and discard the
+entity; a `304` response is not treated as a redirect. In particular, a `303`
+response changes a `QUERY` request to `GET` without the original query content, as required by
 [RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html#section-2.5).
 
 For a redirect that preserves the method and entity, WebClient copies only the
