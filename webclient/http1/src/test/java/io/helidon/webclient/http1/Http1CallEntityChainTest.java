@@ -23,6 +23,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -38,11 +39,16 @@ import io.helidon.common.context.Context;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.webclient.api.ClientAltSvcConfig;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
@@ -50,6 +56,9 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -57,6 +66,68 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1CallEntityChainTest {
+
+    @ParameterizedTest
+    @CsvSource({"true, 200", "true, 307", "false, 200", "false, 307"})
+    void entityResponseCapturesAltSvcOnce(boolean redirectProbe, int statusCode) {
+        try (var fixture = new ResponseFixture(redirectProbe, true, true)) {
+            WebClientServiceResponse response = fixture.proceed("HTTP/1.1 103 Early Hints\r\n"
+                                                                       + "Alt-Svc: h3=\":9443\"\r\n\r\n"
+                                                                       + finalResponse(statusCode, true));
+
+            assertThat(response.status().code(), is(statusCode));
+            assertThat(fixture.whenSent.getNow(null), sameInstance(fixture.serviceRequest));
+            Optional<WebClientProtocolResponse> captured = fixture.chain.protocolResponse(response);
+            assertThat("The final response must be available to protocol discovery", captured.isPresent(), is(true));
+            WebClientProtocolResponse protocolResponse = captured.orElseThrow();
+            assertThat(protocolResponse.target(), sameInstance(fixture.connection.resolvedTarget().orElseThrow()));
+            assertThat(protocolResponse.explicitConnection(), is(false));
+            assertThat(protocolResponse.protocolId(), is(Http1Client.PROTOCOL_ID));
+            assertThat(protocolResponse.status().code(), is(statusCode));
+            assertThat(protocolResponse.headers().get(HeaderNames.ALT_SVC).get(), is("h3=\":8443\""));
+            assertThat("Protocol discovery must receive each response only once",
+                       fixture.chain.protocolResponse(response).isEmpty(),
+                       is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, true, true", "true, false, true", "true, true, false"})
+    void redirectProbeRequiresEligibleAltSvc(boolean altSvcEnabled, boolean altSvcPresent, boolean resolvedTarget) {
+        try (var fixture = new ResponseFixture(true, altSvcEnabled, resolvedTarget)) {
+            WebClientServiceResponse response = fixture.proceed("HTTP/1.1 103 Early Hints\r\n"
+                                                                       + "Alt-Svc: h3=\":9443\"\r\n\r\n"
+                                                                       + finalResponse(307, altSvcPresent));
+
+            assertThat(response.status(), is(Status.TEMPORARY_REDIRECT_307));
+            assertThat("Disabled discovery, absent final Alt-Svc, or an unresolved target must not be captured",
+                       fixture.chain.protocolResponse(response).isEmpty(),
+                       is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void entityResponsePreservesContinueHandling(boolean redirectProbe) {
+        try (var fixture = new ResponseFixture(redirectProbe, true, true)) {
+            WebClientServiceResponse response = fixture.proceed("HTTP/1.1 103 Early Hints\r\n\r\n"
+                                                                       + "HTTP/1.1 102 Processing\r\n\r\n"
+                                                                       + "HTTP/1.1 100 Continue\r\n\r\n"
+                                                                       + finalResponse(200, true));
+
+            assertThat(response.status(), is(redirectProbe ? Status.CONTINUE_100 : Status.OK_200));
+            if (redirectProbe) {
+                assertThat(fixture.chain.protocolResponse(response).isEmpty(), is(true));
+                // A redirect probe returns at 100 Continue so its caller can send the entity before reading the final head.
+                response = fixture.chain.readResponse(fixture.serviceRequest, fixture.connection, fixture.reader);
+                assertThat(response.status(), is(Status.OK_200));
+            }
+            Optional<WebClientProtocolResponse> captured = fixture.chain.protocolResponse(response);
+            assertThat("The final response must remain available after informational responses", captured.isPresent(), is(true));
+            assertThat(captured.orElseThrow().status(), is(Status.OK_200));
+            assertThat(fixture.chain.protocolResponse(response).isEmpty(), is(true));
+        }
+    }
 
     @Test
     void entityWriteFailureCompletesWhenSentExceptionally() throws Exception {
@@ -99,6 +170,65 @@ class Http1CallEntityChainTest {
             assertThat(lifecycleFailure.getCause(), sameInstance(actual));
         } finally {
             client.closeResource();
+        }
+    }
+
+    private static String finalResponse(int statusCode, boolean altSvcPresent) {
+        return "HTTP/1.1 " + statusCode + " " + Status.create(statusCode).reasonPhrase() + "\r\n"
+                + (altSvcPresent ? "Alt-Svc: h3=\":8443\"\r\n" : "")
+                + (statusCode == 307 ? "Location: /redirected\r\n" : "")
+                + "Content-Length: 0\r\n\r\n";
+    }
+
+    private static final class ResponseFixture implements AutoCloseable {
+        private final Http1ClientImpl client;
+        private final TcpClientConnection connection;
+        private final CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        private final TestServiceRequest serviceRequest;
+        private final Http1CallEntityChain chain;
+        private DataReader reader;
+
+        private ResponseFixture(boolean redirectProbe, boolean altSvcEnabled, boolean resolvedTarget) {
+            client = (Http1ClientImpl) Http1Client.builder()
+                    .altSvc(ClientAltSvcConfig.builder().enabled(altSvcEnabled).build())
+                    .proxy(Proxy.noProxy())
+                    .protocolConfig(config -> config.log(log -> log.receiveLog(false).sendLog(false)))
+                    .build();
+            var uri = ClientUri.create(URI.create("http://127.0.0.1/entity"));
+            var headers = ClientRequestHeaders.create(WritableHeaders.create());
+            var whenComplete = new CompletableFuture<WebClientServiceResponse>();
+            var request = new Http1ClientRequestImpl(client, null, Method.POST, uri, null, Map.of())
+                    .outputStreamRedirect(redirectProbe);
+            var key = Http1ConnectionCache.connectionKey(request, uri, headers, client.clientConfig());
+            connection = resolvedTarget
+                    ? TcpClientConnection.create(client.webClient(),
+                                                 ClientConnectionTarget.create(key, uri.scheme()).resolve(),
+                                                 List.of(Http1Client.PROTOCOL_ID),
+                                                 _ -> false,
+                                                 _ -> { })
+                    : TcpClientConnection.create(client.webClient(), key, List.of(Http1Client.PROTOCOL_ID), _ -> false, _ -> { });
+            serviceRequest = new TestServiceRequest(uri, headers, whenSent, whenComplete);
+            chain = new Http1CallEntityChain(client, request, whenSent, whenComplete, new byte[0]);
+        }
+
+        @Override
+        public void close() {
+            try {
+                connection.closeResource();
+            } finally {
+                client.closeResource();
+            }
+        }
+
+        private WebClientServiceResponse proceed(String wireResponse) {
+            var chunks = List.of(wireResponse.getBytes(StandardCharsets.US_ASCII)).iterator();
+            reader = DataReader.create(() -> chunks.hasNext() ? chunks.next() : null);
+            return chain.doProceed(connection,
+                                   serviceRequest,
+                                   serviceRequest.headers(),
+                                   new NoopDataWriter(),
+                                   reader,
+                                   BufferData.growing(64));
         }
     }
 

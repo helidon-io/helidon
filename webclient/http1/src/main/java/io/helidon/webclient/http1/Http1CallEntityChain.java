@@ -74,19 +74,6 @@ class Http1CallEntityChain extends Http1CallChainBase {
         }
         whenSent.complete(serviceRequest);
 
-        if (originalRequest().outputStreamRedirect()) {
-            ResponseHead responseHead = readResponseHead(connection,
-                                                         reader,
-                                                         Http1CallChainBase::isPreContinueInterimResponse);
-            return createServiceResponseWithTrailers(originalRequest().http1Client(),
-                                                     serviceRequest,
-                                                     connection,
-                                                     reader,
-                                                     responseHead.status(),
-                                                     responseHead.headers(),
-                                                     whenComplete());
-        }
-
         return readResponse(serviceRequest, connection, reader);
     }
 }
