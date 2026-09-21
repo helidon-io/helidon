@@ -339,13 +339,21 @@ entity; a `304` response is not treated as a redirect. In particular, a `303`
 response changes a `QUERY` request to `GET` without the original query content, as required by
 [RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html#section-2.5).
 
-For a redirect that preserves the method and entity, WebClient copies only the
-`Accept`, `Accept-Charset`, `Accept-Encoding`, `Accept-Language`,
-`Content-Encoding`, `Content-Language`, `Content-Location`, and `Content-Type`
-headers from the preceding request. A redirect that changes the method does
-not copy request-specific headers. Each redirected request still starts with
-the client default headers, invokes the configured client services, and
-selects stored cookies for the target URI.
+Redirected requests retain explicitly configured request headers, subject to
+the adjustments and filtering described below. Dedicated `Http1Client`,
+`Http2Client`, and `Http3Client` requests also retain non-`Cookie` header changes
+made by services after transport dispatch. Headers generated for the preceding
+attempt are not copied wholesale: each hop applies client defaults, invokes
+the configured client services, and selects stored cookies for the target URI.
+Entity-writer headers are prepared or replayed as appropriate for the target
+attempt.
+
+Redirect handling removes the preceding attempt's `Content-Length`,
+`Transfer-Encoding`, and `Expect` headers so the target attempt can prepare its
+own framing and expectations. When the entity is discarded, it also removes
+`Content-Type`, `Content-Encoding`, `Content-Language`, and `Content-Location`.
+The target attempt's normal header processing still applies. Host and authority
+headers are adjusted when the redirect changes the target origin.
 
 Two URIs have the same origin when their schemes and hosts match
 case-insensitively and their ports are equal. WebClient follows a same-origin
@@ -356,9 +364,8 @@ when every possible redirect target is trusted.
 With redirect header filtering enabled, a cross-origin redirect removes the
 configured redirect-sensitive headers, including `Authorization`, `Cookie`,
 and `Proxy-Authorization`. This filtering remains active for later hops after
-a redirect chain crosses an origin boundary. Disabling the filtering does not
-change which request-specific headers WebClient copies from the preceding
-request.
+a redirect chain crosses an origin boundary. Disabling this filtering does not
+disable the entity, framing, or authority adjustments described above.
 
 ### Customizing the Request
 
