@@ -68,16 +68,6 @@ abstract class Http3AbstractTestingTest {
         addGreetingRoutes(rules, "hello");
     }
 
-    @Test
-    void testDefaultSocket() {
-        assertGreeting(http3Client, "hello");
-    }
-
-    @Test
-    void testDynamicQpackReuse() {
-        assertDynamicQpackReuse(lowLevelHttp3Client, "hello");
-    }
-
     static void assertGreeting(Http3Client http3Client, String expectedEntity) {
         try (Http3ClientResponse response = http3Client.get("/greet").request()) {
             assertThat(response.status().code(), is(200));
@@ -151,5 +141,15 @@ abstract class Http3AbstractTestingTest {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to initialize HTTP/3 test server TLS", e);
         }
+    }
+
+    @Test
+    void testDefaultSocket() {
+        assertGreeting(http3Client, "hello");
+    }
+
+    @Test
+    void testDynamicQpackReuse() {
+        assertDynamicQpackReuse(lowLevelHttp3Client, "hello");
     }
 }

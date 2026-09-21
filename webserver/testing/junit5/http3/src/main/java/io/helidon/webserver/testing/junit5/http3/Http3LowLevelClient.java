@@ -344,125 +344,6 @@ public final class Http3LowLevelClient implements AutoCloseable {
         return decodeResponse(qpackContext, requestStream.stream().streamId(), response);
     }
 
-    /**
-     * Immutable decoded low-level HTTP/3 response details.
-     */
-    public static final class DecodedResponse {
-        private final int status;
-        private final Headers headers;
-        private final Map<String, List<String>> headerValues;
-        private final int headersPayloadLength;
-        private final byte[] body;
-
-        private DecodedResponse(int status, Headers headers, int headersPayloadLength, byte[] body) {
-            this.status = status;
-            this.headers = materializeHeaders(headers);
-            Map<String, List<String>> headerValues = new LinkedHashMap<>();
-            for (Header header : this.headers) {
-                headerValues.put(header.headerName().lowerCase(), List.copyOf(header.allValues()));
-            }
-            this.headerValues = Map.copyOf(headerValues);
-            this.headersPayloadLength = headersPayloadLength;
-            this.body = Objects.requireNonNull(body, "body").clone();
-        }
-
-        /**
-         * Create a decoded response snapshot.
-         *
-         * @param status HTTP status code
-         * @param headers response headers
-         * @param headersPayloadLength encoded HEADERS payload length in bytes
-         * @param body raw DATA payload bytes
-         * @return decoded response snapshot
-         */
-        public static DecodedResponse create(int status,
-                                             Headers headers,
-                                             int headersPayloadLength,
-                                             byte[] body) {
-            return new DecodedResponse(status, headers, headersPayloadLength, body);
-        }
-
-        /**
-         * HTTP status code.
-         *
-         * @return HTTP status code
-         */
-        public int status() {
-            return status;
-        }
-
-        /**
-         * Defensive-copy access to the decoded response headers.
-         *
-         * @return copied response headers
-         */
-        public Headers headers() {
-            return materializeHeaders(headers);
-        }
-
-        /**
-         * Encoded HEADERS payload length in bytes.
-         *
-         * @return encoded HEADERS payload length
-         */
-        public int headersPayloadLength() {
-            return headersPayloadLength;
-        }
-
-        /**
-         * Defensive-copy access to the decoded response body.
-         *
-         * @return copied response body bytes
-         */
-        public byte[] body() {
-            return body.clone();
-        }
-
-        @Override
-        public boolean equals(Object object) {
-            if (this == object) {
-                return true;
-            }
-            if (!(object instanceof DecodedResponse that)) {
-                return false;
-            }
-            return status == that.status
-                    && headersPayloadLength == that.headersPayloadLength
-                    && headerValues.equals(that.headerValues)
-                    && Arrays.equals(body, that.body);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = Integer.hashCode(status);
-            result = 31 * result + headerValues.hashCode();
-            result = 31 * result + Integer.hashCode(headersPayloadLength);
-            return 31 * result + Arrays.hashCode(body);
-        }
-
-        @Override
-        public String toString() {
-            return "DecodedResponse["
-                    + "status=" + status
-                    + ", headerCount=" + headerValues.size()
-                    + ", headersPayloadLength=" + headersPayloadLength
-                    + ", bodyLength=" + body.length
-                    + ']';
-        }
-
-        private static Headers materializeHeaders(Headers headers) {
-            WritableHeaders<?> result = WritableHeaders.create();
-            for (Header header : Objects.requireNonNull(headers, "headers")) {
-                List<String> values = List.copyOf(header.allValues());
-                result.set(HeaderValues.create(header.headerName(),
-                                               header.changing(),
-                                               header.sensitive(),
-                                               values.toArray(String[]::new)));
-            }
-            return result;
-        }
-    }
-
     private static int port(URI baseUri) {
         return baseUri.getPort() > 0 ? baseUri.getPort() : 443;
     }
@@ -633,6 +514,125 @@ public final class Http3LowLevelClient implements AutoCloseable {
             throw new IllegalStateException("Failed while " + operation + ".", cause);
         } catch (TimeoutException e) {
             throw new IllegalStateException("Timed out while " + operation + ".", e);
+        }
+    }
+
+    /**
+     * Immutable decoded low-level HTTP/3 response details.
+     */
+    public static final class DecodedResponse {
+        private final int status;
+        private final Headers headers;
+        private final Map<String, List<String>> headerValues;
+        private final int headersPayloadLength;
+        private final byte[] body;
+
+        private DecodedResponse(int status, Headers headers, int headersPayloadLength, byte[] body) {
+            this.status = status;
+            this.headers = materializeHeaders(headers);
+            Map<String, List<String>> headerValues = new LinkedHashMap<>();
+            for (Header header : this.headers) {
+                headerValues.put(header.headerName().lowerCase(), List.copyOf(header.allValues()));
+            }
+            this.headerValues = Map.copyOf(headerValues);
+            this.headersPayloadLength = headersPayloadLength;
+            this.body = Objects.requireNonNull(body, "body").clone();
+        }
+
+        /**
+         * Create a decoded response snapshot.
+         *
+         * @param status HTTP status code
+         * @param headers response headers
+         * @param headersPayloadLength encoded HEADERS payload length in bytes
+         * @param body raw DATA payload bytes
+         * @return decoded response snapshot
+         */
+        public static DecodedResponse create(int status,
+                                             Headers headers,
+                                             int headersPayloadLength,
+                                             byte[] body) {
+            return new DecodedResponse(status, headers, headersPayloadLength, body);
+        }
+
+        /**
+         * HTTP status code.
+         *
+         * @return HTTP status code
+         */
+        public int status() {
+            return status;
+        }
+
+        /**
+         * Defensive-copy access to the decoded response headers.
+         *
+         * @return copied response headers
+         */
+        public Headers headers() {
+            return materializeHeaders(headers);
+        }
+
+        /**
+         * Encoded HEADERS payload length in bytes.
+         *
+         * @return encoded HEADERS payload length
+         */
+        public int headersPayloadLength() {
+            return headersPayloadLength;
+        }
+
+        /**
+         * Defensive-copy access to the decoded response body.
+         *
+         * @return copied response body bytes
+         */
+        public byte[] body() {
+            return body.clone();
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) {
+                return true;
+            }
+            if (!(object instanceof DecodedResponse that)) {
+                return false;
+            }
+            return status == that.status
+                    && headersPayloadLength == that.headersPayloadLength
+                    && headerValues.equals(that.headerValues)
+                    && Arrays.equals(body, that.body);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Integer.hashCode(status);
+            result = 31 * result + headerValues.hashCode();
+            result = 31 * result + Integer.hashCode(headersPayloadLength);
+            return 31 * result + Arrays.hashCode(body);
+        }
+
+        @Override
+        public String toString() {
+            return "DecodedResponse["
+                    + "status=" + status
+                    + ", headerCount=" + headerValues.size()
+                    + ", headersPayloadLength=" + headersPayloadLength
+                    + ", bodyLength=" + body.length
+                    + ']';
+        }
+
+        private static Headers materializeHeaders(Headers headers) {
+            WritableHeaders<?> result = WritableHeaders.create();
+            for (Header header : Objects.requireNonNull(headers, "headers")) {
+                List<String> values = List.copyOf(header.allValues());
+                result.set(HeaderValues.create(header.headerName(),
+                                               header.changing(),
+                                               header.sensitive(),
+                                               values.toArray(String[]::new)));
+            }
+            return result;
         }
     }
 
