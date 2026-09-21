@@ -1035,6 +1035,62 @@ class Http1ClientTest {
         customHandler(req, res, false);
     }
 
+    private static void responseHandler(ServerRequest req, ServerResponse res) throws IOException {
+        customHandler(req, res, false);
+    }
+
+    private static void chunkResponseHandler(ServerRequest req, ServerResponse res) throws IOException {
+        customHandler(req, res, true);
+    }
+
+    private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) throws IOException {
+        Headers reqHeaders = req.headers();
+        if (reqHeaders.contains(HeaderValues.EXPECT_100)) {
+            res.headers().set(REQ_EXPECT_100_HEADER_NAME);
+        }
+        if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(HeaderNames.CONTENT_LENGTH).get());
+        }
+        if (reqHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+            res.headers().set(REQ_CHUNKED_HEADER);
+        }
+
+        try (InputStream inputStream = req.content().inputStream();
+                OutputStream outputStream = res.outputStream()) {
+            if (!chunkResponse) {
+                new ByteArrayInputStream(inputStream.readAllBytes()).transferTo(outputStream);
+            } else {
+                // Break the entity into 3 parts and send them in chunks
+                int chunkParts = 3;
+                byte[] entity = inputStream.readAllBytes();
+                int regularChunkLen = entity.length / chunkParts;
+                int lastChunkLen = regularChunkLen + entity.length % chunkParts;
+                for (int i = 0; i < chunkParts; i++) {
+                    int chunkLen = (i != chunkParts - 1) ? regularChunkLen : lastChunkLen;
+                    byte[] chunk = new byte[chunkLen];
+                    System.arraycopy(entity, i * regularChunkLen, chunk, 0, chunkLen);
+                    outputStream.write(chunk);
+                    outputStream.flush();       // will force chunked
+                }
+            }
+        }
+    }
+
+    private static HttpClientResponse getHttp1ClientResponseFromOutputStream(HttpClientRequest request,
+                                                                             String[] requestEntityParts) {
+
+        return request.outputStream(it -> {
+            for (String r : requestEntityParts) {
+                it.write(r.getBytes(StandardCharsets.UTF_8));
+            }
+            it.close();
+        });
+    }
+
+    private HttpClientRequest getHttp1ClientRequest(Method method, String uriPath) {
+        return injectedHttp1client.method(method).uri(uriPath);
+    }
+
     private static final class LifecycleRecorder implements WebClientService {
         private final String failingPath;
         private final Map<String, RequestLifecycle> requests = new ConcurrentHashMap<>();
@@ -1127,62 +1183,6 @@ class Http1ClientTest {
         private void responseStatus(Status responseStatus) {
             this.responseStatus = responseStatus;
         }
-    }
-
-    private static void responseHandler(ServerRequest req, ServerResponse res) throws IOException {
-        customHandler(req, res, false);
-    }
-
-    private static void chunkResponseHandler(ServerRequest req, ServerResponse res) throws IOException {
-        customHandler(req, res, true);
-    }
-
-    private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) throws IOException {
-        Headers reqHeaders = req.headers();
-        if (reqHeaders.contains(HeaderValues.EXPECT_100)) {
-            res.headers().set(REQ_EXPECT_100_HEADER_NAME);
-        }
-        if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
-            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(HeaderNames.CONTENT_LENGTH).get());
-        }
-        if (reqHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-            res.headers().set(REQ_CHUNKED_HEADER);
-        }
-
-        try (InputStream inputStream = req.content().inputStream();
-                OutputStream outputStream = res.outputStream()) {
-            if (!chunkResponse) {
-                new ByteArrayInputStream(inputStream.readAllBytes()).transferTo(outputStream);
-            } else {
-                // Break the entity into 3 parts and send them in chunks
-                int chunkParts = 3;
-                byte[] entity = inputStream.readAllBytes();
-                int regularChunkLen = entity.length / chunkParts;
-                int lastChunkLen = regularChunkLen + entity.length % chunkParts;
-                for (int i = 0; i < chunkParts; i++) {
-                    int chunkLen = (i != chunkParts - 1) ? regularChunkLen : lastChunkLen;
-                    byte[] chunk = new byte[chunkLen];
-                    System.arraycopy(entity, i * regularChunkLen, chunk, 0, chunkLen);
-                    outputStream.write(chunk);
-                    outputStream.flush();       // will force chunked
-                }
-            }
-        }
-    }
-
-    private static HttpClientResponse getHttp1ClientResponseFromOutputStream(HttpClientRequest request,
-                                                                             String[] requestEntityParts) {
-
-        return request.outputStream(it -> {
-            for (String r : requestEntityParts) {
-                it.write(r.getBytes(StandardCharsets.UTF_8));
-            }
-            it.close();
-        });
-    }
-
-    private HttpClientRequest getHttp1ClientRequest(Method method, String uriPath) {
-        return injectedHttp1client.method(method).uri(uriPath);
     }
 
     private static class CustomizedMediaContext implements MediaContext {
