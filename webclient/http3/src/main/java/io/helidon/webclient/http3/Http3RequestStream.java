@@ -724,7 +724,7 @@ final class Http3RequestStream {
     }
 
     private final class RequestOutputStream extends OutputStream {
-        private final long contentLength = request.requestBody().contentLength().orElse(-1);
+        private long contentLength = -1;
         private long bytesWritten;
         private int pendingDispatchBytes;
         private boolean headersSent;
@@ -806,7 +806,11 @@ final class Http3RequestStream {
             if (uri.getRawQuery() != null) {
                 path += "?" + uri.getRawQuery();
             }
-            Http3MessageReader.validateRequestHeaders(request.headers());
+            contentLength = Http3MessageReader.validateRequestHeaders(request.headers()).orElse(-1);
+            if (last && contentLength > 0) {
+                throw new IllegalStateException("Content length was set to " + contentLength
+                                                        + ", but the request producer wrote 0 bytes");
+            }
             String authority = Http3Protocol.requestAuthority(uri, request.headers());
             boolean connect = request.method() == Method.CONNECT;
             sendFrameListener.requestHeaders(

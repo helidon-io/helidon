@@ -16,10 +16,13 @@
 
 package io.helidon.webclient.http3;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ReleasableResource;
@@ -56,6 +59,92 @@ class Http3ClientRequestImplTest {
         verify(result.rawResource(), times(1)).closeResource();
         assertThat(result.returnedResource(), sameInstance(result.rawResource()));
         assertFailedCompletions(result);
+    }
+
+    @Test
+    void normalizesBufferedContentLengthAfterServiceMutation() {
+        assertBufferedServicePreparation(Method.POST, new byte[5], true, Optional.of("5"));
+    }
+
+    @Test
+    void normalizesEmptyContentLengthAfterServiceMutation() {
+        assertBufferedServicePreparation(Method.POST, new byte[0], true, Optional.of("0"));
+    }
+
+    @Test
+    void leavesContentLengthAbsentForEmptyRequest() {
+        assertBufferedServicePreparation(Method.GET, new byte[0], false, Optional.empty());
+    }
+
+    private static void assertBufferedServicePreparation(Method method,
+                                                         byte[] body,
+                                                         boolean serviceChangesLength,
+                                                         Optional<String> expectedLength) {
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        AtomicReference<WebClientServiceResponse> rawResponse = new AtomicReference<>();
+        ReleasableResource resource = mock(ReleasableResource.class);
+        Http3CallEntityChain callChain = mock(Http3CallEntityChain.class);
+        when(callChain.protocolId()).thenReturn(Http3Client.PROTOCOL_ID);
+        when(callChain.rawResponse()).thenAnswer(_ -> rawResponse.get());
+        when(callChain.proceed(any())).thenAnswer(invocation -> {
+            WebClientServiceRequest serviceRequest = invocation.getArgument(0);
+            assertThat("content length at terminal transport dispatch",
+                       serviceRequest.headers().first(HeaderNames.CONTENT_LENGTH),
+                       is(expectedLength));
+            whenSent.complete(serviceRequest);
+            WebClientServiceResponse response = WebClientServiceResponse.builder()
+                    .serviceRequest(serviceRequest)
+                    .connection(resource)
+                    .whenComplete(whenComplete)
+                    .status(Status.OK_200)
+                    .headers(ClientResponseHeaders.create(WritableHeaders.create()))
+                    .build();
+            rawResponse.set(response);
+            return response;
+        });
+
+        Http3ClientImpl client = (Http3ClientImpl) Http3Client.builder()
+                .baseUri("https://example.test")
+                .servicesDiscoverServices(false)
+                .addService((chain, request) -> {
+                    Optional<String> initialLength = serviceChangesLength
+                            ? Optional.of(Integer.toString(body.length))
+                            : Optional.empty();
+                    assertThat("content length before service mutation",
+                               request.headers().first(HeaderNames.CONTENT_LENGTH),
+                               is(initialLength));
+                    if (serviceChangesLength) {
+                        request.headers().set(HeaderNames.CONTENT_LENGTH, body.length + 1);
+                    }
+                    // Continue to terminal preparation; only the transport response is stubbed.
+                    WebClientServiceResponse response = chain.proceed(request);
+                    assertThat("prepared content length visible to the service",
+                               request.headers().first(HeaderNames.CONTENT_LENGTH),
+                               is(expectedLength));
+                    return response;
+                })
+                .shareConnectionCache(false)
+                .build();
+        try {
+            Http3ClientRequestImpl request = (Http3ClientRequestImpl) client.method(method);
+            if (serviceChangesLength) {
+                request.headers().set(HeaderNames.CONTENT_LENGTH, body.length);
+            }
+            try (Http3ClientResponse response = request.invokeWithServices(callChain,
+                                                                           whenSent,
+                                                                           whenComplete,
+                                                                           Http3RequestBody.create(body))) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat("finalized request content length",
+                           request.headers().first(HeaderNames.CONTENT_LENGTH),
+                           is(expectedLength));
+            }
+            verify(callChain, times(1)).proceed(any());
+            verify(resource, times(1)).closeResource();
+        } finally {
+            client.closeResource();
+        }
     }
 
     private static AdaptationFailure invokeAdaptationFailure(boolean aliasResources) {
