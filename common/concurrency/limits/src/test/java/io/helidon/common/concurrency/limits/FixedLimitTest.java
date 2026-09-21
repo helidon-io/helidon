@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -181,6 +182,28 @@ public class FixedLimitTest {
         assertThat(failures.get(), lessThanOrEqualTo(concurrency - 2));
         // may be 2 or more (1 submitted, 1 or more queued)
         assertThat(result.size(), greaterThanOrEqualTo(2));
+    }
+
+    @Test
+    void testQueueTimeoutDoesNotRetryReleasedPermit() {
+        var semaphore = new Semaphore(0) {
+            @Override
+            public boolean tryAcquire(long timeout, TimeUnit unit) {
+                release();
+                return false;
+            }
+        };
+        var limiter = FixedLimit.builder()
+                .semaphore(semaphore)
+                .queueLength(1)
+                .queueTimeout(Duration.ofMillis(10))
+                .build();
+
+        var outcome = limiter.tryAcquireOutcome(true);
+
+        assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
+        assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
+        assertThat("The timed-out acquisition must leave the released permit available", semaphore.availablePermits(), is(1));
     }
 
     @Test

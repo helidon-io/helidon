@@ -248,7 +248,7 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
 
         @Override
         public long maxWaitMillis() {
-            return Math.max(1L, nanosPerToken / 1_000_000L);
+            return Math.ceilDiv(nanosPerToken, 1_000_000L);
         }
 
         @Override
@@ -290,7 +290,7 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
 
         @Override
         public long maxWaitMillis() {
-            return Math.max(1L, nanosPerRequest / 1_000_000L);
+            return Math.ceilDiv(nanosPerRequest, 1_000_000L);
         }
 
         @Override

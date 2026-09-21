@@ -117,6 +117,13 @@ class LimitHandlers {
                 }
                 remainingWaitMillis -= actualWaitMillis;
             } while (remainingWaitMillis > 0);
+            if (timeoutMillis > 0 && beforeAcquire.isPresent()) {
+                // A permit may have become due during the final wait; refill without extending the wait budget.
+                beforeAcquire.get().run();
+                if (semaphore.tryAcquire(0, TimeUnit.MILLISECONDS)) {
+                    return Optional.of(tokenSupplier.get());
+                }
+            }
             return Optional.empty();
         }
 
