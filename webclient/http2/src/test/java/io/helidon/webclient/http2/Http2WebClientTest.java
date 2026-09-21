@@ -51,6 +51,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -436,6 +437,135 @@ class Http2WebClientTest {
             response.close();
             response.close();
             assertThat(resourceCloses.get(), is(1));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void nonRedirectResponseDoesNotReadPostServiceHeaderValues() {
+        AtomicInteger valueReads = new AtomicInteger();
+        var postServiceHeader = spy(HeaderValues.create(HeaderNames.create("X-Post-Service-Snapshot"), "unused"));
+        doAnswer(invocation -> {
+            valueReads.incrementAndGet();
+            return invocation.callRealMethod();
+        }).when(postServiceHeader).allValues();
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .protocolConfig(protocol -> protocol.priorKnowledge(true))
+                .baseUri("http://localhost:" + plainPort)
+                .addService((chain, request) -> {
+                    WebClientServiceResponse response = chain.proceed(request);
+                    request.headers().set(postServiceHeader);
+                    valueReads.set(0);
+                    return response;
+                })
+                .build();
+
+        try {
+            try (Http2ClientResponse response = client.get("/").request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class), is("Hello world!"));
+            }
+            assertThat("A non-redirect response must not materialize headers added after dispatch",
+                       valueReads.get(),
+                       is(0));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void redirectProbeRetainsStablePostServiceHeaders() {
+        HeaderName snapshotHeader = HeaderNames.create("X-Redirect-Snapshot");
+        AtomicReference<ClientRequestHeaders> postServiceHeaders = new AtomicReference<>();
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .protocolConfig(protocol -> protocol.priorKnowledge(true))
+                .baseUri("http://localhost:" + plainPort)
+                .addService((chain, request) -> {
+                    WebClientServiceResponse response = chain.proceed(request);
+                    request.headers().set(HeaderValues.create(snapshotHeader, "original", "second"));
+                    postServiceHeaders.set(request.headers());
+                    return response;
+                })
+                .build();
+
+        try {
+            Http2ClientRequestImpl request = (Http2ClientRequestImpl) client.post("/output-stream-redirect/start")
+                    .followRedirects(false);
+            try (Http2ClientResponse response = request.redirectProbe()) {
+                assertThat(response.status(), is(Status.TEMPORARY_REDIRECT_307));
+                postServiceHeaders.get().set(snapshotHeader, "mutated");
+                var redirectUri = request.resolveRedirectUri(response.lastEndpointUri(),
+                                                              response.headers().get(HeaderNames.LOCATION).get());
+                Http2ClientRequestImpl redirect = new Http2ClientRequestImpl(request,
+                                                                              POST,
+                                                                              redirectUri,
+                                                                              request.properties(),
+                                                                              response.lastEndpointUri(),
+                                                                              false);
+                assertThat(redirect.headers().contains(snapshotHeader), is(true));
+                assertThat(redirect.headers().get(snapshotHeader).allValues(), contains("original", "second"));
+            }
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void reusedRequestDoesNotReplayPreviousInvocationHeaders() {
+        HeaderName staleHeader = HeaderNames.create("X-Stale-Snapshot");
+        HeaderName versionHeader = HeaderNames.create("X-Snapshot-Version");
+        AtomicInteger sourceAttempts = new AtomicInteger();
+        AtomicInteger targetAttempts = new AtomicInteger();
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .protocolConfig(protocol -> protocol.priorKnowledge(true))
+                .baseUri("http://localhost:" + plainPort)
+                .addService((chain, request) -> {
+                    String path = request.uri().toUri().getPath();
+                    if (path.equals("/output-stream-redirect/start") && sourceAttempts.getAndIncrement() == 0) {
+                        request.headers().set(staleHeader, "previous");
+                        request.headers().set(versionHeader, "previous");
+                        return WebClientServiceResponse.builder()
+                                .serviceRequest(request)
+                                .whenComplete(new CompletableFuture<>())
+                                .connection(() -> { })
+                                .status(Status.TEMPORARY_REDIRECT_307)
+                                .headers(ClientResponseHeaders.create(WritableHeaders.create()
+                                        .set(HeaderNames.LOCATION, "/output-stream-redirect/next")))
+                                .build();
+                    }
+                    if (path.equals("/output-stream-redirect/next") || path.equals("/output-stream-redirect/final")) {
+                        assertThat(request.headers().contains(staleHeader), is(false));
+                        assertThat(request.headers().get(versionHeader).get(), is("current"));
+                        targetAttempts.incrementAndGet();
+                    }
+                    return chain.proceed(request);
+                })
+                .build();
+
+        try {
+            Http2ClientRequest request = client.post("/output-stream-redirect/start")
+                    .followRedirects(false)
+                    .header(versionHeader, "configured");
+            try (Http2ClientResponse response = request.request()) {
+                assertThat(response.status(), is(Status.TEMPORARY_REDIRECT_307));
+            }
+            request.headers().set(versionHeader, "current");
+            request.followRedirects(true)
+                    .sendExpectContinue(true);
+            try (Http2ClientResponse response = request.outputStream(output -> {
+                output.write("body".getBytes(StandardCharsets.UTF_8));
+                output.close();
+            })) {
+                assertThat(response.as(String.class), is("final redirect target"));
+            }
+            assertThat(targetAttempts.get(), is(2));
         } finally {
             client.closeResource();
         }
