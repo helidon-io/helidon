@@ -83,6 +83,11 @@ class Http3ServerExtensionTest {
         assertThrows(NullPointerException.class, () -> extension.afterEach(null));
     }
 
+    @Test
+    void afterAllRejectsNullContext() {
+        assertThrows(NullPointerException.class, () -> extension.afterAll(null));
+    }
+
     private static <T> T unusedCollaborator(Class<T> type) {
         // Null arguments must be rejected before consulting any otherwise valid collaborator.
         return type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type}, (_, method, _) -> {
