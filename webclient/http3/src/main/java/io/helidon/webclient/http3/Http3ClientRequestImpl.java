@@ -411,24 +411,6 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
         }
     }
 
-    private void prepareRequestBody(Http3RequestBody requestBody, WebClientServiceRequest serviceRequest) {
-        int maximum = Math.max(1, clientConfig().maxInMemoryEntity());
-        int configuredBuffer = clientConfig().writeBufferSize();
-        int desiredBuffer = configuredBuffer <= 1 ? 1024 : configuredBuffer;
-        EntityWriterPreflight.Application serviceApplication = requestBody.prepare(serviceRequest.headers(),
-                                                                                   serviceRequest.context(),
-                                                                                   Math.max(1,
-                                                                                            Math.min(desiredBuffer,
-                                                                                                     maximum)));
-        if (serviceRequest.method() == Method.QUERY && !serviceRequest.headers().contains(HeaderNames.CONTENT_TYPE)) {
-            throw new IllegalArgumentException("Content-Type header is required for method '" + Method.QUERY + "'");
-        }
-        if (serviceApplication == null || requestBody.terminalHeaderChanges().isEmpty()) {
-            return;
-        }
-        terminalEntityHeaders = serviceApplication;
-    }
-
     HttpClientResponse fallbackResponse(Http3RequestBody requestBody,
                                         WebClientServiceRequest serviceRequest,
                                         boolean http1Only,
@@ -531,6 +513,24 @@ class Http3ClientRequestImpl extends ClientRequestBase<Http3ClientRequest, Http3
         return redirectHeadersAfterServices == null
                 ? EntityWriterPreflight.copyOf(normalizedRequestHeaders(headers()))
                 : redirectHeadersAfterServices;
+    }
+
+    private void prepareRequestBody(Http3RequestBody requestBody, WebClientServiceRequest serviceRequest) {
+        int maximum = Math.max(1, clientConfig().maxInMemoryEntity());
+        int configuredBuffer = clientConfig().writeBufferSize();
+        int desiredBuffer = configuredBuffer <= 1 ? 1024 : configuredBuffer;
+        EntityWriterPreflight.Application serviceApplication = requestBody.prepare(serviceRequest.headers(),
+                                                                                   serviceRequest.context(),
+                                                                                   Math.max(1,
+                                                                                            Math.min(desiredBuffer,
+                                                                                                     maximum)));
+        if (serviceRequest.method() == Method.QUERY && !serviceRequest.headers().contains(HeaderNames.CONTENT_TYPE)) {
+            throw new IllegalArgumentException("Content-Type header is required for method '" + Method.QUERY + "'");
+        }
+        if (serviceApplication == null || requestBody.terminalHeaderChanges().isEmpty()) {
+            return;
+        }
+        terminalEntityHeaders = serviceApplication;
     }
 
     private static final class ResponseResources {
