@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -65,6 +66,8 @@ public class Http3ServerExtension implements ServerJunitExtension {
 
     @Override
     public void beforeAll(ExtensionContext context) {
+        Objects.requireNonNull(context, "context");
+
         listenerBuilders.clear();
         lowLevelClients.clear();
     }
@@ -72,6 +75,9 @@ public class Http3ServerExtension implements ServerJunitExtension {
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
+        Objects.requireNonNull(parameterContext, "parameterContext");
+        Objects.requireNonNull(extensionContext, "extensionContext");
+
         Class<?> parameterType = parameterContext.getParameter().getType();
         return Http3Client.class.equals(parameterType) || Http3LowLevelClient.class.equals(parameterType);
     }
@@ -81,6 +87,11 @@ public class Http3ServerExtension implements ServerJunitExtension {
                                    ExtensionContext extensionContext,
                                    Class<?> parameterType,
                                    WebServer server) {
+        Objects.requireNonNull(parameterContext, "parameterContext");
+        Objects.requireNonNull(extensionContext, "extensionContext");
+        Objects.requireNonNull(parameterType, "parameterType");
+        Objects.requireNonNull(server, "server");
+
         if (!Http3Client.class.equals(parameterType)) {
             if (!Http3LowLevelClient.class.equals(parameterType)) {
                 throw new ParameterResolutionException("HTTP/3 extension only supports Http3Client and "
@@ -119,11 +130,17 @@ public class Http3ServerExtension implements ServerJunitExtension {
     public void updateListenerBuilder(String socketName,
                                       ListenerConfig.Builder listenerBuilder,
                                       Router.RouterBuilder<?> routerBuilder) {
+        Objects.requireNonNull(socketName, "socketName");
+        Objects.requireNonNull(listenerBuilder, "listenerBuilder");
+        Objects.requireNonNull(routerBuilder, "routerBuilder");
+
         listenerBuilders.put(socketName, listenerBuilder);
     }
 
     @Override
     public void afterEach(ExtensionContext context) {
+        Objects.requireNonNull(context, "context");
+
         clients.values().forEach(Http3Client::closeResource);
         clients.clear();
         lowLevelClients.values().forEach(Http3LowLevelClient::close);
