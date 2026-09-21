@@ -721,6 +721,7 @@ class Http1ClientTest {
             assertThat(lifecycleUploadReceived.await(5, TimeUnit.SECONDS), is(true));
             RequestLifecycle source = service.requests().get("/lifecycle/start");
             RequestLifecycle target = service.requests().get("/lifecycle/final");
+            CompletableFuture.allOf(source.whenSent(), target.whenSent()).get(5, TimeUnit.SECONDS);
             assertThat("source whenSent must complete after the final upload, before response headers",
                        source.whenSent().isDone(),
                        is(true));
