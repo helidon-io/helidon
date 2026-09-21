@@ -151,20 +151,6 @@ final class Http3RequestFailureSupport {
                 && requestAttemptException.endpointFailure();
     }
 
-    private static Throwable unwrap(Throwable throwable) {
-        Throwable cause = unwrapCompletion(throwable);
-        if (cause instanceof RequestAttemptException requestAttemptException) {
-            return requestAttemptException.getCause();
-        }
-        return cause;
-    }
-
-    private static Throwable unwrapCompletion(Throwable throwable) {
-        return throwable instanceof CompletionException completionException && completionException.getCause() != null
-                ? completionException.getCause()
-                : throwable;
-    }
-
     /**
      * Whether the observed GOAWAY no longer permits a request stream id.
      *
@@ -206,6 +192,26 @@ final class Http3RequestFailureSupport {
         return completion.handle((_, failure) -> failure).toCompletableFuture().join();
     }
 
+    private static Throwable unwrap(Throwable throwable) {
+        Throwable cause = unwrapCompletion(throwable);
+        if (cause instanceof RequestAttemptException requestAttemptException) {
+            return requestAttemptException.getCause();
+        }
+        return cause;
+    }
+
+    private static Throwable unwrapCompletion(Throwable throwable) {
+        return throwable instanceof CompletionException completionException && completionException.getCause() != null
+                ? completionException.getCause()
+                : throwable;
+    }
+
+    enum AttemptDisposition {
+        NOT_PROCESSED,
+        VERSION_FALLBACK,
+        POSSIBLY_PROCESSED
+    }
+
     /**
      * Failure indicating the connection no longer accepts new requests.
      */
@@ -239,12 +245,6 @@ final class Http3RequestFailureSupport {
         private VersionFallbackException(Throwable cause) {
             super("HTTP/3 peer requested version fallback.", cause);
         }
-    }
-
-    enum AttemptDisposition {
-        NOT_PROCESSED,
-        VERSION_FALLBACK,
-        POSSIBLY_PROCESSED
     }
 
     static final class RequestAttemptException extends IllegalStateException {

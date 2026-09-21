@@ -565,6 +565,18 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                 && tlsCompatibility.compatible(clientRequest.tls());
     }
 
+    private static boolean sameHost(String first, String second) {
+        return normalizeHost(first).equals(normalizeHost(second));
+    }
+
+    private static String normalizeHost(String host) {
+        String normalized = Objects.requireNonNull(host, "host").trim();
+        if (normalized.startsWith("[") && normalized.endsWith("]")) {
+            normalized = normalized.substring(1, normalized.length() - 1);
+        }
+        return normalized.toLowerCase(Locale.ROOT);
+    }
+
     private boolean supportsHttp3Transport(FullClientRequest<?> clientRequest, ClientUri clientUri) {
         if (clientRequest.connection().isPresent() || !"https".equalsIgnoreCase(clientUri.scheme())) {
             return false;
@@ -580,18 +592,6 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
 
     private boolean responseProtocolSupported(String protocolId) {
         return Http3Client.PROTOCOL_ID.equals(protocolId) || webClient.tcpProtocolIds().contains(protocolId);
-    }
-
-    private static boolean sameHost(String first, String second) {
-        return normalizeHost(first).equals(normalizeHost(second));
-    }
-
-    private static String normalizeHost(String host) {
-        String normalized = Objects.requireNonNull(host, "host").trim();
-        if (normalized.startsWith("[") && normalized.endsWith("]")) {
-            normalized = normalized.substring(1, normalized.length() - 1);
-        }
-        return normalized.toLowerCase(Locale.ROOT);
     }
 
     private List<String> fallbackProtocols() {
