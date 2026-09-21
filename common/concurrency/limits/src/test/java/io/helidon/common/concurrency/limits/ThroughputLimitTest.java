@@ -31,11 +31,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -238,6 +238,51 @@ public class ThroughputLimitTest {
     }
 
     @ParameterizedTest
+    @CsvSource({
+            "TOKEN_BUCKET, 101, ACCEPTED",
+            "FIXED_RATE, 101, ACCEPTED",
+            "TOKEN_BUCKET, 90, REJECTED",
+            "FIXED_RATE, 90, REJECTED"
+    })
+    void testQueuedFractionalRefillNearTimeout(RateLimitingAlgorithmType algorithm,
+                                              long timeoutMillis,
+                                              LimitAlgorithm.Outcome.Disposition expectedDisposition) {
+        var clock = new TestNanoClock();
+        var semaphore = new Semaphore(1) {
+            @Override
+            public boolean tryAcquire(long timeout, TimeUnit unit) {
+                if (super.tryAcquire()) {
+                    return true;
+                }
+                clock.advance(Duration.ofNanos(unit.toNanos(timeout)));
+                return false;
+            }
+        };
+        var limiter = ThroughputLimit.builder()
+                .amount(1)
+                .duration(Duration.ofNanos(100_500_000))
+                .rateLimitingAlgorithm(algorithm)
+                .semaphore(semaphore)
+                .clock(clock::getNanos)
+                .queueLength(1)
+                .queueTimeout(Duration.ofMillis(timeoutMillis))
+                .build();
+        assertAccepted(limiter, 1);
+        clock.advance(Duration.ofMillis(10));
+        long start = clock.getNanos();
+
+        var outcome = limiter.tryAcquireOutcome(true);
+
+        assertThat(outcome.disposition(), is(expectedDisposition));
+        assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
+        assertThat("The queued acquisition must respect its timeout",
+                   clock.getNanos() - start, lessThanOrEqualTo(Duration.ofMillis(timeoutMillis).toNanos()));
+        if (outcome instanceof LimitAlgorithm.Outcome.Accepted accepted) {
+            accepted.token().success();
+        }
+    }
+
+    @ParameterizedTest
     @EnumSource(RateLimitingAlgorithmType.class)
     void testMultipleOperationsPerNanosecond(RateLimitingAlgorithmType algorithm) {
         var clock = new AtomicLong();
@@ -389,13 +434,11 @@ public class ThroughputLimitTest {
     private void assertQueuedRefill(RateLimitingAlgorithmType algorithm,
                                     int amount,
                                     Duration interval,
-                                    long expectedWaitMillis) {
+                                    long maxElapsedMillis) {
         TestNanoClock clock = new TestNanoClock();
-        List<Long> waits = new ArrayList<>();
         Semaphore semaphore = new Semaphore(0) {
             @Override
             public boolean tryAcquire(long timeout, TimeUnit unit) {
-                waits.add(unit.toMillis(timeout));
                 if (super.tryAcquire()) {
                     return true;
                 }
@@ -413,9 +456,11 @@ public class ThroughputLimitTest {
                 .queueTimeout(Duration.ofSeconds(1))
                 .build();
 
+        long start = clock.getNanos();
         LimitAlgorithm.Outcome outcome = limiter.tryAcquireOutcome(true);
 
-        assertThat(algorithm + " refill waits", waits, contains(expectedWaitMillis, expectedWaitMillis));
+        assertThat(algorithm + " queued wait", clock.getNanos() - start,
+                   lessThanOrEqualTo(Duration.ofMillis(maxElapsedMillis).toNanos()));
         assertThat(algorithm + " queued request", outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.ACCEPTED));
         assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
         ((LimitAlgorithm.Outcome.Accepted) outcome).token().success();
