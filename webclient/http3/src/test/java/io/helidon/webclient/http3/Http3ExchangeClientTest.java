@@ -20,6 +20,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,7 @@ import io.helidon.common.socket.SocketContext;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpTransportObserver.StreamObservation;
 import io.helidon.http.HttpTransportObserver.StreamOutcome;
@@ -70,6 +72,8 @@ import static io.helidon.quic.stream.QuicSenderStream.SendingStreamState.RESET_R
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
@@ -328,6 +332,78 @@ class Http3ExchangeClientTest {
 
         assertThat(producerFailure.get(), sameInstance(dispatchFailure));
         assertThat(requestFailure.getCause(), sameInstance(dispatchFailure));
+    }
+
+    @Test
+    void shouldRejectUnknownLengthRequestUnderrunAgainstFinalHeaders() {
+        CapturedRequest captured = captureRequest(streamingRequestBody(5, -1), 6);
+
+        assertThat("An underrun must not complete the request with FIN", captured.finCount(), equalTo(0));
+        assertThat("The producer must report the final Content-Length mismatch", captured.failure(), notNullValue());
+        assertThat(captured.headers().get(HeaderNames.CONTENT_LENGTH).get(), equalTo("6"));
+        assertThat(captured.dataLength(), equalTo(5L));
+    }
+
+    @Test
+    void shouldRejectUnknownLengthRequestOverrunAgainstFinalHeaders() {
+        CapturedRequest captured = captureRequest(streamingRequestBody(5, -1), 4);
+
+        assertThat("An overrun must not complete the request with FIN", captured.finCount(), equalTo(0));
+        assertThat("The producer must report the final Content-Length mismatch", captured.failure(), notNullValue());
+        assertThat(captured.headers().get(HeaderNames.CONTENT_LENGTH).get(), equalTo("4"));
+        assertThat("The oversized write must not be dispatched", captured.dataLength(), equalTo(0L));
+    }
+
+    @Test
+    void shouldRejectEmptyStreamingRequestWithPositiveFinalContentLength() {
+        CapturedRequest captured = captureRequest(streamingRequestBody(0, -1), 1);
+
+        assertThat("An empty producer must not dispatch HEADERS declaring a nonempty body",
+                   captured.headers(),
+                   nullValue());
+        assertThat(captured.dataLength(), equalTo(0L));
+        assertThat(captured.finCount(), equalTo(0));
+        assertThat("The producer must report the final Content-Length mismatch", captured.failure(), notNullValue());
+    }
+
+    @Test
+    void shouldUseFinalContentLengthForStreamingRequest() {
+        CapturedRequest captured = captureRequest(streamingRequestBody(5, 6), 5);
+
+        assertThat("The final headers, not the original body declaration, govern framing",
+                   captured.failure(),
+                   nullValue());
+        assertThat(captured.headers().get(HeaderNames.CONTENT_LENGTH).get(), equalTo("5"));
+        assertThat(captured.dataLength(), equalTo(5L));
+        assertThat(captured.finCount(), equalTo(1));
+    }
+
+    @Test
+    void shouldAllowUnknownLengthStreamingRequestWithoutContentLength() {
+        CapturedRequest captured = captureRequest(streamingRequestBody(5, -1), -1);
+
+        assertThat(captured.failure(), nullValue());
+        assertThat(captured.headers().contains(HeaderNames.CONTENT_LENGTH), equalTo(false));
+        assertThat(captured.dataLength(), equalTo(5L));
+        assertThat(captured.finCount(), equalTo(1));
+    }
+
+    @Test
+    void shouldNotCompleteKnownBodyWithMismatchedContentLength() {
+        CapturedRequest captured = captureRequest(Http3RequestBody.create(new byte[5]), 6);
+
+        if (captured.finCount() == 0) {
+            assertThat("The transport must report rejection of inconsistent finalized headers",
+                       captured.failure(),
+                       notNullValue());
+        } else {
+            assertThat(captured.failure(), nullValue());
+            assertThat(captured.finCount(), equalTo(1));
+            long declaredLength = Long.parseLong(captured.headers().get(HeaderNames.CONTENT_LENGTH).get());
+            assertThat("A completed request must match its encoded Content-Length",
+                       captured.dataLength(),
+                       equalTo(declaredLength));
+        }
     }
 
     @Test
@@ -705,7 +781,74 @@ class Http3ExchangeClientTest {
         return requestStreamFixture(CompletableFuture.completedFuture(DATA_RECVD));
     }
 
+    private static Http3RequestBody streamingRequestBody(int length, long declaredLength) {
+        return Http3RequestBody.create(outputStream -> {
+            try (outputStream) {
+                outputStream.write(new byte[length]);
+            }
+        }, declaredLength);
+    }
+
+    private static CapturedRequest captureRequest(Http3RequestBody requestBody, long finalContentLength) {
+        ClientRequestHeaders finalHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        if (finalContentLength >= 0) {
+            finalHeaders.contentLength(finalContentLength);
+        }
+        Http3QpackContext decoder = Http3QpackContext.create(0, 0, 16_384, _ -> { });
+        try (RequestExecutionFixture fixture = requestExecutionFixture(requestBody, finalHeaders)) {
+            List<byte[]> frames = new ArrayList<>();
+            AtomicInteger finCount = new AtomicInteger();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            doAnswer(invocation -> {
+                frames.add(invocation.<BufferData>getArgument(0).readBytes());
+                if (invocation.<Boolean>getArgument(1)) {
+                    finCount.incrementAndGet();
+                }
+                return null;
+            }).when(fixture.writer()).scheduleForWriting(any(BufferData.class), anyBoolean());
+            when(fixture.writer().scheduleForWritingAndGetDispatchCompletion(any(BufferData.class), anyBoolean()))
+                    .thenAnswer(invocation -> {
+                        frames.add(invocation.<BufferData>getArgument(0).readBytes());
+                        if (invocation.<Boolean>getArgument(1)) {
+                            finCount.incrementAndGet();
+                        }
+                        return CompletableFuture.completedFuture(null);
+                    });
+
+            fixture.requestStream().execute(Runnable::run, (_, cause) -> failure.set(cause));
+
+            Headers headers = null;
+            long dataLength = 0;
+            for (byte[] frame : frames) {
+                ByteBuffer encoded = ByteBuffer.wrap(frame);
+                while (encoded.hasRemaining()) {
+                    long type = VariableLengthEncoder.decode(encoded);
+                    int length = Math.toIntExact(VariableLengthEncoder.decode(encoded));
+                    byte[] payload = new byte[length];
+                    encoded.get(payload);
+                    if (type == Http3Protocol.FRAME_HEADERS) {
+                        assertThat("Only one request HEADERS frame is expected", headers, nullValue());
+                        headers = decoder.openStream(0).decodeHeaders(BufferData.create(payload), -1);
+                    } else {
+                        assertThat("Only request HEADERS and DATA frames are expected",
+                                   type,
+                                   equalTo(Http3Protocol.FRAME_DATA));
+                        dataLength += length;
+                    }
+                }
+            }
+            return new CapturedRequest(headers, dataLength, finCount.get(), failure.get());
+        } finally {
+            decoder.close(new IllegalStateException("Request capture complete"));
+        }
+    }
+
     private static RequestExecutionFixture requestExecutionFixture(Http3RequestBody requestBody) {
+        return requestExecutionFixture(requestBody, ClientRequestHeaders.create(WritableHeaders.create()));
+    }
+
+    private static RequestExecutionFixture requestExecutionFixture(Http3RequestBody requestBody,
+                                                                   ClientRequestHeaders finalHeaders) {
         Http3ExchangeClient.ConnectionSession session = mock(Http3ExchangeClient.ConnectionSession.class);
         QuicConnection connection = mock(QuicConnection.class);
         when(connection.termination()).thenReturn(Optional.empty());
@@ -725,7 +868,7 @@ class Http3ExchangeClientTest {
         Http3ExchangeClient.RequestData request = new Http3ExchangeClient.RequestData(
                 URI.create("https://example.test"),
                 Method.POST,
-                ClientRequestHeaders.create(WritableHeaders.create()),
+                finalHeaders,
                 requestBody,
                 Duration.ofSeconds(1),
                 Duration.ZERO,
@@ -754,7 +897,7 @@ class Http3ExchangeClientTest {
                 },
                 _ -> {
                 });
-        return new RequestExecutionFixture(writer, requestStream);
+        return new RequestExecutionFixture(writer, requestStream, qpackContext);
     }
 
     private static RequestStreamFixture requestStreamFixture(
@@ -808,7 +951,21 @@ class Http3ExchangeClientTest {
                                         AtomicInteger responseCancellations) {
     }
 
-    private record RequestExecutionFixture(QuicStreamWriter writer, Http3RequestStream requestStream) {
+    private record CapturedRequest(Headers headers, long dataLength, int finCount, Throwable failure) {
+    }
+
+    private record RequestExecutionFixture(QuicStreamWriter writer,
+                                            Http3RequestStream requestStream,
+                                            Http3QpackContext qpackContext) implements AutoCloseable {
+        @Override
+        public void close() {
+            try {
+                requestStream.cancel();
+            } finally {
+                qpackContext.close(new IllegalStateException("Request fixture closed"));
+            }
+        }
+
         private Throwable execute() {
             CompletableFuture<Throwable> requestOutcome = new CompletableFuture<>();
             requestStream.execute(Runnable::run, (_, failure) -> {
