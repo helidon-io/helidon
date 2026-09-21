@@ -130,19 +130,6 @@ public class Http3ServerExtension implements ServerJunitExtension {
         lowLevelClients.clear();
     }
 
-    private Tls clientTls(ParameterContext parameterContext,
-                          ExtensionContext extensionContext,
-                          WebServer server,
-                          String socketName) {
-        Tls listenerTls = listenerTls(server, socketName);
-
-        return Tls.builder()
-                .trust(clientCertificates(parameterContext, extensionContext, listenerTls))
-                .applicationProtocols(List.of(Http3Client.PROTOCOL_ID))
-                .enabledProtocols(List.of("TLSv1.3"))
-                .build();
-    }
-
     private static List<X509Certificate> clientCertificates(ParameterContext parameterContext,
                                                             ExtensionContext extensionContext,
                                                             Tls listenerTls) {
@@ -202,6 +189,19 @@ public class Http3ServerExtension implements ServerJunitExtension {
     private static Http3ClientTls configuredTls(ParameterContext parameterContext, ExtensionContext extensionContext) {
         return parameterContext.findAnnotation(Http3ClientTls.class)
                 .orElseGet(() -> extensionContext.getRequiredTestClass().getAnnotation(Http3ClientTls.class));
+    }
+
+    private Tls clientTls(ParameterContext parameterContext,
+                          ExtensionContext extensionContext,
+                          WebServer server,
+                          String socketName) {
+        Tls listenerTls = listenerTls(server, socketName);
+
+        return Tls.builder()
+                .trust(clientCertificates(parameterContext, extensionContext, listenerTls))
+                .applicationProtocols(List.of(Http3Client.PROTOCOL_ID))
+                .enabledProtocols(List.of("TLSv1.3"))
+                .build();
     }
 
     private Tls listenerTls(WebServer server, String socketName) {
