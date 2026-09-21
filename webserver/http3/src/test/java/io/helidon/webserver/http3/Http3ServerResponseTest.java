@@ -461,6 +461,44 @@ class Http3ServerResponseTest {
     }
 
     @Test
+    void rejectsNullByteSliceForBodylessResponses() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            Http3ServerStream stream = mock(Http3ServerStream.class);
+            Http3ServerResponse response = response(stream, Method.GET, ContentEncodingContext.create());
+            AtomicBoolean prepared = new AtomicBoolean();
+            response.status(status);
+            response.beforeSend(() -> prepared.set(true));
+
+            assertThrows(NullPointerException.class, () -> response.send(null, 0, 0), status.toString());
+            assertThat("Response preparation for " + status, prepared.get(), is(false));
+            assertThat(response.isSent(), is(false));
+            verifyNoWrites(stream);
+        }
+    }
+
+    @Test
+    void rejectsNullByteSliceForFilteredBodylessResponses() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            Http3ServerStream stream = mock(Http3ServerStream.class);
+            Http3ServerResponse response = response(stream, Method.GET, ContentEncodingContext.create());
+            AtomicBoolean prepared = new AtomicBoolean();
+            AtomicBoolean filterCalled = new AtomicBoolean();
+            response.status(status);
+            response.beforeSend(() -> prepared.set(true));
+            response.streamFilter(outputStream -> {
+                filterCalled.set(true);
+                return outputStream;
+            });
+
+            assertThrows(NullPointerException.class, () -> response.send(null, 0, 0), status.toString());
+            assertThat("Response preparation for " + status, prepared.get(), is(false));
+            assertThat("Stream filter for " + status, filterCalled.get(), is(false));
+            assertThat(response.isSent(), is(false));
+            verifyNoWrites(stream);
+        }
+    }
+
+    @Test
     void rejectsNullOutputStreamFilterResult() {
         Http3ServerResponse response = response();
         response.streamFilter(outputStream -> null);
