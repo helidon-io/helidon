@@ -190,38 +190,12 @@ final class Http3ServerStream implements Runnable {
         return estimate -> requestBodyReader.read(estimate);
     }
 
-    private Http3QpackContext qpackContext() {
-        return serverConnection.qpackContext();
-    }
-
     Http3ConnectionContext context() {
         return serverConnection.context();
     }
 
     LimitAlgorithm.Outcome requestLimitOutcome() {
         return Objects.requireNonNull(requestLimitOutcome, "HTTP/3 request limit outcome is not available");
-    }
-
-    private QuicStreamWriter writer() {
-        QuicStreamException inputFailure = requestInputFailure.get();
-        if (inputFailure != null) {
-            throw inputFailure;
-        }
-        QuicStreamWriter current = writer;
-        if (current != null) {
-            return current;
-        }
-        writerLock.lock();
-        try {
-            current = writer;
-            if (current == null) {
-                current = Http3StreamSupport.connectWriter(stream, serverConnection.connection(), sendFrameListener);
-                writer = current;
-            }
-            return current;
-        } finally {
-            writerLock.unlock();
-        }
     }
 
     Http3ServerResponse response(Http3ServerRequest request) {
@@ -364,14 +338,6 @@ final class Http3ServerStream implements Runnable {
         stream.reset(errorCode);
     }
 
-    private boolean stopSendingReceived() {
-        return stream.stopSendingReceived();
-    }
-
-    private long stopSendingErrorCode() {
-        return stream.sndErrorCode();
-    }
-
     void activate() {
         if (!active.compareAndSet(false, true)) {
             throw new IllegalStateException("HTTP/3 stream is already active: " + streamId());
@@ -417,6 +383,95 @@ final class Http3ServerStream implements Runnable {
         } finally {
             close(outcome);
         }
+    }
+
+    RequestAdmission admitRequest() {
+        requestPermitLock.lock();
+        try {
+            if (requestAdmissionClosed) {
+                return RequestAdmission.CLOSED;
+            }
+        } finally {
+            requestPermitLock.unlock();
+        }
+
+        LimitAlgorithm.Outcome outcome = requestLimit.tryAcquireOutcome(false);
+        LimitAlgorithm.Token ignoredPermit = null;
+        RequestAdmission admission;
+        requestPermitLock.lock();
+        try {
+            if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
+                LimitAlgorithm.Token permit = ((LimitAlgorithm.Outcome.Accepted) outcome).token();
+                if (requestAdmissionClosed) {
+                    ignoredPermit = permit;
+                    admission = RequestAdmission.CLOSED;
+                } else {
+                    requestLimitOutcome = outcome;
+                    requestPermit = permit;
+                    admission = RequestAdmission.ACCEPTED;
+                }
+            } else {
+                admission = requestAdmissionClosed ? RequestAdmission.CLOSED : RequestAdmission.REJECTED;
+            }
+        } finally {
+            requestPermitLock.unlock();
+        }
+        if (ignoredPermit != null) {
+            ignoredPermit.ignore();
+        }
+        if (admission == RequestAdmission.ACCEPTED) {
+            reader.activateReadTimeout();
+        }
+        return admission;
+    }
+
+    private static boolean requestReadTimedOut(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof Http3ReadTimeoutException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private static Http3Handler.BufferedResponse handlerFailureResponse() {
+        return Http3Handler.BufferedResponse.text(500, "HTTP/3 handler failure");
+    }
+
+    private Http3QpackContext qpackContext() {
+        return serverConnection.qpackContext();
+    }
+
+    private QuicStreamWriter writer() {
+        QuicStreamException inputFailure = requestInputFailure.get();
+        if (inputFailure != null) {
+            throw inputFailure;
+        }
+        QuicStreamWriter current = writer;
+        if (current != null) {
+            return current;
+        }
+        writerLock.lock();
+        try {
+            current = writer;
+            if (current == null) {
+                current = Http3StreamSupport.connectWriter(stream, serverConnection.connection(), sendFrameListener);
+                writer = current;
+            }
+            return current;
+        } finally {
+            writerLock.unlock();
+        }
+    }
+
+    private boolean stopSendingReceived() {
+        return stream.stopSendingReceived();
+    }
+
+    private long stopSendingErrorCode() {
+        return stream.sndErrorCode();
     }
 
     private Optional<Http3Handler.BufferedResponse> handleRequest() {
@@ -882,61 +937,6 @@ final class Http3ServerStream implements Runnable {
             }
             throw new IllegalStateException("Failed to dispatch HTTP/3 response", cause);
         }
-    }
-
-    RequestAdmission admitRequest() {
-        requestPermitLock.lock();
-        try {
-            if (requestAdmissionClosed) {
-                return RequestAdmission.CLOSED;
-            }
-        } finally {
-            requestPermitLock.unlock();
-        }
-
-        LimitAlgorithm.Outcome outcome = requestLimit.tryAcquireOutcome(false);
-        LimitAlgorithm.Token ignoredPermit = null;
-        RequestAdmission admission;
-        requestPermitLock.lock();
-        try {
-            if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
-                LimitAlgorithm.Token permit = ((LimitAlgorithm.Outcome.Accepted) outcome).token();
-                if (requestAdmissionClosed) {
-                    ignoredPermit = permit;
-                    admission = RequestAdmission.CLOSED;
-                } else {
-                    requestLimitOutcome = outcome;
-                    requestPermit = permit;
-                    admission = RequestAdmission.ACCEPTED;
-                }
-            } else {
-                admission = requestAdmissionClosed ? RequestAdmission.CLOSED : RequestAdmission.REJECTED;
-            }
-        } finally {
-            requestPermitLock.unlock();
-        }
-        if (ignoredPermit != null) {
-            ignoredPermit.ignore();
-        }
-        if (admission == RequestAdmission.ACCEPTED) {
-            reader.activateReadTimeout();
-        }
-        return admission;
-    }
-
-    private static boolean requestReadTimedOut(Throwable throwable) {
-        Throwable current = throwable;
-        while (current != null) {
-            if (current instanceof Http3ReadTimeoutException) {
-                return true;
-            }
-            current = current.getCause();
-        }
-        return false;
-    }
-
-    private static Http3Handler.BufferedResponse handlerFailureResponse() {
-        return Http3Handler.BufferedResponse.text(500, "HTTP/3 handler failure");
     }
 
     enum RequestAdmission {

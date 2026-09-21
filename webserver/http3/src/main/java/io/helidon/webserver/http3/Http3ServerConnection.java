@@ -301,31 +301,6 @@ final class Http3ServerConnection implements Http3ControlStreamListener {
         fail(OptionalLong.of(streamId), throwable);
     }
 
-    private void fail(OptionalLong streamId, Throwable throwable) {
-        Throwable cause = throwable instanceof CompletionException && throwable.getCause() != null
-                ? throwable.getCause()
-                : throwable;
-        Optional<Http3ProtocolException> protocolException = Http3ProtocolException.find(cause);
-        if (protocolException.filter(it -> it.scope() == Http3ProtocolException.Scope.STREAM).isPresent()) {
-            throw new IllegalArgumentException("Stream-scoped HTTP/3 signal reached the connection owner", cause);
-        }
-        if (!closeChildren(cause, StreamOutcome.ERROR)) {
-            return;
-        }
-        logDebug(() -> "state=connection-fail cause=%s"
-                .formatted(Http3RuntimeSupport.throwableSummary(cause)));
-        Http3ErrorCode errorCode = protocolException.map(Http3ProtocolException::errorCode)
-                .orElse(Http3ErrorCode.INTERNAL_ERROR);
-        QuicCloseCommand command = QuicCloseCommand.application(errorCode.code(), cause);
-        if (streamId.isPresent()) {
-            command = command.withStream(streamId.orElseThrow());
-        }
-        if (config.sendErrorDetails() && cause.getMessage() != null) {
-            command = command.withPeerDetail(cause.getMessage());
-        }
-        connection.terminate(command);
-    }
-
     void close() {
         IllegalStateException cause = new IllegalStateException("HTTP/3 server is closing");
         if (!closeChildren(cause, StreamOutcome.CANCELLED)) {
@@ -428,6 +403,50 @@ final class Http3ServerConnection implements Http3ControlStreamListener {
 
     void executeRequestCompletion(Runnable completion) {
         requestExecutor.execute(completion);
+    }
+
+    private static void addSuppressed(Throwable cause, Throwable cleanupFailure) {
+        if (cause != cleanupFailure) {
+            cause.addSuppressed(cleanupFailure);
+        }
+    }
+
+    private static String goAwaySummary(Http3GoAway goAway) {
+        return goAway == null ? "none" : "0x" + Long.toHexString(goAway.identifier());
+    }
+
+    private static void updateMax(AtomicLong target, long candidate) {
+        for (;;) {
+            long current = target.get();
+            if (candidate <= current || target.compareAndSet(current, candidate)) {
+                return;
+            }
+        }
+    }
+
+    private void fail(OptionalLong streamId, Throwable throwable) {
+        Throwable cause = throwable instanceof CompletionException && throwable.getCause() != null
+                ? throwable.getCause()
+                : throwable;
+        Optional<Http3ProtocolException> protocolException = Http3ProtocolException.find(cause);
+        if (protocolException.filter(it -> it.scope() == Http3ProtocolException.Scope.STREAM).isPresent()) {
+            throw new IllegalArgumentException("Stream-scoped HTTP/3 signal reached the connection owner", cause);
+        }
+        if (!closeChildren(cause, StreamOutcome.ERROR)) {
+            return;
+        }
+        logDebug(() -> "state=connection-fail cause=%s"
+                .formatted(Http3RuntimeSupport.throwableSummary(cause)));
+        Http3ErrorCode errorCode = protocolException.map(Http3ProtocolException::errorCode)
+                .orElse(Http3ErrorCode.INTERNAL_ERROR);
+        QuicCloseCommand command = QuicCloseCommand.application(errorCode.code(), cause);
+        if (streamId.isPresent()) {
+            command = command.withStream(streamId.orElseThrow());
+        }
+        if (config.sendErrorDetails() && cause.getMessage() != null) {
+            command = command.withPeerDetail(cause.getMessage());
+        }
+        connection.terminate(command);
     }
 
     private boolean acceptRemoteStream(QuicReceiverStream stream) {
@@ -741,12 +760,6 @@ final class Http3ServerConnection implements Http3ControlStreamListener {
         }
     }
 
-    private static void addSuppressed(Throwable cause, Throwable cleanupFailure) {
-        if (cause != cleanupFailure) {
-            cause.addSuppressed(cleanupFailure);
-        }
-    }
-
     private void recordCleanupFailure(Throwable cause, Throwable failure) {
         addSuppressed(cause, failure);
         recordCleanupFailure(failure);
@@ -786,23 +799,20 @@ final class Http3ServerConnection implements Http3ControlStreamListener {
         }
     }
 
-    private static String goAwaySummary(Http3GoAway goAway) {
-        return goAway == null ? "none" : "0x" + Long.toHexString(goAway.identifier());
-    }
-
-    private static void updateMax(AtomicLong target, long candidate) {
-        for (;;) {
-            long current = target.get();
-            if (candidate <= current || target.compareAndSet(current, candidate)) {
-                return;
-            }
-        }
+    private enum Lifecycle {
+        OPEN,
+        DRAINING,
+        CLOSING,
+        CLOSED
     }
 
     interface StreamLifecycle {
         boolean requestStarted(Http3ServerConnection connection, Http3ServerStream stream);
 
         void requestCompleted(Http3ServerConnection connection, Http3ServerStream stream);
+    }
+
+    private record PrimedUniStream(QuicSenderStream stream, QuicStreamWriter writer) {
     }
 
     private final class StreamTask extends FutureTask<Void> {
@@ -850,15 +860,5 @@ final class Http3ServerConnection implements Http3ControlStreamListener {
         private void cancelAfterClose() {
             cancel(runner != Thread.currentThread());
         }
-    }
-
-    private enum Lifecycle {
-        OPEN,
-        DRAINING,
-        CLOSING,
-        CLOSED
-    }
-
-    private record PrimedUniStream(QuicSenderStream stream, QuicStreamWriter writer) {
     }
 }

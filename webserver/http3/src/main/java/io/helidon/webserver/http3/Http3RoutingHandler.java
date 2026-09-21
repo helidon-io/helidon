@@ -125,6 +125,16 @@ final class Http3RoutingHandler implements Http3Handler {
         }
     }
 
+    private static void consumeRequest(Http3ServerRequest serverRequest, Http3ServerStream stream) {
+        try {
+            serverRequest.content().consume();
+        } catch (RuntimeException e) {
+            if (stream.receiveErrorCode() != Http3ErrorCode.REQUEST_CANCELLED.code()) {
+                throw e;
+            }
+        }
+    }
+
     private HttpPrologue createPrologue(Http3Protocol.DecodedRequestHead request, Method method) {
         try {
             if (Method.CONNECT.equals(method)) {
@@ -225,16 +235,6 @@ final class Http3RoutingHandler implements Http3Handler {
     private boolean maxPayloadExceeded(long entitySize) {
         long maxPayloadSize = listenerContext.listenerContext().config().maxPayloadSize();
         return maxPayloadSize > -1 && entitySize > maxPayloadSize;
-    }
-
-    private static void consumeRequest(Http3ServerRequest serverRequest, Http3ServerStream stream) {
-        try {
-            serverRequest.content().consume();
-        } catch (RuntimeException e) {
-            if (stream.receiveErrorCode() != Http3ErrorCode.REQUEST_CANCELLED.code()) {
-                throw e;
-            }
-        }
     }
 
     private record AuthorityFormPath(String rawPath) implements UriPath {

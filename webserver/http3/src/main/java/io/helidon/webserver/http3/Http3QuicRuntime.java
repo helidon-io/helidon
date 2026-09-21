@@ -132,69 +132,6 @@ final class Http3QuicRuntime implements HttpQuicSubProtocolRuntime, Http3ServerC
         accept(connection, observation, Optional.of(Objects.requireNonNull(sniContext, "sniContext")));
     }
 
-    private void accept(QuicConnection connection,
-                        ConnectionObservation observation,
-                        Optional<SniContext> sniContext) {
-        Http3ServerConnection serverConnection = new Http3ServerConnection(bindingContext,
-                                                                           connection,
-                                                                           observation,
-                                                                           sniContext,
-                                                                           localSettings,
-                                                                           handler,
-                                                                           receiveFrameListener,
-                                                                           sendFrameListener,
-                                                                           streamOpenTimeout,
-                                                                           requestReadTimeout,
-                                                                           config,
-                                                                           this,
-                                                                           requestExecutor);
-        boolean accepted;
-        stateLock.lock();
-        try {
-            accepted = !shutdownStarted.get()
-                    && !draining
-                    && connections.putIfAbsent(connection, serverConnection) == null;
-        } finally {
-            stateLock.unlock();
-        }
-        if (!accepted) {
-            connection.log(LOGGER,
-                           System.Logger.Level.DEBUG,
-                           "state=connection-rejected connectionId=%s peer=%s reason=server-closing",
-                           connection.childSocketId(),
-                           connection.remotePeer().address());
-            serverConnection.close();
-            return;
-        }
-
-        connection.log(LOGGER,
-                       System.Logger.Level.DEBUG,
-                       "state=connection-accepted connectionId=%s peer=%s",
-                       connection.childSocketId(),
-                       connection.remotePeer().address());
-        observation.protocolSelected(PROTOCOL_HTTP_3);
-        connection.whenTerminated()
-                .whenComplete((cause, throwable) -> {
-                    StreamOutcome streamOutcome = cause != null
-                            && (isNormalTermination(cause)
-                                    || cause.kind() == QuicTermination.Kind.STATELESS_RESET)
-                            ? StreamOutcome.CANCELLED
-                            : StreamOutcome.ERROR;
-                    serverConnection.transportTerminated(cause == null ? throwable : cause.closeCause(),
-                                                         throwable,
-                                                         streamOutcome);
-                    serverConnection.whenTerminated().whenComplete((_, cleanupFailure) -> {
-                        connections.remove(connection, serverConnection);
-                        if (cleanupFailure != null) {
-                            logDebug(() -> "state=connection-cleanup-failed connectionId=%s cause=%s"
-                                    .formatted(connection.childSocketId(),
-                                               Http3RuntimeSupport.throwableSummary(cleanupFailure)));
-                        }
-                    });
-                });
-        serverConnection.start();
-    }
-
     @Override
     public TransportBinding.ShutdownResult closeGracefully(Duration gracePeriod) {
         Objects.requireNonNull(gracePeriod, "gracePeriod");
@@ -323,6 +260,74 @@ final class Http3QuicRuntime implements HttpQuicSubProtocolRuntime, Http3ServerC
         }
     }
 
+    private static long remainingNanos(long started, long budgetNanos) {
+        long elapsed = Math.max(0, System.nanoTime() - started);
+        return elapsed >= budgetNanos ? 0 : budgetNanos - elapsed;
+    }
+
+    private void accept(QuicConnection connection,
+                        ConnectionObservation observation,
+                        Optional<SniContext> sniContext) {
+        Http3ServerConnection serverConnection = new Http3ServerConnection(bindingContext,
+                                                                           connection,
+                                                                           observation,
+                                                                           sniContext,
+                                                                           localSettings,
+                                                                           handler,
+                                                                           receiveFrameListener,
+                                                                           sendFrameListener,
+                                                                           streamOpenTimeout,
+                                                                           requestReadTimeout,
+                                                                           config,
+                                                                           this,
+                                                                           requestExecutor);
+        boolean accepted;
+        stateLock.lock();
+        try {
+            accepted = !shutdownStarted.get()
+                    && !draining
+                    && connections.putIfAbsent(connection, serverConnection) == null;
+        } finally {
+            stateLock.unlock();
+        }
+        if (!accepted) {
+            connection.log(LOGGER,
+                           System.Logger.Level.DEBUG,
+                           "state=connection-rejected connectionId=%s peer=%s reason=server-closing",
+                           connection.childSocketId(),
+                           connection.remotePeer().address());
+            serverConnection.close();
+            return;
+        }
+
+        connection.log(LOGGER,
+                       System.Logger.Level.DEBUG,
+                       "state=connection-accepted connectionId=%s peer=%s",
+                       connection.childSocketId(),
+                       connection.remotePeer().address());
+        observation.protocolSelected(PROTOCOL_HTTP_3);
+        connection.whenTerminated()
+                .whenComplete((cause, throwable) -> {
+                    StreamOutcome streamOutcome = cause != null
+                            && (isNormalTermination(cause)
+                                    || cause.kind() == QuicTermination.Kind.STATELESS_RESET)
+                            ? StreamOutcome.CANCELLED
+                            : StreamOutcome.ERROR;
+                    serverConnection.transportTerminated(cause == null ? throwable : cause.closeCause(),
+                                                         throwable,
+                                                         streamOutcome);
+                    serverConnection.whenTerminated().whenComplete((_, cleanupFailure) -> {
+                        connections.remove(connection, serverConnection);
+                        if (cleanupFailure != null) {
+                            logDebug(() -> "state=connection-cleanup-failed connectionId=%s cause=%s"
+                                    .formatted(connection.childSocketId(),
+                                               Http3RuntimeSupport.throwableSummary(cleanupFailure)));
+                        }
+                    });
+                });
+        serverConnection.start();
+    }
+
     private boolean awaitCompletion(CompletableFuture<Void> completion,
                                     long drainStarted,
                                     long graceNanos,
@@ -349,11 +354,6 @@ final class Http3QuicRuntime implements HttpQuicSubProtocolRuntime, Http3ServerC
                                Http3RuntimeSupport.throwableSummary(Http3RuntimeSupport.unwrap(e))));
             return false;
         }
-    }
-
-    private static long remainingNanos(long started, long budgetNanos) {
-        long elapsed = Math.max(0, System.nanoTime() - started);
-        return elapsed >= budgetNanos ? 0 : budgetNanos - elapsed;
     }
 
     private List<Http3ServerConnection> closeNow() {
