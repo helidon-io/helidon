@@ -283,6 +283,84 @@ class Http3ConnectionReuseTest {
     }
 
     @Test
+    void shouldCompleteEquivalentQueuedRequestsOnceAndReuseDrainedConnection() throws Exception {
+        StreamHold hold = new StreamHold("/hold-equivalent-requests");
+        AtomicInteger queuedRequests = new AtomicInteger();
+        AtomicInteger drainedRequests = new AtomicInteger();
+        List<QuicConnection> acceptedConnections = new CopyOnWriteArrayList<>();
+        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, _, stream) -> {
+                 String path = request.path().orElseThrow();
+                 if (hold.path().equals(path)) {
+                     hold.begin(connection, stream);
+                     return null;
+                 }
+                 if ("/equivalent-queued".equals(path)) {
+                     queuedRequests.incrementAndGet();
+                 } else if ("/after-equivalent-queue".equals(path)) {
+                     drainedRequests.incrementAndGet();
+                 }
+                 return Http3RawTestServer.text(Status.OK_200.code(), connection.childSocketId());
+             }, acceptedConnections::add, 1)) {
+            Http3ClientProtocolConfig.Builder protocolConfig = Http3ClientProtocolConfig.builder()
+                    .streamOpenTimeout(Duration.ofSeconds(30));
+            Http3Client client = strictClientBuilder(protocolConfig)
+                    .baseUri(server.baseUri())
+                    .tls(server.clientTlsHttp3())
+                    .connectionCacheSize(1)
+                    .build();
+            List<AtomicInteger> completions = new ArrayList<>();
+
+            try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                try (Http3ClientResponse heldResponse = client.get(hold.path()).request()) {
+                    assertThat(heldResponse.status(), is(Status.OK_200));
+                    String connectionId = hold.connectionId();
+                    assertThat(acceptedConnections.size(), is(1));
+
+                    CountDownLatch requestsStarted = new CountDownLatch(3);
+                    List<CompletableFuture<String>> waitingRequests = new ArrayList<>();
+                    for (int i = 0; i < 3; i++) {
+                        AtomicInteger completionCount = new AtomicInteger();
+                        completions.add(completionCount);
+                        waitingRequests.add(CompletableFuture.supplyAsync(() -> {
+                            requestsStarted.countDown();
+                            return requestConnectionId(client, "/equivalent-queued");
+                        }, executor).whenComplete((_, _) -> completionCount.incrementAndGet()));
+                    }
+                    await(requestsStarted);
+                    for (CompletableFuture<String> waitingRequest : waitingRequests) {
+                        assertThrows(TimeoutException.class,
+                                     () -> waitingRequest.get(500, TimeUnit.MILLISECONDS));
+                    }
+                    assertThat(queuedRequests.get(), is(0));
+                    assertThat(acceptedConnections.size(), is(1));
+
+                    hold.complete();
+                    assertThat(heldResponse.as(String.class), is(connectionId));
+                    for (CompletableFuture<String> waitingRequest : waitingRequests) {
+                        assertThat(waitingRequest.get(10, TimeUnit.SECONDS), is(connectionId));
+                    }
+                    assertThat(queuedRequests.get(), is(3));
+                    assertThat(requestConnectionId(client, "/after-equivalent-queue"), is(connectionId));
+                    assertThat(drainedRequests.get(), is(1));
+                    assertThat(acceptedConnections.size(), is(1));
+                } finally {
+                    try {
+                        hold.completeIfRegistered();
+                    } finally {
+                        client.closeResource();
+                    }
+                }
+            } finally {
+                client.closeResource();
+            }
+
+            assertThat(completions.stream().map(AtomicInteger::get).toList(), is(List.of(1, 1, 1)));
+            assertThat(queuedRequests.get(), is(3));
+            assertThat(drainedRequests.get(), is(1));
+        }
+    }
+
+    @Test
     void shouldUseRecoveredSessionWhileAnotherSessionHandshakeRemainsPending() throws Exception {
         StreamHold hold = new StreamHold("/hold-during-handshake");
         AtomicInteger handshakeRequests = new AtomicInteger();
