@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.microstream.health;
 
+import java.lang.System.Logger;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +26,8 @@ import io.helidon.health.HealthCheckResponse;
 
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 
+import static java.lang.System.Logger.Level.TRACE;
+
 /**
  * Microstream health check.
  * @deprecated Microstream is renamed to Eclipse store and no longer updated
@@ -32,6 +35,7 @@ import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 @Deprecated(forRemoval = true, since = "4.2.1")
 public class MicrostreamHealthCheck implements HealthCheck {
 
+    private static final Logger LOGGER = System.getLogger(MicrostreamHealthCheck.class.getName());
     private static final String DEFAULT_NAME = "Microstream";
     private static final long DEFAULT_TIMEOUT_SECONDS = 10;
 
@@ -62,9 +66,8 @@ public class MicrostreamHealthCheck implements HealthCheck {
 
             builder.status(status.get());
         } catch (Throwable e) {
-            builder.status(false)
-                .detail("ErrorMessage", e.getMessage())
-                .detail("ErrorClass", e.getClass().getName());
+            builder.status(false);
+            LOGGER.log(TRACE, "Microstream health check failed", e);
         }
 
         return builder.build();
