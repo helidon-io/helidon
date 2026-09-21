@@ -239,14 +239,24 @@ public class ThroughputLimitTest {
 
     @ParameterizedTest
     @CsvSource({
-            "TOKEN_BUCKET, 101, ACCEPTED",
-            "FIXED_RATE, 101, ACCEPTED",
-            "TOKEN_BUCKET, 90, REJECTED",
-            "FIXED_RATE, 90, REJECTED"
+            "TOKEN_BUCKET, 10, 101, ACCEPTED, 101",
+            "FIXED_RATE, 10, 101, ACCEPTED, 101",
+            "TOKEN_BUCKET, 0, 150, ACCEPTED, 101",
+            "FIXED_RATE, 0, 150, ACCEPTED, 101",
+            "TOKEN_BUCKET, 0, 300, ACCEPTED, 101",
+            "FIXED_RATE, 0, 300, ACCEPTED, 101",
+            "TOKEN_BUCKET, 10, 90, REJECTED, 90",
+            "FIXED_RATE, 10, 90, REJECTED, 90",
+            "TOKEN_BUCKET, 0, 100, REJECTED, 100",
+            "FIXED_RATE, 0, 100, REJECTED, 100",
+            "TOKEN_BUCKET, 0, 0, REJECTED, 0",
+            "FIXED_RATE, 0, 0, REJECTED, 0"
     })
     void testQueuedFractionalRefillNearTimeout(RateLimitingAlgorithmType algorithm,
+                                              long elapsedMillis,
                                               long timeoutMillis,
-                                              LimitAlgorithm.Outcome.Disposition expectedDisposition) {
+                                              LimitAlgorithm.Outcome.Disposition expectedDisposition,
+                                              long maxElapsedMillis) {
         var clock = new TestNanoClock();
         var semaphore = new Semaphore(1) {
             @Override
@@ -268,17 +278,58 @@ public class ThroughputLimitTest {
                 .queueTimeout(Duration.ofMillis(timeoutMillis))
                 .build();
         assertAccepted(limiter, 1);
-        clock.advance(Duration.ofMillis(10));
+        clock.advance(Duration.ofMillis(elapsedMillis));
         long start = clock.getNanos();
 
         var outcome = limiter.tryAcquireOutcome(true);
 
         assertThat(outcome.disposition(), is(expectedDisposition));
         assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
-        assertThat("The queued acquisition must respect its timeout",
-                   clock.getNanos() - start, lessThanOrEqualTo(Duration.ofMillis(timeoutMillis).toNanos()));
+        assertThat("The queued acquisition must finish by the expected refill or timeout",
+                   clock.getNanos() - start, lessThanOrEqualTo(Duration.ofMillis(maxElapsedMillis).toNanos()));
         if (outcome instanceof LimitAlgorithm.Outcome.Accepted accepted) {
             accepted.token().success();
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(RateLimitingAlgorithmType.class)
+    void testInterruptedFinalRefill(RateLimitingAlgorithmType algorithm) {
+        var clock = new TestNanoClock();
+        var semaphore = new Semaphore(1) {
+            @Override
+            public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
+                if (timeout == 0) {
+                    throw new InterruptedException("Interrupted at the final acquisition");
+                }
+                if (super.tryAcquire()) {
+                    return true;
+                }
+                clock.advance(Duration.ofNanos(unit.toNanos(timeout)));
+                return false;
+            }
+        };
+        var limiter = ThroughputLimit.builder()
+                .amount(1)
+                .duration(Duration.ofNanos(100_500_000))
+                .rateLimitingAlgorithm(algorithm)
+                .semaphore(semaphore)
+                .clock(clock::getNanos)
+                .queueLength(1)
+                .queueTimeout(Duration.ofMillis(101))
+                .build();
+        assertAccepted(limiter, 1);
+        clock.advance(Duration.ofMillis(10));
+
+        try {
+            var outcome = limiter.tryAcquireOutcome(true);
+
+            assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
+            assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+            assertThat("Interrupted acquisition must leave the refilled permit available", semaphore.availablePermits(), is(1));
+        } finally {
+            Thread.interrupted();
         }
     }
 
