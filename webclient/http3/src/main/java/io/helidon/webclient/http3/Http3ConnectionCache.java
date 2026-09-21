@@ -17,13 +17,14 @@
 package io.helidon.webclient.http3;
 
 import java.time.Duration;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedSet;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -1396,7 +1397,8 @@ final class Http3ConnectionCache extends ClientConnectionCache {
         private final long epoch;
         private final int capacity;
         private final List<SessionSlot> slots = new ArrayList<>();
-        private final ArrayDeque<PendingRequest> queuedRequests = new ArrayDeque<>();
+        // PendingRequest uses identity equality; preserve FIFO without scanning on individual removal.
+        private final SequencedSet<PendingRequest> queuedRequests = new LinkedHashSet<>();
         private final Set<PendingRequest> activeRequests = Collections.newSetFromMap(new IdentityHashMap<>());
         private final Map<SessionSlot, ReservationAttempt> reservationAttempts = new IdentityHashMap<>();
         private final Map<SessionSlot, ClaimedReservation> claimedReservations = new IdentityHashMap<>();
@@ -1554,8 +1556,9 @@ final class Http3ConnectionCache extends ClientConnectionCache {
                     return actions;
                 }
                 activeRequests.add(pending);
-                queuedRequests.addLast(pending);
-                queuedRequestCount.incrementAndGet();
+                if (queuedRequests.add(pending)) {
+                    queuedRequestCount.incrementAndGet();
+                }
                 addReservationAttemptsLocked(actions, currentEpoch);
                 return actions;
             } finally {
@@ -1824,10 +1827,11 @@ final class Http3ConnectionCache extends ClientConnectionCache {
         }
 
         private PendingRequest pollQueuedRequestLocked() {
-            PendingRequest pending = queuedRequests.pollFirst();
-            if (pending != null) {
-                queuedRequestCount.decrementAndGet();
+            if (queuedRequests.isEmpty()) {
+                return null;
             }
+            PendingRequest pending = queuedRequests.removeFirst();
+            queuedRequestCount.decrementAndGet();
             return pending;
         }
 
