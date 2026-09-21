@@ -508,6 +508,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                                        CompletableFuture<WebClientServiceRequest> whenSent,
                                                        CompletableFuture<WebClientServiceResponse> whenComplete) {
 
+        redirectHeadersAfterServices = null;
         if (redirectedWhenSent != null) {
             whenSent.whenComplete((sentRequest, failure) -> {
                 if (failure == null) {
@@ -529,7 +530,9 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                              whenComplete,
                                              resolvedUri,
                                              callChain::prepareRequest);
-            redirectHeadersAfterServices = EntityWriterPreflight.copyOf(serviceResponse.serviceRequest().headers());
+            if (RedirectionProcessor.redirectionStatusCode(serviceResponse.status())) {
+                redirectHeadersAfterServices = EntityWriterPreflight.copyOf(serviceResponse.serviceRequest().headers());
+            }
         } catch (RuntimeException | Error e) {
             if (callChain.rawServiceResponse() != null) {
                 try {
