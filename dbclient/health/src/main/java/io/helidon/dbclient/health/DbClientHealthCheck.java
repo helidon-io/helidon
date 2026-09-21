@@ -96,8 +96,6 @@ public abstract class DbClientHealthCheck implements HealthCheck {
             builder.status(HealthCheckResponse.Status.UP);
         } catch (Throwable e) {
             builder.status(HealthCheckResponse.Status.DOWN);
-            builder.detail("ErrorMessage", e.getMessage());
-            builder.detail("ErrorClass", e.getClass().getName());
             LOGGER.log(System.Logger.Level.TRACE,
                     () -> String.format("Database %s is not responding: %s", dbClient.dbType(), e.getMessage()), e);
         }

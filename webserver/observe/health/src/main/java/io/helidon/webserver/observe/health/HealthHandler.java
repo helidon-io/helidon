@@ -23,7 +23,6 @@ import java.util.List;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.HtmlEncoder;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.json.JsonSupport;
@@ -61,8 +60,6 @@ class HealthHandler implements Handler {
             } catch (Exception e) {
                 response = HealthCheckResponse.builder()
                         .status(HealthCheckResponse.Status.ERROR)
-                        .detail("error", e.getClass().getName())
-                        .detail("message", HtmlEncoder.encode(e.getMessage()))
                         .build();
                 LOGGER.log(System.Logger.Level.ERROR, "Unexpected failure of health check", e);
             }

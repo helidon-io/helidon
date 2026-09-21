@@ -106,6 +106,16 @@ Types of Health Checks
 | readiness | whether the microservice is currently capable of doing its work                                      | `/health/ready`   | Diverts requests away from the instance; periodically rechecks readiness and resumes traffic once the microservice reports itself as ready.                         |
 | startup   | whether the microservice has initialized to the point where liveness and readiness checks might pass | `/health/started` | Treats the instance as still starting up; does not check liveness or readiness until the startup probe reports success or times out according to its configuration. |
 
+### Health Response Details
+
+Detailed health responses are enabled by default in Helidon MP. Unexpected check
+exceptions are logged on the server; the response retains the check name and
+error status but omits the exception class and message.
+
+Data explicitly returned by custom health checks is included without filtering.
+Keep credentials and sensitive backend information out of that data, and restrict
+access to health endpoints when application health data is confidential.
+
 ## Configuration
 
 Health checks may be configured using the following properties.

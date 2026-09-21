@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.integrations.microstream.health;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 import io.helidon.health.HealthCheckResponse;
 
@@ -55,6 +56,19 @@ class MicrostreamHealthTest {
         MicrostreamHealthCheck check = MicrostreamHealthCheck.create(embeddedStorageManager);
         HealthCheckResponse response = check.call();
         assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+    }
+
+    @Test
+    void failedCheckDoesNotExposeExceptionDetails() {
+        Mockito.when(embeddedStorageManager.isRunning()).thenThrow(new IllegalStateException(
+                "Storage initialization failed for internal-storage; password=health-secret"));
+        MicrostreamHealthCheck check = MicrostreamHealthCheck.create(embeddedStorageManager);
+
+        HealthCheckResponse response = check.call();
+
+        assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+        assertThat(response.details(), is(Map.of()));
+        assertThat(check.name(), is("Microstream"));
     }
 
     @Test

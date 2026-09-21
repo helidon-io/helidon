@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,16 +68,11 @@ public class Neo4jHealthCheck implements HealthCheck {
                 var resultSummary = result.consume();
                 var serverInfo = resultSummary.server();
 
-                var responseBuilder = builder
-                        .detail("server", serverInfo.protocolVersion() + "@" + serverInfo.address())
-                        .detail("edition", edition);
-
-                var databaseInfo = resultSummary.database();
-                if (!databaseInfo.name().trim().isBlank()) {
-                    responseBuilder.detail("database", databaseInfo.name().trim());
-                }
-
-                return responseBuilder.status(HealthCheckResponse.Status.UP).build();
+                return builder
+                        .detail("server", serverInfo.protocolVersion())
+                        .detail("edition", edition)
+                        .status(HealthCheckResponse.Status.UP)
+                        .build();
             });
         } catch (Exception e) {
             return builder.status(HealthCheckResponse.Status.DOWN).build();
