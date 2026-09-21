@@ -25,11 +25,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -259,7 +259,7 @@ public final class Http3LowLevelClient implements AutoCloseable {
         Objects.requireNonNull(method);
         Objects.requireNonNull(headers);
 
-        return request(connection, qpackContext, uri, method, headers);
+        return request(executor, connection, qpackContext, uri, method, headers);
     }
 
     @Override
@@ -323,7 +323,8 @@ public final class Http3LowLevelClient implements AutoCloseable {
         return current;
     }
 
-    private static DecodedResponse request(QuicConnection connection,
+    private static DecodedResponse request(ExecutorService executor,
+                                           QuicConnection connection,
                                            Http3QpackContext qpackContext,
                                            URI uri,
                                            String method,
@@ -345,13 +346,20 @@ public final class Http3LowLevelClient implements AutoCloseable {
                                                                               headers)),
                                         true);
             reader.activateReadTimeout();
-            Http3MessageReader.ResponseHead head = reader.readResponseHead(_ -> { });
-            int headersPayloadLength = Math.toIntExact(frames.headersPayloadLength);
-            BufferData body = BufferData.growing(256);
-            while (!reader.messageComplete()) {
-                body.write(reader.readEntityBufferWithTrailers(4096));
+            Future<DecodedResponse> response = executor.submit(() -> {
+                Http3MessageReader.ResponseHead head = reader.readResponseHead(_ -> { });
+                int headersPayloadLength = Math.toIntExact(frames.headersPayloadLength);
+                BufferData body = BufferData.growing(256);
+                while (!reader.messageComplete()) {
+                    body.write(reader.readEntityBufferWithTrailers(4096));
+                }
+                return DecodedResponse.create(head.status().code(), head.headers(), headersPayloadLength, body.readBytes());
+            });
+            try {
+                return await(response, 10, TimeUnit.SECONDS, "reading the HTTP/3 response from " + uri);
+            } finally {
+                response.cancel(true);
             }
-            return DecodedResponse.create(head.status().code(), head.headers(), headersPayloadLength, body.readBytes());
         }
     }
 
@@ -427,7 +435,7 @@ public final class Http3LowLevelClient implements AutoCloseable {
         return new RequestStream(stream, Http3StreamSupport.connectWriter(stream, connection));
     }
 
-    private static <T> T await(CompletableFuture<T> future,
+    private static <T> T await(Future<T> future,
                                long timeout,
                                TimeUnit unit,
                                String operation) {
