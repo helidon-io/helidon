@@ -40,10 +40,10 @@ module io.helidon.webserver.http3 {
 
     exports io.helidon.webserver.http3;
 
+    uses io.helidon.webserver.http.spi.SinkProvider;
+
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http3.Http3QuicProtocolProvider;
     provides io.helidon.webserver.quic.spi.QuicSubProtocolProvider
             with io.helidon.webserver.http3.Http3QuicProtocolProvider;
-
-    uses io.helidon.webserver.http.spi.SinkProvider;
 }
