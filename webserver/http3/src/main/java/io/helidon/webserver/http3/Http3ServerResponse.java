@@ -221,49 +221,6 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
         return outputStream(true);
     }
 
-    private OutputStream outputStream(Runnable responsePreparation) {
-        return outputStream(responsePreparation, true);
-    }
-
-    private OutputStream outputStream(boolean allowAutomaticEncoding) {
-        return outputStream(NO_OP, allowAutomaticEncoding);
-    }
-
-    private OutputStream outputStream(Runnable responsePreparation, boolean allowAutomaticEncoding) {
-        Objects.requireNonNull(responsePreparation, "responsePreparation");
-        if (preparingResponse) {
-            throw new IllegalStateException("Response preparation already in progress");
-        }
-        if (sent) {
-            throw new IllegalStateException("Response already sent");
-        }
-        if (streamingEntity) {
-            throw new IllegalStateException("OutputStream already obtained");
-        }
-
-        boolean noEntityResponse = prepareResponse(responsePreparation);
-        streamingEntity = true;
-        if (!noEntityResponse && !responseSemantics().tunnel()) {
-            ensureStreamResultTrailer();
-        }
-
-        int configuredWriteBufferSize = ctx.listenerContext().config().writeBufferSize();
-        outputStream = new StreamingEntityOutputStream(configuredWriteBufferSize <= 0
-                                                               ? 0
-                                                               : Math.min(configuredWriteBufferSize,
-                                                                          responseDispatchWindowSize),
-                                                       noEntityResponse);
-        if (noEntityResponse) {
-            if (isNoEntityStatus(status())) {
-                contentEncode(outputStream, false);
-            }
-            return new ApplicationOutputStream(outputStream, outputStream);
-        }
-        OutputStream encodedOutputStream = contentEncode(outputStream, allowAutomaticEncoding);
-        OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
-        return new ApplicationOutputStream(applicationOutputStream, outputStream);
-    }
-
     @Override
     public long bytesWritten() {
         return streamingEntity && outputStream != null ? outputStream.bytesWritten() : bytesWritten;
@@ -399,6 +356,67 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
         }
     }
 
+    private static boolean isNoEntityStatus(Status status) {
+        int statusCode = status.code();
+        return statusCode == Status.NO_CONTENT_204.code()
+                || statusCode == Status.RESET_CONTENT_205.code()
+                || statusCode == Status.NOT_MODIFIED_304.code();
+    }
+
+    private static void normalizeNoEntityHeaders(ServerResponseHeaders headers, Status status) {
+        int statusCode = status.code();
+        if (statusCode == Status.NO_CONTENT_204.code()) {
+            headers.remove(HeaderNames.CONTENT_LENGTH);
+        } else if (statusCode == Status.RESET_CONTENT_205.code()) {
+            headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+        }
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+        headers.remove(HeaderNames.TRAILER);
+    }
+
+    private OutputStream outputStream(Runnable responsePreparation) {
+        return outputStream(responsePreparation, true);
+    }
+
+    private OutputStream outputStream(boolean allowAutomaticEncoding) {
+        return outputStream(NO_OP, allowAutomaticEncoding);
+    }
+
+    private OutputStream outputStream(Runnable responsePreparation, boolean allowAutomaticEncoding) {
+        Objects.requireNonNull(responsePreparation, "responsePreparation");
+        if (preparingResponse) {
+            throw new IllegalStateException("Response preparation already in progress");
+        }
+        if (sent) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (streamingEntity) {
+            throw new IllegalStateException("OutputStream already obtained");
+        }
+
+        boolean noEntityResponse = prepareResponse(responsePreparation);
+        streamingEntity = true;
+        if (!noEntityResponse && !responseSemantics().tunnel()) {
+            ensureStreamResultTrailer();
+        }
+
+        int configuredWriteBufferSize = ctx.listenerContext().config().writeBufferSize();
+        outputStream = new StreamingEntityOutputStream(configuredWriteBufferSize <= 0
+                                                               ? 0
+                                                               : Math.min(configuredWriteBufferSize,
+                                                                          responseDispatchWindowSize),
+                                                       noEntityResponse);
+        if (noEntityResponse) {
+            if (isNoEntityStatus(status())) {
+                contentEncode(outputStream, false);
+            }
+            return new ApplicationOutputStream(outputStream, outputStream);
+        }
+        OutputStream encodedOutputStream = contentEncode(outputStream, allowAutomaticEncoding);
+        OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
+        return new ApplicationOutputStream(applicationOutputStream, outputStream);
+    }
+
     private void sendFinalResponse(byte[] actualBytes, int position, int length) {
         boolean trailersExpected = trailersExpected(headers);
         if (responseSemantics().dataAllowed() && length > 0) {
@@ -508,24 +526,6 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
         return responseSemantics().trailersAllowed() && headers.contains(HeaderNames.TRAILER);
     }
 
-    private static boolean isNoEntityStatus(Status status) {
-        int statusCode = status.code();
-        return statusCode == Status.NO_CONTENT_204.code()
-                || statusCode == Status.RESET_CONTENT_205.code()
-                || statusCode == Status.NOT_MODIFIED_304.code();
-    }
-
-    private static void normalizeNoEntityHeaders(ServerResponseHeaders headers, Status status) {
-        int statusCode = status.code();
-        if (statusCode == Status.NO_CONTENT_204.code()) {
-            headers.remove(HeaderNames.CONTENT_LENGTH);
-        } else if (statusCode == Status.RESET_CONTENT_205.code()) {
-            headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-        }
-        headers.remove(HeaderNames.TRANSFER_ENCODING);
-        headers.remove(HeaderNames.TRAILER);
-    }
-
     private Http3ResponseSemantics responseSemantics() {
         return Http3ResponseSemantics.create(request.prologue().method(), status());
     }
@@ -534,6 +534,85 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
         return Http3MessageReader.validateResponseHeaders(request.prologue().method(),
                                                           status(),
                                                           headers);
+    }
+
+    private static final class ApplicationOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private final StreamingEntityOutputStream networkOutputStream;
+
+        private ApplicationOutputStream(OutputStream delegate, StreamingEntityOutputStream networkOutputStream) {
+            this.delegate = Objects.requireNonNull(delegate, "output stream filter result");
+            this.networkOutputStream = networkOutputStream;
+        }
+
+        @Override
+        public void write(int value) throws IOException {
+            networkOutputStream.checkWriteAllowed(1);
+            try {
+                delegate.write(value);
+            } catch (IOException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            }
+        }
+
+        @Override
+        public void write(byte[] bytes) throws IOException {
+            networkOutputStream.checkWriteAllowed(bytes.length);
+            try {
+                delegate.write(bytes);
+            } catch (IOException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            }
+        }
+
+        @Override
+        public void write(byte[] bytes, int offset, int length) throws IOException {
+            networkOutputStream.checkWriteAllowed(length);
+            try {
+                delegate.write(bytes, offset, length);
+            } catch (IOException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            networkOutputStream.checkWriteAllowed(0);
+            try {
+                delegate.flush();
+            } catch (IOException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                delegate.close();
+            } catch (IOException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                networkOutputStream.failedWrite(e);
+                throw e;
+            }
+        }
     }
 
     private final class StreamingEntityOutputStream extends OutputStream {
@@ -839,85 +918,6 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
             if (!discardWrites) {
                 discardWrites = true;
                 writeFailure = e;
-            }
-        }
-    }
-
-    private static final class ApplicationOutputStream extends OutputStream {
-        private final OutputStream delegate;
-        private final StreamingEntityOutputStream networkOutputStream;
-
-        private ApplicationOutputStream(OutputStream delegate, StreamingEntityOutputStream networkOutputStream) {
-            this.delegate = Objects.requireNonNull(delegate, "output stream filter result");
-            this.networkOutputStream = networkOutputStream;
-        }
-
-        @Override
-        public void write(int value) throws IOException {
-            networkOutputStream.checkWriteAllowed(1);
-            try {
-                delegate.write(value);
-            } catch (IOException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            } catch (RuntimeException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            }
-        }
-
-        @Override
-        public void write(byte[] bytes) throws IOException {
-            networkOutputStream.checkWriteAllowed(bytes.length);
-            try {
-                delegate.write(bytes);
-            } catch (IOException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            } catch (RuntimeException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            }
-        }
-
-        @Override
-        public void write(byte[] bytes, int offset, int length) throws IOException {
-            networkOutputStream.checkWriteAllowed(length);
-            try {
-                delegate.write(bytes, offset, length);
-            } catch (IOException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            } catch (RuntimeException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            }
-        }
-
-        @Override
-        public void flush() throws IOException {
-            networkOutputStream.checkWriteAllowed(0);
-            try {
-                delegate.flush();
-            } catch (IOException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            } catch (RuntimeException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            }
-        }
-
-        @Override
-        public void close() throws IOException {
-            try {
-                delegate.close();
-            } catch (IOException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
-            } catch (RuntimeException e) {
-                networkOutputStream.failedWrite(e);
-                throw e;
             }
         }
     }

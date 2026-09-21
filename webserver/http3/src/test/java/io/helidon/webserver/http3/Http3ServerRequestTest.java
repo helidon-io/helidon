@@ -37,6 +37,32 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 class Http3ServerRequestTest {
+    static Http3ServerRequest request(ConnectionContext context) {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/3",
+                                                    "HTTP",
+                                                    "3",
+                                                    Method.GET,
+                                                    "/before/routing",
+                                                    true);
+        Http3ServerRequest.RequestMeta metadata = new Http3ServerRequest.RequestMeta(
+                1,
+                false,
+                _ -> BufferData.empty(),
+                () -> {
+                },
+                () -> {
+                },
+                null,
+                new Http3ServerRequest.EntityLimits(1024, 1024));
+        return Http3ServerRequest.create(context,
+                                         mock(HttpSecurity.class),
+                                         prologue,
+                                         ServerRequestHeaders.create(),
+                                         "example.com",
+                                         ContentDecoder.NO_OP,
+                                         metadata);
+    }
+
     @Test
     void matchingPatternSupplierIsLazyAndReplaceable() {
         Http3ServerRequest request = request(mock(ConnectionContext.class));
@@ -83,31 +109,5 @@ class Http3ServerRequestTest {
 
         assertThrows(NullPointerException.class, () -> request.path(null));
         assertThrows(NullPointerException.class, () -> request.prologue(null));
-    }
-
-    static Http3ServerRequest request(ConnectionContext context) {
-        HttpPrologue prologue = HttpPrologue.create("HTTP/3",
-                                                    "HTTP",
-                                                    "3",
-                                                    Method.GET,
-                                                    "/before/routing",
-                                                    true);
-        Http3ServerRequest.RequestMeta metadata = new Http3ServerRequest.RequestMeta(
-                1,
-                false,
-                _ -> BufferData.empty(),
-                () -> {
-                },
-                () -> {
-                },
-                null,
-                new Http3ServerRequest.EntityLimits(1024, 1024));
-        return Http3ServerRequest.create(context,
-                                         mock(HttpSecurity.class),
-                                         prologue,
-                                         ServerRequestHeaders.create(),
-                                         "example.com",
-                                         ContentDecoder.NO_OP,
-                                         metadata);
     }
 }

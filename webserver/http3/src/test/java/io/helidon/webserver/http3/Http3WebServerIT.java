@@ -3138,6 +3138,70 @@ class Http3WebServerIT {
         output.write((int) remaining);
     }
 
+    private static Headers headers(Header... headers) {
+        WritableHeaders<?> writable = WritableHeaders.create();
+        for (Header header : headers) {
+            writable.add(header);
+        }
+        return writable;
+    }
+
+    private static Tls serverTls() throws Exception {
+        Keys keys = Keys.builder()
+                .keystore(store -> store
+                        .passphrase(new String(KEY_PASSWORD))
+                        .keyAlias("server")
+                        .certChainAlias("server")
+                        .keystore(Resource.create(SERVER_KEYSTORE)))
+                .build();
+
+        return Tls.builder()
+                .privateKey(keys.privateKey().orElseThrow())
+                .privateKeyCertChain(keys.certChain())
+                .build();
+    }
+
+    private static Tls clientTls() {
+        return Tls.builder()
+                .trust(trust -> trust.keystore(store -> store
+                        .passphrase(new String(KEY_PASSWORD))
+                        .trustStore(true)
+                        .keystore(Resource.create(CLIENT_TRUSTSTORE))))
+                .applicationProtocols(List.of(Http3Client.PROTOCOL_ID))
+                .enabledProtocols(List.of("TLSv1.3"))
+                .build();
+    }
+
+    private static Tls clientTlsNoAlpn() {
+        return Tls.builder()
+                .trust(trust -> trust.keystore(store -> store
+                        .passphrase(new String(KEY_PASSWORD))
+                        .trustStore(true)
+                        .keystore(Resource.create(CLIENT_TRUSTSTORE))))
+                .build();
+    }
+
+    private static SSLContext clientSslContext() throws Exception {
+        KeyStore trustStore = loadStore(CLIENT_TRUSTSTORE);
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init(trustStore);
+
+        SSLContext clientContext = SSLContext.getInstance("TLS");
+        clientContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+        return clientContext;
+    }
+
+    private static KeyStore loadStore(String resourceName) throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        try (InputStream stream = Http3WebServerIT.class.getClassLoader().getResourceAsStream(resourceName)) {
+            if (stream == null) {
+                throw new IllegalStateException("Missing test resource: " + resourceName);
+            }
+            keyStore.load(stream, KEY_PASSWORD);
+        }
+        return keyStore;
+    }
+
     private static final class LowLevelHttp3Client implements AutoCloseable {
         private static final Duration STREAM_OPEN_TIMEOUT = Duration.ofSeconds(5);
         private static final long LOCAL_QPACK_MAX_TABLE_CAPACITY = 4096;
@@ -3159,6 +3223,19 @@ class Http3WebServerIT {
             this.connection = connection;
             this.qpackContext = qpackContext;
             this.controlWriter = controlWriter;
+        }
+
+        @Override
+        public void close() throws Exception {
+            try {
+                qpackContext.close(new IllegalStateException("HTTP/3 test client closed"));
+            } finally {
+                try {
+                    client.close();
+                } finally {
+                    executor.close();
+                }
+            }
         }
 
         private static LowLevelHttp3Client create(TestEnvironment environment) throws Exception {
@@ -3353,19 +3430,6 @@ class Http3WebServerIT {
                                         last);
         }
 
-        @Override
-        public void close() throws Exception {
-            try {
-                qpackContext.close(new IllegalStateException("HTTP/3 test client closed"));
-            } finally {
-                try {
-                    client.close();
-                } finally {
-                    executor.close();
-                }
-            }
-        }
-
         private record RequestStream(QuicBidiStream stream, QuicStreamWriter writer) {
         }
     }
@@ -3407,6 +3471,15 @@ class Http3WebServerIT {
             this.server = server;
             this.securePort = securePort;
             this.plainPort = plainPort;
+        }
+
+        @Override
+        public void close() {
+            try {
+                server.stop();
+            } finally {
+                executor.close();
+            }
         }
 
         private static TestEnvironment create() throws Exception {
@@ -3672,15 +3745,6 @@ class Http3WebServerIT {
             }
             return new URI("http", null, "localhost", plainPort, path, null, null);
         }
-
-        @Override
-        public void close() {
-            try {
-                server.stop();
-            } finally {
-                executor.close();
-            }
-        }
     }
 
     private static final class RawTestEnvironment implements AutoCloseable {
@@ -3697,6 +3761,15 @@ class Http3WebServerIT {
             this.clientSslContext = clientSslContext;
             this.server = server;
             this.securePort = securePort;
+        }
+
+        @Override
+        public void close() {
+            try {
+                server.close();
+            } finally {
+                executor.close();
+            }
         }
 
         private static RawTestEnvironment create(Http3Handler handler) throws Exception {
@@ -3725,78 +3798,5 @@ class Http3WebServerIT {
         private URI uri(String path) throws Exception {
             return new URI("https", null, "localhost", securePort, path, null, null);
         }
-
-        @Override
-        public void close() {
-            try {
-                server.close();
-            } finally {
-                executor.close();
-            }
-        }
-    }
-
-    private static Headers headers(Header... headers) {
-        WritableHeaders<?> writable = WritableHeaders.create();
-        for (Header header : headers) {
-            writable.add(header);
-        }
-        return writable;
-    }
-
-    private static Tls serverTls() throws Exception {
-        Keys keys = Keys.builder()
-                .keystore(store -> store
-                        .passphrase(new String(KEY_PASSWORD))
-                        .keyAlias("server")
-                        .certChainAlias("server")
-                        .keystore(Resource.create(SERVER_KEYSTORE)))
-                .build();
-
-        return Tls.builder()
-                .privateKey(keys.privateKey().orElseThrow())
-                .privateKeyCertChain(keys.certChain())
-                .build();
-    }
-
-    private static Tls clientTls() {
-        return Tls.builder()
-                .trust(trust -> trust.keystore(store -> store
-                        .passphrase(new String(KEY_PASSWORD))
-                        .trustStore(true)
-                        .keystore(Resource.create(CLIENT_TRUSTSTORE))))
-                .applicationProtocols(List.of(Http3Client.PROTOCOL_ID))
-                .enabledProtocols(List.of("TLSv1.3"))
-                .build();
-    }
-
-    private static Tls clientTlsNoAlpn() {
-        return Tls.builder()
-                .trust(trust -> trust.keystore(store -> store
-                        .passphrase(new String(KEY_PASSWORD))
-                        .trustStore(true)
-                        .keystore(Resource.create(CLIENT_TRUSTSTORE))))
-                .build();
-    }
-
-    private static SSLContext clientSslContext() throws Exception {
-        KeyStore trustStore = loadStore(CLIENT_TRUSTSTORE);
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory.init(trustStore);
-
-        SSLContext clientContext = SSLContext.getInstance("TLS");
-        clientContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
-        return clientContext;
-    }
-
-    private static KeyStore loadStore(String resourceName) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        try (InputStream stream = Http3WebServerIT.class.getClassLoader().getResourceAsStream(resourceName)) {
-            if (stream == null) {
-                throw new IllegalStateException("Missing test resource: " + resourceName);
-            }
-            keyStore.load(stream, KEY_PASSWORD);
-        }
-        return keyStore;
     }
 }
