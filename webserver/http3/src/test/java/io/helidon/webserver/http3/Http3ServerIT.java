@@ -520,253 +520,6 @@ class Http3ServerIT {
         };
     }
 
-    private static final class TestEnvironment implements AutoCloseable {
-        private final ExecutorService executor;
-        private final SSLContext clientSslContext;
-        private final RawHttp3TestServer server;
-
-        private TestEnvironment(ExecutorService executor,
-                                SSLContext clientSslContext,
-                                RawHttp3TestServer server) {
-            this.executor = executor;
-            this.clientSslContext = clientSslContext;
-            this.server = server;
-        }
-
-        private static TestEnvironment create() throws Exception {
-            return create(stream ->
-                                  Optional.of(Http3Handler.BufferedResponse.text(200,
-                                                                                 stream.request().method() + " "
-                                                                                         + stream.request().path().orElseThrow())));
-        }
-
-        private static TestEnvironment create(Http3Handler handler) throws Exception {
-            return create(handler, null);
-        }
-
-        private static TestEnvironment create(Duration requestReadTimeout, Http3Handler handler) throws Exception {
-            return create((_, stream) -> handler.handle(stream), null, requestReadTimeout);
-        }
-
-        private static TestEnvironment create(Http3Handler handler,
-                                              AtomicReference<RawHttp3TestServer> serverRef) throws Exception {
-            return create((_, stream) -> handler.handle(stream), serverRef);
-        }
-
-        private static TestEnvironment create(RawHttp3TestServer.ConnectionHandler handler,
-                                              AtomicReference<RawHttp3TestServer> serverRef) throws Exception {
-            return create(handler, serverRef, Duration.ZERO);
-        }
-
-        private static TestEnvironment create(RawHttp3TestServer.ConnectionHandler handler,
-                                              AtomicReference<RawHttp3TestServer> serverRef,
-                                              Duration requestReadTimeout) throws Exception {
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-
-            RawHttp3TestServer server = RawHttp3TestServer.create(executor,
-                                                                  new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
-                                                                  serverTls(),
-                                                                  List.of(QuicVersion.QUIC_V1),
-                                                                  requestReadTimeout,
-                                                                  handler);
-            if (serverRef != null) {
-                serverRef.set(server);
-            }
-            return new TestEnvironment(executor, Http3ServerIT.clientSslContext(), server);
-        }
-
-        private ExecutorService executor() {
-            return executor;
-        }
-
-        private SSLContext clientSslContext() {
-            return clientSslContext;
-        }
-
-        private Tls clientTls() {
-            return Http3ServerIT.clientTls();
-        }
-
-        private URI uri(String path) throws Exception {
-            return new URI("https", null, "localhost", server.localAddress().getPort(), path, null, null);
-        }
-
-        @Override
-        public void close() throws Exception {
-            try {
-                server.close();
-            } finally {
-                executor.close();
-            }
-        }
-    }
-
-    private static final class LowLevelHttp3Client implements AutoCloseable {
-        private static final Duration STREAM_OPEN_TIMEOUT = Duration.ofSeconds(5);
-        private static final long LOCAL_QPACK_MAX_TABLE_CAPACITY = 4096;
-        private static final int LOCAL_QPACK_BLOCKED_STREAMS = 16;
-
-        private final ExecutorService executor;
-        private final QuicClientRuntime client;
-        private final QuicClientConnection connection;
-        private final Http3QpackContext qpackContext;
-
-        private LowLevelHttp3Client(ExecutorService executor,
-                                    QuicClientRuntime client,
-                                    QuicClientConnection connection,
-                                    Http3QpackContext qpackContext) {
-            this.executor = executor;
-            this.client = client;
-            this.connection = connection;
-            this.qpackContext = qpackContext;
-        }
-
-        private static LowLevelHttp3Client create(TestEnvironment environment) throws Exception {
-            return create(environment, _ -> {
-            });
-        }
-
-        private static LowLevelHttp3Client create(TestEnvironment environment,
-                                                  Consumer<Http3GoAway> goAwayConsumer) throws Exception {
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-            QuicClientRuntime client = QuicClientRuntime.builder()
-                    .executor(executor)
-                    .quicConfig(QuicConfig.builder()
-                                        .availableVersions(List.of(QuicVersion.QUIC_V1))
-                                        .buildPrototype())
-                    .tls(environment.clientTls())
-                    .build();
-            Http3QpackContext qpackContext = Http3QpackContext.create(LOCAL_QPACK_MAX_TABLE_CAPACITY,
-                                                                      LOCAL_QPACK_BLOCKED_STREAMS,
-                                                                      16_384,
-                                                                      _ -> {
-                                                                      });
-
-            InetSocketAddress peerAddress =
-                    new InetSocketAddress(InetAddress.getLoopbackAddress(), environment.server.localAddress().getPort());
-            QuicClientConnection connection = client.createConnection(peerAddress,
-                                                                      peerAddress.getHostString(),
-                                                                      peerAddress.getPort(),
-                                                                      new String[] {Http3Client.PROTOCOL_ID});
-            Http3PeerCriticalStreams peerCriticalStreams = Http3PeerCriticalStreams.create();
-            connection.addRemoteStreamListener(stream -> {
-                if (stream instanceof QuicReceiverStream receiver && !(stream instanceof QuicBidiStream)) {
-                    Http3ControlStreamSupport.observe(receiver,
-                                                      qpackContext,
-                                                      peerCriticalStreams,
-                                                      connection,
-                                                      new Http3ControlStreamListener() {
-                                                          @Override
-                                                          public void onSettings(Http3Settings settings) {
-                                                              qpackContext.peerSettings(
-                                                                      settings.qpackMaxTableCapacity(),
-                                                                      settings.qpackBlockedStreams());
-                                                          }
-
-                                                          @Override
-                                                          public void onGoAway(Http3GoAway goAway) {
-                                                              goAwayConsumer.accept(goAway);
-                                                          }
-                                                      })
-                            .completion().exceptionally(throwable -> null);
-                    return true;
-                }
-                return false;
-            });
-            connection.startHandshake().get(20, TimeUnit.SECONDS);
-            primeControlStreams(connection, qpackContext);
-            return new LowLevelHttp3Client(executor, client, connection, qpackContext);
-        }
-
-        private static void primeControlStreams(QuicConnection connection,
-                                                Http3QpackContext qpackContext) throws Exception {
-            openAndPrimeUniStream(connection,
-                                  Http3Protocol.controlStreamPreamble(
-                                          Http3Settings.create(LOCAL_QPACK_MAX_TABLE_CAPACITY,
-                                                               LOCAL_QPACK_BLOCKED_STREAMS)),
-                                  Http3StreamType.CONTROL);
-            QuicStreamWriter encoderWriter = openAndPrimeUniStream(connection,
-                                                                   Http3Protocol.qpackUniStreamPreamble(
-                                                                           Http3StreamType.QPACK_ENCODER),
-                                                                   Http3StreamType.QPACK_ENCODER);
-            qpackContext.encoderInstructionsSender(bytes -> encoderWriter.scheduleForWriting(BufferData.create(bytes), false));
-            QuicStreamWriter decoderWriter = openAndPrimeUniStream(connection,
-                                                                   Http3Protocol.qpackUniStreamPreamble(
-                                                                           Http3StreamType.QPACK_DECODER),
-                                                                   Http3StreamType.QPACK_DECODER);
-            qpackContext.decoderInstructionsSender(bytes -> decoderWriter.scheduleForWriting(BufferData.create(bytes), false));
-        }
-
-        private static QuicStreamWriter openAndPrimeUniStream(QuicConnection connection,
-                                                              byte[] payload,
-                                                              Http3StreamType streamType) throws Exception {
-            QuicSenderStream stream = connection.openNewLocalUniStream(STREAM_OPEN_TIMEOUT)
-                    .get(10, TimeUnit.SECONDS);
-            QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream, connection, streamType);
-            writer.scheduleForWriting(BufferData.create(payload), false);
-            return writer;
-        }
-
-        private RequestStream openRequestStream() throws Exception {
-            QuicBidiStream stream = connection.openNewLocalBidiStream(STREAM_OPEN_TIMEOUT)
-                    .get(10, TimeUnit.SECONDS);
-            return new RequestStream(stream, Http3StreamSupport.connectWriter(stream, connection));
-        }
-
-        private DecodedResponse get(URI uri) throws Exception {
-            return request(uri, "GET", headers());
-        }
-
-        private DecodedResponse request(URI uri, String method, Headers headers) throws Exception {
-            RequestStream requestStream = openRequestStream();
-            CompletableFuture<byte[]> responseFuture = readAll(requestStream.stream());
-            requestStream.writer()
-                    .scheduleForWriting(BufferData.create(encodeRequestHeaders(requestStream, uri, method, headers)), true);
-            return decodeResponse(requestStream, responseFuture.get(10, TimeUnit.SECONDS));
-        }
-
-        private byte[] encodeRequestHeaders(RequestStream requestStream,
-                                            URI uri,
-                                            String method,
-                                            Headers headers) {
-            return Http3ServerIT.encodeRequestHeaders(qpackContext, requestStream.stream().streamId(), uri, method, headers);
-        }
-
-        private DecodedResponse decodeResponse(RequestStream requestStream, byte[] bytes) {
-            return Http3ServerIT.decodeResponse(qpackContext, requestStream.stream().streamId(), bytes);
-        }
-
-        private void sendHeaders(RequestStream requestStream, URI uri, int contentLength) {
-            requestStream.writer()
-                    .scheduleForWriting(BufferData.create(encodeRequestHeaders(requestStream,
-                                                                            uri,
-                                                                            "POST",
-                                                                            headers(HeaderValues.create(
-                                                                                            HeaderNames.CONTENT_LENGTH,
-                                                                                            contentLength),
-                                                                                    HeaderValues.create(
-                                                                                            HeaderNames.CONTENT_TYPE,
-                                                                                            "text/plain; charset=utf-8")))),
-                                        false);
-        }
-
-        private void sendData(RequestStream requestStream, byte[] data, boolean last) {
-            requestStream.writer().scheduleForWriting(BufferData.create(Http3Protocol.encodeDataFrame(data)), last);
-        }
-
-        @Override
-        public void close() throws Exception {
-            try {
-                client.close();
-            } finally {
-                executor.close();
-            }
-        }
-
-        private record RequestStream(QuicBidiStream stream, QuicStreamWriter writer) {
-        }
-    }
-
     private static Tls serverTls() throws Exception {
         Keys keys = Keys.builder()
                 .keystore(store -> store
@@ -915,6 +668,253 @@ class Http3ServerIT {
             return inputStream.readAllBytes();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private static final class TestEnvironment implements AutoCloseable {
+        private final ExecutorService executor;
+        private final SSLContext clientSslContext;
+        private final RawHttp3TestServer server;
+
+        private TestEnvironment(ExecutorService executor,
+                                SSLContext clientSslContext,
+                                RawHttp3TestServer server) {
+            this.executor = executor;
+            this.clientSslContext = clientSslContext;
+            this.server = server;
+        }
+
+        @Override
+        public void close() throws Exception {
+            try {
+                server.close();
+            } finally {
+                executor.close();
+            }
+        }
+
+        private static TestEnvironment create() throws Exception {
+            return create(stream ->
+                                  Optional.of(Http3Handler.BufferedResponse.text(200,
+                                                                                 stream.request().method() + " "
+                                                                                         + stream.request().path().orElseThrow())));
+        }
+
+        private static TestEnvironment create(Http3Handler handler) throws Exception {
+            return create(handler, null);
+        }
+
+        private static TestEnvironment create(Duration requestReadTimeout, Http3Handler handler) throws Exception {
+            return create((_, stream) -> handler.handle(stream), null, requestReadTimeout);
+        }
+
+        private static TestEnvironment create(Http3Handler handler,
+                                              AtomicReference<RawHttp3TestServer> serverRef) throws Exception {
+            return create((_, stream) -> handler.handle(stream), serverRef);
+        }
+
+        private static TestEnvironment create(RawHttp3TestServer.ConnectionHandler handler,
+                                              AtomicReference<RawHttp3TestServer> serverRef) throws Exception {
+            return create(handler, serverRef, Duration.ZERO);
+        }
+
+        private static TestEnvironment create(RawHttp3TestServer.ConnectionHandler handler,
+                                              AtomicReference<RawHttp3TestServer> serverRef,
+                                              Duration requestReadTimeout) throws Exception {
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+            RawHttp3TestServer server = RawHttp3TestServer.create(executor,
+                                                                  new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
+                                                                  serverTls(),
+                                                                  List.of(QuicVersion.QUIC_V1),
+                                                                  requestReadTimeout,
+                                                                  handler);
+            if (serverRef != null) {
+                serverRef.set(server);
+            }
+            return new TestEnvironment(executor, Http3ServerIT.clientSslContext(), server);
+        }
+
+        private ExecutorService executor() {
+            return executor;
+        }
+
+        private SSLContext clientSslContext() {
+            return clientSslContext;
+        }
+
+        private Tls clientTls() {
+            return Http3ServerIT.clientTls();
+        }
+
+        private URI uri(String path) throws Exception {
+            return new URI("https", null, "localhost", server.localAddress().getPort(), path, null, null);
+        }
+    }
+
+    private static final class LowLevelHttp3Client implements AutoCloseable {
+        private static final Duration STREAM_OPEN_TIMEOUT = Duration.ofSeconds(5);
+        private static final long LOCAL_QPACK_MAX_TABLE_CAPACITY = 4096;
+        private static final int LOCAL_QPACK_BLOCKED_STREAMS = 16;
+
+        private final ExecutorService executor;
+        private final QuicClientRuntime client;
+        private final QuicClientConnection connection;
+        private final Http3QpackContext qpackContext;
+
+        private LowLevelHttp3Client(ExecutorService executor,
+                                    QuicClientRuntime client,
+                                    QuicClientConnection connection,
+                                    Http3QpackContext qpackContext) {
+            this.executor = executor;
+            this.client = client;
+            this.connection = connection;
+            this.qpackContext = qpackContext;
+        }
+
+        @Override
+        public void close() throws Exception {
+            try {
+                client.close();
+            } finally {
+                executor.close();
+            }
+        }
+
+        private static LowLevelHttp3Client create(TestEnvironment environment) throws Exception {
+            return create(environment, _ -> {
+            });
+        }
+
+        private static LowLevelHttp3Client create(TestEnvironment environment,
+                                                  Consumer<Http3GoAway> goAwayConsumer) throws Exception {
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+            QuicClientRuntime client = QuicClientRuntime.builder()
+                    .executor(executor)
+                    .quicConfig(QuicConfig.builder()
+                                        .availableVersions(List.of(QuicVersion.QUIC_V1))
+                                        .buildPrototype())
+                    .tls(environment.clientTls())
+                    .build();
+            Http3QpackContext qpackContext = Http3QpackContext.create(LOCAL_QPACK_MAX_TABLE_CAPACITY,
+                                                                      LOCAL_QPACK_BLOCKED_STREAMS,
+                                                                      16_384,
+                                                                      _ -> {
+                                                                      });
+
+            InetSocketAddress peerAddress =
+                    new InetSocketAddress(InetAddress.getLoopbackAddress(), environment.server.localAddress().getPort());
+            QuicClientConnection connection = client.createConnection(peerAddress,
+                                                                      peerAddress.getHostString(),
+                                                                      peerAddress.getPort(),
+                                                                      new String[] {Http3Client.PROTOCOL_ID});
+            Http3PeerCriticalStreams peerCriticalStreams = Http3PeerCriticalStreams.create();
+            connection.addRemoteStreamListener(stream -> {
+                if (stream instanceof QuicReceiverStream receiver && !(stream instanceof QuicBidiStream)) {
+                    Http3ControlStreamSupport.observe(receiver,
+                                                      qpackContext,
+                                                      peerCriticalStreams,
+                                                      connection,
+                                                      new Http3ControlStreamListener() {
+                                                          @Override
+                                                          public void onSettings(Http3Settings settings) {
+                                                              qpackContext.peerSettings(
+                                                                      settings.qpackMaxTableCapacity(),
+                                                                      settings.qpackBlockedStreams());
+                                                          }
+
+                                                          @Override
+                                                          public void onGoAway(Http3GoAway goAway) {
+                                                              goAwayConsumer.accept(goAway);
+                                                          }
+                                                      })
+                            .completion().exceptionally(throwable -> null);
+                    return true;
+                }
+                return false;
+            });
+            connection.startHandshake().get(20, TimeUnit.SECONDS);
+            primeControlStreams(connection, qpackContext);
+            return new LowLevelHttp3Client(executor, client, connection, qpackContext);
+        }
+
+        private static void primeControlStreams(QuicConnection connection,
+                                                Http3QpackContext qpackContext) throws Exception {
+            openAndPrimeUniStream(connection,
+                                  Http3Protocol.controlStreamPreamble(
+                                          Http3Settings.create(LOCAL_QPACK_MAX_TABLE_CAPACITY,
+                                                               LOCAL_QPACK_BLOCKED_STREAMS)),
+                                  Http3StreamType.CONTROL);
+            QuicStreamWriter encoderWriter = openAndPrimeUniStream(connection,
+                                                                   Http3Protocol.qpackUniStreamPreamble(
+                                                                           Http3StreamType.QPACK_ENCODER),
+                                                                   Http3StreamType.QPACK_ENCODER);
+            qpackContext.encoderInstructionsSender(bytes -> encoderWriter.scheduleForWriting(BufferData.create(bytes), false));
+            QuicStreamWriter decoderWriter = openAndPrimeUniStream(connection,
+                                                                   Http3Protocol.qpackUniStreamPreamble(
+                                                                           Http3StreamType.QPACK_DECODER),
+                                                                   Http3StreamType.QPACK_DECODER);
+            qpackContext.decoderInstructionsSender(bytes -> decoderWriter.scheduleForWriting(BufferData.create(bytes), false));
+        }
+
+        private static QuicStreamWriter openAndPrimeUniStream(QuicConnection connection,
+                                                              byte[] payload,
+                                                              Http3StreamType streamType) throws Exception {
+            QuicSenderStream stream = connection.openNewLocalUniStream(STREAM_OPEN_TIMEOUT)
+                    .get(10, TimeUnit.SECONDS);
+            QuicStreamWriter writer = Http3StreamSupport.connectWriter(stream, connection, streamType);
+            writer.scheduleForWriting(BufferData.create(payload), false);
+            return writer;
+        }
+
+        private RequestStream openRequestStream() throws Exception {
+            QuicBidiStream stream = connection.openNewLocalBidiStream(STREAM_OPEN_TIMEOUT)
+                    .get(10, TimeUnit.SECONDS);
+            return new RequestStream(stream, Http3StreamSupport.connectWriter(stream, connection));
+        }
+
+        private DecodedResponse get(URI uri) throws Exception {
+            return request(uri, "GET", headers());
+        }
+
+        private DecodedResponse request(URI uri, String method, Headers headers) throws Exception {
+            RequestStream requestStream = openRequestStream();
+            CompletableFuture<byte[]> responseFuture = readAll(requestStream.stream());
+            requestStream.writer()
+                    .scheduleForWriting(BufferData.create(encodeRequestHeaders(requestStream, uri, method, headers)), true);
+            return decodeResponse(requestStream, responseFuture.get(10, TimeUnit.SECONDS));
+        }
+
+        private byte[] encodeRequestHeaders(RequestStream requestStream,
+                                            URI uri,
+                                            String method,
+                                            Headers headers) {
+            return Http3ServerIT.encodeRequestHeaders(qpackContext, requestStream.stream().streamId(), uri, method, headers);
+        }
+
+        private DecodedResponse decodeResponse(RequestStream requestStream, byte[] bytes) {
+            return Http3ServerIT.decodeResponse(qpackContext, requestStream.stream().streamId(), bytes);
+        }
+
+        private void sendHeaders(RequestStream requestStream, URI uri, int contentLength) {
+            requestStream.writer()
+                    .scheduleForWriting(BufferData.create(encodeRequestHeaders(requestStream,
+                                                                            uri,
+                                                                            "POST",
+                                                                            headers(HeaderValues.create(
+                                                                                            HeaderNames.CONTENT_LENGTH,
+                                                                                            contentLength),
+                                                                                    HeaderValues.create(
+                                                                                            HeaderNames.CONTENT_TYPE,
+                                                                                            "text/plain; charset=utf-8")))),
+                                        false);
+        }
+
+        private void sendData(RequestStream requestStream, byte[] data, boolean last) {
+            requestStream.writer().scheduleForWriting(BufferData.create(Http3Protocol.encodeDataFrame(data)), last);
+        }
+
+        private record RequestStream(QuicBidiStream stream, QuicStreamWriter writer) {
         }
     }
 

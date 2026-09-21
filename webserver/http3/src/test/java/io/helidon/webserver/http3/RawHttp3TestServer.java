@@ -150,33 +150,6 @@ final class RawHttp3TestServer implements AutoCloseable {
                       (_, stream) -> handler.handle(stream));
     }
 
-    private static RawHttp3TestServer create(String listenerName,
-                                             Executor executor,
-                                             InetSocketAddress bindAddress,
-                                             Tls tls,
-                                             List<QuicVersion> availableVersions,
-                                             long qpackMaxTableCapacity,
-                                             int qpackBlockedStreams,
-                                             Duration streamOpenTimeout,
-                                             Duration requestReadTimeout,
-                                             ConnectionHandler handler) {
-        RawRuntime runtime = new RawRuntime(listenerName,
-                                            handler,
-                                            qpackMaxTableCapacity,
-                                            qpackBlockedStreams,
-                                            streamOpenTimeout,
-                                            requestReadTimeout,
-                                            executor);
-        QuicServerRuntime server = createQuicServer(listenerName,
-                                                    executor,
-                                                    bindAddress,
-                                                    tls,
-                                                    QuicConfig.builder()
-                                                            .availableVersions(availableVersions)
-                                                            .buildPrototype());
-        return new RawHttp3TestServer(listenerName, server, runtime);
-    }
-
     static QuicServerRuntime createQuicServer(String listenerName,
                                               Executor executor,
                                               InetSocketAddress bindAddress,
@@ -191,10 +164,6 @@ final class RawHttp3TestServer implements AutoCloseable {
                 .applicationErrors(Http3RuntimeSupport.applicationErrors())
                 .quicConfig(quicConfig)
                 .build();
-    }
-
-    InetSocketAddress localAddress() {
-        return quicServer.localAddress();
     }
 
     static InputStream requestBodyInputStream(Http3ServerStream stream) {
@@ -251,6 +220,10 @@ final class RawHttp3TestServer implements AutoCloseable {
         };
     }
 
+    InetSocketAddress localAddress() {
+        return quicServer.localAddress();
+    }
+
     void sendGoAway(QuicConnection connection, Http3GoAway goAway) {
         runtime.sendGoAway(connection, goAway);
     }
@@ -285,6 +258,33 @@ final class RawHttp3TestServer implements AutoCloseable {
                 runtime.close();
             }
         }
+    }
+
+    private static RawHttp3TestServer create(String listenerName,
+                                             Executor executor,
+                                             InetSocketAddress bindAddress,
+                                             Tls tls,
+                                             List<QuicVersion> availableVersions,
+                                             long qpackMaxTableCapacity,
+                                             int qpackBlockedStreams,
+                                             Duration streamOpenTimeout,
+                                             Duration requestReadTimeout,
+                                             ConnectionHandler handler) {
+        RawRuntime runtime = new RawRuntime(listenerName,
+                                            handler,
+                                            qpackMaxTableCapacity,
+                                            qpackBlockedStreams,
+                                            streamOpenTimeout,
+                                            requestReadTimeout,
+                                            executor);
+        QuicServerRuntime server = createQuicServer(listenerName,
+                                                    executor,
+                                                    bindAddress,
+                                                    tls,
+                                                    QuicConfig.builder()
+                                                            .availableVersions(availableVersions)
+                                                            .buildPrototype());
+        return new RawHttp3TestServer(listenerName, server, runtime);
     }
 
     private void acceptLoop() {
@@ -353,6 +353,78 @@ final class RawHttp3TestServer implements AutoCloseable {
             this.requestReadTimeout = Objects.requireNonNull(requestReadTimeout, "requestReadTimeout");
             this.requestExecutor = Objects.requireNonNull(requestExecutor, "requestExecutor");
             this.bindingContext = bindingContext(requestExecutor);
+        }
+
+        @Override
+        public void close() {
+            if (shutdownStarted.compareAndSet(false, true)) {
+                closeNow();
+            }
+        }
+
+        @Override
+        public boolean requestStarted(Http3ServerConnection connection, Http3ServerStream stream) {
+            stateLock.lock();
+            try {
+                if (draining || shutdownStarted.get() || connection.rejectsStream(stream.streamId())) {
+                    return false;
+                }
+                activeStreams++;
+                return true;
+            } finally {
+                stateLock.unlock();
+            }
+        }
+
+        @Override
+        public void requestCompleted(Http3ServerConnection connection, Http3ServerStream stream) {
+            CompletableFuture<Void> localDrainCompletion = null;
+            stateLock.lock();
+            try {
+                if (activeStreams == 0) {
+                    LOGGER.log(System.Logger.Level.ERROR,
+                               "Raw HTTP/3 request completed without active stream accounting on listener {0}",
+                               listenerName);
+                    return;
+                }
+                activeStreams--;
+                if (draining && activeStreams == 0 && drainCompletion != null) {
+                    localDrainCompletion = drainCompletion;
+                }
+            } finally {
+                stateLock.unlock();
+            }
+            if (localDrainCompletion != null) {
+                localDrainCompletion.complete(null);
+            }
+        }
+
+        private static boolean isNormalTermination(QuicTermination termination) {
+            if (termination.kind() == QuicTermination.Kind.CONNECTION_CLOSE
+                    && termination.layer() == QuicTermination.Layer.APPLICATION) {
+                return termination.cause().isEmpty()
+                        && termination.errorCode().orElse(-1) == Http3ErrorCode.NO_ERROR.code();
+            }
+            return termination.cause().isEmpty()
+                    && (termination.kind() == QuicTermination.Kind.SILENT
+                            || termination.errorCode().orElse(-1) == 0);
+        }
+
+        private static long remainingNanos(long started, long budgetNanos) {
+            long elapsed = Math.max(0, System.nanoTime() - started);
+            return elapsed >= budgetNanos ? 0 : budgetNanos - elapsed;
+        }
+
+        private static TransportBindingContext bindingContext(Executor executor) {
+            TransportBindingContext context = mock(TransportBindingContext.class);
+            ListenerContext listenerContext = mock(ListenerContext.class);
+            when(context.listenerContext()).thenReturn(listenerContext);
+            when(context.router()).thenReturn(mock(Router.class));
+            when(context.requestLimit()).thenReturn(FixedLimit.create());
+            if (executor instanceof ExecutorService executorService) {
+                when(listenerContext.executor()).thenReturn(executorService);
+            }
+            return context;
         }
 
         private void accept(QuicConnection connection, ConnectionObservation observation) {
@@ -458,50 +530,6 @@ final class RawHttp3TestServer implements AutoCloseable {
             }
         }
 
-        @Override
-        public void close() {
-            if (shutdownStarted.compareAndSet(false, true)) {
-                closeNow();
-            }
-        }
-
-        @Override
-        public boolean requestStarted(Http3ServerConnection connection, Http3ServerStream stream) {
-            stateLock.lock();
-            try {
-                if (draining || shutdownStarted.get() || connection.rejectsStream(stream.streamId())) {
-                    return false;
-                }
-                activeStreams++;
-                return true;
-            } finally {
-                stateLock.unlock();
-            }
-        }
-
-        @Override
-        public void requestCompleted(Http3ServerConnection connection, Http3ServerStream stream) {
-            CompletableFuture<Void> localDrainCompletion = null;
-            stateLock.lock();
-            try {
-                if (activeStreams == 0) {
-                    LOGGER.log(System.Logger.Level.ERROR,
-                               "Raw HTTP/3 request completed without active stream accounting on listener {0}",
-                               listenerName);
-                    return;
-                }
-                activeStreams--;
-                if (draining && activeStreams == 0 && drainCompletion != null) {
-                    localDrainCompletion = drainCompletion;
-                }
-            } finally {
-                stateLock.unlock();
-            }
-            if (localDrainCompletion != null) {
-                localDrainCompletion.complete(null);
-            }
-        }
-
         private void awaitCompletion(CompletableFuture<Void> completion, long started, long budgetNanos) {
             try {
                 if (completion.isDone()) {
@@ -526,34 +554,6 @@ final class RawHttp3TestServer implements AutoCloseable {
 
         private void closeNow() {
             List.copyOf(connections.values()).forEach(Http3ServerConnection::close);
-        }
-
-        private static boolean isNormalTermination(QuicTermination termination) {
-            if (termination.kind() == QuicTermination.Kind.CONNECTION_CLOSE
-                    && termination.layer() == QuicTermination.Layer.APPLICATION) {
-                return termination.cause().isEmpty()
-                        && termination.errorCode().orElse(-1) == Http3ErrorCode.NO_ERROR.code();
-            }
-            return termination.cause().isEmpty()
-                    && (termination.kind() == QuicTermination.Kind.SILENT
-                            || termination.errorCode().orElse(-1) == 0);
-        }
-
-        private static long remainingNanos(long started, long budgetNanos) {
-            long elapsed = Math.max(0, System.nanoTime() - started);
-            return elapsed >= budgetNanos ? 0 : budgetNanos - elapsed;
-        }
-
-        private static TransportBindingContext bindingContext(Executor executor) {
-            TransportBindingContext context = mock(TransportBindingContext.class);
-            ListenerContext listenerContext = mock(ListenerContext.class);
-            when(context.listenerContext()).thenReturn(listenerContext);
-            when(context.router()).thenReturn(mock(Router.class));
-            when(context.requestLimit()).thenReturn(FixedLimit.create());
-            if (executor instanceof ExecutorService executorService) {
-                when(listenerContext.executor()).thenReturn(executorService);
-            }
-            return context;
         }
     }
 
