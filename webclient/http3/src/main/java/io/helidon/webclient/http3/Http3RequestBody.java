@@ -27,6 +27,7 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.EntityWriterPreflight;
@@ -110,6 +111,9 @@ final class Http3RequestBody {
     EntityWriterPreflight.Application prepare(ClientRequestHeaders headers,
                                               Context context,
                                               int bufferCapacity) {
+        if (bytes != null && (bytes.length > 0 || headers.contains(HeaderNames.CONTENT_LENGTH))) {
+            headers.contentLength(bytes.length);
+        }
         if (entityWriter == null) {
             return null;
         }

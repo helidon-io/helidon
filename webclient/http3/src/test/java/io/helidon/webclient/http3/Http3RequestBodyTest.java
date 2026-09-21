@@ -23,6 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.context.Context;
+import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -110,6 +114,48 @@ class Http3RequestBodyTest {
         assertThat(materialized.contentLength(), is(OptionalLong.of(13)));
         assertThat(declaredStreaming.contentLength(), is(OptionalLong.of(21)));
         assertThat(unknownStreaming.contentLength(), is(OptionalLong.empty()));
+    }
+
+    @Test
+    void shouldPrepareMaterializedContentLengthFromActualBytes() {
+        for (long declaredLength : new long[] {-1, 3, 6}) {
+            ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+            if (declaredLength >= 0) {
+                headers.contentLength(declaredLength);
+            }
+            Http3RequestBody body = Http3RequestBody.create(new byte[5]);
+
+            body.prepare(headers, Context.create(), 16);
+
+            assertThat("Buffered length must replace service length " + declaredLength,
+                       headers.contentLength(),
+                       is(OptionalLong.of(5)));
+        }
+    }
+
+    @Test
+    void shouldCorrectEmptyBodyLengthWithoutAddingUnneededHeader() {
+        Http3RequestBody body = Http3RequestBody.create(new byte[0]);
+        ClientRequestHeaders declared = ClientRequestHeaders.create(WritableHeaders.create());
+        declared.contentLength(6);
+        ClientRequestHeaders absent = ClientRequestHeaders.create(WritableHeaders.create());
+
+        body.prepare(declared, Context.create(), 16);
+        body.prepare(absent, Context.create(), 16);
+
+        assertThat(declared.contentLength(), is(OptionalLong.of(0)));
+        assertThat(absent.contains(HeaderNames.CONTENT_LENGTH), is(false));
+    }
+
+    @Test
+    void shouldPreserveServiceFinalStreamingLength() {
+        Http3RequestBody body = Http3RequestBody.create(_ -> { }, 21);
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        headers.contentLength(6);
+
+        body.prepare(headers, Context.create(), 16);
+
+        assertThat(headers.contentLength(), is(OptionalLong.of(6)));
     }
 
     @Test
