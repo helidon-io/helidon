@@ -137,12 +137,11 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http3WebServerIT {
@@ -357,7 +356,7 @@ class Http3WebServerIT {
                 while (validationFailure.getCause() != null) {
                     validationFailure = validationFailure.getCause();
                 }
-                assertInstanceOf(IllegalArgumentException.class, validationFailure);
+                assertThat(validationFailure, instanceOf(IllegalArgumentException.class));
                 assertThat(validationFailure.getMessage(),
                            containsString("header value is invalid for header 'x-malformed'"));
                 assertThat(routed.get(), equalTo(false));
@@ -659,7 +658,7 @@ class Http3WebServerIT {
             Http3MessageReader slowReader = client.responseReader(slowRequest, Method.GET);
             assertThat(slowReader.readResponseHead(_ -> {
             }).status().code(), equalTo(200));
-            assertArrayEquals(expectedBody, readMessageBody(slowReader));
+            assertThat(readMessageBody(slowReader), equalTo(expectedBody));
             assertThat(slowHandlerCompleted.await(5, TimeUnit.SECONDS), equalTo(true));
         }
     }
@@ -717,7 +716,7 @@ class Http3WebServerIT {
             });
             assertThat(reader.readResponseHead(_ -> {
             }).status().code(), equalTo(200));
-            assertArrayEquals(expectedBody, readMessageBody(reader));
+            assertThat(readMessageBody(reader), equalTo(expectedBody));
             assertThat(handlerCompleted.await(5, TimeUnit.SECONDS), equalTo(true));
             assertThat(dataFrameCount.get(), greaterThan(1));
             assertThat(largestDataFrame.get(), lessThanOrEqualTo(4_096L));
