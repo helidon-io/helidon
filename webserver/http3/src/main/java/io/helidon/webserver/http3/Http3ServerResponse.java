@@ -125,6 +125,7 @@ final class Http3ServerResponse extends ServerResponseBase<Http3ServerResponse> 
 
     @Override
     public void send(byte[] entityBytes, int position, int length) {
+        Objects.requireNonNull(entityBytes, "entityBytes");
         if (preparingResponse) {
             throw new IllegalStateException("Response preparation already in progress");
         }
