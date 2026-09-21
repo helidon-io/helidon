@@ -502,10 +502,11 @@ class Http1ClientTest {
         }
 
         try (HttpClientResponse response = injectedHttp1client.put("/redirect")
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(REQUEST_METADATA_HEADER, "preserved")
                 .submit("Test entity")) {
-            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
             assertThat(response.lastEndpointUri().path().path(), is("/afterRedirect"));
-            assertThat(response.as(String.class), is(EXPECTED_GET_AFTER_REDIRECT_STRING));
         }
     }
 
@@ -527,7 +528,7 @@ class Http1ClientTest {
     }
 
     @Test
-    void testSameMethodRedirectDropsEntityHeaders() {
+    void testSeeOtherRedirectDropsEntityHeadersWithSameMethod() {
         try (HttpClientResponse response = injectedHttp1client.get("/redirectDropEntity")
                 .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
                 .header(REQUEST_METADATA_HEADER, "preserved")
@@ -966,7 +967,7 @@ class Http1ClientTest {
     }
 
     private static void redirectDropEntity(ServerRequest req, ServerResponse res) {
-        res.status(Status.FOUND_302)
+        res.status(Status.SEE_OTHER_303)
                 .header(HeaderNames.LOCATION, "/afterDropEntity")
                 .send();
     }
