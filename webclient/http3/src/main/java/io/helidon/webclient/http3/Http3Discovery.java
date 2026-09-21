@@ -95,105 +95,6 @@ final class Http3Discovery {
         }
     }
 
-    private Optional<Selection> select(EndpointContextKey key,
-                                       boolean altSvcEnabled,
-                                       Target defaultTarget,
-                                       Predicate<Target> hasSession) {
-        Objects.requireNonNull(key, "key");
-        Objects.requireNonNull(hasSession, "hasSession");
-        List<Map.Entry<EndpointContextKey, Target>> invalidations = null;
-        lock.lock();
-        try {
-            DiscoveryKey routeKey = key.discoveryKey();
-            RouteState state = routes.get(routeKey);
-            if (state == null) {
-                if (defaultTarget == null) {
-                    return Optional.empty();
-                }
-                state = new RouteState(nextGeneration(), null, null, null, null, null, null, exactKeys(key));
-                invalidations = putState(routeKey, state, invalidations);
-                return Optional.of(new Selection(key,
-                                                 defaultTarget,
-                                                 state.generation(),
-                                                 networkGeneration,
-                                                 true,
-                                                 clock));
-            }
-            EndpointContextKey evictedKey = registerExactKey(state.exactKeys(), key);
-            if (evictedKey != null) {
-                invalidations = addInvalidations(evictedKey, state, invalidations);
-                state = new RouteState(nextGeneration(expirationTime(state.alternative())),
-                                       state.knownGood(),
-                                       state.alternative(),
-                                       state.alternativeFailure(),
-                                       state.directFailure(),
-                                       state.observedAt(),
-                                       state.alternativeObservedAt(),
-                                       state.exactKeys());
-                invalidations = putState(routeKey, state, invalidations);
-            }
-
-            Instant now = clock.instant();
-            AlternativeEntry alternative = state.alternative();
-            NegativeEntry alternativeFailure = state.alternativeFailure();
-            NegativeEntry directFailure = state.directFailure();
-            boolean changed = false;
-            if (alternativeFailure != null && !alternativeFailure.retryAt().isAfter(now)) {
-                alternativeFailure = null;
-                changed = true;
-            }
-            if (directFailure != null && !directFailure.retryAt().isAfter(now)) {
-                directFailure = null;
-                changed = true;
-            }
-
-            Target target = null;
-            if (altSvcEnabled
-                    && key.altSvcEnabled()
-                    && alternative != null
-                    && !failed(alternativeFailure, alternative.target())
-                    && (alternative.expiresAt().isAfter(now)
-                            || hasSession.test(alternative.target()))) {
-                target = alternative.target();
-            }
-            if (target == null
-                    && state.knownGood() != null
-                    && !failed(directFailure, state.knownGood())) {
-                target = state.knownGood();
-            }
-
-            if (changed) {
-                state = new RouteState(state.generation(),
-                                       state.knownGood(),
-                                       alternative,
-                                       alternativeFailure,
-                                       directFailure,
-                                       state.observedAt(),
-                                       state.alternativeObservedAt(),
-                                       state.exactKeys());
-                invalidations = putState(routeKey, state, invalidations);
-            }
-            if (target == null && !failed(directFailure, defaultTarget)) {
-                target = defaultTarget;
-            }
-            boolean successChangesState = target != null
-                    && (target.alternative()
-                            ? state.alternativeFailure() != null
-                            : !target.equals(state.knownGood()) || state.directFailure() != null);
-            return Optional.ofNullable(target == null
-                                               ? null
-                                               : new Selection(key,
-                                                               target,
-                                                               state.generation(),
-                                                               networkGeneration,
-                                                               successChangesState,
-                                                               clock));
-        } finally {
-            lock.unlock();
-            notifyInvalidations(invalidations);
-        }
-    }
-
     boolean current(Selection selection) {
         Objects.requireNonNull(selection, "selection");
         return selection.generation().current();
@@ -504,84 +405,6 @@ final class Http3Discovery {
         return normalized.toLowerCase(Locale.ROOT);
     }
 
-    private List<Map.Entry<EndpointContextKey, Target>> putState(
-            DiscoveryKey key,
-            RouteState state,
-            List<Map.Entry<EndpointContextKey, Target>> invalidations) {
-        RouteState previous = routes.get(key);
-        if (previous != null && previous.generation() != state.generation()) {
-            previous.generation().invalidate();
-        }
-        updateAutomaticHint(key, previous, state);
-        tombstones.remove(key);
-        routes.put(key, state);
-        invalidations = addInvalidations(previous, state, invalidations);
-        return enforceCapacityLocked(invalidations, false);
-    }
-
-    private List<Map.Entry<EndpointContextKey, Target>> removeWithTombstone(
-            DiscoveryKey key,
-            RouteState expected,
-            Instant observedAt,
-            List<Map.Entry<EndpointContextKey, Target>> invalidations) {
-        if (expected != null && routes.get(key) == expected) {
-            expected.generation().invalidate();
-            routes.remove(key, expected);
-            updateAutomaticHint(key, expected, null);
-            invalidations = addInvalidations(expected, null, invalidations);
-        }
-        return putTombstoneLocked(key, observedAt, invalidations);
-    }
-
-    private List<Map.Entry<EndpointContextKey, Target>> putTombstoneLocked(
-            DiscoveryKey key,
-            Instant observedAt,
-            List<Map.Entry<EndpointContextKey, Target>> invalidations) {
-        Instant previous = tombstones.get(key);
-        if (previous != null && !observedAt.isAfter(previous)) {
-            return invalidations;
-        }
-        tombstones.remove(key);
-        tombstones.put(key, observedAt);
-        return enforceCapacityLocked(invalidations, true);
-    }
-
-    private List<Map.Entry<EndpointContextKey, Target>> enforceCapacityLocked(
-            List<Map.Entry<EndpointContextKey, Target>> invalidations,
-            boolean evictRouteFirst) {
-        while (routes.size() + tombstones.size() > MAX_ENTRIES) {
-            if (!evictRouteFirst && tombstones.pollFirstEntry() != null) {
-                continue;
-            }
-            Map.Entry<DiscoveryKey, RouteState> removed = routes.pollFirstEntry();
-            if (removed != null) {
-                removed.getValue().generation().invalidate();
-                updateAutomaticHint(removed.getKey(), removed.getValue(), null);
-                invalidations = addInvalidations(removed.getValue(), null, invalidations);
-                continue;
-            }
-            if (tombstones.pollFirstEntry() != null) {
-                continue;
-            }
-            throw new IllegalStateException("HTTP/3 discovery indexes are empty above capacity");
-        }
-        return invalidations;
-    }
-
-    private void updateAutomaticHint(DiscoveryKey key, RouteState previous, RouteState current) {
-        boolean wasHinted = previous != null && (previous.knownGood() != null || previous.alternative() != null);
-        boolean isHinted = current != null && (current.knownGood() != null || current.alternative() != null);
-        if (wasHinted == isHinted) {
-            return;
-        }
-        DiscoveryHint hint = key.hint();
-        if (isHinted) {
-            automaticHints.merge(hint, 1, Integer::sum);
-        } else if (automaticHints.computeIfPresent(hint, (_, count) -> count == 1 ? null : count - 1) == null) {
-            automaticHints.remove(hint);
-        }
-    }
-
     private static List<Map.Entry<EndpointContextKey, Target>> addInvalidations(
             RouteState previous,
             RouteState current,
@@ -681,6 +504,183 @@ final class Http3Discovery {
             return first;
         }
         return first.isAfter(second) ? first : second;
+    }
+
+    private Optional<Selection> select(EndpointContextKey key,
+                                       boolean altSvcEnabled,
+                                       Target defaultTarget,
+                                       Predicate<Target> hasSession) {
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(hasSession, "hasSession");
+        List<Map.Entry<EndpointContextKey, Target>> invalidations = null;
+        lock.lock();
+        try {
+            DiscoveryKey routeKey = key.discoveryKey();
+            RouteState state = routes.get(routeKey);
+            if (state == null) {
+                if (defaultTarget == null) {
+                    return Optional.empty();
+                }
+                state = new RouteState(nextGeneration(), null, null, null, null, null, null, exactKeys(key));
+                invalidations = putState(routeKey, state, invalidations);
+                return Optional.of(new Selection(key,
+                                                 defaultTarget,
+                                                 state.generation(),
+                                                 networkGeneration,
+                                                 true,
+                                                 clock));
+            }
+            EndpointContextKey evictedKey = registerExactKey(state.exactKeys(), key);
+            if (evictedKey != null) {
+                invalidations = addInvalidations(evictedKey, state, invalidations);
+                state = new RouteState(nextGeneration(expirationTime(state.alternative())),
+                                       state.knownGood(),
+                                       state.alternative(),
+                                       state.alternativeFailure(),
+                                       state.directFailure(),
+                                       state.observedAt(),
+                                       state.alternativeObservedAt(),
+                                       state.exactKeys());
+                invalidations = putState(routeKey, state, invalidations);
+            }
+
+            Instant now = clock.instant();
+            AlternativeEntry alternative = state.alternative();
+            NegativeEntry alternativeFailure = state.alternativeFailure();
+            NegativeEntry directFailure = state.directFailure();
+            boolean changed = false;
+            if (alternativeFailure != null && !alternativeFailure.retryAt().isAfter(now)) {
+                alternativeFailure = null;
+                changed = true;
+            }
+            if (directFailure != null && !directFailure.retryAt().isAfter(now)) {
+                directFailure = null;
+                changed = true;
+            }
+
+            Target target = null;
+            if (altSvcEnabled
+                    && key.altSvcEnabled()
+                    && alternative != null
+                    && !failed(alternativeFailure, alternative.target())
+                    && (alternative.expiresAt().isAfter(now)
+                            || hasSession.test(alternative.target()))) {
+                target = alternative.target();
+            }
+            if (target == null
+                    && state.knownGood() != null
+                    && !failed(directFailure, state.knownGood())) {
+                target = state.knownGood();
+            }
+
+            if (changed) {
+                state = new RouteState(state.generation(),
+                                       state.knownGood(),
+                                       alternative,
+                                       alternativeFailure,
+                                       directFailure,
+                                       state.observedAt(),
+                                       state.alternativeObservedAt(),
+                                       state.exactKeys());
+                invalidations = putState(routeKey, state, invalidations);
+            }
+            if (target == null && !failed(directFailure, defaultTarget)) {
+                target = defaultTarget;
+            }
+            boolean successChangesState = target != null
+                    && (target.alternative()
+                            ? state.alternativeFailure() != null
+                            : !target.equals(state.knownGood()) || state.directFailure() != null);
+            return Optional.ofNullable(target == null
+                                               ? null
+                                               : new Selection(key,
+                                                               target,
+                                                               state.generation(),
+                                                               networkGeneration,
+                                                               successChangesState,
+                                                               clock));
+        } finally {
+            lock.unlock();
+            notifyInvalidations(invalidations);
+        }
+    }
+
+    private List<Map.Entry<EndpointContextKey, Target>> putState(
+            DiscoveryKey key,
+            RouteState state,
+            List<Map.Entry<EndpointContextKey, Target>> invalidations) {
+        RouteState previous = routes.get(key);
+        if (previous != null && previous.generation() != state.generation()) {
+            previous.generation().invalidate();
+        }
+        updateAutomaticHint(key, previous, state);
+        tombstones.remove(key);
+        routes.put(key, state);
+        invalidations = addInvalidations(previous, state, invalidations);
+        return enforceCapacityLocked(invalidations, false);
+    }
+
+    private List<Map.Entry<EndpointContextKey, Target>> removeWithTombstone(
+            DiscoveryKey key,
+            RouteState expected,
+            Instant observedAt,
+            List<Map.Entry<EndpointContextKey, Target>> invalidations) {
+        if (expected != null && routes.get(key) == expected) {
+            expected.generation().invalidate();
+            routes.remove(key, expected);
+            updateAutomaticHint(key, expected, null);
+            invalidations = addInvalidations(expected, null, invalidations);
+        }
+        return putTombstoneLocked(key, observedAt, invalidations);
+    }
+
+    private List<Map.Entry<EndpointContextKey, Target>> putTombstoneLocked(
+            DiscoveryKey key,
+            Instant observedAt,
+            List<Map.Entry<EndpointContextKey, Target>> invalidations) {
+        Instant previous = tombstones.get(key);
+        if (previous != null && !observedAt.isAfter(previous)) {
+            return invalidations;
+        }
+        tombstones.remove(key);
+        tombstones.put(key, observedAt);
+        return enforceCapacityLocked(invalidations, true);
+    }
+
+    private List<Map.Entry<EndpointContextKey, Target>> enforceCapacityLocked(
+            List<Map.Entry<EndpointContextKey, Target>> invalidations,
+            boolean evictRouteFirst) {
+        while (routes.size() + tombstones.size() > MAX_ENTRIES) {
+            if (!evictRouteFirst && tombstones.pollFirstEntry() != null) {
+                continue;
+            }
+            Map.Entry<DiscoveryKey, RouteState> removed = routes.pollFirstEntry();
+            if (removed != null) {
+                removed.getValue().generation().invalidate();
+                updateAutomaticHint(removed.getKey(), removed.getValue(), null);
+                invalidations = addInvalidations(removed.getValue(), null, invalidations);
+                continue;
+            }
+            if (tombstones.pollFirstEntry() != null) {
+                continue;
+            }
+            throw new IllegalStateException("HTTP/3 discovery indexes are empty above capacity");
+        }
+        return invalidations;
+    }
+
+    private void updateAutomaticHint(DiscoveryKey key, RouteState previous, RouteState current) {
+        boolean wasHinted = previous != null && (previous.knownGood() != null || previous.alternative() != null);
+        boolean isHinted = current != null && (current.knownGood() != null || current.alternative() != null);
+        if (wasHinted == isHinted) {
+            return;
+        }
+        DiscoveryHint hint = key.hint();
+        if (isHinted) {
+            automaticHints.merge(hint, 1, Integer::sum);
+        } else if (automaticHints.computeIfPresent(hint, (_, count) -> count == 1 ? null : count - 1) == null) {
+            automaticHints.remove(hint);
+        }
     }
 
     private void notifyInvalidations(List<Map.Entry<EndpointContextKey, Target>> invalidations) {

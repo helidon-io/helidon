@@ -126,6 +126,36 @@ final class Http3ExchangeClient implements AutoCloseable {
                 builder.transportObserver);
     }
 
+    static Throwable unwrap(Throwable throwable) {
+        return throwable instanceof CompletionException completionException && completionException.getCause() != null
+                ? completionException.getCause()
+                : throwable;
+    }
+
+    static ClientSettings clientSettings(Http3ClientProtocolConfig protocolConfig) {
+        Objects.requireNonNull(protocolConfig, "protocolConfig");
+        Http3Settings localSettings = Http3Settings.createConfigured(protocolConfig.maxFieldSectionSize(),
+                                                                     protocolConfig.qpackMaxTableCapacity(),
+                                                                     protocolConfig.qpackBlockedStreams());
+        Duration initialResponseTimeout = protocolConfig.initialResponseTimeout();
+        Http3ClientConfigSupport.validateTimeouts(initialResponseTimeout,
+                                                  protocolConfig.handshakeTimeout(),
+                                                  protocolConfig.streamOpenTimeout());
+        QuicConfig quicConfig = protocolConfig.quic().orElseGet(QuicConfig::create);
+        Http3ClientConfigSupport.validateQuic(quicConfig);
+        Duration idleTimeout = quicConfig.idleTimeout();
+        return new ClientSettings(idleTimeout.toMillis(),
+                                  localSettings,
+                                  protocolConfig.maxHeadersSize(),
+                                  initialResponseTimeout,
+                                  quicConfig,
+                                  protocolConfig.log());
+    }
+
+    static LongFunction<String> applicationErrors() {
+        return Http3Protocol::applicationErrorToString;
+    }
+
     Http3StreamedResponse send(URI uri,
                                Method method,
                                ClientRequestHeaders headers,
@@ -141,6 +171,17 @@ final class Http3ExchangeClient implements AutoCloseable {
                                          options.retried(),
                                          options.context(),
                                          options.requestSent())).join();
+    }
+
+    @Override
+    public void close() {
+    }
+
+    private static String requestTarget(String method, URI uri) {
+        Objects.requireNonNull(method, "method");
+        Objects.requireNonNull(uri, "uri");
+        String rawPath = Objects.requireNonNullElse(uri.getRawPath(), "");
+        return LogFormatter.escape(method) + " " + LogFormatter.escape(LogFormatter.pathOnly(rawPath));
     }
 
     private CompletableFuture<Http3StreamedResponse> sendAsync(RequestData request) {
@@ -240,47 +281,6 @@ final class Http3ExchangeClient implements AutoCloseable {
         } finally {
             result.completeExceptionally(failure);
         }
-    }
-
-    @Override
-    public void close() {
-    }
-
-    static Throwable unwrap(Throwable throwable) {
-        return throwable instanceof CompletionException completionException && completionException.getCause() != null
-                ? completionException.getCause()
-                : throwable;
-    }
-
-    private static String requestTarget(String method, URI uri) {
-        Objects.requireNonNull(method, "method");
-        Objects.requireNonNull(uri, "uri");
-        String rawPath = Objects.requireNonNullElse(uri.getRawPath(), "");
-        return LogFormatter.escape(method) + " " + LogFormatter.escape(LogFormatter.pathOnly(rawPath));
-    }
-
-    static ClientSettings clientSettings(Http3ClientProtocolConfig protocolConfig) {
-        Objects.requireNonNull(protocolConfig, "protocolConfig");
-        Http3Settings localSettings = Http3Settings.createConfigured(protocolConfig.maxFieldSectionSize(),
-                                                                     protocolConfig.qpackMaxTableCapacity(),
-                                                                     protocolConfig.qpackBlockedStreams());
-        Duration initialResponseTimeout = protocolConfig.initialResponseTimeout();
-        Http3ClientConfigSupport.validateTimeouts(initialResponseTimeout,
-                                                  protocolConfig.handshakeTimeout(),
-                                                  protocolConfig.streamOpenTimeout());
-        QuicConfig quicConfig = protocolConfig.quic().orElseGet(QuicConfig::create);
-        Http3ClientConfigSupport.validateQuic(quicConfig);
-        Duration idleTimeout = quicConfig.idleTimeout();
-        return new ClientSettings(idleTimeout.toMillis(),
-                                  localSettings,
-                                  protocolConfig.maxHeadersSize(),
-                                  initialResponseTimeout,
-                                  quicConfig,
-                                  protocolConfig.log());
-    }
-
-    static LongFunction<String> applicationErrors() {
-        return Http3Protocol::applicationErrorToString;
     }
 
     record ClientSettings(long idleTimeoutMillis,
@@ -560,23 +560,6 @@ final class Http3ExchangeClient implements AutoCloseable {
             connection.whenTerminated().whenComplete(this::connectionTerminated);
         }
 
-        private void connectionTerminated(QuicTermination termination, Throwable throwable) {
-            if (throwable == null) {
-                transportCleanupComplete.complete(null);
-            } else {
-                transportCleanupComplete.completeExceptionally(throwable);
-            }
-            if (termination != null) {
-                QuicClientObserver.TerminationOutcomes outcomes =
-                        QuicClientObserver.classifyTermination(termination, null);
-                closeWithCause(termination.closeCause(), outcomes.openStreamOutcome());
-            } else if (throwable != null) {
-                closeWithCause(throwable, StreamOutcome.ERROR);
-            } else {
-                closeNormally();
-            }
-        }
-
         static ConnectionSession create(ConnectionConfig config,
                                         QuicClientTlsSessionCache tlsSessionCache,
                                         QuicClientInitialTokenCache initialTokenCache,
@@ -643,6 +626,12 @@ final class Http3ExchangeClient implements AutoCloseable {
                     }
                 }
                 throw failure;
+            }
+        }
+
+        static void completeResponseTrailers(List<Http3RequestStream> requestStreams, Throwable failure) {
+            for (Http3RequestStream requestStream : requestStreams) {
+                Thread.startVirtualThread(() -> requestStream.completeTrailersFailure(failure));
             }
         }
 
@@ -719,6 +708,178 @@ final class Http3ExchangeClient implements AutoCloseable {
                     throw new CompletionException(requestOpenFailure());
                 }
                 return createRequestStream(request, responseExecutor, reservation.open());
+            }
+        }
+
+        void close() {
+            connection.termination()
+                    .ifPresentOrElse(termination -> {
+                        QuicClientObserver.TerminationOutcomes outcomes =
+                                QuicClientObserver.classifyTermination(termination, null);
+                        closeWithCause(termination.closeCause(), outcomes.openStreamOutcome());
+                    },
+                                     this::closeNormallyAfterControlBatch);
+        }
+
+        void requestFinished(long streamId) {
+            if (activeRequestStreams.remove(streamId) == null) {
+                return;
+            }
+            if (activeRequests.decrementAndGet() == 0) {
+                Lifecycle current = lifecycle.get();
+                if (current == Lifecycle.DRAINING) {
+                    closeNormallyAfterControlBatch();
+                } else if (current == Lifecycle.CLOSING) {
+                    completeClosed();
+                }
+            }
+        }
+
+        void retire(String reason) {
+            markRetired(reason);
+            if (activeRequests.get() == 0) {
+                closeNormallyAfterControlBatch();
+            }
+        }
+
+        @Override
+        public void onSettings(Http3Settings settings) {
+            if (peerSettings != null) {
+                throw Http3ProtocolException.connectionError(Http3ErrorCode.SETTINGS_ERROR,
+                                                             "Peer HTTP/3 settings are already installed");
+            }
+            peerSettings = Objects.requireNonNull(settings, "settings");
+            qpackContext.peerSettings(peerSettings.qpackMaxTableCapacity(), peerSettings.qpackBlockedStreams());
+            logDebug(() -> "state=peer-settings settings=%s".formatted(peerSettings));
+        }
+
+        void fail(long streamId, Throwable throwable) {
+            fail(OptionalLong.of(streamId), throwable);
+        }
+
+        @Override
+        public void onControlDataProcessing() {
+            normalCloseState.compareAndSet(NormalCloseState.AVAILABLE, NormalCloseState.CONTROL_BATCH_PENDING);
+        }
+
+        @Override
+        public void onGoAway(Http3GoAway goAway) {
+            Http3GoAway previous = updatePeerGoAway(peerGoAway, goAway);
+            logStreamDebug(goAway.identifier(),
+                           () -> "state=goaway-observed previous=%s".formatted(goAwaySummary(previous)));
+            markRetired("goaway");
+        }
+
+        @Override
+        public void onControlDataProcessed() {
+            boolean retiredAndIdle = lifecycle.get() == Lifecycle.DRAINING && activeRequests.get() == 0;
+            for (;;) {
+                NormalCloseState state = normalCloseState.get();
+                NormalCloseState next = switch (state) {
+                    case CONTROL_BATCH_PENDING -> retiredAndIdle
+                            ? NormalCloseState.CLOSE_SELECTED
+                            : NormalCloseState.AVAILABLE;
+                    case CONTROL_BATCH_CLOSE_REQUESTED -> NormalCloseState.CLOSE_SELECTED;
+                    case AVAILABLE, CLOSE_SELECTED -> null;
+                };
+                if (next == null) {
+                    return;
+                }
+                if (normalCloseState.compareAndSet(state, next)) {
+                    if (next == NormalCloseState.CLOSE_SELECTED) {
+                        closeNormally();
+                    }
+                    return;
+                }
+            }
+        }
+
+        void logRequestOpen(long streamId, String method, URI uri, boolean retried) {
+            logStreamDebug(streamId,
+                           () -> "state=request-open retry=%s request=%s"
+                                   .formatted(retried, requestTarget(method, uri)));
+        }
+
+        void logRequestFailure(long streamId, Throwable cause, boolean retryable) {
+            logStreamDebug(streamId,
+                           () -> "state=request-failure retryable=%s cause=%s"
+                                   .formatted(retryable, Http3RequestFailureSupport.throwableSummary(cause)));
+        }
+
+        void logResponse(long streamId, int status, boolean hasEntity) {
+            logStreamDebug(streamId,
+                           () -> "state=response-head status=%d entity=%s".formatted(status, hasEntity));
+        }
+
+        private static void resetFailedCriticalStream(QuicSenderStream stream, Throwable failure) {
+            try {
+                stream.reset(Http3ErrorCode.INTERNAL_ERROR.code());
+            } catch (RuntimeException | Error cleanupFailure) {
+                if (failure != cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+        }
+
+        private static Http3ErrorCode connectionCloseCode(Throwable throwable) {
+            Optional<Http3ProtocolException> protocolException = Http3ProtocolException.find(throwable);
+            if (protocolException.filter(it -> it.scope() == Http3ProtocolException.Scope.STREAM).isPresent()) {
+                throw new IllegalArgumentException("Stream-scoped HTTP/3 signal reached the connection owner", throwable);
+            }
+            return protocolException.map(Http3ProtocolException::errorCode)
+                    .orElse(Http3ErrorCode.INTERNAL_ERROR);
+        }
+
+        private static Http3GoAway updatePeerGoAway(AtomicReference<Http3GoAway> peerGoAway, Http3GoAway next) {
+            Objects.requireNonNull(peerGoAway, "peerGoAway");
+            Objects.requireNonNull(next, "next");
+            if (next.type() != Http3GoAway.Type.REQUEST_STREAM_ID) {
+                throw Http3ProtocolException.connectionError(Http3ErrorCode.ID_ERROR,
+                                                             "Server GOAWAY must contain a request stream ID");
+            }
+            for (;;) {
+                Http3GoAway current = peerGoAway.get();
+                if (current != null && !next.isValidSuccessorOf(current)) {
+                    throw Http3ProtocolException.connectionError(
+                            Http3ErrorCode.ID_ERROR,
+                            "HTTP/3 GOAWAY identifier increased from "
+                                    + current.identifier()
+                                    + " to "
+                                    + next.identifier());
+                }
+                if (peerGoAway.compareAndSet(current, next)) {
+                    return current;
+                }
+            }
+        }
+
+        private static void abortStream(QuicBidiStream stream) {
+            stream.requestStopSending(Http3ErrorCode.REQUEST_CANCELLED.code());
+            try {
+                stream.reset(Http3ErrorCode.REQUEST_CANCELLED.code());
+            } catch (QuicStreamException _) {
+                // If the stream is already closed, retiring the connection is enough.
+            }
+        }
+
+        private static String goAwaySummary(Http3GoAway goAway) {
+            return goAway == null ? "none" : "0x" + Long.toHexString(goAway.identifier());
+        }
+
+        private void connectionTerminated(QuicTermination termination, Throwable throwable) {
+            if (throwable == null) {
+                transportCleanupComplete.complete(null);
+            } else {
+                transportCleanupComplete.completeExceptionally(throwable);
+            }
+            if (termination != null) {
+                QuicClientObserver.TerminationOutcomes outcomes =
+                        QuicClientObserver.classifyTermination(termination, null);
+                closeWithCause(termination.closeCause(), outcomes.openStreamOutcome());
+            } else if (throwable != null) {
+                closeWithCause(throwable, StreamOutcome.ERROR);
+            } else {
+                closeNormally();
             }
         }
 
@@ -801,37 +962,6 @@ final class Http3ExchangeClient implements AutoCloseable {
                 throw new CompletionException(requestOpenFailure());
             }
             return requestStream;
-        }
-
-        void close() {
-            connection.termination()
-                    .ifPresentOrElse(termination -> {
-                        QuicClientObserver.TerminationOutcomes outcomes =
-                                QuicClientObserver.classifyTermination(termination, null);
-                        closeWithCause(termination.closeCause(), outcomes.openStreamOutcome());
-                    },
-                                     this::closeNormallyAfterControlBatch);
-        }
-
-        void requestFinished(long streamId) {
-            if (activeRequestStreams.remove(streamId) == null) {
-                return;
-            }
-            if (activeRequests.decrementAndGet() == 0) {
-                Lifecycle current = lifecycle.get();
-                if (current == Lifecycle.DRAINING) {
-                    closeNormallyAfterControlBatch();
-                } else if (current == Lifecycle.CLOSING) {
-                    completeClosed();
-                }
-            }
-        }
-
-        void retire(String reason) {
-            markRetired(reason);
-            if (activeRequests.get() == 0) {
-                closeNormallyAfterControlBatch();
-            }
         }
 
         private void markRetired(String reason) {
@@ -956,17 +1086,6 @@ final class Http3ExchangeClient implements AutoCloseable {
             return true;
         }
 
-        @Override
-        public void onSettings(Http3Settings settings) {
-            if (peerSettings != null) {
-                throw Http3ProtocolException.connectionError(Http3ErrorCode.SETTINGS_ERROR,
-                                                             "Peer HTTP/3 settings are already installed");
-            }
-            peerSettings = Objects.requireNonNull(settings, "settings");
-            qpackContext.peerSettings(peerSettings.qpackMaxTableCapacity(), peerSettings.qpackBlockedStreams());
-            logDebug(() -> "state=peer-settings settings=%s".formatted(peerSettings));
-        }
-
         private CompletableFuture<PrimedUniStream> openAndPrimeControlStream() {
             return connection.openNewLocalUniStream(streamOpenTimeout)
                     .thenApply(stream -> {
@@ -1006,16 +1125,6 @@ final class Http3ExchangeClient implements AutoCloseable {
                             throw e;
                         }
                     });
-        }
-
-        private static void resetFailedCriticalStream(QuicSenderStream stream, Throwable failure) {
-            try {
-                stream.reset(Http3ErrorCode.INTERNAL_ERROR.code());
-            } catch (RuntimeException | Error cleanupFailure) {
-                if (failure != cleanupFailure) {
-                    failure.addSuppressed(cleanupFailure);
-                }
-            }
         }
 
         private ConnectionSession addLocalCriticalStream(PrimedUniStream criticalStream) {
@@ -1088,10 +1197,6 @@ final class Http3ExchangeClient implements AutoCloseable {
             fail(OptionalLong.empty(), throwable);
         }
 
-        void fail(long streamId, Throwable throwable) {
-            fail(OptionalLong.of(streamId), throwable);
-        }
-
         private void fail(OptionalLong streamId, Throwable throwable) {
             Throwable cause = Http3ExchangeClient.unwrap(throwable);
             Optional<Http3ProtocolException> protocolException = Http3ProtocolException.find(cause);
@@ -1154,15 +1259,6 @@ final class Http3ExchangeClient implements AutoCloseable {
                                   ? "HTTP/3 connection retired"
                                   : "HTTP/3 connection cache eviction",
                           streamOutcome);
-        }
-
-        private static Http3ErrorCode connectionCloseCode(Throwable throwable) {
-            Optional<Http3ProtocolException> protocolException = Http3ProtocolException.find(throwable);
-            if (protocolException.filter(it -> it.scope() == Http3ProtocolException.Scope.STREAM).isPresent()) {
-                throw new IllegalArgumentException("Stream-scoped HTTP/3 signal reached the connection owner", throwable);
-            }
-            return protocolException.map(Http3ProtocolException::errorCode)
-                    .orElse(Http3ErrorCode.INTERNAL_ERROR);
         }
 
         private void closeInternal(Optional<Throwable> throwable,
@@ -1295,12 +1391,6 @@ final class Http3ExchangeClient implements AutoCloseable {
             });
         }
 
-        static void completeResponseTrailers(List<Http3RequestStream> requestStreams, Throwable failure) {
-            for (Http3RequestStream requestStream : requestStreams) {
-                Thread.startVirtualThread(() -> requestStream.completeTrailersFailure(failure));
-            }
-        }
-
         private void completeClosed() {
             if (activeRequests.get() == 0
                     && cleanupComplete.isDone()
@@ -1320,40 +1410,36 @@ final class Http3ExchangeClient implements AutoCloseable {
             return current == Lifecycle.CLOSING || current == Lifecycle.CLOSED;
         }
 
-        @Override
-        public void onControlDataProcessing() {
-            normalCloseState.compareAndSet(NormalCloseState.AVAILABLE, NormalCloseState.CONTROL_BATCH_PENDING);
+        private Throwable requestOpenFailure() {
+            return Http3RequestFailureSupport.connectionRetired();
         }
 
-        @Override
-        public void onGoAway(Http3GoAway goAway) {
-            Http3GoAway previous = updatePeerGoAway(peerGoAway, goAway);
-            logStreamDebug(goAway.identifier(),
-                           () -> "state=goaway-observed previous=%s".formatted(goAwaySummary(previous)));
-            markRetired("goaway");
+        private void logFailureAction(String method, URI uri, Throwable cause, String action) {
+            logDebug(() -> "state=request-terminal action=%s request=%s cause=%s"
+                    .formatted(action,
+                               requestTarget(method, uri),
+                               Http3RequestFailureSupport.throwableSummary(cause)));
         }
 
-        @Override
-        public void onControlDataProcessed() {
-            boolean retiredAndIdle = lifecycle.get() == Lifecycle.DRAINING && activeRequests.get() == 0;
-            for (;;) {
-                NormalCloseState state = normalCloseState.get();
-                NormalCloseState next = switch (state) {
-                    case CONTROL_BATCH_PENDING -> retiredAndIdle
-                            ? NormalCloseState.CLOSE_SELECTED
-                            : NormalCloseState.AVAILABLE;
-                    case CONTROL_BATCH_CLOSE_REQUESTED -> NormalCloseState.CLOSE_SELECTED;
-                    case AVAILABLE, CLOSE_SELECTED -> null;
-                };
-                if (next == null) {
-                    return;
-                }
-                if (normalCloseState.compareAndSet(state, next)) {
-                    if (next == NormalCloseState.CLOSE_SELECTED) {
-                        closeNormally();
-                    }
-                    return;
-                }
+        private void logResponseClosedEarly(long streamId) {
+            logStreamDebug(streamId, () -> "state=response-close-early");
+        }
+
+        private void logRequestOpenRejected(long streamId) {
+            logStreamDebug(streamId,
+                           () -> "state=request-open-rejected goAwayStreamId=%s retired=%s"
+                                   .formatted(goAwaySummary(peerGoAway.get()), isRetired()));
+        }
+
+        private void logDebug(Supplier<String> messageSupplier) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                connection.log(LOGGER, System.Logger.Level.DEBUG, "%s", messageSupplier.get());
+            }
+        }
+
+        private void logStreamDebug(long streamId, Supplier<String> messageSupplier) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                connection.log(LOGGER, System.Logger.Level.DEBUG, "%d: %s", streamId, messageSupplier.get());
             }
         }
 
@@ -1369,92 +1455,6 @@ final class Http3ExchangeClient implements AutoCloseable {
             DRAINING,
             CLOSING,
             CLOSED
-        }
-
-        private static Http3GoAway updatePeerGoAway(AtomicReference<Http3GoAway> peerGoAway, Http3GoAway next) {
-            Objects.requireNonNull(peerGoAway, "peerGoAway");
-            Objects.requireNonNull(next, "next");
-            if (next.type() != Http3GoAway.Type.REQUEST_STREAM_ID) {
-                throw Http3ProtocolException.connectionError(Http3ErrorCode.ID_ERROR,
-                                                             "Server GOAWAY must contain a request stream ID");
-            }
-            for (;;) {
-                Http3GoAway current = peerGoAway.get();
-                if (current != null && !next.isValidSuccessorOf(current)) {
-                    throw Http3ProtocolException.connectionError(
-                            Http3ErrorCode.ID_ERROR,
-                            "HTTP/3 GOAWAY identifier increased from "
-                                    + current.identifier()
-                                    + " to "
-                                    + next.identifier());
-                }
-                if (peerGoAway.compareAndSet(current, next)) {
-                    return current;
-                }
-            }
-        }
-
-        private static void abortStream(QuicBidiStream stream) {
-            stream.requestStopSending(Http3ErrorCode.REQUEST_CANCELLED.code());
-            try {
-                stream.reset(Http3ErrorCode.REQUEST_CANCELLED.code());
-            } catch (QuicStreamException _) {
-                // If the stream is already closed, retiring the connection is enough.
-            }
-        }
-
-        private Throwable requestOpenFailure() {
-            return Http3RequestFailureSupport.connectionRetired();
-        }
-
-        void logRequestOpen(long streamId, String method, URI uri, boolean retried) {
-            logStreamDebug(streamId,
-                           () -> "state=request-open retry=%s request=%s"
-                                   .formatted(retried, requestTarget(method, uri)));
-        }
-
-        void logRequestFailure(long streamId, Throwable cause, boolean retryable) {
-            logStreamDebug(streamId,
-                           () -> "state=request-failure retryable=%s cause=%s"
-                                   .formatted(retryable, Http3RequestFailureSupport.throwableSummary(cause)));
-        }
-
-        private void logFailureAction(String method, URI uri, Throwable cause, String action) {
-            logDebug(() -> "state=request-terminal action=%s request=%s cause=%s"
-                    .formatted(action,
-                               requestTarget(method, uri),
-                               Http3RequestFailureSupport.throwableSummary(cause)));
-        }
-
-        void logResponse(long streamId, int status, boolean hasEntity) {
-            logStreamDebug(streamId,
-                           () -> "state=response-head status=%d entity=%s".formatted(status, hasEntity));
-        }
-
-        private void logResponseClosedEarly(long streamId) {
-            logStreamDebug(streamId, () -> "state=response-close-early");
-        }
-
-        private void logRequestOpenRejected(long streamId) {
-            logStreamDebug(streamId,
-                           () -> "state=request-open-rejected goAwayStreamId=%s retired=%s"
-                                   .formatted(goAwaySummary(peerGoAway.get()), isRetired()));
-        }
-
-        private static String goAwaySummary(Http3GoAway goAway) {
-            return goAway == null ? "none" : "0x" + Long.toHexString(goAway.identifier());
-        }
-
-        private void logDebug(Supplier<String> messageSupplier) {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                connection.log(LOGGER, System.Logger.Level.DEBUG, "%s", messageSupplier.get());
-            }
-        }
-
-        private void logStreamDebug(long streamId, Supplier<String> messageSupplier) {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                connection.log(LOGGER, System.Logger.Level.DEBUG, "%d: %s", streamId, messageSupplier.get());
-            }
         }
 
         @FunctionalInterface

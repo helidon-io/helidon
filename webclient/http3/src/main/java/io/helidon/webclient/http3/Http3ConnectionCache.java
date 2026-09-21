@@ -108,6 +108,211 @@ final class Http3ConnectionCache extends ClientConnectionCache {
         return result;
     }
 
+    boolean hasSession(CacheKey cacheKey) {
+        long epoch = cacheEpoch.get();
+        if (closed.get()
+                || (epoch & 1) != 0
+                || !currentTlsGeneration(cacheKey, cacheKey.connectionKey().tls())) {
+            return false;
+        }
+        SessionPool pool = sessions.get(cacheKey);
+        return epoch == cacheEpoch.get()
+                && pool != null
+                && pool.hasSession(epoch)
+                && currentTlsGeneration(cacheKey, cacheKey.connectionKey().tls());
+    }
+
+    Http3Discovery discovery() {
+        return discovery;
+    }
+
+    boolean closeWouldBlockCurrentThread() {
+        evictionLock.lock();
+        try {
+            Thread currentThread = Thread.currentThread();
+            for (SessionSlot slot : activeSlots) {
+                if (slot.creationPendingOn(currentThread)) {
+                    return true;
+                }
+                Http3ExchangeClient.ConnectionSession currentSession = slot.session();
+                if (currentSession != null && currentSession.closeWouldBlockCurrentThread()) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            evictionLock.unlock();
+        }
+    }
+
+    void remove(CacheKey cacheKey, Http3ExchangeClient.ConnectionSession session) {
+        SessionSlot expected = null;
+        evictionLock.lock();
+        try {
+            SessionSlot slot = activeSessions.get(session);
+            if (slot != null && slot.pool().cacheKey().equals(cacheKey)) {
+                expected = slot;
+            }
+        } finally {
+            evictionLock.unlock();
+        }
+        if (expected != null) {
+            removeFromPool(expected);
+            expected.close();
+        }
+    }
+
+    @Override
+    protected void evict() {
+        List<SessionSlot> toClose = new ArrayList<>();
+        List<PoolActions> poolActions = new ArrayList<>();
+        evictionLock.lock();
+        try {
+            if (closed.get()) {
+                return;
+            }
+            cacheEpoch.incrementAndGet();
+            try {
+                for (Http3SessionIndex.Entry<CacheKey, SessionPool> entry : sessions.clear()) {
+                    PoolDetach detached = entry.value().detachAll();
+                    toClose.addAll(detached.slots());
+                    poolActions.add(detached.actions());
+                }
+                tlsGenerations.values().forEach(TlsGenerationState::close);
+                tlsGenerations.clear();
+                discardInitialTokenCaches();
+                discovery.networkChanged();
+            } finally {
+                cacheEpoch.incrementAndGet();
+            }
+        } finally {
+            evictionLock.unlock();
+        }
+        poolActions.forEach(PoolActions::execute);
+        toClose.forEach(SessionSlot::close);
+    }
+
+    @Override
+    public void closeResource() {
+        boolean closeOwner = false;
+        Throwable failure = null;
+        List<SessionSlot> slotsToClose = List.of();
+        List<PoolActions> poolActions = new ArrayList<>();
+        List<CompletionStage<Void>> sessionTerminations = new ArrayList<>();
+        evictionLock.lock();
+        try {
+            if (!closed.getAndSet(true)) {
+                closeOwner = true;
+                cacheEpoch.incrementAndGet();
+                for (Http3SessionIndex.Entry<CacheKey, SessionPool> entry : sessions.clear()) {
+                    poolActions.add(entry.value().detachAll().actions());
+                }
+                for (SessionSlot slot : List.copyOf(activeSlots)) {
+                    slot.detach();
+                }
+                slotsToClose = List.copyOf(activeSlots);
+                for (TlsGenerationState generationState : tlsGenerations.values()) {
+                    try {
+                        generationState.close();
+                    } catch (Throwable closeFailure) {
+                        failure = collectCleanupFailure(failure, closeFailure);
+                    }
+                }
+                tlsGenerations.clear();
+                for (InitialTokenState state : initialTokenCaches.values()) {
+                    try {
+                        state.discard();
+                    } catch (Throwable closeFailure) {
+                        failure = collectCleanupFailure(failure, closeFailure);
+                    }
+                }
+                initialTokenCaches.clear();
+            }
+        } finally {
+            evictionLock.unlock();
+        }
+
+        if (closeOwner) {
+            poolActions.forEach(PoolActions::execute);
+            try {
+                discovery.clear();
+            } catch (Throwable closeFailure) {
+                failure = collectCleanupFailure(failure, closeFailure);
+            }
+            for (SessionSlot slot : slotsToClose) {
+                try {
+                    sessionTerminations.add(slot.close());
+                } catch (Throwable closeFailure) {
+                    failure = collectCleanupFailure(failure, closeFailure);
+                }
+            }
+            for (CompletionStage<Void> termination : sessionTerminations) {
+                try {
+                    Throwable terminationFailure = Http3RequestFailureSupport.completionFailure(termination);
+                    if (terminationFailure != null) {
+                        failure = collectCleanupFailure(failure, terminationFailure);
+                    }
+                } catch (Throwable terminationFailure) {
+                    failure = collectCleanupFailure(failure, terminationFailure);
+                }
+            }
+            if (failure != null
+                    && !(failure instanceof RuntimeException)
+                    && !(failure instanceof Error)) {
+                failure = new IllegalStateException("Failed to close HTTP/3 connection cache", failure);
+            }
+            if (failure == null) {
+                closeCompletion.complete(null);
+            } else {
+                closeCompletion.completeExceptionally(failure);
+            }
+        }
+
+        Throwable closeFailure = Http3RequestFailureSupport.completionFailure(closeCompletion);
+        if (closeFailure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (closeFailure instanceof Error error) {
+            throw error;
+        }
+        if (closeFailure != null) {
+            throw new IllegalStateException("Failed to close HTTP/3 connection cache", closeFailure);
+        }
+    }
+
+    void releaseInitialTokenState(InitialTokenState state) {
+        evictionLock.lock();
+        try {
+            state.release();
+        } finally {
+            evictionLock.unlock();
+        }
+    }
+
+    private static void completeStream(SessionPool pool,
+                                       SessionSlot slot,
+                                       Http3ExchangeClient.ConnectionSession session,
+                                       Http3RequestStream stream,
+                                       CompletableFuture<Http3ExchangeClient.RequestStream> result) {
+        pool.prefer(slot);
+        if (!result.complete(new Http3ExchangeClient.RequestStream(session, stream))) {
+            stream.cancel();
+        }
+    }
+
+    private static boolean currentTlsGeneration(CacheKey cacheKey, Tls tls) {
+        return cacheKey.tlsGeneration() == tls.generation();
+    }
+
+    private static void retireDetached(SessionSlot slot, String reason) {
+        Http3ExchangeClient.ConnectionSession session = slot.session();
+        if (session == null) {
+            slot.close();
+        } else {
+            session.retire(reason);
+        }
+    }
+
     private SessionPool sessionPool(Http3ExchangeClient.ConnectionConfig config) {
         CacheKey cacheKey = config.cacheKey();
         while (true) {
@@ -441,17 +646,6 @@ final class Http3ConnectionCache extends ClientConnectionCache {
         }
     }
 
-    private static void completeStream(SessionPool pool,
-                                       SessionSlot slot,
-                                       Http3ExchangeClient.ConnectionSession session,
-                                       Http3RequestStream stream,
-                                       CompletableFuture<Http3ExchangeClient.RequestStream> result) {
-        pool.prefer(slot);
-        if (!result.complete(new Http3ExchangeClient.RequestStream(session, stream))) {
-            stream.cancel();
-        }
-    }
-
     private SlotReservation reserveSlot(Http3ExchangeClient.ConnectionConfig config,
                                         SessionPool pool,
                                         long revision) {
@@ -634,43 +828,6 @@ final class Http3ConnectionCache extends ClientConnectionCache {
                 && (config.selection() == null || discovery.current(config.selection()));
     }
 
-    boolean hasSession(CacheKey cacheKey) {
-        long epoch = cacheEpoch.get();
-        if (closed.get()
-                || (epoch & 1) != 0
-                || !currentTlsGeneration(cacheKey, cacheKey.connectionKey().tls())) {
-            return false;
-        }
-        SessionPool pool = sessions.get(cacheKey);
-        return epoch == cacheEpoch.get()
-                && pool != null
-                && pool.hasSession(epoch)
-                && currentTlsGeneration(cacheKey, cacheKey.connectionKey().tls());
-    }
-
-    Http3Discovery discovery() {
-        return discovery;
-    }
-
-    boolean closeWouldBlockCurrentThread() {
-        evictionLock.lock();
-        try {
-            Thread currentThread = Thread.currentThread();
-            for (SessionSlot slot : activeSlots) {
-                if (slot.creationPendingOn(currentThread)) {
-                    return true;
-                }
-                Http3ExchangeClient.ConnectionSession currentSession = slot.session();
-                if (currentSession != null && currentSession.closeWouldBlockCurrentThread()) {
-                    return true;
-                }
-            }
-            return false;
-        } finally {
-            evictionLock.unlock();
-        }
-    }
-
     private InitialTokenLease initialTokenLease(Http3ExchangeClient.ConnectionConfig config) {
         evictionLock.lock();
         try {
@@ -712,141 +869,6 @@ final class Http3ConnectionCache extends ClientConnectionCache {
             return new InitialTokenLease(this, tokenState);
         } finally {
             evictionLock.unlock();
-        }
-    }
-
-    void remove(CacheKey cacheKey, Http3ExchangeClient.ConnectionSession session) {
-        SessionSlot expected = null;
-        evictionLock.lock();
-        try {
-            SessionSlot slot = activeSessions.get(session);
-            if (slot != null && slot.pool().cacheKey().equals(cacheKey)) {
-                expected = slot;
-            }
-        } finally {
-            evictionLock.unlock();
-        }
-        if (expected != null) {
-            removeFromPool(expected);
-            expected.close();
-        }
-    }
-
-    @Override
-    protected void evict() {
-        List<SessionSlot> toClose = new ArrayList<>();
-        List<PoolActions> poolActions = new ArrayList<>();
-        evictionLock.lock();
-        try {
-            if (closed.get()) {
-                return;
-            }
-            cacheEpoch.incrementAndGet();
-            try {
-                for (Http3SessionIndex.Entry<CacheKey, SessionPool> entry : sessions.clear()) {
-                    PoolDetach detached = entry.value().detachAll();
-                    toClose.addAll(detached.slots());
-                    poolActions.add(detached.actions());
-                }
-                tlsGenerations.values().forEach(TlsGenerationState::close);
-                tlsGenerations.clear();
-                discardInitialTokenCaches();
-                discovery.networkChanged();
-            } finally {
-                cacheEpoch.incrementAndGet();
-            }
-        } finally {
-            evictionLock.unlock();
-        }
-        poolActions.forEach(PoolActions::execute);
-        toClose.forEach(SessionSlot::close);
-    }
-
-    @Override
-    public void closeResource() {
-        boolean closeOwner = false;
-        Throwable failure = null;
-        List<SessionSlot> slotsToClose = List.of();
-        List<PoolActions> poolActions = new ArrayList<>();
-        List<CompletionStage<Void>> sessionTerminations = new ArrayList<>();
-        evictionLock.lock();
-        try {
-            if (!closed.getAndSet(true)) {
-                closeOwner = true;
-                cacheEpoch.incrementAndGet();
-                for (Http3SessionIndex.Entry<CacheKey, SessionPool> entry : sessions.clear()) {
-                    poolActions.add(entry.value().detachAll().actions());
-                }
-                for (SessionSlot slot : List.copyOf(activeSlots)) {
-                    slot.detach();
-                }
-                slotsToClose = List.copyOf(activeSlots);
-                for (TlsGenerationState generationState : tlsGenerations.values()) {
-                    try {
-                        generationState.close();
-                    } catch (Throwable closeFailure) {
-                        failure = collectCleanupFailure(failure, closeFailure);
-                    }
-                }
-                tlsGenerations.clear();
-                for (InitialTokenState state : initialTokenCaches.values()) {
-                    try {
-                        state.discard();
-                    } catch (Throwable closeFailure) {
-                        failure = collectCleanupFailure(failure, closeFailure);
-                    }
-                }
-                initialTokenCaches.clear();
-            }
-        } finally {
-            evictionLock.unlock();
-        }
-
-        if (closeOwner) {
-            poolActions.forEach(PoolActions::execute);
-            try {
-                discovery.clear();
-            } catch (Throwable closeFailure) {
-                failure = collectCleanupFailure(failure, closeFailure);
-            }
-            for (SessionSlot slot : slotsToClose) {
-                try {
-                    sessionTerminations.add(slot.close());
-                } catch (Throwable closeFailure) {
-                    failure = collectCleanupFailure(failure, closeFailure);
-                }
-            }
-            for (CompletionStage<Void> termination : sessionTerminations) {
-                try {
-                    Throwable terminationFailure = Http3RequestFailureSupport.completionFailure(termination);
-                    if (terminationFailure != null) {
-                        failure = collectCleanupFailure(failure, terminationFailure);
-                    }
-                } catch (Throwable terminationFailure) {
-                    failure = collectCleanupFailure(failure, terminationFailure);
-                }
-            }
-            if (failure != null
-                    && !(failure instanceof RuntimeException)
-                    && !(failure instanceof Error)) {
-                failure = new IllegalStateException("Failed to close HTTP/3 connection cache", failure);
-            }
-            if (failure == null) {
-                closeCompletion.complete(null);
-            } else {
-                closeCompletion.completeExceptionally(failure);
-            }
-        }
-
-        Throwable closeFailure = Http3RequestFailureSupport.completionFailure(closeCompletion);
-        if (closeFailure instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-        if (closeFailure instanceof Error error) {
-            throw error;
-        }
-        if (closeFailure != null) {
-            throw new IllegalStateException("Failed to close HTTP/3 connection cache", closeFailure);
         }
     }
 
@@ -927,15 +949,6 @@ final class Http3ConnectionCache extends ClientConnectionCache {
         initialTokenCaches.clear();
     }
 
-    void releaseInitialTokenState(InitialTokenState state) {
-        evictionLock.lock();
-        try {
-            state.release();
-        } finally {
-            evictionLock.unlock();
-        }
-    }
-
     private void retireRoute(Http3Discovery.EndpointContextKey endpointKey, Http3Discovery.Target target) {
         List<PoolRetirement> retirements = new ArrayList<>();
         evictionLock.lock();
@@ -963,19 +976,6 @@ final class Http3ConnectionCache extends ClientConnectionCache {
             throw new IllegalStateException("TLS configuration was reloaded");
         }
         return epoch;
-    }
-
-    private static boolean currentTlsGeneration(CacheKey cacheKey, Tls tls) {
-        return cacheKey.tlsGeneration() == tls.generation();
-    }
-
-    private static void retireDetached(SessionSlot slot, String reason) {
-        Http3ExchangeClient.ConnectionSession session = slot.session();
-        if (session == null) {
-            slot.close();
-        } else {
-            session.retire(reason);
-        }
     }
 
     private enum ReservationKind {
