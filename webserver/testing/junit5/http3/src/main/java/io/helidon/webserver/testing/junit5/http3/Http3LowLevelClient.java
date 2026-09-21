@@ -19,14 +19,12 @@ package io.helidon.webserver.testing.junit5.http3;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -38,15 +36,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http3.Http3ControlStreamListener;
 import io.helidon.http.http3.Http3ControlStreamSupport;
 import io.helidon.http.http3.Http3ErrorCode;
+import io.helidon.http.http3.Http3FrameListener;
 import io.helidon.http.http3.Http3GoAway;
+import io.helidon.http.http3.Http3MessageReader;
 import io.helidon.http.http3.Http3PeerCriticalStreams;
 import io.helidon.http.http3.Http3Protocol;
 import io.helidon.http.http3.Http3ProtocolException;
@@ -62,12 +64,9 @@ import io.helidon.quic.QuicConfig;
 import io.helidon.quic.QuicConnection;
 import io.helidon.quic.QuicRemoteStreamRegistration;
 import io.helidon.quic.QuicVersion;
-import io.helidon.quic.SequentialScheduler;
-import io.helidon.quic.VariableLengthEncoder;
 import io.helidon.quic.stream.QuicBidiStream;
 import io.helidon.quic.stream.QuicReceiverStream;
 import io.helidon.quic.stream.QuicSenderStream;
-import io.helidon.quic.stream.QuicStreamReader;
 import io.helidon.quic.stream.QuicStreamWriter;
 import io.helidon.webclient.http3.Http3Client;
 
@@ -79,6 +78,7 @@ public final class Http3LowLevelClient implements AutoCloseable {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final long LOCAL_QPACK_MAX_TABLE_CAPACITY = 4096;
     private static final int LOCAL_QPACK_BLOCKED_STREAMS = 16;
+    private static final int MAX_HEADERS_SIZE = 16_384;
 
     private final URI baseUri;
     private final ExecutorService executor;
@@ -143,7 +143,7 @@ public final class Http3LowLevelClient implements AutoCloseable {
                                                                       new String[] {Http3Client.PROTOCOL_ID});
             Http3QpackContext qpackContext = Http3QpackContext.create(LOCAL_QPACK_MAX_TABLE_CAPACITY,
                                                                       LOCAL_QPACK_BLOCKED_STREAMS,
-                                                                      16_384,
+                                                                      MAX_HEADERS_SIZE,
                                                                       throwable -> terminateConnection(connection,
                                                                                                        throwable));
             registration = connection.addRemoteStreamListener(stream -> {
@@ -328,105 +328,35 @@ public final class Http3LowLevelClient implements AutoCloseable {
                                            URI uri,
                                            String method,
                                            Headers headers) {
+        Method requestMethod = Method.create(method);
         RequestStream requestStream = openRequestStream(connection);
-        CompletableFuture<byte[]> responseFuture = readAll(requestStream.stream());
-        requestStream.writer()
-                .scheduleForWriting(BufferData.create(encodeRequestHeaders(qpackContext,
-                                                                          requestStream.stream().streamId(),
-                                                                          uri,
-                                                                          method,
-                                                                          headers)),
-                                    true);
-        byte[] response = await(responseFuture,
-                                10,
-                                TimeUnit.SECONDS,
-                                "reading the HTTP/3 response from " + uri);
-        return decodeResponse(qpackContext, requestStream.stream().streamId(), response);
+        ResponseFrameListener frames = new ResponseFrameListener();
+        try (Http3MessageReader reader = Http3MessageReader.response(requestStream.stream(),
+                                                                   qpackContext,
+                                                                   connection,
+                                                                   requestMethod,
+                                                                   MAX_HEADERS_SIZE,
+                                                                   Http3MessageReader.ResponseOptions.create(TIMEOUT, frames))) {
+            requestStream.writer()
+                    .scheduleForWriting(BufferData.create(encodeRequestHeaders(qpackContext,
+                                                                              requestStream.stream().streamId(),
+                                                                              uri,
+                                                                              method,
+                                                                              headers)),
+                                        true);
+            reader.activateReadTimeout();
+            Http3MessageReader.ResponseHead head = reader.readResponseHead(_ -> { });
+            int headersPayloadLength = Math.toIntExact(frames.headersPayloadLength);
+            BufferData body = BufferData.growing(256);
+            while (!reader.messageComplete()) {
+                body.write(reader.readEntityBufferWithTrailers(4096));
+            }
+            return DecodedResponse.create(head.status().code(), head.headers(), headersPayloadLength, body.readBytes());
+        }
     }
 
     private static int port(URI baseUri) {
         return baseUri.getPort() > 0 ? baseUri.getPort() : 443;
-    }
-
-    private static CompletableFuture<byte[]> readAll(QuicReceiverStream stream) {
-        CompletableFuture<byte[]> result = new CompletableFuture<>();
-        BufferData output = BufferData.growing(256);
-        QuicStreamReader[] holder = new QuicStreamReader[1];
-        SequentialScheduler scheduler = SequentialScheduler.lockingScheduler(() -> {
-            try {
-                QuicStreamReader reader = holder[0];
-                for (;;) {
-                    Optional<BufferData> next = reader.poll();
-                    if (next.isEmpty()) {
-                        return;
-                    }
-                    BufferData buffer = next.orElseThrow();
-                    if (buffer == QuicStreamReader.EOF) {
-                        result.complete(output.readBytes());
-                        return;
-                    }
-                    output.write(buffer);
-                }
-            } catch (Throwable t) {
-                result.completeExceptionally(t);
-            }
-        });
-        holder[0] = stream.connectReader(scheduler);
-        holder[0].start();
-        return result;
-    }
-
-    private static DecodedResponseHead decodeResponseHead(Http3QpackContext qpackContext,
-                                                          long streamId,
-                                                          byte[] headersPayload) {
-        Http3QpackContext.Stream qpackStream = qpackContext.openStream(streamId);
-        try {
-            Headers decodedHeaders = qpackStream.decodeHeaders(BufferData.create(headersPayload), -1);
-            int status = -1;
-            WritableHeaders<?> headers = WritableHeaders.create();
-            for (Header header : decodedHeaders) {
-                if (header.headerName().lowerCase().equals(":status")) {
-                    status = Integer.parseInt(header.get());
-                } else {
-                    headers.add(header);
-                }
-            }
-            if (status < 0) {
-                throw new IllegalArgumentException("Missing :status pseudo-header");
-            }
-            return new DecodedResponseHead(status, headers);
-        } finally {
-            qpackStream.complete();
-        }
-    }
-
-    private static DecodedResponse decodeResponse(Http3QpackContext qpackContext, long streamId, byte[] bytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        long frameType = VariableLengthEncoder.decode(buffer);
-        long frameLength = VariableLengthEncoder.decode(buffer);
-        if (frameType != Http3Protocol.FRAME_HEADERS || frameLength < 0 || frameLength > buffer.remaining()) {
-            throw new IllegalStateException("Malformed HTTP/3 response message.");
-        }
-        byte[] headersPayload = new byte[(int) frameLength];
-        buffer.get(headersPayload);
-        DecodedResponseHead responseHead = decodeResponseHead(qpackContext, streamId, headersPayload);
-        BufferData body = BufferData.growing(256);
-        while (buffer.hasRemaining()) {
-            long nextType = VariableLengthEncoder.decode(buffer);
-            long nextLength = VariableLengthEncoder.decode(buffer);
-            if (nextLength < 0 || nextLength > buffer.remaining()) {
-                throw new IllegalStateException("Malformed HTTP/3 response frame.");
-            }
-            byte[] payload = new byte[(int) nextLength];
-            buffer.get(payload);
-            if (nextType == Http3Protocol.FRAME_DATA) {
-                body.write(payload);
-            }
-        }
-        return DecodedResponse.create(responseHead.status(),
-                                      responseHead.headers(),
-                                      headersPayload.length,
-                                      body.readBytes());
     }
 
     private static byte[] encodeRequestHeaders(Http3QpackContext qpackContext,
@@ -544,7 +474,7 @@ public final class Http3LowLevelClient implements AutoCloseable {
          *
          * @param status HTTP status code
          * @param headers response headers
-         * @param headersPayloadLength encoded HEADERS payload length in bytes
+         * @param headersPayloadLength encoded final-response HEADERS payload length in bytes
          * @param body raw DATA payload bytes
          * @return decoded response snapshot
          */
@@ -574,7 +504,7 @@ public final class Http3LowLevelClient implements AutoCloseable {
         }
 
         /**
-         * Encoded HEADERS payload length in bytes.
+         * Encoded final-response HEADERS payload length in bytes.
          *
          * @return encoded HEADERS payload length
          */
@@ -636,12 +566,21 @@ public final class Http3LowLevelClient implements AutoCloseable {
         }
     }
 
-    private record RequestStream(QuicBidiStream stream, QuicStreamWriter writer) {
+    private static final class ResponseFrameListener implements Http3FrameListener {
+        private long headersPayloadLength;
+
+        @Override
+        public void frameHeader(SocketContext context,
+                                long streamId,
+                                long frameType,
+                                long frameLength,
+                                int encodedLength) {
+            if (frameType == Http3Protocol.FRAME_HEADERS) {
+                headersPayloadLength = frameLength;
+            }
+        }
     }
 
-    private record DecodedResponseHead(int status, Headers headers) {
-        private DecodedResponseHead {
-            headers = WritableHeaders.create(headers);
-        }
+    private record RequestStream(QuicBidiStream stream, QuicStreamWriter writer) {
     }
 }
