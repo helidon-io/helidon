@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +50,8 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -123,6 +127,78 @@ class Http2ClientResponseImplTest {
     }
 
     @Test
+    void transportCleanupFailureStillClosesDecoratorOnce() throws Exception {
+        IllegalStateException transportFailure = new IllegalStateException("transport cleanup failed");
+        IllegalStateException decoratorFailure = new IllegalStateException("decorator cleanup failed");
+        List<String> closedResources = new ArrayList<>();
+        ReleasableResource rawResource = () -> {
+            closedResources.add("transport");
+            throw transportFailure;
+        };
+        ReleasableResource returnedResource = () -> {
+            closedResources.add("decorator");
+            throw decoratorFailure;
+        };
+        CompletableFuture<ClientResponseTrailers> trailers = new CompletableFuture<>();
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        Http2ClientResponseImpl response = response(null,
+                                                    trailers,
+                                                    lifecycle,
+                                                    returnedResource,
+                                                    rawResource,
+                                                    rawResource::closeResource);
+
+        IllegalStateException actual = assertThrows(IllegalStateException.class, response::close);
+
+        assertThat(actual, sameInstance(transportFailure));
+        assertThat(actual.getSuppressed(), arrayContaining(decoratorFailure));
+        ExecutionException completion = assertThrows(ExecutionException.class,
+                                                     () -> lifecycle.get(5, TimeUnit.SECONDS));
+        assertThat(completion.getCause(), sameInstance(transportFailure));
+        ExecutionException trailerCompletion = assertThrows(ExecutionException.class,
+                                                            () -> trailers.get(5, TimeUnit.SECONDS));
+        assertThat(trailerCompletion.getCause(), sameInstance(transportFailure));
+
+        response.close();
+        assertThat(closedResources, contains("transport", "decorator"));
+    }
+
+    @Test
+    void trailerFailureRetainsItsCauseWhenBothResourcesFailToClose() throws Exception {
+        IllegalStateException trailerFailure = new IllegalStateException("trailers failed");
+        IllegalStateException transportFailure = new IllegalStateException("transport cleanup failed");
+        IllegalStateException decoratorFailure = new IllegalStateException("decorator cleanup failed");
+        List<String> closedResources = new ArrayList<>();
+        ReleasableResource rawResource = () -> {
+            closedResources.add("transport");
+            throw transportFailure;
+        };
+        ReleasableResource returnedResource = () -> {
+            closedResources.add("decorator");
+            throw decoratorFailure;
+        };
+        CompletableFuture<Void> lifecycle = new CompletableFuture<>();
+        Http2ClientResponseImpl response = response(null,
+                                                    CompletableFuture.failedFuture(trailerFailure),
+                                                    lifecycle,
+                                                    returnedResource,
+                                                    rawResource,
+                                                    rawResource::closeResource);
+        response.serviceEntityConsumed();
+
+        IllegalStateException actual = assertThrows(IllegalStateException.class, response::trailers);
+
+        assertThat(actual, sameInstance(trailerFailure));
+        assertThat(actual.getSuppressed(), arrayContaining(transportFailure, decoratorFailure));
+        ExecutionException completion = assertThrows(ExecutionException.class,
+                                                     () -> lifecycle.get(5, TimeUnit.SECONDS));
+        assertThat(completion.getCause(), sameInstance(trailerFailure));
+
+        response.close();
+        assertThat(closedResources, contains("transport", "decorator"));
+    }
+
+    @Test
     void responseDecodingUsesFinalizedRequestHeaderSnapshot() {
         ClientRequestHeaders finalizedHeaders = ClientRequestHeaders.create(WritableHeaders.create());
         finalizedHeaders.set(DECODER_HEADER, "sent");
@@ -159,12 +235,21 @@ class Http2ClientResponseImplTest {
                                                     CompletableFuture<ClientResponseTrailers> trailers,
                                                     CompletableFuture<Void> lifecycle,
                                                     AtomicInteger cleanupCount) {
+        ReleasableResource resource = () -> { };
+        return response(inputStream, trailers, lifecycle, resource, resource, cleanupCount::incrementAndGet);
+    }
+
+    private static Http2ClientResponseImpl response(InputStream inputStream,
+                                                    CompletableFuture<ClientResponseTrailers> trailers,
+                                                    CompletableFuture<Void> lifecycle,
+                                                    ReleasableResource returnedResource,
+                                                    ReleasableResource rawResource,
+                                                    Runnable cleanup) {
         ClientRequestHeaders requestHeaders = ClientRequestHeaders.create(WritableHeaders.create());
         WritableHeaders<?> responseHeaders = WritableHeaders.create();
         responseHeaders.add(HeaderNames.TRAILER, "checksum");
         WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
         when(serviceRequest.headers()).thenReturn(requestHeaders);
-        ReleasableResource resource = () -> { };
         return new Http2ClientResponseImpl(HttpClientConfig.builder().build(),
                                            Http2Client.PROTOCOL_ID,
                                            Status.OK_200,
@@ -176,11 +261,11 @@ class Http2ClientResponseImplTest {
                                            inputStream,
                                            MediaContext.create(),
                                            ClientUri.create(URI.create("https://localhost/test")),
-                                           resource,
-                                           resource,
+                                           returnedResource,
+                                           rawResource,
                                            null,
                                            lifecycle,
-                                           cleanupCount::incrementAndGet,
+                                           cleanup,
                                            1024);
     }
 

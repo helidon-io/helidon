@@ -19,6 +19,7 @@ package io.helidon.webclient.http2;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -41,6 +42,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -68,9 +70,12 @@ import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientConnectionTarget;
+import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.RedirectSecurityState;
+import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.api.ResolvedClientTarget;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClient;
@@ -1850,6 +1855,88 @@ class Http2ClientConnectionTest {
                 if (replacement != null) {
                     replacement.cancel();
                     replacement.close();
+                }
+                stream.cancel();
+                stream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void decoratedResponseCloseResetsBeforeReplacementStream() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            AtomicReference<Http2ClientStream> replacement = new AtomicReference<>();
+            try {
+                test.awaitWrittenFrame(Http2FrameType.SETTINGS);
+                stream.writeHeaders(requestHeaders(), true);
+                test.awaitWrittenFrame(Http2FrameType.HEADERS);
+
+                Http2Headers.DynamicTable inboundTable =
+                        Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+                test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                     encodedResponseHeaders(false),
+                                                     inboundTable,
+                                                     Http2HuffmanEncoder.create()));
+                var uri = ClientUri.create(URI.create("http://www.example.com/"));
+                ClientRequestHeaders requestHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+                WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
+                when(serviceRequest.method()).thenReturn(Method.GET);
+                when(serviceRequest.uri()).thenReturn(uri);
+                when(serviceRequest.headers()).thenReturn(requestHeaders);
+                var chain = new Http2CallEntityChain(test.client,
+                                                    mock(Http2ClientRequestImpl.class),
+                                                    new CompletableFuture<>(),
+                                                    new CompletableFuture<>(),
+                                                    BufferData.EMPTY_BYTES);
+                chain.stream(stream);
+                WebClientServiceResponse rawResponse = chain.readResponse(serviceRequest, stream);
+                ReleasableResource returnedResource = () -> {
+                    rawResponse.connection().closeResource();
+                    // A competing request can reserve the released peer slot before this decorator returns.
+                    Http2ClientStream nextStream = connection.tryStream(STREAM_CONFIG);
+                    replacement.set(nextStream);
+                    assertThat("The closed response must release the peer's only stream slot", nextStream, notNullValue());
+                    nextStream.writeHeaders(requestHeaders(), true);
+                };
+                var response = new Http2ClientResponseImpl(test.clientConfig,
+                                                           Http2Client.PROTOCOL_ID,
+                                                           rawResponse.status(),
+                                                           serviceRequest,
+                                                           requestHeaders,
+                                                           RedirectSecurityState.initial(),
+                                                           rawResponse.headers(),
+                                                           rawResponse.trailers(),
+                                                           rawResponse.inputStream().orElseThrow(),
+                                                           test.clientConfig.mediaContext(),
+                                                           uri,
+                                                           returnedResource,
+                                                           rawResponse.connection(),
+                                                           stream,
+                                                           new CompletableFuture<>(),
+                                                           chain::closeResponse,
+                                                           test.client.protocolConfig().maxBufferedEntitySize().toBytes());
+
+                response.close();
+
+                BufferData next = test.writtenFrames.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                assertThat("Closing an unfinished response must write RST_STREAM", next, notNullValue());
+                Http2FrameHeader resetHeader = Http2FrameHeader.create(next);
+                assertThat("Response cancellation must precede replacement HEADERS at the peer concurrency limit",
+                           resetHeader.type(),
+                           is(Http2FrameType.RST_STREAM));
+                assertThat(resetHeader.streamId(), is(stream.streamId()));
+                assertThat(Http2RstStream.create(next).errorCode(), is(Http2ErrorCode.CANCEL));
+                Http2FrameData replacementHeaders = test.awaitWrittenFrame(Http2FrameType.HEADERS);
+                assertThat(replacementHeaders.header().streamId(), is(replacement.get().streamId()));
+            } finally {
+                Http2ClientStream nextStream = replacement.get();
+                if (nextStream != null) {
+                    nextStream.cancel();
+                    nextStream.close();
                 }
                 stream.cancel();
                 stream.close();

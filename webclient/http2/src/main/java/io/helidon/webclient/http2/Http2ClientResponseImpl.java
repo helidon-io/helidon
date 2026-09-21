@@ -264,16 +264,17 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     }
 
     private Throwable closeResources(Throwable failure) {
-        if (returnedResource != rawResource) {
+        // Cancel the transport before a decorator can release the raw stream's concurrency reservation.
+        if (rawResource != null) {
             try {
-                returnedResource.closeResource();
+                closeResponseRunnable.run();
             } catch (RuntimeException | Error cleanupFailure) {
                 failure = mergeFailure(failure, cleanupFailure);
             }
         }
-        if (rawResource != null) {
+        if (returnedResource != rawResource) {
             try {
-                closeResponseRunnable.run();
+                returnedResource.closeResource();
             } catch (RuntimeException | Error cleanupFailure) {
                 failure = mergeFailure(failure, cleanupFailure);
             }
