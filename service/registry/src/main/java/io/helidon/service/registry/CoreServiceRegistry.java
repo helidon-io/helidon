@@ -65,7 +65,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     // map of service implementation class to service info
     private final Map<TypeName, ServiceInfo> servicesByType;
     // map of provided contracts to service info(s)
-    private final Map<ResolvedType, Set<ServiceInfo>> servicesByContract;
+    private final Map<ResolvedType, List<ServiceInfo>> servicesByContract = new HashMap<>();
     // map of qualifier annotations to service info(s)
     private final Map<TypeName, Set<ServiceInfo>> qualifiedProvidersByQualifier;
     // map of qualifier annotations and resolved type combination to service info(s)
@@ -135,7 +135,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
         this.scopeHandlerServices = scopeHandlers;
         this.servicesByType = new HashMap<>(servicesByType);
-        this.servicesByContract = new HashMap<>(servicesByContract);
+        servicesByContract.forEach((contract, services) -> this.servicesByContract.put(contract, List.copyOf(services)));
         this.qualifiedProvidersByQualifier = qualifiedProvidersByQualifier;
         this.typedQualifiedProviders = typedQualifiedProviders;
         this.activationRequest = ActivationRequest.builder()
@@ -417,7 +417,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             if (1 == lookup.contracts().size()) {
                 // a single contract is requested, we are ready for this ("indexed by contract")
                 ResolvedType theOnlyContractRequested = lookup.contracts().iterator().next();
-                Set<ServiceInfo> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
+                List<ServiceInfo> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
                 if (subsetOfMatches != null) {
                     // the subset is ordered, cannot use parallel, also no need to re-order
                     subsetOfMatches.stream()
@@ -538,7 +538,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                                                                + contract.type());
                 }
 
-                Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
+                List<ServiceInfo> serviceInfos = new ArrayList<>();
                 var existing = servicesByContract.get(contract);
                 if (existing != null) {
                     // we may add new contracts in case somebody injects Object; this should only be done
@@ -546,7 +546,10 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                     serviceInfos.addAll(existing);
                 }
 
-                serviceInfos.add(descriptor);
+                if (!serviceInfos.contains(descriptor)) {
+                    serviceInfos.add(descriptor);
+                }
+                serviceInfos.sort(SERVICE_INFO_COMPARATOR);
 
                 // replace the instances
                 servicesByContract.put(contract, serviceInfos);
@@ -600,14 +603,15 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         checkValidContract(contract);
         ServiceInfo serviceInfo = servicesByType.get(contract.type());
         if (serviceInfo == null) {
-            Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
-            Set<ServiceInfo> currentInfos = servicesByContract.get(contract);
+            List<ServiceInfo> serviceInfos = new ArrayList<>();
+            List<ServiceInfo> currentInfos = servicesByContract.get(contract);
             if (currentInfos != null) {
                 serviceInfos.addAll(currentInfos);
             }
 
             // each instance will have its own descriptor
             setContract(contract, instance, weight, serviceInfos, qualifiers);
+            serviceInfos.sort(SERVICE_INFO_COMPARATOR);
 
             // replace the instances
             servicesByContract.put(contract, serviceInfos);
@@ -665,7 +669,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                                                        + contract.resolvedName() + ", qualifiers: " + qualifiers);
         }
         if (serviceInfo == null) {
-            Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
+            List<ServiceInfo> serviceInfos = new ArrayList<>();
 
             // we need to keep order of the instances; if somebody calls set, and then add, it may be tricky
 
@@ -704,7 +708,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         checkValidContract(contractType);
         ServiceInfo serviceInfo = servicesByType.get(contractType.type());
         if (serviceInfo == null) {
-            Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
+            List<ServiceInfo> serviceInfos = new ArrayList<>();
 
             // we need to keep order of the instances; if somebody calls set, and then add, it may be tricky
             double currentWeight = Weighted.DEFAULT_WEIGHT;
@@ -744,7 +748,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     }
 
     List<ServiceInfo> servicesByContract(ResolvedType contract) {
-        Set<ServiceInfo> serviceInfos = servicesByContract.get(contract);
+        List<ServiceInfo> serviceInfos = servicesByContract.get(contract);
         if (serviceInfos == null) {
             return List.of();
         }
@@ -852,7 +856,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     private <T> void setContract(ResolvedType contractType,
                                  T instance,
                                  double currentWeight,
-                                 Set<ServiceInfo> serviceInfos,
+                                 List<ServiceInfo> serviceInfos,
                                  Set<Qualifier> qualifiers) {
         VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), currentWeight, instance, qualifiers);
         ServiceProvider<Object> provider = new ServiceProvider<>(this,

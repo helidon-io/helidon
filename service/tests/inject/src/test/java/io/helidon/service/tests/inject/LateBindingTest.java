@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -178,6 +179,49 @@ public class LateBindingTest {
             assertThat(contracts.get(0).message(), is("custom1"));
             assertThat(contracts.get(1).message(), is("injected"));
             assertThat(contracts.get(2).message(), is("custom2"));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testLateBindingContractEqualWeights() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry registry = manager.registry();
+        GlobalServiceRegistry.registry(registry);
+        try {
+            Services.add(LateBindingTypes.Contract.class,
+                         Weighted.DEFAULT_WEIGHT,
+                         new LateBindingTypes.ServiceProvider("first"));
+            Services.add(LateBindingTypes.Contract.class,
+                         Weighted.DEFAULT_WEIGHT,
+                         new LateBindingTypes.ServiceProvider("second"));
+
+            List<String> messages = registry.all(LateBindingTypes.Contract.class)
+                    .stream()
+                    .map(LateBindingTypes.Contract::message)
+                    .toList();
+            assertThat(messages, containsInAnyOrder("injected", "first", "second"));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testLateBindingNamedContractEqualWeights() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry registry = manager.registry();
+        GlobalServiceRegistry.registry(registry);
+        try {
+            var first = new LateBindingTypes.ServiceProvider("first");
+            var shared = new LateBindingTypes.ServiceProvider("shared");
+            Services.setNamed(LateBindingTypes.Contract.class, first, "first");
+            Services.addNamed(LateBindingTypes.Contract.class, Weighted.DEFAULT_WEIGHT, shared, "second");
+            Services.addNamed(LateBindingTypes.Contract.class, Weighted.DEFAULT_WEIGHT, shared, "third");
+
+            List<LateBindingTypes.Contract> contracts = registry.all(LateBindingTypes.Contract.class,
+                                                                      Qualifier.createNamed("*"));
+            assertThat(contracts, containsInAnyOrder(first, shared, shared));
         } finally {
             manager.shutdown();
         }

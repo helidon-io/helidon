@@ -16,6 +16,7 @@
 
 package io.helidon.service.metadata;
 
+import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.common.types.ResolvedType;
@@ -39,7 +40,8 @@ public interface DescriptorMetadata {
                                      double weight,
                                      Set<ResolvedType> contracts,
                                      Set<ResolvedType> factoryContracts) {
-        return new DescriptorMetadataImpl(weight, descriptor, contracts, factoryContracts);
+        Objects.requireNonNull(descriptor, "descriptor");
+        return new DescriptorMetadataImpl(weight, descriptor, Set.copyOf(contracts), Set.copyOf(factoryContracts));
     }
 
     /**
