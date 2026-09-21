@@ -54,8 +54,9 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
  */
 @Api.Internal
 public class Http3ServerExtension implements ServerJunitExtension {
-    private final Map<Parameter, Http3Client> clients = new ConcurrentHashMap<>();
-    private final Map<Parameter, Http3LowLevelClient> lowLevelClients = new ConcurrentHashMap<>();
+    private static final ExtensionContext.Namespace CLIENTS_NAMESPACE =
+            ExtensionContext.Namespace.create(Http3ServerExtension.class);
+
     private final Map<String, ListenerConfig.Builder> listenerBuilders = new ConcurrentHashMap<>();
 
     /**
@@ -69,7 +70,6 @@ public class Http3ServerExtension implements ServerJunitExtension {
         Objects.requireNonNull(context, "context");
 
         listenerBuilders.clear();
-        lowLevelClients.clear();
     }
 
     @Override
@@ -112,8 +112,10 @@ public class Http3ServerExtension implements ServerJunitExtension {
 
         URI baseUri = URI.create("https://localhost:" + port + "/");
         Tls clientTls = clientTls(parameterContext, extensionContext, server, socketName);
+        ClientResources resources = clientStore(extensionContext)
+                .getOrComputeIfAbsent(ClientResources.class, _ -> new ClientResources(), ClientResources.class);
         if (Http3Client.class.equals(parameterType)) {
-            return clients.computeIfAbsent(parameter, ignored -> Http3Client.builder()
+            return resources.clients.computeIfAbsent(parameter, _ -> Http3Client.builder()
                     .baseUri(baseUri)
                     .shareConnectionCache(false)
                     .proxy(Proxy.noProxy())
@@ -123,7 +125,7 @@ public class Http3ServerExtension implements ServerJunitExtension {
                                             .build())
                     .build());
         }
-        return lowLevelClients.computeIfAbsent(parameter, ignored -> Http3LowLevelClient.create(baseUri, clientTls));
+        return resources.lowLevelClients.computeIfAbsent(parameter, _ -> Http3LowLevelClient.create(baseUri, clientTls));
     }
 
     @Override
@@ -141,10 +143,26 @@ public class Http3ServerExtension implements ServerJunitExtension {
     public void afterEach(ExtensionContext context) {
         Objects.requireNonNull(context, "context");
 
-        clients.values().forEach(Http3Client::closeResource);
-        clients.clear();
-        lowLevelClients.values().forEach(Http3LowLevelClient::close);
-        lowLevelClients.clear();
+        closeClients(context);
+    }
+
+    @Override
+    public void afterAll(ExtensionContext context) {
+        Objects.requireNonNull(context, "context");
+
+        closeClients(context);
+    }
+
+    private static ExtensionContext.Store clientStore(ExtensionContext context) {
+        // Store lookups include ancestors, so isolate ownership by the exact injection context.
+        return context.getStore(CLIENTS_NAMESPACE.append(context.getUniqueId()));
+    }
+
+    private static void closeClients(ExtensionContext context) {
+        ClientResources resources = clientStore(context).remove(ClientResources.class, ClientResources.class);
+        if (resources != null) {
+            resources.close();
+        }
     }
 
     private static List<X509Certificate> clientCertificates(ParameterContext parameterContext,
@@ -241,5 +259,18 @@ public class Http3ServerExtension implements ServerJunitExtension {
 
         return listenerConfig.tls()
                 .orElseThrow(() -> new IllegalStateException("Socket " + socketName + " does not have TLS configured"));
+    }
+
+    private static final class ClientResources implements ExtensionContext.Store.CloseableResource {
+        private final Map<Parameter, Http3Client> clients = new ConcurrentHashMap<>();
+        private final Map<Parameter, Http3LowLevelClient> lowLevelClients = new ConcurrentHashMap<>();
+
+        @Override
+        public void close() {
+            clients.values().forEach(Http3Client::closeResource);
+            clients.clear();
+            lowLevelClients.values().forEach(Http3LowLevelClient::close);
+            lowLevelClients.clear();
+        }
     }
 }

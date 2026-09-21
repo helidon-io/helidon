@@ -48,12 +48,19 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Isolated
 class JunitExtensionBaseTest {
     private static final AtomicInteger FACTORY_CREATE_COUNT = new AtomicInteger();
     private static final AtomicInteger UNRELATED_FACTORY_CREATE_COUNT = new AtomicInteger();
     private static final AtomicInteger PROVIDER_CREATE_COUNT = new AtomicInteger();
+
+    @Test
+    void serverConstructorScopeRejectsNullContext() {
+        var extension = new HelidonServerJunitExtension();
+        assertThrows(NullPointerException.class, () -> extension.getTestInstantiationExtensionContextScope(null));
+    }
 
     @Test
     void registryFeatureTakesPrecedenceOverMatchingProvider() {
