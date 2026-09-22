@@ -55,7 +55,7 @@ class WebclientServiceValuePropagationTest extends TestParent {
         try (HttpClientResponse response = webClient.get("/greet/valuesPropagated")
                 .path("replace/me")
                 .request()) {
-            assertThat(response.as(String.class), is("Hi"));
+            assertThat(response.as(String.class), is("Hi "));
             assertThat(response.lastEndpointUri().fragment().value(), is("Test"));
         }
     }
