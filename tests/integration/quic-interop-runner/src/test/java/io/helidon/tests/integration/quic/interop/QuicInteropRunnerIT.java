@@ -167,9 +167,9 @@ class QuicInteropRunnerIT {
             String interopOutput = copyTextFileIfPresent(tool,
                                                          LOG_SUBDIR + "/output.txt",
                                                          artifactsDir.resolve("interop-output.txt"));
-            String serverLog = copyTextFileIfPresent(tool,
-                                                     LOG_SUBDIR + "/server/helidon-http3.log",
-                                                     artifactsDir.resolve("server.log"));
+            copyTextFileIfPresent(tool,
+                                  LOG_SUBDIR + "/server/helidon-http3.log",
+                                  artifactsDir.resolve("server.log"));
 
             assertThat("quic-interop-runner reported a failure.\n\n"
                                + runnerOutput
@@ -259,7 +259,7 @@ class QuicInteropRunnerIT {
                 Files.write(targetPath, bytes);
                 return new String(bytes, StandardCharsets.UTF_8);
             });
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             Container.ExecResult fallback = container.execInContainer("sh",
                                                                       "-c",
                                                                       "if [ -f '" + sourcePath + "' ]; then "
