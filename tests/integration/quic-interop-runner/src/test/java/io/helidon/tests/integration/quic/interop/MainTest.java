@@ -86,14 +86,12 @@ class MainTest {
                                                            "index.html");
 
         WebServer server = Main.startServer(config);
-        try {
-            HttpClient client = HttpClient.newBuilder()
-                    .version(HTTP_3)
-                    .connectTimeout(TestTlsSupport.TIMEOUT)
-                    .proxy(ProxySelector.of(null))
-                    .sslContext(TestTlsSupport.clientSslContext())
-                    .build();
-
+        try (HttpClient client = HttpClient.newBuilder()
+                .version(HTTP_3)
+                .connectTimeout(TestTlsSupport.TIMEOUT)
+                .proxy(ProxySelector.of(null))
+                .sslContext(TestTlsSupport.clientSslContext())
+                .build()) {
             HttpRequest request = HttpRequest.newBuilder(URI.create("https://localhost:" + server.port() + "/"))
                     .version(HTTP_3)
                     .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
