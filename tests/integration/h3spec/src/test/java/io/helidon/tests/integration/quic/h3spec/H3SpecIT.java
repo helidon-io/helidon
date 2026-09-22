@@ -28,6 +28,8 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.CleanupMode;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
@@ -52,8 +54,7 @@ class H3SpecIT {
 
     @Test
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
-    void shouldPassH3SpecAgainstInteropHarness() throws Exception {
-        Path workDir = Files.createTempDirectory("helidon-h3spec");
+    void shouldPassH3SpecAgainstInteropHarness(@TempDir(cleanup = CleanupMode.ALWAYS) Path workDir) throws Exception {
         Path certsDir = Files.createDirectory(workDir.resolve("certs"));
         Path webRoot = Files.createDirectory(workDir.resolve("www"));
         Path certChain = certsDir.resolve("cert.pem");
