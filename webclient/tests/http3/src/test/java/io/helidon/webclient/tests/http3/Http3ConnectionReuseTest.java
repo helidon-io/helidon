@@ -1084,13 +1084,11 @@ class Http3ConnectionReuseTest {
                 CompletableFuture<String> firstRequest = CompletableFuture.supplyAsync(() -> {
                     requestsStarted.countDown();
                     return requestConnectionId(client, "/queued-before-close-first");
-                }, executor);
+                }, executor).whenComplete((_, _) -> firstCompletions.incrementAndGet());
                 CompletableFuture<String> secondRequest = CompletableFuture.supplyAsync(() -> {
                     requestsStarted.countDown();
                     return requestConnectionId(client, "/queued-before-close-second");
-                }, executor);
-                firstRequest.whenComplete((_, _) -> firstCompletions.incrementAndGet());
-                secondRequest.whenComplete((_, _) -> secondCompletions.incrementAndGet());
+                }, executor).whenComplete((_, _) -> secondCompletions.incrementAndGet());
                 await(requestsStarted);
                 assertThrows(TimeoutException.class,
                              () -> firstRequest.get(500, TimeUnit.MILLISECONDS));
