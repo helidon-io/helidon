@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class Http3UdpOnlyListenerTest {
     @Test
     void shouldServeHttp3OnUdpOnlyListener() throws Exception {
-        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.udpOnlyListener(Http3UdpOnlyListenerTest::routing)) {
-            HttpClient client = environment.http3Client();
+        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.udpOnlyListener(Http3UdpOnlyListenerTest::routing);
+             HttpClient client = environment.http3Client()) {
             HttpResponse<String> response = client.send(Http3TestSupport.http3Get(environment.port(), "/hello"), ofString());
 
             assertThat(response.statusCode(), is(200));
@@ -45,9 +45,8 @@ class Http3UdpOnlyListenerTest {
 
     @Test
     void shouldRejectHttp1OnUdpOnlyListener() throws Exception {
-        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.udpOnlyListener(Http3UdpOnlyListenerTest::routing)) {
-            HttpClient client = environment.http1Client();
-
+        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.udpOnlyListener(Http3UdpOnlyListenerTest::routing);
+             HttpClient client = environment.http1Client()) {
             assertThrows(IOException.class, () -> client.send(Http3TestSupport.http1Get(environment.port(), "/hello"),
                                                               ofString()));
         }

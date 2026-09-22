@@ -36,8 +36,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class Http3AltSvcTest {
     @Test
     void shouldAdvertiseAltSvcOnSuccessfulResponse() throws Exception {
-        try (Http3TestSupport.TestEnvironment environment = environment()) {
-            HttpClient client = environment.http1Client();
+        try (Http3TestSupport.TestEnvironment environment = environment();
+             HttpClient client = environment.http1Client()) {
             int port = environment.port();
             HttpResponse<String> response = client.send(Http3TestSupport.http1Get(port, "/ok"), ofString());
 
@@ -50,8 +50,8 @@ class Http3AltSvcTest {
 
     @Test
     void shouldAdvertiseAltSvcOnRedirectFromErrorHandler() throws Exception {
-        try (Http3TestSupport.TestEnvironment environment = environment()) {
-            HttpClient client = environment.http1Client();
+        try (Http3TestSupport.TestEnvironment environment = environment();
+             HttpClient client = environment.http1Client()) {
             int port = environment.port();
             HttpResponse<String> response = client.send(Http3TestSupport.http1Get(port, "/error-redirect"), ofString());
 
@@ -64,8 +64,8 @@ class Http3AltSvcTest {
 
     @Test
     void shouldNotAdvertiseAltSvcOnNotFound() throws Exception {
-        try (Http3TestSupport.TestEnvironment environment = environment()) {
-            HttpClient client = environment.http1Client();
+        try (Http3TestSupport.TestEnvironment environment = environment();
+             HttpClient client = environment.http1Client()) {
             int port = environment.port();
             HttpResponse<String> response = client.send(Http3TestSupport.http1Get(port, "/missing"), ofString());
 

@@ -57,18 +57,18 @@ class Http3LoopbackTest {
     }
 
     private static void assertSharedRoute(Http3TestSupport.TestEnvironment environment) throws Exception {
-        HttpClient http1Client = environment.http1Client();
-        HttpClient http3Client = environment.http3Client();
+        try (HttpClient http1Client = environment.http1Client();
+             HttpClient http3Client = environment.http3Client()) {
+            HttpResponse<String> http1Response = http1Client.send(environment.http1Get("/hello"), ofString());
+            HttpResponse<String> http3Response = http3Client.send(environment.http3Get("/hello"), ofString());
 
-        HttpResponse<String> http1Response = http1Client.send(environment.http1Get("/hello"), ofString());
-        HttpResponse<String> http3Response = http3Client.send(environment.http3Get("/hello"), ofString());
+            assertThat(http1Response.statusCode(), is(200));
+            assertThat(http1Response.version(), is(HTTP_1_1));
+            assertThat(http1Response.body(), is("shared"));
 
-        assertThat(http1Response.statusCode(), is(200));
-        assertThat(http1Response.version(), is(HTTP_1_1));
-        assertThat(http1Response.body(), is("shared"));
-
-        assertThat(http3Response.statusCode(), is(200));
-        assertThat(http3Response.version(), is(HTTP_3));
-        assertThat(http3Response.body(), is("shared"));
+            assertThat(http3Response.statusCode(), is(200));
+            assertThat(http3Response.version(), is(HTTP_3));
+            assertThat(http3Response.body(), is("shared"));
+        }
     }
 }

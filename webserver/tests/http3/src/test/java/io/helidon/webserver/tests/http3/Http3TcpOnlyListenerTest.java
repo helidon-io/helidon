@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class Http3TcpOnlyListenerTest {
     @Test
     void shouldServeHttp1OnTcpOnlyListener() throws Exception {
-        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.tcpOnlyListener(Http3TcpOnlyListenerTest::routing)) {
-            HttpClient client = environment.http1Client();
+        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.tcpOnlyListener(Http3TcpOnlyListenerTest::routing);
+             HttpClient client = environment.http1Client()) {
             HttpResponse<String> response = client.send(environment.http1Get("/hello"), ofString());
 
             assertThat(response.statusCode(), is(200));
@@ -45,9 +45,8 @@ class Http3TcpOnlyListenerTest {
 
     @Test
     void shouldRejectHttp3OnTcpOnlyListener() throws Exception {
-        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.tcpOnlyListener(Http3TcpOnlyListenerTest::routing)) {
-            HttpClient client = environment.http3Client();
-
+        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.tcpOnlyListener(Http3TcpOnlyListenerTest::routing);
+             HttpClient client = environment.http3Client()) {
             assertThrows(IOException.class, () -> client.send(environment.http3Get("/hello"), ofString()));
         }
     }
