@@ -17,57 +17,15 @@
 package io.helidon.webserver.quic;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.webserver.ListenerConfig;
-import io.helidon.webserver.WebServerConfig;
 
 final class QuicTransportConfigSupport {
     static final String DEFAULT_HANDSHAKE_TIMEOUT = "PT10S";
     static final int DEFAULT_MAX_PENDING_HANDSHAKES = 256;
 
     private QuicTransportConfigSupport() {
-    }
-
-    static final class CustomMethods {
-        private CustomMethods() {
-        }
-
-        /**
-         * Add this QUIC transport configuration to a listener.
-         * <p>
-         * The target listener supplies the address, port, TLS, routing, request limit, and connection limit.
-         *
-         * @param config QUIC transport configuration
-         * @param listenerBuilder listener builder to update
-         * @return the supplied listener builder
-         */
-        @Prototype.PrototypeMethod
-        @Prototype.Annotated("io.helidon.common.Api.Incubating")
-        static ListenerConfig.Builder addTo(QuicTransportConfig config, ListenerConfig.Builder listenerBuilder) {
-            Objects.requireNonNull(listenerBuilder, "listenerBuilder");
-            listenerBuilder.addBinding(QuicTransportBindingFactory.create(config));
-            return listenerBuilder;
-        }
-
-        /**
-         * Add this QUIC transport configuration to the default listener of a web server.
-         * <p>
-         * The target listener supplies the address, port, TLS, routing, request limit, and connection limit.
-         *
-         * @param config QUIC transport configuration
-         * @param serverBuilder web server builder to update
-         * @return the supplied web server builder
-         */
-        @Prototype.PrototypeMethod
-        @Prototype.Annotated("io.helidon.common.Api.Incubating")
-        static WebServerConfig.Builder addTo(QuicTransportConfig config, WebServerConfig.Builder serverBuilder) {
-            Objects.requireNonNull(serverBuilder, "serverBuilder");
-            serverBuilder.addBinding(QuicTransportBindingFactory.create(config));
-            return serverBuilder;
-        }
     }
 
     static final class Decorator implements Prototype.BuilderDecorator<QuicTransportConfig.BuilderBase<?, ?>> {

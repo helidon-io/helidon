@@ -3581,8 +3581,8 @@ class Http3WebServerIT {
             var listenerBuilder = ListenerConfig.builder()
                     .address(address)
                     .port(0)
-                    .bindingsDiscoverServices(false);
-            QuicTransportConfig.create().addTo(listenerBuilder);
+                    .bindingsDiscoverServices(false)
+                    .addBinding(QuicTransportConfig.create());
 
             var serverBuilder = WebServer.builder()
                     .from(listenerBuilder)

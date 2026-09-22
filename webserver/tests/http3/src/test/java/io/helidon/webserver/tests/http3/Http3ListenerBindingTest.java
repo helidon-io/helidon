@@ -53,11 +53,9 @@ class Http3ListenerBindingTest {
                     port = tcp.getLocalPort();
                 }
 
-                environment = Http3TestSupport.sharedListener(builder -> {
-                    builder.port(port)
-                            .bindingsDiscoverServices(false);
-                    QuicTransportConfig.create().addTo(builder);
-                }, Http3ListenerBindingTest::routing);
+                environment = Http3TestSupport.sharedListener(builder -> builder.port(port)
+                        .bindingsDiscoverServices(false)
+                        .addBinding(QuicTransportConfig.create()), Http3ListenerBindingTest::routing);
             } catch (Exception e) {
                 if (attempt >= MAX_BIND_ATTEMPTS || !isRetryableBindFailure(e)) {
                     throw e;
@@ -76,11 +74,9 @@ class Http3ListenerBindingTest {
     @Test
     void shouldConvergeOnEphemeralPortWithProgrammaticTcpFirst() throws Exception {
         try (Http3TestSupport.TestEnvironment environment =
-                     Http3TestSupport.sharedListener(builder -> {
-                         builder.bindingsDiscoverServices(false)
-                                 .addBinding(TcpTransportConfig.create());
-                         QuicTransportConfig.create().addTo(builder);
-                     }, Http3ListenerBindingTest::routing)) {
+                     Http3TestSupport.sharedListener(builder -> builder.bindingsDiscoverServices(false)
+                             .addBinding(TcpTransportConfig.create())
+                             .addBinding(QuicTransportConfig.create()), Http3ListenerBindingTest::routing)) {
             assertThat(environment.port(), is(greaterThan(0)));
             assertServesHttp1AndHttp3(environment);
         }
@@ -89,11 +85,9 @@ class Http3ListenerBindingTest {
     @Test
     void shouldConvergeOnEphemeralPortWithProgrammaticQuicFirst() throws Exception {
         try (Http3TestSupport.TestEnvironment environment =
-                     Http3TestSupport.sharedListener(builder -> {
-                         builder.bindingsDiscoverServices(false);
-                         QuicTransportConfig.create().addTo(builder);
-                         builder.addBinding(TcpTransportConfig.create());
-                     }, Http3ListenerBindingTest::routing)) {
+                     Http3TestSupport.sharedListener(builder -> builder.bindingsDiscoverServices(false)
+                             .addBinding(QuicTransportConfig.create())
+                             .addBinding(TcpTransportConfig.create()), Http3ListenerBindingTest::routing)) {
             assertThat(environment.port(), is(greaterThan(0)));
             assertServesHttp1AndHttp3(environment);
         }

@@ -20,26 +20,38 @@ import java.time.Duration;
 import java.util.List;
 
 import io.helidon.common.Weighted;
+import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.quic.QuicVersion;
 import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.ListenerTlsContext;
+import io.helidon.webserver.TransportBindingContext;
 import io.helidon.webserver.TransportBindingTypes;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.quic.spi.QuicSubProtocolConfig;
 import io.helidon.webserver.quic.spi.QuicSubProtocolProvider;
+import io.helidon.webserver.quic.spi.QuicSubProtocolRuntime;
+import io.helidon.webserver.spi.PortTransportBinding;
 import io.helidon.webserver.spi.TransportBindingFactory;
+import io.helidon.webserver.spi.TransportConfig;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class QuicTransportConfigTest {
     @Test
@@ -68,12 +80,12 @@ class QuicTransportConfigTest {
     }
 
     @Test
-    void addsBindingToSuppliedListenerBuilder() {
-        QuicTransportConfig config = QuicTransportConfig.create();
+    void addBindingReturnsSameListenerBuilder() {
+        TransportConfig config = QuicTransportConfig.create();
         ListenerConfig.Builder listenerBuilder = ListenerConfig.builder()
                 .bindingsDiscoverServices(false);
 
-        ListenerConfig.Builder result = config.addTo(listenerBuilder);
+        ListenerConfig.Builder result = listenerBuilder.addBinding(config);
 
         assertThat(result, sameInstance(listenerBuilder));
         assertThat(listenerBuilder.bindings().stream().map(TransportBindingFactory::type).toList(),
@@ -87,16 +99,103 @@ class QuicTransportConfigTest {
     }
 
     @Test
-    void addsBindingToSuppliedWebServerBuilder() {
-        QuicTransportConfig config = QuicTransportConfig.create();
+    void addBindingReturnsSameWebServerBuilder() {
+        TransportConfig config = QuicTransportConfig.create();
         WebServerConfig.Builder serverBuilder = WebServer.builder()
                 .bindingsDiscoverServices(false);
 
-        WebServerConfig.Builder result = config.addTo(serverBuilder);
+        WebServerConfig.Builder result = serverBuilder.addBinding(config);
 
         assertThat(result, sameInstance(serverBuilder));
         assertThat(serverBuilder.bindings().stream().map(TransportBindingFactory::type).toList(),
                    contains(QuicTransportBindingTypes.QUIC));
+    }
+
+    @Test
+    void listenerBuilderRejectsNullTransportConfig() {
+        ListenerConfig.Builder builder = ListenerConfig.builder();
+
+        assertThrows(NullPointerException.class, () -> builder.addBinding((TransportConfig) null));
+    }
+
+    @Test
+    void webServerBuilderRejectsNullTransportConfig() {
+        WebServerConfig.Builder builder = WebServer.builder();
+
+        assertThrows(NullPointerException.class, () -> builder.addBinding((TransportConfig) null));
+    }
+
+    @Test
+    void explicitBindingPreservesDisabledAndRequiredSettings() {
+        QuicTransportConfig config = QuicTransportConfig.builder()
+                .enabled(false)
+                .required(true)
+                .buildPrototype();
+        ListenerConfig listener = ListenerConfig.builder()
+                .bindingsDiscoverServices(false)
+                .addBinding(config)
+                .buildPrototype();
+        TransportBindingFactory factory = listener.bindings()
+                .stream()
+                .filter(binding -> QuicTransportBindingTypes.QUIC.equals(binding.type()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(factory.type(), is(QuicTransportBindingTypes.QUIC));
+        assertThat(factory.enabled(), is(false));
+        assertThat(factory.required(), is(true));
+    }
+
+    @Test
+    void explicitBindingPreservesQuicStreamLimitBeforeOpeningSocket() {
+        var protocol = mock(QuicSubProtocolConfig.class);
+        when(protocol.type()).thenReturn("test-tuning");
+        when(protocol.name()).thenReturn("test-tuning");
+        when(protocol.enabled()).thenReturn(true);
+        var runtime = mock(QuicSubProtocolRuntime.class);
+        when(runtime.minimumPeerUniStreams()).thenReturn(2L);
+        @SuppressWarnings("unchecked")
+        QuicSubProtocolProvider<QuicSubProtocolConfig> provider = mock(QuicSubProtocolProvider.class);
+        when(provider.configKey()).thenReturn("test-tuning");
+        when(provider.protocolConfigType()).thenReturn(QuicSubProtocolConfig.class);
+
+        QuicTransportConfig config = QuicTransportConfig.builder()
+                .quic(quic -> quic.maxUniStreams(1))
+                .subProtocolProvidersDiscoverServices(false)
+                .addSubProtocolProvider(provider)
+                .buildPrototype();
+        ListenerConfig listener = ListenerConfig.builder()
+                .bindingsDiscoverServices(false)
+                .protocolsDiscoverServices(false)
+                .addBinding(config)
+                .addProtocol(protocol)
+                .buildPrototype();
+        TransportBindingFactory factory = listener.bindings()
+                .stream()
+                .filter(binding -> QuicTransportBindingTypes.QUIC.equals(binding.type()))
+                .findFirst()
+                .orElseThrow();
+        var context = mock(TransportBindingContext.class);
+        var listenerContext = mock(ListenerContext.class);
+        var listenerTls = mock(ListenerTlsContext.class);
+        var tls = mock(Tls.class);
+        when(context.listenerContext()).thenReturn(listenerContext);
+        when(context.listenerTls()).thenReturn(listenerTls);
+        when(listenerContext.config()).thenReturn(listener);
+        when(listenerTls.tls()).thenReturn(tls);
+        when(tls.enabled()).thenReturn(true);
+        when(provider.create(context, protocol)).thenReturn(runtime);
+        PortTransportBinding binding = (PortTransportBinding) factory.create(context);
+
+        try {
+            ConfigException failure = assertThrows(ConfigException.class, binding::start);
+
+            assertThat(failure.getMessage(),
+                       containsString("requires QuicConfig.maxUniStreams to be at least 2, but the binding configures 1"));
+            assertThat(binding.port(), is(-1));
+        } finally {
+            binding.stop(Duration.ZERO);
+        }
     }
 
     @Test
