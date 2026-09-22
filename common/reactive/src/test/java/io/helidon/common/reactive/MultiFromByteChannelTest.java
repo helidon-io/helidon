@@ -21,8 +21,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
@@ -43,6 +47,7 @@ import io.helidon.common.LazyValue;
 
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -63,6 +68,25 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class MultiFromByteChannelTest {
 
     private static final int TEST_DATA_SIZE = 250 * 1024;
+
+    @Test
+    void testFirstKeepsChannelUsable(@TempDir Path directory) throws IOException {
+        Path path = Files.write(directory.resolve("channel.bin"), new byte[] {10, 20});
+        try (var channel = FileChannel.open(path, StandardOpenOption.READ)) {
+            ByteBuffer first = IoMulti.multiFromByteChannelBuilder(channel)
+                    .bufferCapacity(1)
+                    .build()
+                    .first()
+                    .await(ofSeconds(5));
+
+            assertThat(first.remaining(), is(1));
+            assertThat(first.get(), is((byte) 10));
+            var remaining = ByteBuffer.allocate(1);
+            assertThat("The caller must be able to read the next byte", channel.read(remaining), is(1));
+            remaining.flip();
+            assertThat(remaining.get(), is((byte) 20));
+        }
+    }
 
     @Test
     void testReadAllData() {
@@ -283,12 +307,13 @@ public class MultiFromByteChannelTest {
 
         assertThat("Should not complete", completeCalled.get(), is(false));
         assertThat("Exception should be null", failure.get(), is(nullValue()));
-        assertThat("Cancellation must close the channel", pc.isOpen(), is(false));
+        assertThat("Cancellation must leave the caller's channel open", pc.isOpen(), is(true));
 
         MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
         LazyValue<ScheduledExecutorService> executor = multi.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
+        pc.close();
     }
 
     @Test
@@ -311,7 +336,8 @@ public class MultiFromByteChannelTest {
         } catch (CompletionException e) {
             assertThat(e.getCause(), instanceOf(TimeoutException.class));
         }
-        assertThat("Retry exhaustion must close the channel", pc.isOpen(), is(false));
+        assertThat("Retry exhaustion must leave the caller's channel open", pc.isOpen(), is(true));
+        pc.close();
     }
 
     @Test
@@ -323,7 +349,7 @@ public class MultiFromByteChannelTest {
             IoMulti.multiFromByteChannelBuilder(channel).executor(executor).build().subscribe(subscriber);
             subscriber.cancel().assertEmpty();
 
-            assertThat("Cancellation must close the channel", channel.isOpen(), is(false));
+            assertThat("Cancellation must leave the caller's channel open", channel.isOpen(), is(true));
             assertThat(channel.readMethodCallCounter, is(0));
             assertThat("The caller still owns the executor", executor.isShutdown(), is(false));
             assertThat(executor.submit(() -> "available").get(5, TimeUnit.SECONDS), is("available"));
@@ -336,7 +362,7 @@ public class MultiFromByteChannelTest {
 
     @ParameterizedTest
     @ValueSource(longs = {0, -1})
-    void testInvalidDemandClosesChannel(long demand) {
+    void testInvalidDemandKeepsChannelOpen(long demand) {
         var channel = new PeriodicalChannel(_ -> 1024, TEST_DATA_SIZE);
         var subscriptionRef = new AtomicReference<Subscription>();
         var subscriber = new TestSubscriber<ByteBuffer>() {
@@ -351,14 +377,14 @@ public class MultiFromByteChannelTest {
         subscriptionRef.get().request(demand);
         subscriber.assertFailure(IllegalArgumentException.class);
 
-        assertThat("Invalid demand must close the channel", channel.isOpen(), is(false));
+        assertThat("Invalid demand must leave the caller's channel open", channel.isOpen(), is(true));
         assertThat(channel.readMethodCallCounter, is(0));
+        channel.close();
     }
 
     @Test
-    void testReadFailureClosesChannelAndPreservesError() {
+    void testReadFailureKeepsChannelOpenAndPreservesError() throws IOException {
         var readFailure = new IOException("read failed");
-        var closeFailure = new IOException("close failed");
         var closed = new AtomicBoolean();
         var channel = new ReadableByteChannel() {
             @Override
@@ -372,17 +398,18 @@ public class MultiFromByteChannelTest {
             }
 
             @Override
-            public void close() throws IOException {
+            public void close() {
                 closed.set(true);
-                throw closeFailure;
             }
         };
-        var subscriber = new TestSubscriber<ByteBuffer>(Long.MAX_VALUE);
-        IoMulti.multiFromByteChannelBuilder(channel).build().subscribe(subscriber);
+        try (channel) {
+            var subscriber = new TestSubscriber<ByteBuffer>(Long.MAX_VALUE);
+            IoMulti.multiFromByteChannelBuilder(channel).build().subscribe(subscriber);
 
-        subscriber.assertFailure(IOException.class);
-        assertThat(subscriber.getLastError(), sameInstance(readFailure));
-        assertThat("Read failure must close the channel even when close fails", closed.get(), is(true));
+            subscriber.assertFailure(IOException.class);
+            assertThat(subscriber.getLastError(), sameInstance(readFailure));
+            assertThat("Read failure must leave the caller's channel open", channel.isOpen(), is(true));
+        }
     }
 
     @Test
@@ -399,7 +426,7 @@ public class MultiFromByteChannelTest {
             publisher.subscribe(subscriber);
 
             subscriber.assertEmpty();
-            assertAll(() -> assertThat("Cancellation must close the channel", channel.isOpen(), is(false)),
+            assertAll(() -> assertThat("Cancellation must leave the caller's channel open", channel.isOpen(), is(true)),
                       () -> assertThat("Cancellation must not create a retry executor", publisher.executor().isLoaded(), is(false)));
         } finally {
             channel.close();
