@@ -102,10 +102,10 @@ class HttpProxy {
         try {
             try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress(connectedPort), 10000);
-            } catch (IOException ignored) {
+            } catch (IOException _) {
             }
             return executor.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             return false;
         }

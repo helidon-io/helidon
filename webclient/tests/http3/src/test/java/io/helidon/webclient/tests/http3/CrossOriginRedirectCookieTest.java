@@ -260,7 +260,7 @@ class CrossOriginRedirectCookieTest {
         AtomicReference<String> capturedQuery = new AtomicReference<>();
         CompletableFuture<Void> fallbackObserved = new CompletableFuture<>();
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((_, connection, streamId, stream) -> {
                  http3RequestCount.incrementAndGet();
                  try {
                      stream.requestBodyInputStream().readAllBytes();
@@ -467,7 +467,7 @@ class CrossOriginRedirectCookieTest {
                         .putDefaultCookie("default", "secret"));
                 Http3Client client = strictClientBuilder()
                         .baseUri(sourceBaseUri)
-                        .dnsResolver((host, lookup) -> InetAddress.getLoopbackAddress())
+                        .dnsResolver((_, _) -> InetAddress.getLoopbackAddress())
                         .tls(source.clientTlsHttp3())
                         .cookieManager(cookieManager)
                         .build();

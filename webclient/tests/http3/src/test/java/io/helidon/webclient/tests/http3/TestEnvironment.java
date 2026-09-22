@@ -20,15 +20,14 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.function.Consumer;
 
+import javax.net.ssl.SSLContext;
+
 import io.helidon.common.tls.Tls;
-import io.helidon.webclient.http3.Http3Client;
 import io.helidon.webserver.SniAuthorityPolicy;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http3.Http3Config;
-
-import javax.net.ssl.SSLContext;
 
 final class TestEnvironment implements AutoCloseable {
     private final WebServer server;

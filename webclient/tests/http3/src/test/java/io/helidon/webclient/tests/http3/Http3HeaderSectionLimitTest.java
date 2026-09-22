@@ -20,7 +20,6 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http3.Http3ErrorCode;
-import io.helidon.http.http3.Http3Protocol;
 import io.helidon.http.http3.Http3ProtocolException;
 import io.helidon.webclient.http3.Http3Client;
 import io.helidon.webclient.http3.Http3ClientProtocolConfig;
@@ -38,7 +37,7 @@ class Http3HeaderSectionLimitTest {
         WritableHeaders<?> responseHeaders = WritableHeaders.create()
                 .add(HeaderValues.create("x-big", "x".repeat(200)));
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) ->
+        try (Http3RawTestServer server = Http3RawTestServer.create((_, _, _, _) ->
                 Http3RawTestServer.response(Status.OK_200.code(), responseHeaders, new byte[0]))) {
             Http3ClientProtocolConfig.Builder protocolConfig = Http3ClientProtocolConfig.builder()
                     .maxHeadersSize(128);

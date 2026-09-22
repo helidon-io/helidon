@@ -351,7 +351,7 @@ class Http3AltSvcNegativeCacheTest {
                 try {
                     socket.receive(packet);
                     receivedCount.incrementAndGet();
-                } catch (SocketTimeoutException ignored) {
+                } catch (SocketTimeoutException _) {
                     CountDownLatch idle = idleWaiter.getAndSet(null);
                     if (idle != null) {
                         idle.countDown();

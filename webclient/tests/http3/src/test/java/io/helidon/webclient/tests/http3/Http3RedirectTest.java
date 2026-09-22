@@ -1025,7 +1025,7 @@ class Http3RedirectTest {
                 String sourceUri = "https://source.invalid:" + URI.create(source.baseUri()).getPort();
                 WebClient client = strictWebClientBuilder()
                         .baseUri(sourceUri)
-                        .dnsResolver((host, lookup) -> InetAddress.getLoopbackAddress())
+                        .dnsResolver((_, _) -> InetAddress.getLoopbackAddress())
                         .tls(source.clientTls())
                         .addProtocolPreference(Http3Client.PROTOCOL_ID)
                         .addProtocolPreference(Http1Client.PROTOCOL_ID)
@@ -1079,7 +1079,7 @@ class Http3RedirectTest {
                 WebClient client = strictWebClientBuilder()
                         .baseUri("http://source.invalid")
                         .servicesDiscoverServices(false)
-                        .dnsResolver((host, lookup) -> InetAddress.getLoopbackAddress())
+                        .dnsResolver((_, _) -> InetAddress.getLoopbackAddress())
                         .proxy(proxy)
                         .tls(target.clientTls())
                         .addProtocolPreference(Http3Client.PROTOCOL_ID)
