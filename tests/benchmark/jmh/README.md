@@ -580,18 +580,20 @@ atomically published under a content-addressed immutable Resolver prefix only af
 
 JMH emits the complete `META-INF/BenchmarkList` registry in nondeterministic order, so directory hashing sorts only those
 intact registry records; every record's contents and every other class or resource byte remain exact. Choose a durable,
-absolute campaign root outside the Helidon checkout and every Maven `target` directory, then use Java 27 to run the generator
-only after the intended source is final:
+absolute campaign root outside the Helidon checkout and every Maven `target` directory. Set
+`helidon.benchmark.evidence.root` to its `controlled/` subdirectory, the controlled evidence root used by the
+[Linux campaign guide](HTTP3_QUIC_LINUX_BENCHMARK_CAMPAIGN.md). The generator writes directly into that configured
+directory; it does not append `controlled/`. Use Java 27 to run the generator only after the intended source is final:
 
 ```shell
 mvn -Ptests,jmh \
     -pl :helidon-tests-benchmark-jmh \
     -Dtest=Http3QuicEvidenceManifestTest \
-    -Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign \
+    -Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign/controlled \
     test -ntp
 ```
 
-The campaign root receives `http3-quic-controlled-build.manifest`,
+The controlled evidence root receives `http3-quic-controlled-build.manifest`,
 `http3-quic-controlled-source.manifest`, and `http3-quic-controlled-build.log`. The generator prints the exact immutable
 Resolver local prefix. The build manifest binds that prefix, its complete content digest, the shared remote prefix,
 captured HEAD, Maven and Java versions, invocation digest, effective timeout, controlled-build processor cap, and
@@ -612,13 +614,13 @@ worktrees supply both through `.mvn/maven.config`; otherwise set
 `-Daether.enhancedLocalRepository.remotePrefix=<shared-remote-prefix>` on the generator invocation.
 
 Every evidence Maven invocation must select the printed local prefix and the recorded remote prefix, in addition to the
-same campaign root:
+same controlled evidence root:
 
 ```text
 -Daether.enhancedLocalRepository.split=true
 -Daether.enhancedLocalRepository.localPrefix=<printed-immutable-prefix>
 -Daether.enhancedLocalRepository.remotePrefix=<recorded-remote-prefix>
--Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign
+-Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign/controlled
 ```
 
 If Maven uses a non-default local repository, pass that same `maven.repo.local` value as well. Missing or different
@@ -628,8 +630,8 @@ build-log, build-manifest, loaded-artifact, or runtime-class-path change invalid
 
 Before a workload starts, its runner atomically creates a distinct reservation marker for every final bundle path, so
 concurrent reuse of a run ID fails without placing reservation text at a result-shaped path. A successful run removes
-the markers and publishes exactly six direct children of the campaign root: JSON, workload log, effective-properties
-metadata, source-manifest snapshot, build-manifest snapshot, and controlled-build-log snapshot. The JSON result is the
+the markers and publishes exactly six direct children of the controlled evidence root: JSON, workload log,
+effective-properties metadata, source-manifest snapshot, build-manifest snapshot, and controlled-build-log snapshot. The JSON result is the
 atomic final commit action. A complete run therefore has the JSON file and no surviving reservation marker; a run without
 JSON or with any reservation marker is incomplete. JMH evidence installs one explicit canonical class path and verifies
 its aggregate digest once in every fork, before any process profiler starts. Archive the complete campaign root as one
@@ -661,7 +663,7 @@ mvn -Ptests,jmh \
     -Daether.enhancedLocalRepository.split=true \
     -Daether.enhancedLocalRepository.localPrefix=<printed-immutable-prefix> \
     -Daether.enhancedLocalRepository.remotePrefix=<recorded-remote-prefix> \
-    -Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign \
+    -Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign/controlled \
     '-Dquic.server.admission.jmh.include=^io\.helidon\.quic\.QuicServerAdmissionJmhBenchmark\.serverLifecycleHandshakeReady$' \
     -Dquic.server.admission.jmh.evidence=true \
     -Dquic.server.admission.jmh.runId=<run-id> \
@@ -677,8 +679,8 @@ warmups, and five 1000 ms measurements; the defaults satisfy every minimum excep
 
 The standard runner timing, profiler, and `scenario` properties use the `quic.server.admission.jmh.` prefix. `scenario`
 accepts a comma-separated subset of the six names above. Keep all six for comparable full evidence. Evidence mode derives
-all final paths from the campaign root and unique `runId`; independent result or output overrides are rejected. Every
-evidence invocation exclusively claims its six-file JSON, log, properties, source-manifest, build-manifest, and
+all final paths from the controlled evidence root and unique `runId`; independent result or output overrides are rejected.
+Every evidence invocation exclusively claims its six-file JSON, log, properties, source-manifest, build-manifest, and
 controlled-build-log bundle before JMH starts. The primary SampleTime distribution is end-to-end loopback lifecycle
 latency, not packet-crypto cost or physical-network latency.
 
@@ -713,7 +715,7 @@ mvn -Ptests,jmh \
     -Daether.enhancedLocalRepository.split=true \
     -Daether.enhancedLocalRepository.localPrefix=<printed-immutable-prefix> \
     -Daether.enhancedLocalRepository.remotePrefix=<recorded-remote-prefix> \
-    -Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign \
+    -Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign/controlled \
     -Dhttp3.small.write.jmh.mode=latency \
     -Dhttp3.small.write.jmh.runId=<run-id> \
     clean test -ntp
@@ -777,13 +779,13 @@ mvn -Ptests,jmh \
     -Daether.enhancedLocalRepository.split=true \
     -Daether.enhancedLocalRepository.localPrefix=<printed-immutable-prefix> \
     -Daether.enhancedLocalRepository.remotePrefix=<recorded-remote-prefix> \
-    -Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign \
+    -Dhelidon.benchmark.evidence.root=/absolute/path/to/http3-quic-campaign/controlled \
     -Dhttp3.adverse.network.mode=evidence \
     -Dhttp3.adverse.network.runId=<run-id> \
     clean test -ntp
 ```
 
-The result is `<campaign-root>/http3-adverse-network-evidence-<run-id>.json`; an existing bundle is never overwritten.
+The result is `<controlled-root>/http3-adverse-network-evidence-<run-id>.json`; an existing bundle is never overwritten.
 Advanced properties use the `http3.adverse.network.` prefix: `warmups`, `samples`, `stalledCloseSamples`,
 `requestTimeoutMillis`, `drainMillis`, `stalledCloseTimeoutMillis`, `stalledRequestCompletionTimeoutMillis`, and
 `baseSeed`. Reducing the evidence minima is rejected. The `smoke` mode uses smaller defaults only for functional
