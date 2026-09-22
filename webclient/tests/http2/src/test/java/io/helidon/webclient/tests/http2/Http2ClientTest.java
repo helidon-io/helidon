@@ -54,7 +54,6 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
-import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.webclient.api.HttpClientResponse;
