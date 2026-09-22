@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -40,6 +41,8 @@ import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.TransportBindingFactory;
+import io.helidon.webserver.spi.TransportBindingFactoryProvider;
+import io.helidon.webserver.spi.TransportConfig;
 
 class WebServerConfigSupport {
     private static final String KEY_BINDINGS = "bindings";
@@ -283,6 +286,40 @@ class WebServerConfigSupport {
     }
 
     static class ListenerCustomMethods {
+        /**
+         * Add an explicit transport binding configuration.
+         * <p>
+         * The transport's provider converts the configuration to a binding factory. Provider lookup is independent of
+         * automatic binding discovery, so this method also works when {@code bindingsDiscoverServices(false)} is set.
+         * The listener supplies the endpoint, TLS, routing, request limit, and connection limit.
+         *
+         * @param builder listener config builder
+         * @param config transport binding configuration
+         * @throws IllegalArgumentException if no provider supports the configured transport type
+         * @throws UnsupportedOperationException if the provider does not support programmatic configuration
+         */
+        @Prototype.BuilderMethod
+        @Prototype.Annotated("io.helidon.common.Api.Incubating")
+        static void addBinding(ListenerConfig.BuilderBase<?, ?> builder, TransportConfig config) {
+            Objects.requireNonNull(config, "config");
+            String type = Objects.requireNonNull(config.type(), "Transport configuration type must not be null");
+            TransportBindingFactoryProvider provider = TransportBindingProviders.create()
+                    .providers()
+                    .stream()
+                    .filter(it -> type.equals(it.configKey()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("No transport binding provider is available for type \""
+                                                                           + type + "\""));
+            TransportBindingFactory factory = Objects.requireNonNull(provider.create(config),
+                                                                     "Transport binding provider returned null factory");
+            String factoryType = Objects.requireNonNull(factory.type(), "Transport binding factory type must not be null");
+            if (!type.equals(factoryType)) {
+                throw new ConfigException("Transport configuration type \"" + type
+                                                  + "\" does not match factory type \"" + factoryType + "\"");
+            }
+            builder.addBinding(factory);
+        }
+
         /**
          * Customize HTTP routing of this listener.
          *

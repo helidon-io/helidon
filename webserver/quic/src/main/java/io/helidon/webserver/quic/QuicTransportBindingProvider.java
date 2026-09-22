@@ -16,11 +16,14 @@
 
 package io.helidon.webserver.quic;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.TransportBindingFactory;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
+import io.helidon.webserver.spi.TransportConfig;
 
 /**
  * Provider of QUIC transport binding factories.
@@ -45,6 +48,15 @@ public class QuicTransportBindingProvider implements TransportBindingFactoryProv
                 .config(config)
                 .build();
         return QuicTransportBindingFactory.create(quicConfig);
+    }
+
+    @Override
+    public TransportBindingFactory create(TransportConfig config) {
+        Objects.requireNonNull(config, "config");
+        if (config instanceof QuicTransportConfig quicConfig) {
+            return QuicTransportBindingFactory.create(quicConfig);
+        }
+        throw new IllegalArgumentException("QUIC transport requires QuicTransportConfig, got " + config.getClass().getName());
     }
 
     @Override

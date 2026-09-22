@@ -25,6 +25,7 @@ import io.helidon.common.Api;
 import io.helidon.quic.QuicConfig;
 import io.helidon.webserver.quic.spi.QuicSubProtocolProvider;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
+import io.helidon.webserver.spi.TransportConfig;
 
 /**
  * QUIC transport binding configuration.
@@ -33,8 +34,7 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 @Prototype.Blueprint(decorator = QuicTransportConfigSupport.Decorator.class)
 @Prototype.Configured(root = false, value = QuicTransportBindingTypes.QUIC)
 @Prototype.Provides(TransportBindingFactoryProvider.class)
-@Prototype.CustomMethods(QuicTransportConfigSupport.CustomMethods.class)
-interface QuicTransportConfigBlueprint {
+interface QuicTransportConfigBlueprint extends TransportConfig {
     /**
      * Whether this binding is enabled.
      *
@@ -123,4 +123,9 @@ interface QuicTransportConfigBlueprint {
     @Option.Configured(merge = true)
     @Option.DefaultMethod("create")
     QuicConfig quic();
+
+    @Override
+    default String type() {
+        return QuicTransportBindingTypes.QUIC;
+    }
 }

@@ -16,14 +16,17 @@
 
 package io.helidon.webserver.tests.http3.modulepath;
 
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.http.spi.SinkProvider;
 import io.helidon.webserver.http3.Http3Config;
 import io.helidon.webserver.quic.QuicTransportConfig;
 import io.helidon.webserver.quic.spi.QuicSubProtocolProvider;
+import io.helidon.webserver.spi.TransportBindingFactory;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
@@ -33,6 +36,17 @@ class ModulePathProviderDiscoveryTest {
     private static final String HTTP3_PROVIDER = "io.helidon.webserver.http3.Http3QuicProtocolProvider";
     private static final String SSE_MODULE = "io.helidon.webserver.sse";
     private static final String SSE_PROVIDER = "io.helidon.webserver.sse.SseSinkProvider";
+
+    @Test
+    void addsExplicitQuicBindingFromNamedModule() {
+        assertThat(getClass().getModule().isNamed(), is(true));
+        ListenerConfig listener = ListenerConfig.builder()
+                .bindingsDiscoverServices(false)
+                .addBinding(QuicTransportConfig.create())
+                .buildPrototype();
+
+        assertThat(listener.bindings().stream().map(TransportBindingFactory::type).toList(), contains("tcp", "quic"));
+    }
 
     @Test
     void discoversProvidersFromNamedModulesThroughGeneratedPrototypes() {

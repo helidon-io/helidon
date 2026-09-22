@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.webserver.spi;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
-import io.helidon.webserver.spi.TransportBindingFactoryProvider;
-import io.helidon.webserver.spi.TransportConfig;
 
 /**
- * Configuration of the built-in TCP listener transport binding.
+ * Configuration of a listener transport binding.
+ * Add a transport configuration through
+ * {@link io.helidon.webserver.ListenerConfig.BuilderBase#addBinding(TransportConfig)}.
+ * The listener supplies the endpoint, TLS, routing, and limits shared by its bindings.
  */
 @Api.Incubating
-@Prototype.Blueprint
-@Prototype.Configured(root = false, value = TransportBindingTypes.TCP)
-@Prototype.Provides(TransportBindingFactoryProvider.class)
-interface TcpTransportConfigBlueprint extends TransportConfig {
+public interface TransportConfig {
+    /**
+     * Transport type, which is the binding's sole identity and configuration key.
+     *
+     * @return transport type
+     */
+    String type();
+
     /**
      * Whether this binding is enabled.
      *
      * @return whether this binding is enabled
      */
-    @Option.Configured
-    @Option.DefaultBoolean(true)
     boolean enabled();
 
     /**
@@ -44,13 +45,5 @@ interface TcpTransportConfigBlueprint extends TransportConfig {
      *
      * @return whether this binding is required
      */
-    @Option.Configured
-    @Option.DefaultBoolean(false)
     boolean required();
-
-    @Override
-    default String type() {
-        return TransportBindingTypes.TCP;
-    }
-
 }

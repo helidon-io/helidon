@@ -16,10 +16,13 @@
 
 package io.helidon.webserver;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.TransportBindingFactory;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
+import io.helidon.webserver.spi.TransportConfig;
 
 /**
  * Transport binding factory provider for the built-in TCP listener binding.
@@ -44,5 +47,14 @@ public class TcpTransportBindingFactoryProvider implements TransportBindingFacto
                 .config(config)
                 .build();
         return TcpTransportBindingFactory.create(tcpConfig);
+    }
+
+    @Override
+    public TransportBindingFactory create(TransportConfig config) {
+        Objects.requireNonNull(config, "config");
+        if (config instanceof TcpTransportConfig tcpConfig) {
+            return TcpTransportBindingFactory.create(tcpConfig);
+        }
+        throw new IllegalArgumentException("TCP transport requires TcpTransportConfig, got " + config.getClass().getName());
     }
 }

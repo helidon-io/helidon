@@ -36,6 +36,21 @@ public interface TransportBindingFactoryProvider extends ConfiguredProvider<Tran
      */
     TransportBindingFactory create(Config config);
 
+    /**
+     * Create a transport binding factory from an explicit programmatic configuration.
+     * Providers which support programmatic configuration override this method and validate the configuration type.
+     *
+     * @param config transport configuration
+     * @return configured transport binding factory
+     * @throws UnsupportedOperationException if this provider does not support programmatic configuration
+     * @throws IllegalArgumentException if the configuration type is not supported by this provider
+     */
+    default TransportBindingFactory create(TransportConfig config) {
+        Objects.requireNonNull(config, "config");
+        throw new UnsupportedOperationException("Transport binding provider \"" + configKey()
+                                                        + "\" does not support programmatic configuration");
+    }
+
     @Override
     default TransportBindingFactory create(Config config, String name) {
         String providerKey = Objects.requireNonNull(configKey(), "Transport binding provider key must not be null");
