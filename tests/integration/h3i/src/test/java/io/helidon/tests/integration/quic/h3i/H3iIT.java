@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.CleanupMode;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
@@ -47,8 +49,8 @@ class H3iIT {
 
     @Test
     @Timeout(value = 20, unit = TimeUnit.MINUTES)
-    void shouldPassH3iMalformedPeerSuiteAgainstInteropHarness() throws Exception {
-        Path workDir = Files.createTempDirectory("helidon-h3i");
+    void shouldPassH3iMalformedPeerSuiteAgainstInteropHarness(@TempDir(cleanup = CleanupMode.ALWAYS) Path workDir)
+            throws Exception {
         Path certsDir = Files.createDirectory(workDir.resolve("certs"));
         Path webRoot = Files.createDirectory(workDir.resolve("www"));
         Path certChain = certsDir.resolve("cert.pem");
