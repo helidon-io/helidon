@@ -105,13 +105,24 @@ with `protocol-config.max-buffered-message-size` in `WsClient` configuration.
 If a combined message exceeds the applicable limit, that side closes the
 connection with WebSocket close code `1009`.
 
-The server limit is independent of `max-frame-length`, which applies to each
-individual frame. Binary messages are measured exactly in bytes. Text message
-size is approximated using the number of UTF-16 code units in each decoded
-string fragment and may be smaller than the UTF-8 payload size. Listener
-methods that accept the trailing `boolean` fragment indicator, `Reader`, or
-`InputStream` consume fragments without whole-message buffering and are not
-limited by `max-buffered-message-size`.
+The buffered-message limits are independent of the per-frame limits. The
+server and client each also accept frame payloads up to 1 MiB by default.
+Configure the server frame limit with
+`server.protocols.websocket.max-frame-length`, and the client frame limit with
+`protocol-config.max-frame-size` in `WsClient` configuration using a byte count
+or a size such as `2 MiB`. The client limit is also configurable with
+`WsClientProtocolConfig.Builder.maxFrameSize(Size)` and must be between 1 byte
+and `Integer.MAX_VALUE` bytes, inclusive. If an individual frame exceeds the
+applicable limit, it is rejected before its payload is buffered and that side
+closes the connection with WebSocket close code `1009`.
+
+Binary messages are measured exactly in bytes. Text message size is
+approximated using the number of UTF-16 code units in each decoded string
+fragment and may be smaller than the UTF-8 payload size. Listener methods that
+accept the trailing `boolean` fragment indicator, `Reader`, or `InputStream`
+consume fragments without whole-message buffering and are not limited by
+`max-buffered-message-size`, but they remain subject to the applicable per-frame
+limit.
 
 ## Security
 
