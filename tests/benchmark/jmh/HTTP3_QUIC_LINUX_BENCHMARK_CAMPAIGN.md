@@ -1093,7 +1093,7 @@ margin from becoming an unobservable wait.
 | 16 | synthetic establishment t4 | 1 | `00:00:52.5` | `00:05:00` | `600` |
 | 17 | route lifecycle t1 | 5 | `00:03:45` | `00:08:00` | `900` |
 | 18 | route lifecycle t4 | 5 | `00:03:45` | `00:08:00` | `900` |
-| 19 | established path | 15 | `00:11:15` | `00:18:00` | `1800` |
+| 19 | established path | 22 | `00:16:30` | `00:25:00` | `2400` |
 | 20 | HTTP/3 eligibility | 17 | `00:12:45` | `00:22:00` | `1800` |
 | 21 | HTTP/3 DATA ingress | 30 | `00:22:30` | `00:35:00` | `3000` |
 
@@ -1602,15 +1602,29 @@ mvn -Ptests,jmh \
     -Dquic.path.jmh.warmupMillis=1000 \
     -Dquic.path.jmh.measurementIterations=10 \
     -Dquic.path.jmh.measurementMillis=1000 \
-    -Dquic.path.jmh.gcProfiler=true \
+    -Dquic.path.jmh.gcProfiler=false \
     -Dquic.path.jmh.result=__SUPPLEMENTAL_DIR__/quic-established-path-__ATTEMPT_ID__.json \
     -Dquic.path.jmh.output=__SUPPLEMENTAL_DIR__/quic-established-path-__ATTEMPT_ID__.log \
     -l __OPERATOR_DIR__/quic-established-path-__ATTEMPT_ID__-maven.log \
     clean test -ntp
 ```
 
-This covers one and sixteen connections, synchronous and asynchronous datagram
-send, 64 and 4096 in-flight packets, and one and 32 ACK ranges where applicable.
+The default matrix has 22 result cells: six ingress/permit/ACK-generation
+cells over one and sixteen connections, four synchronous/asynchronous
+datagram-send cells over those connection counts, two ACK-range timing and
+allocation cells, eight recovery timing and allocation cells over the four
+recovery scenarios, one packet-sent cell, and one ordered-ACK-publication cell.
+The ACK-range defaults are 64 in-flight packets, one ACK range, a reused packet
+space, and a new ACK. This invocation does not cover 4096-packet flights or
+32-range ACKs.
+
+Keep `gcProfiler=false`: the runner rejects GC profiling when ACK-range or
+ACK-recovery methods are selected because it would include fixture allocation.
+For the two `*Allocation` methods, report worker-thread bytes per ACK as
+`allocatedBytes / ackOperations`; their instrumented timing is not latency
+evidence. This invocation does not collect allocation for the other path
+methods. Its timed minimum is `22 * 3 * (5 + 10) = 990` seconds, before fork
+and fixture overhead.
 
 ### HTTP/3 eligibility and shared-cache cardinality
 
@@ -1666,12 +1680,15 @@ mvn -Ptests,jmh \
 This covers ten heap/slice/materialization/fallback methods at 1 KiB, 16 KiB,
 and 1 MiB.
 
-Three maintained benchmark classes currently have no dedicated safe runner:
-`QuicNullContractJmhBenchmark`, `QuicServerIngressJmhBenchmark`, and
-`QuicStreamIngressJmhBenchmark`. The legacy runner does not select them. Do not
-claim that they ran, and do not add a runner during this campaign. Record them
-as uncovered benchmark sources; their functional behavior remains covered by
-tests.
+Four maintained benchmark classes currently have no dedicated safe runner:
+`QuicNullContractJmhBenchmark`, `QuicServerIngressJmhBenchmark`,
+`QuicStreamIngressJmhBenchmark`, and `QuicTlsGroupsJmhBenchmark`. Do not claim
+that they ran, and do not add a runner during this campaign. Record them as
+uncovered benchmark sources; their functional behavior remains covered by
+tests. `QuicTlsGroupsJmhBenchmarkTest` checks the fixture and allocation
+counters directly; it does not run JMH or provide a controlled Linux timing
+comparison. Earlier supported-groups measurements remain historical evidence,
+not coverage of this campaign.
 
 The repository also has no source-bound HTTP/3 load harness for multi-connection
 or highly concurrent stream throughput, no apples-to-apples HTTP/1.1 or HTTP/2
