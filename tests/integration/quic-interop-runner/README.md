@@ -187,14 +187,19 @@ accepts only the recorded CPython 3.12 musl wheels for Linux amd64 and arm64.
 The Docker base already supplies its checksum-verified Compose plugin, so the
 image does not replace it from Alpine repositories.
 
-When updating the runner snapshot or a dependency, update the corresponding
-version and digest or hash in `Dockerfile.runner-tool`. Regenerate each APK lock
-with the matching native architecture image, regenerate the Python lock for
-both supported architectures, and build the `runner-tool-sbom` stage once on
-amd64 and arm64. Both builds must produce the same normalized package JSON
-before replacing `sbom.runner-tool.lock.json`. A byte-for-byte raw SPDX
-comparison is not expected because SBOM creation metadata includes the build
-time.
+When updating the runner snapshot or a dependency, update its corresponding
+pin: Docker base, runner archive, and scanner pins are in
+`Dockerfile.runner-tool`; APK root versions are in
+`apk.runner-tool.requirements`; Python versions and wheel hashes are in
+`requirements.runner-tool.lock`. For APK updates, regenerate each architecture's
+lock with `runner_tool_apk_lock.sh generate` inside the matching architecture
+image. For Python updates, regenerate the Python lock for both supported
+architectures. Build the `runner-tool-sbom` stage for amd64 and arm64. Both
+builds must produce the same normalized package JSON before replacing
+`sbom.runner-tool.lock.json`. Emulated builds can verify this artifact
+consistency, but do not replace native interoperability qualification. A
+byte-for-byte raw SPDX comparison is not expected because SBOM creation
+metadata includes the build time.
 
 ## Local Wrapper Smoke Check
 
