@@ -46,7 +46,7 @@ class Http3ProtocolPreferenceTest {
 
     @BeforeEach
     void beforeEach() throws Exception {
-        environment = TestEnvironment.createSharedListener(routing -> routing.get("/hello", (req, res) -> res.send(HELLO)));
+        environment = TestEnvironment.createSharedListener(routing -> routing.get("/hello", (_, res) -> res.send(HELLO)));
     }
 
     @AfterEach
@@ -166,7 +166,7 @@ class Http3ProtocolPreferenceTest {
                     .addBinding(TcpTransportConfig.create())
                     .protocolsDiscoverServices(false)
                     .addProtocol(Http1Config.create())
-                    .routing(routing -> routing.get("/hello", (req, res) -> res.send(HELLO)))
+                    .routing(routing -> routing.get("/hello", (_, res) -> res.send(HELLO)))
                     .build()
                     .start();
             return new PlaintextEnvironment(server);

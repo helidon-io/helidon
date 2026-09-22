@@ -1129,7 +1129,7 @@ class Http3ConnectionReuseTest {
                 .add(HeaderValues.create(qpackEnv, envValue))
                 .add(HeaderValues.create(qpackCluster, clusterValue));
         List<Integer> encodedHeadersLengths = new CopyOnWriteArrayList<>();
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((_, connection, _, stream) -> {
                  encodedHeadersLengths.add(stream.writeResponseHeaders(Status.OK_200.code(),
                                                                         repeatedResponseHeaders,
                                                                         false));

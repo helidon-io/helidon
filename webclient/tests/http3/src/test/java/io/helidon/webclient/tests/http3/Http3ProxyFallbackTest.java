@@ -426,6 +426,6 @@ class Http3ProxyFallbackTest {
 
     private static TestEnvironment newSharedListener(Http1Config http1Config) throws Exception {
         return TestEnvironment.createSharedListener(http1Config,
-                                                    routing -> routing.get("/hello", (req, res) -> res.send(HELLO)));
+                                                    routing -> routing.get("/hello", (_, res) -> res.send(HELLO)));
     }
 }

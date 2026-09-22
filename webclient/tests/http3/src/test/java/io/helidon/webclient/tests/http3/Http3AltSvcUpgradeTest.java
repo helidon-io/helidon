@@ -360,13 +360,13 @@ class Http3AltSvcUpgradeTest {
                 .build();
         try (TestEnvironment target = TestEnvironment.createSharedListener(
                 advertised,
-                routing -> routing.get("/hello", (req, res) -> res.send(HELLO)))) {
+                routing -> routing.get("/hello", (_, res) -> res.send(HELLO)))) {
             URI targetUri = URI.create(target.baseUri() + "/hello");
             replaceEnvironment(Http1Config.create(), routing -> routing
-                    .get("/hello", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+                    .get("/hello", (_, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
                             .header(HeaderNames.LOCATION, targetUri.toString())
                             .send())
-                    .get("/source", (req, res) -> res.send(HELLO)));
+                    .get("/source", (_, res) -> res.send(HELLO)));
             WebClient client = WebClient.builder()
                     .baseUri(environment.baseUri())
                     .shareConnectionCache(false)

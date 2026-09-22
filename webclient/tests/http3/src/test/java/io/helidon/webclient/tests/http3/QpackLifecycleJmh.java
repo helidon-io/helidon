@@ -105,7 +105,7 @@ public class QpackLifecycleJmh {
 
         @Setup(Level.Trial)
         public void setup() {
-            decoder = Http3QpackContext.create(0, 0, 16_384, ignored -> {
+            decoder = Http3QpackContext.create(0, 0, 16_384, _ -> {
             });
             WritableHeaders<?> headers = WritableHeaders.create();
             for (int i = 0; i < headerCount; i++) {
@@ -131,7 +131,7 @@ public class QpackLifecycleJmh {
 
         @Setup(Level.Trial)
         public void prepareFieldSection() {
-            Http3QpackContext encoder = Http3QpackContext.create(0, 0, 16_384, ignored -> {
+            Http3QpackContext encoder = Http3QpackContext.create(0, 0, 16_384, _ -> {
             });
             List<byte[]> instructions = new ArrayList<>();
             encoder.encoderInstructionsSender(instructions::add);
@@ -140,7 +140,7 @@ public class QpackLifecycleJmh {
                     .add(HeaderValues.create("x-benchmark-dynamic", "value"));
             encoder.encodeHeaders(0, headers);
 
-            Http3QpackContext primingDecoder = Http3QpackContext.create(MAX_TABLE_CAPACITY, 128, 16_384, ignored -> {
+            Http3QpackContext primingDecoder = Http3QpackContext.create(MAX_TABLE_CAPACITY, 128, 16_384, _ -> {
             });
             primingDecoder.decoderInstructionsSender(encoder::onDecoderStreamData);
             for (byte[] instruction : instructions) {
@@ -152,9 +152,9 @@ public class QpackLifecycleJmh {
 
         @Setup(Level.Invocation)
         public void blockFieldSections() {
-            decoder = Http3QpackContext.create(MAX_TABLE_CAPACITY, blockedStreams, 16_384, ignored -> {
+            decoder = Http3QpackContext.create(MAX_TABLE_CAPACITY, blockedStreams, 16_384, _ -> {
             });
-            decoder.decoderInstructionsSender(ignored -> {
+            decoder.decoderInstructionsSender(_ -> {
             });
             streams = new ArrayList<>(blockedStreams);
             results = new ArrayList<>(blockedStreams);
