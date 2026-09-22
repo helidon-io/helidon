@@ -33,7 +33,6 @@ import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http3.Http3Route;
 import io.helidon.webserver.security.SecurityFeature;
 
@@ -50,46 +49,6 @@ class Http3SharedListenerTest {
     private static final String MISSING = "missing";
     private static final AtomicInteger SECURITY_INVOCATIONS = new AtomicInteger();
     private static final AtomicReference<List<String>> SECURITY_HEADER_VALUES = new AtomicReference<>();
-
-    private static void routing(HttpRouting.Builder router) {
-        router.get("/hello", (req, res) -> res.send("shared"))
-                .get("/client-cn", (req, res) -> res.send(req.headers()
-                                                                  .value(HeaderNames.X_HELIDON_CN)
-                                                                  .orElse(MISSING)))
-                .get("/security-cn",
-                     SecurityFeature.authenticate(),
-                     (req, res) -> {
-                         List<String> values = SECURITY_HEADER_VALUES.get();
-                         res.send(values == null ? MISSING : String.join("|", values));
-                     })
-                .route(HttpRoute.builder()
-                               .methods(GET)
-                               .path("/shared-first")
-                               .handler((req, res) -> res.send("shared-first"))
-                               .build())
-                .route(Http3Route.route(GET, "/shared-first", (req, res) -> res.send("http3-after-shared")))
-                .route(Http3Route.route(GET, "/http3-first", (req, res) -> res.send("http3-first")))
-                .route(HttpRoute.builder()
-                               .methods(GET)
-                               .path("/http3-first")
-                               .handler((req, res) -> res.send("shared-after-http3"))
-                               .build());
-    }
-
-    private static void security(WebServerConfig.Builder server) {
-        Security security = Security.builder()
-                .addAuthenticationProvider(providerRequest -> {
-                    SECURITY_INVOCATIONS.incrementAndGet();
-                    SECURITY_HEADER_VALUES.set(providerRequest.env().headers().get(HeaderNames.X_HELIDON_CN_NAME));
-                    return AuthenticationResponse.success(Principal.create("jack"));
-                })
-                .build();
-
-        server.addFeature(ContextFeature.create())
-                .addFeature(SecurityFeature.builder()
-                                    .security(security)
-                                    .build());
-    }
 
     @Test
     void shouldServeSharedRouteOverHttp1AndHttp3() throws Exception {
@@ -177,6 +136,46 @@ class Http3SharedListenerTest {
             assertThat(entity(response), is(MISSING));
             assertThat(SECURITY_INVOCATIONS.get(), is(1));
         }
+    }
+
+    private static void routing(HttpRouting.Builder router) {
+        router.get("/hello", (_, res) -> res.send("shared"))
+                .get("/client-cn", (req, res) -> res.send(req.headers()
+                                                                  .value(HeaderNames.X_HELIDON_CN)
+                                                                  .orElse(MISSING)))
+                .get("/security-cn",
+                     SecurityFeature.authenticate(),
+                     (_, res) -> {
+                         List<String> values = SECURITY_HEADER_VALUES.get();
+                         res.send(values == null ? MISSING : String.join("|", values));
+                     })
+                .route(HttpRoute.builder()
+                               .methods(GET)
+                               .path("/shared-first")
+                               .handler((_, res) -> res.send("shared-first"))
+                               .build())
+                .route(Http3Route.route(GET, "/shared-first", (_, res) -> res.send("http3-after-shared")))
+                .route(Http3Route.route(GET, "/http3-first", (_, res) -> res.send("http3-first")))
+                .route(HttpRoute.builder()
+                               .methods(GET)
+                               .path("/http3-first")
+                               .handler((_, res) -> res.send("shared-after-http3"))
+                               .build());
+    }
+
+    private static void security(WebServerConfig.Builder server) {
+        Security security = Security.builder()
+                .addAuthenticationProvider(providerRequest -> {
+                    SECURITY_INVOCATIONS.incrementAndGet();
+                    SECURITY_HEADER_VALUES.set(providerRequest.env().headers().get(HeaderNames.X_HELIDON_CN_NAME));
+                    return AuthenticationResponse.success(Principal.create("jack"));
+                })
+                .build();
+
+        server.addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.builder()
+                                    .security(security)
+                                    .build());
     }
 
     private static String entity(Http3TestSupport.DecodedResponse response) {

@@ -19,6 +19,7 @@ package io.helidon.webserver.tests.http3;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
+
 import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
@@ -30,10 +31,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http3UdpOnlyListenerTest {
-    private static void routing(HttpRouting.Builder router) {
-        router.get("/hello", (req, res) -> res.send("hello"));
-    }
-
     @Test
     void shouldServeHttp3OnUdpOnlyListener() throws Exception {
         try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.udpOnlyListener(Http3UdpOnlyListenerTest::routing)) {
@@ -54,5 +51,9 @@ class Http3UdpOnlyListenerTest {
             assertThrows(IOException.class, () -> client.send(Http3TestSupport.http1Get(environment.port(), "/hello"),
                                                               ofString()));
         }
+    }
+
+    private static void routing(HttpRouting.Builder router) {
+        router.get("/hello", (_, res) -> res.send("hello"));
     }
 }

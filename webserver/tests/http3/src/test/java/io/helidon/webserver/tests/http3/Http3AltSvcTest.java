@@ -16,9 +16,9 @@
 
 package io.helidon.webserver.tests.http3;
 
-import java.time.Duration;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
@@ -34,17 +34,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class Http3AltSvcTest {
-    private static void routing(HttpRouting.Builder router) {
-        router.error(RedirectException.class,
-                     (req, res, throwable) -> res.status(Status.MOVED_PERMANENTLY_301)
-                             .header(HeaderNames.LOCATION, "/ok")
-                             .send())
-                .get("/ok", (req, res) -> res.send("ok"))
-                .get("/error-redirect", (req, res) -> {
-                    throw new RedirectException();
-                });
-    }
-
     @Test
     void shouldAdvertiseAltSvcOnSuccessfulResponse() throws Exception {
         try (Http3TestSupport.TestEnvironment environment = environment()) {
@@ -84,6 +73,17 @@ class Http3AltSvcTest {
             assertThat(response.version(), is(HTTP_1_1));
             assertThat(response.headers().firstValue(HeaderNames.ALT_SVC.defaultCase()).isPresent(), is(false));
         }
+    }
+
+    private static void routing(HttpRouting.Builder router) {
+        router.error(RedirectException.class,
+                     (_, res, _) -> res.status(Status.MOVED_PERMANENTLY_301)
+                             .header(HeaderNames.LOCATION, "/ok")
+                             .send())
+                .get("/ok", (_, res) -> res.send("ok"))
+                .get("/error-redirect", (_, _) -> {
+                    throw new RedirectException();
+                });
     }
 
     private static String expectedAltSvc(int port) {

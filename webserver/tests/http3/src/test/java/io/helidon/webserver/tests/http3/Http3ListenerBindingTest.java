@@ -43,7 +43,7 @@ class Http3ListenerBindingTest {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         int port;
         try (ServerSocket tcp = new ServerSocket(0, 1, loopback);
-             DatagramSocket udp = new DatagramSocket(new InetSocketAddress(loopback, tcp.getLocalPort()))) {
+             DatagramSocket _ = new DatagramSocket(new InetSocketAddress(loopback, tcp.getLocalPort()))) {
             port = tcp.getLocalPort();
         }
 
@@ -85,7 +85,7 @@ class Http3ListenerBindingTest {
     }
 
     private static void routing(HttpRouting.Builder routing) {
-        routing.get("/binding", (req, res) -> res.send(ENTITY));
+        routing.get("/binding", (_, res) -> res.send(ENTITY));
     }
 
     private static void assertServesHttp1AndHttp3(Http3TestSupport.TestEnvironment environment) throws Exception {
