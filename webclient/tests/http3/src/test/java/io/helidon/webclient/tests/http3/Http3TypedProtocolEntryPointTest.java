@@ -47,9 +47,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
 class Http3TypedProtocolEntryPointTest {
-    private static final String SERVER_KEYSTORE = "server.p12";
-    private static final String CLIENT_TRUSTSTORE = "client.p12";
-    private static final char[] KEY_PASSWORD = "password".toCharArray();
     private static final String HELLO = "Hello";
     private static final String PAYLOAD = "payload";
     private static final Duration HANDSHAKE_TIMEOUT = Duration.ofMillis(250);
