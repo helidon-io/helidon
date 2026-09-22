@@ -28,6 +28,7 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.webserver.spi.TransportBindingFactory;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
+import io.helidon.webserver.spi.TransportConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +37,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListenerConfigTest {
@@ -289,6 +291,100 @@ public class ListenerConfigTest {
     }
 
     @Test
+    void testSharedTransportConfigPreservesOrderAndDisabledTcp() {
+        TransportConfig uds = UdsTransportConfig.builder()
+                .socket(UnixDomainSocketAddress.of("/tmp/server.sock"))
+                .required(true)
+                .build();
+        TransportConfig tcp = TcpTransportConfig.builder().enabled(false).build();
+        ListenerConfig.Builder builder = ListenerConfig.builder().bindingsDiscoverServices(false);
+
+        assertThat(builder.addBinding(uds), sameInstance(builder));
+        builder.addBinding(tcp);
+        ListenerConfig listenerConfig = builder.buildPrototype();
+
+        assertThat(bindingDescriptions(listenerConfig), is(List.of("uds/uds/true", "tcp/tcp/false")));
+        assertThat(listenerConfig.bindings().getFirst().required(), is(true));
+        assertThat(bindingDescriptions(ListenerConfig.builder(listenerConfig).buildPrototype()),
+                   is(bindingDescriptions(listenerConfig)));
+    }
+
+    @Test
+    void testSharedTransportConfigKeepsDefaultTcp() {
+        TransportConfig uds = UdsTransportConfig.builder()
+                .socket(UnixDomainSocketAddress.of("/tmp/server.sock"))
+                .build();
+        WebServerConfig.Builder builder = WebServer.builder().bindingsDiscoverServices(false);
+
+        assertThat(builder.addBinding(uds), sameInstance(builder));
+        assertThat(bindingDescriptions(builder.buildPrototype()), is(List.of("tcp/tcp/true", "uds/uds/true")));
+    }
+
+    @Test
+    void testSharedTransportConfigRejectsDuplicateBinding() {
+        TransportConfig config = TcpTransportConfig.create();
+        ListenerConfig.Builder builder = ListenerConfig.builder()
+                .bindingsDiscoverServices(false)
+                .addBinding(config)
+                .addBinding(config);
+
+        ConfigException failure = assertThrows(ConfigException.class, builder::buildPrototype);
+
+        assertThat(failure.getMessage(), containsString("Multiple configured provider instances of type \"tcp\""));
+        assertThat(failure.getMessage(), containsString("one instance per type"));
+    }
+
+    @Test
+    void testSharedTransportConfigRejectsNullBeforeMutation() {
+        ListenerConfig.Builder builder = ListenerConfig.builder().bindingsDiscoverServices(false);
+
+        assertThrows(NullPointerException.class, () -> builder.addBinding((TransportConfig) null));
+
+        assertThat(builder.bindings(), is(List.of()));
+    }
+
+    @Test
+    void testSharedTransportConfigRejectsMissingProviderBeforeMutation() {
+        ListenerConfig.Builder builder = ListenerConfig.builder().bindingsDiscoverServices(false);
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                       () -> builder.addBinding(new OtherTransportConfig("missing-binding")));
+
+        assertThat(failure.getMessage(),
+                   containsString("No transport binding provider is available for type \"missing-binding\""));
+        assertThat(builder.bindings(), is(List.of()));
+    }
+
+    @Test
+    void testSharedTransportConfigRejectsWrongConfigurationClassBeforeMutation() {
+        ListenerConfig.Builder builder = ListenerConfig.builder().bindingsDiscoverServices(false);
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                       () -> builder.addBinding(new OtherTransportConfig("tcp")));
+
+        assertThat(failure.getMessage(), containsString("TCP transport requires TcpTransportConfig"));
+        assertThat(builder.bindings(), is(List.of()));
+    }
+
+    @Test
+    void testProviderWithoutProgrammaticSupportRemainsUsableFromConfig() {
+        TestTransportBindingProvider provider = new TestTransportBindingProvider();
+
+        assertThat(provider.create(Config.empty()).type(), is(TestTransportBindingConfig.TYPE));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> provider.create(new OtherTransportConfig(TestTransportBindingConfig.TYPE)));
+        assertThrows(NullPointerException.class, () -> provider.create((TransportConfig) null));
+    }
+
+    @Test
+    void testBuiltInProgrammaticProvidersRejectNull() {
+        assertThrows(NullPointerException.class,
+                     () -> new TcpTransportBindingFactoryProvider().create((TransportConfig) null));
+        assertThrows(NullPointerException.class,
+                     () -> new UdsTransportBindingFactoryProvider().create((TransportConfig) null));
+    }
+
+    @Test
     void testBindingListFormIsRejectedBeforeProviderLookup() {
         Config config = Config.just("""
                 server:
@@ -512,5 +608,17 @@ public class ListenerConfigTest {
         return ListenerConfig.builder()
                 .config(config.get("server"))
                 .buildPrototype();
+    }
+
+    private record OtherTransportConfig(String type) implements TransportConfig {
+        @Override
+        public boolean enabled() {
+            return true;
+        }
+
+        @Override
+        public boolean required() {
+            return false;
+        }
     }
 }

@@ -241,15 +241,13 @@ final class Http3TestSupport {
 
     static TestEnvironment udpOnlyListener(Http3Config http3Config,
                                            Consumer<HttpRouting.Builder> routing) throws Exception {
-        return createServer(builder -> {
-            builder.bindingsDiscoverServices(false)
-                    .addBinding(TcpTransportConfig.builder()
-                                        .enabled(false)
-                                        .build())
-                    .addProtocol(http3Config)
-                    .routing(routing);
-            QuicTransportConfig.create().addTo(builder);
-        });
+        return createServer(builder -> builder.bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .build())
+                .addBinding(QuicTransportConfig.create())
+                .addProtocol(http3Config)
+                .routing(routing));
     }
 
     static boolean ipv6LoopbackAvailable() {

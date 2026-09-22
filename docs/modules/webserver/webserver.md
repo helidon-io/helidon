@@ -119,22 +119,21 @@ under at least one TCP protocol used by clients for ordinary HTTP/3 discovery.
 
 A minimal programmatic setup adds the incubating QUIC configuration to the
 listener without using an internal binding factory. It omits the custom host,
-field, Retry, and UDP-payload settings from the YAML example.
-`QuicTransportConfig.addTo` returns the same listener builder, and the listener
-supplies the endpoint, TLS, routing, and limits:
+field, Retry, and UDP-payload settings from the YAML example. Use `addBinding`
+on the listener or web server builder, which supplies the endpoint, TLS,
+routing, and limits:
 
 ```java
 WebServerConfig.Builder serverBuilder = WebServer.builder()
         .port(8443)
         .tls(tls)
         .protocolsDiscoverServices(false)
+        .addBinding(QuicTransportConfig.create())
         .addProtocol(Http1Config.builder()
                              .altSvc(AltSvc.builder().build())
                              .build())
         .addProtocol(Http2Config.create())
         .addProtocol(Http3Config.create());
-
-QuicTransportConfig.create().addTo(serverBuilder);
 ```
 
 The combined example also requires the `helidon-webserver-http2` dependency for
