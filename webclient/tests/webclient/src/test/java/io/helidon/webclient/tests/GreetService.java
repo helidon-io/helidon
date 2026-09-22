@@ -131,8 +131,11 @@ public class GreetService implements HttpService {
 
     private void valuesPropagated(ServerRequest serverRequest, ServerResponse serverResponse) {
         String queryParam = serverRequest.query().first("param").orElse("Query param not present");
+        String fragment = serverRequest.prologue().fragment().hasValue()
+                ? serverRequest.prologue().fragment().value()
+                : "";
         serverResponse.status(Status.OK_200);
-        serverResponse.send(queryParam);
+        serverResponse.send(queryParam + " " + fragment);
     }
 
     private void obtainedQuery(ServerRequest serverRequest, ServerResponse serverResponse) {
