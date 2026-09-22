@@ -50,6 +50,7 @@ class InteropContainerIT {
         TestTlsSupport.exportServerPem(certChain, privateKey);
 
         ImageFromDockerfile image = new ImageFromDockerfile("helidon-qir-it-" + UUID.randomUUID(), true)
+                .withBuildImageCmdModifier(cmd -> cmd.withForcerm(true))
                 .withDockerfile(Path.of("./Dockerfile"));
         GenericContainer<?> container = new GenericContainer<>(image)
                 .withCopyFileToContainer(MountableFile.forHostPath(certChain), "/certs/cert.pem")
