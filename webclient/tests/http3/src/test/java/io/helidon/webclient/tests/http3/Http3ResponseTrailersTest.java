@@ -54,8 +54,8 @@ class Http3ResponseTrailersTest {
 
     @Test
     void shouldExposeTrailersOnDirectTypedHttp3Response() throws Exception {
-        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing.get("/trailers",
-                                                                                                       Http3ResponseTrailersTest::sendTrailers))) {
+        try (TestEnvironment environment = TestEnvironment.createSharedListener(
+                routing -> routing.get("/trailers", Http3ResponseTrailersTest::sendTrailers))) {
             Http3Client client = strictClientBuilder()
                     .baseUri(environment.baseUri())
                     .tls(environment.clientTlsHttp3())

@@ -265,6 +265,31 @@ public class Http3UploadJmh {
         download("/download/application-trailer", true, blackhole);
     }
 
+    private static void streamDownload(ServerResponse response, byte[] body, boolean trailers) {
+        // Streaming responses always include the internal stream-result trailer.
+        if (trailers) {
+            response.header(HeaderNames.TRAILER, DOWNLOAD_TRAILER.name());
+        }
+        try (var outputStream = response.outputStream()) {
+            outputStream.write(body);
+            if (trailers) {
+                response.trailers().add(DOWNLOAD_TRAILER);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void prime(WebClient client, String expectedProtocol) {
+        try (HttpClientResponse _ = client.post("/upload").submit(SMALL_BODY);
+             HttpClientResponse second = client.post("/upload").submit(SMALL_BODY)) {
+            if (!expectedProtocol.equals(second.protocolId())) {
+                throw new IllegalStateException("Expected primed protocol " + expectedProtocol
+                                                        + ", but got " + second.protocolId());
+            }
+        }
+    }
+
     private WebClient genericClient(TestEnvironment clientEnvironment,
                                     Http3ClientProtocolConfig protocolConfig,
                                     boolean shareConnectionCache,
@@ -294,31 +319,6 @@ public class Http3UploadJmh {
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-    }
-
-    private static void streamDownload(ServerResponse response, byte[] body, boolean trailers) {
-        // Streaming responses always include the internal stream-result trailer.
-        if (trailers) {
-            response.header(HeaderNames.TRAILER, DOWNLOAD_TRAILER.name());
-        }
-        try (var outputStream = response.outputStream()) {
-            outputStream.write(body);
-            if (trailers) {
-                response.trailers().add(DOWNLOAD_TRAILER);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static void prime(WebClient client, String expectedProtocol) {
-        try (HttpClientResponse first = client.post("/upload").submit(SMALL_BODY);
-             HttpClientResponse second = client.post("/upload").submit(SMALL_BODY)) {
-            if (!expectedProtocol.equals(second.protocolId())) {
-                throw new IllegalStateException("Expected primed protocol " + expectedProtocol
-                                                        + ", but got " + second.protocolId());
-            }
         }
     }
 }

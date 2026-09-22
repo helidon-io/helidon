@@ -95,46 +95,6 @@ public final class Http3RawTestServer implements AutoCloseable {
     private final Consumer<QuicConnection> connectionObserver;
     private final AtomicBoolean shutdownStarted = new AtomicBoolean();
 
-    @FunctionalInterface
-    public interface Handler {
-        BufferedResponse handle(Http3Protocol.DecodedRequestHead request,
-                                QuicConnection connection,
-                                long streamId,
-                                StreamControl stream);
-    }
-
-    public interface StreamControl {
-        int writeResponseHeaders(int status, Headers headers, boolean endStream);
-
-        void writeData(byte[] data, boolean endStream);
-
-        void reset(long errorCode);
-
-        boolean stopSendingReceived();
-
-        long stopSendingErrorCode();
-
-        InputStream requestBodyInputStream();
-    }
-
-    public record BufferedResponse(int status, Headers headers, byte[] body) {
-        public BufferedResponse {
-            headers = WritableHeaders.create(Objects.requireNonNull(headers, "headers"));
-            body = body == null ? new byte[0] : body.clone();
-        }
-
-        public static BufferedResponse create(int status, Headers headers, byte[] body) {
-            return new BufferedResponse(status, headers, body);
-        }
-
-        public static BufferedResponse text(int status, String body) {
-            return create(status,
-                          WritableHeaders.create()
-                                  .add(HeaderValues.create(HeaderNames.CONTENT_TYPE, "text/plain; charset=utf-8")),
-                          body.getBytes(StandardCharsets.UTF_8));
-        }
-    }
-
     private Http3RawTestServer(ExecutorService executor,
                                Http3TlsSupport.Http3TlsMaterials tlsMaterials,
                                String listenerName,
@@ -229,6 +189,51 @@ public final class Http3RawTestServer implements AutoCloseable {
             }
             executor.close();
             throw e;
+        }
+    }
+
+    public static BufferedResponse response(int status, Headers headers, byte[] body) {
+        return BufferedResponse.create(status, headers, body);
+    }
+
+    public static BufferedResponse text(int status, String body) {
+        return BufferedResponse.text(status, body);
+    }
+
+    public String baseUri() {
+        return "https://localhost:" + localAddress().getPort();
+    }
+
+    public Tls clientTlsHttp3() {
+        return tlsMaterials.clientTlsHttp3();
+    }
+
+    public URI uri(String path) throws Exception {
+        return new URI("https", null, "localhost", localAddress().getPort(), path, null, null);
+    }
+
+    public CompletableFuture<Void> sendGoAway(QuicConnection connection, long streamId) {
+        return runtime.orElseThrow(() -> new IllegalStateException("Raw peer has no managed HTTP/3 runtime"))
+                .sendGoAway(connection, Http3GoAway.requestStream(streamId));
+    }
+
+    @Override
+    public void close() {
+        if (!shutdownStarted.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            quicServer.stopAccepting();
+        } finally {
+            try {
+                quicServer.close();
+            } finally {
+                try {
+                    runtime.ifPresent(RawRuntime::close);
+                } finally {
+                    executor.close();
+                }
+            }
         }
     }
 
@@ -333,51 +338,6 @@ public final class Http3RawTestServer implements AutoCloseable {
         };
     }
 
-    public static BufferedResponse response(int status, Headers headers, byte[] body) {
-        return BufferedResponse.create(status, headers, body);
-    }
-
-    public static BufferedResponse text(int status, String body) {
-        return BufferedResponse.text(status, body);
-    }
-
-    public String baseUri() {
-        return "https://localhost:" + localAddress().getPort();
-    }
-
-    public Tls clientTlsHttp3() {
-        return tlsMaterials.clientTlsHttp3();
-    }
-
-    public URI uri(String path) throws Exception {
-        return new URI("https", null, "localhost", localAddress().getPort(), path, null, null);
-    }
-
-    public CompletableFuture<Void> sendGoAway(QuicConnection connection, long streamId) {
-        return runtime.orElseThrow(() -> new IllegalStateException("Raw peer has no managed HTTP/3 runtime"))
-                .sendGoAway(connection, Http3GoAway.requestStream(streamId));
-    }
-
-    @Override
-    public void close() {
-        if (!shutdownStarted.compareAndSet(false, true)) {
-            return;
-        }
-        try {
-            quicServer.stopAccepting();
-        } finally {
-            try {
-                quicServer.close();
-            } finally {
-                try {
-                    runtime.ifPresent(RawRuntime::close);
-                } finally {
-                    executor.close();
-                }
-            }
-        }
-    }
-
     private InetSocketAddress localAddress() {
         return quicServer.localAddress();
     }
@@ -426,6 +386,46 @@ public final class Http3RawTestServer implements AutoCloseable {
         }
     }
 
+    @FunctionalInterface
+    public interface Handler {
+        BufferedResponse handle(Http3Protocol.DecodedRequestHead request,
+                                QuicConnection connection,
+                                long streamId,
+                                StreamControl stream);
+    }
+
+    public interface StreamControl {
+        int writeResponseHeaders(int status, Headers headers, boolean endStream);
+
+        void writeData(byte[] data, boolean endStream);
+
+        void reset(long errorCode);
+
+        boolean stopSendingReceived();
+
+        long stopSendingErrorCode();
+
+        InputStream requestBodyInputStream();
+    }
+
+    public record BufferedResponse(int status, Headers headers, byte[] body) {
+        public BufferedResponse {
+            headers = WritableHeaders.create(Objects.requireNonNull(headers, "headers"));
+            body = body == null ? new byte[0] : body.clone();
+        }
+
+        public static BufferedResponse create(int status, Headers headers, byte[] body) {
+            return new BufferedResponse(status, headers, body);
+        }
+
+        public static BufferedResponse text(int status, String body) {
+            return create(status,
+                          WritableHeaders.create()
+                                  .add(HeaderValues.create(HeaderNames.CONTENT_TYPE, "text/plain; charset=utf-8")),
+                          body.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
     private static final class RawRuntime implements Http3ServerConnection.StreamLifecycle, AutoCloseable {
         private static final Http3FrameListener NO_OP_FRAME_LISTENER = Http3FrameListener.create(List.of());
 
@@ -456,6 +456,31 @@ public final class Http3RawTestServer implements AutoCloseable {
             }
             this.config = configBuilder.buildPrototype();
             this.bindingContext = new TestTransportBindingContext(executor);
+        }
+
+        @Override
+        public boolean requestStarted(Http3ServerConnection connection, Http3ServerStream stream) {
+            return !closed.get() && !connection.rejectsStream(stream.streamId());
+        }
+
+        @Override
+        public void requestCompleted(Http3ServerConnection connection, Http3ServerStream stream) {
+        }
+
+        @Override
+        public void close() {
+            List<Http3ServerConnection> currentConnections;
+            stateLock.lock();
+            try {
+                if (!closed.compareAndSet(false, true)) {
+                    return;
+                }
+                currentConnections = List.copyOf(connections.values());
+                connections.clear();
+            } finally {
+                stateLock.unlock();
+            }
+            currentConnections.forEach(Http3ServerConnection::close);
         }
 
         private void accept(QuicConnection connection) {
@@ -515,31 +540,6 @@ public final class Http3RawTestServer implements AutoCloseable {
                 throw new IllegalStateException("HTTP/3 connection is not managed by this server");
             }
             return serverConnection.sendGoAway(goAway, "manual");
-        }
-
-        @Override
-        public boolean requestStarted(Http3ServerConnection connection, Http3ServerStream stream) {
-            return !closed.get() && !connection.rejectsStream(stream.streamId());
-        }
-
-        @Override
-        public void requestCompleted(Http3ServerConnection connection, Http3ServerStream stream) {
-        }
-
-        @Override
-        public void close() {
-            List<Http3ServerConnection> currentConnections;
-            stateLock.lock();
-            try {
-                if (!closed.compareAndSet(false, true)) {
-                    return;
-                }
-                currentConnections = List.copyOf(connections.values());
-                connections.clear();
-            } finally {
-                stateLock.unlock();
-            }
-            currentConnections.forEach(Http3ServerConnection::close);
         }
     }
 
@@ -622,7 +622,6 @@ public final class Http3RawTestServer implements AutoCloseable {
         public ExecutorService executor() {
             return executor;
         }
-
     }
 
     private static final class ObservedQuicConnection implements QuicConnection {
@@ -820,5 +819,4 @@ public final class Http3RawTestServer implements AutoCloseable {
             current = BufferData.empty();
         }
     }
-
 }

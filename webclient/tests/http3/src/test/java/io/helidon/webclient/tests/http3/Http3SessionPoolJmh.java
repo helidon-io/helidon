@@ -167,6 +167,52 @@ public class Http3SessionPoolJmh {
         }
     }
 
+    private static int concurrentRequests(Http3Client client, ExecutorService executor, String path) {
+        CountDownLatch start = new CountDownLatch(1);
+        List<CompletableFuture<Integer>> requests = new ArrayList<>(CONCURRENT_REQUESTS);
+        for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
+            requests.add(CompletableFuture.supplyAsync(() -> {
+                await(start);
+                return request(client, path);
+            }, executor));
+        }
+        start.countDown();
+        int result = 0;
+        for (CompletableFuture<Integer> request : requests) {
+            result += request.join();
+        }
+        return result;
+    }
+
+    private static int request(Http3Client client, String path) {
+        try (Http3ClientResponse response = client.get(path).request()) {
+            requireOk(response);
+            return response.status().code();
+        }
+    }
+
+    private static String requestConnectionId(Http3Client client, String path) {
+        try (Http3ClientResponse response = client.get(path).request()) {
+            requireOk(response);
+            return response.as(String.class);
+        }
+    }
+
+    private static void requireOk(Http3ClientResponse response) {
+        if (response.status().code() != Status.OK_200.code()) {
+            throw new IllegalStateException("Unexpected HTTP/3 benchmark response status: " + response.status());
+        }
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while starting concurrent HTTP/3 benchmark requests", e);
+        }
+    }
+
     @State(Scope.Benchmark)
     public static class OneSessionState {
         private Scenario scenario;
@@ -407,52 +453,6 @@ public class Http3SessionPoolJmh {
         }
     }
 
-    private static int concurrentRequests(Http3Client client, ExecutorService executor, String path) {
-        CountDownLatch start = new CountDownLatch(1);
-        List<CompletableFuture<Integer>> requests = new ArrayList<>(CONCURRENT_REQUESTS);
-        for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
-            requests.add(CompletableFuture.supplyAsync(() -> {
-                await(start);
-                return request(client, path);
-            }, executor));
-        }
-        start.countDown();
-        int result = 0;
-        for (CompletableFuture<Integer> request : requests) {
-            result += request.join();
-        }
-        return result;
-    }
-
-    private static int request(Http3Client client, String path) {
-        try (Http3ClientResponse response = client.get(path).request()) {
-            requireOk(response);
-            return response.status().code();
-        }
-    }
-
-    private static String requestConnectionId(Http3Client client, String path) {
-        try (Http3ClientResponse response = client.get(path).request()) {
-            requireOk(response);
-            return response.as(String.class);
-        }
-    }
-
-    private static void requireOk(Http3ClientResponse response) {
-        if (response.status().code() != Status.OK_200.code()) {
-            throw new IllegalStateException("Unexpected HTTP/3 benchmark response status: " + response.status());
-        }
-    }
-
-    private static void await(CountDownLatch latch) {
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while starting concurrent HTTP/3 benchmark requests", e);
-        }
-    }
-
     private static final class Scenario implements AutoCloseable {
         private final BenchmarkServer server;
         private final ExecutorService executor;
@@ -462,6 +462,19 @@ public class Http3SessionPoolJmh {
             this.server = server;
             this.executor = executor;
             this.client = client;
+        }
+
+        @Override
+        public void close() {
+            try {
+                client.closeResource();
+            } finally {
+                try {
+                    server.close();
+                } finally {
+                    executor.close();
+                }
+            }
         }
 
         private static Scenario create(int capacity) throws Exception {
@@ -507,19 +520,6 @@ public class Http3SessionPoolJmh {
         private Http3Client client() {
             return client;
         }
-
-        @Override
-        public void close() {
-            try {
-                client.closeResource();
-            } finally {
-                try {
-                    server.close();
-                } finally {
-                    executor.close();
-                }
-            }
-        }
     }
 
     private static final class BenchmarkServer implements AutoCloseable {
@@ -534,8 +534,17 @@ public class Http3SessionPoolJmh {
             server = Http3RawTestServer.create(this::handle, this::connectionAccepted, 1);
         }
 
+        @Override
+        public void close() {
+            server.close();
+        }
+
         private static BenchmarkServer create() throws Exception {
             return new BenchmarkServer();
+        }
+
+        private static Http3RawTestServer.BufferedResponse emptyResponse() {
+            return Http3RawTestServer.response(Status.OK_200.code(), WritableHeaders.create(), EMPTY_BODY);
         }
 
         private Http3RawTestServer.BufferedResponse handle(Http3Protocol.DecodedRequestHead request,
@@ -640,11 +649,6 @@ public class Http3SessionPoolJmh {
             }
         }
 
-        @Override
-        public void close() {
-            server.close();
-        }
-
         private void connectionAccepted(QuicConnection connection) {
             String connectionId = connection.childSocketId();
             connections.add(connectionId);
@@ -653,10 +657,6 @@ public class Http3SessionPoolJmh {
                 connections.remove(connectionId);
                 requests.remove(connectionId);
             });
-        }
-
-        private static Http3RawTestServer.BufferedResponse emptyResponse() {
-            return Http3RawTestServer.response(Status.OK_200.code(), WritableHeaders.create(), EMPTY_BODY);
         }
     }
 
