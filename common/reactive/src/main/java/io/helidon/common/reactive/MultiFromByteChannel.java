@@ -74,7 +74,6 @@ class MultiFromByteChannel implements Multi<ByteBuffer> {
                     @Override
                     public void cancel() {
                         subscriber.cancel();
-                        closeChannel();
                         closeExecutor();
                     }
                 });
@@ -189,10 +188,7 @@ class MultiFromByteChannel implements Multi<ByteBuffer> {
     }
 
     private void tryComplete(Throwable t) {
-        subscriber.close(sub -> {
-            closeChannel();
-            sub.onError(t);
-        });
+        subscriber.close(sub -> sub.onError(t));
         closeExecutor();
     }
 
