@@ -14,8 +14,10 @@ exposes a simple `POST /echo` endpoint for request-body protocol tests, and
 uses PEM-based TLS material:
 
 - `HELIDON_QUIC_INTEROP_WEB_ROOT` defaults to `/www`
+- `HELIDON_QUIC_INTEROP_WELCOME_FILE` defaults to `index.html`
 - `HELIDON_QUIC_INTEROP_CERT_CHAIN` defaults to `/certs/cert.pem`
 - `HELIDON_QUIC_INTEROP_PRIVATE_KEY` defaults to `/certs/priv.key`
+- `HELIDON_QUIC_INTEROP_PRIVATE_KEY_PASSPHRASE` is optional
 - `HELIDON_QUIC_INTEROP_PORT` defaults to `443`
 - `HELIDON_QUIC_INTEROP_HOST` defaults to `0.0.0.0`
 
@@ -24,8 +26,9 @@ The container wrapper in `run_endpoint.sh` currently supports:
 - `ROLE=server`
 - `TESTCASE=http3`
 
-All other roles and test cases exit with status `127`, which matches the interop
-runner convention for unsupported functionality.
+Other non-empty roles and test cases exit with status `127`, which matches the
+interop runner convention for unsupported functionality. A missing `ROLE` or,
+for the server role, a missing `TESTCASE` exits with status `1`.
 
 ## How The Test Works
 
@@ -203,17 +206,21 @@ metadata includes the build time.
 
 ## Local Wrapper Smoke Check
 
-This bypasses the simulator setup script and exercises only the wrapper's role and
-testcase filtering:
+Use the locally built endpoint image from [Build The Interop Image](#build-the-interop-image).
+The wrapper uses container paths such as `/logs` and `/opt/helidon`, so run it
+inside Docker, not directly on the host. These checks bypass the simulator setup
+script and exercise only the wrapper's role and testcase filtering:
 
 ```bash
-cd tests/integration/quic-interop-runner
-ROLE=client TESTCASE=http3 HELIDON_QUIC_INTEROP_SKIP_SETUP=1 ./run_endpoint.sh
+docker run --rm --pull=never \
+  -e ROLE=client -e TESTCASE=http3 -e HELIDON_QUIC_INTEROP_SKIP_SETUP=1 \
+  helidon/quic-interop-runner
 ```
 
 Unsupported testcase gating can be checked the same way:
 
 ```bash
-cd tests/integration/quic-interop-runner
-ROLE=server TESTCASE=handshake HELIDON_QUIC_INTEROP_SKIP_SETUP=1 ./run_endpoint.sh
+docker run --rm --pull=never \
+  -e ROLE=server -e TESTCASE=handshake -e HELIDON_QUIC_INTEROP_SKIP_SETUP=1 \
+  helidon/quic-interop-runner
 ```
