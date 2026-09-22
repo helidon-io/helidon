@@ -22,7 +22,7 @@ import io.helidon.common.Api;
  * Configuration of a listener transport binding.
  * Add a transport configuration through
  * {@link io.helidon.webserver.ListenerConfig.BuilderBase#addBinding(TransportConfig)}.
- * The listener supplies the endpoint, TLS, routing, and limits shared by its bindings.
+ * Listener-wide settings such as TLS, routing, and limits remain on the listener.
  */
 @Api.Incubating
 public interface TransportConfig {
