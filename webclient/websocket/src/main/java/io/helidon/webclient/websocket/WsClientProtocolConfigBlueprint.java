@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Size;
 import io.helidon.webclient.spi.ProtocolConfig;
 import io.helidon.websocket.WsProtocolConfig;
 
@@ -28,7 +29,7 @@ import io.helidon.websocket.WsProtocolConfig;
  */
 @Prototype.Blueprint(decorator = WsClientProtocolConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
-@Prototype.IncludeDefaultMethods("maxFrameLength")
+@Prototype.IncludeDefaultMethods("maxFrameSize")
 interface WsClientProtocolConfigBlueprint extends ProtocolConfig, WsProtocolConfig {
     @Override
     default String type() {
@@ -55,16 +56,16 @@ interface WsClientProtocolConfigBlueprint extends ProtocolConfig, WsProtocolConf
     List<String> subProtocols();
 
     /**
-     * Maximum WebSocket frame payload size in bytes accepted by the client, from {@code 1} through
-     * {@code Integer.MAX_VALUE}; the default is 1 MiB, replacing the earlier effectively unbounded behavior, and
+     * Maximum WebSocket frame payload size accepted by the client, from {@code 1 B} through
+     * {@code Integer.MAX_VALUE} bytes; the default is 1 MiB, replacing the earlier effectively unbounded behavior, and
      * exceeding the configured limit causes the client to close the connection with status code {@code 1009}
      * ({@code Message Too Big}).
      *
-     * @return maximum frame payload size in bytes
+     * @return maximum frame payload size
      */
     @Option.Configured
-    @Option.DefaultInt(1024 * 1024)
-    default int maxFrameLength() {
-        return 1024 * 1024;
+    @Option.Default("1 MiB")
+    default Size maxFrameSize() {
+        return Size.create(1, Size.Unit.MIB);
     }
 }

@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
@@ -41,7 +42,9 @@ import io.helidon.websocket.WsListener;
 import io.helidon.websocket.WsListenerBase;
 import io.helidon.websocket.WsSession;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -51,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 class ClientWsConnectionTest {
     private static final long TEST_TIMEOUT_SECONDS = 5;
@@ -70,33 +74,44 @@ class ClientWsConnectionTest {
     }
 
     @Test
-    void clientProtocolConfigHasFrameLengthDefaultAndOverride() {
+    void clientProtocolConfigHasFrameSizeDefaultAndOverride() {
         WsClientProtocolConfig defaults = WsClientProtocolConfig.create();
         WsClientProtocolConfig configured = WsClientProtocolConfig.builder()
-                .maxFrameLength(16)
+                .maxFrameSize(Size.create(16))
                 .build();
-        Config config = Config.create(ConfigSources.create(Map.of("max-frame-length", "32")));
+        Config config = Config.create(ConfigSources.create(Map.of("max-frame-size", "32")));
         WsClientProtocolConfig mapped = WsClientProtocolConfig.create(config);
+        WsClientProtocolConfig withUnits = new WsProtocolConfigProvider()
+                .create(Config.create(ConfigSources.create(Map.of("max-frame-size", "2 MiB"))), "test");
 
         assertAll(
-                () -> assertThat(defaults.maxFrameLength(), is(1024 * 1024)),
-                () -> assertThat(configured.maxFrameLength(), is(16)),
-                () -> assertThat(mapped.maxFrameLength(), is(32))
+                () -> assertThat(defaults.maxFrameSize().toBytes(), is(1024L * 1024)),
+                () -> assertThat(configured.maxFrameSize().toBytes(), is(16L)),
+                () -> assertThat(mapped.maxFrameSize().toBytes(), is(32L)),
+                () -> assertThat(withUnits.maxFrameSize().toBytes(), is(2L * 1024 * 1024))
         );
     }
 
+    @TestFactory
+    Stream<DynamicTest> clientProtocolConfigRejectsInvalidFrameSizes() {
+        return Stream.of("0 B", "-1 B", "2 GiB", "8 EiB")
+                .map(size -> dynamicTest(size, () -> assertAll(
+                        () -> assertThrows(IllegalArgumentException.class,
+                                           () -> WsClientProtocolConfig.builder().maxFrameSize(Size.parse(size)).build()),
+                        () -> assertThrows(IllegalArgumentException.class,
+                                           () -> WsClientProtocolConfig.create(Config.create(
+                                                   ConfigSources.create(Map.of("max-frame-size", size))))))));
+    }
+
     @Test
-    void clientProtocolConfigRejectsNonPositiveFrameLength() {
-        assertThrows(IllegalArgumentException.class,
-                     () -> WsClientProtocolConfig.builder().maxFrameLength(0).build());
-        assertThrows(IllegalArgumentException.class,
-                     () -> WsClientProtocolConfig.builder().maxFrameLength(-1).build());
-        assertThrows(IllegalArgumentException.class,
-                     () -> WsClientProtocolConfig.create(
-                             Config.create(ConfigSources.create(Map.of("max-frame-length", "0")))));
-        assertThrows(IllegalArgumentException.class,
-                     () -> WsClientProtocolConfig.create(
-                             Config.create(ConfigSources.create(Map.of("max-frame-length", "-1")))));
+    void clientProtocolConfigAcceptsFrameSizeBounds() {
+        assertAll(
+                () -> assertThat(WsClientProtocolConfig.builder().maxFrameSize(Size.create(1)).build()
+                                         .maxFrameSize().toBytes(), is(1L)),
+                () -> assertThat(WsClientProtocolConfig.create(Config.create(
+                                         ConfigSources.create(Map.of("max-frame-size", "2147483647 B"))))
+                                         .maxFrameSize().toBytes(), is((long) Integer.MAX_VALUE))
+        );
     }
 
     @Test
@@ -121,8 +136,8 @@ class ClientWsConnectionTest {
         assertThat(withoutSubProtocolCloseFrame, notNullValue());
         assertThat(withSubProtocolCloseFrame, notNullValue());
         assertAll(
-                () -> assertThat(withoutSubProtocol.protocolConfig().maxFrameLength(), is(1024 * 1024)),
-                () -> assertThat(withSubProtocol.protocolConfig().maxFrameLength(), is(1024 * 1024)),
+                () -> assertThat(withoutSubProtocol.protocolConfig().maxFrameSize().toBytes(), is(1024L * 1024)),
+                () -> assertThat(withSubProtocol.protocolConfig().maxFrameSize().toBytes(), is(1024L * 1024)),
                 () -> assertThat(maskedCloseCode(withoutSubProtocolCloseFrame), is(WsCloseCodes.TOO_BIG)),
                 () -> assertThat(maskedCloseCode(withSubProtocolCloseFrame), is(WsCloseCodes.TOO_BIG))
         );
@@ -151,7 +166,7 @@ class ClientWsConnectionTest {
             }
         };
         WsClientProtocolConfig protocolConfig = WsClientProtocolConfig.builder()
-                .maxFrameLength(expected.length)
+                .maxFrameSize(Size.create(expected.length))
                 .build();
         ClientWsConnection connection = new ClientWsConnection(
                 new TestClientConnection(DataReader.create(() -> inbound.getAndSet(null)), dataWriter),
@@ -195,7 +210,7 @@ class ClientWsConnectionTest {
             }
         };
         WsClientProtocolConfig protocolConfig = WsClientProtocolConfig.builder()
-                .maxFrameLength(16)
+                .maxFrameSize(Size.create(16))
                 .build();
         ClientWsConnection connection = new ClientWsConnection(new TestClientConnection(oversizedFrameReader(), dataWriter),
                                                                listener,
@@ -235,7 +250,7 @@ class ClientWsConnectionTest {
             }
         };
         WsClientProtocolConfig protocolConfig = WsClientProtocolConfig.builder()
-                .maxFrameLength(16)
+                .maxFrameSize(Size.create(16))
                 .build();
         ClientWsConnection connection = new ClientWsConnection(new TestClientConnection(oversizedFrameReader(), dataWriter),
                                                                listener,

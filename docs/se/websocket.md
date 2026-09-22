@@ -83,6 +83,20 @@ server.routing(it -> it
 This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and
 associates.
 
+## Client Frame Size
+
+The WebSocket client accepts frame payloads up to 1 MiB by default. Configure
+`protocol-config.max-frame-size` in `WsClient` configuration using a byte count
+or a size such as `2 MiB`, or use `WsClientProtocolConfig.Builder.maxFrameSize(Size)`.
+The size must be between 1 byte and `Integer.MAX_VALUE` bytes, inclusive.
+Oversized frames are rejected before their payload is buffered, and the client
+closes the connection with WebSocket close code `1009`.
+
+This per-frame limit is independent of `max-buffered-message-size`, which
+limits whole-message buffering. Listeners that consume fragments, readers,
+or input streams are still subject to the frame limit. The server's per-frame
+setting remains `server.protocols.websocket.max-frame-length`.
+
 ## Security
 
 When a WebSocket upgrade request includes an `Origin` header, Helidon validates
