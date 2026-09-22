@@ -24,7 +24,6 @@ import java.util.Map;
 
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.http.HtmlEncoder;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
@@ -69,8 +68,6 @@ class SingleCheckHandler implements Handler {
         } catch (Exception e) {
             response = HealthCheckResponse.builder()
                     .status(HealthCheckResponse.Status.ERROR)
-                    .detail("error", e.getClass().getName())
-                    .detail("message", HtmlEncoder.encode(e.getMessage()))
                     .build();
             LOGGER.log(System.Logger.Level.ERROR, "Unexpected failure of health check", e);
         }
