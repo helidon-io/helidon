@@ -25,8 +25,17 @@ final class WsClientProtocolConfigSupport {
     static class BuilderDecorator implements Prototype.BuilderDecorator<WsClientProtocolConfig.BuilderBase<?, ?>> {
         @Override
         public void decorate(WsClientProtocolConfig.BuilderBase<?, ?> builder) {
-            if (builder.maxFrameLength() <= 0) {
-                throw new IllegalArgumentException("Maximum WebSocket frame length must be greater than 0");
+            long maxFrameSize;
+            try {
+                maxFrameSize = builder.maxFrameSize().toBytes();
+            } catch (ArithmeticException e) {
+                throw new IllegalArgumentException("Maximum WebSocket frame size exceeds Integer.MAX_VALUE bytes", e);
+            }
+            if (maxFrameSize <= 0) {
+                throw new IllegalArgumentException("Maximum WebSocket frame size must be greater than 0");
+            }
+            if (maxFrameSize > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("Maximum WebSocket frame size exceeds Integer.MAX_VALUE bytes");
             }
         }
     }

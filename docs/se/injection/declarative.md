@@ -799,12 +799,15 @@ limit with `protocol-config.max-buffered-message-size` in `WsClient`
 configuration. If a combined message exceeds the applicable limit, that side
 closes the connection with WebSocket close code `1009`. The server limit is
 independent of `max-frame-length`, which applies to each individual frame.
+On the client, `protocol-config.max-frame-size` limits each frame to 1 MiB by
+default and accepts size values such as `2 MiB`. Exceeding that limit also
+closes the connection with code `1009`.
 Binary messages are measured exactly in bytes. Text message size is
 approximated using the number of UTF-16 code units in each decoded string
 fragment and may be smaller than the UTF-8 payload size. Methods that accept
 the trailing `boolean` fragment indicator, `Reader`, or `InputStream` consume
 fragments without whole-message buffering and are not limited by
-`max-buffered-message-size`.
+`max-buffered-message-size`, but remain subject to the applicable per-frame limit.
 
 Annotations on endpoint type:
 
