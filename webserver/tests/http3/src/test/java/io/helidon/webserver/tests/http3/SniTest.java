@@ -160,13 +160,14 @@ class SniTest {
                                                                         SniSelectionPolicy.FALLBACK,
                                                                         routeInvocations);
              RejectedHandshakeClient client = RejectedHandshakeClient.create(environment, List.of())) {
-            client.connection().startHandshake();
+            CompletableFuture<?> handshake = client.connection().startHandshake();
 
             assertThrows(TimeoutException.class,
                          () -> client.connection()
                                  .whenTerminated()
                                  .toCompletableFuture()
                                  .get(2, TimeUnit.SECONDS));
+            assertThat(handshake.isDone(), is(false));
             assertThat(routeInvocations.get(), is(0));
         }
     }
