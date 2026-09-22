@@ -198,28 +198,6 @@ class Http3RedirectTest {
         assertMethodAndEntityPreserved(executeRedirect(Method.POST, 308, false), Method.POST);
     }
 
-    private static void assertRewrittenToGet(RedirectCaptures captures) {
-
-        assertRewrittenGet(captures.serviceRequest());
-        assertRewrittenGet(captures.wireRequest());
-        assertThat(captures.wireRequest().body(), is(new byte[0]));
-        assertThat(captures.serviceInvocations(), is(2));
-    }
-
-    private static void assertMethodAndEntityPreserved(RedirectCaptures captures, Method method) {
-        assertThat(captures.serviceRequest().method(), is(method));
-        assertThat(captures.serviceRequest().contentLength(), is(Integer.toString(PAYLOAD.length)));
-        assertThat(captures.serviceRequest().transferEncoding(), is(false));
-        assertThat(captures.wireRequest().method(), is(method));
-        assertThat(captures.wireRequest().contentLength(), is(Integer.toString(PAYLOAD.length)));
-        assertThat(captures.wireRequest().transferEncoding(), is(false));
-        assertThat(captures.wireRequest().expectContinue(), is(true));
-        assertThat(captures.wireRequest().body(), is(PAYLOAD));
-        assertThat(captures.serviceInvocations(), is(2));
-        assertRepresentationHeadersPreserved(captures.serviceRequest());
-        assertRepresentationHeadersPreserved(captures.wireRequest());
-    }
-
     @Test
     void shouldRejectOneShotBodyAfterTemporaryRedirect() throws Exception {
         assertOneShotBodyRejected(Method.POST, Status.TEMPORARY_REDIRECT_307);
@@ -1103,6 +1081,28 @@ class Http3RedirectTest {
 
         assertThat(proxyRequestCount.get(), is(1));
         assertThat(targetRequestCount.get(), is(1));
+    }
+
+    private static void assertRewrittenToGet(RedirectCaptures captures) {
+
+        assertRewrittenGet(captures.serviceRequest());
+        assertRewrittenGet(captures.wireRequest());
+        assertThat(captures.wireRequest().body(), is(new byte[0]));
+        assertThat(captures.serviceInvocations(), is(2));
+    }
+
+    private static void assertMethodAndEntityPreserved(RedirectCaptures captures, Method method) {
+        assertThat(captures.serviceRequest().method(), is(method));
+        assertThat(captures.serviceRequest().contentLength(), is(Integer.toString(PAYLOAD.length)));
+        assertThat(captures.serviceRequest().transferEncoding(), is(false));
+        assertThat(captures.wireRequest().method(), is(method));
+        assertThat(captures.wireRequest().contentLength(), is(Integer.toString(PAYLOAD.length)));
+        assertThat(captures.wireRequest().transferEncoding(), is(false));
+        assertThat(captures.wireRequest().expectContinue(), is(true));
+        assertThat(captures.wireRequest().body(), is(PAYLOAD));
+        assertThat(captures.serviceInvocations(), is(2));
+        assertRepresentationHeadersPreserved(captures.serviceRequest());
+        assertRepresentationHeadersPreserved(captures.wireRequest());
     }
 
     private static void assertMaterializedBodyReplayed(Method method, Status redirectStatus) throws Exception {

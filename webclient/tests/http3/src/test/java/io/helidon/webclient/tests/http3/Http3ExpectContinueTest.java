@@ -40,10 +40,11 @@ class Http3ExpectContinueTest {
     void shouldSupportExpectContinueOnTypedHttp3Client() throws Exception {
         AtomicBoolean sawExpect = new AtomicBoolean();
 
-        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing.post("/expect-continue", (req, res) -> {
-                 sawExpect.set(req.headers().contains(HeaderValues.EXPECT_100));
-                 res.send(req.content().as(String.class));
-             }))) {
+        try (TestEnvironment environment = TestEnvironment.createSharedListener(
+                routing -> routing.post("/expect-continue", (req, res) -> {
+                    sawExpect.set(req.headers().contains(HeaderValues.EXPECT_100));
+                    res.send(req.content().as(String.class));
+                }))) {
             Http3Client client = strictClientBuilder()
                     .baseUri(environment.baseUri())
                     .tls(environment.clientTlsHttp3())
@@ -70,10 +71,11 @@ class Http3ExpectContinueTest {
     void shouldSupportExpectContinueOnGenericClientWhenHttp3IsExplicitlySelected() throws Exception {
         AtomicBoolean sawExpect = new AtomicBoolean();
 
-        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing.post("/expect-continue", (req, res) -> {
-                 sawExpect.set(req.headers().contains(HeaderValues.EXPECT_100));
-                 res.send(req.content().as(String.class));
-             }))) {
+        try (TestEnvironment environment = TestEnvironment.createSharedListener(
+                routing -> routing.post("/expect-continue", (req, res) -> {
+                    sawExpect.set(req.headers().contains(HeaderValues.EXPECT_100));
+                    res.send(req.content().as(String.class));
+                }))) {
             WebClient client = strictWebClientBuilder()
                     .baseUri(environment.baseUri())
                     .tls(environment.clientTls())
@@ -101,10 +103,11 @@ class Http3ExpectContinueTest {
     void shouldExposeFinalResponseWhenRouteFailsBeforeReadingEntity() throws Exception {
         AtomicBoolean sawExpect = new AtomicBoolean();
 
-        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing.post("/expect-continue-fail", (req, _) -> {
-                 sawExpect.set(req.headers().contains(HeaderValues.EXPECT_100));
-                 throw new IllegalStateException("boom");
-             }))) {
+        try (TestEnvironment environment = TestEnvironment.createSharedListener(
+                routing -> routing.post("/expect-continue-fail", (req, _) -> {
+                    sawExpect.set(req.headers().contains(HeaderValues.EXPECT_100));
+                    throw new IllegalStateException("boom");
+                }))) {
             Http3Client client = strictClientBuilder()
                     .baseUri(environment.baseUri())
                     .tls(environment.clientTlsHttp3())

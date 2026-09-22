@@ -115,6 +115,54 @@ class HttpProxy {
         return connectedPort;
     }
 
+    private static final class OriginInfo {
+        private static final String CONNECT = "CONNECT ";
+        private static final String AUTHORIZATION = "Proxy-Authorization:";
+
+        private String host;
+        private int port;
+        private String user;
+        private String password;
+
+        @Override
+        public String toString() {
+            return "OriginInfo{"
+                    + "host='" + host + '\''
+                    + ", port=" + port
+                    + ", user='" + user + '\''
+                    + ", password='" + password + '\''
+                    + '}';
+        }
+
+        private void parseFirstLine(String line) throws MalformedURLException {
+            String[] split = line.split(" ");
+            if (split.length < 2) {
+                throw new MalformedURLException("Cannot parse CONNECT line: " + line);
+            }
+            String authority = split[1];
+            int colon = authority.lastIndexOf(':');
+            if (colon < 1 || colon + 1 >= authority.length()) {
+                throw new MalformedURLException("Cannot parse CONNECT authority: " + authority);
+            }
+            host = authority.substring(0, colon);
+            port = Integer.parseInt(authority.substring(colon + 1));
+        }
+
+        private void parseAuthorization(String line) {
+            String[] split = line.split(" ", 3);
+            if (split.length < 3) {
+                return;
+            }
+            String credentials = new String(Base64.getDecoder().decode(split[2]));
+            int colon = credentials.indexOf(':');
+            if (colon < 0) {
+                return;
+            }
+            user = credentials.substring(0, colon);
+            password = credentials.substring(colon + 1);
+        }
+    }
+
     private class MiddleCommunicator {
         private static final System.Logger LOGGER = System.getLogger(MiddleCommunicator.class.getName());
         private static final int BUFFER_SIZE = 1024 * 1024;
@@ -155,6 +203,29 @@ class HttpProxy {
                     LOGGER.log(Level.ERROR, "Cannot close " + socket + ": " + e.getMessage());
                 }
             }
+        }
+
+        private boolean authenticate(OriginInfo originInfo) {
+            if (HttpProxy.this.user == null) {
+                return true;
+            }
+            return HttpProxy.this.user.equals(originInfo.user)
+                    && HttpProxy.this.password.equals(originInfo.password);
+        }
+
+        private OriginInfo getOriginInfo(byte[] buffer, int read) throws MalformedURLException {
+            byte[] content = Arrays.copyOf(buffer, read);
+            String request = new String(content);
+            String[] lines = request.split("\r\n");
+            OriginInfo originInfo = new OriginInfo();
+            for (String line : lines) {
+                if (line.startsWith(OriginInfo.CONNECT)) {
+                    originInfo.parseFirstLine(line);
+                } else if (line.startsWith(OriginInfo.AUTHORIZATION)) {
+                    originInfo.parseAuthorization(line);
+                }
+            }
+            return originInfo;
         }
 
         private abstract class Reader implements Runnable {
@@ -201,29 +272,6 @@ class HttpProxy {
             }
         }
 
-        private boolean authenticate(OriginInfo originInfo) {
-            if (HttpProxy.this.user == null) {
-                return true;
-            }
-            return HttpProxy.this.user.equals(originInfo.user)
-                    && HttpProxy.this.password.equals(originInfo.password);
-        }
-
-        private OriginInfo getOriginInfo(byte[] buffer, int read) throws MalformedURLException {
-            byte[] content = Arrays.copyOf(buffer, read);
-            String request = new String(content);
-            String[] lines = request.split("\r\n");
-            OriginInfo originInfo = new OriginInfo();
-            for (String line : lines) {
-                if (line.startsWith(OriginInfo.CONNECT)) {
-                    originInfo.parseFirstLine(line);
-                } else if (line.startsWith(OriginInfo.AUTHORIZATION)) {
-                    originInfo.parseAuthorization(line);
-                }
-            }
-            return originInfo;
-        }
-
         private class OriginToRemoteReader extends Reader {
             @Override
             public void run() {
@@ -236,54 +284,6 @@ class HttpProxy {
             public void run() {
                 super.run();
             }
-        }
-    }
-
-    private static final class OriginInfo {
-        private static final String CONNECT = "CONNECT ";
-        private static final String AUTHORIZATION = "Proxy-Authorization:";
-
-        private String host;
-        private int port;
-        private String user;
-        private String password;
-
-        private void parseFirstLine(String line) throws MalformedURLException {
-            String[] split = line.split(" ");
-            if (split.length < 2) {
-                throw new MalformedURLException("Cannot parse CONNECT line: " + line);
-            }
-            String authority = split[1];
-            int colon = authority.lastIndexOf(':');
-            if (colon < 1 || colon + 1 >= authority.length()) {
-                throw new MalformedURLException("Cannot parse CONNECT authority: " + authority);
-            }
-            host = authority.substring(0, colon);
-            port = Integer.parseInt(authority.substring(colon + 1));
-        }
-
-        private void parseAuthorization(String line) {
-            String[] split = line.split(" ", 3);
-            if (split.length < 3) {
-                return;
-            }
-            String credentials = new String(Base64.getDecoder().decode(split[2]));
-            int colon = credentials.indexOf(':');
-            if (colon < 0) {
-                return;
-            }
-            user = credentials.substring(0, colon);
-            password = credentials.substring(colon + 1);
-        }
-
-        @Override
-        public String toString() {
-            return "OriginInfo{"
-                    + "host='" + host + '\''
-                    + ", port=" + port
-                    + ", user='" + user + '\''
-                    + ", password='" + password + '\''
-                    + '}';
         }
     }
 }
