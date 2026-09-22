@@ -53,9 +53,9 @@ class Http3SharedListenerTest {
     @Test
     void shouldServeSharedRouteOverHttp1AndHttp3() throws Exception {
         try (Http3TestSupport.TestEnvironment environment =
-                     Http3TestSupport.sharedListener(Http3SharedListenerTest::routing)) {
-            HttpClient http1Client = environment.http1Client();
-            HttpClient http3Client = environment.http3Client();
+                     Http3TestSupport.sharedListener(Http3SharedListenerTest::routing);
+             HttpClient http1Client = environment.http1Client();
+             HttpClient http3Client = environment.http3Client()) {
             int port = environment.port();
 
             HttpResponse<String> http1Response =
@@ -76,9 +76,9 @@ class Http3SharedListenerTest {
     @Test
     void shouldUseFirstMatchingRouteOrderForHttp3Route() throws Exception {
         try (Http3TestSupport.TestEnvironment environment =
-                     Http3TestSupport.sharedListener(Http3SharedListenerTest::routing)) {
-            HttpClient http1Client = environment.http1Client();
-            HttpClient http3Client = environment.http3Client();
+                     Http3TestSupport.sharedListener(Http3SharedListenerTest::routing);
+             HttpClient http1Client = environment.http1Client();
+             HttpClient http3Client = environment.http3Client()) {
             int port = environment.port();
 
             HttpResponse<String> http3SharedFirst =

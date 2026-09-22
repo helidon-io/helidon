@@ -58,14 +58,17 @@ class Http3TlsReloadTest {
                     .build();
 
             try {
-                assertResponse(Http3TestSupport.http1Client(initialClientSslContext),
-                               environment.http1Get("/hello"),
-                               HTTP_1_1,
-                               "hello");
-                assertResponse(Http3TestSupport.http3Client(initialClientSslContext),
-                               environment.http3Get("/hello"),
-                               HTTP_3,
-                               "hello");
+                try (HttpClient initialHttp1Client = Http3TestSupport.http1Client(initialClientSslContext);
+                     HttpClient initialHttp3Client = Http3TestSupport.http3Client(initialClientSslContext)) {
+                    assertResponse(initialHttp1Client,
+                                   environment.http1Get("/hello"),
+                                   HTTP_1_1,
+                                   "hello");
+                    assertResponse(initialHttp3Client,
+                                   environment.http3Get("/hello"),
+                                   HTTP_3,
+                                   "hello");
+                }
 
                 String existingSocketId;
                 try (Http3ClientResponse response = persistentHttp3Client.get("/socket-id").request()) {
@@ -87,19 +90,23 @@ class Http3TlsReloadTest {
 
                 SSLContext oldTrustClientSslContext = Http3TestSupport.clientSslContext("client.p12");
                 Tls oldTrustClientTls = Http3TestSupport.clientTls("client.p12");
-                HttpClient oldTrustHttp1Client = Http3TestSupport.http1Client(oldTrustClientSslContext);
-                assertThrows(IOException.class,
-                             () -> oldTrustHttp1Client.send(environment.http1Get("/hello"), ofString()));
+                try (HttpClient oldTrustHttp1Client = Http3TestSupport.http1Client(oldTrustClientSslContext)) {
+                    assertThrows(IOException.class,
+                                 () -> oldTrustHttp1Client.send(environment.http1Get("/hello"), ofString()));
+                }
                 assertOldTrustHttp3Fails(environment, oldTrustClientTls);
 
-                assertResponse(Http3TestSupport.http1Client(reloadedClientSslContext),
-                               environment.http1Get("/hello"),
-                               HTTP_1_1,
-                               "hello");
-                assertResponse(Http3TestSupport.http3Client(reloadedClientSslContext),
-                               environment.http3Get("/hello"),
-                               HTTP_3,
-                               "hello");
+                try (HttpClient reloadedHttp1Client = Http3TestSupport.http1Client(reloadedClientSslContext);
+                     HttpClient reloadedHttp3Client = Http3TestSupport.http3Client(reloadedClientSslContext)) {
+                    assertResponse(reloadedHttp1Client,
+                                   environment.http1Get("/hello"),
+                                   HTTP_1_1,
+                                   "hello");
+                    assertResponse(reloadedHttp3Client,
+                                   environment.http3Get("/hello"),
+                                   HTTP_3,
+                                   "hello");
+                }
             } finally {
                 persistentHttp3Client.closeResource();
             }
