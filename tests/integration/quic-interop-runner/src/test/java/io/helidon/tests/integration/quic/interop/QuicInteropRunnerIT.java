@@ -228,6 +228,7 @@ class QuicInteropRunnerIT {
 
     private static void waitForDocker(GenericContainer<?> tool) throws Exception {
         Exception failure = null;
+        Container.ExecResult lastResult = null;
         for (int attempt = 0; attempt < 60; attempt++) {
             try {
                 Container.ExecResult result = tool.execInContainer("docker",
@@ -236,17 +237,18 @@ class QuicInteropRunnerIT {
                 if (result.getExitCode() == 0) {
                     return;
                 }
+                lastResult = result;
             } catch (Exception e) {
                 failure = e;
             }
             Thread.sleep(1000);
         }
 
-        if (failure != null) {
-            throw failure;
+        String message = "Nested Docker daemon in the interop runner tool container did not become ready.";
+        if (lastResult != null) {
+            message += "\nLast docker info exit code: " + lastResult.getExitCode() + "\n" + execOutput(lastResult);
         }
-
-        throw new IllegalStateException("Nested Docker daemon in the interop runner tool container did not become ready.");
+        throw new IllegalStateException(message, failure);
     }
 
     private static String copyTextFileIfPresent(GenericContainer<?> container,
