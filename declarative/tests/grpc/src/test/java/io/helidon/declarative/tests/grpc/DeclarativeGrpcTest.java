@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.declarative.tests.grpc.DescriptorTypesProto.Envelope;
 import io.helidon.metrics.api.Counter;
@@ -64,7 +65,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -125,6 +128,98 @@ class DeclarativeGrpcTest {
         var response = blockingStub.greet(request("Tomas"));
 
         assertThat(response.getMessage(), is("Hello Tomas"));
+    }
+
+    @Test
+    void testOptionalUnaryPresent() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).optionalGreet(request("Tomas"), observer);
+
+        observer.assertSuccess(reply("Hello Tomas"));
+    }
+
+    @Test
+    void testOptionalUnaryEmpty() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).optionalGreet(request("empty"), observer);
+
+        observer.assertFailure(Code.NOT_FOUND,
+                               "No response for gRPC method " + ClientConfigGreetingClients.SERVICE_NAME + "/OptionalGreet");
+    }
+
+    @Test
+    void testOptionalUnaryNull() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).optionalGreet(request("null"), observer);
+
+        observer.assertFailure(Code.INTERNAL,
+                               "Declarative gRPC unary method " + ClientConfigGreetingClients.SERVICE_NAME
+                                       + "/OptionalGreet returned null");
+    }
+
+    @Test
+    void testOptionalUnaryDefaultResponse() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).optionalGreet(request("default"), observer);
+
+        observer.assertSuccess(GreetingReply.getDefaultInstance());
+    }
+
+    @Test
+    void testDirectUnaryNull() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).directGreet(request("null"), observer);
+
+        observer.assertFailure(Code.INTERNAL,
+                               "Declarative gRPC unary method " + ClientConfigGreetingClients.SERVICE_NAME
+                                       + "/DirectGreet returned null");
+    }
+
+    @Test
+    void testDirectUnaryDefaultResponse() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).directGreet(request("default"), observer);
+
+        observer.assertSuccess(GreetingReply.getDefaultInstance());
+    }
+
+    @Test
+    void testOptionalUnaryPreservesStatusAndTrailers() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).optionalGreet(request("denied"), observer);
+
+        var exception = observer.assertFailure(Code.PERMISSION_DENIED, "Greeting is forbidden");
+        assertThat(exception.getTrailers(), notNullValue());
+        assertThat(exception.getTrailers().get(Metadata.Key.of("failure-detail", Metadata.ASCII_STRING_MARSHALLER)),
+                   is("greeting denied"));
+    }
+
+    @Test
+    void testDirectUnaryPreservesStatusAndTrailers() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).directGreet(request("denied"), observer);
+
+        var exception = observer.assertFailure(Code.PERMISSION_DENIED, "Greeting is forbidden");
+        assertThat(exception.getTrailers(), notNullValue());
+        assertThat(exception.getTrailers().get(Metadata.Key.of("failure-detail", Metadata.ASCII_STRING_MARSHALLER)),
+                   is("greeting denied"));
+    }
+
+    @Test
+    void testObserverUnary() throws InterruptedException {
+        var observer = new UnaryResponseObserver();
+
+        asyncStub.withDeadlineAfter(10, TimeUnit.SECONDS).observerGreet(request("Tomas"), observer);
+
+        observer.assertSuccess(reply("Hello Tomas"));
     }
 
     @Test
@@ -608,4 +703,45 @@ class DeclarativeGrpcTest {
         return response.get();
     }
 
+    private static class UnaryResponseObserver implements StreamObserver<GreetingReply> {
+        private final CountDownLatch terminated = new CountDownLatch(1);
+        private final List<GreetingReply> replies = new ArrayList<>();
+        private Throwable error;
+        private boolean completed;
+
+        @Override
+        public void onNext(GreetingReply response) {
+            replies.add(response);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            error = throwable;
+            terminated.countDown();
+        }
+
+        @Override
+        public void onCompleted() {
+            completed = true;
+            terminated.countDown();
+        }
+
+        void assertSuccess(GreetingReply expected) throws InterruptedException {
+            assertThat("unary response terminated", terminated.await(10, TimeUnit.SECONDS), is(true));
+            assertThat("unary response error", error, nullValue());
+            assertThat("unary response completed", completed, is(true));
+            assertThat(replies, contains(expected));
+        }
+
+        StatusRuntimeException assertFailure(Code expectedCode, String expectedDescription) throws InterruptedException {
+            assertThat("unary response terminated", terminated.await(10, TimeUnit.SECONDS), is(true));
+            assertThat("error response messages", replies, empty());
+            assertThat("error response completed", completed, is(false));
+            assertThat(error, instanceOf(StatusRuntimeException.class));
+            var exception = (StatusRuntimeException) error;
+            assertThat(exception.getStatus().getCode(), is(expectedCode));
+            assertThat(exception.getStatus().getDescription(), is(expectedDescription));
+            return exception;
+        }
+    }
 }

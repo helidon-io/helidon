@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.tests.grpc;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,6 +35,9 @@ import io.helidon.tracing.Tracing;
 import io.helidon.webserver.grpc.RpcServer;
 
 import com.google.protobuf.Descriptors;
+import io.grpc.Metadata;
+import io.grpc.Status;
+import io.grpc.stub.StreamObserver;
 import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -55,6 +59,36 @@ class GreetingEndpoint implements SecuredGreetingContract {
                     tags = @Tracing.Tag(key = "transport", value = "grpc"))
     GreetingReply greet(GreetingRequest request) {
         return reply(request.getName());
+    }
+
+    @Grpc.Unary("OptionalGreet")
+    Optional<GreetingReply> optionalGreet(GreetingRequest request) {
+        return switch (request.getName()) {
+            case "empty" -> Optional.empty();
+            case "null" -> null;
+            case "default" -> Optional.of(GreetingReply.getDefaultInstance());
+            default -> Optional.of(directGreet(request));
+        };
+    }
+
+    @Grpc.Unary("DirectGreet")
+    GreetingReply directGreet(GreetingRequest request) {
+        return switch (request.getName()) {
+            case "null" -> null;
+            case "default" -> GreetingReply.getDefaultInstance();
+            case "denied" -> {
+                var trailers = new Metadata();
+                trailers.put(Metadata.Key.of("failure-detail", Metadata.ASCII_STRING_MARSHALLER), "greeting denied");
+                throw Status.PERMISSION_DENIED.withDescription("Greeting is forbidden").asRuntimeException(trailers);
+            }
+            default -> reply(request.getName());
+        };
+    }
+
+    @Grpc.Unary("ObserverGreet")
+    void observerGreet(GreetingRequest request, StreamObserver<GreetingReply> responseObserver) {
+        responseObserver.onNext(reply(request.getName()));
+        responseObserver.onCompleted();
     }
 
     @Grpc.Unary("InterceptedGreet")

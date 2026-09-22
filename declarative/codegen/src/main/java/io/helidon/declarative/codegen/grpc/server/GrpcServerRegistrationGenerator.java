@@ -22,6 +22,7 @@ import java.util.List;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
+import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -42,6 +43,7 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_EN
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_ROUTE_REGISTRATION;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SECURITY;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SERVICE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_STATUS;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_STREAMS;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_MESSAGE_DESCRIPTOR;
@@ -455,11 +457,9 @@ class GrpcServerRegistrationGenerator {
                         .name(grpcMethod.uniqueName())
                         .addParameter(grpcMethod.requestType(), "request")
                         .addParameter(responseObserver, "responseObserver");
-                if (grpcMethod.invocation() == GrpcMethod.Invocation.UNARY_RETURN) {
-                    method.addContent("responseObserver.onNext(" + endpointAccessor)
-                            .addContent(grpcMethod.method().elementName())
-                            .addContentLine("(request));")
-                            .addContentLine("responseObserver.onCompleted();");
+                if (grpcMethod.invocation() == GrpcMethod.Invocation.UNARY_RETURN
+                        || grpcMethod.invocation() == GrpcMethod.Invocation.UNARY_OPTIONAL) {
+                    addUnaryHandler(method, endpoint, grpcMethod, endpointAccessor);
                 } else if (grpcMethod.invocation() == GrpcMethod.Invocation.SERVER_STREAMING_STREAM) {
                     method.addContent(GRPC_STREAMS)
                             .addContent(".serverStreaming(() -> ")
@@ -473,5 +473,41 @@ class GrpcServerRegistrationGenerator {
                 }
             });
         }
+    }
+
+    private static void addUnaryHandler(Method.Builder method,
+                                        GrpcEndpoint endpoint,
+                                        GrpcMethod grpcMethod,
+                                        String endpointAccessor) {
+        String methodName = endpoint.serviceName() + "/" + grpcMethod.grpcName();
+        method.addContent("var response = " + endpointAccessor)
+                .addContent(grpcMethod.method().elementName())
+                .addContentLine("(request);")
+                .addContentLine("if (response == null) {")
+                .increaseContentPadding()
+                .addContent("responseObserver.onError(")
+                .addContent(GRPC_STATUS)
+                .addContent(".INTERNAL.withDescription(")
+                .addContentLiteral("Declarative gRPC unary method " + methodName + " returned null")
+                .addContentLine(").asRuntimeException());")
+                .addContentLine("return;")
+                .decreaseContentPadding()
+                .addContentLine("}");
+        if (grpcMethod.invocation() == GrpcMethod.Invocation.UNARY_OPTIONAL) {
+            method.addContentLine("if (response.isEmpty()) {")
+                    .increaseContentPadding()
+                    .addContent("responseObserver.onError(")
+                    .addContent(GRPC_STATUS)
+                    .addContent(".NOT_FOUND.withDescription(")
+                    .addContentLiteral("No response for gRPC method " + methodName)
+                    .addContentLine(").asRuntimeException());")
+                    .addContentLine("return;")
+                    .decreaseContentPadding()
+                    .addContentLine("}")
+                    .addContentLine("responseObserver.onNext(response.get());");
+        } else {
+            method.addContentLine("responseObserver.onNext(response);");
+        }
+        method.addContentLine("responseObserver.onCompleted();");
     }
 }
