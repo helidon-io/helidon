@@ -56,10 +56,11 @@ public class QpackLifecycleJmh {
     private static final long MAX_TABLE_CAPACITY = 256;
 
     public static void main(String[] args) throws Exception {
+        // Invocation fixtures are excluded from timing, but GC profiling includes their allocations.
+        // Do not enable GC profiling automatically for these timing-oriented workloads.
         Options options = new OptionsBuilder()
                 .include(QpackLifecycleJmh.class.getSimpleName())
                 .shouldFailOnError(true)
-                .addProfiler("gc")
                 .build();
         new Runner(options).run();
     }
