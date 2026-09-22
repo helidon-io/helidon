@@ -62,12 +62,16 @@ class WsConversationService implements WsListener {
         SessionState state = new SessionState(conversation.actions(), new LinkedBlockingQueue<>());
         sessions.put(session, state);
         Thread.ofVirtual().start(() -> {
-            while (state.actions().hasNext()) {
-                WsAction action = state.actions().next();
-                switch (action.op) {
-                    case SND -> sendMessage(action, session);
-                    case RCV -> waitMessage(action, session, state);
+            try {
+                while (state.actions().hasNext()) {
+                    WsAction action = state.actions().next();
+                    switch (action.op) {
+                        case SND -> sendMessage(action, session);
+                        case RCV -> waitMessage(action, session, state);
+                    }
                 }
+            } finally {
+                sessions.remove(session, state);
             }
         });
     }
