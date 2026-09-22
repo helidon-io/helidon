@@ -291,12 +291,12 @@ class WebServerConfigSupport {
          * <p>
          * The transport's provider converts the configuration to a binding factory. Provider lookup is independent of
          * automatic binding discovery, so this method also works when {@code bindingsDiscoverServices(false)} is set.
-         * The listener supplies the endpoint, TLS, routing, request limit, and connection limit.
+         * Shared TLS, routing, request limit, and connection limit settings remain on the listener.
+         * A provider that does not support programmatic configuration throws {@link java.lang.UnsupportedOperationException}.
          *
          * @param builder listener config builder
          * @param config transport binding configuration
-         * @throws IllegalArgumentException if no provider supports the configured transport type
-         * @throws UnsupportedOperationException if the provider does not support programmatic configuration
+         * @throws IllegalArgumentException if no provider supports the configuration type
          */
         @Prototype.BuilderMethod
         @Prototype.Annotated("io.helidon.common.Api.Incubating")
