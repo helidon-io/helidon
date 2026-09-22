@@ -222,12 +222,14 @@ public class Http3SessionPoolJmh {
             scenario = Scenario.create(1);
             request(scenario.client(), FAST_PATH);
             scenario.server().requireConnectionCount(1);
+            scenario.server().requireAcceptedConnectionCount(1);
         }
 
         @TearDown(Level.Trial)
         public void tearDown() {
             try {
                 scenario.server().requireConnectionCount(1);
+                scenario.server().requireAcceptedConnectionCount(1);
             } finally {
                 scenario.close();
             }
@@ -381,12 +383,14 @@ public class Http3SessionPoolJmh {
             scenario = Scenario.create(1);
             request(scenario.client(), FAST_PATH);
             scenario.server().requireConnectionCount(1);
+            scenario.server().requireAcceptedConnectionCount(1);
         }
 
         @TearDown(Level.Trial)
         public void tearDown() {
             try {
                 scenario.server().requireConnectionCount(1);
+                scenario.server().requireAcceptedConnectionCount(1);
             } finally {
                 scenario.close();
             }
