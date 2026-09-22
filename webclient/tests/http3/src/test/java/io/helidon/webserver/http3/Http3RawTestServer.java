@@ -83,9 +83,6 @@ import io.helidon.webserver.spi.TransportBinding;
 
 public final class Http3RawTestServer implements AutoCloseable {
     private static final System.Logger LOGGER = System.getLogger(Http3RawTestServer.class.getName());
-    private static final char[] KEY_PASSWORD = "password".toCharArray();
-    private static final String SERVER_KEYSTORE = "server.p12";
-    private static final String CLIENT_TRUSTSTORE = "client.p12";
 
     private final ExecutorService executor;
     private final Http3TlsSupport.Http3TlsMaterials tlsMaterials;

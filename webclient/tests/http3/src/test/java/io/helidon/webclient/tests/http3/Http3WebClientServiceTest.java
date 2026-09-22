@@ -84,9 +84,6 @@ class Http3WebClientServiceTest {
     private static final Duration AWAIT_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration EARLY_COMPLETION_TIMEOUT = Duration.ofSeconds(1);
     private static final Duration HANDSHAKE_TIMEOUT = Duration.ofMillis(250);
-    private static final String SERVER_KEYSTORE = "server.p12";
-    private static final String CLIENT_TRUSTSTORE = "client.p12";
-    private static final char[] KEY_PASSWORD = "password".toCharArray();
 
     private HttpProxy httpProxy;
     private int proxyPort;
