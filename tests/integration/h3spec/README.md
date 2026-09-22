@@ -35,8 +35,16 @@ containers.
 
 ## Current Scope
 
-The module runs the full `h3spec` suite without exclusions. It covers QUIC,
-TLS, HTTP/3, and QPACK negative cases and requires every RFC example to pass.
+The module runs the full `h3spec` suite without explicit exclusions. It covers
+QUIC, TLS, HTTP/3, and QPACK negative cases and fails the build on reported
+failures.
+
+The upstream checker can skip a protocol assertion when a capability is
+unavailable while still counting the example as successful. Helidon does not
+support 0-RTT, so `h3spec` logs a skip for its CRYPTO-in-0-RTT case without
+executing that protocol assertion. A summary with zero failures therefore does
+not mean that every protocol assertion was exercised; consult the raw output
+for these capability-based skips.
 
 ## Run The Module
 
