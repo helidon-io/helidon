@@ -181,6 +181,14 @@ class Http3CancellationTest {
         assertThat(exception.getMessage(), is("HTTP/3 response closed before trailers were read."));
     }
 
+    private static Headers headers(Header... headers) {
+        WritableHeaders<?> writable = WritableHeaders.create();
+        for (Header header : headers) {
+            writable.add(header);
+        }
+        return writable;
+    }
+
     private static final class CancellationProbe {
         private final AtomicReference<String> connectionId = new AtomicReference<>();
         private final CountDownLatch cancelHandled = new CountDownLatch(1);
@@ -255,13 +263,5 @@ class Http3CancellationTest {
             }
             return stopSendingReceived.get();
         }
-    }
-
-    private static Headers headers(Header... headers) {
-        WritableHeaders<?> writable = WritableHeaders.create();
-        for (Header header : headers) {
-            writable.add(header);
-        }
-        return writable;
     }
 }

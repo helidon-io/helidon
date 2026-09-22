@@ -56,8 +56,8 @@ class Http3TypedProtocolEntryPointTest {
 
     @Test
     void shouldUseHttp3WhenTypedClientIsObtainedFromWebClientProtocol() throws Exception {
-        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing.get("/hello",
-                                                                                                        (_, res) -> res.send(HELLO)))) {
+        try (TestEnvironment environment = TestEnvironment.createSharedListener(
+                routing -> routing.get("/hello", (_, res) -> res.send(HELLO)))) {
             WebClient webClient = strictWebClientBuilder()
                     .baseUri(environment.baseUri())
                     .tls(environment.clientTlsHttp3())
@@ -95,7 +95,7 @@ class Http3TypedProtocolEntryPointTest {
             AtomicReference<Throwable> closeFailure = new AtomicReference<>();
             Thread requestThread = Thread.ofPlatform()
                     .unstarted(() -> {
-                        try (Http3ClientResponse ignored = client.post("/held-request").outputStream(outputStream -> {
+                        try (Http3ClientResponse _ = client.post("/held-request").outputStream(outputStream -> {
                             producerStarted.countDown();
                             boolean interrupted = false;
                             for (;;) {

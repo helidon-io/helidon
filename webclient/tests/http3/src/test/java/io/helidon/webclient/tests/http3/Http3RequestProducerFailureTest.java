@@ -79,7 +79,7 @@ class Http3RequestProducerFailureTest {
 
             try {
                 RuntimeException failure = assertThrows(RuntimeException.class, () -> {
-                    try (Http3ClientResponse ignored = client.post(CONNECTION_FAILURE_PATH)
+                    try (Http3ClientResponse _ = client.post(CONNECTION_FAILURE_PATH)
                             .sendExpectContinue(false)
                             .outputStream(outputStream -> {
                                 try {
@@ -152,7 +152,7 @@ class Http3RequestProducerFailureTest {
 
             try {
                 Thread.ofVirtual().start(() -> {
-                    try (Http3ClientResponse ignored = client.post(PRODUCER_FAILURE_PATH)
+                    try (Http3ClientResponse _ = client.post(PRODUCER_FAILURE_PATH)
                             .sendExpectContinue(false)
                             .outputStream(outputStream -> {
                                 try {
@@ -368,7 +368,7 @@ class Http3RequestProducerFailureTest {
                            is(true));
 
                 RuntimeException failure = assertThrows(RuntimeException.class, () -> {
-                    try (Http3ClientResponse ignored = client.post(PRODUCER_FAILURE_PATH)
+                    try (Http3ClientResponse _ = client.post(PRODUCER_FAILURE_PATH)
                             .sendExpectContinue(false)
                             .outputStream(outputStream -> {
                                 try {
@@ -446,7 +446,7 @@ class Http3RequestProducerFailureTest {
 
                 executor.pause();
                 Thread.ofVirtual().start(() -> {
-                    try (Http3ClientResponse ignored = client.post(PRODUCER_FAILURE_PATH)
+                    try (Http3ClientResponse _ = client.post(PRODUCER_FAILURE_PATH)
                             .outputStream(outputStream -> {
                                 producerInvocations.incrementAndGet();
                                 outputStream.close();

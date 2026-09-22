@@ -208,7 +208,7 @@ class Http3AltSvcNegativeCacheTest {
     private static int freePort() throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         try (ServerSocket serverSocket = new ServerSocket(0, 1, loopback);
-             DatagramSocket ignored = new DatagramSocket(new InetSocketAddress(loopback, serverSocket.getLocalPort()))) {
+             DatagramSocket _ = new DatagramSocket(new InetSocketAddress(loopback, serverSocket.getLocalPort()))) {
             return serverSocket.getLocalPort();
         }
     }
