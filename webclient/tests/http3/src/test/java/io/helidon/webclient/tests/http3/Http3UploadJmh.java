@@ -207,6 +207,7 @@ public class Http3UploadJmh {
     @Benchmark
     public void cachedGenericHttp3Upload(Blackhole blackhole) {
         try (HttpClientResponse response = genericHttp3Client.post("/upload").submit(SMALL_BODY)) {
+            requireHttp3(response);
             blackhole.consume(response.status());
         }
     }
@@ -215,6 +216,7 @@ public class Http3UploadJmh {
     @Threads(8)
     public void cachedGenericHttp3ConcurrentUpload(Blackhole blackhole) {
         try (HttpClientResponse response = genericHttp3Client.post("/upload").submit(SMALL_BODY)) {
+            requireHttp3(response);
             blackhole.consume(response.status());
         }
     }
@@ -224,6 +226,7 @@ public class Http3UploadJmh {
     public void cachedSharedHttp3MultiRouteConcurrentUpload(Blackhole blackhole, ThreadParams threadParams) {
         WebClient routeClient = (threadParams.getThreadIndex() & 1) == 0 ? sharedRouteAClient : sharedRouteBClient;
         try (HttpClientResponse response = routeClient.post("/upload").submit(SMALL_BODY)) {
+            requireHttp3(response);
             blackhole.consume(response.status());
         }
     }
@@ -287,6 +290,13 @@ public class Http3UploadJmh {
                 throw new IllegalStateException("Expected primed protocol " + expectedProtocol
                                                         + ", but got " + second.protocolId());
             }
+        }
+    }
+
+    private static void requireHttp3(HttpClientResponse response) {
+        String protocolId = response.protocolId();
+        if (!Http3Client.PROTOCOL_ID.equals(protocolId)) {
+            throw new IllegalStateException("Expected HTTP/3 benchmark response, but got protocol " + protocolId);
         }
     }
 
