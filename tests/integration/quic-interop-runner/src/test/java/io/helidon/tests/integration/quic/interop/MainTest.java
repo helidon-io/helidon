@@ -30,6 +30,8 @@ import java.util.Optional;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.CleanupMode;
+import org.junit.jupiter.api.io.TempDir;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
@@ -68,8 +70,7 @@ class MainTest {
     }
 
     @Test
-    void shouldServeStaticContentOverHttp3() throws Exception {
-        Path workDir = Files.createTempDirectory("helidon-quic-interop");
+    void shouldServeStaticContentOverHttp3(@TempDir(cleanup = CleanupMode.ALWAYS) Path workDir) throws Exception {
         Path webRoot = Files.createDirectory(workDir.resolve("www"));
         Path certChain = workDir.resolve("cert.pem");
         Path privateKey = workDir.resolve("priv.key");

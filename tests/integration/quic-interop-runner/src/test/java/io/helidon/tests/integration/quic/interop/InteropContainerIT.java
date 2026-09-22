@@ -23,6 +23,8 @@ import java.time.Duration;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.CleanupMode;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
@@ -39,8 +41,7 @@ class InteropContainerIT {
     private static final int CONTAINER_PORT = 443;
 
     @Test
-    void shouldServeStaticContentFromInteropImage() throws Exception {
-        Path workDir = Files.createTempDirectory("helidon-qir-container");
+    void shouldServeStaticContentFromInteropImage(@TempDir(cleanup = CleanupMode.ALWAYS) Path workDir) throws Exception {
         Path certsDir = Files.createDirectory(workDir.resolve("certs"));
         Path webRoot = Files.createDirectory(workDir.resolve("www"));
         Path certChain = certsDir.resolve("cert.pem");
