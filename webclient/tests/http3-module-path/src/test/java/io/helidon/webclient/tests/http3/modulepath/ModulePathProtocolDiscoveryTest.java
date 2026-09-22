@@ -55,4 +55,22 @@ class ModulePathProtocolDiscoveryTest {
             webClient.closeResource();
         }
     }
+
+    @Test
+    void discoversHttp3ProviderForGenericClientOnModulePath() {
+        Module testModule = getClass().getModule();
+
+        assertThat(testModule.isNamed(), is(true));
+        assertThat(testModule.getName(), is(TEST_MODULE));
+
+        WebClient webClient = WebClient.builder()
+                .addProtocolPreference(Http3Client.PROTOCOL_ID)
+                .addProtocolPreference(Http1Client.PROTOCOL_ID)
+                .build();
+        try {
+            assertThat(webClient.tcpProtocolIds(), contains(Http1Client.PROTOCOL_ID));
+        } finally {
+            webClient.closeResource();
+        }
+    }
 }
