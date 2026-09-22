@@ -20,6 +20,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 
 import io.helidon.webserver.TcpTransportConfig;
@@ -89,16 +90,19 @@ class Http3ListenerBindingTest {
     }
 
     private static void assertServesHttp1AndHttp3(Http3TestSupport.TestEnvironment environment) throws Exception {
-        HttpResponse<String> http1Response =
-                environment.http1Client().send(Http3TestSupport.http1Get(environment.port(), "/binding"), ofString());
-        HttpResponse<String> http3Response =
-                environment.http3Client().send(Http3TestSupport.http3Get(environment.port(), "/binding"), ofString());
+        try (HttpClient http1Client = environment.http1Client();
+             HttpClient http3Client = environment.http3Client()) {
+            HttpResponse<String> http1Response =
+                    http1Client.send(Http3TestSupport.http1Get(environment.port(), "/binding"), ofString());
+            HttpResponse<String> http3Response =
+                    http3Client.send(Http3TestSupport.http3Get(environment.port(), "/binding"), ofString());
 
-        assertThat(http1Response.statusCode(), is(200));
-        assertThat(http1Response.version(), is(HTTP_1_1));
-        assertThat(http1Response.body(), is(ENTITY));
-        assertThat(http3Response.statusCode(), is(200));
-        assertThat(http3Response.version(), is(HTTP_3));
-        assertThat(http3Response.body(), is(ENTITY));
+            assertThat(http1Response.statusCode(), is(200));
+            assertThat(http1Response.version(), is(HTTP_1_1));
+            assertThat(http1Response.body(), is(ENTITY));
+            assertThat(http3Response.statusCode(), is(200));
+            assertThat(http3Response.version(), is(HTTP_3));
+            assertThat(http3Response.body(), is(ENTITY));
+        }
     }
 }

@@ -48,8 +48,8 @@ class Http3InteroperabilityTest {
 
     @Test
     void shouldAcceptLargeJdkHttp3Upload() throws Exception {
-        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.sharedListener(Http3InteroperabilityTest::routing)) {
-            HttpClient client = environment.http3Client();
+        try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.sharedListener(Http3InteroperabilityTest::routing);
+             HttpClient client = environment.http3Client()) {
             HttpRequest request = HttpRequest.newBuilder(environment.uri("/upload-length"))
                     .version(HTTP_3)
                     .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
