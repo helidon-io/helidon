@@ -437,6 +437,161 @@ class CrossOriginRedirectHeaderTest {
         rejectBufferedEntityWhenH2cFallbackRedirectsCrossOrigin(308);
     }
 
+    @Test
+    void sanitizesPreparedWriterHeadersBeforeCrossOriginReplay() {
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .followCrossOriginEntityRedirects(true)
+                .mediaContext(writerMediaContext(false))
+                .build();
+        try (Http2ClientResponse response = client.put("/redirect/cross-origin-entity")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+        } finally {
+            client.closeResource();
+        }
+
+        CapturedWriterHeaders captured = WRITER_CAPTURE.get();
+        assertThat(captured, is(notNullValue()));
+        assertThat(captured.authorization(), is(nullValue()));
+        assertThat(captured.cookie(), is(nullValue()));
+        assertThat(captured.writerMetadata(), is("preserved"));
+        assertThat(captured.contentType(), is("text/plain"));
+        assertThat(captured.body(), is("payload"));
+    }
+
+    @Test
+    void appliesWriterFinalAuthorityBeforeSelectingCookies() {
+        CookieStore cookieStore = new CookieManager().getCookieStore();
+        HttpCookie originalCookie = new HttpCookie("original-manager", "must-not-leak");
+        originalCookie.setPath("/");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), originalCookie);
+        HttpCookie writerCookie = new HttpCookie("writer-manager", "selected");
+        writerCookie.setPath("/");
+        cookieStore.add(URI.create("http://" + WRITER_AUTHORITY), writerCookie);
+        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
+                .automaticStoreEnabled(true)
+                .cookieStore(cookieStore));
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .cookieManager(cookieManager)
+                .mediaContext(writerMediaContext(true))
+                .build();
+
+        try (Http2ClientResponse response = client.put("/capture-writer-final")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+        } finally {
+            client.closeResource();
+        }
+
+        CapturedWriterFinalHeaders captured = WRITER_FINAL_CAPTURE.get();
+        assertThat(captured, is(notNullValue()));
+        assertThat(captured.host(), is(WRITER_AUTHORITY));
+        assertThat(captured.cookie(), not(containsString("original-manager")));
+        assertThat(captured.cookie(), containsString("writer-cookie=secret"));
+        assertThat(captured.cookie(), containsString("writer-manager"));
+        assertThat(captured.body(), is("payload"));
+    }
+
+    @Test
+    void removesWriterHeadersWhenRedirectChangesRequestToGet() {
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .addService(new WriterDefaultService())
+                .mediaContext(writerMediaContext(false))
+                .build();
+
+        try (Http2ClientResponse response = client.put("/redirect/writer-preserve")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+        } finally {
+            client.closeResource();
+        }
+
+        assertThat(PRESERVED_WRITER_CAPTURE.get(), is("writer-final"));
+        assertThat(DISCARDED_WRITER_CAPTURE.get(), is("final-default"));
+    }
+
+    @Test
+    void redirectRebuildsPathCookiesWithoutReplayingSourceStoreCookie() {
+        CookieStore cookieStore = new CookieManager().getCookieStore();
+        HttpCookie sourceCookie = new HttpCookie("source-manager", "must-not-leak");
+        sourceCookie.setPath("/source");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), sourceCookie);
+        HttpCookie targetCookie = new HttpCookie("target-manager", "selected");
+        targetCookie.setPath("/other");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), targetCookie);
+        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
+                .automaticStoreEnabled(true)
+                .cookieStore(cookieStore));
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .cookieManager(cookieManager)
+                .mediaContext(writerMediaContext(false))
+                .build();
+
+        try (Http2ClientResponse response = client.put("/source/path-cookie-redirect")
+                .header(HeaderNames.COOKIE, "user-cookie=kept")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().as(String.class), is("payload"));
+        } finally {
+            client.closeResource();
+        }
+
+        String cookies = PATH_COOKIE_CAPTURE.get();
+        assertThat(cookies, not(containsString("source-manager")));
+        assertThat(cookies, containsString("target-manager"));
+        assertThat(cookies, containsString("user-cookie=kept"));
+        assertThat(cookies, containsString("writer-cookie=secret"));
+    }
+
+    @Test
+    void nonInstanceWriterRedirectRebuildsPathCookiesWithoutReplayingSourceStoreCookie() {
+        CookieStore cookieStore = new CookieManager().getCookieStore();
+        HttpCookie sourceCookie = new HttpCookie("source-manager", "must-not-leak");
+        sourceCookie.setPath("/source");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), sourceCookie);
+        HttpCookie targetCookie = new HttpCookie("target-manager", "selected");
+        targetCookie.setPath("/other");
+        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), targetCookie);
+        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
+                .automaticStoreEnabled(true)
+                .cookieStore(cookieStore));
+        Http2Client client = Http2Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://127.0.0.1:" + trustedServer.port())
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .cookieManager(cookieManager)
+                .mediaContext(writerMediaContext(false, false))
+                .build();
+
+        try (Http2ClientResponse response = client.put("/source/path-cookie-redirect")
+                .header(HeaderNames.COOKIE, "user-cookie=kept")
+                .header(HeaderNames.CONTENT_LENGTH, "7")
+                .submit(new WriterEntity("payload"))) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().as(String.class), is("payload"));
+        } finally {
+            client.closeResource();
+        }
+
+        String cookies = PATH_COOKIE_CAPTURE.get();
+        assertThat(cookies, not(containsString("source-manager")));
+        assertThat(cookies, containsString("target-manager"));
+        assertThat(cookies, containsString("user-cookie=kept"));
+        assertThat(cookies, containsString("writer-cookie=secret"));
+    }
+
     private static void rejectBufferedEntityWhenH2cFallbackRedirectsCrossOrigin(int redirectStatus) throws Exception {
         try (RedirectingHttp1Server firstHop = new RedirectingHttp1Server(redirectStatus)) {
             Http2Client client = newClient(firstHop.port(), true, true, null, false);
@@ -920,161 +1075,6 @@ class CrossOriginRedirectHeaderTest {
         assertThat(CROSS_ORIGIN_AUTHORITY_CAPTURE.get(), is("localhost:" + redirectTargetServer.port()));
     }
 
-    @Test
-    void sanitizesPreparedWriterHeadersBeforeCrossOriginReplay() {
-        Http2Client client = Http2Client.builder()
-                .servicesDiscoverServices(false)
-                .baseUri("http://127.0.0.1:" + trustedServer.port())
-                .protocolConfig(it -> it.priorKnowledge(true))
-                .followCrossOriginEntityRedirects(true)
-                .mediaContext(writerMediaContext(false))
-                .build();
-        try (Http2ClientResponse response = client.put("/redirect/cross-origin-entity")
-                .submit(new WriterEntity("payload"))) {
-            assertThat(response.status(), is(Status.OK_200));
-        } finally {
-            client.closeResource();
-        }
-
-        CapturedWriterHeaders captured = WRITER_CAPTURE.get();
-        assertThat(captured, is(notNullValue()));
-        assertThat(captured.authorization(), is(nullValue()));
-        assertThat(captured.cookie(), is(nullValue()));
-        assertThat(captured.writerMetadata(), is("preserved"));
-        assertThat(captured.contentType(), is("text/plain"));
-        assertThat(captured.body(), is("payload"));
-    }
-
-    @Test
-    void appliesWriterFinalAuthorityBeforeSelectingCookies() {
-        CookieStore cookieStore = new CookieManager().getCookieStore();
-        HttpCookie originalCookie = new HttpCookie("original-manager", "must-not-leak");
-        originalCookie.setPath("/");
-        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), originalCookie);
-        HttpCookie writerCookie = new HttpCookie("writer-manager", "selected");
-        writerCookie.setPath("/");
-        cookieStore.add(URI.create("http://" + WRITER_AUTHORITY), writerCookie);
-        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
-                .automaticStoreEnabled(true)
-                .cookieStore(cookieStore));
-        Http2Client client = Http2Client.builder()
-                .servicesDiscoverServices(false)
-                .baseUri("http://127.0.0.1:" + trustedServer.port())
-                .protocolConfig(it -> it.priorKnowledge(true))
-                .cookieManager(cookieManager)
-                .mediaContext(writerMediaContext(true))
-                .build();
-
-        try (Http2ClientResponse response = client.put("/capture-writer-final")
-                .submit(new WriterEntity("payload"))) {
-            assertThat(response.status(), is(Status.OK_200));
-        } finally {
-            client.closeResource();
-        }
-
-        CapturedWriterFinalHeaders captured = WRITER_FINAL_CAPTURE.get();
-        assertThat(captured, is(notNullValue()));
-        assertThat(captured.host(), is(WRITER_AUTHORITY));
-        assertThat(captured.cookie(), not(containsString("original-manager")));
-        assertThat(captured.cookie(), containsString("writer-cookie=secret"));
-        assertThat(captured.cookie(), containsString("writer-manager"));
-        assertThat(captured.body(), is("payload"));
-    }
-
-    @Test
-    void removesWriterHeadersWhenRedirectChangesRequestToGet() {
-        Http2Client client = Http2Client.builder()
-                .servicesDiscoverServices(false)
-                .baseUri("http://127.0.0.1:" + trustedServer.port())
-                .protocolConfig(it -> it.priorKnowledge(true))
-                .addService(new WriterDefaultService())
-                .mediaContext(writerMediaContext(false))
-                .build();
-
-        try (Http2ClientResponse response = client.put("/redirect/writer-preserve")
-                .submit(new WriterEntity("payload"))) {
-            assertThat(response.status(), is(Status.OK_200));
-        } finally {
-            client.closeResource();
-        }
-
-        assertThat(PRESERVED_WRITER_CAPTURE.get(), is("writer-final"));
-        assertThat(DISCARDED_WRITER_CAPTURE.get(), is("final-default"));
-    }
-
-    @Test
-    void redirectRebuildsPathCookiesWithoutReplayingSourceStoreCookie() {
-        CookieStore cookieStore = new CookieManager().getCookieStore();
-        HttpCookie sourceCookie = new HttpCookie("source-manager", "must-not-leak");
-        sourceCookie.setPath("/source");
-        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), sourceCookie);
-        HttpCookie targetCookie = new HttpCookie("target-manager", "selected");
-        targetCookie.setPath("/other");
-        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), targetCookie);
-        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
-                .automaticStoreEnabled(true)
-                .cookieStore(cookieStore));
-        Http2Client client = Http2Client.builder()
-                .servicesDiscoverServices(false)
-                .baseUri("http://127.0.0.1:" + trustedServer.port())
-                .protocolConfig(it -> it.priorKnowledge(true))
-                .cookieManager(cookieManager)
-                .mediaContext(writerMediaContext(false))
-                .build();
-
-        try (Http2ClientResponse response = client.put("/source/path-cookie-redirect")
-                .header(HeaderNames.COOKIE, "user-cookie=kept")
-                .submit(new WriterEntity("payload"))) {
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.entity().as(String.class), is("payload"));
-        } finally {
-            client.closeResource();
-        }
-
-        String cookies = PATH_COOKIE_CAPTURE.get();
-        assertThat(cookies, not(containsString("source-manager")));
-        assertThat(cookies, containsString("target-manager"));
-        assertThat(cookies, containsString("user-cookie=kept"));
-        assertThat(cookies, containsString("writer-cookie=secret"));
-    }
-
-    @Test
-    void nonInstanceWriterRedirectRebuildsPathCookiesWithoutReplayingSourceStoreCookie() {
-        CookieStore cookieStore = new CookieManager().getCookieStore();
-        HttpCookie sourceCookie = new HttpCookie("source-manager", "must-not-leak");
-        sourceCookie.setPath("/source");
-        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), sourceCookie);
-        HttpCookie targetCookie = new HttpCookie("target-manager", "selected");
-        targetCookie.setPath("/other");
-        cookieStore.add(URI.create("http://127.0.0.1:" + trustedServer.port()), targetCookie);
-        WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
-                .automaticStoreEnabled(true)
-                .cookieStore(cookieStore));
-        Http2Client client = Http2Client.builder()
-                .servicesDiscoverServices(false)
-                .baseUri("http://127.0.0.1:" + trustedServer.port())
-                .protocolConfig(it -> it.priorKnowledge(true))
-                .cookieManager(cookieManager)
-                .mediaContext(writerMediaContext(false, false))
-                .build();
-
-        try (Http2ClientResponse response = client.put("/source/path-cookie-redirect")
-                .header(HeaderNames.COOKIE, "user-cookie=kept")
-                .header(HeaderNames.CONTENT_LENGTH, "7")
-                .submit(new WriterEntity("payload"))) {
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.entity().as(String.class), is("payload"));
-        } finally {
-            client.closeResource();
-        }
-
-        String cookies = PATH_COOKIE_CAPTURE.get();
-        assertThat(cookies, not(containsString("source-manager")));
-        assertThat(cookies, containsString("target-manager"));
-        assertThat(cookies, containsString("user-cookie=kept"));
-        assertThat(cookies, containsString("writer-cookie=secret"));
-    }
-
     private static MediaContext writerMediaContext(boolean overrideAuthority) {
         return writerMediaContext(overrideAuthority, true);
     }
@@ -1365,6 +1365,12 @@ class CrossOriginRedirectHeaderTest {
         }
     }
 
+    private static CapturedHeaders capturedHeaders(ServerRequest request) {
+        return new CapturedHeaders(request.headers().first(HeaderNames.AUTHORIZATION).orElse(null),
+                                   request.headers().first(HeaderNames.PROXY_AUTHORIZATION).orElse(null),
+                                   request.headers().first(API_KEY_HEADER).orElse(null));
+    }
+
     private record WriterDefaultService() implements WebClientService {
         @Override
         public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
@@ -1373,12 +1379,6 @@ class CrossOriginRedirectHeaderTest {
             request.headers().setIfAbsent(HeaderValues.create(WRITER_OVERRIDE_HEADER, defaultValue));
             return chain.proceed(request);
         }
-    }
-
-    private static CapturedHeaders capturedHeaders(ServerRequest request) {
-        return new CapturedHeaders(request.headers().first(HeaderNames.AUTHORIZATION).orElse(null),
-                                   request.headers().first(HeaderNames.PROXY_AUTHORIZATION).orElse(null),
-                                   request.headers().first(API_KEY_HEADER).orElse(null));
     }
 
     private record CapturedHeaders(String authorization, String proxyAuthorization, String apiKey) {
