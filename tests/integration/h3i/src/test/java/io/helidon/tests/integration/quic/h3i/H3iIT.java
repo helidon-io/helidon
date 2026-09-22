@@ -79,7 +79,8 @@ class H3iIT {
                         .withCopyFileToContainer(MountableFile.forHostPath(webRoot.resolve("index.html")), "/www/index.html")
                         .waitingFor(Wait.forLogMessage(".*Helidon HTTP/3 interop server listening on.*", 1));
                 GenericContainer<?> tool = new GenericContainer<>(toolImage)
-                        .withNetwork(network)) {
+                        .withNetwork(network);
+                AutoCloseable _ = () -> Files.writeString(serverOutput, server.getLogs(), StandardCharsets.UTF_8)) {
 
             server.start();
             tool.start();
@@ -99,8 +100,6 @@ class H3iIT {
                            result.getExitCode(),
                            is(0));
             }
-
-            Files.writeString(serverOutput, server.getLogs(), StandardCharsets.UTF_8);
         }
     }
 }
