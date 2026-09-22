@@ -113,7 +113,7 @@ class FollowRedirectTest {
                 .addBinding(TcpTransportConfig.create())
                 .protocolsDiscoverServices(false)
                 .addProtocol(Http1Config.create())
-                .routing(rules -> rules.get("/fallback/probe", (req, res) -> res.send("ready"))
+                .routing(rules -> rules.get("/fallback/probe", (_, res) -> res.send("ready"))
                         .put("/fallback/target", (req, res) -> res.send(req.content().as(String.class))))
                 .build()
                 .start();
@@ -248,7 +248,7 @@ class FollowRedirectTest {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
-        }).route(Method.PUT, "/cleanup/start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+        }).route(Method.PUT, "/cleanup/start", (_, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
                 .header(HeaderNames.LOCATION, "/cleanup/after-upload")
                 .send()
         ).route(Method.PUT, "/cleanup/after-upload", (req, res) -> {
@@ -284,7 +284,7 @@ class FollowRedirectTest {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
-        }).route(Method.PUT, "/lifecycle/start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+        }).route(Method.PUT, "/lifecycle/start", (_, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
                 .header(HeaderNames.LOCATION, "/lifecycle/hop")
                 .send()
         ).route(Method.PUT, "/lifecycle/hop", (req, res) -> {
@@ -299,13 +299,13 @@ class FollowRedirectTest {
                 throw new IllegalStateException("Timed out waiting to release lifecycle response");
             }
             res.send(entity);
-        }).route(Method.PUT, "/lifecycle/fail-start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+        }).route(Method.PUT, "/lifecycle/fail-start", (_, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
                 .header(HeaderNames.LOCATION, "/lifecycle/fail")
                 .send()
-        ).route(Method.GET, "/redirect/ftp", (req, res) -> res.status(Status.FOUND_302)
+        ).route(Method.GET, "/redirect/ftp", (_, res) -> res.status(Status.FOUND_302)
                 .header(HeaderNames.LOCATION, "ftp://example.com/file")
                 .send()
-        ).route(Method.PUT, "/entity/expect-start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+        ).route(Method.PUT, "/entity/expect-start", (_, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
                 .header(HeaderNames.LOCATION, "/entity/target")
                 .send()
         ).route(Method.PUT, "/entity/post-start", (req, res) -> {
@@ -324,15 +324,15 @@ class FollowRedirectTest {
         }).route(Method.PUT, "/entity/string-target", (req, res) -> {
             STRING_TARGET_CONTENT_TYPE.set(req.headers().first(HeaderNames.CONTENT_TYPE).orElse(null));
             res.send(req.content().as(String.class));
-        }).route(Method.PUT, "/fallback/start", (req, res) -> {
+        }).route(Method.PUT, "/fallback/start", (_, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION,
                             "http://127.0.0.1:" + http1Target.port() + "/fallback/target")
                     .send();
-        }).route(Method.PUT, "/cookie/start", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+        }).route(Method.PUT, "/cookie/start", (_, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
                 .header(HeaderNames.LOCATION, "/cookie/intermediate")
                 .send()
-        ).route(Method.PUT, "/cookie/intermediate", (req, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
+        ).route(Method.PUT, "/cookie/intermediate", (_, res) -> res.status(Status.TEMPORARY_REDIRECT_307)
                 .header(HeaderNames.LOCATION, "/cookie/final")
                 .header(HeaderNames.SET_COOKIE, "intermediate=kept; Path=/")
                 .send()
@@ -340,14 +340,14 @@ class FollowRedirectTest {
             req.content().as(String.class);
             res.header(HeaderNames.SET_COOKIE, "final=blocked; Path=/")
                     .send("done");
-        }).route(Method.PUT, "/cookie/loop-start", (req, res) -> res.status(Status.FOUND_302)
+        }).route(Method.PUT, "/cookie/loop-start", (_, res) -> res.status(Status.FOUND_302)
                 .header(HeaderNames.LOCATION, "/cookie/loop-intermediate")
                 .send()
-        ).route(Method.GET, "/cookie/loop-intermediate", (req, res) -> res.status(Status.FOUND_302)
+        ).route(Method.GET, "/cookie/loop-intermediate", (_, res) -> res.status(Status.FOUND_302)
                 .header(HeaderNames.LOCATION, "/cookie/loop-final")
                 .header(HeaderNames.SET_COOKIE, "loop=kept; Path=/")
                 .send()
-        ).route(Method.GET, "/cookie/loop-final", (req, res) -> res.send("loop-done")
+        ).route(Method.GET, "/cookie/loop-final", (_, res) -> res.send("loop-done")
         ).route(Method.GET, "/cookie/echo", (req, res) -> res.send(
                 req.headers().contains(HeaderNames.COOKIE)
                         ? String.join("; ", req.headers().get(HeaderNames.COOKIE).allValues())
