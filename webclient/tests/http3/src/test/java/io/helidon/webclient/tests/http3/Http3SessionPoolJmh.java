@@ -56,7 +56,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
@@ -111,6 +110,8 @@ public class Http3SessionPoolJmh {
         if (result.isBlank()) {
             throw new IllegalArgumentException("HTTP/3 session-pool benchmark result must not be blank");
         }
+        // Invocation fixtures are excluded from timing, but GC profiling includes their allocations.
+        // Do not enable GC profiling automatically for these timing-oriented workloads.
         ChainedOptionsBuilder optionsBuilder = new OptionsBuilder()
                 .include(include)
                 .forks(forks)
@@ -121,7 +122,6 @@ public class Http3SessionPoolJmh {
                 .measurementTime(TimeValue.milliseconds(measurementMillis))
                 .resultFormat(ResultFormatType.JSON)
                 .result(result)
-                .addProfiler(GCProfiler.class)
                 .shouldFailOnError(true);
         String output = System.getProperty(PREFIX + "output");
         if (output != null && !output.isBlank()) {
