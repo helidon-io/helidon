@@ -29,16 +29,16 @@ the named runner and an exact include expression where the runner accepts one.
 Do not automatically rerun a disappointing result. Preserve it first, identify
 the reason for a rerun, and use a new run ID.
 
-The production-code checkpoint immediately before the original handoff was
-`63975fbf38e7e10cff209112cd56d4f44fcab38b`. It is a lineage anchor, not the
-source identity to benchmark. Final implementation fixes or benchmark-harness
-corrections after that checkpoint require a new clean selected commit and a new
-campaign directory.
+Select a clean final-source commit containing the implementation and
+benchmark-harness fixes to be measured. Further fixes require a new clean
+selected commit and a new campaign directory. Do not use ancestry from a
+historical handoff commit as an acceptance check: rebases and squashes can
+change that relationship without changing the implementation being measured.
 
 The controlled source and build manifests generated on the Linux host are the
 authoritative identity. Before starting, designate the exact clean final-source
-commit and record both its HEAD and tree IDs. Verify that it is a descendant of
-the checkpoint. Every command and result in one campaign must retain those
+commit and record both its HEAD and tree IDs. Verify that the checkout matches
+those selected IDs. Every command and result in one campaign must retain those
 selected IDs. If HEAD, tree, or worktree status changes, stop and start a new
 campaign directory; do not mix results from the two source identities.
 
@@ -161,7 +161,7 @@ runners that do not enforce the controlled six-file format belong under
 Required software and capabilities:
 
 - bare-metal Linux;
-- a Java 26 JDK with JFR support;
+- a Java 27 JDK with JFR support;
 - Maven compatible with this checkout;
 - Git;
 - GNU `tar` and `sha256sum`;
@@ -230,8 +230,7 @@ git rev-parse HEAD
 git log -1 --format=fuller
 git status --short --untracked-files=all
 git diff --check
-git merge-base --is-ancestor 63975fbf38e7e10cff209112cd56d4f44fcab38b HEAD
-git diff --name-only 63975fbf38e7e10cff209112cd56d4f44fcab38b HEAD
+git rev-parse 'HEAD^{tree}'
 git --version
 "__JAVA_HOME__/bin/javac" -version
 "__JAVA_HOME__/bin/java" -XshowSettings:properties -version
@@ -336,7 +335,7 @@ file or the supplemental identity sidecar.
 
 `JAVA_HOME` must be set to `__JAVA_HOME__`. The PATH `java`, the exact
 `"__JAVA_HOME__/bin/java"` executable, and the Java home printed by
-`mvn -version` must resolve to the same canonical Java 26 installation. Record
+`mvn -version` must resolve to the same canonical Java 27 installation. Record
 and compare:
 
 ```shell
@@ -348,7 +347,7 @@ mvn -version
 ```
 
 Any mismatch is a preflight failure, even if both installations report Java
-26.
+27.
 
 Capture the installed package inventory in a stable file. Run exactly one of
 the first two commands, as appropriate for the host. The redirection is
@@ -544,16 +543,16 @@ The following must all be true before the first Maven invocation:
 2. `git diff --check` succeeds.
 3. `git rev-parse HEAD` is `__SELECTED_HEAD__` and
    `git rev-parse 'HEAD^{tree}'` is `__SELECTED_TREE__`.
-4. `__SELECTED_HEAD__` is a descendant of
-   `63975fbf38e7e10cff209112cd56d4f44fcab38b`.
+4. The selected commit contains the implementation and benchmark-harness fixes
+   to be measured.
 5. PATH `java`, `"__JAVA_HOME__/bin/java"`, and the runtime printed by
-   `mvn -version` all report Java 26 and the same canonical Java home.
+   `mvn -version` all report Java 27 and the same canonical Java home.
 6. No other benchmark, build, container, or high-load process is running.
 7. The host power, CPU, affinity, and NUMA policy has been recorded.
 8. Every `environment-before` capture and the sorted preflight environment
    manifest has been created and hashed.
 
-From the repository root, create a fresh Java 26 reactor baseline before any
+From the repository root, create a fresh Java 27 reactor baseline before any
 focused benchmark command:
 
 ```shell
