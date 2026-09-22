@@ -94,6 +94,8 @@ class Http3TypedProtocolEntryPointTest {
             AtomicReference<Throwable> requestFailure = new AtomicReference<>();
             AtomicReference<Throwable> closeFailure = new AtomicReference<>();
             Thread requestThread = Thread.ofPlatform()
+                    .daemon(true)
+                    .name("typed-client-held-request")
                     .unstarted(() -> {
                         try (Http3ClientResponse _ = client.post("/held-request").outputStream(outputStream -> {
                             producerStarted.countDown();
@@ -117,6 +119,8 @@ class Http3TypedProtocolEntryPointTest {
                         }
                     });
             Thread closeThread = Thread.ofPlatform()
+                    .daemon(true)
+                    .name("typed-client-close")
                     .unstarted(() -> {
                         try {
                             client.closeResource();
@@ -126,43 +130,67 @@ class Http3TypedProtocolEntryPointTest {
                     });
             Http3Client replacement = null;
             try {
-                requestThread.start();
-                assertThat(producerStarted.await(10, TimeUnit.SECONDS), is(true));
-                closeThread.start();
+                try {
+                    requestThread.start();
+                    assertThat(producerStarted.await(10, TimeUnit.SECONDS), is(true));
+                    closeThread.start();
 
-                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
-                boolean closingObserved = false;
-                while (System.nanoTime() < deadline) {
-                    try {
-                        client.get();
-                    } catch (IllegalStateException _) {
-                        closingObserved = true;
-                        break;
+                    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                    boolean closingObserved = false;
+                    while (System.nanoTime() < deadline) {
+                        try {
+                            client.get();
+                        } catch (IllegalStateException _) {
+                            closingObserved = true;
+                            break;
+                        }
+                        Thread.onSpinWait();
                     }
-                    Thread.onSpinWait();
+
+                    assertThat(closingObserved, is(true));
+                    assertThat(closeThread.isAlive(), is(true));
+                    assertThat(webClient.client(Http3Client.PROTOCOL), sameInstance(client));
+                } finally {
+                    producerAllowed.countDown();
+                    if (closeThread.getState() == Thread.State.NEW) {
+                        closeThread.start();
+                    }
+                    requestThread.join(TimeUnit.SECONDS.toMillis(10));
+                    boolean requestTerminated = !requestThread.isAlive();
+                    if (!requestTerminated) {
+                        requestThread.interrupt();
+                    }
+                    closeThread.join(TimeUnit.SECONDS.toMillis(10));
+                    boolean closeTerminated = !closeThread.isAlive();
+                    if (!closeTerminated) {
+                        closeThread.interrupt();
+                    }
+                    assertThat("The held-request worker must terminate within 10 seconds",
+                               requestTerminated,
+                               is(true));
+                    assertThat("The client-close worker must terminate within 10 seconds",
+                               closeTerminated,
+                               is(true));
                 }
 
-                assertThat(closingObserved, is(true));
-                assertThat(closeThread.isAlive(), is(true));
-                assertThat(webClient.client(Http3Client.PROTOCOL), sameInstance(client));
-            } finally {
-                producerAllowed.countDown();
-                requestThread.join();
-                if (closeThread.getState() != Thread.State.NEW) {
-                    closeThread.join();
-                }
-            }
-
-            try {
                 assertThat(closeFailure.get(), nullValue());
                 assertThat(requestFailure.get(), notNullValue());
                 replacement = webClient.client(Http3Client.PROTOCOL);
                 assertThat(replacement, not(sameInstance(client)));
             } finally {
-                if (replacement != null) {
-                    replacement.closeResource();
+                producerAllowed.countDown();
+                if (requestThread.isAlive() || closeThread.getState() != Thread.State.TERMINATED) {
+                    requestThread.interrupt();
+                    closeThread.interrupt();
+                } else {
+                    try {
+                        if (replacement != null) {
+                            replacement.closeResource();
+                        }
+                    } finally {
+                        webClient.closeResource();
+                    }
                 }
-                webClient.closeResource();
             }
         }
     }
