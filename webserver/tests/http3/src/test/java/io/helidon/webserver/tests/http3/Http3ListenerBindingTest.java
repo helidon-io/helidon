@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.tests.http3;
 
+import java.net.BindException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -38,24 +39,37 @@ import static org.hamcrest.Matchers.greaterThan;
 
 class Http3ListenerBindingTest {
     private static final String ENTITY = "listener-binding";
+    private static final int MAX_BIND_ATTEMPTS = 10;
 
     @Test
     void shouldKeepDefaultTcpOverlayOnConfiguredFixedPort() throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
-        int port;
-        try (ServerSocket tcp = new ServerSocket(0, 1, loopback);
-             DatagramSocket _ = new DatagramSocket(new InetSocketAddress(loopback, tcp.getLocalPort()))) {
-            port = tcp.getLocalPort();
-        }
+        for (int attempt = 1; ; attempt++) {
+            int port;
+            Http3TestSupport.TestEnvironment environment;
+            try {
+                try (ServerSocket tcp = new ServerSocket(0, 1, loopback);
+                     DatagramSocket _ = new DatagramSocket(new InetSocketAddress(loopback, tcp.getLocalPort()))) {
+                    port = tcp.getLocalPort();
+                }
 
-        try (Http3TestSupport.TestEnvironment environment =
-                     Http3TestSupport.sharedListener(builder -> {
-                         builder.port(port)
-                                 .bindingsDiscoverServices(false);
-                         QuicTransportConfig.create().addTo(builder);
-                     }, Http3ListenerBindingTest::routing)) {
-            assertThat(environment.port(), is(port));
-            assertServesHttp1AndHttp3(environment);
+                environment = Http3TestSupport.sharedListener(builder -> {
+                    builder.port(port)
+                            .bindingsDiscoverServices(false);
+                    QuicTransportConfig.create().addTo(builder);
+                }, Http3ListenerBindingTest::routing);
+            } catch (Exception e) {
+                if (attempt >= MAX_BIND_ATTEMPTS || !isRetryableBindFailure(e)) {
+                    throw e;
+                }
+                continue;
+            }
+
+            try (environment) {
+                assertThat(environment.port(), is(port));
+                assertServesHttp1AndHttp3(environment);
+            }
+            return;
         }
     }
 
@@ -83,6 +97,22 @@ class Http3ListenerBindingTest {
             assertThat(environment.port(), is(greaterThan(0)));
             assertServesHttp1AndHttp3(environment);
         }
+    }
+
+    private static boolean isRetryableBindFailure(Throwable failure) {
+        if (Thread.currentThread().isInterrupted()) {
+            return false;
+        }
+        boolean bindFailure = false;
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof InterruptedException || cause.getSuppressed().length != 0) {
+                return false;
+            }
+            if (cause instanceof BindException) {
+                bindFailure = true;
+            }
+        }
+        return bindFailure;
     }
 
     private static void routing(HttpRouting.Builder routing) {
