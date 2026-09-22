@@ -31,7 +31,6 @@
     <name>Helidon Tests Integration HTTP/3 h3spec</name>
 
     <properties>
-        <mainClass>io.helidon.tests.integration.quic.h3spec.Main</mainClass>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
     </properties>
 
