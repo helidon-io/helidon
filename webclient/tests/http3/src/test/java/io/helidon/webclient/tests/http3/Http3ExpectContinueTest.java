@@ -101,7 +101,7 @@ class Http3ExpectContinueTest {
     void shouldExposeFinalResponseWhenRouteFailsBeforeReadingEntity() throws Exception {
         AtomicBoolean sawExpect = new AtomicBoolean();
 
-        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing.post("/expect-continue-fail", (req, res) -> {
+        try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing.post("/expect-continue-fail", (req, _) -> {
                  sawExpect.set(req.headers().contains(HeaderValues.EXPECT_100));
                  throw new IllegalStateException("boom");
              }))) {

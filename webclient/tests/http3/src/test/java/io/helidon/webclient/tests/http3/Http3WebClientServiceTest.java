@@ -27,8 +27,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -42,10 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
@@ -55,7 +49,6 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http3.Http3ErrorCode;
-import io.helidon.http.http3.Http3Protocol;
 import io.helidon.webclient.api.ClientAltSvcConfig;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
@@ -222,7 +215,7 @@ class Http3WebClientServiceTest {
 
     @Test
     void shouldReturnShortCircuitServiceResponseWithoutTransportSelection() {
-        WebClientService service = (chain, request) -> WebClientServiceResponse.builder()
+        WebClientService service = (_, request) -> WebClientServiceResponse.builder()
                 .serviceRequest(request)
                 .whenComplete(new CompletableFuture<>())
                 .connection(() -> { })

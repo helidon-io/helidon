@@ -82,7 +82,7 @@ class Http3GoAwayTest {
         AtomicBoolean goAwaySent = new AtomicBoolean();
         List<QuicConnection> acceptedConnections = new CopyOnWriteArrayList<>();
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((_, connection, streamId, _) -> {
                  if (goAwaySent.compareAndSet(false, true)) {
                      serverRef.get().sendGoAway(connection, streamId + 4);
                  }
@@ -127,7 +127,7 @@ class Http3GoAwayTest {
         AtomicReference<Http3RawTestServer> serverRef = new AtomicReference<>();
         AtomicBoolean goAwaySent = new AtomicBoolean();
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((_, connection, streamId, _) -> {
                  if (goAwaySent.compareAndSet(false, true)) {
                      serverRef.get().sendGoAway(connection, streamId + 4);
                  }
@@ -215,7 +215,7 @@ class Http3GoAwayTest {
         AtomicInteger requestCount = new AtomicInteger();
         RecordingTransportObserverService observer = new RecordingTransportObserverService();
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((request, _, _, stream) -> {
                  if (!REQUEST_REJECTED_PATH.equals(request.path().orElseThrow())) {
                      return Http3RawTestServer.text(Status.NOT_FOUND_404.code(), request.path().orElseThrow());
                  }
@@ -257,7 +257,7 @@ class Http3GoAwayTest {
         CountDownLatch retryObserved = new CountDownLatch(1);
         RecordingTransportObserverService observer = new RecordingTransportObserverService();
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, _) -> {
                  if (!REQUEST_REJECTED_PATH.equals(request.path().orElseThrow())) {
                      return Http3RawTestServer.text(Status.NOT_FOUND_404.code(), request.path().orElseThrow());
                  }
@@ -303,7 +303,7 @@ class Http3GoAwayTest {
     void shouldNotRetryPostForConnectionLevelRequestRejectedCode() throws Exception {
         AtomicInteger requestCount = new AtomicInteger();
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, _, _) -> {
                  if (!CONNECTION_REJECTED_PATH.equals(request.path().orElseThrow())) {
                      return Http3RawTestServer.text(Status.NOT_FOUND_404.code(), request.path().orElseThrow());
                  }
@@ -333,7 +333,7 @@ class Http3GoAwayTest {
         AtomicInteger requestCount = new AtomicInteger();
         AtomicInteger producerCount = new AtomicInteger();
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((_, _, _, stream) -> {
                  requestCount.incrementAndGet();
                  stream.reset(Http3ErrorCode.REQUEST_REJECTED.code());
                  return null;
@@ -401,7 +401,7 @@ class Http3GoAwayTest {
                     .protocolsDiscoverServices(false)
                     .tls(tlsMaterials.serverTls())
                     .addProtocol(Http1Config.create())
-                    .routing(routing -> routing.post(VERSION_FALLBACK_PATH, (request, response) -> {
+                    .routing(routing -> routing.post(VERSION_FALLBACK_PATH, (_, response) -> {
                         http1RequestCount.incrementAndGet();
                         versionFallbackObserved.countDown();
                         response.send("fallback-ok");
@@ -450,7 +450,7 @@ class Http3GoAwayTest {
         AtomicReference<QuicConnection> firstConnection = new AtomicReference<>();
         CountDownLatch producerStarted = new CountDownLatch(1);
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, _) -> {
                  requestCount.incrementAndGet();
                  if (STREAM_STOP_PATH.equals(request.path().orElseThrow())) {
                      firstConnection.set(connection);

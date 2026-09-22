@@ -222,7 +222,7 @@ class Http3CancellationTest {
                 }
                 try {
                     TimeUnit.MILLISECONDS.sleep(10);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException _) {
                     Thread.currentThread().interrupt();
                     break;
                 }

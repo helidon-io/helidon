@@ -113,7 +113,7 @@ class Http3ResponseTrailersTest {
                                                               WebClientServiceRequest request) {
         WebClientServiceResponse response = chain.proceed(request);
         return WebClientServiceResponse.builder(response)
-                .trailers(response.trailers().thenApply(ignored -> {
+                .trailers(response.trailers().thenApply(_ -> {
                     WritableHeaders<?> headers = WritableHeaders.create();
                     headers.add(DECORATED_TRAILER);
                     return ClientResponseTrailers.create(headers);

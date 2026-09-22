@@ -48,7 +48,7 @@ class Http3TlsCompatibilityFallbackTest {
 
     @BeforeEach
     void beforeEach() throws Exception {
-        environment = TestEnvironment.createSharedListener(routing -> routing.get("/hello", (req, res) -> res.send(HELLO)));
+        environment = TestEnvironment.createSharedListener(routing -> routing.get("/hello", (_, res) -> res.send(HELLO)));
         tlsWithoutTls13 = environment.clientTlsWithoutTls13();
     }
 
@@ -95,7 +95,7 @@ class Http3TlsCompatibilityFallbackTest {
                 .baseUri(baseUri)
                 .shareConnectionCache(false)
                 .proxy(Proxy.noProxy())
-                .dnsResolver((host, lookup) -> InetAddress.getLoopbackAddress())
+                .dnsResolver((_, _) -> InetAddress.getLoopbackAddress())
                 .tls(tlsWithoutTls13)
                 .addProtocolPreference(Http3Client.PROTOCOL_ID)
                 .addProtocolPreference(Http1Client.PROTOCOL_ID)

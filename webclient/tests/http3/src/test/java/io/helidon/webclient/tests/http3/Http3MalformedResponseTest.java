@@ -105,7 +105,7 @@ class Http3MalformedResponseTest {
                     && System.nanoTime() < deadline) {
                 try {
                     TimeUnit.MILLISECONDS.sleep(10);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException _) {
                     Thread.currentThread().interrupt();
                     break;
                 }

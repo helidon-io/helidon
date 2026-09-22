@@ -146,7 +146,7 @@ public final class Http3RawTestServer implements AutoCloseable {
         this.listenerName = Objects.requireNonNull(listenerName, "listenerName");
         this.quicServer = Objects.requireNonNull(quicServer, "quicServer");
         this.runtime = Objects.requireNonNull(runtime, "runtime");
-        this.connectionObserver = connectionObserver == null ? ignored -> {
+        this.connectionObserver = connectionObserver == null ? _ -> {
         } : connectionObserver;
         acceptLoop();
     }

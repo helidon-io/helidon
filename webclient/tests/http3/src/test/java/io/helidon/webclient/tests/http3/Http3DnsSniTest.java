@@ -53,8 +53,8 @@ class Http3DnsSniTest {
         AtomicReference<String> resolvedHost = new AtomicReference<>();
 
         try (TestEnvironment environment = TestEnvironment.createSharedListener(
-                routing -> routing.get("/hello", (req, res) -> res.send(HELLO)))) {
-            DnsResolver resolver = (host, lookup) -> {
+                routing -> routing.get("/hello", (_, res) -> res.send(HELLO)))) {
+            DnsResolver resolver = (host, _) -> {
                 resolvedHost.set(host);
                 resolutions.incrementAndGet();
                 return InetAddress.getLoopbackAddress();
@@ -91,8 +91,8 @@ class Http3DnsSniTest {
 
         try (TestEnvironment environment = TestEnvironment.createSharedListener(
                 http1,
-                routing -> routing.get("/hello", (req, res) -> res.send(HELLO)))) {
-            DnsResolver resolver = (host, lookup) -> {
+                routing -> routing.get("/hello", (_, res) -> res.send(HELLO)))) {
+            DnsResolver resolver = (host, _) -> {
                 resolvedHost.set(host);
                 resolutions.incrementAndGet();
                 return InetAddress.getLoopbackAddress();
@@ -143,8 +143,8 @@ class Http3DnsSniTest {
     @Test
     void shouldUseFinalHostHeaderForSniAndAuthority() throws Exception {
         try (TestEnvironment environment = TestEnvironment.createSharedListener(
-                routing -> routing.get("/hello", (req, res) -> res.send(HELLO)))) {
-            DnsResolver resolver = (host, lookup) -> InetAddress.getLoopbackAddress();
+                routing -> routing.get("/hello", (_, res) -> res.send(HELLO)))) {
+            DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
             int port = URI.create(environment.baseUri()).getPort();
             Http3Client client = strictClientBuilder()
                     .baseUri(fakeBaseUri(environment))
@@ -175,8 +175,8 @@ class Http3DnsSniTest {
                 .build();
         try (TestEnvironment environment = TestEnvironment.createSharedListener(
                 http1,
-                routing -> routing.get("/hello", (req, res) -> res.send(HELLO)))) {
-            DnsResolver resolver = (host, lookup) -> {
+                routing -> routing.get("/hello", (_, res) -> res.send(HELLO)))) {
+            DnsResolver resolver = (host, _) -> {
                 resolvedHost.set(host);
                 return InetAddress.getLoopbackAddress();
             };

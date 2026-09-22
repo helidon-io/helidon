@@ -260,7 +260,7 @@ public class Http3SessionPoolJmh {
             try {
                 waitingRequest.get(100, TimeUnit.MILLISECONDS);
                 throw new IllegalStateException("HTTP/3 full-pool request completed while both sessions were held");
-            } catch (TimeoutException expected) {
+            } catch (TimeoutException _) {
                 // Expected: both pooled sessions have exhausted peer stream credit.
             }
             waitingConnectionId = null;

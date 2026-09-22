@@ -16,19 +16,12 @@
 
 package io.helidon.webclient.tests.http3;
 
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Status;
@@ -64,7 +57,7 @@ class Http3TypedProtocolEntryPointTest {
     @Test
     void shouldUseHttp3WhenTypedClientIsObtainedFromWebClientProtocol() throws Exception {
         try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing.get("/hello",
-                                                                                                        (req, res) -> res.send(HELLO)))) {
+                                                                                                        (_, res) -> res.send(HELLO)))) {
             WebClient webClient = strictWebClientBuilder()
                     .baseUri(environment.baseUri())
                     .tls(environment.clientTlsHttp3())
@@ -109,7 +102,7 @@ class Http3TypedProtocolEntryPointTest {
                                 try {
                                     producerAllowed.await();
                                     break;
-                                } catch (InterruptedException e) {
+                                } catch (InterruptedException _) {
                                     interrupted = true;
                                 }
                             }
@@ -142,7 +135,7 @@ class Http3TypedProtocolEntryPointTest {
                 while (System.nanoTime() < deadline) {
                     try {
                         client.get();
-                    } catch (IllegalStateException expected) {
+                    } catch (IllegalStateException _) {
                         closingObserved = true;
                         break;
                     }
@@ -372,7 +365,7 @@ class Http3TypedProtocolEntryPointTest {
                     .tls(tlsMaterials.serverTls())
                     .addProtocol(Http1Config.create())
                     .routing(routing -> routing
-                            .get("/hello", (req, res) -> {
+                            .get("/hello", (_, res) -> {
                                 getCount.incrementAndGet();
                                 res.send(HELLO);
                             })

@@ -34,7 +34,6 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http3.Http3ErrorCode;
-import io.helidon.http.http3.Http3Protocol;
 import io.helidon.quic.QuicConnectionImpl;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
