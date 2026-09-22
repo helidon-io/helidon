@@ -46,9 +46,9 @@ class MainTest {
 
         assertThat(config.host(), is("0.0.0.0"));
         assertThat(config.port(), is(443));
-        assertThat(config.certChain(), is(Path.of("/certs/cert.pem")));
-        assertThat(config.privateKey(), is(Path.of("/certs/priv.key")));
-        assertThat(config.webRoot(), is(Path.of("/www")));
+        assertThat(config.certChain(), is(Path.of("/certs/cert.pem").toAbsolutePath().normalize()));
+        assertThat(config.privateKey(), is(Path.of("/certs/priv.key").toAbsolutePath().normalize()));
+        assertThat(config.webRoot(), is(Path.of("/www").toAbsolutePath().normalize()));
         assertThat(config.welcomeFile(), is("index.html"));
     }
 
