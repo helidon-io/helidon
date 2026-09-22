@@ -63,6 +63,7 @@ class QuicInteropRunnerIT {
     void shouldPassHttp3SmokeTestThroughQuicInteropRunner() throws Exception {
         Path artifactsDir = Files.createDirectories(Path.of("target", "quic-interop-runner"));
         ImageFromDockerfile toolImage = new ImageFromDockerfile("helidon-quic-interop-tool-" + UUID.randomUUID(), true)
+                .withBuildImageCmdModifier(cmd -> cmd.withForcerm(true))
                 .withDockerfile(Path.of("./Dockerfile.runner-tool"));
         Network network = Network.newNetwork();
         GenericContainer<?> tool = new GenericContainer<>(toolImage)
