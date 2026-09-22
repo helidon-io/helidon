@@ -1008,8 +1008,8 @@ class Http3WebClientServiceTest {
         private final AtomicInteger getCount;
 
         private Http1OnlyTlsEnvironment(WebServer server,
-                                       Http3TlsSupport.Http3TlsMaterials tlsMaterials,
-                                       AtomicInteger getCount) {
+                                        Http3TlsSupport.Http3TlsMaterials tlsMaterials,
+                                        AtomicInteger getCount) {
             this.server = server;
             this.tlsMaterials = tlsMaterials;
             this.getCount = getCount;
