@@ -45,11 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class Http3TlsReloadTest {
     private static final String SNI_HOST = "api.example.com";
 
-    private static void routing(HttpRouting.Builder router) {
-        router.get("/hello", (req, res) -> res.send("hello"));
-        router.get("/socket-id", (req, res) -> res.send(req.socketId()));
-    }
-
     @Test
     void shouldObserveDirectTlsReloadForSharedHttp1AndHttp3Listener() throws Exception {
         try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.sharedListener(Http3TlsReloadTest::routing)) {
@@ -147,6 +142,11 @@ class Http3TlsReloadTest {
                 persistentClient.closeResource();
             }
         }
+    }
+
+    private static void routing(HttpRouting.Builder router) {
+        router.get("/hello", (_, res) -> res.send("hello"));
+        router.get("/socket-id", (req, res) -> res.send(req.socketId()));
     }
 
     private static void assertOldTrustHttp3Fails(Http3TestSupport.TestEnvironment environment, Tls oldTrustClientTls) {

@@ -21,15 +21,15 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.net.StandardProtocolFamily;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.ByteBuffer;
-import java.security.KeyStore;
-import java.security.SecureRandom;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
-import java.net.StandardProtocolFamily;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -39,8 +39,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SNIServerName;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.buffers.BufferData;
@@ -112,15 +112,6 @@ final class Http3TestSupport {
                 .privateKey(keys.privateKey().orElseThrow())
                 .privateKeyCertChain(keys.certChain())
                 .build();
-    }
-
-    private static Keys serverKeys(String keystoreResource) {
-        Keys keys = Keys.builder()
-                .keystore(store -> store
-                        .passphrase("password")
-                        .keystore(Resource.create(keystoreResource)))
-                .build();
-        return keys;
     }
 
     static SSLContext clientSslContext(String trustStoreResource) throws Exception {
@@ -261,6 +252,29 @@ final class Http3TestSupport {
         });
     }
 
+    static boolean ipv6LoopbackAvailable() {
+        try {
+            InetAddress loopback = InetAddress.getByName("::1");
+            try (ServerSocketChannel tcp = ServerSocketChannel.open(StandardProtocolFamily.INET6);
+                 DatagramChannel udp = DatagramChannel.open(StandardProtocolFamily.INET6)) {
+                tcp.bind(new InetSocketAddress(loopback, 0));
+                udp.bind(new InetSocketAddress(loopback, 0));
+                return true;
+            }
+        } catch (IOException _) {
+            return false;
+        }
+    }
+
+    private static Keys serverKeys(String keystoreResource) {
+        Keys keys = Keys.builder()
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create(keystoreResource)))
+                .build();
+        return keys;
+    }
+
     private static TestEnvironment createServer(Consumer<WebServerConfig.Builder> customizer) throws Exception {
         return createServer(InetAddress.getLoopbackAddress(), customizer);
     }
@@ -375,20 +389,6 @@ final class Http3TestSupport {
         return Http3Protocol.encodeRequestHeaders(qpackContext, streamId, uri, method, headers);
     }
 
-    static boolean ipv6LoopbackAvailable() {
-        try {
-            InetAddress loopback = InetAddress.getByName("::1");
-            try (ServerSocketChannel tcp = ServerSocketChannel.open(StandardProtocolFamily.INET6);
-                 DatagramChannel udp = DatagramChannel.open(StandardProtocolFamily.INET6)) {
-                tcp.bind(new InetSocketAddress(loopback, 0));
-                udp.bind(new InetSocketAddress(loopback, 0));
-                return true;
-            }
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
     private static KeyStore loadStore(String resourceName) throws Exception {
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
         try (InputStream stream = Http3TestSupport.class.getClassLoader().getResourceAsStream(resourceName)) {
@@ -431,51 +431,6 @@ final class Http3TestSupport {
             return create(environment, Optional.of(List.copyOf(serverNames)));
         }
 
-        private static LowLevelHttp3Client create(TestEnvironment environment,
-                                                  Optional<List<SNIServerName>> serverNames) throws Exception {
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-            QuicClientRuntime client = QuicClientRuntime.builder()
-                    .executor(executor)
-                    .quicConfig(QuicConfig.builder()
-                                        .availableVersions(List.of(QuicVersion.QUIC_V1))
-                                        .buildPrototype())
-                    .tls(environment.clientTls())
-                    .build();
-            Http3QpackContext qpackContext = Http3QpackContext.create(LOCAL_QPACK_MAX_TABLE_CAPACITY,
-                                                                      LOCAL_QPACK_BLOCKED_STREAMS,
-                                                                      16_384,
-                                                                      ignored -> {
-                                                                      });
-
-            InetSocketAddress peer = new InetSocketAddress(InetAddress.getByName(environment.host), environment.port());
-            QuicClientConnection connection = serverNames.isEmpty()
-                    ? client.createConnection(peer,
-                                              peer.getHostString(),
-                                              peer.getPort(),
-                                              new String[] {Http3Client.PROTOCOL_ID})
-                    : client.createConnection(peer,
-                                              environment.host,
-                                              environment.port(),
-                                              new String[] {Http3Client.PROTOCOL_ID},
-                                              serverNames.orElseThrow());
-            Http3PeerCriticalStreams peerCriticalStreams = Http3PeerCriticalStreams.create();
-            connection.addRemoteStreamListener(stream -> {
-                if (stream instanceof QuicReceiverStream receiver && !(stream instanceof QuicBidiStream)) {
-                    Http3ControlStreamSupport.observe(receiver,
-                                                      qpackContext,
-                                                      peerCriticalStreams,
-                                                      connection,
-                                                      controlStreamListener(qpackContext))
-                            .completion().exceptionally(throwable -> null);
-                    return true;
-                }
-                return false;
-            });
-            connection.startHandshake().get(20, TimeUnit.SECONDS);
-            primeControlStreams(connection, qpackContext);
-            return new LowLevelHttp3Client(environment.uri("/"), executor, client, connection, qpackContext);
-        }
-
         DecodedResponse get(String path) throws Exception {
             return get(baseUri.resolve(path));
         }
@@ -497,28 +452,49 @@ final class Http3TestSupport {
             }
         }
 
-        private QuicClientConnection createConnection(String host,
-                                                      int port,
-                                                      Http3QpackContext qpackContext) throws Exception {
-            InetSocketAddress peerAddress = new InetSocketAddress(InetAddress.getByName(host), port);
-            QuicClientConnection newConnection = client.createConnection(peerAddress,
-                                                                         peerAddress.getHostString(),
-                                                                         peerAddress.getPort(),
-                                                                         new String[] {Http3Client.PROTOCOL_ID});
+        private static LowLevelHttp3Client create(TestEnvironment environment,
+                                                  Optional<List<SNIServerName>> serverNames) throws Exception {
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+            QuicClientRuntime client = QuicClientRuntime.builder()
+                    .executor(executor)
+                    .quicConfig(QuicConfig.builder()
+                                        .availableVersions(List.of(QuicVersion.QUIC_V1))
+                                        .buildPrototype())
+                    .tls(environment.clientTls())
+                    .build();
+            Http3QpackContext qpackContext = Http3QpackContext.create(LOCAL_QPACK_MAX_TABLE_CAPACITY,
+                                                                      LOCAL_QPACK_BLOCKED_STREAMS,
+                                                                      16_384,
+                                                                      _ -> {
+                                                                      });
+
+            InetSocketAddress peer = new InetSocketAddress(InetAddress.getByName(environment.host), environment.port());
+            QuicClientConnection connection = serverNames.isEmpty()
+                    ? client.createConnection(peer,
+                                              peer.getHostString(),
+                                              peer.getPort(),
+                                              new String[] {Http3Client.PROTOCOL_ID})
+                    : client.createConnection(peer,
+                                              environment.host,
+                                              environment.port(),
+                                              new String[] {Http3Client.PROTOCOL_ID},
+                                              serverNames.orElseThrow());
             Http3PeerCriticalStreams peerCriticalStreams = Http3PeerCriticalStreams.create();
-            newConnection.addRemoteStreamListener(stream -> {
+            connection.addRemoteStreamListener(stream -> {
                 if (stream instanceof QuicReceiverStream receiver && !(stream instanceof QuicBidiStream)) {
                     Http3ControlStreamSupport.observe(receiver,
                                                       qpackContext,
                                                       peerCriticalStreams,
-                                                      newConnection,
+                                                      connection,
                                                       controlStreamListener(qpackContext))
-                            .completion().exceptionally(throwable -> null);
+                            .completion().exceptionally(_ -> null);
                     return true;
                 }
                 return false;
             });
-            return newConnection;
+            connection.startHandshake().get(20, TimeUnit.SECONDS);
+            primeControlStreams(connection, qpackContext);
+            return new LowLevelHttp3Client(environment.uri("/"), executor, client, connection, qpackContext);
         }
 
         private static DecodedResponse request(QuicConnection connection,
@@ -584,6 +560,30 @@ final class Http3TestSupport {
             QuicBidiStream stream = connection.openNewLocalBidiStream(TIMEOUT)
                     .get(10, TimeUnit.SECONDS);
             return new RequestStream(stream, Http3StreamSupport.connectWriter(stream, connection));
+        }
+
+        private QuicClientConnection createConnection(String host,
+                                                      int port,
+                                                      Http3QpackContext qpackContext) throws Exception {
+            InetSocketAddress peerAddress = new InetSocketAddress(InetAddress.getByName(host), port);
+            QuicClientConnection newConnection = client.createConnection(peerAddress,
+                                                                         peerAddress.getHostString(),
+                                                                         peerAddress.getPort(),
+                                                                         new String[] {Http3Client.PROTOCOL_ID});
+            Http3PeerCriticalStreams peerCriticalStreams = Http3PeerCriticalStreams.create();
+            newConnection.addRemoteStreamListener(stream -> {
+                if (stream instanceof QuicReceiverStream receiver && !(stream instanceof QuicBidiStream)) {
+                    Http3ControlStreamSupport.observe(receiver,
+                                                      qpackContext,
+                                                      peerCriticalStreams,
+                                                      newConnection,
+                                                      controlStreamListener(qpackContext))
+                            .completion().exceptionally(_ -> null);
+                    return true;
+                }
+                return false;
+            });
+            return newConnection;
         }
 
         private record RequestStream(QuicBidiStream stream, QuicStreamWriter writer) {
@@ -675,13 +675,13 @@ final class Http3TestSupport {
             return Http3TestSupport.http3Client(clientSslContext);
         }
 
-        private String hostForUri() {
-            return host.contains(":") ? "[" + host + "]" : host;
-        }
-
         @Override
         public void close() {
             server.stop();
+        }
+
+        private String hostForUri() {
+            return host.contains(":") ? "[" + host + "]" : host;
         }
     }
 }

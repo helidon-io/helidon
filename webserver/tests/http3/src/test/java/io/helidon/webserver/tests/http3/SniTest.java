@@ -182,7 +182,7 @@ class SniTest {
                                                                .host(SNI_HOST)
                                                                .tls(tls)),
                                                routing -> routing
-                                                       .get("/", (req, res) -> res.send("ok"))
+                                                       .get("/", (_, res) -> res.send("ok"))
                                                        .get("/sni", (req, res) -> res.send(
                                                                req.sniRequestedHost().orElse("")
                                                                        + "|"
@@ -218,6 +218,15 @@ class SniTest {
     private record RejectedHandshakeClient(ExecutorService executor,
                                            QuicClientRuntime client,
                                            QuicClientConnection connection) implements AutoCloseable {
+        @Override
+        public void close() {
+            try {
+                client.close();
+            } finally {
+                executor.close();
+            }
+        }
+
         private static RejectedHandshakeClient create(Http3TestSupport.TestEnvironment environment,
                                                       List<SNIServerName> serverNames) throws Exception {
             ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -252,13 +261,5 @@ class SniTest {
             }
         }
 
-        @Override
-        public void close() {
-            try {
-                client.close();
-            } finally {
-                executor.close();
-            }
-        }
     }
 }

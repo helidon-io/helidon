@@ -32,15 +32,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class Http3LoopbackTest {
-    private static void routing(HttpRouting.Builder router) {
-        router.get("/hello", (req, res) -> res.send("shared"));
-    }
-
     @Test
     void shouldServeSharedRouteOverIpv4Loopback() throws Exception {
         InetAddress ipv4Loopback = InetAddress.getByName("127.0.0.1");
         try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.sharedListener(ipv4Loopback,
-                                                                                            Http3LoopbackTest::routing)) {
+                                                                                         Http3LoopbackTest::routing)) {
             assertSharedRoute(environment);
         }
     }
@@ -51,9 +47,13 @@ class Http3LoopbackTest {
 
         InetAddress ipv6Loopback = InetAddress.getByName("::1");
         try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.sharedListener(ipv6Loopback,
-                                                                                            Http3LoopbackTest::routing)) {
+                                                                                         Http3LoopbackTest::routing)) {
             assertSharedRoute(environment);
         }
+    }
+
+    private static void routing(HttpRouting.Builder router) {
+        router.get("/hello", (_, res) -> res.send("shared"));
     }
 
     private static void assertSharedRoute(Http3TestSupport.TestEnvironment environment) throws Exception {

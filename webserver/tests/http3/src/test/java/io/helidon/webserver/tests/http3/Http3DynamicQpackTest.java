@@ -68,8 +68,8 @@ class Http3DynamicQpackTest {
     }
 
     private static void routing(HttpRouting.Builder router) {
-        router.get("/hello", (req, res) -> res.send("hello"))
-                .get("/dynamic-qpack", (req, res) -> {
+        router.get("/hello", (_, res) -> res.send("hello"))
+                .get("/dynamic-qpack", (_, res) -> {
                     res.header(QPACK_USER, USER_VALUE);
                     res.header(QPACK_ENV, ENV_VALUE);
                     res.header(QPACK_CLUSTER, CLUSTER_VALUE);

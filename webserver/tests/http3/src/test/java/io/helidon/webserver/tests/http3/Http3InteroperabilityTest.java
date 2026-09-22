@@ -46,21 +46,6 @@ class Http3InteroperabilityTest {
     private static final String LARGE_RESPONSE = CHUNK.repeat(REPETITIONS);
     private static final byte[] LARGE_UPLOAD = LARGE_RESPONSE.getBytes(StandardCharsets.UTF_8);
 
-    private static void routing(HttpRouting.Builder router) {
-        router.post("/upload-length", (req, res) -> res.send(Long.toString(countBytes(req.content().inputStream()))))
-                .get("/download-large", (req, res) -> {
-                    try (OutputStream outputStream = res.outputStream()) {
-                        byte[] chunkBytes = CHUNK.getBytes(StandardCharsets.UTF_8);
-                        for (int i = 0; i < REPETITIONS; i++) {
-                            outputStream.write(chunkBytes);
-                        }
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                })
-                .get("/socket-id", (req, res) -> res.send(req.socketId()));
-    }
-
     @Test
     void shouldAcceptLargeJdkHttp3Upload() throws Exception {
         try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.sharedListener(Http3InteroperabilityTest::routing)) {
@@ -127,6 +112,21 @@ class Http3InteroperabilityTest {
                 client.closeResource();
             }
         }
+    }
+
+    private static void routing(HttpRouting.Builder router) {
+        router.post("/upload-length", (req, res) -> res.send(Long.toString(countBytes(req.content().inputStream()))))
+                .get("/download-large", (_, res) -> {
+                    try (OutputStream outputStream = res.outputStream()) {
+                        byte[] chunkBytes = CHUNK.getBytes(StandardCharsets.UTF_8);
+                        for (int i = 0; i < REPETITIONS; i++) {
+                            outputStream.write(chunkBytes);
+                        }
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .get("/socket-id", (req, res) -> res.send(req.socketId()));
     }
 
     private static long countBytes(InputStream inputStream) {

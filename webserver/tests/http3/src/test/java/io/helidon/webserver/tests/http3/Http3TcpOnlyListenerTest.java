@@ -31,10 +31,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http3TcpOnlyListenerTest {
-    private static void routing(HttpRouting.Builder router) {
-        router.get("/hello", (req, res) -> res.send("hello"));
-    }
-
     @Test
     void shouldServeHttp1OnTcpOnlyListener() throws Exception {
         try (Http3TestSupport.TestEnvironment environment = Http3TestSupport.tcpOnlyListener(Http3TcpOnlyListenerTest::routing)) {
@@ -54,5 +50,9 @@ class Http3TcpOnlyListenerTest {
 
             assertThrows(IOException.class, () -> client.send(environment.http3Get("/hello"), ofString()));
         }
+    }
+
+    private static void routing(HttpRouting.Builder router) {
+        router.get("/hello", (_, res) -> res.send("hello"));
     }
 }
