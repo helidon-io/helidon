@@ -24,8 +24,27 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.DestroyFailedException;
+import javax.security.auth.Destroyable;
+
+import io.helidon.common.NativeImageHelper;
 
 final class QuicTlsKeySharePossession {
+    private static final ClassValue<Boolean> ATTEMPT_DESTRUCTION = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            // Native images keep the direct best-effort call without requiring dynamic reflection metadata.
+            if (NativeImageHelper.isNativeImage()) {
+                return true;
+            }
+            try {
+                // The inherited default only throws; provider implementations still receive a call for each key.
+                return type.getMethod("destroy").getDeclaringClass() != Destroyable.class;
+            } catch (NoSuchMethodException | SecurityException _) {
+                return true;
+            }
+        }
+    };
+
     private final QuicTlsNamedGroup namedGroup;
     private final PublicKey publicKey;
     private final AtomicReference<PrivateKey> privateKey;
@@ -85,10 +104,13 @@ final class QuicTlsKeySharePossession {
     }
 
     private static void destroy(PrivateKey privateKey) {
+        if (!ATTEMPT_DESTRUCTION.get(privateKey.getClass())) {
+            return;
+        }
         try {
             privateKey.destroy();
-        } catch (DestroyFailedException _) {
-            // Providers need not support destruction; dropping our reference still ends local ownership.
+        } catch (DestroyFailedException | RuntimeException _) {
+            // Provider cleanup failure must not replace derivation errors or prevent other keys from being discarded.
         }
     }
 }
