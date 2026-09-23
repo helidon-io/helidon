@@ -70,6 +70,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.http.Status.INTERNAL_SERVER_ERROR_500;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -86,6 +87,8 @@ class FollowRedirectTest {
     private static final String QUERY_ENTITY = "select * from example";
     private static final String QUERY_LANGUAGE = "en";
     private static final HeaderName REDIRECT_HEADER = HeaderNames.create("X-Redirect-Test");
+    private static final HeaderName REDIRECT_METHOD = HeaderNames.create("X-Redirect-Method");
+    private static final HeaderName REDIRECT_ENTITY = HeaderNames.create("X-Redirect-Entity");
     private static final AtomicReference<String> REDIRECT_SOURCE_COOKIE = new AtomicReference<>();
     private static final AtomicReference<String> REDIRECT_TARGET_COOKIE = new AtomicReference<>();
     private static final AtomicInteger ENTITY_TARGET_REQUESTS = new AtomicInteger();
@@ -128,6 +131,15 @@ class FollowRedirectTest {
 
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
+        for (Status status : List.of(Status.MOVED_PERMANENTLY_301, Status.FOUND_302)) {
+            router.any("/methodRedirect" + status.code(), (_, res) -> res.status(status)
+                    .header(HeaderNames.LOCATION, "/methodRedirectTarget")
+                    .send());
+        }
+        router.any("/methodRedirectTarget", (req, res) -> res
+                .header(REDIRECT_METHOD, req.prologue().method().text())
+                .header(REDIRECT_ENTITY, req.content().hasEntity() ? req.content().as(String.class) : "")
+                .send());
         router.route(Method.QUERY,
                      "/queryRedirect301",
                      (_, res) -> queryRedirect(res, Status.MOVED_PERMANENTLY_301, "/queryRedirectTarget"))
@@ -167,11 +179,11 @@ class FollowRedirectTest {
                     .header(HeaderNames.LOCATION, "/redirectAfterUploadDelayed")
                     .send();
         }).route(Method.PUT, "/redirectNoEntity", (req, res) -> {
-            res.status(Status.FOUND_302)
+            res.status(Status.SEE_OTHER_303)
                     .header(HeaderNames.LOCATION, "/plain")
                     .send();
         }).route(Method.PUT, "/redirectNoEntityAfterKeepMethod", (req, res) -> {
-            res.status(Status.FOUND_302)
+            res.status(Status.SEE_OTHER_303)
                     .header(HeaderNames.LOCATION, "/delayedPlain")
                     .send();
         }).route(Method.PUT, "/redirectAfterUploadDelayed", (req, res) -> {
@@ -208,7 +220,7 @@ class FollowRedirectTest {
             String contentType = req.headers().contentType().orElseThrow().mediaType().text();
             res.send(contentType + ":" + req.content().as(String.class));
         }).route(Method.GET, "/redirectDropEntity", (req, res) -> {
-            res.status(Status.FOUND_302)
+            res.status(Status.SEE_OTHER_303)
                     .header(HeaderNames.LOCATION, "/afterDropEntity")
                     .send();
         }).route(Method.GET, "/afterDropEntity", (req, res) -> {
@@ -340,7 +352,7 @@ class FollowRedirectTest {
             req.content().as(String.class);
             res.header(HeaderNames.SET_COOKIE, "final=blocked; Path=/")
                     .send("done");
-        }).route(Method.PUT, "/cookie/loop-start", (_, res) -> res.status(Status.FOUND_302)
+        }).route(Method.PUT, "/cookie/loop-start", (_, res) -> res.status(Status.SEE_OTHER_303)
                 .header(HeaderNames.LOCATION, "/cookie/loop-intermediate")
                 .send()
         ).route(Method.GET, "/cookie/loop-intermediate", (_, res) -> res.status(Status.FOUND_302)
@@ -394,6 +406,46 @@ class FollowRedirectTest {
                     it.close();
                 })) {
             assertThat(response.entity().as(String.class), is(expected));
+        }
+    }
+
+    @Test
+    void nonPostRedirectPreservesMethodAndEntity() {
+        for (int redirectStatus : new int[] {301, 302}) {
+            for (String method : List.of("PUT", "PATCH", "DELETE", "post")) {
+                try (Http2ClientResponse response = webClient.method(Method.create(method))
+                        .uri("/methodRedirect" + redirectStatus)
+                        .submit("redirect entity")) {
+                    String context = method + " after " + redirectStatus;
+                    assertThat(context + " status", response.status(), is(Status.OK_200));
+                    assertThat(context + " method", response.headers(), hasHeader(REDIRECT_METHOD, method));
+                    assertThat(context + " entity", response.headers(), hasHeader(REDIRECT_ENTITY, "redirect entity"));
+                }
+            }
+        }
+    }
+
+    @Test
+    void headRedirectPreservesMethod() {
+        for (int redirectStatus : new int[] {301, 302}) {
+            try (Http2ClientResponse response = webClient.head("/methodRedirect" + redirectStatus).request()) {
+                String context = "HEAD after " + redirectStatus;
+                assertThat(context + " status", response.status(), is(Status.OK_200));
+                assertThat(context + " method", response.headers(), hasHeader(REDIRECT_METHOD, Method.HEAD.text()));
+                assertThat(context + " entity", response.headers(), hasHeader(REDIRECT_ENTITY, ""));
+            }
+        }
+    }
+
+    @Test
+    void postRedirectChangesToGetAndDropsEntity() {
+        for (int redirectStatus : new int[] {301, 302}) {
+            try (Http2ClientResponse response = webClient.post("/methodRedirect" + redirectStatus).submit("redirect entity")) {
+                String context = "POST after " + redirectStatus;
+                assertThat(context + " status", response.status(), is(Status.OK_200));
+                assertThat(context + " method", response.headers(), hasHeader(REDIRECT_METHOD, Method.GET.text()));
+                assertThat(context + " entity", response.headers(), hasHeader(REDIRECT_ENTITY, ""));
+            }
         }
     }
 

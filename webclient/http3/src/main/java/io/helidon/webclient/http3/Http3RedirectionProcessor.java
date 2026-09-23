@@ -95,7 +95,7 @@ class Http3RedirectionProcessor {
         int statusCode = status.code();
         return statusCode == Status.TEMPORARY_REDIRECT_307.code()
                 || statusCode == Status.PERMANENT_REDIRECT_308.code()
-                || (Method.QUERY.equals(method)
+                || (!Method.POST.equals(method)
                         && (statusCode == Status.MOVED_PERMANENTLY_301.code()
                         || statusCode == Status.FOUND_302.code()));
     }

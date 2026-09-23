@@ -83,7 +83,7 @@ class CrossOriginRedirectHeaderTest {
                                     .send();
                         })
                         .put("/redirect/cross-origin-round-trip", (req, res) -> {
-                            res.status(Status.FOUND_302)
+                            res.status(Status.SEE_OTHER_303)
                                     .header(HeaderNames.LOCATION,
                                             "http://localhost:" + redirectTargetServer.port() + "/redirect/back-to-trusted")
                                     .send();

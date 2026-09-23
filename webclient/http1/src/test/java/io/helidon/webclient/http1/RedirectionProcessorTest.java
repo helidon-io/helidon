@@ -44,7 +44,10 @@ class RedirectionProcessorTest {
         assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.PERMANENT_REDIRECT_308), is(true));
         assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.create(307, "Custom")), is(true));
         assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.create(308, "Custom")), is(true));
-        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.FOUND_302), is(false));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.MOVED_PERMANENTLY_301), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.PUT, Status.FOUND_302), is(true));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.POST, Status.MOVED_PERMANENTLY_301), is(false));
+        assertThat(RedirectionProcessor.keepsMethodAndEntity(Method.POST, Status.FOUND_302), is(false));
     }
 
     @Test
