@@ -20,7 +20,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -62,6 +64,32 @@ class Http3QuicEvidenceManifestTest {
             "_JAVA_OPTIONS",
             "MAVEN_OPTS");
 
+    static void publishCampaignIdentity(BenchmarkSourceIdentity.EvidenceBundle campaignIdentity,
+                                        Path stagedEvidenceRoot,
+                                        Path campaignRoot) throws IOException {
+        String sourceManifest = "http3-quic-controlled-source.manifest";
+        for (String file : List.of("http3-quic-controlled-build.log",
+                                   "http3-quic-controlled-build.manifest",
+                                   sourceManifest)) {
+            Path staged = stagedEvidenceRoot.resolve(file);
+            if (!Files.isRegularFile(staged, LinkOption.NOFOLLOW_LINKS)) {
+                throw new IllegalArgumentException("Staged campaign identity is not a regular file: " + staged);
+            }
+            Path destination = campaignRoot.resolve(file);
+            Path temporary = Files.createTempFile(campaignRoot, "." + file + "-", ".tmp");
+            try {
+                Files.copy(staged, temporary, StandardCopyOption.REPLACE_EXISTING);
+                if (file.equals(sourceManifest)) {
+                    campaignIdentity.commit(temporary);
+                } else {
+                    campaignIdentity.publish(temporary, destination);
+                }
+            } finally {
+                Files.deleteIfExists(temporary);
+            }
+        }
+    }
+
     @Test
     void generateAndVerify() throws Exception {
         Path repositoryRoot = Http3QuicEvidenceScope.repositoryRoot();
@@ -98,7 +126,11 @@ class Http3QuicEvidenceManifestTest {
         int activeProcessorCount = parseActiveProcessorCount();
         Path maven = mavenExecutable();
 
-        try (var snapshot = BenchmarkSourceIdentity.createBuildSnapshot(repositoryRoot);
+        try (var campaignIdentity = BenchmarkSourceIdentity.reserveEvidenceBundle(
+                Http3QuicEvidenceScope.manifest(repositoryRoot),
+                Http3QuicEvidenceScope.buildManifest(repositoryRoot),
+                Http3QuicEvidenceScope.buildLog(repositoryRoot));
+             var snapshot = BenchmarkSourceIdentity.createBuildSnapshot(repositoryRoot);
              var controlledRepository =
                      BenchmarkSourceIdentity.createControlledRepository(localRepository, remotePrefix)) {
             try {
@@ -224,15 +256,7 @@ class Http3QuicEvidenceManifestTest {
                 }
 
                 controlledRepository.publish(repositoryIdentity);
-                BenchmarkSourceIdentity.publishReplacing(
-                        stagedBuildLog,
-                        Http3QuicEvidenceScope.buildLog(repositoryRoot));
-                BenchmarkSourceIdentity.publishReplacing(
-                        stagedBuildManifest,
-                        Http3QuicEvidenceScope.buildManifest(repositoryRoot));
-                BenchmarkSourceIdentity.publishReplacing(
-                        stagedSourceManifest,
-                        Http3QuicEvidenceScope.manifest(repositoryRoot));
+                publishCampaignIdentity(campaignIdentity, stagedEvidenceRoot, campaignRoot);
                 System.out.println("Controlled Maven repository local prefix: "
                                            + repositoryIdentity.localPrefix());
                 System.out.println("Persistent HTTP/3 and QUIC evidence root: " + campaignRoot);
