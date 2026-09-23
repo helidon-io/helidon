@@ -23,7 +23,7 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Automatic metrics collection settings.
+ * Automatic HTTP request and transport metrics collection settings.
  */
 @Prototype.Blueprint(decorator = AutoHttpMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
@@ -32,7 +32,7 @@ import io.helidon.builder.api.Prototype;
 interface AutoHttpMetricsConfigBlueprint {
 
     /**
-     * Whether automatic metrics collection as a whole is enabled.
+     * Whether automatic HTTP request and transport metrics collection is enabled.
      *
      * @return automatic metrics collection enabled
      */
@@ -41,7 +41,8 @@ interface AutoHttpMetricsConfigBlueprint {
     boolean enabled();
 
     /**
-     * Socket names for sockets to be instrumented with automatic metrics. Defaults to all sockets.
+     * Socket names for sockets to be instrumented with automatic HTTP request and transport metrics.
+     * Defaults to all sockets, including the default socket, named {@code @default}.
      *
      * @return socket names
      */
@@ -49,7 +50,8 @@ interface AutoHttpMetricsConfigBlueprint {
     Set<String> sockets();
 
     /**
-     * Automatic metrics collection settings. Default excludes built-in Helidon paths (e.g., metrics, health).
+     * Path selection for automatic HTTP request metrics; does not filter transport lifecycle metrics.
+     * Default excludes built-in Helidon paths (e.g., metrics, health).
      * A request's path and HTTP method are checked against each entry under {@code paths} in order.
      * <ul>
      *     <li>If a request matches no entry, then the request is measured.</li>
@@ -63,7 +65,8 @@ interface AutoHttpMetricsConfigBlueprint {
     List<AutoHttpMetricsPathConfig> paths();
 
     /**
-     * Elective attribute for which to opt in. Each string in the list is of the form
+     * Elective HTTP request metric attributes for which to opt in; does not affect transport metrics.
+     * Each string in the list is of the form
      * {@code meter-name:attribute-name} where {@code meter-name} is the name of the meter and {@code attribute-name} is the
      * name of an attribute (tag) which is optional on that meter.
      *
@@ -73,8 +76,8 @@ interface AutoHttpMetricsConfigBlueprint {
     List<String> optIn();
 
     /**
-     * Exact, case-sensitive HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard
-     * HTTP methods; assigning this value fully replaces the set of method names.
+     * Exact, case-sensitive HTTP methods to be used in the HTTP method tag for automatic HTTP request metrics, defaulted to
+     * the standard HTTP methods; assigning this value fully replaces the set of method names.
      * <p>
      * Default known HTTP methods: {@code CONNECT}, {@code DELETE}, {@code GET}, {@code HEAD}, {@code OPTIONS},
      * {@code PATCH}, {@code POST}, {@code PUT}, {@code QUERY}, and {@code TRACE}. Unlisted methods are
