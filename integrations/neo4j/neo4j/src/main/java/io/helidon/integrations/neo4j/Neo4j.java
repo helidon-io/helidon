@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.logging.Level;
 
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 
 import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
@@ -76,6 +77,13 @@ public final class Neo4j {
      * Fluent API builder for Neo4j.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, Neo4j> {
+        private static final String CONFIG_TRUST_STRATEGY = "trustsettings.trustStrategy";
+        private static final String CONFIG_CERTIFICATE = "trustsettings.certificate";
+        private static final String CONFIG_HOSTNAME_VERIFICATION_ENABLED = "trustsettings.hostnameVerificationEnabled";
+        private static final String LEGACY_CONFIG_TRUST_STRATEGY = "trust-strategy";
+        private static final String LEGACY_CONFIG_CERTIFICATE = "certificate";
+        private static final String LEGACY_CONFIG_HOSTNAME_VERIFICATION_ENABLED = "hostname-verification-enabled";
+
         private boolean encrypted;
         private boolean authenticationEnabled = true;
         private String username;
@@ -93,7 +101,7 @@ public final class Neo4j {
         //trust
         private TrustStrategy trustStrategy = TrustStrategy.TRUST_SYSTEM_CA_SIGNED_CERTIFICATES;
         private Path certFile;
-        private boolean hostnameVerificationEnabled;
+        private boolean hostnameVerificationEnabled = true;
 
         // explicit driver
         private Driver driver;
@@ -135,9 +143,19 @@ public final class Neo4j {
             config.get("pool.connectionAcquisitionTimeout").as(Duration.class).ifPresent(this::connectionAcquisitionTimeout);
 
             //trust
-            config.get("trustsettings.trustStrategy").asString().map(TrustStrategy::valueOf).ifPresent(this::trustStrategy);
-            config.get("trustsettings.certificate").as(Path.class).ifPresent(this::certificate);
-            config.get("trustsettings.hostnameVerificationEnabled").asBoolean().ifPresent(this::hostnameVerificationEnabled);
+            // Use the previously published flat keys only when the canonical structured keys are absent.
+            DeprecatedConfig.get(config, CONFIG_TRUST_STRATEGY, LEGACY_CONFIG_TRUST_STRATEGY)
+                    .asString()
+                    .map(TrustStrategy::valueOf)
+                    .ifPresent(this::trustStrategy);
+            DeprecatedConfig.get(config, CONFIG_CERTIFICATE, LEGACY_CONFIG_CERTIFICATE)
+                    .as(Path.class)
+                    .ifPresent(this::certificate);
+            DeprecatedConfig.get(config,
+                                 CONFIG_HOSTNAME_VERIFICATION_ENABLED,
+                                 LEGACY_CONFIG_HOSTNAME_VERIFICATION_ENABLED)
+                    .asBoolean()
+                    .ifPresent(this::hostnameVerificationEnabled);
 
             return this;
         }
@@ -294,7 +312,7 @@ public final class Neo4j {
         }
 
         /**
-         * Enable hostname verification.
+         * Enable hostname verification. Enabled by default.
          *
          * @param hostnameVerificationEnabled parameter
          * @return Builder

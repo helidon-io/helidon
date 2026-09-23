@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,9 +49,16 @@ MicroProfile configuration options:
 |`trustsettings.trustStrategy`|string |{nbsp} | Trust Strategy: Trust All certificates, `TRUST_ALL_CERTIFICATES`, Trust custom certificates -
 `TRUST_CUSTOM_CA_SIGNED_CERTIFICATES`, Trust system CA - `TRUST_SYSTEM_CA_SIGNED_CERTIFICATES`
 |`trustsettings.certificate`|string |{nbsp} | Path to trusted certificate
-|`trustsettings.hostnameVerificationEnabled`|string |FALSE | If hostname verification is enabled.
+|`trustsettings.hostnameVerificationEnabled`|boolean |TRUE | If hostname verification is enabled.
+|`trust-strategy`|string |{nbsp} | Deprecated alias for `trustsettings.trustStrategy`.
+|`certificate`|string |{nbsp} | Deprecated alias for `trustsettings.certificate`.
+|`hostname-verification-enabled`|boolean |TRUE | Deprecated alias for `trustsettings.hostnameVerificationEnabled`.
 
 
 |===
+
+The structured `trustsettings.*` keys take precedence over their deprecated flat
+aliases when both are configured. An invalid structured value is rejected rather
+than falling back to an alias.
 
 // end::config[]
