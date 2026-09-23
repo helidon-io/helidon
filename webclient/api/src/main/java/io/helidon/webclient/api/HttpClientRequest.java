@@ -170,68 +170,9 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             }
         }
         if ("https".equals(resolvedUri.scheme()) && effectiveTls.enabled() && !tcpProtocols.isEmpty()) {
-            UnixDomainSocketAddress unixSocketAddress = null;
-            if (address().isPresent()) {
-                var address = address().get();
-                if (address instanceof UnixDomainSocketAddress udsa) {
-                    unixSocketAddress = udsa;
-                }
-            }
-            ClientConnection connection;
-            if (unixSocketAddress == null) {
-                ConnectionKey connectionKey = connectionKey(resolvedUri,
-                                                            effectiveSni,
-                                                            effectiveTls,
-                                                            clientConfig,
-                                                            proxy(),
-                                                            headers());
-                // this is a temporary connection, used to determine which protocol is supported, next
-                // call to the same remote location will be obtained from cache
-                connection = TcpClientConnection.create(webClient,
-                                                        connectionKey,
-                                                        tcpProtocolIds,
-                                                        conn -> false,
-                                                        conn -> {
-                                                        });
-            } else {
-                ConnectionKey connectionKey = unixConnectionKey(resolvedUri,
-                                                                effectiveSni,
-                                                                effectiveTls,
-                                                                clientConfig,
-                                                                unixSocketAddress,
-                                                                headers());
-                connection = UnixDomainSocketClientConnection.create(webClient,
-                                                                     connectionKey,
-                                                                     tcpProtocolIds,
-                                                                     unixSocketAddress,
-                                                                     conn -> false,
-                                                                     conn -> {
-                                                                     });
-            }
-            connection.connect();
-            HelidonSocket socket = connection.helidonSocket();
-            if (socket.protocolNegotiated()) {
-                String negotiatedProtocol = socket.protocol();
-                LoomClient.ProtocolSpi protocolSpi = clients.get(negotiatedProtocol);
-                if (protocolSpi == null) {
-                    if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                        LOGGER.log(System.Logger.Level.TRACE, "Attempted to negotiate a protocol (" + tcpProtocolIds + "), "
-                                + "but got an unsupported protocol back: " + negotiatedProtocol);
-                    }
-                    // we have negotiated protocol we do not support? this is strange
-                    connection.closeResource();
-                } else {
-                    clientSpiCache.put(endpointKey, protocolSpi.spi());
-                    ClientRequest<?> clientRequest = protocolSpi.spi().clientRequest(this, resolvedUri);
-                    clientRequest.connection(connection);
-                    return clientRequest;
-                }
-            } else {
-                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                    LOGGER.log(System.Logger.Level.TRACE, "Attempted to negotiate a protocol (" + tcpProtocolIds + "), "
-                            + "but did not get a negotiated protocol back, ignoring.");
-                }
-                connection.closeResource();
+            ClientRequest<?> negotiated = negotiatedRequest(resolvedUri, effectiveSni, effectiveTls, clientConfig, endpointKey);
+            if (negotiated != null) {
+                return negotiated;
             }
         }
 
@@ -249,6 +190,95 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
         throw new IllegalArgumentException("Cannot handle request to " + resolvedUri + ", did not discover any HTTP version "
                                                    + "willing to handle it. HTTP versions supported: " + clients.keySet());
+    }
+
+    private ClientRequest<?> negotiatedRequest(ClientUri resolvedUri,
+                                               SniConfig effectiveSni,
+                                               Tls effectiveTls,
+                                               HttpClientConfig clientConfig,
+                                               LoomClient.EndpointKey endpointKey) {
+        UnixDomainSocketAddress unixSocketAddress = null;
+        if (address().isPresent() && address().get() instanceof UnixDomainSocketAddress udsa) {
+            unixSocketAddress = udsa;
+        }
+        ProtocolDiscoveryConnections.Registration observation = webClient instanceof LoomClient loomClient
+                ? loomClient.discoveryObservation()
+                : null;
+        try {
+            ClientConnection connection;
+            if (unixSocketAddress == null) {
+                ConnectionKey connectionKey = connectionKey(resolvedUri,
+                                                            effectiveSni,
+                                                            effectiveTls,
+                                                            clientConfig,
+                                                            proxy(),
+                                                            headers());
+                // this is a temporary connection, used to determine which protocol is supported, next
+                // call to the same remote location will be obtained from cache
+                connection = TcpClientConnection.create(webClient,
+                                                        connectionKey,
+                                                        tcpProtocolIds,
+                                                        conn -> false,
+                                                        observation == null ? conn -> {
+                                                        } : observation::closed);
+            } else {
+                ConnectionKey connectionKey = unixConnectionKey(resolvedUri,
+                                                                effectiveSni,
+                                                                effectiveTls,
+                                                                clientConfig,
+                                                                unixSocketAddress,
+                                                                headers());
+                connection = UnixDomainSocketClientConnection.create(webClient,
+                                                                     connectionKey,
+                                                                     tcpProtocolIds,
+                                                                     unixSocketAddress,
+                                                                     conn -> false,
+                                                                     observation == null ? conn -> {
+                                                                     } : observation::closed);
+            }
+            if (observation == null) {
+                connection.connect();
+            } else {
+                observation.connect(connection);
+            }
+            HelidonSocket socket = connection.helidonSocket();
+            if (socket.protocolNegotiated()) {
+                String negotiatedProtocol = socket.protocol();
+                LoomClient.ProtocolSpi protocolSpi = clients.get(negotiatedProtocol);
+                if (protocolSpi == null) {
+                    if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                        LOGGER.log(System.Logger.Level.TRACE, "Attempted to negotiate a protocol (" + tcpProtocolIds + "), "
+                                + "but got an unsupported protocol back: " + negotiatedProtocol);
+                    }
+                    // we have negotiated protocol we do not support? this is strange
+                    connection.closeResource();
+                } else {
+                    clientSpiCache.put(endpointKey, protocolSpi.spi());
+                    ClientRequest<?> clientRequest = protocolSpi.spi().clientRequest(this, resolvedUri);
+                    clientRequest.connection(connection);
+                    if (observation != null) {
+                        observation.handoff();
+                    }
+                    return clientRequest;
+                }
+            } else {
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    LOGGER.log(System.Logger.Level.TRACE, "Attempted to negotiate a protocol (" + tcpProtocolIds + "), "
+                            + "but did not get a negotiated protocol back, ignoring.");
+                }
+                connection.closeResource();
+            }
+            return null;
+        } catch (RuntimeException failure) {
+            if (observation != null) {
+                try {
+                    observation.closeResource();
+                } catch (RuntimeException cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            throw failure;
+        }
     }
 
     private String transportKey() {

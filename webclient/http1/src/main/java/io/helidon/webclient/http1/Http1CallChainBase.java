@@ -88,6 +88,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     private ClientConnection effectiveConnection;
     private boolean forwardProxy;
     private WebClientProtocolResponse pendingProtocolResponse;
+    private Http1TransportObservation transportObservation;
 
     Http1CallChainBase(Http1ClientImpl http1Client,
                        Http1ClientRequestImpl clientRequest,
@@ -113,10 +114,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     static WebClientServiceResponse createServiceResponse(Http1ClientImpl http1Client,
                                                           WebClientServiceRequest serviceRequest,
                                                           ClientConnection connection,
-                                                          DataReader reader,
                                                           Status responseStatus,
                                                           ClientResponseHeaders responseHeaders,
-                                                          CompletableFuture<WebClientServiceResponse> whenComplete) {
+                                                          CompletableFuture<WebClientServiceResponse> whenComplete,
+                                                          Http1TransportObservation transportObservation) {
         HttpClientConfig clientConfig = http1Client.clientConfig();
         Http1ConnectionListener recvListener = http1Client.recvListener();
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
@@ -126,15 +127,24 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         if (mayExposeEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
             InputStream inputStream = successfulConnect
-                    ? new EverythingInputStream(connection.helidonSocket(), reader, whenComplete, response, recvListener)
+                    ? new EverythingInputStream(connection.helidonSocket(),
+                                                connection.reader(),
+                                                whenComplete,
+                                                response,
+                                                recvListener,
+                                                transportObservation)
                     : inputStream(clientConfig,
                                   recvListener,
-                                  connection.helidonSocket(),
+                                  connection,
                                   response,
                                   responseHeaders,
-                                  reader,
-                                  whenComplete);
-            builder.inputStream(inputStream);
+                                  whenComplete,
+                                  transportObservation);
+            builder.inputStream(transportObservation == null ? inputStream : transportObservation.inputStream(inputStream));
+        }
+
+        if (transportObservation != null) {
+            transportObservation.responseHeaders(serviceRequest.method(), responseStatus, responseHeaders);
         }
 
         WebClientServiceResponse serviceResponse = builder
@@ -261,6 +271,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                 originalRequest.selectedProxyRoute(acquiredRoute);
             }
             effectiveConnection.readTimeout(this.timeout);
+            transportObservation = Http1TransportObservation.open(effectiveConnection);
 
             DataWriter writer = effectiveConnection.writer();
             DataReader reader = effectiveConnection.reader();
@@ -269,6 +280,9 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
             return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
         } catch (RuntimeException | Error e) {
+            if (e instanceof RuntimeException && transportObservation != null) {
+                transportObservation.fail(e);
+            }
             if (!explicitConnectionRequest) {
                 try {
                     effectiveConnection.closeResource();
@@ -375,6 +389,14 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         return whenComplete;
     }
 
+    Http1TransportObservation transportObservation() {
+        return transportObservation;
+    }
+
+    void transportObservation(Http1TransportObservation observation) {
+        transportObservation = observation;
+    }
+
     WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                           ClientConnection connection,
                                           DataReader reader) {
@@ -386,10 +408,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         return createServiceResponse(http1Client,
                                      serviceRequest,
                                      connection,
-                                     reader,
                                      responseHead.status(),
                                      responseHead.headers(),
-                                     whenComplete);
+                                     whenComplete,
+                                     transportObservation);
     }
 
     void captureProtocolResponse(ClientConnection connection,
@@ -448,6 +470,9 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
         } catch (RuntimeException e) {
             if (closeOnReadFailure || !(e instanceof UncheckedIOException)) {
+                if (transportObservation != null) {
+                    transportObservation.fail(e);
+                }
                 // A connection cannot be reused after a malformed status or a normal response read failure.
                 try {
                     connection.closeResource();
@@ -530,12 +555,14 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
     private static InputStream inputStream(HttpClientConfig clientConfig,
                                            Http1ConnectionListener recvListener,
-                                           HelidonSocket helidonSocket,
+                                           ClientConnection connection,
                                            AtomicReference<WebClientServiceResponse> response,
                                            ClientResponseHeaders responseHeaders,
-                                           DataReader reader,
-                                           CompletableFuture<WebClientServiceResponse> whenComplete) {
+                                           CompletableFuture<WebClientServiceResponse> whenComplete,
+                                           Http1TransportObservation transportObservation) {
         ContentEncodingContext encodingSupport = clientConfig.contentEncoding();
+        HelidonSocket helidonSocket = connection.helidonSocket();
+        DataReader reader = connection.reader();
 
         ContentDecoder decoder;
 
@@ -551,7 +578,8 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         }
         InputStream inputStream;
         if (isChunkedFinalTransferCoding(responseHeaders)) {
-            inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response, recvListener);
+            inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response, recvListener,
+                                                transportObservation);
         } else if (!responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)
                 && responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
@@ -560,10 +588,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                                                        whenComplete,
                                                        response,
                                                        length,
-                                                       recvListener);
+                                                       recvListener,
+                                                       transportObservation);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
-            inputStream = new EverythingInputStream(helidonSocket, reader, whenComplete, response, recvListener);
+            inputStream = new EverythingInputStream(helidonSocket, reader, whenComplete, response, recvListener,
+                                                   transportObservation);
         }
         return decoder.apply(inputStream);
     }
@@ -637,6 +667,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         private final Runnable entityProcessedRunnable;
         private final HelidonSocket socket;
         private final Http1ConnectionListener recvListener;
+        private final Http1TransportObservation transportObservation;
 
         private BufferData currentBuffer;
         private boolean finished;
@@ -647,11 +678,13 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                                  CompletableFuture<WebClientServiceResponse> whenComplete,
                                  AtomicReference<WebClientServiceResponse> response,
                                  long length,
-                                 Http1ConnectionListener recvListener) {
+                                 Http1ConnectionListener recvListener,
+                                 Http1TransportObservation transportObservation) {
             this.socket = socket;
             this.reader = reader;
             this.remainingLength = length;
             this.recvListener = recvListener;
+            this.transportObservation = transportObservation;
 
             // we can only get the response at the time of completion, as the instance is created after this constructor
             // returns
@@ -672,6 +705,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             if (read != -1) {
                 remainingLength--;
             }
+            observeCompletion();
             return read;
         }
 
@@ -687,7 +721,14 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             }
             int read = currentBuffer.read(b, off, len);
             remainingLength -= read;
+            observeCompletion();
             return read;
+        }
+
+        private void observeCompletion() {
+            if (remainingLength == 0 && transportObservation != null) {
+                transportObservation.bodyComplete(false);
+            }
         }
 
         private int maxRemaining(int estimate) {
@@ -696,6 +737,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         private void ensureBuffer(int estimate) {
             if (remainingLength == 0) {
+                observeCompletion();
                 entityProcessedRunnable.run();
                 // we have fully read the entity
                 finished = true;
@@ -726,6 +768,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         private final DataReader reader;
         private final Http1ConnectionListener recvListener;
         private final Runnable entityProcessedRunnable;
+        private final Http1TransportObservation transportObservation;
 
         private BufferData currentBuffer;
         private boolean finished;
@@ -734,10 +777,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                               DataReader reader,
                               CompletableFuture<WebClientServiceResponse> whenComplete,
                               AtomicReference<WebClientServiceResponse> response,
-                              Http1ConnectionListener recvListener) {
+                              Http1ConnectionListener recvListener,
+                              Http1TransportObservation transportObservation) {
             this.helidonSocket = helidonSocket;
             this.reader = reader;
             this.recvListener = recvListener;
+            this.transportObservation = transportObservation;
 
             // we can only get the response at the time of completion, as the instance is created after this constructor
             // returns
@@ -774,12 +819,22 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                 return;
             }
 
-            reader.ensureAvailable();
+            try {
+                reader.ensureAvailable();
+            } catch (DataReader.InsufficientDataAvailableException e) {
+                if (transportObservation != null) {
+                    transportObservation.remoteComplete();
+                }
+                throw e;
+            }
             int toRead = Math.min(reader.available(), estimate);
 
             // read between 0 and available bytes (or estimate, which is the number of requested bytes)
             currentBuffer = reader.readBuffer(toRead);
             if (currentBuffer == null || currentBuffer == BufferData.empty()) {
+                if (transportObservation != null) {
+                    transportObservation.bodyComplete(false);
+                }
                 entityProcessedRunnable.run();
                 finished = true;
             } else {
@@ -793,6 +848,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         private final DataReader reader;
         private final Runnable entityProcessedRunnable;
         private final Http1ConnectionListener recvListener;
+        private final Http1TransportObservation transportObservation;
 
         private BufferData currentBuffer;
         private boolean finished;
@@ -801,10 +857,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                            DataReader reader,
                            CompletableFuture<WebClientServiceResponse> whenComplete,
                            AtomicReference<WebClientServiceResponse> response,
-                           Http1ConnectionListener recvListener) {
+                           Http1ConnectionListener recvListener,
+                           Http1TransportObservation transportObservation) {
             this.helidonSocket = helidonSocket;
             this.reader = reader;
             this.recvListener = recvListener;
+            this.transportObservation = transportObservation;
 
             // we can only get the response at the time of completion, as the instance is created after this constructor
             // returns
@@ -852,13 +910,21 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             try {
                 length = readChunkSize(reader);
             } catch (IllegalStateException e) {
+                if (transportObservation != null) {
+                    transportObservation.fail(e);
+                }
                 entityProcessedRunnable.run();
                 throw e;
             }
             if (length == 0) {
-                if (reader.startsWithNewLine()) {
+                boolean trailersPending = !reader.startsWithNewLine();
+                if (!trailersPending) {
                     // No trailers, skip second CRLF
                     reader.skip(2);
+                }
+
+                if (transportObservation != null) {
+                    transportObservation.bodyComplete(trailersPending);
                 }
 
                 recvListener.data(helidonSocket, BufferData.empty());

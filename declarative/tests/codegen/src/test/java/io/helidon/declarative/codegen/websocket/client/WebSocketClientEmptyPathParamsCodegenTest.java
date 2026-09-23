@@ -34,6 +34,7 @@ import io.helidon.http.Http;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
+import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.websocket.WebSocketClient;
 import io.helidon.websocket.WebSocket;
 import io.helidon.websocket.WsSession;
@@ -54,6 +55,7 @@ class WebSocketClientEmptyPathParamsCodegenTest {
             Http.class,
             Mappers.class,
             Prototype.class,
+            ReleasableResource.class,
             Service.class,
             ServiceDescriptor.class,
             WebSocket.class,

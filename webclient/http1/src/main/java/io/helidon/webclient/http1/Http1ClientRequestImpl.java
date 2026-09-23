@@ -362,7 +362,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                            serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
                                            resolvedUri,
-                                           complete);
+                                           complete,
+                                           callChain.transportObservation());
     }
 
     /**

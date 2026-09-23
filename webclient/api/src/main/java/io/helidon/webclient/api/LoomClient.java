@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -73,6 +75,7 @@ class LoomClient implements WebClient {
     private final List<String> tcpProtocolIds;
     private final WebClientCookieManager cookieManager;
     private final LruCache<EndpointKey, HttpClientSpi> clientSpiLruCache = LruCache.create();
+    private final HttpTransportConnectionCache<ProtocolDiscoveryConnections> observedDiscoveryConnections;
 
     /**
      * Construct this instance from a subclass of builder.
@@ -130,6 +133,10 @@ class LoomClient implements WebClient {
         this.tcpProtocolIds = tcpProtocols.stream()
                 .map(ProtocolSpi::id)
                 .toList();
+        this.observedDiscoveryConnections = HttpTransportConnectionCache.create(ProtocolDiscoveryConnections.class,
+                                                                                config,
+                                                                                ProtocolDiscoveryConnections::new)
+                .orElse(null);
     }
 
     @Override
@@ -160,9 +167,31 @@ class LoomClient implements WebClient {
     @Override
     @Service.PreDestroy
     public void closeResource() {
-        for (ProtocolSpi o : List.copyOf(clientSpiByProtocol.values())) {
-            o.spi().releaseResource();
+        try {
+            for (ProtocolSpi o : List.copyOf(clientSpiByProtocol.values())) {
+                o.spi().releaseResource();
+            }
+        } finally {
+            if (observedDiscoveryConnections != null) {
+                observedDiscoveryConnections.closeResource();
+            }
         }
+    }
+
+    @Override
+    public CompletionStage<Void> closeResourceAsync() {
+        var completions = new ArrayList<CompletableFuture<Void>>(clientSpiByProtocol.size());
+        for (ProtocolSpi protocol : clientSpiByProtocol.values()) {
+            try {
+                completions.add(protocol.spi().closeResourceAsync().toCompletableFuture());
+            } catch (RuntimeException failure) {
+                completions.add(CompletableFuture.failedFuture(failure));
+            }
+        }
+        if (observedDiscoveryConnections != null) {
+            completions.add(observedDiscoveryConnections.closeResourceAsync().toCompletableFuture());
+        }
+        return CompletableFuture.allOf(completions.toArray(CompletableFuture<?>[]::new)).minimalCompletionStage();
     }
 
     @Override
@@ -214,6 +243,12 @@ class LoomClient implements WebClient {
     @Override
     public ExecutorService executor() {
         return EXECUTOR.get();
+    }
+
+    ProtocolDiscoveryConnections.Registration discoveryObservation() {
+        return observedDiscoveryConnections == null
+                ? null
+                : observedDiscoveryConnections.cache().registration(observedDiscoveryConnections.observer());
     }
 
     record ProtocolSpi(String id, HttpClientSpi spi) {

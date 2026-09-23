@@ -24,6 +24,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.socket.SocketContext;
@@ -37,6 +38,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.HttpTransportObserverSupport;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -120,43 +122,12 @@ class WsClientImpl implements WsClient {
 
         UpgradeResponse upgradeResponse = upgradeRequest.upgrade("websocket");
 
-        if (!upgradeResponse.isUpgraded()) {
-            throw new WsClientException("Failed to upgrade to WebSocket. Response: " + upgradeResponse);
-        }
-
-        ClientWsConnection session;
         try (HttpClientResponse response = upgradeResponse.response()) {
-            ClientResponseHeaders responseHeaders = response.headers();
-            if (!responseHeaders.containsToken(HEADER_CONN_UPGRADE)) {
-                throw new WsClientException("Failed to upgrade to WebSocket, expected Connection: Upgrade token. Headers: "
-                                                    + responseHeaders);
+            if (!upgradeResponse.isUpgraded()) {
+                throw new WsClientException("Failed to upgrade to WebSocket. Response: " + upgradeResponse);
             }
-            if (!responseHeaders.containsToken(HEADER_UPGRADE_WS)) {
-                throw new WsClientException("Failed to upgrade to WebSocket, expected Upgrade: websocket token. Headers: "
-                                                    + responseHeaders);
-            }
-            if (!responseHeaders.contains(HEADER_WS_ACCEPT)) {
-                throw new WsClientException("Failed to upgrade to WebSocket, expected Sec-WebSocket-Accept header. Headers: "
-                                                    + responseHeaders);
-            }
-            ClientConnection connection = upgradeResponse.connection();
-            String secWsAccept = responseHeaders.get(HEADER_WS_ACCEPT).get();
-            if (!hash(connection.helidonSocket(), secWsKey).equals(secWsAccept)) {
-                throw new WsClientException("Failed to upgrade to WebSocket, expected valid secWsKey. Headers: "
-                                                    + responseHeaders);
-            }
-            // we are upgraded, let's switch to web socket
-            if (headers.contains(HEADER_WS_PROTOCOL)) {
-                session = new ClientWsConnection(connection,
-                                                 listener,
-                                                 headers.get(HEADER_WS_PROTOCOL).get(),
-                                                 clientConfig.protocolConfig());
-            } else {
-                session = new ClientWsConnection(connection, listener, null, clientConfig.protocolConfig());
-            }
+            connect(upgradeResponse.connection(), response.headers(), secWsKey, listener);
         }
-
-        webClient.executor().submit(session);
     }
 
     @Override
@@ -167,6 +138,16 @@ class WsClientImpl implements WsClient {
     @Override
     public WsClientConfig prototype() {
         return clientConfig;
+    }
+
+    @Override
+    public void closeResource() {
+        http1Client.closeResource();
+    }
+
+    @Override
+    public CompletionStage<Void> closeResourceAsync() {
+        return http1Client.closeResourceAsync();
     }
 
     protected String hash(SocketContext ctx, String wsKey) {
@@ -183,6 +164,51 @@ class WsClientImpl implements WsClient {
         } catch (NoSuchAlgorithmException e) {
             ctx.log(LOGGER, System.Logger.Level.ERROR, "SHA-1 must be provided for WebSocket to work", e);
             throw new IllegalStateException("SHA-1 not provided", e);
+        }
+    }
+
+    private void connect(ClientConnection connection,
+                         ClientResponseHeaders responseHeaders,
+                         String secWsKey,
+                         WsListener listener) {
+        boolean submitted = false;
+        try {
+            if (!responseHeaders.containsToken(HEADER_CONN_UPGRADE)) {
+                throw new WsClientException("Failed to upgrade to WebSocket, expected Connection: Upgrade token. Headers: "
+                                                    + responseHeaders);
+            }
+            if (!responseHeaders.containsToken(HEADER_UPGRADE_WS)) {
+                throw new WsClientException("Failed to upgrade to WebSocket, expected Upgrade: websocket token. Headers: "
+                                                    + responseHeaders);
+            }
+            if (!responseHeaders.contains(HEADER_WS_ACCEPT)) {
+                throw new WsClientException("Failed to upgrade to WebSocket, expected Sec-WebSocket-Accept header. Headers: "
+                                                    + responseHeaders);
+            }
+            String secWsAccept = responseHeaders.get(HEADER_WS_ACCEPT).get();
+            if (!hash(connection.helidonSocket(), secWsKey).equals(secWsAccept)) {
+                throw new WsClientException("Failed to upgrade to WebSocket, expected valid secWsKey. Headers: "
+                                                    + responseHeaders);
+            }
+            // we are upgraded, let's switch to web socket
+            ClientWsConnection session;
+            if (headers.contains(HEADER_WS_PROTOCOL)) {
+                session = new ClientWsConnection(connection,
+                                                 listener,
+                                                 headers.get(HEADER_WS_PROTOCOL).get(),
+                                                 clientConfig.protocolConfig());
+            } else {
+                session = new ClientWsConnection(connection, listener, null, clientConfig.protocolConfig());
+            }
+            webClient.executor().submit(session);
+            submitted = true;
+        } catch (RuntimeException e) {
+            HttpTransportObserverSupport.connectionFailed(connection, e);
+            throw e;
+        } finally {
+            if (!submitted) {
+                connection.closeResource();
+            }
         }
     }
 

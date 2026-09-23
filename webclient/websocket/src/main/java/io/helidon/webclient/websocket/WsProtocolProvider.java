@@ -52,8 +52,9 @@ public class WsProtocolProvider implements ClientProtocolProvider<WsClient, WsCl
 
     @Override
     public WsClient protocol(WebClient client, WsClientProtocolConfig config) {
+        Http1Client baseHttp1Client = client.client(Http1Client.PROTOCOL);
         return new WsClientImpl(client,
-                                client.client(Http1Client.PROTOCOL),
+                                client.client(Http1Client.PROTOCOL, baseHttp1Client.prototype().protocolConfig()),
                                 WsClientConfig.builder().from(client.prototype())
                                         .protocolConfig(config)
                                         .buildPrototype());

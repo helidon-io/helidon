@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.config.Config;
+import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.spi.Protocol;
@@ -28,8 +29,18 @@ import io.helidon.websocket.WsListener;
 
 /**
  * WebSocket client.
+ *
+ * <p>Helidon clients own the HTTP connection resources used for upgrade requests. Release those resources using
+ * {@link #closeResource()} when the client is no longer needed. Existing WebSocket sessions remain active and must be
+ * closed separately through {@link io.helidon.websocket.WsSession}. When transport observation is enabled,
+ * {@link #closeResourceAsync()} also waits for observer cleanup, which may be delayed until active sessions close and
+ * other clients release their ownership of a shared connection cache.
+ *
+ * <p>Closing a WebSocket client obtained from
+ * {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)} does not close the originating
+ * WebClient or its other protocol clients.
  */
-public interface WsClient extends RuntimeType.Api<WsClientConfig> {
+public interface WsClient extends RuntimeType.Api<WsClientConfig>, ReleasableResource {
     /**
      * Protocol to use to obtain an instance of WebSocket specific client from
      * {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)}.
@@ -87,6 +98,15 @@ public interface WsClient extends RuntimeType.Api<WsClientConfig> {
      */
     static WsClient create(Config config) {
         return create(WsClientConfig.create(config));
+    }
+
+    /**
+     * Releases this client's ownership of HTTP connection resources used for upgrades.
+     * Active WebSocket sessions are not closed by this method.
+     * The default implementation does nothing for clients that do not own such resources.
+     */
+    @Override
+    default void closeResource() {
     }
 
     /**
