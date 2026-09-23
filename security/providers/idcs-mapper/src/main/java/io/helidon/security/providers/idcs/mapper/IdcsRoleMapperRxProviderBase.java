@@ -479,7 +479,6 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                              params,
                              json -> {
                                  String accessToken = json.getString(ACCESS_TOKEN_KEY);
-                                 LOGGER.finest(() -> "Access token: " + accessToken);
                                  SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
                                  return new AppTokenData(accessToken, signedJwt.getJwt());
                              },

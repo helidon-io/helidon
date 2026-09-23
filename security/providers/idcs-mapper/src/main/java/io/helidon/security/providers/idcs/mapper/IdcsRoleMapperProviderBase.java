@@ -460,7 +460,6 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             if (tokenResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
                 JsonObject response = tokenResponse.readEntity(JsonObject.class);
                 String accessToken = response.getString(ACCESS_TOKEN_KEY);
-                LOGGER.finest(() -> "Access token: " + accessToken);
                 SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
 
                 this.tokenContent = Optional.of(accessToken);
