@@ -34,11 +34,12 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BenchmarkSourceIdentityTest {
     @TempDir
@@ -54,10 +55,10 @@ class BenchmarkSourceIdentityTest {
         Path stagedMetadata = Files.writeString(temporaryDirectory.resolve("staged-metadata"), "metadata\n");
 
         try (var bundle = BenchmarkSourceIdentity.reserveEvidenceBundle(result, metadata)) {
-            assertFalse(Files.exists(result));
-            assertFalse(Files.exists(metadata));
-            assertTrue(Files.exists(resultReservation));
-            assertTrue(Files.exists(metadataReservation));
+            assertThat("Uncommitted result " + result, Files.exists(result), is(false));
+            assertThat("Unpublished metadata " + metadata, Files.exists(metadata), is(false));
+            assertThat("Result reservation " + resultReservation, Files.exists(resultReservation), is(true));
+            assertThat("Metadata reservation " + metadataReservation, Files.exists(metadataReservation), is(true));
             assertThrows(Exception.class,
                          () -> BenchmarkSourceIdentity.reserveEvidenceBundle(result, metadata));
 
@@ -67,10 +68,12 @@ class BenchmarkSourceIdentityTest {
             bundle.commit(stagedResult);
         }
 
-        assertEquals("result\n", Files.readString(result));
-        assertEquals("metadata\n", Files.readString(metadata));
-        assertFalse(Files.exists(resultReservation));
-        assertFalse(Files.exists(metadataReservation));
+        assertThat(Files.readString(result), is("result\n"));
+        assertThat(Files.readString(metadata), is("metadata\n"));
+        assertThat("Released result reservation " + resultReservation, Files.exists(resultReservation), is(false));
+        assertThat("Released metadata reservation " + metadataReservation,
+                   Files.exists(metadataReservation),
+                   is(false));
     }
 
     @Test
@@ -85,10 +88,12 @@ class BenchmarkSourceIdentityTest {
             bundle.publish(stagedMetadata, metadata);
         }
 
-        assertFalse(Files.exists(result));
-        assertFalse(Files.exists(metadata));
-        assertFalse(Files.exists(resultReservation));
-        assertFalse(Files.exists(metadataReservation));
+        assertThat("Incomplete result " + result, Files.exists(result), is(false));
+        assertThat("Incomplete metadata " + metadata, Files.exists(metadata), is(false));
+        assertThat("Released result reservation " + resultReservation, Files.exists(resultReservation), is(false));
+        assertThat("Released metadata reservation " + metadataReservation,
+                   Files.exists(metadataReservation),
+                   is(false));
     }
 
     @Test
@@ -102,9 +107,9 @@ class BenchmarkSourceIdentityTest {
             System.setProperty("java.class.path", classpath.toString());
             String first = BenchmarkSourceIdentity.runtimeClasspathSha256(temporaryDirectory);
             Files.writeString(benchmarkList, "benchmark-a\nbenchmark-b\n");
-            assertEquals(first, BenchmarkSourceIdentity.runtimeClasspathSha256(temporaryDirectory));
+            assertThat(BenchmarkSourceIdentity.runtimeClasspathSha256(temporaryDirectory), is(first));
             Files.writeString(benchmarkList, "benchmark-a\nbenchmark-c\n");
-            assertNotEquals(first, BenchmarkSourceIdentity.runtimeClasspathSha256(temporaryDirectory));
+            assertThat(BenchmarkSourceIdentity.runtimeClasspathSha256(temporaryDirectory), not(first));
         } finally {
             System.setProperty("java.class.path", originalClasspath);
         }
@@ -126,22 +131,22 @@ class BenchmarkSourceIdentityTest {
             Path evidence = temporaryDirectory.resolve("evidence");
             System.setProperty(property, evidence.toString());
             Path resolvedEvidence = Http3QuicEvidenceScope.evidenceRoot(repository);
-            assertEquals(evidence.toRealPath(), resolvedEvidence);
+            assertThat(resolvedEvidence, is(evidence.toRealPath()));
             var paths = Http3QuicEvidenceScope.evidencePaths(repository, "campaign-1");
-            assertEquals(List.of(
-                                 "campaign-1.json",
-                                 "campaign-1.log",
-                                 "campaign-1.properties",
-                                 "campaign-1.source.manifest",
-                                 "campaign-1.build.manifest",
-                                 "campaign-1.build.log"),
-                         List.of(
-                                 paths.result().getFileName().toString(),
-                                 paths.output().getFileName().toString(),
-                                 paths.metadata().getFileName().toString(),
-                                 paths.sourceManifest().getFileName().toString(),
-                                 paths.buildManifest().getFileName().toString(),
-                                 paths.buildLog().getFileName().toString()));
+            assertThat(List.of(
+                               paths.result().getFileName().toString(),
+                               paths.output().getFileName().toString(),
+                               paths.metadata().getFileName().toString(),
+                               paths.sourceManifest().getFileName().toString(),
+                               paths.buildManifest().getFileName().toString(),
+                               paths.buildLog().getFileName().toString()),
+                       is(List.of(
+                               "campaign-1.json",
+                               "campaign-1.log",
+                               "campaign-1.properties",
+                               "campaign-1.source.manifest",
+                               "campaign-1.build.manifest",
+                               "campaign-1.build.log")));
             assertThrows(IllegalArgumentException.class,
                          () -> Http3QuicEvidenceScope.evidencePaths(repository, "../escape"));
 
@@ -247,9 +252,9 @@ class BenchmarkSourceIdentityTest {
             localPrefix = identity.localPrefix();
             repository.publish(identity);
         }
-        assertEquals("controlled",
-                     Files.readString(localRepository.resolve(localPrefix)
-                                              .resolve("io/helidon/example/1/example-1.jar")));
+        assertThat(Files.readString(localRepository.resolve(localPrefix)
+                                            .resolve("io/helidon/example/1/example-1.jar")),
+                   is("controlled"));
     }
 
     @Test
@@ -272,7 +277,7 @@ class BenchmarkSourceIdentityTest {
         String original = System.getProperty(property);
         try {
             System.setProperty(property, "60");
-            assertEquals(60, Http3QuicEvidenceManifestTest.parseTimeoutSeconds());
+            assertThat(Http3QuicEvidenceManifestTest.parseTimeoutSeconds(), is(60L));
             System.setProperty(property, "59");
             assertThrows(IllegalArgumentException.class,
                          Http3QuicEvidenceManifestTest::parseTimeoutSeconds);
@@ -294,9 +299,9 @@ class BenchmarkSourceIdentityTest {
         String original = System.getProperty(property);
         try {
             System.clearProperty(property);
-            assertEquals(2, Http3QuicEvidenceManifestTest.parseActiveProcessorCount());
+            assertThat(Http3QuicEvidenceManifestTest.parseActiveProcessorCount(), is(2));
             System.setProperty(property, "1");
-            assertEquals(1, Http3QuicEvidenceManifestTest.parseActiveProcessorCount());
+            assertThat(Http3QuicEvidenceManifestTest.parseActiveProcessorCount(), is(1));
             System.setProperty(property, "0");
             assertThrows(IllegalArgumentException.class,
                          Http3QuicEvidenceManifestTest::parseActiveProcessorCount);
@@ -324,8 +329,7 @@ class BenchmarkSourceIdentityTest {
         processBuilder.environment().remove("MAVEN_OPTS");
         processBuilder.environment().remove("MAVEN_ARGS");
         Http3QuicEvidenceManifestTest.configureProcessEnvironment(processBuilder, 3);
-        assertEquals("-XX:ActiveProcessorCount=3",
-                     processBuilder.environment().get("JAVA_TOOL_OPTIONS"));
+        assertThat(processBuilder.environment().get("JAVA_TOOL_OPTIONS"), is("-XX:ActiveProcessorCount=3"));
 
         processBuilder.environment().put("MAVEN_OPTS", "-Xmx1g");
         assertThrows(IllegalStateException.class,
@@ -342,16 +346,16 @@ class BenchmarkSourceIdentityTest {
                 + absoluteMaven.getFileSystem().getSeparator()
                 + absoluteMaven.getFileName()
                 + "\n";
-        assertEquals(absoluteExpected,
-                     Http3QuicEvidenceManifestTest.sanitizeMavenPaths(absoluteInput, absoluteMaven));
+        assertThat(Http3QuicEvidenceManifestTest.sanitizeMavenPaths(absoluteInput, absoluteMaven),
+                   is(absoluteExpected));
 
         String currentDirectory = Path.of("").toAbsolutePath().normalize().toString();
         String relativeInput = "Maven home: " + currentDirectory + "\r\nworking=" + currentDirectory + "\r\n";
         String relativeExpected = "Maven home: <maven-home>\nworking=" + currentDirectory + "\n";
-        assertEquals(relativeExpected,
-                     Http3QuicEvidenceManifestTest.sanitizeMavenPaths(relativeInput, Path.of("mvn")));
-        assertEquals(relativeExpected,
-                     Http3QuicEvidenceManifestTest.sanitizeMavenPaths(relativeInput, Path.of("mvn.cmd")));
+        assertThat(Http3QuicEvidenceManifestTest.sanitizeMavenPaths(relativeInput, Path.of("mvn")),
+                   is(relativeExpected));
+        assertThat(Http3QuicEvidenceManifestTest.sanitizeMavenPaths(relativeInput, Path.of("mvn.cmd")),
+                   is(relativeExpected));
     }
 
     @Test
@@ -401,24 +405,24 @@ class BenchmarkSourceIdentityTest {
                     stagedMetadata);
 
             String result = Files.readString(stagedResult);
-            assertTrue(result.contains("\"jvm\":\"<java-invoker>\""));
-            assertTrue(result.contains("\"localRepository\":\"<maven-local-repository>\""));
-            assertTrue(result.contains("\"score\":12.5"));
-            assertFalse(result.contains("\r"));
+            assertThat(result, containsString("\"jvm\":\"<java-invoker>\""));
+            assertThat(result, containsString("\"localRepository\":\"<maven-local-repository>\""));
+            assertThat(result, containsString("\"score\":12.5"));
+            assertThat(result, not(containsString("\r")));
 
             String output = Files.readString(stagedOutput);
-            assertTrue(output.contains("repository=<live-repository>\n"));
-            assertTrue(output.contains("campaign=<campaign-root>\n"));
-            assertTrue(output.contains("localRepository=<maven-local-repository>\n"));
-            assertTrue(output.contains("javaHome=<java-home>\n"));
-            assertTrue(output.contains("workingDirectory=<working-directory>\n"));
-            assertTrue(output.contains("temporaryRoot=<temporary-directory>\n"));
-            assertTrue(output.contains("userHome=<user-home>\n"));
-            assertTrue(output.contains("Benchmark result is saved to <staged-result>\n"));
-            assertTrue(output.contains("uri=<maven-local-repository>/artifact.jar\n"));
-            assertFalse(output.contains("\r"));
+            assertThat(output, containsString("repository=<live-repository>\n"));
+            assertThat(output, containsString("campaign=<campaign-root>\n"));
+            assertThat(output, containsString("localRepository=<maven-local-repository>\n"));
+            assertThat(output, containsString("javaHome=<java-home>\n"));
+            assertThat(output, containsString("workingDirectory=<working-directory>\n"));
+            assertThat(output, containsString("temporaryRoot=<temporary-directory>\n"));
+            assertThat(output, containsString("userHome=<user-home>\n"));
+            assertThat(output, containsString("Benchmark result is saved to <staged-result>\n"));
+            assertThat(output, containsString("uri=<maven-local-repository>/artifact.jar\n"));
+            assertThat(output, not(containsString("\r")));
 
-            assertEquals("workingDirectory=<working-directory>\n", Files.readString(stagedMetadata));
+            assertThat(Files.readString(stagedMetadata), is("workingDirectory=<working-directory>\n"));
         } finally {
             if (originalLocalRepository == null) {
                 System.clearProperty(localRepositoryProperty);
@@ -441,11 +445,11 @@ class BenchmarkSourceIdentityTest {
                 drivePath,
                 driveUri,
                 "<path>");
-        assertTrue(driveResult.contains("json=\"<path>\\\\artifact.jar\"\n"));
-        assertTrue(driveResult.contains("raw=<path>\\artifact.jar\n"));
-        assertTrue(driveResult.contains("short=file:<path>/artifact.jar\n"));
-        assertTrue(driveResult.contains("long=<path>/artifact.jar\n"));
-        assertFalse(driveResult.contains("Alice"));
+        assertThat(driveResult, containsString("json=\"<path>\\\\artifact.jar\"\n"));
+        assertThat(driveResult, containsString("raw=<path>\\artifact.jar\n"));
+        assertThat(driveResult, containsString("short=file:<path>/artifact.jar\n"));
+        assertThat(driveResult, containsString("long=<path>/artifact.jar\n"));
+        assertThat(driveResult, not(containsString("Alice")));
 
         String uncPath = "\\\\build-server\\share\\Alice Doe\\repository";
         URI uncUri = URI.create("file://build-server/share/Alice%20Doe/repository/");
@@ -457,12 +461,12 @@ class BenchmarkSourceIdentityTest {
                 uncPath,
                 uncUri,
                 "<path>");
-        assertTrue(uncResult.contains("canonical=<path>/artifact.jar\n"));
-        assertTrue(uncResult.contains("four=<path>/artifact.jar\n"));
-        assertTrue(uncResult.contains("raw=<path>\\artifact.jar\n"));
-        assertFalse(uncResult.contains("build-server"));
-        assertFalse(uncResult.contains("share"));
-        assertFalse(uncResult.contains("Alice"));
+        assertThat(uncResult, containsString("canonical=<path>/artifact.jar\n"));
+        assertThat(uncResult, containsString("four=<path>/artifact.jar\n"));
+        assertThat(uncResult, containsString("raw=<path>\\artifact.jar\n"));
+        assertThat(uncResult, not(containsString("build-server")));
+        assertThat(uncResult, not(containsString("share")));
+        assertThat(uncResult, not(containsString("Alice")));
     }
 
     @Test
@@ -479,7 +483,7 @@ class BenchmarkSourceIdentityTest {
                             temporaryDirectory,
                             artifact,
                             artifact));
-            assertEquals("content\n", Files.readString(artifact));
+            assertThat(Files.readString(artifact), is("content\n"));
         } finally {
             if (originalLocalRepository == null) {
                 System.clearProperty(localRepositoryProperty);
@@ -534,10 +538,9 @@ class BenchmarkSourceIdentityTest {
             Thread.sleep(10);
         }
         worker.join(TimeUnit.SECONDS.toMillis(1));
-        assertFalse(worker.isAlive(), "Controlled-build worker did not stop after interruption");
-        assertTrue(failure.get() instanceof InterruptedException,
-                   () -> "Unexpected interruption failure: " + failure.get());
-        assertTrue(interrupted.get(), "Controlled-build cleanup did not restore interrupt status");
+        assertThat("Controlled-build worker did not stop after interruption", worker.isAlive(), is(false));
+        assertThat("Unexpected interruption failure", failure.get(), instanceOf(InterruptedException.class));
+        assertThat("Controlled-build cleanup did not restore interrupt status", interrupted.get(), is(true));
         assertProcessTreeStopped(pidDirectory);
     }
 
@@ -560,9 +563,10 @@ class BenchmarkSourceIdentityTest {
         try {
             awaitProcessTree(pidDirectory);
             Files.writeString(pidDirectory.resolve("exit.request"), "exit\n");
-            assertTrue(orchestrator.waitFor(15, TimeUnit.SECONDS),
-                       "Controlled-build shutdown fixture did not exit; inspect " + processLog);
-            assertEquals(130, orchestrator.exitValue());
+            assertThat("Controlled-build shutdown fixture did not exit; inspect " + processLog,
+                       orchestrator.waitFor(15, TimeUnit.SECONDS),
+                       is(true));
+            assertThat(orchestrator.exitValue(), is(130));
             assertProcessTreeStopped(pidDirectory);
         } finally {
             if (orchestrator.isAlive()) {
@@ -607,10 +611,11 @@ class BenchmarkSourceIdentityTest {
     private static void assertProcessTreeStopped(Path pidDirectory) throws Exception {
         for (String role : List.of("root", "child", "grandchild")) {
             Path pidFile = pidDirectory.resolve(role + ".pid");
-            assertTrue(Files.isRegularFile(pidFile), "Missing process-tree PID: " + role);
+            assertThat("Missing process-tree PID: " + role, Files.isRegularFile(pidFile), is(true));
             long pid = Long.parseLong(Files.readString(pidFile));
-            assertFalse(ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false),
-                        "Process-tree fixture survived cleanup: " + role + " PID " + pid);
+            assertThat("Process-tree fixture survived cleanup: " + role + " PID " + pid,
+                       ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false),
+                       is(false));
         }
     }
 
