@@ -17,7 +17,14 @@
 package io.helidon.quic;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
@@ -25,6 +32,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -119,6 +127,47 @@ class QuicOneRttTrafficKeysTest {
                                                  () -> encrypt(local, 2, (byte) 0x02));
 
         assertThat(ex.errorCode(), is(QuicTransportErrors.AEAD_LIMIT_REACHED.code()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = QuicTls13CipherSuite.class, names = {"TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256"})
+    void shouldReserveLastEncryptionOnceAcrossConcurrentSenders(QuicTls13CipherSuite cipherSuite) throws Exception {
+        int senders = 8;
+        try (ExecutorService executor = Executors.newFixedThreadPool(senders)) {
+            for (int round = 0; round < 256; round++) {
+                SecretKeySpec secret = new SecretKeySpec(HEX.parseHex(ONERTT_SECRET), "TlsSecret");
+                QuicOneRttTrafficKeys local = QuicOneRttTrafficKeys.create(QuicVersion.QUIC_V1,
+                                                                          cipherSuite,
+                                                                          secret,
+                                                                          secret,
+                                                                          true,
+                                                                          1,
+                                                                          1);
+                local.oneRttContext(() -> -1);
+                CyclicBarrier start = new CyclicBarrier(senders);
+                List<Future<Boolean>> attempts = new ArrayList<>();
+                for (int sender = 0; sender < senders; sender++) {
+                    long packetNumber = sender + 1;
+                    attempts.add(executor.submit(() -> {
+                        start.await(10, TimeUnit.SECONDS);
+                        try {
+                            encrypt(local, packetNumber, (byte) 0x01);
+                            return true;
+                        } catch (QuicTransportException failure) {
+                            assertThat(failure.errorCode(), is(QuicTransportErrors.AEAD_LIMIT_REACHED.code()));
+                            return false;
+                        }
+                    }));
+                }
+                int encrypted = 0;
+                for (Future<Boolean> attempt : attempts) {
+                    if (attempt.get(10, TimeUnit.SECONDS)) {
+                        encrypted++;
+                    }
+                }
+                assertThat("Encryptions with a limit of one in round " + round, encrypted, is(1));
+            }
+        }
     }
 
     @Test

@@ -19,21 +19,29 @@ package io.helidon.quic;
 import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
+
+import javax.security.auth.DestroyFailedException;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -164,7 +172,7 @@ class QuicTlsKeySharesTest {
     @Test
     void shouldDestroyCreatedKeysWhenLaterGroupIsInvalid() throws Exception {
         QuicTlsNamedGroup group = mock(QuicTlsNamedGroup.class);
-        PrivateKey privateKey = mock(PrivateKey.class);
+        PrivateKey privateKey = mock(ProviderPrivateKey.class);
         when(group.generateKeyPair(any(SecureRandom.class)))
                 .thenReturn(new KeyPair(mock(PublicKey.class), privateKey));
 
@@ -179,7 +187,7 @@ class QuicTlsKeySharesTest {
         QuicTlsNamedGroup group = mock(QuicTlsNamedGroup.class);
         List<PrivateKey> generatedKeys = new ArrayList<>();
         when(group.generateKeyPair(any(SecureRandom.class))).thenAnswer(_ -> {
-            PrivateKey privateKey = mock(PrivateKey.class);
+            PrivateKey privateKey = mock(ProviderPrivateKey.class);
             generatedKeys.add(privateKey);
             return new KeyPair(mock(PublicKey.class), privateKey);
         });
@@ -193,39 +201,45 @@ class QuicTlsKeySharesTest {
         }
     }
 
-    @Test
-    void shouldDestroyCreatedKeysWhenPublicKeyEncodingFails() throws Exception {
+    @ParameterizedTest
+    @MethodSource("destructionFailures")
+    void shouldDestroyCreatedKeysWhenPublicKeyEncodingFails(Exception destructionFailure) throws Exception {
         QuicTlsNamedGroup firstGroup = mock(QuicTlsNamedGroup.class);
         QuicTlsNamedGroup secondGroup = mock(QuicTlsNamedGroup.class);
-        PrivateKey firstPrivateKey = mock(PrivateKey.class);
-        PrivateKey secondPrivateKey = mock(PrivateKey.class);
+        PrivateKey firstPrivateKey = mock(ProviderPrivateKey.class);
+        PrivateKey secondPrivateKey = mock(ProviderPrivateKey.class);
         PublicKey firstPublicKey = mock(PublicKey.class);
         PublicKey secondPublicKey = mock(PublicKey.class);
+        IllegalArgumentException encodingFailure = new IllegalArgumentException("Invalid public key");
         when(firstGroup.generateKeyPair(any(SecureRandom.class))).thenReturn(new KeyPair(firstPublicKey, firstPrivateKey));
         when(secondGroup.generateKeyPair(any(SecureRandom.class))).thenReturn(new KeyPair(secondPublicKey, secondPrivateKey));
         when(firstGroup.encodePublicKey(firstPublicKey)).thenReturn(new byte[] {1, 2, 3});
-        when(secondGroup.encodePublicKey(secondPublicKey)).thenThrow(new IllegalArgumentException("Invalid public key"));
+        when(secondGroup.encodePublicKey(secondPublicKey)).thenThrow(encodingFailure);
+        doThrow(destructionFailure).when(firstPrivateKey).destroy();
 
         QuicTransportException thrown = assertThrows(QuicTransportException.class,
                 () -> QuicTlsLocalKeyShares.create(List.of(firstGroup, secondGroup), new SecureRandom()));
 
         assertThat(thrown.errorCode(), is(QuicTransportErrors.INTERNAL_ERROR.code()));
+        assertThat(thrown.getCause(), sameInstance(encodingFailure));
         verify(firstPrivateKey).destroy();
         verify(secondPrivateKey).destroy();
     }
 
-    @Test
-    void shouldDiscardAllLocalPrivateKeysOnce() throws Exception {
+    @ParameterizedTest
+    @MethodSource("destructionFailures")
+    void shouldDiscardAllLocalPrivateKeysWhenProviderDestructionFails(Exception destructionFailure) throws Exception {
         QuicTlsNamedGroup firstGroup = mock(QuicTlsNamedGroup.class);
         QuicTlsNamedGroup secondGroup = mock(QuicTlsNamedGroup.class);
-        PrivateKey firstPrivateKey = mock(PrivateKey.class);
-        PrivateKey secondPrivateKey = mock(PrivateKey.class);
+        PrivateKey firstPrivateKey = mock(ProviderPrivateKey.class);
+        PrivateKey secondPrivateKey = mock(ProviderPrivateKey.class);
         PublicKey firstPublicKey = mock(PublicKey.class);
         PublicKey secondPublicKey = mock(PublicKey.class);
         when(firstGroup.generateKeyPair(any(SecureRandom.class))).thenReturn(new KeyPair(firstPublicKey, firstPrivateKey));
         when(secondGroup.generateKeyPair(any(SecureRandom.class))).thenReturn(new KeyPair(secondPublicKey, secondPrivateKey));
         when(firstGroup.encodePublicKey(firstPublicKey)).thenReturn(new byte[] {1, 2, 3});
         when(secondGroup.encodePublicKey(secondPublicKey)).thenReturn(new byte[] {4, 5, 6});
+        doThrow(destructionFailure).when(firstPrivateKey).destroy();
         QuicTlsLocalKeyShares local = QuicTlsLocalKeyShares.create(List.of(firstGroup, secondGroup), new SecureRandom());
         List<QuicTlsKeyShareEntry> publicEntries = local.keyShareEntries();
 
@@ -236,6 +250,12 @@ class QuicTlsKeySharesTest {
         verify(secondPrivateKey).destroy();
         assertThat(local.keyShareEntries(), equalTo(publicEntries));
         assertThrows(IllegalStateException.class, () -> local.sharedSecret(publicEntries.getFirst()));
+    }
+
+    private static Stream<Exception> destructionFailures() {
+        return Stream.of(new DestroyFailedException("Provider does not support destruction"),
+                         new ProviderException("Provider destruction failure"),
+                         new UnsupportedOperationException("Provider does not support destruction"));
     }
 
     private static void assertSharedSecretMatches(QuicTlsNamedGroup namedGroup) {
@@ -249,5 +269,10 @@ class QuicTlsKeySharesTest {
         assertThat(localSecret.length, greaterThan(0));
         assertThat(localSecret, not(equalTo(new byte[localSecret.length])));
         assertThat(localSecret, equalTo(peerSecret));
+    }
+
+    interface ProviderPrivateKey extends PrivateKey {
+        @Override
+        void destroy() throws DestroyFailedException;
     }
 }
