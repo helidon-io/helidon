@@ -16,6 +16,7 @@
 
 package io.helidon.json.tests;
 
+import java.lang.reflect.Modifier;
 import java.util.List;
 
 import io.helidon.common.GenericType;
@@ -56,6 +57,10 @@ public class GenericClassesTest {
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
     public void testGenericPairClassParameterized(BindingMethod bindingMethod) {
+        assertThat("The discovered generated binding factory must remain package-private",
+                   GenericClassesTest_Pair_BindingFactory.class.getModifiers()
+                           & (Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE),
+                   is(0));
         Pair<String, Integer> pair = new Pair<>();
         pair.setFirst("key");
         pair.setSecond(42);
