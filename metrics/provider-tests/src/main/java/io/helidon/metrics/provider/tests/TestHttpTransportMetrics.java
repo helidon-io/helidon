@@ -53,6 +53,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.LOCAL_CLOSE;
 import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.NORMAL;
@@ -650,6 +651,166 @@ class TestHttpTransportMetrics {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void activeGaugesRemainLiveWhenAcquiredDuringCleanup(boolean removalFails) throws Exception {
+        TestRegistry registry = newRegistry();
+        HttpTransportMetrics.Lease first = HttpTransportMetrics.acquire(registry);
+        HttpTransportMetrics.Lease second = null;
+        ConnectionObservation firstConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+        ConnectionObservation secondConnection = null;
+        RemovalBarrier removal = null;
+        try {
+            firstConnection.protocolSelected(PROTOCOL_HTTP_2);
+            firstConnection.streamOpened(BIDIRECTIONAL, REMOTE);
+            synchronize(registry, first);
+            Gauge<?> retainedConnections = gauge(registry,
+                                                 "helidon.http.connections.active",
+                                                 "role", "server",
+                                                 "transport", "tcp",
+                                                 "protocol", "http/2");
+            Gauge<?> retainedStreams = gauge(registry,
+                                             "helidon.http.streams.active",
+                                             "role", "server",
+                                             "protocol", "http/2",
+                                             "direction", "bidi",
+                                             "initiator", "remote");
+            firstConnection.close(NORMAL);
+            assertThat("The retired connection is no longer active", retainedConnections.value().longValue(), is(0L));
+            assertThat("The retired stream is no longer active", retainedStreams.value().longValue(), is(0L));
+
+            registry.failAllRemovals(removalFails);
+            removal = registry.blockNextRemoval("helidon.http.connections.active");
+            first.close();
+            removal.awaitEntered();
+            second = HttpTransportMetrics.acquire(registry);
+            secondConnection = second.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            secondConnection.protocolSelected(PROTOCOL_HTTP_2);
+            StreamObservation secondStream = secondConnection.streamOpened(BIDIRECTIONAL, REMOTE);
+
+            removal.release();
+            awaitCompletion(first);
+            synchronize(registry, second);
+
+            Gauge<?> currentConnections = gauge(registry,
+                                                "helidon.http.connections.active",
+                                                "role", "server",
+                                                "transport", "tcp",
+                                                "protocol", "http/2");
+            Gauge<?> currentStreams = gauge(registry,
+                                            "helidon.http.streams.active",
+                                            "role", "server",
+                                            "protocol", "http/2",
+                                            "direction", "bidi",
+                                            "initiator", "remote");
+            assertThat("The registered connection gauge observes the new connection",
+                       currentConnections.value().longValue(), is(1L));
+            assertThat("The registered stream gauge observes the new stream",
+                       currentStreams.value().longValue(), is(1L));
+            if (removalFails) {
+                assertThat("The retained connection gauge remains live after cleanup",
+                           retainedConnections.value().longValue(), is(1L));
+                assertThat("The retained stream gauge remains live after cleanup",
+                           retainedStreams.value().longValue(), is(1L));
+            }
+
+            secondStream.close(COMPLETED);
+            secondConnection.close(NORMAL);
+            assertThat("The registered connection gauge observes closure",
+                       currentConnections.value().longValue(), is(0L));
+            assertThat("The registered stream gauge observes closure", currentStreams.value().longValue(), is(0L));
+            if (removalFails) {
+                assertThat("The retained connection gauge observes closure",
+                           retainedConnections.value().longValue(), is(0L));
+                assertThat("The retained stream gauge observes closure", retainedStreams.value().longValue(), is(0L));
+            }
+
+            registry.failAllRemovals(false);
+            closeAndAwait(second);
+            assertRegistryEmpty(registry);
+        } finally {
+            registry.failAllRemovals(false);
+            if (removal != null) {
+                removal.release();
+            }
+            registry.releaseBarriers();
+            firstConnection.close(NORMAL);
+            if (secondConnection != null) {
+                secondConnection.close(NORMAL);
+            }
+            closeAndAwait(first);
+            if (second != null) {
+                closeAndAwait(second);
+            }
+            registry.close();
+        }
+    }
+
+    @Test
+    void successfulCleanupRestoresGaugeCapacityAfterConcurrentReacquisition() throws Exception {
+        TestRegistry registry = new TestRegistry(createRegistry(metricsFactory().clockSystem()),
+                                                 "helidon.http.connections.active"::equals);
+        HttpTransportMetrics.Lease first = HttpTransportMetrics.acquire(registry);
+        HttpTransportMetrics.Lease second = null;
+        List<ConnectionObservation> firstConnections = new ArrayList<>();
+        List<ConnectionObservation> secondConnections = new ArrayList<>();
+        RemovalBarrier removal = null;
+        try {
+            CountDownLatch initialRegistrations = new CountDownLatch(256);
+            registry.onMeterAdded(_ -> initialRegistrations.countDown());
+            for (int i = 0; i < 256; i++) {
+                firstConnections.add(first.connectionOpened(SERVER, "retired-" + i, NONE));
+            }
+            assertThat("All 256 initial gauge series register",
+                       initialRegistrations.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
+            assertThat("The initial epoch fills the gauge cache", registry.meters().size(), is(256));
+            firstConnections.forEach(connection -> connection.close(NORMAL));
+
+            removal = registry.blockNextRemoval("helidon.http.connections.active");
+            first.close();
+            removal.awaitEntered();
+            CountDownLatch replacementRegistrations = new CountDownLatch(256);
+            registry.onMeterAdded(_ -> replacementRegistrations.countDown());
+            second = HttpTransportMetrics.acquire(registry);
+            secondConnections.add(second.connectionOpened(SERVER, "retired-0", NONE));
+            removal.release();
+            awaitCompletion(first);
+
+            for (int i = 1; i < 256; i++) {
+                secondConnections.add(second.connectionOpened(SERVER, "replacement-" + i, NONE));
+            }
+            assertThat("One reused and 255 new gauge series register after successful cleanup",
+                       replacementRegistrations.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
+            assertThat("Retired IDs do not consume the replacement epoch's gauge capacity",
+                       registry.meters().size(), is(256));
+            for (int i = 0; i < 256; i++) {
+                String transport = i == 0 ? "retired-0" : "replacement-" + i;
+                assertThat("The replacement connection is active for " + transport,
+                           gauge(registry,
+                                 "helidon.http.connections.active",
+                                 "role", "server",
+                                 "transport", transport,
+                                 "protocol", "unknown").value().longValue(),
+                           is(1L));
+            }
+            secondConnections.forEach(connection -> connection.close(NORMAL));
+            closeAndAwait(second);
+            assertRegistryEmpty(registry);
+        } finally {
+            if (removal != null) {
+                removal.release();
+            }
+            registry.releaseBarriers();
+            firstConnections.forEach(connection -> connection.close(NORMAL));
+            secondConnections.forEach(connection -> connection.close(NORMAL));
+            closeAndAwait(first);
+            if (second != null) {
+                closeAndAwait(second);
+            }
+            registry.close();
+        }
+    }
+
     private static void assertChildOutcome(TestRegistry registry,
                                            HandshakeOutcome handshakeOutcome,
                                            long handshakeCount,
@@ -862,6 +1023,7 @@ class TestHttpTransportMetrics {
 
     private static final class TestRegistry implements MeterRegistry {
         private final MeterRegistry delegate;
+        private final Predicate<String> enabledMeters;
         private final AtomicInteger barrierSequence = new AtomicInteger();
         private final AtomicReference<ProviderBarrier> providerBarrier = new AtomicReference<>();
         private final AtomicReference<RemovalBarrier> removalBarrier = new AtomicReference<>();
@@ -870,7 +1032,12 @@ class TestHttpTransportMetrics {
         private volatile boolean failAllRemovals;
 
         private TestRegistry(MeterRegistry delegate) {
+            this(delegate, _ -> true);
+        }
+
+        private TestRegistry(MeterRegistry delegate, Predicate<String> enabledMeters) {
             this.delegate = delegate;
+            this.enabledMeters = enabledMeters;
         }
 
         private ProviderBarrier blockNextRegistration() {
@@ -939,8 +1106,13 @@ class TestHttpTransportMetrics {
         }
 
         @Override
+        public boolean isMeterEnabled(String name) {
+            return enabledMeters.test(name) && delegate.isMeterEnabled(name);
+        }
+
+        @Override
         public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
-            return delegate.isMeterEnabled(name, tags, scope);
+            return enabledMeters.test(name) && delegate.isMeterEnabled(name, tags, scope);
         }
 
         @Override
