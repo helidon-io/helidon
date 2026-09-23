@@ -434,7 +434,7 @@ public class CorsSupportHelper<Q, R> {
 
             return new RequestTypeInfo(originLocation,
                                        hostLocation,
-                                       originLocation.equals(hostLocation) || originLocation.equals(OPAQUE_ORIGIN));
+                                       originLocation.equals(hostLocation));
         }
     }
 
@@ -530,7 +530,8 @@ public class CorsSupportHelper<Q, R> {
         // If enabled but not allow-listed, deny request
         List<String> allowedOrigins = Arrays.asList(crossOriginConfig.allowOrigins());
         Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
-        if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
+        if ((!allowedOrigins.contains("*") || originOpt.filter(CorsSupportHelper::isOriginOpaque).isPresent())
+                && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
             return Optional.of(forbid(requestAdapter,
                     responseAdapter,
                     ORIGIN_NOT_IN_ALLOWED_LIST,
@@ -567,7 +568,8 @@ public class CorsSupportHelper<Q, R> {
         } else {
             List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
             new Headers()
-                    .add(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin)
+                    .add(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN,
+                         allowedOrigins.contains("*") && !isOriginOpaque(origin) ? "*" : origin)
                     .add(HeaderNames.VARY, HeaderNames.ORIGIN)
                     .setAndLog(responseAdapter::header, "allow-credentials was not set in CORS config");
         }
@@ -616,7 +618,8 @@ public class CorsSupportHelper<Q, R> {
 
         // If enabled but not allow-listed, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
-        if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
+        if ((!allowedOrigins.contains("*") || originOpt.filter(CorsSupportHelper::isOriginOpaque).isPresent())
+                && !contains(originOpt, allowedOrigins, CorsSupportHelper::compareOrigins)) {
             return forbid(requestAdapter,
                     responseAdapter,
                     ORIGIN_NOT_IN_ALLOWED_LIST,
@@ -777,6 +780,10 @@ public class CorsSupportHelper<Q, R> {
      * @return outcome of test
      */
     static Boolean compareOrigins(String url1, String url2) {
+        if (OPAQUE_ORIGIN.equals(url1) || OPAQUE_ORIGIN.equals(url2)) {
+            return url1.equals(url2);
+        }
+
         boolean isHttps = false;
         int length1 = url1.length();
         int length2 = url2.length();
