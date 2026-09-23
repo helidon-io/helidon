@@ -182,7 +182,7 @@ public class QuicNullContractJmhBenchmark {
         @Setup(Level.Trial)
         public void setUp() {
             validLongHeader = ByteBuffer.allocate(23)
-                    .put((byte) 0x80)
+                    .put((byte) 0xc0)
                     .putInt(QuicVersion.QUIC_V1.versionNumber())
                     .put((byte) 8)
                     .putLong(1)
