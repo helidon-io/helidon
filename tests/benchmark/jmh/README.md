@@ -594,10 +594,15 @@ mvn -Ptests,jmh \
 ```
 
 The controlled evidence root receives `http3-quic-controlled-build.manifest`,
-`http3-quic-controlled-source.manifest`, and `http3-quic-controlled-build.log`. The generator prints the exact immutable
-Resolver local prefix. The build manifest binds that prefix, its complete content digest, the shared remote prefix,
-captured HEAD, Maven and Java versions, invocation digest, effective timeout, controlled-build processor cap, and
-controlled-build log digest. The timeout defaults to 1800 seconds and can be set from 60 through 21600 seconds with
+`http3-quic-controlled-source.manifest`, and `http3-quic-controlled-build.log`. Before taking a source snapshot or starting
+Maven, the generator reserves all three paths and rejects any existing file or active reservation. Use a new controlled
+directory for a new source/build identity. The source manifest is published last, after both supporting files; failed
+attempts remove only their own identity files and reservations, preserving existing campaign results.
+
+The generator prints the exact immutable Resolver local prefix. The build manifest binds that prefix, its complete content
+digest, the shared remote prefix, captured HEAD, Maven and Java versions, invocation digest, effective timeout,
+controlled-build processor cap, and controlled-build log digest. The timeout defaults to 1800 seconds and can be set from
+60 through 21600 seconds with
 `helidon.benchmark.evidence.mavenTimeoutSeconds`. Nested Maven, compiler, annotation-processor, GC, JIT, and common-pool
 thread sizing is capped at two active processors by default; set a value from 1 through 64 with
 `helidon.benchmark.evidence.activeProcessorCount`. This is a JVM concurrency-sizing cap rather than an operating-system
