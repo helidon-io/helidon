@@ -16,6 +16,7 @@
 
 package io.helidon.metrics.api;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,4 +62,43 @@ interface MeterConfigBlueprint {
      */
     @Option.Configured
     Optional<List<Double>> percentiles();
+
+    /**
+     * Explicit timer histogram bucket boundaries, preserving builder settings when absent and clearing explicit boundaries
+     * when empty. Each duration must be positive and representable in nanoseconds. This setting is independent of local
+     * percentiles and automatically generated percentile histogram buckets.
+     * <p>
+     * These settings override timer builder customizations at registration. Registering an enabled meter other than a
+     * {@link io.helidon.metrics.api.Timer} with this setting fails with {@link java.lang.IllegalArgumentException}.
+     *
+     * @return optional timer bucket boundaries
+     */
+    @Option.Configured
+    Optional<List<Duration>> buckets();
+
+    /**
+     * Minimum expected timer duration used to size the histogram, preserving builder settings when absent.
+     * The duration must be positive, representable in nanoseconds, and no greater than the maximum expected duration when
+     * both are set. Recorded durations below this value are not discarded.
+     * <p>
+     * This setting overrides timer builder customizations at registration. Registering an enabled meter other than a
+     * {@link io.helidon.metrics.api.Timer} with this setting fails with {@link java.lang.IllegalArgumentException}.
+     *
+     * @return optional minimum expected timer duration
+     */
+    @Option.Configured
+    Optional<Duration> minimumExpectedValue();
+
+    /**
+     * Maximum expected timer duration used to size the histogram, preserving builder settings when absent.
+     * The duration must be positive, representable in nanoseconds, and no less than the minimum expected duration when
+     * both are set. Recorded durations above this value are not discarded.
+     * <p>
+     * This setting overrides timer builder customizations at registration. Registering an enabled meter other than a
+     * {@link io.helidon.metrics.api.Timer} with this setting fails with {@link java.lang.IllegalArgumentException}.
+     *
+     * @return optional maximum expected timer duration
+     */
+    @Option.Configured
+    Optional<Duration> maximumExpectedValue();
 }

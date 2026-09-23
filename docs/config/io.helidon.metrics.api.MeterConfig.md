@@ -19,6 +19,17 @@ Registry settings for a meter identified by its exact name, regardless of its ta
 <tbody>
 <tr>
 <td>
+<code>minimum-<wbr>expected-<wbr>value</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+</td>
+<td>Minimum expected timer duration used to size the histogram, preserving builder settings when absent</td>
+</tr>
+<tr>
+<td>
 <code>percentiles</code>
 </td>
 <td>
@@ -30,6 +41,17 @@ Registry settings for a meter identified by its exact name, regardless of its ta
 </tr>
 <tr>
 <td>
+<code>buckets</code>
+</td>
+<td>
+<code>List&lt;<wbr>Duration&gt;</code>
+</td>
+<td>
+</td>
+<td>Explicit timer histogram bucket boundaries, preserving builder settings when absent and clearing explicit boundaries when empty</td>
+</tr>
+<tr>
+<td>
 <code>name</code>
 </td>
 <td>
@@ -38,6 +60,17 @@ Registry settings for a meter identified by its exact name, regardless of its ta
 <td>
 </td>
 <td>Meter name to match exactly, before any exporter-specific naming conversion</td>
+</tr>
+<tr>
+<td>
+<code>maximum-<wbr>expected-<wbr>value</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+</td>
+<td>Maximum expected timer duration used to size the histogram, preserving builder settings when absent</td>
 </tr>
 <tr>
 <td>

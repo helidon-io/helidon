@@ -16,6 +16,7 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.lang.System.Logger.Level;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -545,13 +546,27 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private void configureMeter(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
         MeterConfig meterConfig = meterConfigs.get(builder.name());
-        if (meterConfig == null || meterConfig.percentiles().isEmpty()) {
+        if (meterConfig == null || (meterConfig.percentiles().isEmpty()
+                && meterConfig.buckets().isEmpty()
+                && meterConfig.minimumExpectedValue().isEmpty()
+                && meterConfig.maximumExpectedValue().isEmpty())) {
             return;
         }
         if (!(builder instanceof io.helidon.metrics.api.Timer.Builder timerBuilder)) {
-            throw new IllegalArgumentException("Percentiles are configured for a meter which is not a timer: " + builder.name());
+            throw new IllegalArgumentException("Timer statistics are configured for a meter which is not a timer: "
+                                                       + builder.name());
         }
-        timerBuilder.percentiles(meterConfig.percentiles().orElseThrow().stream().mapToDouble(Double::doubleValue).toArray());
+        meterConfig.percentiles().ifPresent(percentiles ->
+                timerBuilder.percentiles(percentiles.stream().mapToDouble(Double::doubleValue).toArray()));
+        meterConfig.buckets().ifPresent(buckets -> timerBuilder.buckets(buckets.toArray(Duration[]::new)));
+        meterConfig.minimumExpectedValue().ifPresent(timerBuilder::minimumExpectedValue);
+        meterConfig.maximumExpectedValue().ifPresent(timerBuilder::maximumExpectedValue);
+        if ((meterConfig.minimumExpectedValue().isPresent() || meterConfig.maximumExpectedValue().isPresent())
+                && timerBuilder.minimumExpectedValue().isPresent() && timerBuilder.maximumExpectedValue().isPresent()
+                && timerBuilder.minimumExpectedValue().get().compareTo(timerBuilder.maximumExpectedValue().get()) > 0) {
+            throw new IllegalArgumentException("Timer minimum-expected-value must not exceed maximum-expected-value: "
+                                                       + builder.name());
+        }
     }
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {

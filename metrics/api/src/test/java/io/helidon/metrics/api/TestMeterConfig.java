@@ -16,6 +16,7 @@
 
 package io.helidon.metrics.api;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,80 @@ class TestMeterConfig {
         assertThrows(UnsupportedOperationException.class, () -> meter.percentiles().orElseThrow().clear());
         assertThat(MeterConfig.builder().name("timer").percentiles(List.of()).build().percentiles().orElseThrow(), empty());
         assertThat(MeterConfig.builder().name("timer").build().percentiles().isEmpty(), is(true));
+    }
+
+    @Test
+    void preservesAbsentAndEmptyBucketsAndParsesExpectedDurationsFromYaml() {
+        MetricsConfig config = MetricsConfig.create(Config.just(ConfigSources.classpath("meter-settings.yaml"))
+                                                           .get("metrics"));
+        MeterConfig defaults = config.meters().get(0);
+        MeterConfig aggregate = config.meters().get(1);
+        MeterConfig custom = config.meters().get(2);
+
+        assertThat(defaults.buckets().isEmpty(), is(true));
+        assertThat(defaults.minimumExpectedValue().isEmpty(), is(true));
+        assertThat(defaults.maximumExpectedValue().isEmpty(), is(true));
+        assertThat(aggregate.buckets().orElseThrow(), empty());
+        assertThat(custom.buckets().orElseThrow(), contains(Duration.ofMillis(5), Duration.ofMillis(10)));
+        assertThat(custom.minimumExpectedValue().orElseThrow(), is(Duration.ofMillis(2)));
+        assertThat(custom.maximumExpectedValue().orElseThrow(), is(Duration.ofMillis(20)));
+    }
+
+    @Test
+    void bucketSettingsAreImmutableAndAllowBoundariesOutsideExpectedRange() {
+        var buckets = new ArrayList<>(List.of(Duration.ofNanos(2), Duration.ofNanos(1)));
+        MeterConfig meter = MeterConfig.builder()
+                .name("timer")
+                .buckets(buckets)
+                .minimumExpectedValue(Duration.ofNanos(1))
+                .maximumExpectedValue(Duration.ofNanos(1))
+                .build();
+        buckets.clear();
+
+        assertThat(meter.buckets().orElseThrow(), contains(Duration.ofNanos(2), Duration.ofNanos(1)));
+        assertThrows(UnsupportedOperationException.class, () -> meter.buckets().orElseThrow().clear());
+        assertThat(meter.minimumExpectedValue().orElseThrow(), is(Duration.ofNanos(1)));
+        assertThat(meter.maximumExpectedValue().orElseThrow(), is(Duration.ofNanos(1)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0, -1, Long.MAX_VALUE})
+    void rejectsInvalidHistogramDurations(long seconds) {
+        Duration duration = Duration.ofSeconds(seconds);
+        var bucketFailure = assertThrows(IllegalArgumentException.class,
+                                         () -> MeterConfig.builder().name("timer").buckets(List.of(duration)).build());
+        var minFailure = assertThrows(IllegalArgumentException.class,
+                                      () -> MeterConfig.builder().name("timer").minimumExpectedValue(duration).build());
+        var maxFailure = assertThrows(IllegalArgumentException.class,
+                                      () -> MeterConfig.builder().name("timer").maximumExpectedValue(duration).build());
+
+        assertThat(bucketFailure.getMessage(), containsString("bucket"));
+        assertThat(minFailure.getMessage(), containsString("minimum-expected-value"));
+        assertThat(maxFailure.getMessage(), containsString("maximum-expected-value"));
+        for (var failure : List.of(bucketFailure, minFailure, maxFailure)) {
+            assertThat(failure.getMessage(), containsString(duration.toString()));
+        }
+    }
+
+    @Test
+    void rejectsInvertedExpectedRange() {
+        var failure = assertThrows(IllegalArgumentException.class,
+                                   () -> MeterConfig.builder()
+                                           .name("timer")
+                                           .minimumExpectedValue(Duration.ofMillis(20))
+                                           .maximumExpectedValue(Duration.ofMillis(2))
+                                           .build());
+        assertThat(failure.getMessage(), containsString("minimum-expected-value"));
+        assertThat(failure.getMessage(), containsString("maximum-expected-value"));
+    }
+
+    @Test
+    void rejectsInvalidHistogramDurationsFromConfig() {
+        for (String property : List.of("buckets.0", "minimum-expected-value", "maximum-expected-value")) {
+            Config config = Config.just(ConfigSources.create(Map.of("name", "timer", property, "PT0S")));
+            var failure = assertThrows(IllegalArgumentException.class, () -> MeterConfig.create(config));
+            assertThat(failure.getMessage(), containsString(property.equals("buckets.0") ? "bucket" : property));
+        }
     }
 
     @Test

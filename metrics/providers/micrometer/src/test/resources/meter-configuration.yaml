@@ -20,5 +20,8 @@ metrics:
       percentiles: []
     - name: custom.timer
       percentiles: [0.5, 0.99]
+      buckets: [PT0.005S, PT0.010S]
+      minimum-expected-value: PT0.002S
+      maximum-expected-value: PT0.020S
     - name: disabled.timer
       enabled: false
