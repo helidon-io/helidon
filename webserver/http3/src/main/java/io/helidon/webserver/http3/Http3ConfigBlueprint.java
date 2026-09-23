@@ -93,9 +93,9 @@ interface Http3ConfigBlueprint extends QuicSubProtocolConfig, HttpConfig {
     long maxFieldSectionSize();
 
     /**
-     * Maximum QPACK dynamic table capacity announced by the server.
-     * The value must be {@code -1}, which uses the protocol default of {@code 0}, or a QUIC variable-length integer from
-     * {@code 0} through {@code 2^62 - 1}, inclusive. Default is {@code -1}.
+     * Maximum QPACK dynamic table capacity announced by the server; {@code -1} uses the protocol default of {@code 0}.
+     * The value must be {@code -1} or a QUIC variable-length integer from {@code 0} through {@code 2^62 - 1}, inclusive.
+     * Default is {@code -1}.
      *
      * @return capacity in octets
      */
@@ -104,9 +104,9 @@ interface Http3ConfigBlueprint extends QuicSubProtocolConfig, HttpConfig {
     long qpackMaxTableCapacity();
 
     /**
-     * Maximum number of QPACK blocked streams announced by the server.
-     * The value must be {@code -1}, which uses the protocol default of {@code 0}, or a QUIC variable-length integer from
-     * {@code 0} through {@code 2^62 - 1}, inclusive. Default is {@code -1}.
+     * Maximum number of QPACK blocked streams announced by the server; {@code -1} uses the protocol default of {@code 0}.
+     * The value must be {@code -1} or a QUIC variable-length integer from {@code 0} through {@code 2^62 - 1}, inclusive.
+     * Default is {@code -1}.
      *
      * @return number of blocked streams
      */
