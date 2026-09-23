@@ -154,6 +154,52 @@ mvn test -Ptests,jmh \
     -Dgrpc.streaming.jmh.result=./target/grpc-transport-baseline-steady-t8.json
 ```
 
+## HTTP transport provider dispatch
+
+`HttpTransportMetricsDispatchJmhBenchmark` measures cold, filtered registration attempts through the real HTTP transport
+metrics dispatcher. Each producer has a distinct configured registry wrapper and recorder cache; all wrappers unwrap the
+same native registry and therefore share one dispatcher. Each transport identifier is used once per iteration. Only the
+connection-open counter is selected by name. The provider counts its tag-aware selection calls and returns `false`, so every
+attempt exercises queued cold resolution without native meter construction, timers, or percentile computation. This is a
+dispatcher comparison, not a measurement of Micrometer registration cost or warmed recording throughput.
+
+The dedicated runner selects only `producerAdmission` and `completeWave`, at one and four producer threads, with 32 and 128
+registrations per producer. It uses single-shot iterations with batch size one, three forks, 1,000 warmups, 100 measurements,
+and a fixed 1 GiB heap. Setup acquires fresh leases and precomputes identifiers outside timing. `producerAdmission` measures
+one producer's batch of connection-open/close callbacks while the provider can drain concurrently. `completeWave` additionally
+waits for all producers, all expected provider callbacks, and the final observation dispatcher thread to terminate, including
+its outstanding-task accounting. Results are microseconds per producer batch; concurrent complete-wave samples are each
+producer's time to the shared completion boundary, not independent waves. Divide admission time by registrations per producer
+only when interpreting amortized callback cost.
+
+Every iteration verifies that the number of executed provider callbacks equals the number of attempts. Missing work fails
+the run instead of improving the score. Teardown closes every lease, awaits release completion, and closes the owned registry.
+The GC profiler includes iteration setup and teardown allocation as well as the measured calls; compare matched configurations
+and source-identical harnesses, and do not describe normalized allocation as dispatcher-only allocation.
+
+After installing the repository artifacts, compile and run the ordinary correctness checks without executing JMH:
+
+```shell
+mvn verify -Ptests,jmh -pl :helidon-tests-benchmark-jmh -Dtest=HttpTransportMetricsDispatchTest
+```
+
+The explicit test selection is required: the `jmh` profile enables test execution in this module. These checks directly invoke
+both benchmark paths, cover serial and concurrent producers and fresh iterations, and hold a provider callback while submitting
+1,280 cold attempts across five recorder caches. Exactly 1,024 must execute after release. No sockets or containers are used.
+
+Run the timing comparison on the benchmark host using matched build JDKs and artifacts, with identical harness source on the
+pre-dispatcher-fix and candidate revisions:
+
+```shell
+mvn test -Ptests,jmh -pl :helidon-tests-benchmark-jmh -Dtest=HttpTransportMetricsDispatchJmhRunnerTest
+```
+
+The runner writes `target/http-transport-dispatch-jmh-t1.json` and `target/http-transport-dispatch-jmh-t4.json`. Properties
+`http.transport.dispatch.jmh.threads`, `http.transport.dispatch.jmh.forks`,
+`http.transport.dispatch.jmh.warmupIterations`, `http.transport.dispatch.jmh.measurementIterations`, and
+`http.transport.dispatch.jmh.resultPrefix` override the corresponding defaults. Timed waves above the 1,024-action budget,
+repeated invocations within an iteration, and modes other than single-shot with batch size one are rejected.
+
 ## Troubleshooting
 
 When tests fails repeatedly without any code change, try regenerating baseline file
