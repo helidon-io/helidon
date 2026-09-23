@@ -2,7 +2,7 @@
 
 ## Description
 
-Automatic metrics collection settings
+Automatic HTTP request and transport metrics collection settings
 
 ## Configuration options
 
@@ -26,7 +26,7 @@ Automatic metrics collection settings
 </td>
 <td>
 </td>
-<td>Elective attribute for which to opt in</td>
+<td>Elective HTTP request metric attributes for which to opt in; does not affect transport metrics</td>
 </tr>
 <tr>
 <td>
@@ -40,7 +40,7 @@ Automatic metrics collection settings
 </td>
 <td>
 </td>
-<td>Automatic metrics collection settings</td>
+<td>Path selection for automatic HTTP request metrics; does not filter transport lifecycle metrics</td>
 </tr>
 <tr>
 <td>
@@ -51,7 +51,7 @@ Automatic metrics collection settings
 </td>
 <td>
 </td>
-<td>Socket names for sockets to be instrumented with automatic metrics</td>
+<td>Socket names for sockets to be instrumented with automatic HTTP request and transport metrics</td>
 </tr>
 <tr>
 <td>
@@ -63,7 +63,7 @@ Automatic metrics collection settings
 <td>
 <code>true</code>
 </td>
-<td>Whether automatic metrics collection as a whole is enabled</td>
+<td>Whether automatic HTTP request and transport metrics collection is enabled</td>
 </tr>
 <tr>
 <td>
@@ -74,7 +74,7 @@ Automatic metrics collection settings
 </td>
 <td>
 </td>
-<td>Exact, case-sensitive HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard HTTP methods; assigning this value fully replaces the set of method names</td>
+<td>Exact, case-sensitive HTTP methods to be used in the HTTP method tag for automatic HTTP request metrics, defaulted to the standard HTTP methods; assigning this value fully replaces the set of method names</td>
 </tr>
 </tbody>
 </table>
