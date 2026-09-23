@@ -72,8 +72,8 @@ import org.openjdk.jmh.annotations.Threads;
  * Measurements include client work and response validation, so they do not establish whole-server throughput improvements.
  * Set {@code expectHttp2Streams=false} only for a baseline without HTTP/2 stream publishing. This parameter changes setup
  * and teardown validation only; the timed exchange is identical. Enabled metrics always require physical connection meters.
- * The {@code percentiles=false} setting disables only the stream duration timer's local percentiles. Setup requires runtime
- * support for this per-meter override and verifies the actual timer snapshot when HTTP/2 stream publishing is expected.
+ * The {@code percentiles} setting explicitly configures six local percentiles for the stream duration timer when enabled
+ * and an empty list when disabled. Setup verifies the actual timer snapshot when HTTP/2 stream publishing is expected.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -82,7 +82,7 @@ import org.openjdk.jmh.annotations.Threads;
 public class Http2TransportMetricsJmhBenchmark {
     private static final Duration EXCHANGE_TIMEOUT = Duration.ofSeconds(10);
     private static final String STREAM_DURATION = "helidon.http.streams.duration";
-    private static final List<Double> DEFAULT_PERCENTILES = List.of(0.5, 0.75, 0.95, 0.98, 0.99, 0.999);
+    private static final List<Double> STREAM_PERCENTILES = List.of(0.5, 0.75, 0.95, 0.98, 0.99, 0.999);
     private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.US_ASCII);
     private static final MetricsFactory METRICS_FACTORY = Services.get(MetricsFactory.class);
     private static final List<Tag> CONNECTION_TAGS = List.of(METRICS_FACTORY.tagCreate("role", "server"),
@@ -98,14 +98,17 @@ public class Http2TransportMetricsJmhBenchmark {
                                                                   METRICS_FACTORY.tagCreate("initiator", "remote"),
                                                                   METRICS_FACTORY.tagCreate("outcome", "completed"));
 
+    /** Automatic HTTP metrics mode selected for this fork. */
     @Param({"absent", "disabled", "enabled"})
-    private String metricsMode;
+    public String metricsMode;
 
+    /** Whether setup and teardown require HTTP/2 stream publishing. */
     @Param({"true"})
-    private boolean expectHttp2Streams;
+    public boolean expectHttp2Streams;
 
+    /** Whether to configure local percentiles for the stream duration timer. */
     @Param({"true"})
-    private boolean percentiles = true;
+    public boolean percentiles = true;
 
     private MeterRegistry registry;
     private WebServer server;
@@ -196,12 +199,7 @@ public class Http2TransportMetricsJmhBenchmark {
                     throw new IllegalStateException("Physical connection metrics are not active");
                 }
                 if (expectHttp2Streams) {
-                    if (!streamMetersAdvanced()) {
-                        throw new IllegalStateException("HTTP/2 stream meters did not advance: opened "
-                                                                + warmedOpenedStreamCount + " -> " + openedStreamCount()
-                                                                + ", closed " + warmedStreamCount + " -> " + completedStreamCount()
-                                                                + ", timer " + warmedTimerCount + " -> " + streamTimerCount());
-                    }
+                    await(this::streamMetersAdvanced, "HTTP/2 stream counters and timer to advance");
                 }
             } else {
                 verifyTransportMetricsAbsent();
@@ -305,7 +303,7 @@ public class Http2TransportMetricsJmhBenchmark {
         Timer timer = registry.timer(STREAM_DURATION, COMPLETED_STREAM_TAGS).orElseThrow();
         List<Double> actual = new ArrayList<>();
         timer.snapshot().percentileValues().forEach(value -> actual.add(value.percentile()));
-        List<Double> expected = percentiles ? DEFAULT_PERCENTILES : List.of();
+        List<Double> expected = percentiles ? STREAM_PERCENTILES : List.of();
         if (!actual.equals(expected)) {
             throw new IllegalStateException("Unexpected stream duration percentiles: expected "
                                                     + expected + ", actual " + actual);
@@ -313,16 +311,17 @@ public class Http2TransportMetricsJmhBenchmark {
     }
 
     private MetricsConfig metricsConfig() {
-        Config config = Config.empty();
-        if (!percentiles) {
-            ObjectNode meter = ObjectNode.builder()
-                    .addValue("name-pattern", Pattern.quote(STREAM_DURATION))
-                    .addList("percentiles", ListNode.builder().build())
-                    .build();
-            config = Config.just(ConfigSources.create(ObjectNode.builder()
-                                                              .addList("meters", ListNode.builder().addObject(meter).build())
-                                                              .build()));
+        var values = ListNode.builder();
+        if (percentiles) {
+            STREAM_PERCENTILES.forEach(value -> values.addValue(value.toString()));
         }
+        ObjectNode meter = ObjectNode.builder()
+                .addValue("name-pattern", Pattern.quote(STREAM_DURATION))
+                .addList("percentiles", values.build())
+                .build();
+        Config config = Config.just(ConfigSources.create(ObjectNode.builder()
+                                                                 .addList("meters", ListNode.builder().addObject(meter).build())
+                                                                 .build()));
         return MetricsConfig.builder().config(config).warnOnMultipleRegistries(false).build();
     }
 

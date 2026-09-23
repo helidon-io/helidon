@@ -83,15 +83,15 @@ import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
  * the candidate's always-on publisher hooks. Recorder acquisition uses reflection only during trial setup so this source
  * also compiles on a base which does not yet contain {@code helidon-http-metrics}. Recorder modes include {@code noop},
  * direct {@code metrics}, and {@code composed-metrics}, which includes the production observer composition wrapper.
- * The stream state's {@code percentiles=false} setting requires runtime support for per-meter percentile configuration;
- * setup rejects an ignored override. Configuration uses the existing config API to preserve source compatibility.
+ * The stream state's {@code percentiles} setting explicitly configures six local percentiles when enabled and an empty
+ * list when disabled; setup rejects an ignored override. Configuration uses the existing config API for source compatibility.
  */
 public class HttpTransportMetricsJmhTest {
     private static final String SERVER_HOST = "127.0.0.1";
     private static final int SOCKET_READ_TIMEOUT_MILLIS = 5_000;
     private static final int RESPONSE_BUFFER_SIZE = 1_024;
     private static final String STREAM_DURATION = "helidon.http.streams.duration";
-    private static final List<Double> DEFAULT_PERCENTILES = List.of(0.5, 0.75, 0.95, 0.98, 0.99, 0.999);
+    private static final List<Double> STREAM_PERCENTILES = List.of(0.5, 0.75, 0.95, 0.98, 0.99, 0.999);
     private static final byte[] RESPONSE_BYTES = "OK".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] RESPONSE_STATUS = "HTTP/1.1 200".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] KEEP_ALIVE_REQUEST = """
@@ -183,16 +183,17 @@ public class HttpTransportMetricsJmhTest {
     }
 
     private static MetricsConfig metricsConfig(boolean percentiles) {
-        Config config = Config.empty();
-        if (!percentiles) {
-            ObjectNode meter = ObjectNode.builder()
-                    .addValue("name-pattern", Pattern.quote(STREAM_DURATION))
-                    .addList("percentiles", ListNode.builder().build())
-                    .build();
-            config = Config.just(ConfigSources.create(ObjectNode.builder()
-                                                              .addList("meters", ListNode.builder().addObject(meter).build())
-                                                              .build()));
+        var values = ListNode.builder();
+        if (percentiles) {
+            STREAM_PERCENTILES.forEach(value -> values.addValue(value.toString()));
         }
+        ObjectNode meter = ObjectNode.builder()
+                .addValue("name-pattern", Pattern.quote(STREAM_DURATION))
+                .addList("percentiles", values.build())
+                .build();
+        Config config = Config.just(ConfigSources.create(ObjectNode.builder()
+                                                                 .addList("meters", ListNode.builder().addObject(meter).build())
+                                                                 .build()));
         return MetricsConfig.builder().config(config).warnOnMultipleRegistries(false).build();
     }
 
@@ -444,7 +445,7 @@ public class HttpTransportMetricsJmhTest {
         @Param("noop")
         public String observerMode;
 
-        /** Whether the stream duration timer retains its default local percentiles. */
+        /** Whether to configure local percentiles for the stream duration timer. */
         @Param({"true"})
         public boolean percentiles = true;
 
@@ -611,7 +612,7 @@ public class HttpTransportMetricsJmhTest {
             Timer timer = registry.timer(STREAM_DURATION, duration.tags()).orElseThrow();
             List<Double> actual = new ArrayList<>();
             timer.snapshot().percentileValues().forEach(value -> actual.add(value.percentile()));
-            List<Double> expected = percentiles ? DEFAULT_PERCENTILES : List.of();
+            List<Double> expected = percentiles ? STREAM_PERCENTILES : List.of();
             if (!actual.equals(expected)) {
                 throw new IllegalStateException("Unexpected stream duration percentiles: expected "
                                                         + expected + ", actual " + actual);
