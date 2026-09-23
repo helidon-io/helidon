@@ -132,6 +132,7 @@ final class Http3BenchmarkEnvironment implements AutoCloseable {
                 .baseUri(baseUri)
                 .shareConnectionCache(false)
                 .proxy(Proxy.noProxy())
+                .dnsResolver((_, _) -> address)
                 .tls(clientTls)
                 .protocolConfig(Http3ClientProtocolConfig.builder()
                                         .priorKnowledge(true)
