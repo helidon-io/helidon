@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,8 +96,6 @@ public abstract class DbClientHealthCheck implements HealthCheck {
             builder.up();
         } catch (Throwable e) {
             builder.down();
-            builder.withData("ErrorMessage", e.getMessage());
-            builder.withData("ErrorClass", e.getClass().getName());
             LOGGER.log(Level.FINER, e, () -> String.format(
                     "Database %s is not responding: %s", dbClient.dbType(), e.getMessage()));
         }

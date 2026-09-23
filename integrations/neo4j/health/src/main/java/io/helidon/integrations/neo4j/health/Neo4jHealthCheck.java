@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,16 @@ public class Neo4jHealthCheck implements HealthCheck {
         return new Neo4jHealthCheck(driver);
     }
 
+    @Override
+    public HealthCheckResponse call() {
+        var builder = HealthCheckResponse.named("Neo4j connection health check");
+        try {
+            return runHealthCheckQuery(builder);
+        } catch (Exception ignored) {
+            return builder.down().build();
+        }
+    }
+
     private HealthCheckResponse runHealthCheckQuery(HealthCheckResponseBuilder builder) {
 
         try (Session session = this.driver.session()) {
@@ -74,28 +84,13 @@ public class Neo4jHealthCheck implements HealthCheck {
                 var resultSummary = result.consume();
                 var serverInfo = resultSummary.server();
 
-                var responseBuilder = builder
-                        .withData("server", serverInfo.protocolVersion() + "@" + serverInfo.address())
-                        .withData("edition", edition);
-
-                var databaseInfo = resultSummary.database();
-                if (!databaseInfo.name().trim().isBlank()) {
-                    responseBuilder.withData("database", databaseInfo.name().trim());
-                }
-
-                return responseBuilder.up().build();
+                return builder
+                        .withData("server", serverInfo.protocolVersion())
+                        .withData("edition", edition)
+                        .up()
+                        .build();
             });
         }
     }
 
-    @Override
-    public HealthCheckResponse call() {
-
-        var builder = HealthCheckResponse.named("Neo4j connection health check");
-        try {
-            return runHealthCheckQuery(builder);
-        } catch (Exception ex) {
-            return builder.down().withData("reason", ex.getMessage()).build();
-        }
-    }
 }

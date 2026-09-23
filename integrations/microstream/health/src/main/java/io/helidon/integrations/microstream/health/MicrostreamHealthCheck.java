@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.microstream.health;
 
+import java.lang.System.Logger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -24,11 +25,14 @@ import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 
+import static java.lang.System.Logger.Level.TRACE;
+
 /**
  * Microstream health check.
  */
 public class MicrostreamHealthCheck implements HealthCheck {
 
+    private static final Logger LOGGER = System.getLogger(MicrostreamHealthCheck.class.getName());
     private static final String DEFAULT_NAME = "Microstream";
     private static final long DEFAULT_TIMEOUT_SECONDS = 10;
 
@@ -59,8 +63,7 @@ public class MicrostreamHealthCheck implements HealthCheck {
             }
         } catch (Throwable e) {
             builder.down();
-            builder.withData("ErrorMessage", e.getMessage());
-            builder.withData("ErrorClass", e.getClass().getName());
+            LOGGER.log(TRACE, "Microstream health check failed", e);
         }
 
         return builder.build();

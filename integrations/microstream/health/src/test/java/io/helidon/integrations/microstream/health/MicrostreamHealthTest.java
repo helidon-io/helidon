@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.microstream.health;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
@@ -35,10 +36,6 @@ class MicrostreamHealthTest {
         embeddedStorageManager = Mockito.mock(EmbeddedStorageManager.class);
     }
 
-    private void setMicrostreamStatus(boolean isRunning) {
-        Mockito.when(embeddedStorageManager.isRunning()).thenReturn(isRunning);
-    }
-
     @Test
     void testStatusRunning() {
         setMicrostreamStatus(true);
@@ -56,6 +53,19 @@ class MicrostreamHealthTest {
     }
 
     @Test
+    void failedCheckDoesNotExposeExceptionDetails() {
+        Mockito.when(embeddedStorageManager.isRunning()).thenThrow(new IllegalStateException(
+                "Storage initialization failed for internal-storage; password=health-secret"));
+        MicrostreamHealthCheck check = MicrostreamHealthCheck.create(embeddedStorageManager);
+
+        HealthCheckResponse response = check.call();
+
+        assertThat(response.getStatus(), is(HealthCheckResponse.Status.DOWN));
+        assertThat(response.getData(), is(Optional.empty()));
+        assertThat(response.getName(), is("Microstream"));
+    }
+
+    @Test
     void testStatusTimeout() {
 
         Mockito.when(embeddedStorageManager.isRunning()).then((x) -> {
@@ -68,5 +78,9 @@ class MicrostreamHealthTest {
 
         HealthCheckResponse response = check.call();
         assertThat(response.getStatus(), is(HealthCheckResponse.Status.DOWN));
+    }
+
+    private void setMicrostreamStatus(boolean isRunning) {
+        Mockito.when(embeddedStorageManager.isRunning()).thenReturn(isRunning);
     }
 }

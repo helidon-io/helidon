@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
+** <<Health Response Details, Health Response Details>>
 ** <<Built-In Health Checks, Built-In Health Checks>>
 ** <<Kubernetes Probes, Kubernetes Probes>>
 ** <<Troubleshooting Probes, Troubleshooting Probes>>
@@ -197,6 +198,19 @@ checks
 | `io.helidon.reactive.health.HealthSupport.Builder`
 | Builder class to create `HealthSupport` instances
 |=======
+
+=== Health Response Details
+
+HTTP `GET` responses include check names, statuses, and data returned by health checks.
+Unexpected check exceptions are logged on the server; the response identifies the
+check implementation, reports it as `DOWN`, and includes a fixed failure message
+without the exception class or message. The HTTP status is `500` for such failures.
+Database and MicroStream health checks omit backend exception details. Neo4j health
+checks report the protocol version and edition without the server address or database name.
+
+Data explicitly returned by custom health checks is included without filtering.
+Keep credentials and sensitive backend information out of that data, and restrict
+access to health endpoints when application health data is confidential.
 
 === Built-In Health Checks
 

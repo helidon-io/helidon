@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Usage, Usage>>
 ** <<Understanding Concepts, Understanding Concepts>>
 - <<Rest-Endpoints, REST Endpoints>>
+** <<Health Response Details, Health Response Details>>
 - <<Configuration, Configuration>>
 ** <<Configuration Options, Configuration Options>>
 - <<Examples, Examples>>
@@ -151,6 +152,17 @@ microservice reports itself as ready.
 |Treats the instance as still starting up; does not check liveness or readiness until the startup probe reports success or times out according to its configuration.
 |===
 
+
+=== Health Response Details
+
+HTTP `GET` responses include detailed health results. Unexpected check exceptions
+are logged on the server; the response identifies the check implementation, reports
+it as `DOWN`, and includes a fixed failure message without the exception class or
+message. The HTTP status is `500` for such failures.
+
+Data explicitly returned by custom health checks is included without filtering.
+Keep credentials and sensitive backend information out of that data, and restrict
+access to health endpoints when application health data is confidential.
 
 == Configuration
 
