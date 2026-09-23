@@ -18,6 +18,7 @@ package io.helidon.quic;
 
 import java.security.GeneralSecurityException;
 import java.security.ProviderException;
+import java.util.Arrays;
 import java.util.Objects;
 
 import javax.crypto.Mac;
@@ -51,10 +52,15 @@ final class QuicTls13SecretSchedule {
 
     SecretKey deriveHandshakeSecret(SecretKey earlySecret, byte[] sharedSecret) {
         SecretKey derivedSalt = deriveSecret(earlySecret, "derived", cipherSuite.emptyHash());
-        return QuicTlsHkdf.extractSecret(cipherSuite.hkdfAlgorithm(),
-                                         TLS_SECRET_ALGORITHM,
-                                         derivedSalt.getEncoded(),
-                                         inputSecret(sharedSecret));
+        byte[] inputSecret = inputSecret(sharedSecret);
+        try {
+            return QuicTlsHkdf.extractSecret(cipherSuite.hkdfAlgorithm(),
+                                             TLS_SECRET_ALGORITHM,
+                                             derivedSalt.getEncoded(),
+                                             inputSecret);
+        } finally {
+            Arrays.fill(inputSecret, (byte) 0);
+        }
     }
 
     SecretKey deriveResumptionBinderKey(SecretKey earlySecret) {

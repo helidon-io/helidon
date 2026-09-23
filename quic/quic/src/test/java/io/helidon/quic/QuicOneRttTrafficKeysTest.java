@@ -114,10 +114,9 @@ class QuicOneRttTrafficKeysTest {
         local.oneRttContext(() -> -1);
 
         assertThat(encrypt(local, 1, (byte) 0x01).keyPhase(), is(0));
-        assertThat(encrypt(local, 2, (byte) 0x02).keyPhase(), is(0));
 
         QuicTransportException ex = assertThrows(QuicTransportException.class,
-                                                 () -> encrypt(local, 3, (byte) 0x03));
+                                                 () -> encrypt(local, 2, (byte) 0x02));
 
         assertThat(ex.errorCode(), is(QuicTransportErrors.AEAD_LIMIT_REACHED.code()));
     }
@@ -147,7 +146,7 @@ class QuicOneRttTrafficKeysTest {
         MutableOneRttContext localContext = new MutableOneRttContext();
         QuicOneRttTrafficKeys local = create(QuicVersion.QUIC_V1, true, 1);
         local.oneRttContext(localContext);
-        QuicOneRttTrafficKeys peer = create(QuicVersion.QUIC_V1, false, 1);
+        QuicOneRttTrafficKeys peer = create(QuicVersion.QUIC_V1, false);
         peer.oneRttContext(() -> -1);
 
         encrypt(local, 1, (byte) 0x11);
