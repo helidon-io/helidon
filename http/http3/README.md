@@ -11,5 +11,8 @@ Module ownership is split as follows:
 3. `webserver/http3` contains the preview HTTP/3 server and its integration tests.
 4. `quic/quic` contains the QUIC transport and its incubating standalone client, server, session, and stream API.
 
+The HTTP/3 integrations use the [Helidon-owned QUIC TLS handshake](../../quic/quic/README.md#tls-handshake), including its
+ephemeral-key lifecycle and QUIC-specific packet-protection and alert rules.
+
 The old split `quic/http3/{common,client,server}` reactor has been removed so the filesystem layout matches the new
 module boundaries.

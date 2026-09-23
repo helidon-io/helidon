@@ -1467,6 +1467,44 @@ class QuicConnectionImplTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldTerminateWhenScheduledPacketExceedsAeadLimit(boolean retransmission) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))) {
+            PacketSpaceManager packetSpace =
+                    (PacketSpaceManager) harness.connection.packetSpace(PacketNumberSpace.APPLICATION);
+            if (retransmission) {
+                QuicPacket packet = harness.connection.encoder()
+                        .newOneRttPacket(harness.connection.peerConnectionId(),
+                                         packetSpace.allocateNextPN(),
+                                         -1,
+                                         List.of(PingFrame.create()),
+                                         harness.connection.codingContext(),
+                                         "test");
+                packetSpace.packetSent(packet, -1L, packet.packetNumber());
+            }
+            QuicTransportException failure = new QuicTransportException("test AEAD limit",
+                                                                         KeySpace.ONE_RTT,
+                                                                         0,
+                                                                         QuicTransportErrors.AEAD_LIMIT_REACHED);
+            harness.engine.encryptFailure = failure;
+
+            if (retransmission) {
+                packetSpace.fastRetransmit();
+            } else {
+                packetSpace.requestSendPing();
+            }
+
+            QuicTermination termination = harness.connection.whenTerminated().toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
+            assertThat(termination.errorCode().orElseThrow(), is(QuicTransportErrors.AEAD_LIMIT_REACHED.code()));
+            assertThat(termination.keySpace().orElseThrow(), is(KeySpace.ONE_RTT));
+            assertThat(termination.cause().orElseThrow(), sameInstance(failure));
+            assertThat(harness.connection.isOpen(), is(false));
+            harness.connection.cleanupComplete().toCompletableFuture().get(10, TimeUnit.SECONDS);
+        }
+    }
+
     @Test
     void shouldObserveStatelessResetAsPeerTerminationWithoutCloseCode() throws Exception {
         try (ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT));
@@ -2966,6 +3004,7 @@ class QuicConnectionImplTest {
         private QuicOneRttContext oneRttContext;
         private ByteBuffer outboundHandshakeBytes;
         private RuntimeException decryptFailure;
+        private QuicTransportException encryptFailure;
         private RuntimeException handshakeFailure;
         private KeySpace unavailableOnEncrypt;
 
@@ -3081,6 +3120,9 @@ class QuicConnectionImplTest {
                                         IntFunction<ByteBuffer> headerGenerator,
                                         ByteBuffer packetPayload,
                                         ByteBuffer output) throws QuicTransportException {
+            if (keySpace == KeySpace.ONE_RTT && encryptFailure != null) {
+                throw encryptFailure;
+            }
             if (keySpace == unavailableOnEncrypt) {
                 unavailableOnEncrypt = null;
                 availableKeys.remove(keySpace);

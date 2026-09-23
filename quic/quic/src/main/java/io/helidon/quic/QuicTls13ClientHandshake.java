@@ -52,6 +52,7 @@ final class QuicTls13ClientHandshake {
     private QuicTlsResumptionTicket currentResumptionTicket;
     private HelloRetryRequestState helloRetryRequest;
     private boolean complete;
+    private boolean discarded;
 
     private QuicTls13ClientHandshake(QuicVersion version,
                                      QuicTlsClientHelloMessage initialClientHello,
@@ -84,12 +85,18 @@ final class QuicTls13ClientHandshake {
                                           QuicTlsClientHelloMessage initialClientHello,
                                           QuicTlsLocalKeyShares initialKeyShares,
                                           SecureRandom secureRandom) throws QuicTransportException {
-        return new QuicTls13ClientHandshake(version,
-                                            initialClientHello,
-                                            initialKeyShares,
-                                            null,
-                                            secureRandom,
-                                            QuicAeadLimits.Confidentiality.defaults());
+        Objects.requireNonNull(initialKeyShares, "initialKeyShares");
+        try {
+            return new QuicTls13ClientHandshake(version,
+                                                initialClientHello,
+                                                initialKeyShares,
+                                                null,
+                                                secureRandom,
+                                                QuicAeadLimits.Confidentiality.defaults());
+        } catch (RuntimeException | Error e) {
+            initialKeyShares.discard();
+            throw e;
+        }
     }
 
     static QuicTls13ClientHandshake start(QuicVersion version,
@@ -113,27 +120,32 @@ final class QuicTls13ClientHandshake {
         QuicTlsLocalKeyShares initialKeyShares =
                 QuicTlsLocalKeyShares.create(params.initialKeyShareGroups(),
                                              Objects.requireNonNull(secureRandom, "secureRandom"));
-        QuicTlsClientHelloMessage initialClientHello = createClientHello(
-                new ClientHelloBuild(LEGACY_TLS_VERSION,
-                                     params.random(),
-                                     params.legacySessionId(),
-                                     cipherSuiteCodePoints(params.cipherSuites()),
-                                     LEGACY_NULL_COMPRESSION,
-                                     params.additionalExtensions(),
-                                     params.supportedGroups(),
-                                     List.of(QuicTlsSupportedVersions.TLS_1_3),
-                                     initialKeyShares.keyShareEntries(),
-                                     null,
-                                     params.resumptionTicket(),
-                                     false,
-                                     null,
-                                     null));
-        return new QuicTls13ClientHandshake(version,
-                                            initialClientHello,
-                                            initialKeyShares,
-                                            params.resumptionTicket(),
-                                            secureRandom,
-                                            confidentialityLimits);
+        try {
+            QuicTlsClientHelloMessage initialClientHello = createClientHello(
+                    new ClientHelloBuild(LEGACY_TLS_VERSION,
+                                         params.random(),
+                                         params.legacySessionId(),
+                                         cipherSuiteCodePoints(params.cipherSuites()),
+                                         LEGACY_NULL_COMPRESSION,
+                                         params.additionalExtensions(),
+                                         params.supportedGroups(),
+                                         List.of(QuicTlsSupportedVersions.TLS_1_3),
+                                         initialKeyShares.keyShareEntries(),
+                                         null,
+                                         params.resumptionTicket(),
+                                         false,
+                                         null,
+                                         null));
+            return new QuicTls13ClientHandshake(version,
+                                                initialClientHello,
+                                                initialKeyShares,
+                                                params.resumptionTicket(),
+                                                secureRandom,
+                                                confidentialityLimits);
+        } catch (RuntimeException | Error e) {
+            initialKeyShares.discard();
+            throw e;
+        }
     }
 
     QuicTlsClientHelloMessage clientHelloMessage() {
@@ -145,15 +157,29 @@ final class QuicTls13ClientHandshake {
     }
 
     Result consumeServerHello(ByteBuffer message) throws QuicTransportException {
-        if (complete) {
-            throw new IllegalStateException("TLS hello exchange already completed");
+        if (complete || discarded) {
+            throw new IllegalStateException("TLS hello exchange already completed or discarded");
         }
 
-        byte[] encodedMessage = QuicTlsCodecSupport.copy(Objects.requireNonNull(message, "message"));
-        QuicTlsServerHelloMessage serverHello = QuicTlsServerHelloMessage.decode(ByteBuffer.wrap(encodedMessage));
-        return serverHello.helloRetryRequest()
-                ? processHelloRetryRequest(serverHello, encodedMessage)
-                : processServerHello(serverHello, encodedMessage);
+        try {
+            byte[] encodedMessage = QuicTlsCodecSupport.copy(Objects.requireNonNull(message, "message"));
+            QuicTlsServerHelloMessage serverHello = QuicTlsServerHelloMessage.decode(ByteBuffer.wrap(encodedMessage));
+            Result result = serverHello.helloRetryRequest()
+                    ? processHelloRetryRequest(serverHello, encodedMessage)
+                    : processServerHello(serverHello, encodedMessage);
+            if (complete) {
+                discardKeyShares();
+            }
+            return result;
+        } catch (RuntimeException | Error e) {
+            discard();
+            throw e;
+        }
+    }
+
+    void discard() {
+        discarded = true;
+        discardKeyShares();
     }
 
     private static int requireSupportedVersion(QuicTlsServerHelloMessage serverHello, String messageName)
@@ -404,8 +430,10 @@ final class QuicTls13ClientHandshake {
                                                              byte[] encodedHelloRetryRequest)
             throws QuicTransportException {
         HelloRetryRequestState retryState = validateHelloRetryRequest(helloRetryRequest);
+        discardKeyShares();
         QuicTlsLocalKeyShares retryKeyShares = QuicTlsLocalKeyShares.create(List.of(retryState.selectedGroup()),
                                                                             secureRandom);
+        this.currentKeyShares = retryKeyShares;
         QuicTlsResumptionTicket retryResumptionTicket = retryResumptionTicket(retryState.cipherSuite());
         QuicTlsClientHelloMessage retryClientHello =
                 createRetryClientHello(retryKeyShares, retryState.cookie(), retryResumptionTicket, encodedHelloRetryRequest);
@@ -418,10 +446,17 @@ final class QuicTls13ClientHandshake {
         transcript.add(ByteBuffer.wrap(encodedRetryClientHello));
         this.currentClientHello = retryClientHello;
         this.currentClientHelloBytes = encodedRetryClientHello;
-        this.currentKeyShares = retryKeyShares;
         this.currentResumptionTicket = retryResumptionTicket;
         this.helloRetryRequest = retryState;
         return new HelloRetryRequestResult(helloRetryRequest, retryClientHello);
+    }
+
+    private void discardKeyShares() {
+        QuicTlsLocalKeyShares keyShares = currentKeyShares;
+        currentKeyShares = null;
+        if (keyShares != null) {
+            keyShares.discard();
+        }
     }
 
     private CompleteResult processServerHello(QuicTlsServerHelloMessage serverHello, byte[] encodedServerHello)

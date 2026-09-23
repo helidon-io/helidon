@@ -24,6 +24,7 @@ import javax.crypto.SecretKey;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -188,6 +189,17 @@ class QuicTls13SecretScheduleTest {
 
         assertThat(exception.errorCode(), is(QuicTransportErrors.INTERNAL_ERROR.code()));
         assertThat(exception.getCause(), instanceOf(NoSuchAlgorithmException.class));
+    }
+
+    @Test
+    void shouldKeepCallerSharedSecretAfterDerivingHandshakeSecret() {
+        byte[] sharedSecret = bytes(SIMPLE_SHARED_SECRET);
+        SecretKey earlySecret = SCHEDULE.extractEarlySecret(new byte[0]);
+
+        SecretKey handshakeSecret = SCHEDULE.deriveHandshakeSecret(earlySecret, sharedSecret);
+
+        assertSecret(handshakeSecret, SIMPLE_HANDSHAKE_SECRET);
+        assertThat(sharedSecret, equalTo(bytes(SIMPLE_SHARED_SECRET)));
     }
 
     private static byte[] bytes(String hex) {

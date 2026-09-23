@@ -92,6 +92,22 @@ The ordered ALPN lists must be non-empty and contain no duplicates. Each Java ch
 one-to-one to an opaque ALPN byte using ISO-8859-1; characters outside that byte range are rejected. Check
 `session.applicationProtocol()` before dispatching to application-protocol code.
 
+## TLS Handshake
+
+Helidon processes the TLS 1.3 handshake for QUIC and uses JCA providers for cryptographic operations. Shared `Tls`
+configuration supplies the certificate, trust, and algorithm policies. The handshake follows the QUIC integration rules
+in [RFC 9001](https://www.rfc-editor.org/rfc/rfc9001.html); [RFC 9846](https://www.rfc-editor.org/rfc/rfc9846.html) is the
+current TLS 1.3 specification. This handshake processing is separate from the JSSE engine used for TCP-based TLS.
+
+Each connection uses fresh ephemeral key shares. Helidon releases their private-key references after secret derivation
+or when a pending exchange is replaced or abandoned, requests destruction from the key provider, and clears temporary
+shared-secret arrays. Physical erasure of provider-owned key material depends on the provider. CertificateRequest's
+mandatory signature-algorithm extension is checked even when the client has no certificate to offer.
+
+QUIC protects packets and updates keys without TLS records or TLS KeyUpdate messages. A 1-RTT key cannot encrypt more
+packets than its AEAD confidentiality limit permits. TLS alerts terminate the QUIC connection, including alerts that
+have warning semantics in TLS over TCP.
+
 ## Sessions and Streams
 
 A session can open locally initiated bidirectional and unidirectional streams. Opening a stream can block while waiting

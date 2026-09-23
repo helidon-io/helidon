@@ -558,7 +558,7 @@ final class QuicOneRttTrafficKeys {
                                    ByteBuffer packetPayload,
                                    ByteBuffer output) throws QuicTransportException {
             long confidentialityLimit = confidentialityLimit();
-            if (confidentialityLimit > 0 && numEncrypted.get() > confidentialityLimit) {
+            if (confidentialityLimit > 0 && numEncrypted.get() >= confidentialityLimit) {
                 throw new QuicTransportException("confidentiality limit reached",
                                                  QuicTLSEngine.KeySpace.ONE_RTT,
                                                  0,

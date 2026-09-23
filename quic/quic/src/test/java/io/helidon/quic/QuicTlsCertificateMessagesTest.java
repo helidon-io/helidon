@@ -93,6 +93,19 @@ class QuicTlsCertificateMessagesTest {
     }
 
     @Test
+    void shouldDecodeEmptyCertificateRequestExtensionsBeforeSemanticValidation() {
+        byte[] encoded = QuicTlsRfc8448Vectors.bytes("0d000003000000");
+        QuicTlsCertificateRequestMessage certificateRequest =
+                QuicTlsCertificateRequestMessage.decode(ByteBuffer.wrap(encoded));
+
+        assertThat(copy(certificateRequest.encode()), equalTo(encoded));
+        assertThat(certificateRequest.requestContext(), equalTo(new byte[0]));
+        QuicTransportException thrown = assertThrows(QuicTransportException.class,
+                                                     certificateRequest::signatureAlgorithms);
+        assertThat(thrown.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 109));
+    }
+
+    @Test
     void shouldApplyCertificateSignatureScopeWhenCertificateExtensionIsAbsent() {
         QuicTlsCertificateRequestMessage certificateRequest = QuicTlsCertificateRequestMessage.create(
                 new byte[0],

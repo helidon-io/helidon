@@ -765,18 +765,28 @@ final class QuicTls13ServerHandshake {
 
         QuicTlsKeySharePossession serverKeyShare =
                 QuicTlsKeySharePossession.create(clientKeyShare.namedGroup(), secureRandom);
-
-        QuicTlsServerHelloMessage serverHello =
-                serverHello(clientHello.legacySessionId(), selectedCipherSuite, serverKeyShare.keyShareEntry(), -1);
-        byte[] serverHelloBytes = copy(serverHello.encode());
-
-        if (helloRetryRequest == null) {
-            transcript.reset();
-        }
-        transcript.add(ByteBuffer.wrap(clientHelloBytes));
-        transcript.add(ByteBuffer.wrap(serverHelloBytes));
-
+        byte[] serverHelloBytes;
         QuicTls13ConnectionSecrets secrets;
+        try {
+            QuicTlsServerHelloMessage serverHello =
+                    serverHello(clientHello.legacySessionId(), selectedCipherSuite, serverKeyShare.keyShareEntry(), -1);
+            serverHelloBytes = copy(serverHello.encode());
+
+            if (helloRetryRequest == null) {
+                transcript.reset();
+            }
+            transcript.add(ByteBuffer.wrap(clientHelloBytes));
+            transcript.add(ByteBuffer.wrap(serverHelloBytes));
+            secrets = QuicTls13ConnectionSecrets.create(version,
+                                                        selectedCipherSuite,
+                                                        serverKeyShare,
+                                                        clientKeyShare,
+                                                        false,
+                                                        confidentialityLimits.aesGcm(),
+                                                        confidentialityLimits.chacha20Poly1305());
+        } finally {
+            serverKeyShare.discard();
+        }
         byte[] helloTranscriptHash;
         QuicLongHeaderTrafficKeys serverHandshakeKeys;
         byte[] encryptedExtensions;
@@ -785,13 +795,6 @@ final class QuicTls13ServerHandshake {
         byte[] certificateVerify;
         byte[] finished;
         QuicOneRttTrafficKeys serverOneRttKeys;
-        secrets = QuicTls13ConnectionSecrets.create(version,
-                                                    selectedCipherSuite,
-                                                    serverKeyShare,
-                                                    clientKeyShare,
-                                                    false,
-                                                    confidentialityLimits.aesGcm(),
-                                                    confidentialityLimits.chacha20Poly1305());
         helloTranscriptHash = transcript.hash(selectedCipherSuite);
         serverHandshakeKeys = secrets.deriveHandshakeTrafficKeys(helloTranscriptHash);
 
@@ -925,31 +928,34 @@ final class QuicTls13ServerHandshake {
             throws QuicTransportException {
         QuicTlsKeySharePossession serverKeyShare =
                 QuicTlsKeySharePossession.create(clientKeyShare.namedGroup(), secureRandom);
-
-        QuicTlsServerHelloMessage serverHello =
-                serverHello(clientHello.legacySessionId(),
-                            selectedCipherSuite,
-                            serverKeyShare.keyShareEntry(),
-                            resumptionSelection.selectedIdentity());
-        byte[] serverHelloBytes = copy(serverHello.encode());
-
-        transcript.reset();
-        transcript.add(ByteBuffer.wrap(clientHelloBytes));
-        transcript.add(ByteBuffer.wrap(serverHelloBytes));
-
+        byte[] serverHelloBytes;
         QuicTls13ConnectionSecrets secrets;
+        try {
+            QuicTlsServerHelloMessage serverHello =
+                    serverHello(clientHello.legacySessionId(),
+                                selectedCipherSuite,
+                                serverKeyShare.keyShareEntry(),
+                                resumptionSelection.selectedIdentity());
+            serverHelloBytes = copy(serverHello.encode());
+
+            transcript.reset();
+            transcript.add(ByteBuffer.wrap(clientHelloBytes));
+            transcript.add(ByteBuffer.wrap(serverHelloBytes));
+            secrets = QuicTls13ConnectionSecrets.create(version,
+                                                        selectedCipherSuite,
+                                                        resumptionSelection.resumptionTicket().resumptionPsk(),
+                                                        serverKeyShare,
+                                                        clientKeyShare,
+                                                        false,
+                                                        confidentialityLimits);
+        } finally {
+            serverKeyShare.discard();
+        }
         byte[] helloTranscriptHash;
         QuicLongHeaderTrafficKeys serverHandshakeKeys;
         byte[] encryptedExtensions;
         byte[] finished;
         QuicOneRttTrafficKeys serverOneRttKeys;
-        secrets = QuicTls13ConnectionSecrets.create(version,
-                                                    selectedCipherSuite,
-                                                    resumptionSelection.resumptionTicket().resumptionPsk(),
-                                                    serverKeyShare,
-                                                    clientKeyShare,
-                                                    false,
-                                                    confidentialityLimits);
         helloTranscriptHash = transcript.hash(selectedCipherSuite);
         serverHandshakeKeys = secrets.deriveHandshakeTrafficKeys(helloTranscriptHash);
 
