@@ -25,7 +25,9 @@ import java.util.stream.StreamSupport;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.metrics.api.Bucket;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterConfig;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Timer;
@@ -65,6 +67,9 @@ class TestMeterConfiguration {
             assertThat(percentiles(defaults), contains(0.5, 0.75, 0.95, 0.98, 0.99, 0.999));
             assertThat(percentiles(aggregate), empty());
             assertThat(percentiles(custom), contains(0.5, 0.99));
+            assertThat(buckets(custom).stream().map(bucket -> bucket.boundary(TimeUnit.MILLISECONDS)).toList(),
+                       contains(5D, 10D));
+            assertThat(buckets(custom).stream().map(Bucket::count).toList(), contains(1L, 2L));
             assertThat(aggregate.count(), is(2L));
             assertThat(aggregate.totalTime(TimeUnit.MILLISECONDS), is(10D));
             assertThat(aggregate.max(TimeUnit.MILLISECONDS), is(8D));
@@ -122,6 +127,161 @@ class TestMeterConfiguration {
             assertThat(percentiles(timer), empty());
             assertThat(timer.snapshot().histogramCounts().iterator().hasNext(), is(true));
             assertThat(timer.count(), is(1L));
+        }
+    }
+
+    @Test
+    void configuredBucketsOverrideBuilderAndCustomizerWithoutChangingPercentiles() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.name("configured").buckets(List.of(Duration.ofMillis(5), Duration.ofMillis(10))))
+                .build();
+        MeterBuilderCustomizer customizer = builder -> {
+            if (builder instanceof Timer.Builder timerBuilder) {
+                timerBuilder.buckets(Duration.ofMillis(3));
+            }
+        };
+        try (var fixture = new Fixture(config, List.of(customizer))) {
+            Timer timer = fixture.registry.getOrCreate(fixture.factory.timerBuilder("configured")
+                                                               .buckets(Duration.ofMillis(1))
+                                                               .percentiles(0.5, 0.99));
+            timer.record(Duration.ofMillis(2));
+            timer.record(Duration.ofMillis(8));
+            timer.record(Duration.ofMillis(12));
+
+            assertThat(buckets(timer).stream().map(bucket -> bucket.boundary(TimeUnit.MILLISECONDS)).toList(),
+                       contains(5D, 10D));
+            assertThat(buckets(timer).stream().map(Bucket::count).toList(), contains(1L, 2L));
+            assertThat(timer.count(), is(3L));
+            assertThat(percentiles(timer), contains(0.5, 0.99));
+        }
+    }
+
+    @Test
+    void absentBucketsPreserveBuilderAndEmptyBucketsClearOnlyExplicitBoundaries() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.name("preserved"))
+                .addMeter(meter -> meter.name("cleared").buckets(List.of()))
+                .addMeter(meter -> meter.name("automatic").buckets(List.of()))
+                .build();
+        try (var fixture = new Fixture(config)) {
+            Timer preserved = fixture.registry.getOrCreate(fixture.factory.timerBuilder("preserved")
+                                                                   .buckets(Duration.ofMillis(5)));
+            Timer cleared = fixture.registry.getOrCreate(fixture.factory.timerBuilder("cleared")
+                                                                 .buckets(Duration.ofMillis(5))
+                                                                 .percentiles(0.5));
+            Timer automatic = fixture.registry.getOrCreate(fixture.factory.timerBuilder("automatic")
+                                                                   .buckets(Duration.ofMillis(200))
+                                                                   .publishPercentileHistogram(true)
+                                                                   .minimumExpectedValue(Duration.ofMillis(2))
+                                                                   .maximumExpectedValue(Duration.ofMillis(20)));
+            cleared.record(Duration.ofMillis(8));
+
+            assertThat(buckets(preserved).stream().map(bucket -> bucket.boundary(TimeUnit.MILLISECONDS)).toList(),
+                       contains(5D));
+            assertThat(buckets(cleared), empty());
+            assertThat(percentiles(cleared), contains(0.5));
+            assertThat(cleared.count(), is(1L));
+            assertThat(cleared.totalTime(TimeUnit.MILLISECONDS), is(8D));
+            assertThat(buckets(automatic).getFirst().boundary(TimeUnit.MILLISECONDS), is(2D));
+            assertThat(buckets(automatic).getLast().boundary(TimeUnit.MILLISECONDS), is(20D));
+        }
+    }
+
+    @Test
+    void expectedRangeOverridesBuilderAndCustomizerWithoutDiscardingMeasurements() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.name("timer")
+                        .minimumExpectedValue(Duration.ofMillis(2))
+                        .maximumExpectedValue(Duration.ofMillis(20)))
+                .build();
+        MeterBuilderCustomizer customizer = builder -> {
+            if (builder instanceof Timer.Builder timerBuilder) {
+                timerBuilder.minimumExpectedValue(Duration.ofMillis(3)).maximumExpectedValue(Duration.ofMillis(50));
+            }
+        };
+        try (var fixture = new Fixture(config, List.of(customizer))) {
+            Timer timer = fixture.registry.getOrCreate(fixture.factory.timerBuilder("timer")
+                                                               .publishPercentileHistogram(true)
+                                                               .minimumExpectedValue(Duration.ofMillis(1))
+                                                               .maximumExpectedValue(Duration.ofMillis(100)));
+            timer.record(Duration.ofMillis(1));
+            timer.record(Duration.ofMillis(10));
+            timer.record(Duration.ofMillis(30));
+
+            List<Bucket> histogram = buckets(timer);
+            assertThat(histogram.getFirst().boundary(TimeUnit.MILLISECONDS), is(2D));
+            assertThat(histogram.getLast().boundary(TimeUnit.MILLISECONDS), is(20D));
+            assertThat(histogram.getFirst().count(), is(1L));
+            assertThat(histogram.getLast().count(), is(2L));
+            assertThat(timer.count(), is(3L));
+            assertThat(timer.totalTime(TimeUnit.MILLISECONDS), is(41D));
+        }
+    }
+
+    @Test
+    void absentExpectedBoundsPreserveBuilderValues() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.name("both"))
+                .addMeter(meter -> meter.name("minimum").minimumExpectedValue(Duration.ofMillis(2)))
+                .addMeter(meter -> meter.name("maximum").maximumExpectedValue(Duration.ofMillis(20)))
+                .build();
+        try (var fixture = new Fixture(config)) {
+            for (String name : List.of("both", "minimum", "maximum")) {
+                Timer timer = fixture.registry.getOrCreate(fixture.factory.timerBuilder(name)
+                                                                   .publishPercentileHistogram(true)
+                                                                   .minimumExpectedValue(Duration.ofMillis(1))
+                                                                   .maximumExpectedValue(Duration.ofMillis(100)));
+                List<Bucket> histogram = buckets(timer);
+                assertThat(name, histogram.getFirst().boundary(TimeUnit.MILLISECONDS), is(name.equals("minimum") ? 2D : 1D));
+                assertThat(name, histogram.getLast().boundary(TimeUnit.MILLISECONDS), is(name.equals("maximum") ? 20D : 100D));
+            }
+        }
+    }
+
+    @Test
+    void rejectsConfiguredBoundConflictingWithPreservedBuilderBound() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.name("minimum").minimumExpectedValue(Duration.ofMillis(20)))
+                .addMeter(meter -> meter.name("maximum").maximumExpectedValue(Duration.ofMillis(2)))
+                .build();
+        try (var fixture = new Fixture(config)) {
+            for (String name : List.of("minimum", "maximum")) {
+                var failure = assertThrows(IllegalArgumentException.class,
+                                           () -> fixture.registry.getOrCreate(fixture.factory.timerBuilder(name)
+                                                                                      .minimumExpectedValue(Duration.ofMillis(5))
+                                                                                      .maximumExpectedValue(Duration.ofMillis(10))));
+                assertThat(failure.getMessage(), containsString("minimum-expected-value"));
+                assertThat(failure.getMessage(), containsString("maximum-expected-value"));
+                assertThat(failure.getMessage(), containsString(name));
+            }
+            assertThat(fixture.nativeRegistry().getMeters(), empty());
+        }
+    }
+
+    @Test
+    void histogramSettingsRejectNonTimersAndRespectDisablement() {
+        List<MeterConfig> settings = List.of(
+                MeterConfig.builder().name("counter").buckets(List.of(Duration.ofMillis(5))).build(),
+                MeterConfig.builder().name("counter").minimumExpectedValue(Duration.ofMillis(2)).build(),
+                MeterConfig.builder().name("counter").maximumExpectedValue(Duration.ofMillis(20)).build());
+        for (MeterConfig meter : settings) {
+            try (var fixture = new Fixture(configBuilder().addMeter(meter).build())) {
+                var failure = assertThrows(IllegalArgumentException.class,
+                                           () -> fixture.registry.getOrCreate(fixture.factory.counterBuilder("counter")));
+                assertThat(failure.getMessage(), containsString("not a timer: counter"));
+                assertThat(fixture.nativeRegistry().getMeters(), empty());
+            }
+            List<MetricsConfig> disabledConfigs = List.of(
+                    configBuilder().enabled(false).addMeter(meter).build(),
+                    configBuilder().addMeter(builder -> builder.from(meter).enabled(false)).build());
+            for (MetricsConfig config : disabledConfigs) {
+                try (var fixture = new Fixture(config)) {
+                    Counter counter = fixture.registry.getOrCreate(fixture.factory.counterBuilder("counter"));
+                    counter.increment();
+                    assertThat(counter.count(), is(0L));
+                    assertThat(fixture.nativeRegistry().getMeters(), empty());
+                }
+            }
         }
     }
 
@@ -238,6 +398,10 @@ class TestMeterConfiguration {
         return StreamSupport.stream(timer.snapshot().percentileValues().spliterator(), false)
                 .map(ValueAtPercentile::percentile)
                 .toList();
+    }
+
+    private static List<Bucket> buckets(Timer timer) {
+        return StreamSupport.stream(timer.snapshot().histogramCounts().spliterator(), false).toList();
     }
 
     private static final class Fixture implements AutoCloseable {

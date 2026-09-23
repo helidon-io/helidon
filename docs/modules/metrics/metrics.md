@@ -129,6 +129,34 @@ percentiles while retaining count, total duration, mean, and windowed maximum.
 A non-empty list selects percentile values between `0` and `1`, inclusive.
 Separately configured histogram buckets remain independent of local percentiles.
 
+For timers, use `buckets` to configure explicit duration boundaries and
+`minimum-expected-value` and `maximum-expected-value` to tune the generated
+histogram's range:
+
+```yaml [application.yaml]
+metrics:
+  meters:
+    - name: helidon.http.streams.duration
+      percentiles: []
+      buckets: [PT0.1S, PT0.5S, PT1S]
+      minimum-expected-value: PT0.001S
+      maximum-expected-value: PT10S
+```
+
+Duration values use ISO-8601 strings. Explicit bucket counts can be
+aggregated across service instances that use the same boundaries, even when
+local percentiles are disabled. An omitted property preserves the corresponding
+timer builder or `MeterBuilderCustomizer` setting. An explicit `buckets: []`
+clears custom bucket boundaries; it does not change local percentiles or
+automatic percentile histogram generation. The expected minimum and maximum
+tune the generated histogram's range; they do not discard measurements outside
+that range. These per-meter settings do not enable automatic percentile
+histogram generation.
+
+Bucket boundaries and expected minimum and maximum values must be positive
+durations representable in nanoseconds. The minimum must not exceed the
+maximum, including when one value comes from the timer builder or a customizer.
+
 To disable the duration meter entirely, use:
 
 ```yaml [application.yaml]
@@ -142,8 +170,8 @@ This leaves stream counters and active-stream gauges enabled. A disabled meter
 is not registered or exported; attempts to register it return a no-op meter.
 Global `metrics.enabled: false` takes precedence over individual entries.
 Duplicate names, blank names, and invalid percentile values are rejected.
-Percentile settings apply to timers; applying them to an enabled non-timer meter
-is an error when that meter is registered.
+Percentile, bucket, and expected-value settings apply to timers; applying them
+to an enabled non-timer meter is an error when that meter is registered.
 
 The equivalent programmatic configuration is:
 
@@ -159,10 +187,11 @@ MeterRegistry registry = Services.get(MetricsFactory.class).createMeterRegistry(
 
 `MeterConfig` and `MetricsConfig` are in `io.helidon.metrics.api`. For complete
 disablement, replace `.percentiles(List.of(0.5, 0.99))` with `.enabled(false)`.
-Explicit percentile configuration takes precedence over meter builder settings
-and `MeterBuilderCustomizer` customizations. Configure these settings before
-creating the registry; they are not live reconfiguration controls. If a client
-or server receives an explicit registry, configure the registry itself.
+Explicit per-meter timer configuration takes precedence over meter builder
+settings and `MeterBuilderCustomizer` customizations at registration.
+Configure these settings before creating the registry; they are not live
+reconfiguration controls. If a client or server receives an explicit registry,
+configure the registry itself.
 
 ## Publishing Metrics
 
