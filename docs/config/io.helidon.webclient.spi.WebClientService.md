@@ -7,7 +7,27 @@ This type is a provider contract.
 ## Implementations
 
 
-No implementations are currently known.
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="http-metrics"></a>
+<a href="io.helidon.webclient.metrics.WebClientTransportMetrics.md">
+<code>http-<wbr>metrics</code>
+</a>
+</td>
+<td>Configuration of HTTP transport metrics for WebClient</td>
+</tr>
+</tbody>
+</table>
+
 
 
 ## Usages

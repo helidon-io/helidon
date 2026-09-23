@@ -1091,6 +1091,14 @@ section to configure the default handler behavior on that port.
 See [Configuration options][io-helidon-commo].
 <!--/include-->
 
+## HTTP Transport Metrics
+
+The [metrics observer](../metrics/metrics.md#http-transport-metrics) records
+physical connection lifecycles, TLS handshakes, and HTTP/1 and HTTP/2 exchanges,
+including gRPC calls carried on HTTP/2 streams. Its
+automatic HTTP metrics settings control enablement and listener selection.
+See the metrics guide for protocol coverage, meter names, and configuration.
+
 ## Server Features
 
 Server features provide additional functionality to the WebServer, through

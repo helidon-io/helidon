@@ -108,6 +108,20 @@ Merged configuration for metrics
 </tr>
 <tr>
 <td>
+<a id="meters"></a>
+<a href="io.helidon.metrics.api.MeterConfig.md">
+<code>meters</code>
+</a>
+</td>
+<td>
+<code>List&lt;<wbr>Meter<wbr>Config&gt;</code>
+</td>
+<td>
+</td>
+<td>Settings for individual meters, matched by exact name across all tags in this registry</td>
+</tr>
+<tr>
+<td>
 <code>permit-<wbr>all</code>
 </td>
 <td>

@@ -104,6 +104,66 @@ meters. Application code obtains the global registry by injecting
 `MeterRegistry` or, for imperative code, using
 `Services.get(MeterRegistry.class)`.
 
+### Selecting Meters and Timer Percentiles
+
+Use `metrics.meters` to configure individual meters by their exact registry
+names. Each entry applies to every tag combination of that name in the
+configured registry. Names are case-sensitive; they are not patterns or
+exporter-transformed names. Unlisted meters retain their existing settings.
+
+The `helidon.http.streams.duration` timer records count, total duration, mean,
+and windowed maximum without local percentiles by default. To enable local
+percentiles for this timer:
+
+```yaml [application.yaml]
+metrics:
+  meters:
+    - name: helidon.http.streams.duration
+      percentiles: [0.5, 0.99]
+```
+
+An omitted `percentiles` property preserves the timer builder's settings.
+Other timers, including connection and handshake duration timers, retain
+Helidon's default percentiles. An explicit empty list disables local
+percentiles while retaining count, total duration, mean, and windowed maximum.
+A non-empty list selects percentile values between `0` and `1`, inclusive.
+Separately configured histogram buckets remain independent of local percentiles.
+
+To disable the duration meter entirely, use:
+
+```yaml [application.yaml]
+metrics:
+  meters:
+    - name: helidon.http.streams.duration
+      enabled: false
+```
+
+This leaves stream counters and active-stream gauges enabled. A disabled meter
+is not registered or exported; attempts to register it return a no-op meter.
+Global `metrics.enabled: false` takes precedence over individual entries.
+Duplicate names, blank names, and invalid percentile values are rejected.
+Percentile settings apply to timers; applying them to an enabled non-timer meter
+is an error when that meter is registered.
+
+The equivalent programmatic configuration is:
+
+```java
+MetricsConfig config = MetricsConfig.builder()
+        .addMeter(MeterConfig.builder()
+                          .name("helidon.http.streams.duration")
+                          .percentiles(List.of(0.5, 0.99))
+                          .build())
+        .build();
+MeterRegistry registry = Services.get(MetricsFactory.class).createMeterRegistry(config);
+```
+
+`MeterConfig` and `MetricsConfig` are in `io.helidon.metrics.api`. For complete
+disablement, replace `.percentiles(List.of(0.5, 0.99))` with `.enabled(false)`.
+Explicit percentile configuration takes precedence over meter builder settings
+and `MeterBuilderCustomizer` customizations. Configure these settings before
+creating the registry; they are not live reconfiguration controls. If a client
+or server receives an explicit registry, configure the registry itself.
+
 ## Publishing Metrics
 
 Helidon’s Micrometer-based metrics implementation includes these ways of
@@ -746,12 +806,200 @@ aspects of how Helidon furnishes this information under the
 
 | key        | type                                      | default value      | description                                             |
 |------------|-------------------------------------------|--------------------|---------------------------------------------------------|
-| `auto`     | [AutoHttpMetricsConfig][autohttpmetricsc] |                    | Automatic metrics collection settings.                  |
+| `auto-http-metrics` | [AutoHttpMetricsConfig][autohttpmetricsc] |             | Automatic HTTP request and transport metrics settings. |
 | `enabled`  | boolean                                   | `true`             | Whether this observer is enabled.                       |
 | `endpoint` | string                                    | `/observe/metrics` | Path at which clients can retrieve metrics information. |
 
 See the [Helidon OpenTelemetry documentation][helidon-opentele] for more
 information.
+
+### HTTP Transport Metrics
+
+The metrics observer records physical WebServer TCP or Unix-domain connection
+lifecycles, TLS handshakes, and HTTP/1 and HTTP/2 request and response exchanges. These
+meters use Helidon's Metrics API and the observer's meter registry. Helidon 27
+does not assign metric scopes; each meter is identified by its name and tags.
+Timer base units are seconds. The names below are registry names; an exporter
+such as Prometheus applies its naming convention.
+
+The `helidon-http-metrics` module provides the HTTP-version-neutral recording
+adapter and is included by `helidon-webserver-observe-metrics` and
+`helidon-webclient-metrics`. Adding the adapter alone does not install transport
+instrumentation.
+
+#### Protocol Coverage
+
+WebServer and WebClient publish HTTP/1 and HTTP/2 protocol selection and exchange events.
+Each HTTP/1 request and response exchange is one stream observation, including
+an HTTP upgrade request. An upgrade completes that exchange observation before
+the upgraded protocol takes over. WebSocket messages and frames are not stream
+observations.
+
+HTTP/2 connections report `protocol=http/2`, including TLS, cleartext prior
+knowledge, and HTTP/1 upgrade connections. Each HTTP/2 request stream is one
+exchange observation, including a gRPC call. Individual gRPC messages are not
+separate streams, and the transport tags do not distinguish gRPC from other
+HTTP/2 traffic. A delivered HTTP error response or gRPC error status can still
+complete its transport exchange normally. Stream reset, rejection, and transport
+failure outcomes describe the exchange lifecycle rather than the application
+status code.
+
+An HTTP/1 upgrade exchange completes before HTTP/2 takes over; the upgraded
+request then has an HTTP/2 stream observation. Connection gauges move to
+`http/2`, while the established-connection counter retains the first selected
+protocol. Server-push and protocol control streams are excluded. A successful
+TLS handshake alone does not increment `helidon.http.connections.established`;
+that counter requires a protocol selection event. QUIC and HTTP/3 do not yet
+publish these metrics.
+
+#### Meters and Tags
+
+| Meter | Type | Tags |
+|-------|------|------|
+| `helidon.http.connections.opened` | counter | `role`, `transport`, `handshake` |
+| `helidon.http.connections.established` | counter | `role`, `transport`, `protocol` |
+| `helidon.http.connections.active` | gauge | `role`, `transport`, `protocol` |
+| `helidon.http.connections.closed` | counter | `role`, `transport`, `protocol`, `outcome` |
+| `helidon.http.connections.duration` | timer | `role`, `transport`, `protocol`, `outcome` |
+| `helidon.http.handshakes` | counter | `role`, `transport`, `handshake`, `outcome` |
+| `helidon.http.handshakes.duration` | timer | `role`, `transport`, `handshake`, `outcome` |
+| `helidon.http.streams.opened` | counter | `role`, `protocol`, `direction`, `initiator` |
+| `helidon.http.streams.active` | gauge | `role`, `protocol`, `direction`, `initiator` |
+| `helidon.http.streams.closed` | counter | `role`, `protocol`, `direction`, `initiator`, `outcome` |
+| `helidon.http.streams.duration` | timer | `role`, `protocol`, `direction`, `initiator`, `outcome` |
+
+The recording contract supports the following tag values across HTTP versions.
+This list includes values reserved for integrations beyond the current
+client and server coverage described above:
+
+| Tag | Values |
+|-----|--------|
+| `role` | `client`, `server` |
+| `transport` | `tcp`, `unix`, `quic` |
+| `protocol` | `unknown`, `http/1.1`, `http/2`, `http/3` |
+| `handshake` | `none`, `tls`, `quic-tls` |
+| `direction` | `bidi`, `uni` |
+| `initiator` | `local`, `remote` |
+| Connection `outcome` | `normal`, `local-close`, `remote-close`, `timeout`, `error` |
+| Handshake `outcome` | `success`, `failure`, `cancelled`, `timeout` |
+| Stream `outcome` | `completed`, `rejected`, `reset`, `cancelled`, `error` |
+
+The transport-publishing integration APIs are marked `@Api.Internal` and do not
+provide a supported application extension API. Internal transport integrations
+can use additional stable, bounded `transport` and `protocol` identifiers.
+Tags never contain connection identifiers, network addresses, request paths,
+SNI names, exception text, or protocol error codes.
+
+Connection gauges start under `protocol=unknown` and move to the selected
+protocol when a publisher reports it. Stream observations retain the protocol
+selected when the exchange opened. WebServer exchange observations use
+`role=server`, `protocol=http/1.1` or `protocol=http/2`, `direction=bidi`, and
+`initiator=remote`. WebClient uses the same protocol and direction values with
+`role=client` and `initiator=local`. A shared meter registry can therefore expose
+both sides of an exchange while keeping their observations distinct.
+
+#### Enablement and Listener Selection
+
+Transport metrics follow the same enablement and socket selection as automatic
+HTTP request metrics. They are recorded only when the metrics observer, the
+metrics subsystem, and `auto-http-metrics` are all enabled. Use
+`auto-http-metrics.sockets` to select listeners; omitting it selects all named
+sockets and the default socket.
+
+The `auto-http-metrics.paths`, `known-methods`, and `opt-in` settings apply to
+HTTP request metrics, not transport lifecycle metrics. Transport metrics cover
+all HTTP/1 and HTTP/2 exchanges on each selected listener, including built-in endpoints
+and paths excluded from request metrics. They do not add request path or method
+tags.
+
+To disable both automatic HTTP request metrics and transport metrics while
+keeping the metrics endpoint and other meters available:
+
+```yaml [application.yaml]
+server:
+  features:
+    observe:
+      observers:
+        metrics:
+          auto-http-metrics:
+            enabled: false
+```
+
+The equivalent programmatic setting is
+`MetricsObserver.builder().autoHttpMetrics(auto -> auto.enabled(false))`.
+Setting the observer's `enabled` property to `false` disables the metrics
+endpoint as well. With no metrics observer, or with any of the three enablement
+settings disabled, the observer does not register a transport metrics recorder.
+Other transport observers, if installed, remain independent of these settings.
+
+#### WebClient Enablement
+
+Add `helidon-webclient-metrics` and enable the separate `http-metrics` service:
+
+```yaml [application.yaml]
+client:
+  services:
+    http-metrics:
+      enabled: true
+```
+
+The equivalent programmatic configuration is:
+
+```java
+WebClient client = WebClient.builder()
+        .addService(WebClientTransportMetrics.create())
+        .build();
+```
+
+`WebClientTransportMetrics` is in `io.helidon.webclient.metrics`. Its builder
+accepts `meterRegistry(registry)` to use an explicit registry, including the
+same registry as a WebServer metrics observer. The service applies to HTTP/1,
+HTTP/2, gRPC calls, and WebSocket HTTP upgrades. The existing `services.metrics`
+request metric definitions and telemetry services remain independent.
+
+Omit the service or set `enabled: false` to disable client transport metrics.
+Disabled services do not acquire a metrics lease or enter the request service
+chain. Enabled clients with compatible observer configuration share connection
+caches within the same registry; clients using different registries or disabled
+observation do not share those connections. Unused clients acquire no observer
+lease. Close each client with `closeResource()` when it is no longer needed.
+Applications that own their registry should use `closeResourceAsync()` and await
+the returned stages before closing the registry. Close all sharing clients
+before awaiting any of their stages. Close WebSocket sessions and outstanding
+responses as well; they retain their physical connection observations until
+their transports close.
+
+HTTP response status and gRPC status describe application results; a delivered
+error response can have stream outcome `completed`. Abandoning an HTTP/1
+response before its body and framing are consumed records `cancelled`, including
+releasing a response with unread trailers. Read or write failures record
+`error`; a timeout causing physical closure records connection outcome `timeout`.
+
+#### Selective Measurement
+
+The [per-meter registry settings](#selecting-meters-and-timer-percentiles)
+apply to both client and server transport metrics, including HTTP/1, HTTP/2,
+gRPC exchanges, and WebSocket HTTP upgrades. Client/server enablement controls
+whether observation participates; registry settings select the individual
+measurements and timer statistics. Enabling a meter in the registry does not
+enable observation on a disabled client or listener.
+
+The shared transport recorder caches per-name enablement and skips disabled
+measurements. Disabling `helidon.http.streams.duration` skips its clock reads
+and duration recording while preserving independently enabled stream counters
+and gauges. The same applies to connection and handshake duration timers.
+Disabling only percentiles still measures and records durations. Other enabled
+metrics and connection lifecycle management can still require observation work;
+use the client/server enablement switches to disable transport observation
+entirely.
+
+Enabled recording updates counters, gauges, and timers during transport
+callbacks. First-use meter registration is asynchronous, so new series might
+not appear in the first scrape. Recording cost depends on the workload,
+connection reuse, concurrency, and registry implementation; measure
+representative traffic when evaluating performance.
+
+### Automatic HTTP Request Metrics
 
 #### Selecting REST Endpoints for Automatic Measurement
 
